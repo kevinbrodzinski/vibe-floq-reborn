@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Calendar, Brain, Mail, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NightEvent {
   id: string;
@@ -22,7 +24,7 @@ export const AfterglowScreen = () => {
       type: "venue",
       vibeMatch: 92,
       color: "hsl(180 70% 60%)",
-      icon: "🍻"
+      icon: "venue"
     },
     {
       id: "2",
@@ -30,7 +32,7 @@ export const AfterglowScreen = () => {
       title: "Nico's Chill Floq",
       type: "floq",
       color: "hsl(240 70% 60%)",
-      icon: "🌀"
+      icon: "floq"
     },
     {
       id: "3",
@@ -39,7 +41,7 @@ export const AfterglowScreen = () => {
       participants: ["Julia", "Marcus", "Sam"],
       type: "social",
       color: "hsl(280 70% 60%)",
-      icon: "🎉"
+      icon: "social"
     },
     {
       id: "4",
@@ -47,9 +49,20 @@ export const AfterglowScreen = () => {
       title: "introspective",
       type: "personal",
       color: "hsl(320 70% 60%)",
-      icon: "💭"
+      icon: "personal"
     }
   ]);
+
+  const getEventTypeIcon = (type: string) => {
+    const iconClasses = "w-5 h-5 text-muted-foreground";
+    switch(type) {
+      case "venue": return <div className={`w-5 h-5 rounded-full bg-accent/20 border border-accent/40`} />;
+      case "floq": return <div className={`w-5 h-5 rounded-full bg-primary/20 border border-primary/40`} />;
+      case "social": return <div className={`w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40`} />;
+      case "personal": return <div className={`w-5 h-5 rounded-full bg-muted/20 border border-muted/40`} />;
+      default: return <div className={`w-2 h-2 rounded-full bg-foreground/20`} />;
+    }
+  };
 
   const energySummary = {
     peopleCrossed: 4,
@@ -71,86 +84,118 @@ export const AfterglowScreen = () => {
     <div className="min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center p-6 pt-16">
-        <h1 className="text-4xl font-light">afterglow</h1>
+        <h1 className="text-4xl font-light glow-primary">afterglow</h1>
         <div className="flex space-x-4">
-          <button className="text-2xl">📊</button>
-          <button className="text-2xl">🌙</button>
+          <Button variant="ghost" size="icon" className="hover:glow-secondary">
+            <Calendar className="h-6 w-6" />
+          </Button>
+          <Button variant="ghost" size="icon" className="hover:glow-secondary">
+            <Brain className="h-6 w-6" />
+          </Button>
         </div>
       </div>
 
       {/* Energy Summary */}
       <div className="px-6 mb-8">
-        <h2 className="text-xl text-muted-foreground mb-4">Energy Summary</h2>
-        <div className="flex justify-between items-center mb-6">
-          <div className="text-center">
-            <div className="text-3xl font-bold">{energySummary.peopleCrossed}</div>
-            <div className="text-sm text-muted-foreground">people crossed paths</div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 glow-secondary">
+          <h2 className="text-xl text-muted-foreground mb-6">Energy Summary</h2>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary">{energySummary.peopleCrossed}</div>
+              <div className="text-sm text-muted-foreground">people crossed paths</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">{energySummary.floqsVisited}</div>
+              <div className="text-sm text-muted-foreground">Floqs visited</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-secondary">1</div>
+              <div className="text-sm text-muted-foreground">Most felt emotion</div>
+              <div className="text-xs text-accent font-medium">{energySummary.topEmotion}</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold">{energySummary.floqsVisited}</div>
-            <div className="text-sm text-muted-foreground">Floqs nip/cd</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold">1</div>
-            <div className="text-sm text-muted-foreground">Most felt emotion {energySummary.topEmotion}</div>
-          </div>
-        </div>
 
-        <button className="w-full bg-card/60 backdrop-blur-xl rounded-2xl py-3 text-foreground font-medium border border-border/30 transition-all duration-300 hover:scale-[1.02]">
-          Revisit This Night
-        </button>
+          <Button className="w-full gradient-primary text-primary-foreground font-medium transition-smooth hover:glow-active">
+            Revisit This Night
+          </Button>
+        </div>
       </div>
 
       {/* Timeline */}
       <div className="px-6 relative">
-        {/* Timeline line */}
-        <div className="absolute left-12 top-0 bottom-0 w-1 bg-gradient-to-b from-accent via-primary to-destructive rounded-full"></div>
+        {/* Curved Timeline SVG */}
+        <svg className="absolute left-0 top-0 h-full w-24 pointer-events-none" style={{zIndex: 1}}>
+          <defs>
+            <linearGradient id="timelineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="hsl(180 70% 60%)" />
+              <stop offset="25%" stopColor="hsl(240 70% 60%)" />
+              <stop offset="50%" stopColor="hsl(280 70% 60%)" />
+              <stop offset="75%" stopColor="hsl(320 70% 60%)" />
+              <stop offset="100%" stopColor="hsl(340 70% 60%)" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M48 0 Q52 25 48 50 Q44 75 48 100 Q52 125 48 150 Q44 175 48 200 Q52 225 48 250 Q44 275 48 300 Q52 325 48 350 Q44 375 48 400 Q52 425 48 450 Q44 475 48 500"
+            stroke="url(#timelineGradient)"
+            strokeWidth="3"
+            fill="none"
+            className="drop-shadow-lg glow-primary"
+          />
+        </svg>
 
         <div className="space-y-8">
           {nightEvents.map((event, index) => (
             <div key={event.id} className="relative flex items-start space-x-6">
               {/* Timeline dot */}
               <div 
-                className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow"
+                className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
                 style={{
                   backgroundColor: getTimelineColor(index),
-                  boxShadow: `0 0 20px ${getTimelineColor(index)}`
+                  boxShadow: `0 0 30px ${getTimelineColor(index)}40`
                 }}
               ></div>
 
               {/* Event card */}
-              <div className="flex-1 bg-card/60 backdrop-blur-xl rounded-2xl p-4 border border-border/30 transition-all duration-300 hover:scale-[1.02]">
-                <div className="flex justify-between items-start mb-2">
+              <div className="flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02]">
+                <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center space-x-3">
-                    <span className="text-muted-foreground text-sm">{event.time}</span>
-                    <span className="text-xl">{event.icon}</span>
+                    <span className="text-muted-foreground text-sm font-medium">{event.time}</span>
+                    {getEventTypeIcon(event.type)}
                   </div>
                   
                   {event.id === "1" && (
                     <div className="flex space-x-2">
-                      <button className="bg-secondary/50 text-secondary-foreground px-3 py-1 rounded-lg text-xs transition-all duration-300 hover:scale-105">
-                        ✉️ Send Thank You
-                      </button>
-                      <button className="bg-accent/20 text-accent px-3 py-1 rounded-lg text-xs transition-all duration-300 hover:scale-105">
-                        🔄 ↑
-                      </button>
+                      <Button variant="secondary" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-secondary">
+                        <Mail className="w-3 h-3 mr-1" />
+                        Send Thank You
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-active">
+                        <RotateCcw className="w-3 h-3" />
+                      </Button>
                     </div>
                   )}
                 </div>
 
-                <h3 className="text-lg font-bold mb-1">{event.title}</h3>
+                <h3 className="text-lg font-bold mb-2 text-foreground">{event.title}</h3>
                 
                 {event.description && (
-                  <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
                 )}
 
                 {event.participants && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <div className="flex -space-x-2">
                       {event.participants.map((participant, idx) => (
-                        <div key={idx} className="w-8 h-8 rounded-full bg-gradient-secondary border-2 border-background"></div>
+                        <div 
+                          key={idx} 
+                          className="w-8 h-8 rounded-full gradient-secondary border-2 border-background shadow-lg transition-smooth hover:scale-110"
+                          title={participant}
+                        ></div>
                       ))}
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      with {event.participants.join(", ")}
+                    </span>
                   </div>
                 )}
               </div>
@@ -159,14 +204,18 @@ export const AfterglowScreen = () => {
         </div>
       </div>
 
-      {/* Bottom emotion scale */}
+      {/* Emotional Timeline Footer */}
       <div className="px-6 py-8 mt-8 border-t border-border/30">
-        <div className="flex justify-between items-center text-sm text-muted-foreground">
-          <span>8PM</span>
-          <span>CHILL</span>
-          <span>CONNECTED</span>
-          <span>HYPE</span>
-          <span>1AM</span>
+        <h3 className="text-sm text-muted-foreground mb-4">Emotional Journey</h3>
+        <div className="relative">
+          <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
+            <span className="font-medium">8PM</span>
+            <span className="px-2 py-1 rounded-full bg-accent/20 text-accent">CHILL</span>
+            <span className="px-2 py-1 rounded-full bg-primary/20 text-primary">CONNECTED</span>
+            <span className="px-2 py-1 rounded-full bg-secondary/20 text-secondary">HYPE</span>
+            <span className="font-medium">1AM</span>
+          </div>
+          <div className="h-2 bg-gradient-to-r from-accent via-primary via-secondary to-destructive rounded-full opacity-60"></div>
         </div>
       </div>
 
