@@ -3,6 +3,9 @@ import { MapPin, Navigation, Plus, Sliders, Coffee, Zap, Users, Heart, Star, Spa
 import { Button } from "@/components/ui/button";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { useTimeSyncContext } from "@/components/TimeSyncProvider";
+import { TimeWarpSlider } from "@/components/TimeWarpSlider";
+import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
+import { SocialGestureManager } from "@/components/SocialGestureManager";
 
 interface Person {
   id: string;
@@ -25,6 +28,8 @@ interface FloqEvent {
 
 export const FieldScreen = () => {
   const { timeState, shouldShowModule } = useTimeSyncContext();
+  const [showTimeWarp, setShowTimeWarp] = useState(false);
+  const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
   
   const [people] = useState<Person[]>([
     { id: "1", name: "Julia", x: 25, y: 30, color: "hsl(180 70% 60%)", vibe: "chill" },
@@ -94,7 +99,12 @@ export const FieldScreen = () => {
                 <Users className="w-4 h-4" />
                 <span>See Who's Around</span>
               </Button>
-              <Button variant="outline" size="icon" className="py-3 px-4 rounded-2xl transition-smooth hover:glow-active">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="py-3 px-4 rounded-2xl transition-smooth hover:glow-active"
+                onClick={() => setShowTimeWarp(true)}
+              >
                 <Sliders className="w-4 h-4" />
               </Button>
             </div>
@@ -118,7 +128,12 @@ export const FieldScreen = () => {
                 <Plus className="w-4 h-4" />
                 <span>Create New Floq</span>
               </Button>
-              <Button variant="outline" size="icon" className="py-3 px-4 rounded-2xl transition-smooth hover:glow-active">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="py-3 px-4 rounded-2xl transition-smooth hover:glow-active"
+                onClick={() => setShowTimeWarp(true)}
+              >
                 <Sliders className="w-4 h-4" />
               </Button>
             </div>
@@ -148,6 +163,35 @@ export const FieldScreen = () => {
       default:
         return null;
     }
+  };
+
+  const handleSocialAction = (action: any) => {
+    console.log('Social action triggered:', action);
+    // Handle various social actions from gestures
+    switch (action.type) {
+      case 'shake-pulse':
+        // Show active friends with pulse effect
+        break;
+      case 'social-radar':
+        // Show social connections
+        break;
+      case 'quick-join':
+        // Find and join nearby floqs
+        break;
+      case 'vibe-broadcast':
+        // Broadcast current vibe
+        break;
+    }
+  };
+
+  const handleAvatarInteraction = (interaction: any) => {
+    console.log('Avatar interaction:', interaction);
+    // Handle avatar-to-avatar interactions
+  };
+
+  const handleTimeWarpChange = (hour: number, data: any) => {
+    setCurrentTimeWarpData(data);
+    console.log('Time warp:', hour, data);
   };
 
   return (
@@ -275,7 +319,23 @@ export const FieldScreen = () => {
             </div>
           </div>
         ))}
+
+        {/* Avatar Interaction Layer */}
+        <AvatarInteractionLayer 
+          people={people}
+          onInteraction={handleAvatarInteraction}
+        />
       </div>
+
+      {/* Social Gesture Manager */}
+      <SocialGestureManager onSocialAction={handleSocialAction} />
+
+      {/* Time Warp Slider */}
+      <TimeWarpSlider 
+        isVisible={showTimeWarp}
+        onClose={() => setShowTimeWarp(false)}
+        onTimeChange={handleTimeWarpChange}
+      />
 
       {/* Time-Based Bottom Action Card */}
       <div className="absolute bottom-24 left-4 right-4 z-10">
