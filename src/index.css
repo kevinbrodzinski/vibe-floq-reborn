@@ -8,47 +8,89 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Floq Dark Theme - Living Energy */
+    /* Default Time State - Evening */
     --background: 230 35% 7%;
     --foreground: 210 40% 95%;
-
     --card: 230 30% 10%;
     --card-foreground: 210 40% 95%;
-
     --popover: 230 30% 10%;
     --popover-foreground: 210 40% 95%;
-
     --primary: 252 100% 75%;
     --primary-foreground: 230 35% 7%;
-
     --secondary: 230 25% 15%;
     --secondary-foreground: 210 40% 90%;
-
     --muted: 230 25% 15%;
     --muted-foreground: 215 20% 65%;
-
     --accent: 200 80% 60%;
     --accent-foreground: 230 35% 7%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 230 25% 18%;
     --input: 230 25% 15%;
     --ring: 252 100% 75%;
-
     --radius: 1.5rem;
 
-    /* Floq Energy Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(252 100% 75%), hsl(280 100% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(200 80% 60%), hsl(252 100% 75%));
-    --gradient-field: radial-gradient(circle at center, hsl(230 35% 12%), hsl(230 35% 7%));
+    /* Time-Synced Theme System */
+    --time-transition: all 2s cubic-bezier(0.23, 1, 0.32, 1);
+    
+    /* Dawn State (5-8am) - Soft awakening */
+    --dawn-background: 220 40% 12%;
+    --dawn-foreground: 220 30% 90%;
+    --dawn-primary: 320 60% 75%;
+    --dawn-accent: 340 70% 65%;
+    --dawn-gradient-field: radial-gradient(circle at center, hsl(220 40% 15%), hsl(220 40% 10%));
+    --dawn-glow-primary: 0 0 40px hsl(320 60% 75% / 0.25);
+
+    /* Morning State (8am-12pm) - Energetic clarity */
+    --morning-background: 200 30% 15%;
+    --morning-foreground: 200 25% 92%;
+    --morning-primary: 180 70% 70%;
+    --morning-accent: 160 80% 65%;
+    --morning-gradient-field: radial-gradient(circle at center, hsl(200 30% 18%), hsl(200 30% 12%));
+    --morning-glow-primary: 0 0 40px hsl(180 70% 70% / 0.3);
+
+    /* Afternoon State (12-5pm) - Steady focus */
+    --afternoon-background: 210 25% 18%;
+    --afternoon-foreground: 210 20% 88%;
+    --afternoon-primary: 220 60% 68%;
+    --afternoon-accent: 240 70% 65%;
+    --afternoon-gradient-field: radial-gradient(circle at center, hsl(210 25% 20%), hsl(210 25% 15%));
+    --afternoon-glow-primary: 0 0 40px hsl(220 60% 68% / 0.28);
+
+    /* Evening State (5-9pm) - Social energy */
+    --evening-background: 230 35% 7%;
+    --evening-foreground: 210 40% 95%;
+    --evening-primary: 252 100% 75%;
+    --evening-accent: 200 80% 60%;
+    --evening-gradient-field: radial-gradient(circle at center, hsl(230 35% 12%), hsl(230 35% 7%));
+    --evening-glow-primary: 0 0 40px hsl(252 100% 75% / 0.3);
+
+    /* Night State (9pm-12am) - Peak social */
+    --night-background: 240 45% 5%;
+    --night-foreground: 240 30% 96%;
+    --night-primary: 280 90% 70%;
+    --night-accent: 300 80% 65%;
+    --night-gradient-field: radial-gradient(circle at center, hsl(240 45% 8%), hsl(240 45% 4%));
+    --night-glow-primary: 0 0 50px hsl(280 90% 70% / 0.4);
+
+    /* Late State (12am-5am) - Intimate reflection */
+    --late-background: 260 50% 4%;
+    --late-foreground: 260 25% 85%;
+    --late-primary: 320 70% 65%;
+    --late-accent: 340 60% 60%;
+    --late-gradient-field: radial-gradient(circle at center, hsl(260 50% 6%), hsl(260 50% 3%));
+    --late-glow-primary: 0 0 35px hsl(320 70% 65% / 0.35);
+
+    /* Dynamic Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--primary)));
+    --gradient-field: var(--evening-gradient-field);
     --gradient-vibe: conic-gradient(from 0deg, hsl(0 70% 60%), hsl(60 70% 60%), hsl(120 70% 60%), hsl(180 70% 60%), hsl(240 70% 60%), hsl(300 70% 60%), hsl(0 70% 60%));
     
-    /* Glows & Auras */
-    --glow-primary: 0 0 40px hsl(252 100% 75% / 0.3);
-    --glow-secondary: 0 0 30px hsl(200 80% 60% / 0.2);
-    --glow-active: 0 0 20px hsl(280 100% 70% / 0.4);
+    /* Dynamic Glows */
+    --glow-primary: var(--evening-glow-primary);
+    --glow-secondary: 0 0 30px hsl(var(--accent) / 0.2);
+    --glow-active: 0 0 20px hsl(var(--primary) / 0.4);
     
     /* Animations */
     --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -247,4 +289,118 @@ All colors MUST be HSL.
   .animate-fade-in {
     animation: fade-in 0.6s ease-out forwards;
   }
+
+  /* Time-Synced Theme Classes */
+  .time-dawn {
+    --background: var(--dawn-background);
+    --foreground: var(--dawn-foreground);
+    --primary: var(--dawn-primary);
+    --accent: var(--dawn-accent);
+    --gradient-field: var(--dawn-gradient-field);
+    --glow-primary: var(--dawn-glow-primary);
+  }
+
+  .time-morning {
+    --background: var(--morning-background);
+    --foreground: var(--morning-foreground);
+    --primary: var(--morning-primary);
+    --accent: var(--morning-accent);
+    --gradient-field: var(--morning-gradient-field);
+    --glow-primary: var(--morning-glow-primary);
+  }
+
+  .time-afternoon {
+    --background: var(--afternoon-background);
+    --foreground: var(--afternoon-foreground);
+    --primary: var(--afternoon-primary);
+    --accent: var(--afternoon-accent);
+    --gradient-field: var(--afternoon-gradient-field);
+    --glow-primary: var(--afternoon-glow-primary);
+  }
+
+  .time-evening {
+    --background: var(--evening-background);
+    --foreground: var(--evening-foreground);
+    --primary: var(--evening-primary);
+    --accent: var(--evening-accent);
+    --gradient-field: var(--evening-gradient-field);
+    --glow-primary: var(--evening-glow-primary);
+  }
+
+  .time-night {
+    --background: var(--night-background);
+    --foreground: var(--night-foreground);
+    --primary: var(--night-primary);
+    --accent: var(--night-accent);
+    --gradient-field: var(--night-gradient-field);
+    --glow-primary: var(--night-glow-primary);
+  }
+
+  .time-late {
+    --background: var(--late-background);
+    --foreground: var(--late-foreground);
+    --primary: var(--late-primary);
+    --accent: var(--late-accent);
+    --gradient-field: var(--late-gradient-field);
+    --glow-primary: var(--late-glow-primary);
+  }
+
+  /* Time Transition Classes */
+  .time-sync-transition {
+    transition: var(--time-transition);
+  }
+
+  .time-sync-transition * {
+    transition: var(--time-transition);
+  }
+
+  /* Module Visibility Classes */
+  .time-module-dawn { display: block; }
+  .time-module-morning { display: block; }
+  .time-module-afternoon { display: none; }
+  .time-module-evening { display: block; }
+  .time-module-night { display: block; }
+  .time-module-late { display: block; }
+
+  .time-dawn .time-module-dawn { display: block; }
+  .time-dawn .time-module-morning { display: none; }
+  .time-dawn .time-module-afternoon { display: none; }
+  .time-dawn .time-module-evening { display: none; }
+  .time-dawn .time-module-night { display: none; }
+  .time-dawn .time-module-late { display: none; }
+
+  .time-morning .time-module-dawn { display: none; }
+  .time-morning .time-module-morning { display: block; }
+  .time-morning .time-module-afternoon { display: none; }
+  .time-morning .time-module-evening { display: none; }
+  .time-morning .time-module-night { display: none; }
+  .time-morning .time-module-late { display: none; }
+
+  .time-afternoon .time-module-dawn { display: none; }
+  .time-afternoon .time-module-morning { display: none; }
+  .time-afternoon .time-module-afternoon { display: block; }
+  .time-afternoon .time-module-evening { display: none; }
+  .time-afternoon .time-module-night { display: none; }
+  .time-afternoon .time-module-late { display: none; }
+
+  .time-evening .time-module-dawn { display: none; }
+  .time-evening .time-module-morning { display: none; }
+  .time-evening .time-module-afternoon { display: none; }
+  .time-evening .time-module-evening { display: block; }
+  .time-evening .time-module-night { display: none; }
+  .time-evening .time-module-late { display: none; }
+
+  .time-night .time-module-dawn { display: none; }
+  .time-night .time-module-morning { display: none; }
+  .time-night .time-module-afternoon { display: none; }
+  .time-night .time-module-evening { display: none; }
+  .time-night .time-module-night { display: block; }
+  .time-night .time-module-late { display: none; }
+
+  .time-late .time-module-dawn { display: none; }
+  .time-late .time-module-morning { display: none; }
+  .time-late .time-module-afternoon { display: none; }
+  .time-late .time-module-evening { display: none; }
+  .time-late .time-module-night { display: none; }
+  .time-late .time-module-late { display: block; }
 }

@@ -5,6 +5,7 @@ import { PulseScreen } from "./screens/PulseScreen";
 import { VibeScreen } from "./screens/VibeScreen";
 import { AfterglowScreen } from "./screens/AfterglowScreen";
 import { FloqNavigation } from "./FloqNavigation";
+import { TimeSyncProvider } from "./TimeSyncProvider";
 
 export type FloqTab = "field" | "floqs" | "pulse" | "vibe" | "afterglow";
 
@@ -29,11 +30,13 @@ export const FloqApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
-      <div className="pb-20">
-        {renderScreen()}
+    <TimeSyncProvider>
+      <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
+        <div className="pb-20">
+          {renderScreen()}
+        </div>
+        <FloqNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
-      <FloqNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
+    </TimeSyncProvider>
   );
 };
