@@ -1,4 +1,5 @@
 import { FloqTab } from "./FloqApp";
+import { LayoutGrid, Circle, MessageCircle, Star } from "lucide-react";
 
 interface FloqNavigationProps {
   activeTab: FloqTab;
@@ -7,11 +8,11 @@ interface FloqNavigationProps {
 
 export const FloqNavigation = ({ activeTab, onTabChange }: FloqNavigationProps) => {
   const tabs = [
-    { id: "field" as FloqTab, label: "Field", icon: "⚡" },
-    { id: "floqs" as FloqTab, label: "Floqs", icon: "🌀" },
-    { id: "pulse" as FloqTab, label: "Pulse", icon: "🔮" },
-    { id: "vibe" as FloqTab, label: "Vibe", icon: "🎭" },
-    { id: "afterglow" as FloqTab, label: "Afterglow", icon: "✨" },
+    { id: "field" as FloqTab, label: "Field", Icon: LayoutGrid },
+    { id: "floqs" as FloqTab, label: "Floqs", Icon: Circle },
+    { id: "pulse" as FloqTab, label: "Pulse", Icon: Circle },
+    { id: "vibe" as FloqTab, label: "Vibe", Icon: MessageCircle },
+    { id: "afterglow" as FloqTab, label: "Afterglow", Icon: Star },
   ];
 
   return (
@@ -27,7 +28,7 @@ export const FloqNavigation = ({ activeTab, onTabChange }: FloqNavigationProps) 
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
             }`}
           >
-            <span className="text-xl mb-1">{tab.icon}</span>
+            <tab.Icon size={20} className="mb-1" />
             <span className="text-xs font-medium">{tab.label}</span>
           </button>
         ))}
