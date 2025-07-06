@@ -6,6 +6,8 @@ import { useTimeSyncContext } from "@/components/TimeSyncProvider";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
+import { FriendConstellation } from "@/components/FriendConstellation";
+import { ConstellationGestureSystem } from "@/components/ConstellationGestureSystem";
 
 interface Person {
   id: string;
@@ -30,6 +32,7 @@ export const FieldScreen = () => {
   const { timeState, shouldShowModule } = useTimeSyncContext();
   const [showTimeWarp, setShowTimeWarp] = useState(false);
   const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
+  const [constellationMode, setConstellationMode] = useState(false);
   
   const [people] = useState<Person[]>([
     { id: "1", name: "Julia", x: 25, y: 30, color: "hsl(180 70% 60%)", vibe: "chill" },
@@ -37,6 +40,30 @@ export const FieldScreen = () => {
     { id: "3", name: "Leo", x: 70, y: 35, color: "hsl(200 70% 60%)", vibe: "flowing" },
     { id: "4", name: "Kayla", x: 65, y: 65, color: "hsl(240 70% 60%)", vibe: "social" },
     { id: "5", name: "Leo", x: 75, y: 80, color: "hsl(200 70% 60%)", vibe: "open" },
+  ]);
+
+  // Convert people to friends for constellation system
+  const [friends] = useState([
+    { 
+      id: "1", name: "Julia", x: 25, y: 30, color: "hsl(180 70% 60%)", vibe: "chill",
+      relationship: 'close' as const, activity: 'active' as const, warmth: 85, compatibility: 92, lastSeen: Date.now() - 300000
+    },
+    { 
+      id: "2", name: "Kayla", x: 35, y: 50, color: "hsl(240 70% 60%)", vibe: "social",
+      relationship: 'friend' as const, activity: 'active' as const, warmth: 70, compatibility: 88, lastSeen: Date.now() - 180000
+    },
+    { 
+      id: "3", name: "Leo", x: 70, y: 35, color: "hsl(200 70% 60%)", vibe: "flowing",
+      relationship: 'close' as const, activity: 'idle' as const, warmth: 90, compatibility: 95, lastSeen: Date.now() - 120000
+    },
+    { 
+      id: "4", name: "Emma", x: 65, y: 65, color: "hsl(320 70% 60%)", vibe: "social",
+      relationship: 'friend' as const, activity: 'active' as const, warmth: 75, compatibility: 80, lastSeen: Date.now() - 60000
+    },
+    { 
+      id: "5", name: "Alex", x: 75, y: 80, color: "hsl(280 70% 60%)", vibe: "open",
+      relationship: 'acquaintance' as const, activity: 'away' as const, warmth: 45, compatibility: 65, lastSeen: Date.now() - 900000
+    },
   ]);
 
   const [floqEvents] = useState<FloqEvent[]>([
@@ -171,9 +198,11 @@ export const FieldScreen = () => {
     switch (action.type) {
       case 'shake-pulse':
         // Show active friends with pulse effect
+        setConstellationMode(true);
         break;
       case 'social-radar':
         // Show social connections
+        setConstellationMode(!constellationMode);
         break;
       case 'quick-join':
         // Find and join nearby floqs
@@ -182,6 +211,47 @@ export const FieldScreen = () => {
         // Broadcast current vibe
         break;
     }
+  };
+
+  const handleConstellationAction = (action: any) => {
+    console.log('Constellation action:', action);
+    switch (action.type) {
+      case 'orbital-adjust':
+        // Handle orbital adjustments
+        break;
+      case 'constellation-create':
+        // Create new constellation group
+        break;
+      case 'energy-share':
+        // Share energy between friends
+        break;
+      case 'group-plan':
+        // Start group planning mode
+        break;
+      case 'temporal-view':
+        setShowTimeWarp(true);
+        break;
+    }
+  };
+
+  const handleOrbitalAdjustment = (direction: 'expand' | 'contract', intensity: number) => {
+    console.log('Orbital adjustment:', direction, intensity);
+    // Handle orbital distance changes
+  };
+
+  const handleEnergyShare = (fromId: string, toId: string, energy: number) => {
+    console.log('Energy sharing:', fromId, 'to', toId, 'energy:', energy);
+    // Handle energy sharing between friends
+  };
+
+  const handleFriendInteraction = (friend: any, action: string) => {
+    console.log('Friend interaction:', friend.name, action);
+    // Handle friend-specific interactions
+  };
+
+  const handleConstellationGesture = (gesture: string, friends: any[]) => {
+    console.log('Constellation gesture:', gesture, friends.length, 'friends');
+    // Handle constellation-level gestures
   };
 
   const handleAvatarInteraction = (interaction: any) => {
@@ -257,8 +327,19 @@ export const FieldScreen = () => {
 
       {/* Field Map */}
       <div className="relative h-full pt-48 pb-32">
-        {/* People on the field */}
-        {people.map((person, index) => (
+        {/* Friend Constellation System */}
+        {constellationMode && (
+          <FriendConstellation
+            friends={friends}
+            centerX={50}
+            centerY={50}
+            onFriendInteraction={handleFriendInteraction}
+            onConstellationGesture={handleConstellationGesture}
+          />
+        )}
+
+        {/* People on the field (when not in constellation mode) */}
+        {!constellationMode && people.map((person, index) => (
           <div
             key={person.id}
             className="absolute transition-all duration-500 cursor-pointer hover:scale-110"
@@ -329,6 +410,29 @@ export const FieldScreen = () => {
 
       {/* Social Gesture Manager */}
       <SocialGestureManager onSocialAction={handleSocialAction} />
+
+      {/* Constellation Gesture System */}
+      <ConstellationGestureSystem 
+        onConstellationAction={handleConstellationAction}
+        onOrbitalAdjustment={handleOrbitalAdjustment}
+        onEnergyShare={handleEnergyShare}
+        isActive={constellationMode}
+      />
+
+      {/* Constellation Mode Toggle */}
+      {(timeState === 'evening' || timeState === 'night') && (
+        <div className="absolute top-32 right-4 z-20">
+          <Button
+            variant={constellationMode ? "default" : "outline"}
+            size="sm"
+            className="bg-card/80 backdrop-blur-xl border border-border/30"
+            onClick={() => setConstellationMode(!constellationMode)}
+          >
+            <Star className="w-4 h-4 mr-2" />
+            {constellationMode ? 'Field View' : 'Constellation'}
+          </Button>
+        </div>
+      )}
 
       {/* Time Warp Slider */}
       <TimeWarpSlider 
