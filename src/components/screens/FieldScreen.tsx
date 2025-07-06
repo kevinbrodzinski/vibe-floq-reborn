@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { MapPin, Navigation, Plus, Sliders } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Person {
   id: string;
@@ -37,25 +39,29 @@ export const FieldScreen = () => {
   return (
     <div className="relative h-screen overflow-hidden">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-6">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl font-light">1</span>
-          <span className="text-lg text-muted-foreground">Downtown</span>
-        </div>
-        <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+      <div className="absolute top-0 left-0 right-0 z-10 flex justify-between items-center p-6 pt-12">
+        <Button variant="ghost" className="flex items-center space-x-2 text-foreground hover:glow-secondary">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Downtown</span>
+        </Button>
+        
+        <div className="text-4xl font-light glow-primary">
           floq
         </div>
-        <div className="w-12 h-12 rounded-full bg-gradient-secondary overflow-hidden">
-          <div className="w-full h-full bg-muted-foreground/20"></div>
+        
+        <div className="w-12 h-12 rounded-full gradient-secondary border-2 border-primary/30 glow-secondary overflow-hidden cursor-pointer hover:scale-105 transition-smooth">
+          <div className="w-full h-full bg-muted-foreground/10"></div>
         </div>
       </div>
 
       {/* Status Bar */}
-      <div className="absolute top-20 left-0 right-0 z-10 text-center">
+      <div className="absolute top-24 left-0 right-0 z-10 text-center pt-4">
         <div className="flex items-center justify-center space-x-2">
-          <span className="text-muted-foreground">You're in:</span>
-          <span className="text-xl">✨</span>
-          <span className="text-primary font-medium">Social Flow</span>
+          <span className="text-muted-foreground text-sm">You're in:</span>
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+          <span className="text-primary font-medium bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+            Social Flow
+          </span>
         </div>
       </div>
 
@@ -89,7 +95,7 @@ export const FieldScreen = () => {
         {floqEvents.map((event) => (
           <div
             key={event.id}
-            className="absolute transition-all duration-500 cursor-pointer hover:scale-105"
+            className="absolute transition-all duration-500 cursor-pointer hover:scale-105 group"
             style={{
               left: `${event.x}%`,
               top: `${event.y}%`,
@@ -99,14 +105,24 @@ export const FieldScreen = () => {
             }}
           >
             <div className="relative w-full h-full">
-              {/* Outer ripple */}
-              <div className="absolute inset-0 border-2 border-primary/30 rounded-full animate-pulse"></div>
-              {/* Inner circle */}
-              <div className="absolute inset-4 bg-gradient-primary rounded-full flex items-center justify-center animate-pulse-glow">
-                <div className="w-6 h-6 bg-primary rounded-full"></div>
-              </div>
+              {/* Outer ripple ring */}
+              <div className="absolute inset-0 border-2 border-primary/20 rounded-full animate-pulse group-hover:border-primary/40"></div>
+              {/* Middle ring */}
+              <div className="absolute inset-2 border border-accent/30 rounded-full"></div>
+              {/* Inner glowing core */}
+              <div 
+                className="absolute inset-6 rounded-full animate-pulse-glow group-hover:glow-active"
+                style={{
+                  backgroundColor: event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
+                                   event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
+                                   'hsl(240 70% 60%)',
+                  boxShadow: `0 0 30px ${event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
+                                       event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
+                                       'hsl(240 70% 60%)'}40`
+                }}
+              ></div>
             </div>
-            <div className="text-sm text-center mt-2 text-foreground font-medium">
+            <div className="text-sm text-center mt-2 text-foreground font-medium group-hover:text-primary transition-smooth">
               {event.title}
             </div>
           </div>
@@ -115,24 +131,24 @@ export const FieldScreen = () => {
 
       {/* Bottom Action Card */}
       <div className="absolute bottom-24 left-4 right-4 z-10">
-        <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-medium">3 friends are vibing at</h3>
+        <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30 glow-secondary">
+          <div className="text-center mb-6">
+            <h3 className="text-base text-muted-foreground">3 friends are vibing at</h3>
             <h2 className="text-xl font-bold text-primary mt-1">Warehouse — join?</h2>
           </div>
           
           <div className="flex space-x-3">
-            <button className="flex-1 bg-gradient-secondary text-secondary-foreground py-3 px-4 rounded-2xl font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2">
-              <span className="text-lg">🧭</span>
+            <Button className="flex-1 gradient-secondary text-secondary-foreground py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-active flex items-center justify-center space-x-2">
+              <Navigation className="w-4 h-4" />
               <span>Let Pulse Guide Me</span>
-            </button>
-            <button className="flex-1 bg-secondary/50 text-secondary-foreground py-3 px-4 rounded-2xl font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2">
-              <span className="text-lg">✨</span>
+            </Button>
+            <Button variant="secondary" className="flex-1 py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-secondary flex items-center justify-center space-x-2">
+              <Plus className="w-4 h-4" />
               <span>Create New Floq</span>
-            </button>
-            <button className="bg-accent/20 text-accent py-3 px-4 rounded-2xl font-medium transition-all duration-300 hover:scale-105">
-              <span className="text-lg">🎛️</span>
-            </button>
+            </Button>
+            <Button variant="outline" size="icon" className="py-3 px-4 rounded-2xl transition-smooth hover:glow-active">
+              <Sliders className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
