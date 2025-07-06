@@ -6,8 +6,6 @@ import { VibeScreen } from "./screens/VibeScreen";
 import { AfterglowScreen } from "./screens/AfterglowScreen";
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
-import { AIContextSurface } from "./AIContextSurface";
-import { SocialPulse } from "./SocialPulse";
 
 export type FloqTab = "field" | "floqs" | "pulse" | "vibe" | "afterglow";
 
@@ -38,8 +36,6 @@ export const FloqApp = () => {
           {renderScreen()}
         </div>
         <FloqNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        <SocialPulse />
-        <AIContextSurface />
       </div>
     </TimeSyncProvider>
   );
