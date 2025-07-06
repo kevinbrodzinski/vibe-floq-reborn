@@ -8,35 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Floq Dark Theme - Living Energy */
+    --background: 230 35% 7%;
+    --foreground: 210 40% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 230 30% 10%;
+    --card-foreground: 210 40% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 230 30% 10%;
+    --popover-foreground: 210 40% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 252 100% 75%;
+    --primary-foreground: 230 35% 7%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 230 25% 15%;
+    --secondary-foreground: 210 40% 90%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 230 25% 15%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 200 80% 60%;
+    --accent-foreground: 230 35% 7%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 230 25% 18%;
+    --input: 230 25% 15%;
+    --ring: 252 100% 75%;
 
-    --radius: 0.5rem;
+    --radius: 1.5rem;
+
+    /* Floq Energy Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(252 100% 75%), hsl(280 100% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(200 80% 60%), hsl(252 100% 75%));
+    --gradient-field: radial-gradient(circle at center, hsl(230 35% 12%), hsl(230 35% 7%));
+    --gradient-vibe: conic-gradient(from 0deg, hsl(0 70% 60%), hsl(60 70% 60%), hsl(120 70% 60%), hsl(180 70% 60%), hsl(240 70% 60%), hsl(300 70% 60%), hsl(0 70% 60%));
+    
+    /* Glows & Auras */
+    --glow-primary: 0 0 40px hsl(252 100% 75% / 0.3);
+    --glow-secondary: 0 0 30px hsl(200 80% 60% / 0.2);
+    --glow-active: 0 0 20px hsl(280 100% 70% / 0.4);
+    
+    /* Animations */
+    --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --radius: 1.5rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -101,5 +119,106 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Floq Energy Utilities */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-field {
+    background: var(--gradient-field);
+  }
+  
+  .gradient-vibe {
+    background: var(--gradient-vibe);
+  }
+  
+  .glow-primary {
+    box-shadow: var(--glow-primary);
+  }
+  
+  .glow-secondary {
+    box-shadow: var(--glow-secondary);
+  }
+  
+  .glow-active {
+    box-shadow: var(--glow-active);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from {
+      box-shadow: 0 0 20px hsl(252 100% 75% / 0.2);
+    }
+    to {
+      box-shadow: 0 0 40px hsl(252 100% 75% / 0.4);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+
+  .animate-ripple {
+    animation: ripple 2s infinite;
+  }
+
+  /* Custom slider styles */
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+
+  .slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
   }
 }
