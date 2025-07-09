@@ -61,6 +61,7 @@ export type Database = {
           location: unknown
           max_participants: number | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          radius_m: number | null
           starts_at: string | null
           title: string
           visibility: string | null
@@ -76,6 +77,7 @@ export type Database = {
           location: unknown
           max_participants?: number | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          radius_m?: number | null
           starts_at?: string | null
           title: string
           visibility?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           location?: unknown
           max_participants?: number | null
           primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
+          radius_m?: number | null
           starts_at?: string | null
           title?: string
           visibility?: string | null
@@ -199,6 +202,39 @@ export type Database = {
           id?: string
           name?: string
           venue_count?: number | null
+        }
+        Relationships: []
+      }
+      venues: {
+        Row: {
+          created_at: string | null
+          geo: unknown | null
+          id: string
+          lat: number
+          lng: number
+          name: string
+          source: string | null
+          vibe: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          geo?: unknown | null
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          source?: string | null
+          vibe?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          geo?: unknown | null
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          source?: string | null
+          vibe?: string | null
         }
         Relationships: []
       }
@@ -757,6 +793,17 @@ export type Database = {
       get_user_location: {
         Args: Record<PropertyKey, never>
         Returns: unknown
+      }
+      get_venues_in_bbox: {
+        Args: { west: number; south: number; east: number; north: number }
+        Returns: {
+          id: string
+          name: string
+          lat: number
+          lng: number
+          vibe: string
+          source: string
+        }[]
       }
       get_walkable_floqs: {
         Args: { user_lat: number; user_lng: number; max_walk_meters?: number }
