@@ -30,6 +30,22 @@ export const FloqApp = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // URL synchronization for tab state
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlTab = params.get('tab') as FloqTab;
+    if (urlTab && ['field', 'floqs', 'pulse', 'vibe', 'afterglow', 'plan'].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [setActiveTab]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('tab', activeTab);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [activeTab]);
+
   // Deep-link support for full-screen mode
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('full') === '1') {
@@ -78,7 +94,7 @@ export const FloqApp = () => {
           {renderScreen()}
         </div>
         
-        <FloqNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <FloqNavigation />
         
         {/* Command Palette */}
         <CommandPaletteSheet 

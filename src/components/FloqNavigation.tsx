@@ -1,12 +1,8 @@
-import type { FloqTab } from "@/store/useActiveTab";
+import { useActiveTab, type FloqTab } from "@/store/useActiveTab";
 import { LayoutGrid, Circle, MessageCircle, Star, Calendar } from "lucide-react";
 
-interface FloqNavigationProps {
-  activeTab: FloqTab;
-  onTabChange: (tab: FloqTab) => void;
-}
-
-export const FloqNavigation = ({ activeTab, onTabChange }: FloqNavigationProps) => {
+export const FloqNavigation = () => {
+  const { tab: activeTab, setTab } = useActiveTab();
   const tabs = [
     { id: "field" as FloqTab, label: "Field", Icon: LayoutGrid },
     { id: "floqs" as FloqTab, label: "Floqs", Icon: Circle },
@@ -22,7 +18,7 @@ export const FloqNavigation = ({ activeTab, onTabChange }: FloqNavigationProps) 
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => setTab(tab.id)}
             className={`flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
               activeTab === tab.id
                 ? "bg-gradient-primary text-primary-foreground shadow-lg scale-110 animate-pulse-glow"
