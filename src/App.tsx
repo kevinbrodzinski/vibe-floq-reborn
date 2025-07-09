@@ -23,7 +23,6 @@ const App = () => (
             <Route path="/*" element={<Index />} />
             <Route path="/floq/:floqId" element={<FloqDetails />} />
             <Route path="/u/:userId" element={<UserProfile />} />
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

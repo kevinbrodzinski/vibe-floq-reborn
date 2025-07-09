@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { setDocumentTitle } from '@/utils/setDocumentTitle'
 
 export type FloqTab = "field" | "floqs" | "pulse" | "vibe" | "afterglow" | "plan";
 
@@ -20,12 +21,16 @@ export const useActiveTab = create<ActiveTabStore>()(
       tab: routeToTab(window.location.pathname),
       setTab: (t, push = true) => {
         set({ tab: t });
+        setDocumentTitle(t);
         if (push && window.location.pathname !== `/${t}`) {
           window.history.pushState({}, '', `/${t}`);
         }
       },
-      syncWithLocation: () =>
-        set({ tab: routeToTab(window.location.pathname) }),
+      syncWithLocation: () => {
+        const newTab = routeToTab(window.location.pathname);
+        set({ tab: newTab });
+        setDocumentTitle(newTab);
+      },
     }),
     { 
       name: 'vfo-active-tab',

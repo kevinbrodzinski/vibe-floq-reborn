@@ -25,6 +25,7 @@ export const FloqNavigation = () => {
             onClick={() => setTab(id, false /* already pushed by NavLink */)}
             onMouseEnter={() => prefetchTab(id)}
             onTouchStart={() => prefetchTab(id)}
+            aria-label={`Navigate to ${label} section`}
             className={({ isActive }) =>
               `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
                 isActive
@@ -33,7 +34,7 @@ export const FloqNavigation = () => {
               }`
             }
           >
-            <Icon size={20} className="mb-1" />
+            <Icon size={20} className="mb-1" aria-hidden="true" />
             <span className="text-xs font-medium">{label}</span>
           </NavLink>
         ))}
