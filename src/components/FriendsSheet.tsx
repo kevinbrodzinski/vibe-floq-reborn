@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { User } from 'lucide-react';
 import {
   Sheet,
@@ -12,6 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { useFriends } from '@/hooks/useFriends';
 import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 import { useNavigate } from 'react-router-dom';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useNearbyFriends } from '@/hooks/useNearbyFriends';
+import { useProfileCache } from '@/hooks/useProfileCache';
 
 interface FriendsSheetProps {
   open: boolean;
@@ -21,12 +25,33 @@ interface FriendsSheetProps {
 
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
   const { friends, friendCount, isLoading } = useFriends();
+  const { lat, lng } = useGeolocation();
+  const { data: friendsNearby = [], isLoading: isLoadingNearby } = useNearbyFriends(lat, lng, { km: 0.5 });
+  const { primeProfiles } = useProfileCache();
   const navigate = useNavigate();
+
+  // Prime profile cache for nearby friends
+  useEffect(() => {
+    if (friendsNearby.length > 0) {
+      primeProfiles(friendsNearby.map(f => ({
+        id: f.id,
+        display_name: f.display_name,
+        avatar_url: f.avatar_url,
+        created_at: new Date().toISOString(), // We don't have created_at from RPC
+      })));
+    }
+  }, [friendsNearby, primeProfiles]);
 
   const handleSettingsClick = () => {
     onOpenChange(false);
     // Navigate to settings when that screen exists
     // navigate('/settings');
+  };
+
+  const handleNearbyBadgeClick = () => {
+    // Scroll to friends list or highlight nearby friends
+    // For now, we'll just close the sheet and potentially show on map
+    console.log('Nearby friends:', friendsNearby);
   };
 
   return (
@@ -39,6 +64,18 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
               <Badge variant="secondary">{friendCount}</Badge>
             )}
           </SheetTitle>
+          {friendsNearby.length > 0 && (
+            <div className="flex items-center gap-2 pt-2">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-accent/10 transition-colors"
+                onClick={handleNearbyBadgeClick}
+                aria-label={`${friendsNearby.length} friends within 500 meters`}
+              >
+                {friendsNearby.length} within 500m
+              </Badge>
+            </div>
+          )}
         </SheetHeader>
 
         <div className="flex-1 py-4 space-y-6">
