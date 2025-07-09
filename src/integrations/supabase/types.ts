@@ -303,6 +303,7 @@ export type Database = {
           broadcast_radius: number | null
           expires_at: string | null
           geo: unknown | null
+          geohash6: string | null
           location: unknown
           updated_at: string | null
           user_id: string
@@ -314,6 +315,7 @@ export type Database = {
           broadcast_radius?: number | null
           expires_at?: string | null
           geo?: unknown | null
+          geohash6?: string | null
           location: unknown
           updated_at?: string | null
           user_id: string
@@ -325,6 +327,7 @@ export type Database = {
           broadcast_radius?: number | null
           expires_at?: string | null
           geo?: unknown | null
+          geohash6?: string | null
           location?: unknown
           updated_at?: string | null
           user_id?: string
@@ -1158,6 +1161,7 @@ export type Database = {
           broadcast_radius: number | null
           expires_at: string | null
           geo: unknown | null
+          geohash6: string | null
           location: unknown
           updated_at: string | null
           user_id: string
