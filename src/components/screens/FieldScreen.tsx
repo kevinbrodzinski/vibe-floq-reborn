@@ -21,6 +21,10 @@ import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { VenuesChip } from "@/components/VenuesChip";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
+import { useFullscreenMap } from "@/store/useFullscreenMap";
+import { FullscreenFab } from "@/components/map/FullscreenFab";
+import { useEffect } from "react";
+import { clsx } from "clsx";
 import type { Vibe } from "@/types";
 
 interface Person {
@@ -52,6 +56,8 @@ export const FieldScreen = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  
+  const { mode, set } = useFullscreenMap();
   
   // Use enhanced presence hook for live data
   const location = useGeolocation();
@@ -197,8 +203,37 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     console.log('Time warp:', hour, data);
   };
 
+  // ESC key to exit full-screen mode
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mode === 'full') set('map')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mode, set])
+
+  // URL sync
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (mode === 'full') params.set('full', '1')
+    else params.delete('full')
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
+  }, [mode])
+
+  // Auto-exit full-screen when any sheet opens
+  useEffect(() => {
+    if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
+      set('map')
+    }
+  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
+
+  // Swipe-down gesture to exit full-screen
+  const gestureHandlers = useAdvancedGestures({
+    onSwipeDown: () => mode === 'full' && set('map'),
+  });
+
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden" {...gestureHandlers}>
 {currentEvent && showBanner && (
   <EventBanner
     key={currentEvent.id}
@@ -276,16 +311,23 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
       <TimeModuleIndicators />
 
       {/* Field Map */}
-      <FieldVisualization
-        constellationMode={constellationMode}
-        people={people}
-        friends={friends}
-        floqEvents={floqEvents}
-        walkableFloqs={walkable_floqs}
-        onFriendInteraction={handleFriendInteraction}
-        onConstellationGesture={handleConstellationGesture}
-        onAvatarInteraction={handleAvatarInteraction}
-      />
+      <div
+        id="map-container"
+        className={clsx('h-full w-full transition-all duration-300',
+          mode === 'full' && 'fullscreen-map'
+        )}
+      >
+        <FieldVisualization
+          constellationMode={constellationMode}
+          people={people}
+          friends={friends}
+          floqEvents={floqEvents}
+          walkableFloqs={walkable_floqs}
+          onFriendInteraction={handleFriendInteraction}
+          onConstellationGesture={handleConstellationGesture}
+          onAvatarInteraction={handleAvatarInteraction}
+        />
+      </div>
 
       {/* Social Gesture Manager */}
       <SocialGestureManager onSocialAction={handleSocialAction} />
@@ -343,6 +385,9 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         onOpenChange={(open) => !open && setSelectedVenueId(null)}
         venueId={selectedVenueId}
       />
+
+      {/* Full-screen toggle FAB */}
+      <FullscreenFab />
     </div>
   );
 };

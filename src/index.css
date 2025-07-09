@@ -409,6 +409,14 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 
-.pointer-events-auto {
-  pointer-events: auto;
-}
+  .pointer-events-auto {
+    pointer-events: auto;
+  }
+
+  /* Full-screen map utilities */
+  .fullscreen-map {
+    position: fixed;
+    inset: 0;                 /* fills the safe-area */
+    height: 100dvh;           /* iOS bottom-bar safe */
+    z-index: 10;              /* below sheets (z-30) */
+  }

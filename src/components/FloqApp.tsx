@@ -9,6 +9,7 @@ import { CollaborativePlanningScreen } from "./screens/CollaborativePlanningScre
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
+import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { Button } from "./ui/button";
 
 export type FloqTab = "field" | "floqs" | "pulse" | "vibe" | "afterglow" | "plan";
@@ -29,6 +30,13 @@ export const FloqApp = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Deep-link support for full-screen mode
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('full') === '1') {
+      useFullscreenMap.getState().set('full')
+    }
+  }, [])
 
   const renderScreen = () => {
     switch (activeTab) {
