@@ -10,12 +10,11 @@ import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
+import { useActiveTab, type FloqTab } from "@/store/useActiveTab";
 import { Button } from "./ui/button";
 
-export type FloqTab = "field" | "floqs" | "pulse" | "vibe" | "afterglow" | "plan";
-
 export const FloqApp = () => {
-  const [activeTab, setActiveTab] = useState<FloqTab>("plan");
+  const { tab: activeTab, setTab: setActiveTab } = useActiveTab();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K

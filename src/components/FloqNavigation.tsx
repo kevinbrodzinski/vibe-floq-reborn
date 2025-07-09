@@ -1,4 +1,4 @@
-import { FloqTab } from "./FloqApp";
+import type { FloqTab } from "@/store/useActiveTab";
 import { LayoutGrid, Circle, MessageCircle, Star, Calendar } from "lucide-react";
 
 interface FloqNavigationProps {

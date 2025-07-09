@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 type Mode = 'map' | 'full' | 'list'
 
@@ -22,6 +22,9 @@ export const useFullscreenMap = create<FullscreenMapStore>()(
       toggleList: () =>
         set({ mode: get().mode === 'list' ? 'map' : 'list' }),
     }),
-    { name: 'vfo-fullscreen-map' }
+    { 
+      name: 'vfo-fullscreen-map',
+      storage: createJSONStorage(() => localStorage)
+    }
   )
 )
