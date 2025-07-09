@@ -899,6 +899,26 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       json: {
         Args: { "": unknown }
         Returns: Json
@@ -1121,6 +1141,27 @@ export type Database = {
       remove_friend: {
         Args: { target: string }
         Returns: undefined
+      }
+      search_users: {
+        Args: { query: string }
+        Returns: {
+          id: string
+          display_name: string
+          avatar_url: string
+          created_at: string
+        }[]
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
       }
       spheroid_in: {
         Args: { "": unknown }
