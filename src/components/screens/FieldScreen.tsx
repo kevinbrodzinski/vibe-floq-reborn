@@ -12,6 +12,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyPresence } from "@/hooks/useNearbyPresence";
 import { Badge } from "@/components/ui/badge";
+import { useDebug } from "@/lib/useDebug";
 import type { Vibe } from "@/types";
 
 interface Person {
@@ -34,6 +35,7 @@ interface FloqEvent {
 }
 
 export const FieldScreen = () => {
+  const [debug] = useDebug();
   const { timeState, shouldShowModule } = useTimeSyncContext();
   const [showTimeWarp, setShowTimeWarp] = useState(false);
   const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
@@ -181,15 +183,11 @@ export const FieldScreen = () => {
   return (
     <div className="relative h-screen overflow-hidden">
       {/* Debug counter */}
-      {(() => {
-        const [debug] = useDebug();
-        if (!debug) return null;
-        return (
+      {debug && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
           {nearby_users.length} people • {walkable_floqs.length} floqs ≤ 1 km
         </div>
-        );
-      })()}
+      )}
       
       {/* Header */}
       <FieldHeader />

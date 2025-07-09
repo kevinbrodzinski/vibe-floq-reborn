@@ -3,6 +3,7 @@ import { Search, Plus, Armchair, MessageCircle } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { RadiusSlider } from "@/components/RadiusSlider";
+import { useDebug } from "@/lib/useDebug";
 
 interface FloqCard {
   id: string;
@@ -19,6 +20,8 @@ interface FloqCard {
 }
 
 export const FloqsScreen = () => {
+  const [debug] = useDebug();
+  
   // Get stored radius preference or default to 1km with robust parsing
   const getStoredRadius = () => {
     try {
@@ -84,15 +87,11 @@ export const FloqsScreen = () => {
   return (
     <div className="min-h-screen p-6 pt-16">
       {/* Debug counter */}
-      {(() => {
-        const [debug] = useDebug();
-        if (!debug) return null;
-        return (
+      {debug && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
           {nearbyFloqs.length} floqs ≤ {radiusKm} km
         </div>
-        );
-      })()}
+      )}
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">

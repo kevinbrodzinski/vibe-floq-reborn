@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useDebug } from '@/lib/useDebug';
 import { Button } from '@/components/ui/button';
 import { Users, Orbit, Zap, Heart, Sparkles, RotateCcw } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export const ConstellationGestureSystem = ({
   onEnergyShare,
   isActive = true
 }: ConstellationGestureSystemProps) => {
+  const [debug] = useDebug();
   const [constellationActions] = useState<ConstellationAction[]>([
     {
       id: 'orbital-adjust',
@@ -275,10 +277,7 @@ export const ConstellationGestureSystem = ({
       )}
 
       {/* Live Gesture Debug */}
-      {(() => {
-        const [debug] = useDebug();
-        if (!debug) return null;
-        return (
+      {debug && (
         <div className="fixed bottom-20 right-4 z-30 max-w-xs">
           <div className="bg-card/80 backdrop-blur-xl rounded-lg border border-border/30 p-3">
             <div className="text-xs text-muted-foreground mb-2">Constellation Gestures:</div>
@@ -290,8 +289,7 @@ export const ConstellationGestureSystem = ({
             </div>
           </div>
         </div>
-        );
-      })()}
+      )}
     </>
   );
 };
