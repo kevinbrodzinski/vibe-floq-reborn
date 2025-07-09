@@ -3,18 +3,28 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-export default defineConfig({
+// HMR configuration for Lovable cloud environment
+const PREVIEW_HMR_HOST = process.env.VITE_HMR_HOST;
+
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: PREVIEW_HMR_HOST
+      ? {
+          protocol: 'wss',
+          host: PREVIEW_HMR_HOST,
+          port: 443,
+        }
+      : true,
   },
   plugins: [
     react(),
-    componentTagger(),
-  ],
+    mode === 'development' && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));
