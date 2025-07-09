@@ -11,6 +11,8 @@ import { useFriends } from '@/hooks/useFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
 import { useFullscreenMap } from '@/store/useFullscreenMap';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
+import { usePrefetchVenue } from '@/hooks/usePrefetchVenue';
+import { usePrefetchFloq } from '@/hooks/usePrefetchFloq';
 
 interface CommandPaletteSheetProps {
   open: boolean;
@@ -26,6 +28,8 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
   const { primeProfiles } = useProfileCache();
   const { set: setMapMode } = useFullscreenMap();
   const { setSelectedVenueId } = useSelectedVenue();
+  const prefetchVenue = usePrefetchVenue();
+  const prefetchFloq = usePrefetchFloq();
 
   // Clear search when sheet closes
   useEffect(() => {
@@ -118,10 +122,15 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                 </div>
               </div>
             ) : !hasResults ? (
-              <CommandEmpty className="py-8 text-center text-muted-foreground">
-                <div>
-                  <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No results found for "{query}"</p>
+              <CommandEmpty className="flex flex-col items-center gap-3 py-12 text-center">
+                <div className="text-4xl">🔍</div>
+                <p className="text-sm text-muted-foreground">
+                  No matches for "{query}"
+                </p>
+                <div className="space-y-1 text-xs text-muted-foreground/80">
+                  <p>• Try <code className="bg-muted px-1 rounded">@username</code></p>
+                  <p>• Search "coffee" or "park"</p>
+                  <p>• Use specific venue names</p>
                 </div>
               </CommandEmpty>
             ) : (
@@ -160,6 +169,9 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                             distance_m: venue.distance_m
                           }}
                           onTap={handleVenueTap}
+                          onMouseEnter={() => prefetchVenue(venue.id)}
+                          onFocus={() => prefetchVenue(venue.id)}
+                          onPointerDownCapture={() => prefetchVenue(venue.id)}
                         />
                       </div>
                     ))}
@@ -170,7 +182,13 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                 {results?.floqs && results.floqs.length > 0 && (
                   <CommandGroup heading="Floqs" className="pb-2">
                     {results.floqs.map((floq) => (
-                      <div key={floq.id} className="px-2">
+                      <div 
+                        key={floq.id} 
+                        className="px-2"
+                        onMouseEnter={() => prefetchFloq(floq.id)}
+                        onFocus={() => prefetchFloq(floq.id)}
+                        onPointerDownCapture={() => prefetchFloq(floq.id)}
+                      >
                         <TitleRow
                           id={floq.id}
                           label={floq.label}
@@ -188,7 +206,13 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                 {results?.events && results.events.length > 0 && (
                   <CommandGroup heading="Events" className="pb-2">
                     {results.events.map((event) => (
-                      <div key={event.id} className="px-2">
+                      <div 
+                        key={event.id} 
+                        className="px-2"
+                        onMouseEnter={() => prefetchFloq(event.id)}
+                        onFocus={() => prefetchFloq(event.id)}
+                        onPointerDownCapture={() => prefetchFloq(event.id)}
+                      >
                         <TitleRow
                           id={event.id}
                           label={event.label}

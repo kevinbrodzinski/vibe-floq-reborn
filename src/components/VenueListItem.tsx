@@ -14,6 +14,9 @@ interface VenueListItemProps {
     live_count?: number;
   };
   onTap: (venueId: string) => void;
+  onMouseEnter?: () => void;
+  onFocus?: () => void;
+  onPointerDownCapture?: () => void;
 }
 
 const getVibeEmoji = (vibe: string) => {
@@ -40,7 +43,13 @@ const formatDistance = (meters?: number) => {
   return `${(meters / 1000).toFixed(1)}km`;
 };
 
-export function VenueListItem({ venue, onTap }: VenueListItemProps) {
+export function VenueListItem({ 
+  venue, 
+  onTap, 
+  onMouseEnter, 
+  onFocus, 
+  onPointerDownCapture 
+}: VenueListItemProps) {
   const hasLiveCount = (venue.live_count ?? 0) > 0;
 
   return (
@@ -52,6 +61,10 @@ export function VenueListItem({ venue, onTap }: VenueListItemProps) {
       exit={{ opacity: 0, y: -20 }}
       whileTap={{ scale: 0.98 }}
       onClick={() => onTap(venue.id)}
+      onMouseEnter={onMouseEnter}
+      onFocus={onFocus}
+      onPointerDownCapture={onPointerDownCapture}
+      tabIndex={0}
       className="flex items-center gap-3 p-3 hover:bg-muted/50 active:bg-muted cursor-pointer border-b border-border/40 last:border-0"
     >
       {/* Vibe Emoji with Ring Animation */}

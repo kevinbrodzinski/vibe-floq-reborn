@@ -2,11 +2,13 @@ import { useNearbyVenues } from '@/hooks/useNearbyVenues'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { VenueListItem } from '@/components/VenueListItem'
 import { useSelectedVenue } from '@/store/useSelectedVenue'
+import { usePrefetchVenue } from '@/hooks/usePrefetchVenue'
 
 export const ListModeContainer = () => {
   const { lat, lng } = useGeolocation()
   const { data: nearby = [], isLoading } = useNearbyVenues(lat, lng, 0.5)
   const { setSelectedVenueId } = useSelectedVenue()
+  const prefetchVenue = usePrefetchVenue()
 
   return (
     <div className="pt-3 pb-[120px] px-4 space-y-1 overflow-y-auto h-full">
@@ -32,6 +34,9 @@ export const ListModeContainer = () => {
           key={v.id}
           venue={v}
           onTap={() => setSelectedVenueId(v.id)}
+          onMouseEnter={() => prefetchVenue(v.id)}
+          onFocus={() => prefetchVenue(v.id)}
+          onPointerDownCapture={() => prefetchVenue(v.id)}
         />
       ))}
     </div>
