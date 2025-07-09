@@ -75,7 +75,11 @@ export const FieldScreen = () => {
   const updating = false; // No loading state needed with realtime
   const error = null; // Error handling is done in the hook
   
-const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
+  const { data: currentEvent } = useCurrentEvent(
+    location.lat,
+    location.lng,
+    () => setShowBanner(false)
+  );
   
   // Get nearby venues for chip
   const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
