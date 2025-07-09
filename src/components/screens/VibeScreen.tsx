@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { Radio } from "lucide-react";
+import { Radio, Eye, EyeOff, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
+type VisibilityState = "public" | "friends" | "off";
 
 interface VibeInfo {
   label: string;
@@ -11,6 +13,7 @@ interface VibeInfo {
 
 export const VibeScreen = () => {
   const [selectedVibe, setSelectedVibe] = useState<VibeState>("chill");
+  const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [activeDuration, setActiveDuration] = useState(37);
   const dialRef = useRef<HTMLDivElement>(null);
@@ -66,6 +69,25 @@ export const VibeScreen = () => {
     }
   };
 
+  const cycleVisibility = useCallback(() => {
+    setVisibility(prev => {
+      switch (prev) {
+        case "public": return "friends";
+        case "friends": return "off";
+        case "off": return "public";
+        default: return "public";
+      }
+    });
+  }, []);
+
+  const getVisibilityIcon = () => {
+    switch (visibility) {
+      case "public": return <Eye className="w-5 h-5" />;
+      case "friends": return <Users className="w-5 h-5" />;
+      case "off": return <EyeOff className="w-5 h-5" />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {/* Header Bar */}
@@ -74,9 +96,16 @@ export const VibeScreen = () => {
           <Radio className="w-5 h-5 text-muted-foreground" />
         </button>
         <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
-        <button className="p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60">
-          <Radio className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={cycleVisibility}
+          className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
+            visibility === "off" ? "text-muted-foreground" : "text-foreground"
+          }`}
+        >
+          {getVisibilityIcon()}
+        </Button>
       </div>
 
       {/* Radial Vibe Selector */}

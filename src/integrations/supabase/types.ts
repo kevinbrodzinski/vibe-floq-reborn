@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_areas: {
+        Row: {
+          ends_at: string | null
+          id: string
+          lat: number
+          lng: number
+          name: string
+          radius_m: number
+          shape: Database["public"]["Enums"]["event_shape"] | null
+          starts_at: string | null
+          vibe: string | null
+        }
+        Insert: {
+          ends_at?: string | null
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          radius_m: number
+          shape?: Database["public"]["Enums"]["event_shape"] | null
+          starts_at?: string | null
+          vibe?: string | null
+        }
+        Update: {
+          ends_at?: string | null
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          radius_m?: number
+          shape?: Database["public"]["Enums"]["event_shape"] | null
+          starts_at?: string | null
+          vibe?: string | null
+        }
+        Relationships: []
+      }
       floq_participants: {
         Row: {
           floq_id: string
@@ -548,6 +584,15 @@ export type Database = {
       equals: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
+      }
+      events_containing_point: {
+        Args: { user_lat: number; user_lng: number }
+        Returns: {
+          id: string
+          name: string
+          vibe: string
+          radius_m: number
+        }[]
       }
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
@@ -2152,6 +2197,7 @@ export type Database = {
         | "transit"
         | "creative"
         | "wellness"
+      event_shape: "circle"
       vibe_enum:
         | "chill"
         | "hype"
@@ -2163,6 +2209,7 @@ export type Database = {
         | "down"
         | "flowing"
         | "open"
+      vibe_visibility: "public" | "friends" | "off"
     }
     CompositeTypes: {
       geometry_dump: {
@@ -2306,6 +2353,7 @@ export const Constants = {
         "creative",
         "wellness",
       ],
+      event_shape: ["circle"],
       vibe_enum: [
         "chill",
         "hype",
@@ -2318,6 +2366,7 @@ export const Constants = {
         "flowing",
         "open",
       ],
+      vibe_visibility: ["public", "friends", "off"],
     },
   },
 } as const
