@@ -19,10 +19,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* Main app routes (field, floqs, etc.) are handled inside Index */}
+            <Route path="/*" element={<Index />} />
             <Route path="/floq/:floqId" element={<FloqDetails />} />
             <Route path="/u/:userId" element={<UserProfile />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

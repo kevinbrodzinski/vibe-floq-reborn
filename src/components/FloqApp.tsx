@@ -1,20 +1,15 @@
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
-import { FieldScreen } from "./screens/FieldScreen";
-import { FloqsScreen } from "./screens/FloqsScreen";
-import { PulseScreen } from "./screens/PulseScreen";
-import { VibeScreen } from "./screens/VibeScreen";
-import { AfterglowScreen } from "./screens/AfterglowScreen";
-import { CollaborativePlanningScreen } from "./screens/CollaborativePlanningScreen";
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
+import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
-import { useActiveTab, type FloqTab } from "@/store/useActiveTab";
+import { useActiveTab } from "@/store/useActiveTab";
 import { Button } from "./ui/button";
 
 export const FloqApp = () => {
-  const { tab: activeTab, setTab: setActiveTab } = useActiveTab();
+  const { syncWithLocation } = useActiveTab();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
@@ -30,21 +25,12 @@ export const FloqApp = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // URL synchronization for tab state
+  // Keep store in-sync with browser back/forward
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlTab = params.get('tab') as FloqTab;
-    if (urlTab && ['field', 'floqs', 'pulse', 'vibe', 'afterglow', 'plan'].includes(urlTab)) {
-      setActiveTab(urlTab);
-    }
-  }, [setActiveTab]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('tab', activeTab);
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', newUrl);
-  }, [activeTab]);
+    const onPop = () => syncWithLocation();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [syncWithLocation]);
 
   // Deep-link support for full-screen mode
   useEffect(() => {
@@ -52,25 +38,6 @@ export const FloqApp = () => {
       useFullscreenMap.getState().set('full')
     }
   }, [])
-
-  const renderScreen = () => {
-    switch (activeTab) {
-      case "field":
-        return <FieldScreen />;
-      case "floqs":
-        return <FloqsScreen />;
-      case "pulse":
-        return <PulseScreen />;
-      case "vibe":
-        return <VibeScreen />;
-      case "afterglow":
-        return <AfterglowScreen />;
-      case "plan":
-        return <CollaborativePlanningScreen />;
-      default:
-        return <FieldScreen />;
-    }
-  };
 
   return (
     <TimeSyncProvider>
@@ -91,7 +58,7 @@ export const FloqApp = () => {
         </div>
 
         <div className="pb-20">
-          {renderScreen()}
+          <AppRoutes />
         </div>
         
         <FloqNavigation />

@@ -1,3 +1,4 @@
+import { BrowserRouter } from "react-router-dom";
 import { FloqApp } from "@/components/FloqApp";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { useAuth } from "@/providers/AuthProvider";
@@ -17,7 +18,11 @@ const Index = () => {
     return <AuthScreen />;
   }
 
-  return <FloqApp />;
+  return (
+    <BrowserRouter>
+      <FloqApp />
+    </BrowserRouter>
+  );
 };
 
 export default Index;
