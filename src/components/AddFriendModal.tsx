@@ -11,6 +11,7 @@ import { useFriends } from '@/hooks/useFriends';
 import { useToast } from '@/hooks/use-toast';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { UserSearchResults } from '@/components/UserSearchResults';
+import { useProfileCache } from '@/hooks/useProfileCache';
 
 interface AddFriendModalProps {
   open: boolean;
@@ -21,9 +22,12 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { addFriend, isAddingFriend } = useFriends();
   const { toast } = useToast();
+  const { primeProfiles } = useProfileCache();
 
   // Search for users based on the query
   const { data: searchResults = [], isLoading: isSearching } = useUserSearch(searchQuery);
+  // ⚡ seed profile cache
+  primeProfiles(searchResults);
 
   const handleAddFriend = async (userId: string) => {
     try {
