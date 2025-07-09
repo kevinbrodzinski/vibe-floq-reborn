@@ -306,6 +306,7 @@ export type Database = {
           location: unknown
           updated_at: string | null
           user_id: string
+          venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility: string | null
         }
@@ -316,6 +317,7 @@ export type Database = {
           location: unknown
           updated_at?: string | null
           user_id: string
+          venue_id?: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility?: string | null
         }
@@ -326,6 +328,7 @@ export type Database = {
           location?: unknown
           updated_at?: string | null
           user_id?: string
+          venue_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"]
           visibility?: string | null
         }
@@ -335,6 +338,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -1151,6 +1161,7 @@ export type Database = {
           location: unknown
           updated_at: string | null
           user_id: string
+          venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility: string | null
         }[]
@@ -2277,6 +2288,19 @@ export type Database = {
           live_count: number
           lat: number
           lng: number
+        }[]
+      }
+      venues_near_me: {
+        Args: { user_lat: number; user_lng: number; radius_km?: number }
+        Returns: {
+          id: string
+          name: string
+          lat: number
+          lng: number
+          vibe: string
+          source: string
+          distance_m: number
+          live_count: number
         }[]
       }
       walkable_floqs: {
