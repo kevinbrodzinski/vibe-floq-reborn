@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
@@ -6,6 +6,7 @@ import { ClusterPin } from "@/components/map/ClusterPin";
 import { VenuePin } from "@/components/map/VenuePin";
 import { ViewportControls } from "@/components/map/ViewportControls";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
+import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
 import { latLngToField, mToPercent } from "@/utils/geoConversion";
@@ -70,21 +71,27 @@ export const FieldVisualization = ({
   const { viewport } = viewportControls;
   
   // Get venue clusters for current viewport
-  const venueClusters = useVenueClusters(viewport);
+  const { clusters: venueClusters } = useVenueClusters(viewport);
   
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  
+  // Cluster sheet state
+  const [clusterSheetOpen, setClusterSheetOpen] = useState(false);
+  const [activeCluster, setActiveCluster] = useState<{ id: number; lat: number; lng: number } | null>(null);
 
-  // Handle cluster click - zoom in to expand clusters
+  // Handle cluster click - open details sheet for clusters
   const handleClusterClick = (cluster: any) => {
     if (cluster.pointCount > 0) {
-      viewportControls.panTo(cluster.lat, cluster.lng);
-      viewportControls.zoomIn();
+      // Extract numeric cluster ID from supercluster properties
+      const clusterId = cluster.props.cluster_id;
+      setActiveCluster({ id: clusterId, lat: cluster.lat, lng: cluster.lng });
+      setClusterSheetOpen(true);
     }
   };
 
   const handleVenueClick = (v: any) => {
-    // cluster → zoom in the existing way
+    // cluster → open cluster details sheet
     if (v.pointCount > 0) {
       handleClusterClick(v);
       return;
@@ -94,6 +101,20 @@ export const FieldVisualization = ({
     setSelectedVenueId(v.id);
     setDetailsOpen(true);
   };
+
+  // Auto-dismiss cluster sheet when cluster dissolves on zoom
+  useEffect(() => {
+    if (!activeCluster || !clusterSheetOpen) return;
+    
+    const stillExists = venueClusters.some(
+      (c) => c.props.cluster_id === activeCluster.id && c.pointCount > 0
+    );
+    
+    if (!stillExists) {
+      setClusterSheetOpen(false);
+      setActiveCluster(null);
+    }
+  }, [venueClusters, activeCluster, clusterSheetOpen]);
 
   return (
     <div className="relative h-full pt-48 pb-32">
@@ -241,6 +262,28 @@ export const FieldVisualization = ({
           if (!open) setSelectedVenueId(null);
         }}
         venueId={selectedVenueId}
+      />
+
+      <ClusterVenuesSheet
+        isOpen={clusterSheetOpen}
+        onClose={() => {
+          setClusterSheetOpen(false);
+          setActiveCluster(null);
+        }}
+        clusterId={activeCluster?.id || null}
+        onVenueTap={(venueId) => {
+          // Close cluster sheet and open venue details
+          setClusterSheetOpen(false);
+          setActiveCluster(null);
+          setSelectedVenueId(venueId);
+          setDetailsOpen(true);
+        }}
+        onZoomToArea={() => {
+          if (activeCluster) {
+            viewportControls.panTo(activeCluster.lat, activeCluster.lng);
+            viewportControls.zoomIn();
+          }
+        }}
       />
     </div>
   );

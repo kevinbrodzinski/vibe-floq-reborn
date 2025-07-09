@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import Supercluster from 'supercluster';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -15,10 +15,19 @@ export interface VenueCluster {
   props: Record<string, any>;
 }
 
+export interface ClusterVenue {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  vibe: string;
+  source: string;
+}
+
 /**
  * Hook for fetching and clustering venues within the current viewport
  */
-export function useVenueClusters(viewport: Viewport): VenueCluster[] {
+export function useVenueClusters(viewport: Viewport) {
   const [west, south, east, north] = viewport.bounds;
 
   // Fetch venues within the current viewport bounds
@@ -126,5 +135,23 @@ export function useVenueClusters(viewport: Viewport): VenueCluster[] {
     });
   }, [venues, viewport.bounds, viewport.zoom]);
 
-  return clusters;
+  /** Get venues within a cluster (instant resolution using supercluster) */
+  const getClusterVenues = useCallback(
+    (clusterId: number): ClusterVenue[] => {
+      if (!indexRef.current) return [];
+      
+      const leaves = indexRef.current.getLeaves(clusterId, Infinity);
+      return leaves.map((leaf: any) => ({
+        id: leaf.properties.id,
+        name: leaf.properties.name,
+        lat: leaf.geometry.coordinates[1],
+        lng: leaf.geometry.coordinates[0],
+        vibe: leaf.properties.vibe,
+        source: leaf.properties.source,
+      }));
+    },
+    []
+  );
+
+  return { clusters, getClusterVenues };
 }
