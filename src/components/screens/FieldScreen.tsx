@@ -11,6 +11,8 @@ import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
 import { usePresence } from "@/hooks/usePresence";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyPresence } from "@/hooks/useNearbyPresence";
+import { useCurrentEvent } from "@/hooks/useCurrentEvent";
+import { EventBanner } from "@/components/EventBanner";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import type { Vibe } from "@/types";
@@ -54,6 +56,9 @@ export const FieldScreen = () => {
     location.lng, 
     { km: 1 }
   );
+  
+  // Check for current event based on location
+  const { currentEvent } = useCurrentEvent(location.lat, location.lng);
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
@@ -182,6 +187,15 @@ export const FieldScreen = () => {
 
   return (
     <div className="relative h-screen overflow-hidden">
+      {/* Event Banner */}
+      {currentEvent && (
+        <EventBanner
+          eventName={currentEvent.name}
+          vibe={currentEvent.vibe}
+          onDismiss={() => console.log('Event details TBD')}
+        />
+      )}
+      
       {/* Debug counter */}
       {debug && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">

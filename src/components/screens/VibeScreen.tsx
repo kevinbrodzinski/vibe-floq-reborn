@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Radio, Eye, EyeOff, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
 type VisibilityState = "public" | "friends" | "off";
@@ -12,6 +14,7 @@ interface VibeInfo {
 }
 
 export const VibeScreen = () => {
+  const { user } = useAuth();
   const [selectedVibe, setSelectedVibe] = useState<VibeState>("chill");
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
@@ -69,16 +72,41 @@ export const VibeScreen = () => {
     }
   };
 
+  const updateVisibility = useCallback(async (newVisibility: VisibilityState) => {
+    if (!user) {
+      console.error('No user authenticated for visibility update');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('vibes_now')
+        .update({ visibility: newVisibility })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Failed to update visibility:', error);
+      }
+    } catch (err) {
+      console.error('Visibility update error:', err);
+    }
+  }, [user]);
+
   const cycleVisibility = useCallback(() => {
     setVisibility(prev => {
-      switch (prev) {
-        case "public": return "friends";
-        case "friends": return "off";
-        case "off": return "public";
-        default: return "public";
-      }
+      const newVisibility = (() => {
+        switch (prev) {
+          case "public": return "friends";
+          case "friends": return "off";
+          case "off": return "public";
+          default: return "public";
+        }
+      })();
+      
+      updateVisibility(newVisibility);
+      return newVisibility;
     });
-  }, []);
+  }, [updateVisibility]);
 
   const getVisibilityIcon = () => {
     switch (visibility) {
@@ -101,7 +129,7 @@ export const VibeScreen = () => {
           size="sm"
           onClick={cycleVisibility}
           className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
-            visibility === "off" ? "text-muted-foreground" : "text-foreground"
+            visibility === "off" ? "opacity-30 grayscale" : "text-foreground"
           }`}
         >
           {getVisibilityIcon()}
