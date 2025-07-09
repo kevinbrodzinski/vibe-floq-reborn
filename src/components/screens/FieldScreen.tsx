@@ -84,13 +84,6 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     setCurrentVibe(newVibe);
   };
 
-  const handleVibeClick = () => {
-    const vibes: Vibe[] = ['social', 'chill', 'hype', 'flowing', 'open'];
-    const currentIndex = vibes.indexOf(currentVibe);
-    const nextVibe = vibes[(currentIndex + 1) % vibes.length];
-    changeVibe(nextVibe);
-  };
-
   // Mock floqs data for now
   const walkable_floqs: any[] = [];
   const isLocationReady = !!(location.lat && location.lng);
@@ -273,13 +266,6 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
       {/* Header */}
       <FieldHeader />
 
-      {/* Time Status - Below header, in safe area */}
-      <div className="absolute top-16 left-4 right-4 z-20 pointer-events-auto" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex justify-center">
-          <TimeStatusIndicator />
-        </div>
-      </div>
-
       {/* Map canvas */}
       {(mode === 'map' || mode === 'full') && (
         <FieldVisualization
@@ -349,33 +335,22 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         onTimeChange={handleTimeWarpChange}
       />
 
-      {/* Location Active Status - Above pulse panel */}
-      <div className="absolute bottom-40 left-4 right-4 z-10 pointer-events-auto">
-        <div className="flex justify-center mb-3">
-          <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
+      {/* Status Bar - Above Action Card */}
+      <div className="absolute bottom-36 left-4 right-4 z-10">
+        <div className="flex items-center justify-between gap-4 mb-3">
+          {/* Location Active Status Chip */}
+          <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2">
               <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
               <span className="text-sm font-medium">
                 {isLocationReady ? 'Location Active' : 'Getting Location...'}
               </span>
             </div>
-            {currentVibe && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Vibe:</span>
-                <Badge 
-                  variant="outline" 
-                  className="text-xs cursor-pointer hover:bg-primary/10"
-                  onClick={handleVibeClick}
-                >
-                  {currentVibe}
-                </Badge>
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground mt-1">
-              {nearby_users.length} nearby • {walkable_floqs.length} floqs
-            </div>
-            {updating && <div className="text-xs text-primary animate-pulse">Updating...</div>}
-            {error && <div className="text-xs text-destructive">{error}</div>}
+          </div>
+          
+          {/* Time Status Indicator */}
+          <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg px-3 py-2">
+            <TimeStatusIndicator />
           </div>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
-import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import type { Vibe } from "@/types";
 
 interface FieldOverlayProps {
@@ -42,6 +41,28 @@ export const FieldOverlay = ({
         </div>
       )}
 
+      {/* Status Region - Simplified for remaining vibe controls */}
+      <div className="absolute top-28 left-4 z-20 pointer-events-auto">
+        <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
+          {currentVibe && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Vibe:</span>
+              <Badge 
+                variant="outline" 
+                className="text-xs cursor-pointer hover:bg-primary/10"
+                onClick={changeVibe}
+              >
+                {currentVibe}
+              </Badge>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground mt-1">
+            {nearbyUsersCount} nearby • {walkableFloqsCount} floqs
+          </div>
+          {updating && <div className="text-xs text-primary animate-pulse">Updating...</div>}
+          {error && <div className="text-xs text-destructive">{error}</div>}
+        </div>
+      </div>
 
       {/* Controls Region - Right center column */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
