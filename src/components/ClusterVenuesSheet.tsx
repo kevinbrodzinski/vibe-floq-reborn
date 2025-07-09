@@ -1,8 +1,10 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, MapPin, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { VenueListItem } from './VenueListItem';
 import { useClusterVenues } from '@/hooks/useClusterVenues';
 
@@ -23,7 +25,16 @@ export function ClusterVenuesSheet({
 }: ClusterVenuesSheetProps) {
   const { data: venues = [], isLoading } = useClusterVenues(clusterId);
   
-  const totalLiveCount = 0; // Cluster venues don't have live count in current implementation
+  // Note: Cluster venues don't have live_count in current implementation
+  // This would need to be enhanced to fetch live counts separately
+  const totalLiveCount = 0;
+
+  // Add haptic feedback when sheet opens
+  React.useEffect(() => {
+    if (isOpen && 'vibrate' in navigator) {
+      navigator.vibrate(4);
+    }
+  }, [isOpen]);
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -68,11 +79,17 @@ export function ClusterVenuesSheet({
         <ScrollArea className="flex-1">
           <div className="p-4">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-2">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                  <p className="text-sm text-muted-foreground">Loading venues...</p>
-                </div>
+              <div className="space-y-0">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 border-b border-border/40 last:border-0">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="w-5 h-5 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : venues.length === 0 ? (
               <div className="flex items-center justify-center py-12">
@@ -98,7 +115,7 @@ export function ClusterVenuesSheet({
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ type: "spring", damping: 22, duration: 0.2 }}
                     >
                       <VenueListItem
                         venue={{
