@@ -56,4 +56,4 @@ grant execute on function public.events_containing_point to anon, authenticated;
 
 -- 4. presence visibility column
 alter table public.vibes_now
-  add column if not exists vibe_visibility public.vibe_visibility default 'public';
+  add column if not exists visibility public.vibe_visibility default 'public';
