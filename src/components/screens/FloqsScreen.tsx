@@ -19,11 +19,13 @@ interface FloqCard {
 }
 
 export const FloqsScreen = () => {
-  // Get stored radius preference or default to 1km
+  // Get stored radius preference or default to 1km with robust parsing
   const getStoredRadius = () => {
     try {
       const stored = localStorage.getItem('floq-radius-km');
-      return stored ? parseFloat(stored) : 1;
+      if (!stored) return 1;
+      const parsed = parseFloat(stored);
+      return isNaN(parsed) ? 1 : parsed;
     } catch {
       return 1;
     }
@@ -42,8 +44,8 @@ export const FloqsScreen = () => {
     }
   }, [radiusKm]);
 
-  // Mock data for now - will be replaced with real floqs
-  const [mockFloqs] = useState<FloqCard[]>([
+  // Show real floqs when available, fallback to mock data for UI demo
+  const mockFloqs: FloqCard[] = [
     {
       id: "1",
       title: "Nico's Rooftop Chill",
@@ -70,7 +72,10 @@ export const FloqsScreen = () => {
       color: "hsl(280 70% 60%)",
       iconType: "message-circle"
     }
-  ]);
+  ];
+
+  // Use real floqs when available, otherwise show mock data for demo
+  const displayFloqs = nearbyFloqs.length > 0 ? nearbyFloqs : mockFloqs;
 
   const getIcon = (iconType: "armchair" | "message-circle") => {
     return iconType === "armchair" ? <Armchair size={24} /> : <MessageCircle size={24} />;
@@ -78,8 +83,8 @@ export const FloqsScreen = () => {
 
   return (
     <div className="min-h-screen p-6 pt-16">
-      {/* Debug counter */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* Debug counter - development mode or ?debug=1 URL param */}
+      {(process.env.NODE_ENV === 'development' || window.location.search.includes('debug=1')) && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
           {nearbyFloqs.length} floqs ≤ {radiusKm} km
         </div>
@@ -105,11 +110,11 @@ export const FloqsScreen = () => {
         </div>
       </div>
 
-      {/* Floqs Status */}
+      {/* Floqs Status - improved UX copy */}
       {nearbyFloqs.length === 0 && !floqsLoading && coords.lat && coords.lng && (
         <div className="mb-6 text-center py-8">
-          <p className="text-muted-foreground">No floqs within {radiusKm} km</p>
-          <p className="text-sm text-muted-foreground/60 mt-1">Try increasing the radius</p>
+          <p className="text-muted-foreground">No floqs nearby</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">Try increasing the radius or check back later</p>
         </div>
       )}
 

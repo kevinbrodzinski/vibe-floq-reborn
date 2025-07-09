@@ -1,15 +1,17 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-// Type for the walkable floqs RPC return
-type WalkableFloq = {
-  id: string;
-  title: string;
-  primary_vibe: string;
-  participant_count: number;
-  distance_meters: number;
-  starts_at: string;
-};
+// Use generated Supabase types for walkable floqs RPC return
+type WalkableFloq = Database['public']['Functions']['get_walkable_floqs']['Returns'][number];
+
+export interface NearbyFloqsReturn {
+  nearby: WalkableFloq[];
+  loading: boolean;
+  error: string | null;
+  count: number;
+}
 
 interface NearbyFloqsOptions {
   km?: number;
@@ -19,51 +21,29 @@ export function useNearbyFloqs(
   lat?: number,
   lng?: number,
   { km = 1 }: NearbyFloqsOptions = {}
-) {
-  const [floqs, setFloqs] = useState<WalkableFloq[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+): NearbyFloqsReturn {
+  const queryClient = useQueryClient();
 
-  // Throttled state update to prevent render jank
-  const updateFloqs = useCallback((updater: (prev: WalkableFloq[]) => WalkableFloq[]) => {
-    requestAnimationFrame(() => setFloqs(updater));
-  }, []);
+  // Initial fetch + refetch on coordinate/km changes
+  const { data: floqs = [], isLoading: loading, error } = useQuery({
+    queryKey: ['floqs', lat, lng, km],
+    enabled: !!lat && !!lng,
+    queryFn: async () => {
+      const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', { 
+        user_lat: lat!, 
+        user_lng: lng!, 
+        max_walk_meters: km * 1000 
+      });
 
-  // Initial fetch of nearby floqs
-  useEffect(() => {
-    if (!lat || !lng) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const fetchNearbyFloqs = async () => {
-      try {
-        const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', { 
-          user_lat: lat, 
-          user_lng: lng, 
-          max_walk_meters: km * 1000 
-        });
-
-        if (rpcError) {
-          console.error('Failed to fetch nearby floqs:', rpcError);
-          setError(rpcError.message);
-          return;
-        }
-
-        setFloqs(data || []);
-      } catch (err) {
-        console.error('Error fetching nearby floqs:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
+      if (rpcError) {
+        console.error('Failed to fetch nearby floqs:', rpcError);
+        throw new Error(rpcError.message);
       }
-    };
 
-    fetchNearbyFloqs();
-  }, [lat, lng, km]);
+      return data || [];
+    },
+    staleTime: 30_000, // Cache for 30 seconds
+  });
 
   // Realtime subscription to floqs changes
   useEffect(() => {
@@ -79,28 +59,8 @@ export function useNearbyFloqs(
           table: 'floqs'
         },
         () => {
-          // Refetch data when floqs change
-          updateFloqs(() => {
-            // Trigger refetch by updating state
-            const refetch = async () => {
-              try {
-                const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', { 
-                  user_lat: lat, 
-                  user_lng: lng, 
-                  max_walk_meters: km * 1000 
-                });
-
-                if (!rpcError && data) {
-                  setFloqs(data);
-                }
-              } catch (err) {
-                console.error('Error refetching floqs:', err);
-              }
-            };
-            
-            refetch();
-            return floqs; // Return current state for now
-          });
+          // Fix stale closure: Use queryClient to invalidate cached data
+          queryClient.invalidateQueries({ queryKey: ['floqs', lat, lng, km] });
         }
       )
       .subscribe();
@@ -108,12 +68,12 @@ export function useNearbyFloqs(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [lat, lng, km, updateFloqs, floqs]);
+  }, [lat, lng, km, queryClient]);
 
   return {
     nearby: floqs,
     loading,
-    error,
+    error: error?.message || null,
     count: floqs.length
   };
 }
