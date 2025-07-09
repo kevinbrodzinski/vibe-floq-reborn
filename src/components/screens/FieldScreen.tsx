@@ -57,8 +57,17 @@ export const FieldScreen = () => {
     { km: 1 }
   );
   
-  // Check for current event based on location
-  const { currentEvent } = useCurrentEvent(location.lat, location.lng);
+  // Check for current event based on location with enhanced tracking
+  const { currentEvent, isInsideEvent } = useCurrentEvent(
+    location.lat, 
+    location.lng, 
+    {
+      onLeave: (event) => {
+        console.log('Left event:', event.name);
+        // Banner will auto-hide via state change
+      }
+    }
+  );
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
@@ -188,11 +197,14 @@ export const FieldScreen = () => {
   return (
     <div className="relative h-screen overflow-hidden">
       {/* Event Banner */}
-      {currentEvent && (
+      {currentEvent && isInsideEvent && (
         <EventBanner
+          key={currentEvent.id}
+          eventId={currentEvent.id}
           eventName={currentEvent.name}
           vibe={currentEvent.vibe}
-          onDismiss={() => console.log('Event details TBD')}
+          onDismiss={() => console.log('Banner dismissed')}
+          onTap={() => console.log('Event details TBD - will open EventDetailsSheet')}
         />
       )}
       
