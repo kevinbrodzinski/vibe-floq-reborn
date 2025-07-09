@@ -8,6 +8,9 @@ import { TimeModuleIndicators } from "./field/TimeModuleIndicators";
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
+import { useEnhancedPresence } from "@/hooks/useEnhancedPresence";
+import { Badge } from "@/components/ui/badge";
+import type { Vibe } from "@/types";
 
 interface Person {
   id: string;
@@ -34,43 +37,60 @@ export const FieldScreen = () => {
   const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
   const [constellationMode, setConstellationMode] = useState(false);
   
-  const [people] = useState<Person[]>([
-    { id: "1", name: "Julia", x: 25, y: 30, color: "hsl(180 70% 60%)", vibe: "chill" },
-    { id: "2", name: "Kayla", x: 35, y: 50, color: "hsl(240 70% 60%)", vibe: "social" },
-    { id: "3", name: "Leo", x: 70, y: 35, color: "hsl(200 70% 60%)", vibe: "flowing" },
-    { id: "4", name: "Kayla", x: 65, y: 65, color: "hsl(240 70% 60%)", vibe: "social" },
-    { id: "5", name: "Leo", x: 75, y: 80, color: "hsl(200 70% 60%)", vibe: "open" },
-  ]);
+  // Use enhanced presence hook for live data
+  const {
+    nearby_users,
+    walkable_floqs,
+    currentVibe,
+    updating,
+    error,
+    location,
+    changeVibe,
+    isLocationReady
+  } = useEnhancedPresence('social');
+
+  // Convert nearby users to people format for visualization
+  const getVibeColor = (vibe: string) => {
+    switch (vibe) {
+      case 'hype': return 'hsl(280 70% 60%)';
+      case 'social': return 'hsl(30 70% 60%)';
+      case 'chill': return 'hsl(240 70% 60%)';
+      case 'flowing': return 'hsl(200 70% 60%)';
+      case 'open': return 'hsl(120 70% 60%)';
+      default: return 'hsl(240 70% 60%)';
+    }
+  };
+
+  // Convert nearby users to people format for existing visualization
+  const people: Person[] = nearby_users.map((user, index) => ({
+    id: user.user_id,
+    name: `User ${index + 1}`, // Could be enhanced with profiles
+    x: 20 + (index * 15) % 60, // Distribute across field
+    y: 20 + (index * 20) % 60,
+    color: getVibeColor(user.vibe),
+    vibe: user.vibe,
+  }));
 
   // Convert people to friends for constellation system
-  const [friends] = useState([
-    { 
-      id: "1", name: "Julia", x: 25, y: 30, color: "hsl(180 70% 60%)", vibe: "chill",
-      relationship: 'close' as const, activity: 'active' as const, warmth: 85, compatibility: 92, lastSeen: Date.now() - 300000
-    },
-    { 
-      id: "2", name: "Kayla", x: 35, y: 50, color: "hsl(240 70% 60%)", vibe: "social",
-      relationship: 'friend' as const, activity: 'active' as const, warmth: 70, compatibility: 88, lastSeen: Date.now() - 180000
-    },
-    { 
-      id: "3", name: "Leo", x: 70, y: 35, color: "hsl(200 70% 60%)", vibe: "flowing",
-      relationship: 'close' as const, activity: 'idle' as const, warmth: 90, compatibility: 95, lastSeen: Date.now() - 120000
-    },
-    { 
-      id: "4", name: "Emma", x: 65, y: 65, color: "hsl(320 70% 60%)", vibe: "social",
-      relationship: 'friend' as const, activity: 'active' as const, warmth: 75, compatibility: 80, lastSeen: Date.now() - 60000
-    },
-    { 
-      id: "5", name: "Alex", x: 75, y: 80, color: "hsl(280 70% 60%)", vibe: "open",
-      relationship: 'acquaintance' as const, activity: 'away' as const, warmth: 45, compatibility: 65, lastSeen: Date.now() - 900000
-    },
-  ]);
+  const friends = people.map((person, index) => ({
+    ...person,
+    relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
+    activity: 'active' as const,
+    warmth: 60 + Math.random() * 40,
+    compatibility: 70 + Math.random() * 30,
+    lastSeen: Date.now() - Math.random() * 900000,
+  }));
 
-  const [floqEvents] = useState<FloqEvent[]>([
-    { id: "1", title: "car nightride", x: 50, y: 45, size: 80, participants: 3, vibe: "hype" },
-    { id: "2", title: "Gailleo's", x: 20, y: 70, size: 60, participants: 8, vibe: "social" },
-    { id: "3", title: "Circa", x: 15, y: 85, size: 40, participants: 4, vibe: "chill" },
-  ]);
+  // Convert walkable floqs to floq events format
+  const floqEvents: FloqEvent[] = walkable_floqs.map((floq, index) => ({
+    id: floq.id,
+    title: floq.title,
+    x: 30 + (index * 25) % 50,
+    y: 40 + (index * 20) % 40,
+    size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
+    participants: floq.participant_count,
+    vibe: floq.primary_vibe,
+  }));
 
   // Moved to TimeBasedActionCard component
 
@@ -151,6 +171,40 @@ export const FieldScreen = () => {
       {/* Header */}
       <FieldHeader />
 
+      {/* Live Presence Status */}
+      <div className="absolute top-20 left-4 z-20">
+        <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-sm font-medium">
+              {isLocationReady ? 'Location Active' : 'Getting Location...'}
+            </span>
+          </div>
+          {currentVibe && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Vibe:</span>
+              <Badge 
+                variant="outline" 
+                className="text-xs cursor-pointer hover:bg-primary/10"
+                onClick={() => {
+                  const vibes: Vibe[] = ['social', 'chill', 'hype', 'flowing', 'open'];
+                  const currentIndex = vibes.indexOf(currentVibe);
+                  const nextVibe = vibes[(currentIndex + 1) % vibes.length];
+                  changeVibe(nextVibe);
+                }}
+              >
+                {currentVibe}
+              </Badge>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground mt-1">
+            {nearby_users.length} nearby • {walkable_floqs.length} floqs
+          </div>
+          {updating && <div className="text-xs text-primary animate-pulse">Updating...</div>}
+          {error && <div className="text-xs text-destructive">{error}</div>}
+        </div>
+      </div>
+
       {/* Time-Synced Status Bar */}
       <div className="absolute top-24 left-0 right-0 z-10 text-center pt-4">
         <TimeStatusIndicator />
@@ -165,6 +219,7 @@ export const FieldScreen = () => {
         people={people}
         friends={friends}
         floqEvents={floqEvents}
+        walkableFloqs={walkable_floqs}
         onFriendInteraction={handleFriendInteraction}
         onConstellationGesture={handleConstellationGesture}
         onAvatarInteraction={handleAvatarInteraction}

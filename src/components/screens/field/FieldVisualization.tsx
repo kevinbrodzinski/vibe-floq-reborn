@@ -1,5 +1,7 @@
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
+import { FloqOrb } from "@/components/FloqOrb";
+import type { WalkableFloq } from "@/types";
 
 interface Person {
   id: string;
@@ -39,6 +41,7 @@ interface FieldVisualizationProps {
   people: Person[];
   friends: Friend[];
   floqEvents: FloqEvent[];
+  walkableFloqs?: WalkableFloq[];
   onFriendInteraction: (friend: any, action: string) => void;
   onConstellationGesture: (gesture: string, friends: any[]) => void;
   onAvatarInteraction: (interaction: any) => void;
@@ -49,6 +52,7 @@ export const FieldVisualization = ({
   people,
   friends,
   floqEvents,
+  walkableFloqs = [],
   onFriendInteraction,
   onConstellationGesture,
   onAvatarInteraction
@@ -91,43 +95,67 @@ export const FieldVisualization = ({
         </div>
       ))}
 
-      {/* Floq Events */}
-      {floqEvents.map((event, index) => (
-        <div
-          key={event.id}
-          className="absolute transition-all duration-500 cursor-pointer hover:scale-105 group"
-          style={{
-            left: `${event.x}%`,
-            top: `${event.y}%`,
-            transform: "translate(-50%, -50%)",
-            width: `${event.size}px`,
-            height: `${event.size}px`,
-            animationDelay: `${index * 0.2}s`,
-          }}
-        >
-          <div className="relative w-full h-full animate-fade-in">
-            {/* Outer ripple ring */}
-            <div className="absolute inset-0 border-2 border-primary/20 rounded-full animate-pulse group-hover:border-primary/40"></div>
-            {/* Middle ring */}
-            <div className="absolute inset-2 border border-accent/30 rounded-full"></div>
-            {/* Inner glowing core */}
-            <div 
-              className="absolute inset-6 rounded-full animate-pulse-glow group-hover:glow-active"
-              style={{
-                backgroundColor: event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
-                                 event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
-                                 'hsl(240 70% 60%)',
-                boxShadow: `0 0 30px ${event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
-                                      event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
-                                      'hsl(240 70% 60%)'}40`
-              }}
-            ></div>
+      {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
+      {floqEvents.map((event, index) => {
+        // Check if this floq is walkable
+        const walkableFloq = walkableFloqs.find(wf => wf.id === event.id);
+        const isWalkable = walkableFloq && walkableFloq.distance_meters <= 300;
+        
+        return (
+          <div
+            key={event.id}
+            className="absolute transition-all duration-500 cursor-pointer hover:scale-105 group"
+            style={{
+              left: `${event.x}%`,
+              top: `${event.y}%`,
+              transform: "translate(-50%, -50%)",
+              width: `${event.size}px`,
+              height: `${event.size}px`,
+              animationDelay: `${index * 0.2}s`,
+            }}
+          >
+            <div className="relative w-full h-full animate-fade-in">
+              {/* Outer ripple ring - dashed if walkable */}
+              <div className={`absolute inset-0 border-2 rounded-full animate-pulse group-hover:border-primary/40 ${
+                isWalkable 
+                  ? 'border-dashed border-primary/60' 
+                  : 'border-primary/20'
+              }`}></div>
+              {/* Middle ring */}
+              <div className="absolute inset-2 border border-accent/30 rounded-full"></div>
+              {/* Inner glowing core */}
+              <div 
+                className="absolute inset-6 rounded-full animate-pulse-glow group-hover:glow-active"
+                style={{
+                  backgroundColor: event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
+                                   event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
+                                   event.vibe === 'chill' ? 'hsl(240 70% 60%)' :
+                                   event.vibe === 'flowing' ? 'hsl(200 70% 60%)' :
+                                   event.vibe === 'open' ? 'hsl(120 70% 60%)' :
+                                   'hsl(240 70% 60%)',
+                  boxShadow: `0 0 30px ${event.vibe === 'hype' ? 'hsl(280 70% 60%)' : 
+                                        event.vibe === 'social' ? 'hsl(30 70% 60%)' : 
+                                        event.vibe === 'chill' ? 'hsl(240 70% 60%)' :
+                                        event.vibe === 'flowing' ? 'hsl(200 70% 60%)' :
+                                        event.vibe === 'open' ? 'hsl(120 70% 60%)' :
+                                        'hsl(240 70% 60%)'}40`
+                }}
+              ></div>
+              
+              {/* Distance indicator for walkable floqs */}
+              {isWalkable && walkableFloq && (
+                <div className="absolute -top-2 -right-2 bg-primary/20 text-primary text-xs px-1 py-0.5 rounded border border-primary/30">
+                  {Math.round(walkableFloq.distance_meters)}m
+                </div>
+              )}
+            </div>
+            <div className="text-sm text-center mt-2 text-foreground font-medium group-hover:text-primary transition-smooth">
+              {event.title}
+              <div className="text-xs text-muted-foreground">{event.participants} people</div>
+            </div>
           </div>
-          <div className="text-sm text-center mt-2 text-foreground font-medium group-hover:text-primary transition-smooth">
-            {event.title}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Avatar Interaction Layer */}
       <AvatarInteractionLayer 
