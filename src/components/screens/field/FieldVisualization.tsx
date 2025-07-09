@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
 import { ClusterPin } from "@/components/map/ClusterPin";
 import { VenuePin } from "@/components/map/VenuePin";
 import { ViewportControls } from "@/components/map/ViewportControls";
+import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
 import { latLngToField, mToPercent } from "@/utils/geoConversion";
@@ -69,6 +71,9 @@ export const FieldVisualization = ({
   
   // Get venue clusters for current viewport
   const venueClusters = useVenueClusters(viewport);
+  
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
 
   // Handle cluster click - zoom in to expand clusters
   const handleClusterClick = (cluster: any) => {
@@ -76,6 +81,18 @@ export const FieldVisualization = ({
       viewportControls.panTo(cluster.lat, cluster.lng);
       viewportControls.zoomIn();
     }
+  };
+
+  const handleVenueClick = (v: any) => {
+    // cluster → zoom in the existing way
+    if (v.pointCount > 0) {
+      handleClusterClick(v);
+      return;
+    }
+
+    // single venue → open details sheet
+    setSelectedVenueId(v.id);
+    setDetailsOpen(true);
   };
 
   return (
@@ -195,12 +212,13 @@ export const FieldVisualization = ({
             {cluster.pointCount > 0 ? (
               <ClusterPin 
                 count={cluster.pointCount} 
-                onClick={() => handleClusterClick(cluster)}
+                onClick={() => handleVenueClick(cluster)}
               />
             ) : (
               <VenuePin 
                 vibe={cluster.props.vibe}
                 name={cluster.props.name}
+                onClick={() => handleVenueClick(cluster)}
               />
             )}
           </div>
@@ -215,6 +233,15 @@ export const FieldVisualization = ({
 
       {/* Viewport Controls */}
       <ViewportControls controls={viewportControls} />
+
+      <VenueDetailsSheet
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) setSelectedVenueId(null);
+        }}
+        venueId={selectedVenueId}
+      />
     </div>
   );
 };
