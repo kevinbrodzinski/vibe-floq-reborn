@@ -1,16 +1,36 @@
+import { Maximize2, Minimize2, List } from 'lucide-react'
 import { useFullscreenMap } from '@/store/useFullscreenMap'
-import { Maximize2, Minimize2 } from 'lucide-react'
 
 export const FullscreenFab = () => {
-  const { mode, toggleFull } = useFullscreenMap()
+  const { mode, toggleFull, toggleList } = useFullscreenMap()
+
+  const isFull = mode === 'full'
+  const isList = mode === 'list'
+  const NextIcon = isFull ? Minimize2 : Maximize2
+
   return (
-    <button
-      aria-label="Toggle full-screen map"
-      onClick={toggleFull}
-      className="fixed bottom-24 right-4 z-40 rounded-full bg-background p-3 shadow-lg
-                 ring-1 ring-border transition hover:scale-105 active:scale-95"
-    >
-      {mode === 'full' ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-    </button>
+    <>
+      {/* main full-screen FAB */}
+      <button
+        aria-label={isFull ? 'Exit full-screen map' : 'Enter full-screen map'}
+        onClick={toggleFull}
+        className="fixed bottom-24 right-4 z-20 flex h-12 w-12 items-center
+                   justify-center rounded-full bg-primary text-primary-foreground
+                   shadow-lg transition hover:bg-primary/90"
+      >
+        <NextIcon className="h-5 w-5" />
+      </button>
+
+      {/* list-mode toggle (only visible in map or list) */}
+      <button
+        aria-label={isList ? 'Show map view' : 'Show list view'}
+        onClick={toggleList}
+        className="fixed bottom-40 right-4 z-20 flex h-12 w-12 items-center
+                   justify-center rounded-full bg-background/80 backdrop-blur
+                   shadow-lg ring-1 ring-border transition hover:bg-background/60"
+      >
+        <List className="h-5 w-5" />
+      </button>
+    </>
   )
 }

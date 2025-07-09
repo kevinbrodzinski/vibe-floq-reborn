@@ -46,6 +46,7 @@ interface Friend {
 }
 
 interface FieldVisualizationProps {
+  mini?: boolean;
   constellationMode: boolean;
   people: Person[];
   friends: Friend[];
@@ -57,6 +58,7 @@ interface FieldVisualizationProps {
 }
 
 export const FieldVisualization = ({
+  mini = false,
   constellationMode,
   people,
   friends,
@@ -117,9 +119,9 @@ export const FieldVisualization = ({
   }, [venueClusters, activeCluster, clusterSheetOpen]);
 
   return (
-    <div className="relative h-full pt-48 pb-32">
+    <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'}`}>
       {/* Friend Constellation System */}
-      {constellationMode && (
+      {constellationMode && !mini && (
         <FriendConstellation
           friends={friends}
           centerX={50}
@@ -142,15 +144,17 @@ export const FieldVisualization = ({
           }}
         >
           <div
-            className="w-4 h-4 rounded-full animate-pulse-glow"
+            className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
             style={{
               backgroundColor: person.color,
               boxShadow: `0 0 20px ${person.color}`,
             }}
           ></div>
-          <div className="text-sm text-center mt-2 text-foreground/90">
-            {person.name}
-          </div>
+          {!mini && (
+            <div className="text-sm text-center mt-2 text-foreground/90">
+              {person.name}
+            </div>
+          )}
         </div>
       ))}
 
@@ -202,16 +206,18 @@ export const FieldVisualization = ({
               ></div>
               
               {/* Distance indicator for walkable floqs */}
-              {isWalkable && walkableFloq && (
+              {isWalkable && walkableFloq && !mini && (
                 <div className="absolute -top-2 -right-2 bg-primary/20 text-primary text-xs px-1 py-0.5 rounded border border-primary/30">
                   {Math.round(walkableFloq.distance_meters)}m
                 </div>
               )}
             </div>
-            <div className="text-sm text-center mt-2 text-foreground font-medium group-hover:text-primary transition-smooth">
-              {event.title}
-              <div className="text-xs text-muted-foreground">{event.participants} people</div>
-            </div>
+            {!mini && (
+              <div className="text-sm text-center mt-2 text-foreground font-medium group-hover:text-primary transition-smooth">
+                {event.title}
+                <div className="text-xs text-muted-foreground">{event.participants} people</div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -247,44 +253,50 @@ export const FieldVisualization = ({
       })}
 
       {/* Avatar Interaction Layer */}
-      <AvatarInteractionLayer 
-        people={people}
-        onInteraction={onAvatarInteraction}
-      />
+      {!mini && (
+        <AvatarInteractionLayer 
+          people={people}
+          onInteraction={onAvatarInteraction}
+        />
+      )}
 
       {/* Viewport Controls */}
-      <ViewportControls controls={viewportControls} />
+      {!mini && <ViewportControls controls={viewportControls} />}
 
-      <VenueDetailsSheet
-        open={detailsOpen}
-        onOpenChange={(open) => {
-          setDetailsOpen(open);
-          if (!open) setSelectedVenueId(null);
-        }}
-        venueId={selectedVenueId}
-      />
+      {!mini && (
+        <>
+          <VenueDetailsSheet
+            open={detailsOpen}
+            onOpenChange={(open) => {
+              setDetailsOpen(open);
+              if (!open) setSelectedVenueId(null);
+            }}
+            venueId={selectedVenueId}
+          />
 
-      <ClusterVenuesSheet
-        isOpen={clusterSheetOpen}
-        onClose={() => {
-          setClusterSheetOpen(false);
-          setActiveCluster(null);
-        }}
-        clusterId={activeCluster?.id || null}
-        onVenueTap={(venueId) => {
-          // Close cluster sheet and open venue details
-          setClusterSheetOpen(false);
-          setActiveCluster(null);
-          setSelectedVenueId(venueId);
-          setDetailsOpen(true);
-        }}
-        onZoomToArea={() => {
-          if (activeCluster) {
-            viewportControls.panTo(activeCluster.lat, activeCluster.lng);
-            viewportControls.zoomIn();
-          }
-        }}
-      />
+          <ClusterVenuesSheet
+            isOpen={clusterSheetOpen}
+            onClose={() => {
+              setClusterSheetOpen(false);
+              setActiveCluster(null);
+            }}
+            clusterId={activeCluster?.id || null}
+            onVenueTap={(venueId) => {
+              // Close cluster sheet and open venue details
+              setClusterSheetOpen(false);
+              setActiveCluster(null);
+              setSelectedVenueId(venueId);
+              setDetailsOpen(true);
+            }}
+            onZoomToArea={() => {
+              if (activeCluster) {
+                viewportControls.panTo(activeCluster.lat, activeCluster.lng);
+                viewportControls.zoomIn();
+              }
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

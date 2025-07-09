@@ -1,22 +1,26 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Mode = 'map'   // normal
-           | 'full' // map is 100% (sheet floats on top)
-           | 'list' // sheet owns the screen, map collapses to mini-map
+type Mode = 'map' | 'full' | 'list'
 
-interface FullscreenSlice {
+interface FullscreenMapStore {
   mode: Mode
   set: (m: Mode) => void
-  toggleFull: () => void           // map ↔ full
+  /** map ↔ full */
+  toggleFull: () => void
+  /** map ↔ list */
+  toggleList: () => void
 }
 
-export const useFullscreenMap = create<FullscreenSlice>()(
+export const useFullscreenMap = create<FullscreenMapStore>()(
   persist(
     (set, get) => ({
       mode: 'map',
       set: (m) => set({ mode: m }),
-      toggleFull: () => set({ mode: get().mode === 'full' ? 'map' : 'full' }),
+      toggleFull: () =>
+        set({ mode: get().mode === 'full' ? 'map' : 'full' }),
+      toggleList: () =>
+        set({ mode: get().mode === 'list' ? 'map' : 'list' }),
     }),
     { name: 'vfo-fullscreen-map' }
   )

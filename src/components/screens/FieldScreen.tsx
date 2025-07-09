@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FullscreenFab } from "@/components/map/FullscreenFab";
+import { MiniMap } from "@/components/map/MiniMap";
+import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { useEffect } from "react";
 import { clsx } from "clsx";
 import type { Vibe } from "@/types";
@@ -217,6 +219,8 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     const params = new URLSearchParams(window.location.search)
     if (mode === 'full') params.set('full', '1')
     else params.delete('full')
+    if (mode === 'list') params.set('view', 'list')
+    else params.delete('view')
     window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
   }, [mode])
 
@@ -310,14 +314,33 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
       {/* Time-Based Module Indicators */}
       <TimeModuleIndicators />
 
-      {/* Field Map */}
-      <div
-        id="map-container"
-        className={clsx('h-full w-full transition-all duration-300',
-          mode === 'full' && 'fullscreen-map'
-        )}
-      >
-        <FieldVisualization
+      {/* Map container (full OR map mode) */}
+      {(mode === 'map' || mode === 'full') && (
+        <div
+          id="map-container"
+          className={clsx('h-full w-full transition-all duration-300',
+            mode === 'full' && 'fullscreen-map'
+          )}
+        >
+          <FieldVisualization
+            constellationMode={constellationMode}
+            people={people}
+            friends={friends}
+            floqEvents={floqEvents}
+            walkableFloqs={walkable_floqs}
+            onFriendInteraction={handleFriendInteraction}
+            onConstellationGesture={handleConstellationGesture}
+            onAvatarInteraction={handleAvatarInteraction}
+          />
+        </div>
+      )}
+
+      {/* List mode container */}
+      {mode === 'list' && <ListModeContainer />}
+
+      {/* Mini-map overlay (list mode only) */}
+      {mode === 'list' && (
+        <MiniMap
           constellationMode={constellationMode}
           people={people}
           friends={friends}
@@ -327,7 +350,7 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
           onConstellationGesture={handleConstellationGesture}
           onAvatarInteraction={handleAvatarInteraction}
         />
-      </div>
+      )}
 
       {/* Social Gesture Manager */}
       <SocialGestureManager onSocialAction={handleSocialAction} />
