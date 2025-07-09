@@ -13,6 +13,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyPresence } from "@/hooks/useNearbyPresence";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { EventBanner } from "@/components/EventBanner";
+import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import type { Vibe } from "@/types";
@@ -43,6 +44,7 @@ export const FieldScreen = () => {
   const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
   const [constellationMode, setConstellationMode] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   
   // Use enhanced presence hook for live data
   const location = useGeolocation();
@@ -193,8 +195,19 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     eventId={currentEvent.id}
     name={currentEvent.name}
     vibe={currentEvent.vibe}
-    onDetails={() => console.log("TODO: open EventDetailsSheet")}
+    onDetails={() => setDetailsOpen(true)}
     onDismiss={() => setShowBanner(false)}
+  />
+)}
+
+{currentEvent && (
+  <EventDetailsSheet
+    open={detailsOpen}
+    onOpenChange={setDetailsOpen}
+    event={{
+      ...currentEvent,
+      people: walkable_floqs.length,   // placeholder
+    }}
   />
 )}
       
