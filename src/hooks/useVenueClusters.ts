@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import Supercluster from 'supercluster';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -53,17 +53,24 @@ export function useVenueClusters(viewport: Viewport): VenueCluster[] {
     enabled: true,
   });
 
+  // Use ref to persist supercluster index for performance
+  const indexRef = useRef<Supercluster<undefined, any> | null>(null);
+
   // Create supercluster index and cluster venues
   const clusters = useMemo(() => {
     if (venues.length === 0) return [];
 
-    // Create supercluster index
-    const index = new Supercluster<undefined, any>({
-      radius: 60, // Cluster radius in pixels
-      maxZoom: 18, // Maximum zoom level for clustering
-      minZoom: 0,
-      nodeSize: 64,
-    });
+    // Create or reuse supercluster index
+    if (!indexRef.current) {
+      indexRef.current = new Supercluster<undefined, any>({
+        radius: 60, // Cluster radius in pixels
+        maxZoom: 18, // Maximum zoom level for clustering
+        minZoom: 0,
+        nodeSize: 64,
+      });
+    }
+
+    const index = indexRef.current;
 
     // Convert venues to GeoJSON features
     const points = venues.map(venue => ({
@@ -89,14 +96,14 @@ export function useVenueClusters(viewport: Viewport): VenueCluster[] {
       Math.min(Math.round(viewport.zoom * 2), 18) // Map our 1-10 zoom to supercluster's range
     );
 
-    // Convert to our cluster format
-    return clusterData.map((feature: any): VenueCluster => {
+    // Convert to our cluster format with proper keys
+    return clusterData.map((feature: any, index: number): VenueCluster => {
       const [lng, lat] = feature.geometry.coordinates;
       
       if (feature.properties.cluster) {
         // This is a cluster
         return {
-          id: feature.id,
+          id: `cluster-${feature.properties.cluster_id}`,
           lat,
           lng,
           pointCount: feature.properties.point_count,

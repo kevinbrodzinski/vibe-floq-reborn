@@ -15,28 +15,34 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
         <button
           onClick={zoomIn}
           disabled={viewport.zoom >= 10}
-          className="w-8 h-8 flex items-center justify-center rounded border border-border/50 bg-background/50 hover:bg-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded border border-border/50 bg-background/50 hover:bg-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
           title="Zoom In"
+          aria-label="Zoom in to see more detail"
+          type="button"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={zoomOut}
           disabled={viewport.zoom <= 1}
-          className="w-8 h-8 flex items-center justify-center rounded border border-border/50 bg-background/50 hover:bg-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded border border-border/50 bg-background/50 hover:bg-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
           title="Zoom Out"
+          aria-label="Zoom out to see wider area"
+          type="button"
         >
-          <Minus className="h-4 w-4" />
+          <Minus className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
       {/* Center on User */}
       <button
         onClick={centerOnUser}
-        className="w-8 h-8 flex items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border hover:bg-accent/20 transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border hover:bg-accent/20 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
         title="Center on My Location"
+        aria-label="Center map on your current location"
+        type="button"
       >
-        <Target className="h-4 w-4" />
+        <Target className="h-4 w-4" aria-hidden="true" />
       </button>
 
       {/* Zoom Level Indicator */}

@@ -18,14 +18,13 @@ const BASE_FIELD_SIZE = {
   height: 0.01, // ~1.1km
 };
 
-// Zoom scaling factor (each zoom level doubles the visible area)
-const ZOOM_SCALE_FACTOR = 2;
-
 /**
- * Calculate the field dimensions for a given zoom level
+ * Calculate the field dimensions for a given zoom level using logarithmic scaling
  */
 function getFieldDimensions(zoom: number) {
-  const scale = Math.pow(ZOOM_SCALE_FACTOR, 5 - zoom); // zoom 5 is base
+  // Logarithmic scaling for smoother zoom transitions
+  // Base scale at zoom 5, exponential decay for higher zooms
+  const scale = Math.pow(2, 5 - zoom);
   return {
     width: BASE_FIELD_SIZE.width * scale,
     height: BASE_FIELD_SIZE.height * scale,

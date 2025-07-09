@@ -63,7 +63,7 @@ export function useMapViewport(
     }
   }, [userLat, userLng, panTo]);
 
-  // Zoom to fit multiple points
+  // Zoom to fit multiple points with improved logarithmic calculation
   const zoomToFit = useCallback((points: [number, number][]) => {
     if (points.length === 0) return;
     
@@ -87,18 +87,15 @@ export function useMapViewport(
       (minLng + maxLng) / 2
     ];
     
-    // Calculate required zoom to fit all points
+    // Calculate required zoom using logarithmic scaling to match getFieldDimensions
     const latRange = maxLat - minLat;
     const lngRange = maxLng - minLng;
     const maxRange = Math.max(latRange, lngRange);
     
-    // Estimate zoom level (this is a simplified calculation)
-    let newZoom = 10;
-    if (maxRange > 0.001) newZoom = 8;
-    if (maxRange > 0.005) newZoom = 6;
-    if (maxRange > 0.01) newZoom = 4;
-    if (maxRange > 0.05) newZoom = 2;
-    if (maxRange > 0.1) newZoom = 1;
+    // Use inverse of the logarithmic scaling in getFieldDimensions
+    // scale = 2^(5-zoom), so zoom = 5 - log2(scale)
+    const requiredScale = maxRange / 0.01; // Base field size is 0.01
+    const newZoom = Math.max(1, Math.min(10, 5 - Math.log2(requiredScale * 1.2))); // 1.2 padding
     
     setCenter(newCenter);
     setZoom(newZoom);
