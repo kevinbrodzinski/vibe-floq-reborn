@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { MapPin, Users, Info, Navigation } from "lucide-react";
 import {
@@ -25,7 +26,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
   const { lat, lng } = useGeolocation();
   const { join, joinPending, leave, leavePending } =
-    useVenueJoin(venue?.id ?? null, venue?.lat ?? null, venue?.lng ?? null);
+    useVenueJoin(venue?.id ?? null, lat, lng);
 
   // Handle browser back button
   useEffect(() => {
@@ -49,6 +50,22 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     if (venue) {
       const url = `https://maps.google.com/maps?daddr=${venue.lat},${venue.lng}`;
       window.open(url, "_blank");
+    }
+  };
+
+  const handleJoin = async () => {
+    try {
+      await join({ vibeOverride: venue?.vibe });
+    } catch (error) {
+      console.error("Failed to join venue:", error);
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      await leave();
+    } catch (error) {
+      console.error("Failed to leave venue:", error);
     }
   };
 
@@ -110,7 +127,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                 size="lg"
                 className="flex items-center gap-2"
                 disabled={joinPending || leavePending}
-                onClick={() => join({ vibeOverride: venue.vibe })}
+                onClick={handleJoin}
               >
                 <Users className="h-4 w-4" />
                 {joinPending ? "Joining…" : "Join venue"}
@@ -121,7 +138,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                 size="lg"
                 className="flex items-center gap-2"
                 disabled={leavePending || joinPending}
-                onClick={() => leave()}
+                onClick={handleLeave}
               >
                 <Users className="h-4 w-4" />
                 {leavePending ? "Leaving…" : "Leave"}
@@ -130,11 +147,11 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 col-span-2"
                 onClick={handleDirections}
               >
                 <Navigation className="h-4 w-4" />
-                Directions
+                Get Directions
               </Button>
             </div>
 

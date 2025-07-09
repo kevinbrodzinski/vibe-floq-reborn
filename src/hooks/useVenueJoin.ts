@@ -7,7 +7,7 @@ interface JoinOptions {
 }
 
 /**
- * Simply pumps the venue lat/lng into the existing upsert-presence edge function.
+ * Enhanced venue join hook that sets venue_id in presence when joining/leaving venues.
  * Returns {join, leave, status}
  */
 export function useVenueJoin(venueId: string | null, lat: number | null, lng: number | null) {
@@ -20,7 +20,7 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
         body: {
           lat,
           lng,
-          venue_id: venueId,
+          venue_id: venueId, // Set venue_id when joining
           vibe: opts?.vibeOverride ?? null,
         },
       });
@@ -34,9 +34,15 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
 
   const leaveMutation = useMutation({
     mutationFn: async () => {
-      // send lat/lng as null ⇒ edge fn will mark you "offline"
+      if (lat == null || lng == null) throw new Error("Missing location data");
+      // Keep current location but clear venue_id when leaving
       const { error } = await supabase.functions.invoke("upsert-presence", {
-        body: { lat: null, lng: null, venue_id: null },
+        body: { 
+          lat, 
+          lng, 
+          venue_id: null, // Clear venue_id when leaving
+          vibe: null // Optionally clear vibe too
+        },
       });
       if (error) throw error;
     },
@@ -47,8 +53,8 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
   });
 
   return {
-    join:  joinMutation.mutateAsync,
-    joinPending:  joinMutation.isPending,
+    join: joinMutation.mutateAsync,
+    joinPending: joinMutation.isPending,
     leave: leaveMutation.mutateAsync,
     leavePending: leaveMutation.isPending,
   };

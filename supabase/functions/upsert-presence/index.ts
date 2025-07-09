@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -29,17 +30,18 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { vibe, lat, lng, broadcast_radius = 500 } = body;
+    const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
 
-    console.log(`Updating presence for user ${user.id}: ${vibe} at ${lat},${lng}`);
+    console.log(`Updating presence for user ${user.id}: ${vibe} at ${lat},${lng}${venue_id ? ` venue: ${venue_id}` : ''}`);
 
-    // Upsert presence with PostGIS point (geo column auto-generated)
+    // Upsert presence with PostGIS point and optional venue_id
     const { error } = await supabase
       .from("vibes_now")
       .upsert({
         user_id: user.id,
         vibe,
         location: `POINT(${lng} ${lat})`, // PostGIS WKT format - geo column auto-generated
+        venue_id, // Can be null or a venue UUID
         broadcast_radius,
         updated_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 90_000).toISOString() // 90s TTL
