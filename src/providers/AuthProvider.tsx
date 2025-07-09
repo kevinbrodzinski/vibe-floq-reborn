@@ -30,10 +30,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Ensure profile exists for authenticated user
+        if (session?.user && event === 'SIGNED_IN') {
+          setTimeout(async () => {
+            try {
+              const { error } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: session.user.id,
+                  display_name: session.user.email || 'User'
+                }, { onConflict: 'id' });
+              
+              if (error) {
+                console.error('Profile creation error:', error);
+              }
+            } catch (err) {
+              console.error('Profile upsert failed:', err);
+            }
+          }, 0);
+        }
       }
     );
 
