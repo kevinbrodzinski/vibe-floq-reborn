@@ -12,11 +12,7 @@ interface UseCurrentEventOptions {
   onLeave?: (event: CurrentEvent) => void;
 }
 
-export const useCurrentEvent = (
-  lat?: number, 
-  lng?: number, 
-  options?: UseCurrentEventOptions
-) => {
+export function useCurrentEvent(lat?: number, lng?: number, onLeave?: () => void) {
   const [currentEvent, setCurrentEvent] = useState<CurrentEvent | null>(null);
   const [loading, setLoading] = useState(false);
   const [isInsideEvent, setIsInsideEvent] = useState(false);
@@ -25,7 +21,7 @@ export const useCurrentEvent = (
   const checkForEvents = useCallback(async () => {
     if (!lat || !lng) {
       if (previousEventRef.current) {
-        options?.onLeave?.(previousEventRef.current);
+        onLeave?.();
         previousEventRef.current = null;
       }
       setCurrentEvent(null);
@@ -46,7 +42,7 @@ export const useCurrentEvent = (
       
       // Detect event exit
       if (previousEventRef.current && !newEvent) {
-        options?.onLeave?.(previousEventRef.current);
+        onLeave?.();
       }
       
       setCurrentEvent(newEvent);
@@ -59,11 +55,16 @@ export const useCurrentEvent = (
     } finally {
       setLoading(false);
     }
-  }, [lat, lng, options]);
+  }, [lat, lng, onLeave]);
 
   useEffect(() => {
     checkForEvents();
   }, [checkForEvents]);
 
-  return { currentEvent, loading, isInsideEvent };
-};
+  /* auto-hide banner when user leaves geofence */
+  useEffect(() => {
+    if (!currentEvent && onLeave) onLeave();
+  }, [currentEvent, onLeave]);
+
+  return { currentEvent, loading };
+}
