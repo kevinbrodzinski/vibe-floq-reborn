@@ -26,7 +26,7 @@ export function useCurrentEvent(
       
       return data && data.length > 0 ? data[0] : null;
     },
-    enabled: typeof lat === 'number' && typeof lng === 'number',
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
   });
 
   // Handle event detection

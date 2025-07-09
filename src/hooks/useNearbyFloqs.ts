@@ -27,7 +27,7 @@ export function useNearbyFloqs(
   // Initial fetch + refetch on coordinate/km changes
   const { data: floqs = [], isLoading: loading, error } = useQuery({
     queryKey: ['floqs', lat, lng, km],
-    enabled: !!lat && !!lng,
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async () => {
       const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', { 
         user_lat: lat!, 
@@ -47,7 +47,7 @@ export function useNearbyFloqs(
 
   // Realtime subscription to floqs changes
   useEffect(() => {
-    if (!lat || !lng) return;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
     const channel = supabase
       .channel('floqs-watch')

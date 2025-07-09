@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import ngeohash from 'ngeohash';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -18,95 +19,95 @@ export interface LivePresence {
 }
 
 export const useBucketedPresence = (lat?: number, lng?: number) => {
-  const [people, setPeople] = useState<Record<string, LivePresence>>({});
+  const queryClient = useQueryClient();
   const channelsRef = useRef<RealtimeChannel[]>([]);
   const geosLastRef = useRef<string[]>([]);
 
-  /* ----------------------------------------------------------------
-   * 1.  Memo-compute the 9 buckets *only when location actually moves
-   * ---------------------------------------------------------------- */
-  const buckets = useMemo(() => {
-    if (lat == null || lng == null) return [];
+  // React Query for fetching initial presence data
+  const { data: people = [] } = useQuery({
+    queryKey: ['bucketed-presence', lat, lng],
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
+    queryFn: async () => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+      
+      // Get initial presence data using proximity query
+      const { data, error } = await supabase.rpc('presence_nearby', {
+        lat: lat!,
+        lng: lng!,
+        km: 2, // 2km radius for initial fetch
+        include_self: false
+      });
 
-    const center = ngeohash.encode(lat, lng, GH_PRECISION);
-    return [...ngeohash.neighbors(center), center].sort(); // keep deterministic
-  }, [lat, lng]);
+      if (error) throw error;
 
-  /* ----------------------------------------------------------------
-   * 2.  Debounced 100 m movement-check so GPS jitter is ignored
-   * ---------------------------------------------------------------- */
+      return (data || []).map((row: any) => ({
+        user_id: row.user_id,
+        vibe: row.vibe,
+        lat: row.location?.coordinates?.[1] ?? 0,
+        lng: row.location?.coordinates?.[0] ?? 0,
+        venue_id: row.venue_id,
+        expires_at: row.expires_at,
+      })) as LivePresence[];
+    },
+    staleTime: 30_000, // 30 seconds
+    refetchInterval: 60_000, // 1 minute
+  });
+
+  // Compute buckets when location changes
+  const buckets = Number.isFinite(lat) && Number.isFinite(lng) 
+    ? [...ngeohash.neighbors(ngeohash.encode(lat!, lng!, GH_PRECISION)), ngeohash.encode(lat!, lng!, GH_PRECISION)].sort()
+    : [];
+
+  // Debounced subscription management
   const maybeResubscribe = throttle(() => {
     if (!buckets.length) return;
 
-    // 👇 ONLY resubscribe when the *set* of buckets changed
     const last = geosLastRef.current.join(',');
     const next = buckets.join(',');
-    if (last === next) return;               // 🛑 nothing changed
+    if (last === next) return;
 
-    geosLastRef.current = buckets;           // cache for next run
+    geosLastRef.current = buckets;
 
-    // 2-A • tear down old channels
+    // Tear down old channels
     channelsRef.current.forEach(ch => supabase.removeChannel(ch));
     channelsRef.current = [];
 
-    // 2-B • build new channels
+    // Build new channels for realtime updates
     buckets.forEach(code => {
       const ch = supabase
         .channel(`presence:${code}`)
         .on('postgres_changes',
             { event: '*', schema: 'public', table: 'vibes_now' },
-            payload => {
-              const row = (payload.new || payload.old) as any;
-              if (!row) return;
-
-              const presence: LivePresence = {
-                user_id   : row.user_id,
-                vibe      : row.vibe,
-                lat       : row.location?.coordinates?.[1] ?? 0,
-                lng       : row.location?.coordinates?.[0] ?? 0,
-                venue_id  : row.venue_id,
-                expires_at: row.expires_at,
-              };
-
-              setPeople(prev => {
-                const copy = { ...prev };
-                if (payload.eventType === 'DELETE') delete copy[presence.user_id];
-                else copy[presence.user_id] = presence;
-                return copy;
-              });
+            () => {
+              // Invalidate query to refetch data
+              queryClient.invalidateQueries({ queryKey: ['bucketed-presence', lat, lng] });
             })
-        .subscribe(status => { if (import.meta.env.DEV) console.log(`[presence:${code}]`, status); });
+        .subscribe();
 
       channelsRef.current.push(ch);
     });
+  }, 5000);
 
-  }, 5000); // throttle to once every 5 s even if GPS floods
-
-  /* ----------------------------------------------------------------
-   * 3.  Effect – react to memoised bucket list changes
-   * ---------------------------------------------------------------- */
+  // React to bucket changes
   useEffect(() => {
-    maybeResubscribe();            // will early-out if not needed
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      maybeResubscribe();
+    }
     return () => maybeResubscribe.cancel();
-  }, [buckets]);
+  }, [lat, lng]);
 
-  /* ----------------------------------------------------------------
-   * 4.  Local purge timer – one per hook
-   * ---------------------------------------------------------------- */
+  // Cleanup on unmount
   useEffect(() => {
-    const purge = setInterval(() => {
-      const now = Date.now();
-      setPeople(prev => {
-        const next: typeof prev = {};
-        Object.values(prev).forEach(p => {
-          if (differenceInMilliseconds(new Date(p.expires_at), now) > 0)
-            next[p.user_id] = p;
-        });
-        return next;
-      });
-    }, 1_000);
-    return () => clearInterval(purge);
+    return () => {
+      channelsRef.current.forEach(ch => supabase.removeChannel(ch));
+      channelsRef.current = [];
+    };
   }, []);
 
-  return { people: Object.values(people) };
+  // Filter out expired presence
+  const activePeople = people.filter(person => 
+    differenceInMilliseconds(new Date(person.expires_at), Date.now()) > 0
+  );
+
+  return { people: activePeople };
 };

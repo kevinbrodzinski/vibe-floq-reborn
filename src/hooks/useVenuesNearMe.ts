@@ -15,7 +15,7 @@ interface VenueNearMe {
 export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 0.5) {
   return useInfiniteQuery({
     queryKey: ['venues-near-me', lat, lng, radius_km],
-    enabled: lat != null && lng != null,
+    enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async ({ pageParam = 0 }) => {
       // Use get_venues_in_bbox for now until venues_near_me is available
       const degreeOffset = radius_km / 111; // rough conversion
