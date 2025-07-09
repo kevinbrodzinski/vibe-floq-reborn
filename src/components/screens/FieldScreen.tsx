@@ -335,6 +335,26 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         onTimeChange={handleTimeWarpChange}
       />
 
+      {/* Status Bar - Above Action Card */}
+      <div className="absolute bottom-36 left-4 right-4 z-10">
+        <div className="flex items-center justify-between gap-4 mb-3">
+          {/* Location Active Status Chip */}
+          <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-sm font-medium">
+                {isLocationReady ? 'Location Active' : 'Getting Location...'}
+              </span>
+            </div>
+          </div>
+          
+          {/* Time Status Indicator */}
+          <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg px-3 py-2">
+            <TimeStatusIndicator />
+          </div>
+        </div>
+      </div>
+
       {/* Time-Based Bottom Action Card */}
       <div className="absolute bottom-24 left-4 right-4 z-10">
         <TimeBasedActionCard
