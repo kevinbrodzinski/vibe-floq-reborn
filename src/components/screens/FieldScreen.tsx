@@ -5,7 +5,7 @@ import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { FieldHeader } from "./field/FieldHeader";
 import { FieldOverlay } from "./field/FieldOverlay";
-import { TimeModuleIndicators } from "./field/TimeModuleIndicators";
+
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
@@ -326,8 +326,6 @@ export const FieldScreen = () => {
         />
       )}
 
-      {/* Time-Based Module Indicators */}
-      <TimeModuleIndicators />
 
       {/* Social Gesture Manager */}
       <SocialGestureManager onSocialAction={handleSocialAction} />
