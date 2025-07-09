@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMemo } from 'react';
 
 export function useFriends() {
   const queryClient = useQueryClient();
@@ -22,7 +23,7 @@ export function useFriends() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('friend_count');
       if (error) throw error;
-      return data as number;
+      return (data ?? 0) as number;
     },
   });
 
@@ -34,9 +35,10 @@ export function useFriends() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friends', 'count'] });
+      queryClient.invalidateQueries({ queryKey: ['presence-nearby'] });
       toast({
         title: "Friend added",
-        description: "Successfully added friend",
       });
     },
     onError: (error) => {
@@ -57,9 +59,10 @@ export function useFriends() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friends', 'count'] });
+      queryClient.invalidateQueries({ queryKey: ['presence-nearby'] });
       toast({
         title: "Friend removed",
-        description: "Successfully removed friend",
       });
     },
     onError: (error) => {
@@ -72,9 +75,12 @@ export function useFriends() {
     },
   });
 
+  // Optimized friend set for O(1) lookups
+  const friendsSet = useMemo(() => new Set(friends), [friends]);
+
   // Check if a user is a friend
   const isFriend = (userId: string) => {
-    return friends.includes(userId);
+    return friendsSet.has(userId);
   };
 
   return {
