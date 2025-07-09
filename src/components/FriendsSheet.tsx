@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
+import { Loader2 } from 'lucide-react';
 
 interface FriendsSheetProps {
   open: boolean;
@@ -26,21 +27,22 @@ interface FriendsSheetProps {
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
   const { friends, friendCount, isLoading } = useFriends();
   const { lat, lng } = useGeolocation();
-  const { data: friendsNearby = [], isLoading: isLoadingNearby } = useNearbyFriends(lat, lng, { km: 0.5 });
+  const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();
   const navigate = useNavigate();
 
-  // Prime profile cache for nearby friends
+  // Prime profile cache for nearby friends with debouncing
   useEffect(() => {
     if (friendsNearby.length > 0) {
-      primeProfiles(friendsNearby.map(f => ({
+      const formattedFriends = friendsNearby.map(f => ({
         id: f.id,
         display_name: f.display_name,
         avatar_url: f.avatar_url,
-        created_at: new Date().toISOString(), // We don't have created_at from RPC
-      })));
+        created_at: '2024-01-01T00:00:00Z', // Use a consistent timestamp for cache consistency
+      }));
+      debouncedPrimeProfiles(primeProfiles, formattedFriends);
     }
-  }, [friendsNearby, primeProfiles]);
+  }, [friendsNearby, primeProfiles, debouncedPrimeProfiles]);
 
   const handleSettingsClick = () => {
     onOpenChange(false);
@@ -79,32 +81,47 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
         </SheetHeader>
 
         <div className="flex-1 py-4 space-y-6">
-          {/* Online Friends Section */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Online now
-            </h3>
-            
-            {isLoading ? (
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
-                <div className="flex-1">
-                  <div className="h-4 bg-muted rounded animate-pulse mb-1" />
-                  <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+            {/* Online Friends Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  Online now
+                </h3>
+                {isLoadingNearby && (
+                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              
+              {isLoading ? (
+                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-muted rounded animate-pulse mb-1" />
+                    <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+                  </div>
                 </div>
-              </div>
-            ) : friends.length > 0 ? (
-              <ul className="space-y-3">
-                {friends.map(id => <OnlineFriendRow key={id} userId={id} />)}
-              </ul>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No friends yet</p>
-                <p className="text-sm">Add friends to see them here</p>
-              </div>
-            )}
-          </div>
+              ) : friends.length > 0 ? (
+                <div className="max-h-96 overflow-y-auto space-y-1">
+                  {friends.map(id => {
+                    const nearbyFriend = friendsNearby.find(f => f.id === id);
+                    return (
+                      <OnlineFriendRow 
+                        key={id} 
+                        userId={id} 
+                        isNearby={!!nearbyFriend}
+                        distance={nearbyFriend?.distance_m}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <User className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No friends yet</p>
+                  <p className="text-sm">Add friends to see them here</p>
+                </div>
+              )}
+            </div>
 
           <Separator />
 

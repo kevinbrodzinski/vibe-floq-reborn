@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useRef } from "react";
 
 interface NearbyFriend {
   id: string;
@@ -23,7 +24,18 @@ export function useNearbyFriends(
   lng?: number,
   { km = 1, enabled = true }: UseNearbyFriendsOptions = {}
 ) {
-  return useQuery({
+  const debounceRef = useRef<NodeJS.Timeout>();
+
+  const debouncedPrimeProfiles = useCallback((primeProfiles: (users: any[]) => void, users: any[]) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      primeProfiles(users);
+    }, 300);
+  }, []);
+
+  const result = useQuery({
     queryKey: ["friends-nearby", lat, lng, km],
     enabled: enabled && !!lat && !!lng,
     staleTime: 30_000,                     // 30 s cache
@@ -38,4 +50,6 @@ export function useNearbyFriends(
       return (data ?? []) as NearbyFriend[];
     },
   });
+
+  return { ...result, debouncedPrimeProfiles };
 }
