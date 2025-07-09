@@ -1,6 +1,12 @@
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
+import { ClusterPin } from "@/components/map/ClusterPin";
+import { VenuePin } from "@/components/map/VenuePin";
+import { ViewportControls } from "@/components/map/ViewportControls";
+import { useMapViewport } from "@/hooks/useMapViewport";
+import { useVenueClusters } from "@/hooks/useVenueClusters";
+import { latLngToField, mToPercent } from "@/utils/geoConversion";
 import type { WalkableFloq } from "@/types";
 
 interface Person {
@@ -57,6 +63,21 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
+  // Initialize viewport management
+  const viewportControls = useMapViewport();
+  const { viewport } = viewportControls;
+  
+  // Get venue clusters for current viewport
+  const venueClusters = useVenueClusters(viewport);
+
+  // Handle cluster click - zoom in to expand clusters
+  const handleClusterClick = (cluster: any) => {
+    if (cluster.pointCount > 0) {
+      viewportControls.panTo(cluster.lat, cluster.lng);
+      viewportControls.zoomIn();
+    }
+  };
+
   return (
     <div className="relative h-full pt-48 pb-32">
       {/* Friend Constellation System */}
@@ -157,11 +178,43 @@ export const FieldVisualization = ({
         );
       })}
 
+      {/* Venue Clusters and Pins */}
+      {venueClusters.map((cluster) => {
+        const fieldCoords = latLngToField(cluster.lat, cluster.lng, viewport);
+        
+        return (
+          <div
+            key={cluster.id}
+            className="absolute transition-all duration-300"
+            style={{
+              left: `${fieldCoords.x}%`,
+              top: `${fieldCoords.y}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {cluster.pointCount > 0 ? (
+              <ClusterPin 
+                count={cluster.pointCount} 
+                onClick={() => handleClusterClick(cluster)}
+              />
+            ) : (
+              <VenuePin 
+                vibe={cluster.props.vibe}
+                name={cluster.props.name}
+              />
+            )}
+          </div>
+        );
+      })}
+
       {/* Avatar Interaction Layer */}
       <AvatarInteractionLayer 
         people={people}
         onInteraction={onAvatarInteraction}
       />
+
+      {/* Viewport Controls */}
+      <ViewportControls controls={viewportControls} />
     </div>
   );
 };
