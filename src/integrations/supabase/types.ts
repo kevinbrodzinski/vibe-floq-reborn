@@ -1076,9 +1076,7 @@ export type Database = {
         Returns: string
       }
       presence_nearby: {
-        Args:
-          | { lat: number; lng: number; km: number }
-          | { lat: number; lng: number; km: number; include_self?: boolean }
+        Args: { lat: number; lng: number; km: number; include_self?: boolean }
         Returns: {
           broadcast_radius: number | null
           expires_at: string | null
