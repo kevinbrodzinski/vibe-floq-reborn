@@ -42,7 +42,6 @@ export const FieldScreen = () => {
   const [showTimeWarp, setShowTimeWarp] = useState(false);
   const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
   const [constellationMode, setConstellationMode] = useState(false);
-  const [showBanner, setShowBanner] = useState(true);
   
   // Use enhanced presence hook for live data
   const location = useGeolocation();
@@ -58,7 +57,17 @@ export const FieldScreen = () => {
     { km: 1 }
   );
   
-const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
+  // Check for current event based on location with enhanced tracking
+  const { currentEvent, isInsideEvent } = useCurrentEvent(
+    location.lat, 
+    location.lng, 
+    {
+      onLeave: (event) => {
+        console.log('Left event:', event.name);
+        // Banner will auto-hide via state change
+      }
+    }
+  );
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
@@ -187,16 +196,17 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
 
   return (
     <div className="relative h-screen overflow-hidden">
-{currentEvent && showBanner && (
-  <EventBanner
-    key={currentEvent.id}
-    eventId={currentEvent.id}
-    name={currentEvent.name}
-    vibe={currentEvent.vibe}
-    onDetails={() => console.log("TODO: open EventDetailsSheet")}
-    onDismiss={() => setShowBanner(false)}
-  />
-)}
+      {/* Event Banner */}
+      {currentEvent && isInsideEvent && (
+        <EventBanner
+          key={currentEvent.id}
+          eventId={currentEvent.id}
+          eventName={currentEvent.name}
+          vibe={currentEvent.vibe}
+          onDismiss={() => console.log('Banner dismissed')}
+          onTap={() => console.log('Event details TBD - will open EventDetailsSheet')}
+        />
+      )}
       
       {/* Debug counter */}
       {debug && (
