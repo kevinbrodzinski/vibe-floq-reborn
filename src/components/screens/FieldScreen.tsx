@@ -12,6 +12,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyPresence } from "@/hooks/useNearbyPresence";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
+import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { EventBanner } from "@/components/EventBanner";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,9 @@ export const FieldScreen = () => {
   );
   
 const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
+  
+  // Get nearby venues for chip
+  const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
@@ -195,6 +199,8 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     eventId={currentEvent.id}
     name={currentEvent.name}
     vibe={currentEvent.vibe}
+    liveCount={undefined} // TODO: Add live count from SQL
+    aiSummary={undefined} // TODO: Add AI summary
     onDetails={() => setDetailsOpen(true)}
     onDismiss={() => setShowBanner(false)}
   />
@@ -302,6 +308,23 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
           onTimeWarpToggle={() => setShowTimeWarp(true)}
         />
       </div>
+
+      {/* Nearby Venues Chip */}
+      {nearbyVenues.length > 0 && !currentEvent && (
+        <button
+          onClick={() => {
+            // For now, just open the first venue details
+            // TODO: Later implement a venues list sheet
+            console.log('Show venues:', nearbyVenues);
+          }}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 
+                     bg-accent text-accent-foreground px-4 py-2 
+                     rounded-full text-sm font-medium shadow-lg 
+                     hover:bg-accent/90 transition-colors"
+        >
+          {nearbyVenues.length} venue{nearbyVenues.length > 1 ? 's' : ''} nearby
+        </button>
+      )}
     </div>
   );
 };
