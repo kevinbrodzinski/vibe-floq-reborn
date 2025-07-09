@@ -10,7 +10,7 @@ import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
 import { usePresence } from "@/hooks/usePresence";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { useNearbyPresence } from "@/hooks/useNearbyPresence";
+import { useBucketedPresence } from "@/hooks/useBucketedPresence";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
@@ -69,12 +69,10 @@ export const FieldScreen = () => {
   // Use the bulletproof presence hook for sending
   usePresence(currentVibe, location.lat, location.lng);
   
-  // Use the nearby presence hook for receiving
-  const { nearby: nearby_users, loading: updating, error } = useNearbyPresence(
-    location.lat, 
-    location.lng, 
-    { km: 1 }
-  );
+  // Use the bucketed presence hook for receiving
+  const { people: nearby_users } = useBucketedPresence(location.lat, location.lng);
+  const updating = false; // No loading state needed with realtime
+  const error = null; // Error handling is done in the hook
   
 const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
   
@@ -107,8 +105,8 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
     name: `User ${index + 1}`, // Could be enhanced with profiles
     x: 20 + (index * 15) % 60, // Distribute across field
     y: 20 + (index * 20) % 60,
-    color: getVibeColor(user.vibe),
-    vibe: user.vibe,
+    color: getVibeColor(user.vibe || 'chill'),
+    vibe: user.vibe || 'chill',
   }));
 
   // Convert people to friends for constellation system

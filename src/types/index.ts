@@ -36,3 +36,12 @@ export interface PresenceData {
   updated_at: string;
   expires_at: string;
 }
+
+export interface LivePresence {
+  user_id: string;
+  vibe: string | null;
+  lat: number;
+  lng: number;
+  venue_id: string | null;
+  expires_at: string;
+}
