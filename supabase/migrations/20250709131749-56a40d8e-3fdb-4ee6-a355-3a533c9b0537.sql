@@ -1,4 +1,17 @@
--- 1. event_areas (simple circle geofence; can extend to polygons later)
+-- 1. vibe visibility enum (idempotent)
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type
+    where typname = 'vibe_visibility'
+  ) then
+    create type public.vibe_visibility as enum ('public', 'friends', 'off');
+  end if;
+end
+$$;
+
+-- 2. event_areas (simple circle geofence; can extend to polygons later)
 create type public.event_shape as enum ('circle');
 
 create table if not exists public.event_areas (
@@ -16,7 +29,7 @@ create table if not exists public.event_areas (
 create index if not exists idx_event_areas_time
   on public.event_areas (starts_at, ends_at);
 
--- 2. RPC: events_containing_point
+-- 3. RPC: events_containing_point
 create or replace function public.events_containing_point(
   user_lat numeric,
   user_lng numeric
@@ -41,8 +54,6 @@ $$;
 
 grant execute on function public.events_containing_point to anon, authenticated;
 
--- 3. presence visibility
-alter type public.vibe_visibility add value if not exists 'friends';
-
+-- 4. presence visibility column
 alter table public.vibes_now
-  add column if not exists vibe_visibility vibe_visibility default 'public';
+  add column if not exists vibe_visibility public.vibe_visibility default 'public';
