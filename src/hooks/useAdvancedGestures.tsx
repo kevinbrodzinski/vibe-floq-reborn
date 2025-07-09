@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import type { TouchEvent as ReactTouchEvent } from 'react';
 
 export type GestureType = 
   | 'swipe-left' 
@@ -24,6 +25,11 @@ export interface GestureEvent {
 
 export interface UseAdvancedGesturesProps {
   onGesture?: (gesture: GestureEvent) => void;
+  onSwipeUp?: () => void;
+  onSwipeDown?: () => void;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+  onTap?: () => void;
   longPressDelay?: number;
   swipeThreshold?: number;
   shakeThreshold?: number;
@@ -31,6 +37,11 @@ export interface UseAdvancedGesturesProps {
 
 export const useAdvancedGestures = ({
   onGesture,
+  onSwipeUp,
+  onSwipeDown,
+  onSwipeLeft,
+  onSwipeRight,
+  onTap,
   longPressDelay = 500,
   swipeThreshold = 50,
   shakeThreshold = 15
@@ -44,12 +55,28 @@ export const useAdvancedGestures = ({
 
   const handleGesture = useCallback((gesture: GestureEvent) => {
     onGesture?.(gesture);
-  }, [onGesture]);
+    
+    // Call specific callbacks
+    switch (gesture.type) {
+      case 'swipe-up':
+        onSwipeUp?.();
+        break;
+      case 'swipe-down':
+        onSwipeDown?.();
+        break;
+      case 'swipe-left':
+        onSwipeLeft?.();
+        break;
+      case 'swipe-right':
+        onSwipeRight?.();
+        break;
+    }
+  }, [onGesture, onSwipeUp, onSwipeDown, onSwipeLeft, onSwipeRight]);
 
-  // Touch event handlers
-  const handleTouchStart = useCallback((e: TouchEvent) => {
+  // React touch event handlers
+  const handleReactTouchStart = useCallback((e: ReactTouchEvent) => {
     const touch = e.touches[0];
-    const target = e.target as HTMLElement;
+    const target = e.currentTarget as HTMLElement;
     
     touchStartRef.current = {
       x: touch.clientX,
@@ -77,7 +104,7 @@ export const useAdvancedGestures = ({
     }, longPressDelay);
   }, [handleGesture, longPressDelay]);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
+  const handleReactTouchMove = useCallback((e: ReactTouchEvent) => {
     // Clear long press if moving
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -85,7 +112,7 @@ export const useAdvancedGestures = ({
     }
   }, []);
 
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
+  const handleReactTouchEnd = useCallback((e: ReactTouchEvent) => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
@@ -97,7 +124,7 @@ export const useAdvancedGestures = ({
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
     const duration = Date.now() - touchStartRef.current.time;
-    const target = e.target as HTMLElement;
+    const target = e.currentTarget as HTMLElement;
 
     // Swipe detection
     if (Math.abs(deltaX) > swipeThreshold || Math.abs(deltaY) > swipeThreshold) {
@@ -117,10 +144,37 @@ export const useAdvancedGestures = ({
         duration,
         intensity: Math.sqrt(deltaX * deltaX + deltaY * deltaY)
       });
+    } else if (duration < 300) {
+      // Tap detection - quick touch without significant movement
+      onTap?.();
     }
 
     touchStartRef.current = null;
-  }, [handleGesture, swipeThreshold]);
+  }, [handleGesture, swipeThreshold, onTap]);
+
+  // Native touch event handlers for global listening
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    const touch = e.touches[0];
+    const target = e.target as HTMLElement;
+    
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }, []);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    // Clear long press if moving
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    touchStartRef.current = null;
+  }, []);
 
   // Device motion for shake detection
   const handleDeviceMotion = useCallback((e: DeviceMotionEvent) => {
@@ -192,6 +246,9 @@ export const useAdvancedGestures = ({
   return {
     isListening,
     startListening,
-    stopListening
+    stopListening,
+    onTouchStart: handleReactTouchStart,
+    onTouchMove: handleReactTouchMove,
+    onTouchEnd: handleReactTouchEnd
   };
 };

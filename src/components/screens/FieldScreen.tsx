@@ -13,8 +13,11 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyPresence } from "@/hooks/useNearbyPresence";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
+import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 import { EventBanner } from "@/components/EventBanner";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
+import { NearbyVenuesSheet } from "@/components/NearbyVenuesSheet";
+import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import type { Vibe } from "@/types";
@@ -46,6 +49,8 @@ export const FieldScreen = () => {
   const [constellationMode, setConstellationMode] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   
   // Use enhanced presence hook for live data
   const location = useGeolocation();
@@ -309,22 +314,46 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         />
       </div>
 
-      {/* Nearby Venues Chip */}
+      {/* Swipeable Venues Chip */}
       {nearbyVenues.length > 0 && !currentEvent && (
-        <button
-          onClick={() => {
-            // For now, just open the first venue details
-            // TODO: Later implement a venues list sheet
-            console.log('Show venues:', nearbyVenues);
-          }}
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 
-                     bg-accent text-accent-foreground px-4 py-2 
-                     rounded-full text-sm font-medium shadow-lg 
-                     hover:bg-accent/90 transition-colors"
+        <div
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20"
+          {...useAdvancedGestures({
+            onSwipeUp: () => setVenuesSheetOpen(true),
+            onTap: () => setVenuesSheetOpen(true),
+          })}
         >
-          {nearbyVenues.length} venue{nearbyVenues.length > 1 ? 's' : ''} nearby
-        </button>
+          <button
+            className="bg-accent text-accent-foreground px-4 py-2 
+                       rounded-full text-sm font-medium shadow-lg 
+                       hover:bg-accent/90 transition-all duration-200
+                       active:scale-95 touch-none"
+          >
+            {nearbyVenues.length} venue{nearbyVenues.length > 1 ? 's' : ''} nearby ↑
+          </button>
+        </div>
       )}
+
+      {/* Nearby Venues Sheet */}
+      <NearbyVenuesSheet
+        isOpen={venuesSheetOpen}
+        onClose={() => setVenuesSheetOpen(false)}
+        onVenueTap={(venueId) => {
+          setSelectedVenueId(venueId);
+          setVenuesSheetOpen(false);
+          // Add subtle haptic feedback
+          if ('vibrate' in navigator) {
+            navigator.vibrate(4);
+          }
+        }}
+      />
+
+      {/* Venue Details Sheet */}
+      <VenueDetailsSheet
+        open={!!selectedVenueId}
+        onOpenChange={(open) => !open && setSelectedVenueId(null)}
+        venueId={selectedVenueId}
+      />
     </div>
   );
 };
