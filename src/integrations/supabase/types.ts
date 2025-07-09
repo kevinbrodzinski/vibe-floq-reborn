@@ -620,6 +620,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      friends_nearby: {
+        Args: { user_lat: number; user_lng: number; radius_km?: number }
+        Returns: {
+          id: string
+          display_name: string
+          avatar_url: string
+          lat: number
+          lng: number
+          distance_m: number
+        }[]
+      }
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
         Returns: undefined
