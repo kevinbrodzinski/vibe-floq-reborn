@@ -294,11 +294,6 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         debug={debug}
         onVibeChange={changeVibe}
       >
-        {/* Time-Synced Status Bar */}
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 text-center pointer-events-auto">
-          <TimeStatusIndicator />
-        </div>
-
         {/* Constellation Controls */}
         <ConstellationControls
           timeState={timeState}
