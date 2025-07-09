@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProfile } from '@/hooks/useProfileCache';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getAvatarUrl, getInitials } from '@/lib/avatar';
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -34,9 +35,9 @@ const UserProfile = () => {
           {profile ? (
             <>
               <Avatar className="w-24 h-24 mx-auto mb-4">
-                <AvatarImage src={profile.avatar_url || ''} />
+                <AvatarImage src={getAvatarUrl(profile.avatar_url, 96)} />
                 <AvatarFallback className="text-xl">
-                  {profile.display_name?.slice(0, 2).toUpperCase() || '??'}
+                  {getInitials(profile.display_name)}
                 </AvatarFallback>
               </Avatar>
               

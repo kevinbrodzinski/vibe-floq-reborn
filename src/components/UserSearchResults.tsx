@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import { SearchedUser } from '@/hooks/useUserSearch';
+import { getAvatarUrl, getInitials } from '@/lib/avatar';
 
 interface UserSearchResultsProps {
   users: SearchedUser[];
@@ -44,9 +45,9 @@ export const UserSearchResults = ({
           className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors"
         >
           <Avatar className="w-8 h-8">
-            <AvatarImage src={user.avatar_url || undefined} />
+            <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
             <AvatarFallback>
-              {user.display_name?.slice(0, 2).toUpperCase() || '??'}
+              {getInitials(user.display_name)}
             </AvatarFallback>
           </Avatar>
           
