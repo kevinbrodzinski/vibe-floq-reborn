@@ -36,7 +36,7 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[85vh] flex flex-col p-0 gap-0 rounded-t-3xl border-0 bg-background/95 backdrop-blur-md"
+        className="max-h-[65vh] flex flex-col p-0 gap-0 rounded-t-3xl border-0 bg-background/95 backdrop-blur-md"
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">

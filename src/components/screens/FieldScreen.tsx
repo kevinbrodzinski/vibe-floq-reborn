@@ -18,6 +18,7 @@ import { EventBanner } from "@/components/EventBanner";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { NearbyVenuesSheet } from "@/components/NearbyVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
+import { VenuesChip } from "@/components/VenuesChip";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import type { Vibe } from "@/types";
@@ -316,22 +317,10 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
 
       {/* Swipeable Venues Chip */}
       {nearbyVenues.length > 0 && !currentEvent && (
-        <div
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20"
-          {...useAdvancedGestures({
-            onSwipeUp: () => setVenuesSheetOpen(true),
-            onTap: () => setVenuesSheetOpen(true),
-          })}
-        >
-          <button
-            className="bg-accent text-accent-foreground px-4 py-2 
-                       rounded-full text-sm font-medium shadow-lg 
-                       hover:bg-accent/90 transition-all duration-200
-                       active:scale-95 touch-none"
-          >
-            {nearbyVenues.length} venue{nearbyVenues.length > 1 ? 's' : ''} nearby ↑
-          </button>
-        </div>
+        <VenuesChip
+          onOpen={() => setVenuesSheetOpen(true)}
+          venueCount={nearbyVenues.length}
+        />
       )}
 
       {/* Nearby Venues Sheet */}
