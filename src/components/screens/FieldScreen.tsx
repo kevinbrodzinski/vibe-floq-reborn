@@ -180,10 +180,12 @@ export const FieldScreen = () => {
 
   return (
     <div className="relative h-screen overflow-hidden">
-      {/* Debug counter for testing */}
-      <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
-        {nearby_users.length} people • {walkable_floqs.length} floqs
-      </div>
+      {/* Debug counter for testing - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
+          {nearby_users.length} people • {walkable_floqs.length} floqs
+        </div>
+      )}
       
       {/* Header */}
       <FieldHeader />

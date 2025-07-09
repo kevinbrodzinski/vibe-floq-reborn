@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Plus, Armchair, MessageCircle } from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
+import { RadiusSlider } from "@/components/RadiusSlider";
 
 interface FloqCard {
   id: string;
@@ -16,7 +19,31 @@ interface FloqCard {
 }
 
 export const FloqsScreen = () => {
-  const [floqs] = useState<FloqCard[]>([
+  // Get stored radius preference or default to 1km
+  const getStoredRadius = () => {
+    try {
+      const stored = localStorage.getItem('floq-radius-km');
+      return stored ? parseFloat(stored) : 1;
+    } catch {
+      return 1;
+    }
+  };
+
+  const [radiusKm, setRadiusKm] = useState(getStoredRadius);
+  const coords = useGeolocation();
+  const { nearby: nearbyFloqs, loading: floqsLoading } = useNearbyFloqs(coords.lat, coords.lng, { km: radiusKm });
+
+  // Persist radius preference
+  useEffect(() => {
+    try {
+      localStorage.setItem('floq-radius-km', radiusKm.toString());
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [radiusKm]);
+
+  // Mock data for now - will be replaced with real floqs
+  const [mockFloqs] = useState<FloqCard[]>([
     {
       id: "1",
       title: "Nico's Rooftop Chill",
@@ -51,8 +78,15 @@ export const FloqsScreen = () => {
 
   return (
     <div className="min-h-screen p-6 pt-16">
+      {/* Debug counter */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
+          {nearbyFloqs.length} floqs ≤ {radiusKm} km
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
           <Search size={20} className="text-muted-foreground" />
         </button>
@@ -64,6 +98,21 @@ export const FloqsScreen = () => {
         </button>
       </div>
 
+      {/* Radius Slider */}
+      <div className="mb-6">
+        <div className="bg-card/90 backdrop-blur-xl rounded-3xl border border-border/30">
+          <RadiusSlider km={radiusKm} onChange={setRadiusKm} />
+        </div>
+      </div>
+
+      {/* Floqs Status */}
+      {nearbyFloqs.length === 0 && !floqsLoading && coords.lat && coords.lng && (
+        <div className="mb-6 text-center py-8">
+          <p className="text-muted-foreground">No floqs within {radiusKm} km</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">Try increasing the radius</p>
+        </div>
+      )}
+
       {/* Featured Floq */}
       <div className="mb-8">
         <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02]">
@@ -71,20 +120,20 @@ export const FloqsScreen = () => {
             <div 
               className="w-20 h-20 rounded-full flex items-center justify-center animate-pulse-glow"
               style={{
-                backgroundColor: floqs[0].color,
-                boxShadow: `0 0 30px ${floqs[0].color}`
+                backgroundColor: mockFloqs[0].color,
+                boxShadow: `0 0 30px ${mockFloqs[0].color}`
               }}
             >
               <div className="text-background">
-                {getIcon(floqs[0].iconType)}
+                {getIcon(mockFloqs[0].iconType)}
               </div>
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-2">{floqs[0].title}</h2>
+              <h2 className="text-2xl font-bold mb-2">{mockFloqs[0].title}</h2>
               <div className="flex items-center space-x-2 text-muted-foreground mb-3">
-                <span className="text-sm font-medium">{floqs[0].type}</span>
+                <span className="text-sm font-medium">{mockFloqs[0].type}</span>
                 <span>•</span>
-                <span className="text-sm">{floqs[0].startTime}</span>
+                <span className="text-sm">{mockFloqs[0].startTime}</span>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="flex -space-x-2">
@@ -92,7 +141,7 @@ export const FloqsScreen = () => {
                     <div key={i} className="w-8 h-8 rounded-full bg-gradient-secondary border-2 border-background"></div>
                   ))}
                 </div>
-                <span className="text-sm text-primary font-medium capitalize">{floqs[0].status}</span>
+                <span className="text-sm text-primary font-medium capitalize">{mockFloqs[0].status}</span>
                 <span className="text-sm text-accent font-medium">Sunset</span>
               </div>
             </div>
@@ -124,22 +173,22 @@ export const FloqsScreen = () => {
             <div 
               className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse-glow"
               style={{
-                backgroundColor: floqs[1].color,
-                boxShadow: `0 0 20px ${floqs[1].color}`
+                backgroundColor: mockFloqs[1].color,
+                boxShadow: `0 0 20px ${mockFloqs[1].color}`
               }}
             >
               <div className="text-background">
-                {getIcon(floqs[1].iconType)}
+                {getIcon(mockFloqs[1].iconType)}
               </div>
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-1">{floqs[1].title}</h3>
+              <h3 className="text-xl font-bold mb-1">{mockFloqs[1].title}</h3>
               <div className="text-muted-foreground mb-2">
-                <span className="text-sm font-medium">{floqs[1].type}</span>
+                <span className="text-sm font-medium">{mockFloqs[1].type}</span>
                 <span> • </span>
-                <span className="text-sm">{floqs[1].startTime}</span>
+                <span className="text-sm">{mockFloqs[1].startTime}</span>
               </div>
-              <p className="text-sm text-foreground">{floqs[1].description}</p>
+              <p className="text-sm text-foreground">{mockFloqs[1].description}</p>
             </div>
           </div>
           
@@ -159,13 +208,13 @@ export const FloqsScreen = () => {
 
       {/* Expanded Detail */}
       <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-6 border border-border/30">
-        <h3 className="text-xl font-bold mb-2">{floqs[1].title}</h3>
+        <h3 className="text-xl font-bold mb-2">{mockFloqs[1].title}</h3>
         <div className="text-muted-foreground mb-4">
-          <span className="font-medium">{floqs[1].type}</span>
+          <span className="font-medium">{mockFloqs[1].type}</span>
           <span> • </span>
-          <span>{floqs[1].startTime}</span>
+          <span>{mockFloqs[1].startTime}</span>
         </div>
-        <p className="text-foreground">{floqs[1].description}</p>
+        <p className="text-foreground">{mockFloqs[1].description}</p>
       </div>
 
       {/* Bottom Navigation Spacer */}
