@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       protocol: 'wss',
       host: process.env.VITE_HMR_HOST,
-      port: process.env.VITE_HMR_PORT ? parseInt(process.env.VITE_HMR_PORT) : 443,
+      port: 443,
     },
   },
   plugins: [
