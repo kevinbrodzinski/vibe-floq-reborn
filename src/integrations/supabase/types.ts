@@ -262,31 +262,37 @@ export type Database = {
       venues: {
         Row: {
           created_at: string | null
+          description: string | null
           geo: unknown | null
           id: string
           lat: number
           lng: number
           name: string
+          radius_m: number | null
           source: string | null
           vibe: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           geo?: unknown | null
           id?: string
           lat: number
           lng: number
           name: string
+          radius_m?: number | null
           source?: string | null
           vibe?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           geo?: unknown | null
           id?: string
           lat?: number
           lng?: number
           name?: string
+          radius_m?: number | null
           source?: string | null
           vibe?: string | null
         }
@@ -2260,6 +2266,18 @@ export type Database = {
           new_srid_in: number
         }
         Returns: string
+      }
+      venue_details: {
+        Args: { v_id: string }
+        Returns: {
+          id: string
+          name: string
+          vibe: string
+          description: string
+          live_count: number
+          lat: number
+          lng: number
+        }[]
       }
       walkable_floqs: {
         Args: { lat: number; lng: number; max_walk_meters: number }
