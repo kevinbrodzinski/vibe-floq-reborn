@@ -56,6 +56,7 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           ends_at: string | null
+          geo: unknown | null
           id: string
           location: unknown
           max_participants: number | null
@@ -70,6 +71,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
+          geo?: unknown | null
           id?: string
           location: unknown
           max_participants?: number | null
@@ -84,6 +86,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
+          geo?: unknown | null
           id?: string
           location?: unknown
           max_participants?: number | null
@@ -203,6 +206,7 @@ export type Database = {
         Row: {
           broadcast_radius: number | null
           expires_at: string | null
+          geo: unknown | null
           location: unknown
           updated_at: string | null
           user_id: string
@@ -212,6 +216,7 @@ export type Database = {
         Insert: {
           broadcast_radius?: number | null
           expires_at?: string | null
+          geo?: unknown | null
           location: unknown
           updated_at?: string | null
           user_id: string
@@ -221,6 +226,7 @@ export type Database = {
         Update: {
           broadcast_radius?: number | null
           expires_at?: string | null
+          geo?: unknown | null
           location?: unknown
           updated_at?: string | null
           user_id?: string
@@ -748,6 +754,10 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
+      get_user_location: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown
+      }
       get_walkable_floqs: {
         Args: { user_lat: number; user_lng: number; max_walk_meters?: number }
         Returns: {
@@ -972,6 +982,19 @@ export type Database = {
       postgis_wagyu_version: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      presence_nearby: {
+        Args: { lat: number; lng: number; km: number }
+        Returns: {
+          broadcast_radius: number | null
+          expires_at: string | null
+          geo: unknown | null
+          location: unknown
+          updated_at: string | null
+          user_id: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+          visibility: string | null
+        }[]
       }
       spheroid_in: {
         Args: { "": unknown }
@@ -2059,6 +2082,17 @@ export type Database = {
           new_srid_in: number
         }
         Returns: string
+      }
+      walkable_floqs: {
+        Args: { lat: number; lng: number; max_walk_meters: number }
+        Returns: {
+          id: string
+          title: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          participant_count: number
+          distance_meters: number
+          starts_at: string
+        }[]
       }
     }
     Enums: {
