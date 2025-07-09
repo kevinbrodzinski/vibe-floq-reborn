@@ -1,10 +1,8 @@
-// Core type definitions for floq app
-export type Vibe = 
-  | 'chill' | 'hype' | 'curious' | 'social' | 'solo' 
-  | 'romantic' | 'weird' | 'down' | 'flowing' | 'open';
+// Core type definitions for floq app (aligned with Supabase types)
+import { Database } from '@/integrations/supabase/types';
 
-export type ClusterType = 
-  | 'nightlife' | 'cafe' | 'park' | 'transit' | 'creative' | 'wellness';
+export type Vibe = Database['public']['Enums']['vibe_enum'];
+export type ClusterType = Database['public']['Enums']['cluster_type_enum'];
 
 export interface NearbyUser {
   user_id: string;
