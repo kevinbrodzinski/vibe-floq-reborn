@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VenueListItem } from './VenueListItem';
 import { useClusterVenues } from '@/hooks/useClusterVenues';
+import { useLiveCounts } from '@/hooks/useLiveCounts';
 
 interface ClusterVenuesSheetProps {
   isOpen: boolean;
@@ -25,9 +26,12 @@ export function ClusterVenuesSheet({
 }: ClusterVenuesSheetProps) {
   const { data: venues = [], isLoading } = useClusterVenues(clusterId);
   
-  // Note: Cluster venues don't have live_count in current implementation
-  // This would need to be enhanced to fetch live counts separately
-  const totalLiveCount = 0;
+  // Batch-fetch live counts for all venues in this cluster
+  const venueIds = venues.map(venue => venue.id);
+  const { data: liveCounts = {} } = useLiveCounts(venueIds);
+  
+  // Calculate total live count from batch query results
+  const totalLiveCount = Object.values(liveCounts).reduce((sum, count) => sum + count, 0);
 
   // Add haptic feedback when sheet opens
   React.useEffect(() => {
@@ -79,7 +83,7 @@ export function ClusterVenuesSheet({
         <ScrollArea className="flex-1">
           <div className="p-4">
             {isLoading ? (
-              <div className="space-y-0">
+              <div className="space-y-0" role="status" aria-label="Loading venues">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 border-b border-border/40 last:border-0">
                     <Skeleton className="w-10 h-10 rounded-full" />
@@ -121,7 +125,7 @@ export function ClusterVenuesSheet({
                         venue={{
                           ...venue,
                           distance_m: undefined, // Cluster venues don't have distance
-                          live_count: undefined, // Cluster venues don't have live count
+                          live_count: liveCounts[venue.id] || 0, // Use batch-fetched live count
                         }}
                         onTap={onVenueTap}
                       />
@@ -140,7 +144,12 @@ export function ClusterVenuesSheet({
               Close
             </Button>
             {onZoomToArea && (
-              <Button className="flex-1" onClick={onZoomToArea}>
+              <Button 
+                className="flex-1" 
+                onClick={onZoomToArea}
+                role="button"
+                aria-label="Zoom to area to explore venues"
+              >
                 <Users className="w-4 h-4 mr-2" />
                 Zoom to area
               </Button>
