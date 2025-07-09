@@ -1170,6 +1170,18 @@ export type Database = {
         Args: { target: string }
         Returns: undefined
       }
+      search_everything: {
+        Args: { query: string; limit_count?: number }
+        Returns: {
+          kind: string
+          id: string
+          label: string
+          sublabel: string
+          similarity: number
+          distance_m: number
+          starts_at: string
+        }[]
+      }
       search_users: {
         Args: { search_query: string }
         Returns: {
