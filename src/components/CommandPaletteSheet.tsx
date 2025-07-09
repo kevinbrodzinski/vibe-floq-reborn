@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup } from '@/components/ui/command';
@@ -6,6 +7,10 @@ import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 import { VenueListItem } from '@/components/VenueListItem';
 import { TitleRow } from '@/components/TitleRow';
+import { useFriends } from '@/hooks/useFriends';
+import { useProfileCache } from '@/hooks/useProfileCache';
+import { useFullscreenMap } from '@/store/useFullscreenMap';
+import { useSelectedVenue } from '@/store/useSelectedVenue';
 
 interface CommandPaletteSheetProps {
   open: boolean;
@@ -15,6 +20,12 @@ interface CommandPaletteSheetProps {
 export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetProps) {
   const [query, setQuery] = useState('');
   const { data: results, isLoading } = useGlobalSearch(query, open);
+  
+  const navigate = useNavigate();
+  const { addFriend, isFriend } = useFriends();
+  const { primeProfiles } = useProfileCache();
+  const { set: setMapMode } = useFullscreenMap();
+  const { setSelectedVenueId } = useSelectedVenue();
 
   // Clear search when sheet closes
   useEffect(() => {
@@ -23,21 +34,42 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
     }
   }, [open]);
 
-  const handleUserTap = (userId: string) => {
-    console.log('Navigate to user:', userId);
-    // TODO: Navigate to user profile or add friend
+  const handleUserTap = async (userId: string) => {
+    // Prime profile cache for instant rendering
+    if (results?.users) {
+      const user = results.users.find(u => u.id === userId);
+      if (user) {
+        primeProfiles([{
+          id: userId,
+          display_name: user.label,
+          avatar_url: null,
+          created_at: ''
+        }]);
+      }
+    }
+
+    // Check if already a friend, if so navigate to profile
+    if (isFriend(userId)) {
+      navigate(`/u/${userId}`);
+    } else {
+      // Send friend request
+      await addFriend(userId);
+    }
+    
     onOpenChange(false);
   };
 
   const handleVenueTap = (venueId: string) => {
-    console.log('Navigate to venue:', venueId);
-    // TODO: Open venue details sheet
+    // Exit full-screen/list mode and show map
+    setMapMode('map');
+    // Set selected venue to open details sheet
+    setSelectedVenueId(venueId);
     onOpenChange(false);
   };
 
-  const handleFloqEventTap = (id: string) => {
-    console.log('Navigate to floq/event:', id);
-    // TODO: Navigate to floq or event details
+  const handleFloqEventTap = (floqId: string) => {
+    // Navigate to floq details (stub route)
+    navigate(`/floq/${floqId}`);
     onOpenChange(false);
   };
 
@@ -98,7 +130,11 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                 {results?.users && results.users.length > 0 && (
                   <CommandGroup heading="Users" className="pb-2">
                     {results.users.map((user) => (
-                      <div key={user.id} className="px-2">
+                      <div 
+                        key={user.id} 
+                        className="px-2 cursor-pointer"
+                        onClick={() => handleUserTap(user.id)}
+                      >
                         <OnlineFriendRow
                           userId={user.id}
                           isNearby={false}

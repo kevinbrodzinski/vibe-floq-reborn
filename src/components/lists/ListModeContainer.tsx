@@ -1,10 +1,12 @@
 import { useNearbyVenues } from '@/hooks/useNearbyVenues'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { VenueListItem } from '@/components/VenueListItem'
+import { useSelectedVenue } from '@/store/useSelectedVenue'
 
 export const ListModeContainer = () => {
   const { lat, lng } = useGeolocation()
   const { data: nearby = [], isLoading } = useNearbyVenues(lat, lng, 0.5)
+  const { setSelectedVenueId } = useSelectedVenue()
 
   return (
     <div className="pt-3 pb-[120px] px-4 space-y-1 overflow-y-auto h-full">
@@ -29,7 +31,7 @@ export const ListModeContainer = () => {
         <VenueListItem
           key={v.id}
           venue={v}
-          onTap={() => console.log('open venue', v.id)}
+          onTap={() => setSelectedVenueId(v.id)}
         />
       ))}
     </div>

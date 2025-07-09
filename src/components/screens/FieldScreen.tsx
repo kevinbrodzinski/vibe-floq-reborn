@@ -22,6 +22,7 @@ import { VenuesChip } from "@/components/VenuesChip";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
+import { useSelectedVenue } from "@/store/useSelectedVenue";
 import { FullscreenFab } from "@/components/map/FullscreenFab";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
@@ -57,7 +58,7 @@ export const FieldScreen = () => {
   const [showBanner, setShowBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
   const { mode, set } = useFullscreenMap();
   
