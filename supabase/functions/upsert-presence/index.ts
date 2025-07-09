@@ -33,13 +33,13 @@ serve(async (req) => {
 
     console.log(`Updating presence for user ${user.id}: ${vibe} at ${lat},${lng}`);
 
-    // Upsert presence with PostGIS point
+    // Upsert presence with PostGIS point (geo column auto-generated)
     const { error } = await supabase
       .from("vibes_now")
       .upsert({
         user_id: user.id,
         vibe,
-        location: `POINT(${lng} ${lat})`, // PostGIS WKT format
+        location: `POINT(${lng} ${lat})`, // PostGIS WKT format - geo column auto-generated
         broadcast_radius,
         updated_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 90_000).toISOString() // 90s TTL
@@ -53,11 +53,12 @@ serve(async (req) => {
       });
     }
 
-    // Get nearby users using PostGIS function
+    // Get nearby users using PostGIS function (now includes self by default)
     const { data: nearby, error: nearbyError } = await supabase.rpc('presence_nearby', {
       lat: lat,
       lng: lng,
-      km: 1.0
+      km: 1.0,
+      include_self: true
     });
 
     if (nearbyError) {

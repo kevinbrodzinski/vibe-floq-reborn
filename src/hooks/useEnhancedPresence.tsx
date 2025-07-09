@@ -103,6 +103,11 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     // Initial update
     updatePresence();
 
+    // Debug: Test spatial query directly
+    supabase
+      .rpc('presence_nearby', { lat: location.lat, lng: location.lng, km: 1.0, include_self: true })
+      .then(({ data }) => console.log('Nearby rows from DB ->', data?.length || 0));
+
     // Set up interval for automatic updates
     updateIntervalRef.current = setInterval(() => {
       updatePresence();
