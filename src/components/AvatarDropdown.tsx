@@ -31,7 +31,9 @@ export const AvatarDropdown = () => {
             {friendCount > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0 pointer-events-none"
+                className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0 pointer-events-none font-medium"
+                role="status"
+                aria-label={`${friendCount} friend${friendCount === 1 ? '' : 's'}`}
               >
                 {friendCount > 99 ? '99+' : friendCount}
               </Badge>
