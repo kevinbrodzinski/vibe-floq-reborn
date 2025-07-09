@@ -11,22 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVenueDetails } from "@/hooks/useVenueDetails";
-
-const getVibeEmoji = (vibe: string | null | undefined): string => {
-  switch (vibe?.toLowerCase()) {
-    case "chill": return "😌";
-    case "hype": return "🔥";
-    case "curious": return "🤔";
-    case "social": return "👫";
-    case "solo": return "🧘";
-    case "romantic": return "💕";
-    case "weird": return "🤪";
-    case "down": return "😔";
-    case "flowing": return "🌊";
-    case "open": return "🌟";
-    default: return "📍";
-  }
-};
+import { vibeEmoji } from "@/utils/vibe";
+import { useVenueJoin } from "@/hooks/useVenueJoin";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -36,6 +23,9 @@ interface VenueDetailsSheetProps {
 
 export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsSheetProps) {
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
+  const { lat, lng } = useGeolocation();
+  const { join, joinPending, leave, leavePending } =
+    useVenueJoin(venue?.id ?? null, venue?.lat ?? null, venue?.lng ?? null);
 
   // Handle browser back button
   useEffect(() => {
@@ -84,7 +74,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <SheetTitle className="text-xl font-semibold flex items-center gap-2">
-                    <span className="text-2xl">{getVibeEmoji(venue.vibe)}</span>
+                    <span className="text-2xl">{vibeEmoji(venue.vibe)}</span>
                     {venue.name}
                   </SheetTitle>
                   {venue.vibe && (
@@ -116,16 +106,25 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
         {venue && (
           <div className="mt-8 space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="flex items-center gap-2"
-                onClick={() => {
-                  // TODO: Implement join venue logic
-                  console.log("Join venue:", venue.id);
-                }}
+                disabled={joinPending || leavePending}
+                onClick={() => join({ vibeOverride: venue.vibe })}
               >
                 <Users className="h-4 w-4" />
-                Join Venue
+                {joinPending ? "Joining…" : "Join venue"}
+              </Button>
+              
+              <Button
+                variant="secondary"
+                size="lg"
+                className="flex items-center gap-2"
+                disabled={leavePending || joinPending}
+                onClick={() => leave()}
+              >
+                <Users className="h-4 w-4" />
+                {leavePending ? "Leaving…" : "Leave"}
               </Button>
               
               <Button 
