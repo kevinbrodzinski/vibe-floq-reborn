@@ -34,8 +34,10 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   const location = useGeolocation();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSentRef = useRef<number>(0);
+  const isUpdatingRef = useRef<boolean>(false);
 
-  // Update presence function
+  // Update presence function with throttling and concurrency protection
   const updatePresence = useCallback(async (
     vibe?: Vibe,
     broadcastRadius = 500
@@ -44,8 +46,23 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
       return null;
     }
 
+    // Throttle: prevent calls within 5 seconds of each other
+    const now = Date.now();
+    if (now - lastSentRef.current < 5000) {
+      console.log('Throttling presence update - too soon since last call');
+      return null;
+    }
+
+    // Prevent concurrent requests
+    if (isUpdatingRef.current) {
+      console.log('Skipping presence update - already in progress');
+      return null;
+    }
+
     const vibeToUse = vibe || presenceData.currentVibe || defaultVibe;
     
+    isUpdatingRef.current = true;
+    lastSentRef.current = now;
     setPresenceData(prev => ({ ...prev, updating: true, error: null }));
     
     try {
@@ -84,20 +101,31 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         error: errorMessage,
       }));
 
-      toast({
-        title: "Failed to update presence",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      // Only show toast for non-throttling errors
+      if (!errorMessage.includes('throttled')) {
+        toast({
+          title: "Failed to update presence",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
       
       return null;
+    } finally {
+      isUpdatingRef.current = false;
     }
   }, [session, location.lat, location.lng, presenceData.currentVibe, defaultVibe, toast]);
 
-  // Set up automatic presence updates every 10 seconds
+  // Set up automatic presence updates with proper cleanup
   useEffect(() => {
     if (!session || !location.lat || !location.lng) {
       return;
+    }
+
+    // Clear any existing interval before starting a new one
+    if (updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current);
+      updateIntervalRef.current = null;
     }
 
     // Initial update
@@ -108,10 +136,10 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
       .rpc('presence_nearby', { lat: location.lat, lng: location.lng, km: 1.0, include_self: true })
       .then(({ data }) => console.log('Nearby rows from DB ->', data?.length || 0));
 
-    // Set up interval for automatic updates
+    // Set up interval for automatic updates (reduced frequency)
     updateIntervalRef.current = setInterval(() => {
       updatePresence();
-    }, 10000); // 10 seconds
+    }, 15000); // 15 seconds instead of 10
 
     return () => {
       if (updateIntervalRef.current) {
@@ -119,9 +147,9 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         updateIntervalRef.current = null;
       }
     };
-  }, [session, location.lat, location.lng, updatePresence]);
+  }, [session, location.lat, location.lng]); // Remove updatePresence from deps to prevent recreation
 
-  // Set up realtime subscription for presence changes
+  // Set up realtime subscription with throttled responses
   useEffect(() => {
     if (!session) {
       return;
@@ -139,10 +167,8 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         },
         (payload) => {
           console.log('Presence update received:', payload);
-          // Refresh nearby users when presence changes
-          if (location.lat && location.lng) {
-            updatePresence();
-          }
+          // Don't trigger immediate updates on realtime events to prevent spam
+          // The interval will catch changes naturally
         }
       )
       .on(
@@ -154,10 +180,8 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         },
         (payload) => {
           console.log('Floq update received:', payload);
-          // Refresh walkable floqs when floqs change
-          if (location.lat && location.lng) {
-            updatePresence();
-          }
+          // Don't trigger immediate updates on realtime events to prevent spam
+          // The interval will catch changes naturally
         }
       )
       .subscribe();
@@ -168,7 +192,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         channelRef.current = null;
       }
     };
-  }, [session, location.lat, location.lng, updatePresence]);
+  }, [session]); // Remove location and updatePresence dependencies
 
   // Manual vibe change function
   const changeVibe = useCallback((newVibe: Vibe) => {
