@@ -9,6 +9,7 @@ import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
+import { useSelectedVenue } from "@/store/useSelectedVenue";
 import { latLngToField, mToPercent } from "@/utils/geoConversion";
 import type { WalkableFloq } from "@/types";
 
@@ -75,8 +76,9 @@ export const FieldVisualization = ({
   // Get venue clusters for current viewport
   const { clusters: venueClusters } = useVenueClusters(viewport);
   
+  // Use centralized selected venue store
+  const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   
   // Cluster sheet state
   const [clusterSheetOpen, setClusterSheetOpen] = useState(false);
