@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFriends } from '@/hooks/useFriends';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSearch } from '@/hooks/useUserSearch';
+import { UserSearchResults } from '@/components/UserSearchResults';
 
 interface AddFriendModalProps {
   open: boolean;
@@ -18,40 +18,29 @@ interface AddFriendModalProps {
 }
 
 export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
-  const [username, setUsername] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addFriend } = useFriends();
+  const [searchQuery, setSearchQuery] = useState('');
+  const { addFriend, isAddingFriend } = useFriends();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!username.trim()) {
-      toast({
-        title: "Username required",
-        description: "Please enter a username to add",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Search for users based on the query
+  const { data: searchResults = [], isLoading: isSearching } = useUserSearch(searchQuery);
 
-    setIsSubmitting(true);
-    
+  const handleAddFriend = async (userId: string) => {
     try {
-      // For now, using username as userId - in real implementation
-      // this would involve a user search/lookup step
-      await addFriend(username.trim());
-      setUsername('');
+      await addFriend(userId);
+      setSearchQuery('');
       onOpenChange(false);
+      toast({
+        title: "Friend request sent",
+        description: "Your friend request has been sent successfully",
+      });
     } catch (error) {
       // Error handling is done in the useFriends hook
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setUsername('');
+    setSearchQuery('');
     onOpenChange(false);
   };
 
@@ -65,37 +54,33 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Enter username..."
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={isSubmitting}
+              placeholder="Search by username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isAddingFriend}
+              className="pl-9"
               autoFocus
             />
-            <p className="text-sm text-muted-foreground mt-1">
-              Search by username to add a friend
-            </p>
           </div>
 
-          <DialogFooter className="flex gap-2 sm:gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !username.trim()}
-            >
-              {isSubmitting ? 'Adding...' : 'Add friend'}
-            </Button>
-          </DialogFooter>
-        </form>
+          <div className="max-h-64 overflow-y-auto">
+            {searchQuery.trim().length >= 2 ? (
+              <UserSearchResults
+                users={searchResults}
+                onAddFriend={handleAddFriend}
+                isLoading={isSearching}
+              />
+            ) : (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                Type at least 2 characters to search for users
+              </div>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

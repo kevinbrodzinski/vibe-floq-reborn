@@ -1143,7 +1143,7 @@ export type Database = {
         Returns: undefined
       }
       search_users: {
-        Args: { query: string }
+        Args: { search_query: string }
         Returns: {
           id: string
           display_name: string
