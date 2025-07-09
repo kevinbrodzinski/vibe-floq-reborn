@@ -76,13 +76,7 @@ serve(async (req) => {
       console.error("Walkable floqs error:", floqsError);
     }
 
-    return new Response(JSON.stringify({
-      status: 'ok',
-      nearby_users: nearby || [],
-      walkable_floqs: floqs || []
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return new Response(null, { status: 204, headers: corsHeaders });
 
   } catch (error) {
     console.error("Presence function error:", error);

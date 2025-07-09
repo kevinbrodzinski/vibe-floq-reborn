@@ -8,7 +8,8 @@ import { TimeModuleIndicators } from "./field/TimeModuleIndicators";
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
-import { useEnhancedPresence } from "@/hooks/useEnhancedPresence";
+import { usePresence } from "@/hooks/usePresence";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { Badge } from "@/components/ui/badge";
 import type { Vibe } from "@/types";
 
@@ -38,16 +39,22 @@ export const FieldScreen = () => {
   const [constellationMode, setConstellationMode] = useState(false);
   
   // Use enhanced presence hook for live data
-  const {
-    nearby_users,
-    walkable_floqs,
-    currentVibe,
-    updating,
-    error,
-    location,
-    changeVibe,
-    isLocationReady
-  } = useEnhancedPresence('social');
+  const location = useGeolocation();
+  const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
+  
+  // Use the bulletproof presence hook
+  usePresence(currentVibe, location.lat, location.lng);
+  
+  const changeVibe = (newVibe: Vibe) => {
+    setCurrentVibe(newVibe);
+  };
+
+  // Mock data for now since we're focusing on fixing the presence system
+  const nearby_users: any[] = [];
+  const walkable_floqs: any[] = [];
+  const updating = false;
+  const error = null;
+  const isLocationReady = !!(location.lat && location.lng);
 
   // Convert nearby users to people format for visualization
   const getVibeColor = (vibe: string) => {
