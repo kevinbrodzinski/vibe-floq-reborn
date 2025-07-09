@@ -48,6 +48,7 @@ interface Friend {
 
 interface FieldVisualizationProps {
   mini?: boolean;
+  className?: string;
   constellationMode: boolean;
   people: Person[];
   friends: Friend[];
@@ -60,6 +61,7 @@ interface FieldVisualizationProps {
 
 export const FieldVisualization = ({
   mini = false,
+  className = "",
   constellationMode,
   people,
   friends,
@@ -121,7 +123,7 @@ export const FieldVisualization = ({
   }, [venueClusters, activeCluster, clusterSheetOpen]);
 
   return (
-    <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'}`}>
+    <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'} ${className}`}>
       {/* Friend Constellation System */}
       {constellationMode && !mini && (
         <FriendConstellation

@@ -4,6 +4,7 @@ import { useTimeSyncContext } from "@/components/TimeSyncProvider";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { FieldHeader } from "./field/FieldHeader";
+import { FieldOverlay } from "./field/FieldOverlay";
 import { TimeModuleIndicators } from "./field/TimeModuleIndicators";
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
@@ -236,103 +237,78 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
   });
 
   return (
-    <div className="relative h-screen overflow-hidden" {...gestureHandlers}>
-{currentEvent && showBanner && (
-  <EventBanner
-    key={currentEvent.id}
-    eventId={currentEvent.id}
-    name={currentEvent.name}
-    vibe={currentEvent.vibe}
-    liveCount={undefined} // TODO: Add live count from SQL
-    aiSummary={undefined} // TODO: Add AI summary
-    onDetails={() => setDetailsOpen(true)}
-    onDismiss={() => setShowBanner(false)}
-  />
-)}
+    <div className="relative h-svh w-full bg-background" {...gestureHandlers}>
+      {/* Event Banner */}
+      {currentEvent && showBanner && (
+        <EventBanner
+          key={currentEvent.id}
+          eventId={currentEvent.id}
+          name={currentEvent.name}
+          vibe={currentEvent.vibe}
+          liveCount={undefined} // TODO: Add live count from SQL
+          aiSummary={undefined} // TODO: Add AI summary
+          onDetails={() => setDetailsOpen(true)}
+          onDismiss={() => setShowBanner(false)}
+        />
+      )}
 
-{currentEvent && (
-  <EventDetailsSheet
-    open={detailsOpen}
-    onOpenChange={setDetailsOpen}
-    event={{
-      ...currentEvent,
-      people: walkable_floqs.length,   // placeholder
-    }}
-  />
-)}
-      
-      {/* Debug counter */}
-      {debug && (
-        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
-          {nearby_users.length} people • {walkable_floqs.length} floqs ≤ 1 km
-        </div>
+      {currentEvent && (
+        <EventDetailsSheet
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          event={{
+            ...currentEvent,
+            people: walkable_floqs.length,   // placeholder
+          }}
+        />
       )}
       
       {/* Header */}
       <FieldHeader />
 
-      {/* Live Presence Status */}
-      <div className="absolute top-20 left-4 z-20">
-        <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm font-medium">
-              {isLocationReady ? 'Location Active' : 'Getting Location...'}
-            </span>
-          </div>
-          {currentVibe && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Vibe:</span>
-              <Badge 
-                variant="outline" 
-                className="text-xs cursor-pointer hover:bg-primary/10"
-                onClick={() => {
-                  const vibes: Vibe[] = ['social', 'chill', 'hype', 'flowing', 'open'];
-                  const currentIndex = vibes.indexOf(currentVibe);
-                  const nextVibe = vibes[(currentIndex + 1) % vibes.length];
-                  changeVibe(nextVibe);
-                }}
-              >
-                {currentVibe}
-              </Badge>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">
-            {nearby_users.length} nearby • {walkable_floqs.length} floqs
-          </div>
-          {updating && <div className="text-xs text-primary animate-pulse">Updating...</div>}
-          {error && <div className="text-xs text-destructive">{error}</div>}
-        </div>
-      </div>
-
-      {/* Time-Synced Status Bar */}
-      <div className="absolute top-24 left-0 right-0 z-10 text-center pt-4">
-        <TimeStatusIndicator />
-      </div>
-
-      {/* Time-Based Module Indicators */}
-      <TimeModuleIndicators />
-
-      {/* Map container (full OR map mode) */}
+      {/* Map canvas */}
       {(mode === 'map' || mode === 'full') && (
-        <div
-          id="map-container"
-          className={clsx('h-full w-full transition-all duration-300',
+        <FieldVisualization
+          className={clsx('absolute inset-0 top-12 transition-all duration-300',
             mode === 'full' && 'fullscreen-map'
           )}
-        >
-          <FieldVisualization
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkable_floqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
-        </div>
+          constellationMode={constellationMode}
+          people={people}
+          friends={friends}
+          floqEvents={floqEvents}
+          walkableFloqs={walkable_floqs}
+          onFriendInteraction={handleFriendInteraction}
+          onConstellationGesture={handleConstellationGesture}
+          onAvatarInteraction={handleAvatarInteraction}
+        />
       )}
+
+      {/* Overlay system */}
+      <FieldOverlay
+        isLocationReady={isLocationReady}
+        currentVibe={currentVibe}
+        nearbyUsersCount={nearby_users.length}
+        walkableFloqsCount={walkable_floqs.length}
+        updating={updating}
+        error={error}
+        debug={debug}
+        onVibeChange={changeVibe}
+      >
+        {/* Time-Synced Status Bar */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 text-center pointer-events-auto">
+          <TimeStatusIndicator />
+        </div>
+
+        {/* Constellation Controls */}
+        <ConstellationControls
+          timeState={timeState}
+          constellationMode={constellationMode}
+          onConstellationToggle={() => setConstellationMode(!constellationMode)}
+          onConstellationAction={handleConstellationAction}
+          onOrbitalAdjustment={handleOrbitalAdjustment}
+          onEnergyShare={handleEnergyShare}
+        />
+      </FieldOverlay>
 
       {/* List mode container */}
       {mode === 'list' && <ListModeContainer />}
@@ -351,18 +327,11 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         />
       )}
 
+      {/* Time-Based Module Indicators */}
+      <TimeModuleIndicators />
+
       {/* Social Gesture Manager */}
       <SocialGestureManager onSocialAction={handleSocialAction} />
-
-      {/* Constellation Controls */}
-      <ConstellationControls
-        timeState={timeState}
-        constellationMode={constellationMode}
-        onConstellationToggle={() => setConstellationMode(!constellationMode)}
-        onConstellationAction={handleConstellationAction}
-        onOrbitalAdjustment={handleOrbitalAdjustment}
-        onEnergyShare={handleEnergyShare}
-      />
 
       {/* Time Warp Slider */}
       <TimeWarpSlider 
