@@ -54,10 +54,10 @@ serve(async (req) => {
     }
 
     // Get nearby users using PostGIS function
-    const { data: nearby, error: nearbyError } = await supabase.rpc('get_nearby_presence', {
-      user_lat: lat,
-      user_lng: lng,
-      radius_meters: broadcast_radius
+    const { data: nearby, error: nearbyError } = await supabase.rpc('presence_nearby', {
+      lat: lat,
+      lng: lng,
+      km: 1.0
     });
 
     if (nearbyError) {
@@ -65,9 +65,9 @@ serve(async (req) => {
     }
 
     // Get walkable floqs
-    const { data: floqs, error: floqsError } = await supabase.rpc('get_walkable_floqs', {
-      user_lat: lat,
-      user_lng: lng,
+    const { data: floqs, error: floqsError } = await supabase.rpc('walkable_floqs', {
+      lat: lat,
+      lng: lng,
       max_walk_meters: 1200
     });
 

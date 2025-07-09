@@ -58,7 +58,10 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to update presence');
+      }
 
       const response = data as PresenceResponse;
       
@@ -73,7 +76,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
       return response;
     } catch (error: any) {
       console.error('Presence update error:', error);
-      const errorMessage = error.message;
+      const errorMessage = error.message || 'Unknown error occurred';
       
       setPresenceData(prev => ({
         ...prev,
