@@ -32,20 +32,30 @@ serve(async (req) => {
     const body = await req.json();
     const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
 
-    console.log(`Updating presence for user ${user.id}: ${vibe} at ${lat},${lng}${venue_id ? ` venue: ${venue_id}` : ''}`);
+    const updateData: any = {
+      user_id: user.id,
+      location: `POINT(${lng} ${lat})`,
+      broadcast_radius,
+      updated_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 90_000).toISOString()
+    };
+
+    // Set venue_id if provided
+    if (venue_id !== undefined) {
+      updateData.venue_id = venue_id;
+    }
+    
+    // Only set vibe if explicitly provided (don't clear on venue leave)
+    if (vibe !== undefined && vibe !== null) {
+      updateData.vibe = vibe;
+    }
+
+    console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
 
     // Upsert presence with PostGIS point and optional venue_id
     const { error } = await supabase
       .from("vibes_now")
-      .upsert({
-        user_id: user.id,
-        vibe,
-        location: `POINT(${lng} ${lat})`, // PostGIS WKT format - geo column auto-generated
-        venue_id, // Can be null or a venue UUID
-        broadcast_radius,
-        updated_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 90_000).toISOString() // 90s TTL
-      });
+      .upsert(updateData);
 
     if (error) {
       console.error("Presence upsert error:", error);

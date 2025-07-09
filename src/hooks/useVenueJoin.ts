@@ -26,6 +26,20 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
       });
       if (error) throw error;
     },
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["venue-details", venueId] });
+      const prev = qc.getQueryData(["venue-details", venueId]);
+      if (prev && venueId) {
+        qc.setQueryData(["venue-details", venueId], (d: any) => ({
+          ...d,
+          live_count: d.live_count + 1
+        }));
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["venue-details", venueId], ctx.prev);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["venue-details", venueId] });
       qc.invalidateQueries({ queryKey: ["presence-nearby"] });
@@ -34,14 +48,12 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
 
   const leaveMutation = useMutation({
     mutationFn: async () => {
-      if (lat == null || lng == null) throw new Error("Missing location data");
-      // Keep current location but clear venue_id when leaving
+      // Clear venue_id only (don't send location or clear vibe)
       const { error } = await supabase.functions.invoke("upsert-presence", {
         body: { 
-          lat, 
-          lng, 
+          lat: lat!, 
+          lng: lng!, 
           venue_id: null, // Clear venue_id when leaving
-          vibe: null // Optionally clear vibe too
         },
       });
       if (error) throw error;

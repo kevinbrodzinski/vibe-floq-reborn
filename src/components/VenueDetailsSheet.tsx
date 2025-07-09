@@ -132,17 +132,18 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                 <Users className="h-4 w-4" />
                 {joinPending ? "Joining…" : "Join venue"}
               </Button>
-              
-              <Button
-                variant="secondary"
-                size="lg"
-                className="flex items-center gap-2"
-                disabled={leavePending || joinPending}
-                onClick={handleLeave}
-              >
-                <Users className="h-4 w-4" />
-                {leavePending ? "Leaving…" : "Leave"}
-              </Button>
+              {venue.live_count > 0 && (
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="flex items-center gap-2"
+                  disabled={leavePending || joinPending}
+                  onClick={handleLeave}
+                >
+                  <Users className="h-4 w-4" />
+                  {leavePending ? "Leaving…" : "Leave"}
+                </Button>
+              )}
               
               <Button 
                 variant="outline" 
