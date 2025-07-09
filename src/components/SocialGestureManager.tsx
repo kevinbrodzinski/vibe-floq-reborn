@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAdvancedGestures, GestureEvent } from '@/hooks/useAdvancedGestures';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useDebug } from '@/lib/useDebug';
 import { Button } from '@/components/ui/button';
 import { Zap, Users, MessageCircle, MapPin, Smartphone, Sparkles } from 'lucide-react';
 
@@ -220,8 +221,11 @@ export const SocialGestureManager = ({
         </div>
       )}
 
-      {/* Recent Gestures Debug (only in development) */}
-      {process.env.NODE_ENV === 'development' && recentGestures.length > 0 && (
+      {/* Recent Gestures Debug */}
+      {(() => {
+        const [debug] = useDebug();
+        if (!debug || recentGestures.length === 0) return null;
+        return (
         <div className="fixed bottom-4 left-4 z-30 max-w-xs">
           <div className="bg-card/80 backdrop-blur-xl rounded-lg border border-border/30 p-3">
             <div className="text-xs text-muted-foreground mb-2">Recent Gestures:</div>
@@ -232,7 +236,8 @@ export const SocialGestureManager = ({
             ))}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Gesture Palette (activated by specific gesture) */}
       {/* This would be activated by a specific gesture combination */}

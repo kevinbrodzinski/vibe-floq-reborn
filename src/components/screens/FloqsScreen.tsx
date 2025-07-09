@@ -83,12 +83,16 @@ export const FloqsScreen = () => {
 
   return (
     <div className="min-h-screen p-6 pt-16">
-      {/* Debug counter - development mode or ?debug=1 URL param */}
-      {(process.env.NODE_ENV === 'development' || window.location.search.includes('debug=1')) && (
+      {/* Debug counter */}
+      {(() => {
+        const [debug] = useDebug();
+        if (!debug) return null;
+        return (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
           {nearbyFloqs.length} floqs ≤ {radiusKm} km
         </div>
-      )}
+        );
+      })()}
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">

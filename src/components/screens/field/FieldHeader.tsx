@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
+import { AvatarDropdown } from "@/components/AvatarDropdown";
 
 export const FieldHeader = () => {
   return (
@@ -13,9 +14,7 @@ export const FieldHeader = () => {
         floq
       </div>
       
-      <div className="w-12 h-12 rounded-full gradient-secondary border-2 border-primary/30 glow-secondary overflow-hidden cursor-pointer hover:scale-105 transition-smooth">
-        <div className="w-full h-full bg-muted-foreground/10"></div>
-      </div>
+      <AvatarDropdown />
     </div>
   );
 };

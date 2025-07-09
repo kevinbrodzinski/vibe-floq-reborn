@@ -180,12 +180,16 @@ export const FieldScreen = () => {
 
   return (
     <div className="relative h-screen overflow-hidden">
-      {/* Debug counter - development mode or ?debug=1 URL param */}
-      {(process.env.NODE_ENV === 'development' || window.location.search.includes('debug=1')) && (
+      {/* Debug counter */}
+      {(() => {
+        const [debug] = useDebug();
+        if (!debug) return null;
+        return (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
           {nearby_users.length} people • {walkable_floqs.length} floqs ≤ 1 km
         </div>
-      )}
+        );
+      })()}
       
       {/* Header */}
       <FieldHeader />

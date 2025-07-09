@@ -404,3 +404,11 @@ All colors MUST be HSL.
   .time-late .time-module-night { display: none; }
   .time-late .time-module-late { display: block; }
 }
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.pointer-events-auto {
+  pointer-events: auto;
+}
