@@ -349,8 +349,8 @@ const { currentEvent } = useCurrentEvent(location.lat, location.lng, () => setSh
         onTimeChange={handleTimeWarpChange}
       />
 
-      {/* Location Active Status - Top area */}
-      <div className="absolute top-32 left-4 right-4 z-10 pointer-events-auto">
+      {/* Location Active Status - Above pulse panel */}
+      <div className="absolute top-25 left-4 right-4 z-10 pointer-events-auto">
         <div className="flex justify-center mb-3">
           <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-2">
