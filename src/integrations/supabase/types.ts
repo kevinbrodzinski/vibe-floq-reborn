@@ -145,7 +145,7 @@ export type Database = {
           },
         ]
       }
-      friends: {
+      friend_requests: {
         Row: {
           created_at: string | null
           friend_id: string
@@ -162,6 +162,24 @@ export type Database = {
           created_at?: string | null
           friend_id?: string
           status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string | null
+          friend_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string
           user_id?: string
         }
         Relationships: []
@@ -475,6 +493,10 @@ export type Database = {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
       }
+      add_friend: {
+        Args: { target: string }
+        Returns: undefined
+      }
       addauth: {
         Args: { "": string }
         Returns: boolean
@@ -593,6 +615,10 @@ export type Database = {
           vibe: string
           radius_m: number
         }[]
+      }
+      friend_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
@@ -881,6 +907,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: Json
       }
+      list_friends: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -1087,6 +1117,10 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility: string | null
         }[]
+      }
+      remove_friend: {
+        Args: { target: string }
+        Returns: undefined
       }
       spheroid_in: {
         Args: { "": unknown }
