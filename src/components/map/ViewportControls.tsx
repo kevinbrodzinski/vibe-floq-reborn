@@ -9,7 +9,7 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   const { viewport, zoomIn, zoomOut, centerOnUser } = controls;
 
   return (
-    <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
+    <div className="absolute top-1/2 -translate-y-1/2 right-4 flex flex-col gap-2 z-10">
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
         <button
