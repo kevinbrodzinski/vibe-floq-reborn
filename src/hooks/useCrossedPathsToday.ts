@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFriends } from './useFriends';
 import { useMemo } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
 import type { CrossedPath } from '@/types';
 
 export function useCrossedPathsToday() {
   const { user } = useAuth();
   const { friends } = useFriends();
+  const { toast } = useToast();
 
   // Create stable cache key based on today and friend count
   const todayStart = useMemo(() => {
@@ -16,7 +18,7 @@ export function useCrossedPathsToday() {
     return today.toISOString();
   }, []);
 
-  const { data: crossedPaths = [], isLoading, error } = useQuery({
+  const { data: crossedPaths = [], isLoading, error, refetch } = useQuery({
     queryKey: ['crossed-paths', user?.id, todayStart, friends.length],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -28,6 +30,11 @@ export function useCrossedPathsToday() {
 
       if (error) {
         console.error('Failed to load crossed paths:', error);
+        toast({
+          title: "Failed to load crossed paths",
+          description: "There was a problem loading your recent encounters. Please try again.",
+          variant: "destructive",
+        });
         throw error;
       }
       return (data || []) as unknown as CrossedPath[];
@@ -49,6 +56,7 @@ export function useCrossedPathsToday() {
     crossedPaths: filteredCrossedPaths,
     isLoading,
     error,
+    refetch,
     count: filteredCrossedPaths.length
   };
 }
