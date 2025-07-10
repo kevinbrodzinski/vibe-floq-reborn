@@ -1354,6 +1354,10 @@ export type Database = {
         Args: { target: string }
         Returns: undefined
       }
+      request_friendship: {
+        Args: { _target: string }
+        Returns: undefined
+      }
       respond_friend_request: {
         Args: { request_user_id: string; response_type: string }
         Returns: {

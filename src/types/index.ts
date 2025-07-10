@@ -4,6 +4,7 @@ import { Database } from '@/integrations/supabase/types';
 
 export type Vibe = Database['public']['Enums']['vibe_enum'];
 export type ClusterType = Database['public']['Enums']['cluster_type_enum'];
+export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 
 export interface NearbyUser {
   user_id: string;
