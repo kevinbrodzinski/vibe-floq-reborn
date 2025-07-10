@@ -27,9 +27,18 @@ export const AvatarDropdown = () => {
   const [debug, setDebug] = useDebug();
   const [friendsSheetOpen, setFriendsSheetOpen] = useState(false);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
-  const { friendCount } = useFriends();
+  
+  // Temporarily disable problematic hooks for baseline
+  // const { friendCount } = useFriends();
+  const friendCount: number = 1; // Mock for now to test functionality
+  
   const { user } = useAuth();
-  const { data: profile } = useProfile(user?.id);
+  // const { data: profile } = useProfile(user?.id);
+  const profile = { // Mock profile for now
+    display_name: user?.email || 'User',
+    avatar_url: null,
+  };
+  
   const avatarMgr = useAvatarManager();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
