@@ -447,6 +447,11 @@ All colors MUST be HSL.
     outline: 1px solid red !important;
   }
 
+  /* Phase 2: Dot transitions for smooth jitter movement */
+  .person-dot {
+    transition: transform 120ms linear;
+  }
+
   /* Z-index CSS custom properties */
   :root {
     --z-map: 0;

@@ -22,6 +22,8 @@ import { Z_LAYERS } from "@/lib/z-layers";
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
 import { useMemo } from "react";
+import { jitterPoint, groupByPosition } from '@/utils/jitter';
+import ClusterBadge from '@/components/ClusterBadge';
 
 interface Person {
   id: string;
@@ -197,82 +199,179 @@ export const FieldVisualization = ({
         />
       )}
 
-      {/* People on the field (when not in constellation mode) */}
-      {!constellationMode && people.map((person, index) => {
-        
-        return (
-        <HoverCard key={person.id}>
-          <HoverCardTrigger asChild>
-            <div
-              className="absolute transition-all duration-500 cursor-pointer hover:scale-110 pointer-events-auto"
-              style={{
-                left: `${person.x}%`,
-                top: `${person.y}%`,
-                transform: "translate(-50%, -50%)",
-                animationDelay: `${index * 0.1}s`,
-                zIndex: Z_LAYERS.PEOPLE_DOTS,
-              }}
-            >
-              {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
-              {person.isFriend && (
-                <div 
-                  className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
-                  style={{ 
-                    width: mini ? '16px' : '24px', 
-                    height: mini ? '16px' : '24px',
-                    transform: 'translate(-50%, -50%)',
-                    left: '50%',
-                    top: '50%',
-                    '--dynamic-ring-color': getVibeColor(person.vibe),
-                    borderColor: `${getVibeColor(person.vibe)}60`,
-                  } as React.CSSProperties} 
-                />
-              )}
-              <div
-                className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
-                style={{
-                  backgroundColor: person.color,
-                  boxShadow: `0 0 20px ${person.color}`,
-                }}
-              ></div>
-              {!mini && (
-                <div className={`text-sm text-center mt-2 ${person.isFriend ? 'text-primary font-medium' : 'text-foreground/90'}`}>
-                  {person.name}
-                </div>
-              )}
+      {/* People on the field with collision detection (when not in constellation mode) */}
+      {!constellationMode &&
+        /* ---- Phase 2: Collision handling ---- */
+        Object.values(groupByPosition(people)).map(cluster => {
+          if (cluster.length === 0) return null;
+
+          // Calculate pixel coords once (each person already has x/y in percentage);
+          const base = cluster[0];
+
+          // 1️⃣ Render dots with jitter when cluster size ≤ 4
+          if (cluster.length <= 4) {
+            return cluster.map((person, idx) => {
+              const { dx, dy } = jitterPoint(idx);
+              return (
+                <HoverCard key={person.id}>
+                  <HoverCardTrigger asChild>
+                    <div
+                      className="absolute person-dot cursor-pointer hover:scale-110 pointer-events-auto"
+                      style={{
+                        left: `${person.x}%`,
+                        top: `${person.y}%`,
+                        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
+                        zIndex: Z_LAYERS.PEOPLE_DOTS,
+                      }}
+                    >
+                      {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
+                      {person.isFriend && (
+                        <div 
+                          className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
+                          style={{ 
+                            width: mini ? '16px' : '24px', 
+                            height: mini ? '16px' : '24px',
+                            transform: 'translate(-50%, -50%)',
+                            left: '50%',
+                            top: '50%',
+                            '--dynamic-ring-color': getVibeColor(person.vibe),
+                            borderColor: `${getVibeColor(person.vibe)}60`,
+                          } as React.CSSProperties} 
+                        />
+                      )}
+                      <div
+                        className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
+                        style={{
+                          backgroundColor: person.color,
+                          boxShadow: `0 0 20px ${person.color}`,
+                        }}
+                      ></div>
+                      {!mini && (
+                        <div className={`text-sm text-center mt-2 ${person.isFriend ? 'text-primary font-medium' : 'text-foreground/90'}`}>
+                          {person.name}
+                        </div>
+                      )}
+                    </div>
+                  </HoverCardTrigger>
+                  <LayersPortal layer="popover">
+                    <HoverCardContent 
+                      className="w-64 p-4"
+                      side="top"
+                      sideOffset={8}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className={`font-medium text-sm ${person.isFriend ? 'text-primary' : ''}`}>
+                            {person.name}
+                          </h4>
+                          {person.isFriend && (
+                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Friend</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: person.color }}
+                          />
+                          <span className="text-xs text-muted-foreground capitalize">{person.vibe}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Currently active in the area
+                        </p>
+                      </div>
+                    </HoverCardContent>
+                  </LayersPortal>
+                </HoverCard>
+              );
+            });
+          }
+
+          // 2️⃣ If > 4 members → jitter first 4, then show "+N"
+          return (
+            <div key={`cluster-${base.x}-${base.y}`}>
+              {cluster.slice(0, 4).map((person, idx) => {
+                const { dx, dy } = jitterPoint(idx);
+                return (
+                  <HoverCard key={person.id}>
+                    <HoverCardTrigger asChild>
+                      <div
+                        className="absolute person-dot cursor-pointer hover:scale-110 pointer-events-auto"
+                        style={{
+                          left: `${person.x}%`,
+                          top: `${person.y}%`,
+                          transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
+                          zIndex: Z_LAYERS.PEOPLE_DOTS,
+                        }}
+                        onClick={() => onAvatarInteraction?.(person.id)}
+                      >
+                        {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
+                        {person.isFriend && (
+                          <div 
+                            className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
+                            style={{ 
+                              width: mini ? '16px' : '24px', 
+                              height: mini ? '16px' : '24px',
+                              transform: 'translate(-50%, -50%)',
+                              left: '50%',
+                              top: '50%',
+                              '--dynamic-ring-color': getVibeColor(person.vibe),
+                              borderColor: `${getVibeColor(person.vibe)}60`,
+                            } as React.CSSProperties} 
+                          />
+                        )}
+                        <div
+                          className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
+                          style={{
+                            backgroundColor: person.color,
+                            boxShadow: `0 0 20px ${person.color}`,
+                          }}
+                        ></div>
+                        {!mini && (
+                          <div className={`text-sm text-center mt-2 ${person.isFriend ? 'text-primary font-medium' : 'text-foreground/90'}`}>
+                            {person.name}
+                          </div>
+                        )}
+                      </div>
+                    </HoverCardTrigger>
+                    <LayersPortal layer="popover">
+                      <HoverCardContent 
+                        className="w-64 p-4"
+                        side="top"
+                        sideOffset={8}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className={`font-medium text-sm ${person.isFriend ? 'text-primary' : ''}`}>
+                              {person.name}
+                            </h4>
+                            {person.isFriend && (
+                              <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Friend</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: person.color }}
+                            />
+                            <span className="text-xs text-muted-foreground capitalize">{person.vibe}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Currently active in the area
+                          </p>
+                        </div>
+                      </HoverCardContent>
+                    </LayersPortal>
+                  </HoverCard>
+                );
+              })}
+              <ClusterBadge
+                count={cluster.length - 4}
+                x={base.x}
+                y={base.y}
+              />
             </div>
-          </HoverCardTrigger>
-          <LayersPortal layer="popover">
-            <HoverCardContent 
-              className="w-64 p-4"
-              side="top"
-              sideOffset={8}
-            >
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h4 className={`font-medium text-sm ${person.isFriend ? 'text-primary' : ''}`}>
-                    {person.name}
-                  </h4>
-                  {person.isFriend && (
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Friend</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: person.color }}
-                  />
-                  <span className="text-xs text-muted-foreground capitalize">{person.vibe}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Currently active in the area
-                </p>
-              </div>
-            </HoverCardContent>
-          </LayersPortal>
-        </HoverCard>
-        );
-      })}
+          );
+        })}
 
       {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
       {floqEvents.map((event, index) => {
