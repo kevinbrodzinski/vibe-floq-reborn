@@ -10,7 +10,7 @@ export type Profile = {
 };
 
 export const useProfile = (userId: string | undefined) => {
-  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
@@ -30,26 +30,26 @@ export const useProfile = (userId: string | undefined) => {
     };
   }
 
-  // TODO: Re-enable real profile queries
-  const mockProfile: Profile = {
-    id: userId || 'mock-id',
-    username: 'mock_user',
-    display_name: 'Mock User',
-    avatar_url: null,
-    created_at: new Date().toISOString(),
-  };
+  return useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-  return {
-    data: userId ? mockProfile : undefined,
-    isLoading: false,
-    error: null,
-    isError: false,
-    isSuccess: !!userId,
-  };
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+  });
 };
 
 export const useProfileByUsername = (username: string | undefined) => {
-  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
@@ -69,20 +69,20 @@ export const useProfileByUsername = (username: string | undefined) => {
     };
   }
 
-  // TODO: Re-enable real profile by username queries
-  const mockProfile: Profile = {
-    id: 'mock-id-' + username,
-    username: username || 'mock_user',
-    display_name: username || 'Mock User',
-    avatar_url: null,
-    created_at: new Date().toISOString(),
-  };
+  return useQuery({
+    queryKey: ['profile-by-username', username],
+    queryFn: async () => {
+      if (!username) throw new Error('Username is required');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
 
-  return {
-    data: username ? mockProfile : undefined,
-    isLoading: false,
-    error: null,
-    isError: false,
-    isSuccess: !!username,
-  };
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!username,
+  });
 };
