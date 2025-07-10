@@ -19,7 +19,8 @@ import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useStableMemo } from "@/hooks/useStableMemo";
 import { Z_LAYERS } from "@/lib/z-layers";
-import { track } from "@/lib/analytics";
+import { getVibeColor } from "@/utils/getVibeColor";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface Person {
   id: string;
@@ -81,12 +82,23 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
+  const { trackFriendEncounter } = useAnalytics();
+  
   // Pre-load avatars for better performance - stabilized
   const friendAvatars = useStableMemo(
     () => friends.map(f => f.avatar_url), 
     [friends.length, friends.map(f => f.avatar_url).join(',')]
   );
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
+  
+  // Phase 1 Fix: Move analytics to useEffect to prevent render loop spam
+  useEffect(() => {
+    people.forEach(person => {
+      if (person.isFriend) {
+        trackFriendEncounter(person.id, person.vibe, 'field_visualization');
+      }
+    });
+  }, [people.filter(p => p.isFriend).map(p => p.id).join(',')]);  // Stable dependency
   
   // DM state
   const [dmOpen, setDmOpen] = useState(false);
@@ -177,14 +189,6 @@ export const FieldVisualization = ({
 
       {/* People on the field (when not in constellation mode) */}
       {!constellationMode && people.map((person, index) => {
-        // Analytics tracking for friend encounters
-        if (person.isFriend) {
-          track('friend_encounter', { 
-            friend_id: person.id, 
-            vibe: person.vibe,
-            location: 'field_visualization'
-          });
-        }
         
         return (
         <HoverCard key={person.id}>
@@ -199,17 +203,19 @@ export const FieldVisualization = ({
                 zIndex: Z_LAYERS.PEOPLE_DOTS,
               }}
             >
-              {/* 6.4 - Friend halo: subtle ring/glow effect using friend's vibe color */}
+              {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
               {person.isFriend && (
-                <div className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
-                     style={{ 
-                       width: mini ? '16px' : '24px', 
-                       height: mini ? '16px' : '24px',
-                       transform: 'translate(-50%, -50%)',
-                       left: '50%',
-                       top: '50%',
-                       '--tw-ring-color': `${person.color}60`, // Dynamic friend halo color from vibe
-                     } as React.CSSProperties} 
+                <div 
+                  className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
+                  style={{ 
+                    width: mini ? '16px' : '24px', 
+                    height: mini ? '16px' : '24px',
+                    transform: 'translate(-50%, -50%)',
+                    left: '50%',
+                    top: '50%',
+                    '--dynamic-ring-color': getVibeColor(person.vibe),
+                    borderColor: `${getVibeColor(person.vibe)}60`,
+                  } as React.CSSProperties} 
                 />
               )}
               <div

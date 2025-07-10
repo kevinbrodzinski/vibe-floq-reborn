@@ -68,7 +68,7 @@ export function useFriends() {
 
   // 6.2 Prefetch friend profiles in one batched query
   const { data: profiles = [] } = useQuery({
-    queryKey: ['friend-profiles', friendIds.join(',')], // Fix: stringify array for proper cache key
+    queryKey: ['friend-profiles', [...friendIds].sort().join(',')], // Phase 1 Fix: sort & hash cache key for stable deduplication
     enabled: friendIds.length > 0 && !OFFLINE_MODE,
     staleTime: 120_000, // 2 minutes
     refetchOnWindowFocus: false,
