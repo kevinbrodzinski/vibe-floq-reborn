@@ -11,6 +11,8 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
 import { UsernameStep } from '@/components/UsernameStep';
+import { ProfileStats } from '@/components/profile/ProfileStats';
+import { RecentActivity } from '@/components/profile/RecentActivity';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -106,6 +108,21 @@ const ProfileSettings = () => {
                 <UsernameStep />
               </div>
             )}
+          </div>
+
+          <Separator />
+
+          {/* Social Activity Dashboard */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">Your Activity</h2>
+            <ProfileStats />
+          </div>
+
+          <Separator />
+
+          {/* Recent Activity */}
+          <div className="space-y-4">
+            <RecentActivity />
           </div>
 
           <Separator />
