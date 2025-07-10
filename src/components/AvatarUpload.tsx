@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, Trash2 } from 'lucide-react';
-import { getAvatarUrl, uploadAvatar, deleteAvatar, getInitials } from '@/lib/avatar';
+import { uploadAvatar, deleteAvatar } from '@/lib/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { XXLAvatar } from '@/components/ui/avatar-variants';
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string | null;
@@ -111,12 +111,12 @@ export const AvatarUpload = ({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative group">
-        <Avatar className={`w-${size/4} h-${size/4}`} style={{ width: size, height: size }}>
-          <AvatarImage src={getAvatarUrl(currentAvatarUrl, size)} />
-          <AvatarFallback className="text-xl">
-            {getInitials(displayName)}
-          </AvatarFallback>
-        </Avatar>
+        <XXLAvatar 
+          avatarPath={currentAvatarUrl}
+          displayName={displayName}
+          priority={true}
+          enableBlur={true}
+        />
         
         {/* Upload overlay */}
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center cursor-pointer"

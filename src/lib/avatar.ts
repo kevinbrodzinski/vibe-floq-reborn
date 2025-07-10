@@ -3,28 +3,58 @@ import { supabase } from "@/integrations/supabase/client";
 // Cache for pre-warmed images
 const preWarmCache = new Set<string>();
 
+// Standard avatar sizes for consistency
+export const AVATAR_SIZES = {
+  xs: 32,
+  sm: 48, 
+  md: 64,
+  lg: 96,
+  xl: 128,
+  xxl: 256
+} as const;
+
+export type AvatarSize = keyof typeof AVATAR_SIZES;
+
 /**
- * Generate avatar URL with Transform CDN sizing
+ * Generate optimized avatar URL with Transform CDN
  * @param path - Storage path to the avatar file
- * @param size - Desired size in pixels (default: 64)
- * @returns Public URL with transform parameters, or undefined if no path
+ * @param size - Avatar size (number or size key)
+ * @returns Transform CDN URL with optimization parameters
  */
-export const getAvatarUrl = (path?: string | null, size = 64) => {
-  if (!path) return undefined; // fallback to initials
+export const getAvatarUrl = (path?: string | null, size: number | AvatarSize = 64) => {
+  if (!path) return undefined;
+  
+  const pixelSize = typeof size === 'number' ? size : AVATAR_SIZES[size];
   
   const { data } = supabase.storage
     .from('avatars')
     .getPublicUrl(path);
     
-  const url = `${data.publicUrl}?width=${size}&height=${size}&format=webp&quality=85`;
+  // Transform CDN with advanced optimization
+  const transformUrl = `${data.publicUrl}?width=${pixelSize}&height=${pixelSize}&resize=cover&format=webp&quality=85&dpr=2`;
   
   // Pre-warm on first access
-  if (!preWarmCache.has(url)) {
-    preWarmImage(url);
-    preWarmCache.add(url);
+  if (!preWarmCache.has(transformUrl)) {
+    preWarmImage(transformUrl);
+    preWarmCache.add(transformUrl);
   }
   
-  return url;
+  return transformUrl;
+};
+
+/**
+ * Generate blur placeholder URL (tiny, heavily compressed)
+ * @param path - Storage path to the avatar file
+ * @returns Small blur placeholder URL
+ */
+export const getAvatarBlurUrl = (path?: string | null) => {
+  if (!path) return undefined;
+  
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(path);
+    
+  return `${data.publicUrl}?width=20&height=20&resize=cover&format=webp&quality=20&blur=10`;
 };
 
 /**
