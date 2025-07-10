@@ -49,7 +49,7 @@ const VIBE_OPTIONS: { value: VibeEnum; label: string; emoji: string }[] = [
 
 export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: CreateFloqSheetProps) {
   const [title, setTitle] = useState("");
-  const [vibe, setVibe] = useState<VibeEnum | "">("");
+  const [vibe, setVibe] = useState<VibeEnum | "">("chill"); // Default to chill for better UX
   const [visibility, setVisibility] = useState<"public" | "friends" | "invite">("public");
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(preselectedVenueId || null);
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
@@ -70,7 +70,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
       setSelectedVenueId(preselectedVenueId || null);
     } else {
       setTitle("");
-      setVibe("");
+      setVibe("chill"); // Reset to default chill vibe
       setVisibility("public");
       setSelectedVenueId(null);
       setSelectedFriends([]);
@@ -87,7 +87,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
 
     try {
       await createFloq({
-        location: { lat: selectedVenue.lat, lng: selectedVenue.lng },
+        location: [selectedVenue.lng, selectedVenue.lat], // [lng, lat] tuple format
         startsAt: new Date(startsAt),
         vibe: vibe as VibeEnum,
         visibility,
@@ -259,7 +259,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
                         className="rounded"
                       />
                       <Label htmlFor={`friend-${friendId}`} className="text-sm">
-                        Friend {friendId.slice(0, 8)}...
+                        {friendId.slice(0, 8)}...
                       </Label>
                     </div>
                   ))}

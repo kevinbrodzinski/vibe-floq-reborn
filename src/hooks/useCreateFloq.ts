@@ -6,7 +6,7 @@ import type { Database } from '@/integrations/supabase/types';
 type VibeEnum = Database['public']['Enums']['vibe_enum'];
 
 interface CreateFloqParams {
-  location: { lat: number; lng: number };
+  location: [number, number]; // [lng, lat] tuple format
   startsAt: Date;
   vibe: VibeEnum;
   visibility?: 'public' | 'friends' | 'invite';
@@ -22,11 +22,11 @@ export function useCreateFloq() {
     mutationFn: async (params: CreateFloqParams) => {
       const { location, startsAt, vibe, visibility = 'public', title, invitees = [] } = params;
       
-      // Create PostGIS point for location
-      const point = `POINT(${location.lng} ${location.lat})`;
+      // Create PostGIS geography point using EWKT format (longitude first)
+      const geography = `SRID=4326;POINT(${location[0]} ${location[1]})`;
       
       const { data, error } = await supabase.rpc('create_floq', {
-        p_location: point,
+        p_location: geography,
         p_starts_at: startsAt.toISOString(),
         p_vibe: vibe,
         p_visibility: visibility,
