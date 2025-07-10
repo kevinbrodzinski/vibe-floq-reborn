@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
-import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles } from "lucide-react";
+import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles, Users, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
+import { CrossedPathsCard } from "@/components/CrossedPathsCard";
 
 interface NightEvent {
   id: string;
@@ -15,6 +17,9 @@ interface NightEvent {
 }
 
 export const AfterglowScreen = () => {
+  const { crossedPaths, isLoading: crossedPathsLoading, count: crossedPathsCount } = useCrossedPathsToday();
+  const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
+  
   const [nightEvents] = useState<NightEvent[]>([
     {
       id: "1",
@@ -69,7 +74,7 @@ export const AfterglowScreen = () => {
   
   const energySummary = {
     totalStops: 8,
-    peopleCrossed: 12,
+    peopleCrossed: crossedPathsCount, // Dynamic count from crossed paths
     floqsJoined: 4,
     mostFeltVibe: "flowing",
     vibeIntensity: 87,
@@ -163,6 +168,52 @@ export const AfterglowScreen = () => {
           </Button>
         </div>
       </div>
+
+      {/* Crossed Paths Section */}
+      {crossedPathsCount > 0 && (
+        <div className="px-6 mb-8">
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 glow-secondary">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <Users className="w-5 h-5 text-accent" />
+                <h2 className="text-xl text-foreground">Crossed Paths</h2>
+              </div>
+              {crossedPathsCount > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllCrossedPaths(!showAllCrossedPaths)}
+                  className="text-accent hover:glow-secondary"
+                >
+                  {showAllCrossedPaths ? "Show Less" : `View All ${crossedPathsCount}`}
+                  <ChevronRight className={`w-4 h-4 ml-1 transition-transform duration-300 ${showAllCrossedPaths ? 'rotate-90' : ''}`} />
+                </Button>
+              )}
+            </div>
+
+            {crossedPathsLoading ? (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 mx-auto mb-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                <p className="text-muted-foreground">Finding people you crossed paths with...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(showAllCrossedPaths ? crossedPaths : crossedPaths.slice(0, 3)).map((person) => (
+                  <CrossedPathsCard key={person.user_id} person={person} />
+                ))}
+                
+                {crossedPathsCount === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No crossed paths today yet</p>
+                    <p className="text-sm mt-2">Keep exploring to discover new connections!</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="px-6 relative">
