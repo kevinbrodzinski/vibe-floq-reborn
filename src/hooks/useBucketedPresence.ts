@@ -25,7 +25,6 @@ export const useBucketedPresence = (lat?: number, lng?: number) => {
     return { people };
   }
 
-  // TODO: Re-enable presence subscriptions when network is stable
   const queryClient = useQueryClient();
   const channelsRef = useRef<RealtimeChannel[]>([]);
   const geosLastRef = useRef<string[]>([]);
@@ -38,6 +37,111 @@ export const useBucketedPresence = (lat?: number, lng?: number) => {
     lastLngRef.current = lng;
   }
 
-  const people: LivePresence[] = [];
+  const frozenLat = lastLatRef.current;
+  const frozenLng = lastLngRef.current;
+  const hasValidCoords = Number.isFinite(frozenLat) && Number.isFinite(frozenLng);
+
+  // Query for initial presence data
+  const { data: people = [] } = useQuery({
+    queryKey: ['presence-nearby', frozenLat, frozenLng],
+    queryFn: async () => {
+      if (!hasValidCoords) return [];
+      
+      const { data, error } = await supabase.rpc('presence_nearby', {
+        lat: frozenLat!,
+        lng: frozenLng!,
+        km: 5, // 5km radius
+        include_self: false
+      });
+
+      if (error) {
+        console.error('Error fetching nearby presence:', error);
+        return [];
+      }
+
+      return (data || []).map((item: any): LivePresence => ({
+        user_id: item.user_id,
+        vibe: item.vibe,
+        lat: typeof item.location === 'object' ? 
+          parseFloat(item.location.coordinates?.[1]) || 0 : 
+          parseFloat(item.lat) || 0,
+        lng: typeof item.location === 'object' ? 
+          parseFloat(item.location.coordinates?.[0]) || 0 : 
+          parseFloat(item.lng) || 0,
+        venue_id: item.venue_id,
+        expires_at: item.expires_at || new Date(Date.now() + 2 * 60 * 1000).toISOString()
+      }));
+    },
+    enabled: hasValidCoords,
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute as backup
+  });
+
+  // Set up geohash-bucketed realtime subscriptions
+  useEffect(() => {
+    if (!hasValidCoords) return;
+
+    // Generate geohashes for current location and surrounding area
+    const centerHash = ngeohash.encode(frozenLat!, frozenLng!, GH_PRECISION);
+    const neighbors = ngeohash.neighbors(centerHash);
+    const allHashes = [centerHash, ...Object.values(neighbors)];
+
+    // Check if we need to update subscriptions
+    const hashesChanged = JSON.stringify(allHashes.sort()) !== JSON.stringify(geosLastRef.current.sort());
+    if (!hashesChanged) return;
+
+    // Clean up existing channels
+    channelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    channelsRef.current = [];
+
+    // Create new channels for each geohash bucket
+    allHashes.forEach(geohash => {
+      const channel = supabase.channel(`presence:${geohash}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'vibes_now',
+          filter: `geohash6=eq.${geohash}`
+        }, (payload) => {
+          console.log('Presence update:', payload);
+          
+          // Invalidate and refetch the query to get fresh data
+          queryClient.invalidateQueries({ 
+            queryKey: ['presence-nearby', frozenLat, frozenLng] 
+          });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`Subscribed to presence bucket: ${geohash}`);
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`Error subscribing to presence bucket: ${geohash}`);
+          }
+        });
+
+      channelsRef.current.push(channel);
+    });
+
+    geosLastRef.current = allHashes;
+
+    return () => {
+      // Cleanup on unmount or when dependencies change
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+    };
+  }, [hasValidCoords, frozenLat, frozenLng, queryClient]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+    };
+  }, []);
+
   return { people };
 };
