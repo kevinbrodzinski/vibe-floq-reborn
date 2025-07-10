@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, ArrowRight } from 'lucide-react';
 import {
   Sheet,
@@ -16,10 +16,12 @@ import { getAvatarUrl } from '@/lib/avatar';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useAvatarPreloader } from '@/hooks/useAvatarPreloader';
 
 interface MessagesSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onFriendsSheetOpen?: () => void;
 }
 
 interface DMThread {
@@ -39,7 +41,7 @@ interface DMThread {
   };
 }
 
-export const MessagesSheet = ({ open, onOpenChange }: MessagesSheetProps) => {
+export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: MessagesSheetProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
@@ -96,6 +98,10 @@ export const MessagesSheet = ({ open, onOpenChange }: MessagesSheetProps) => {
       return threadsWithProfiles;
     },
   });
+
+  // Preload avatars for better performance
+  const avatarPaths = threads.map(thread => thread.other_user?.avatar_url).filter(Boolean);
+  useAvatarPreloader(avatarPaths, [48]);
 
   const handleThreadClick = (threadId: string) => {
     onOpenChange(false);
@@ -190,7 +196,7 @@ export const MessagesSheet = ({ open, onOpenChange }: MessagesSheetProps) => {
                 size="sm"
                 onClick={() => {
                   onOpenChange(false);
-                  // This could navigate to friends list or add friend modal
+                  onFriendsSheetOpen?.();
                 }}
               >
                 View Friends

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
+import { track } from '@/lib/analytics';
 
 export interface FriendRequest {
   user_id: string;
@@ -83,6 +84,7 @@ export function useFriendRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      track('friend_request_declined');
       toast({
         title: "Friend request declined",
       });

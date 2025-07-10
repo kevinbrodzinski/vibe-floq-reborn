@@ -136,6 +136,7 @@ export const AvatarDropdown = () => {
       <MessagesSheet 
         open={messagesSheetOpen}
         onOpenChange={setMessagesSheetOpen}
+        onFriendsSheetOpen={() => setFriendsSheetOpen(true)}
       />
 
       <AddFriendModal 
