@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { useMemo } from 'react';
+import { sha1 } from 'crypto-hash';
+import { track } from '@/lib/analytics';
 
 export function useFriends() {
   const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
@@ -66,9 +68,17 @@ export function useFriends() {
     },
   });
 
+  // Phase 1A Fix: Stable cache key with hashing for large friend lists
+  const stableCacheKey = useMemo(async () => {
+    const sortedIds = [...friendIds].sort();
+    const keyRaw = sortedIds.join(',');
+    // Hash if cache key is too large to prevent localStorage overflow
+    return sortedIds.length > 200 ? await sha1(keyRaw) : keyRaw;
+  }, [friendIds]);
+
   // 6.2 Prefetch friend profiles in one batched query
-  const { data: profiles = [] } = useQuery({
-    queryKey: ['friend-profiles', [...friendIds].sort().join(',')], // Phase 1 Fix: sort & hash cache key for stable deduplication
+  const { data: profiles = [], isError: profilesError } = useQuery({
+    queryKey: ['friend-profiles', stableCacheKey],
     enabled: friendIds.length > 0 && !OFFLINE_MODE,
     staleTime: 120_000, // 2 minutes
     refetchOnWindowFocus: false,
@@ -78,12 +88,16 @@ export function useFriends() {
         .select('id, display_name, avatar_url')
         .in('id', friendIds.slice(0, 50));
       if (error) {
-        console.warn('Failed to load friend profiles:', error);
-        return []; // Graceful degradation - don't throw on profile fetch failures
+        // Phase 1A Fix: Silent error telemetry without user-facing toasts
+        track('profile_prefetch_error', { msg: error.message });
+        return null; // Return null for better unknown state handling
       }
       return data || [];
     },
   });
+
+  // Phase 1A Fix: Handle null profiles gracefully
+  const safeProfiles = profiles === null ? [] : profiles;
 
   // Mutation placeholders - still mocked for now
   const addFriend = async (targetUserId: string) => {
@@ -106,9 +120,9 @@ export function useFriends() {
   };
 
   return {
-    friends: friendIds, // Keep friends as the return property name for backward compatibility
+    friends: friendIds,
     friendCount: friendIds.length,
-    profiles, // 6.2 - expose profiles for UI components
+    profiles: safeProfiles,
     isLoading,
     addFriend,
     removeFriend,

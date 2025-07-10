@@ -44,18 +44,19 @@ export const AvatarDropdown = () => {
         <DropdownMenuTrigger asChild>
           <div className="relative">
             <Avatar className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary">
-              {profile?.avatar_url && (
+              {profile?.avatar_url ? (
                 <AvatarImage 
                   src={getAvatarUrl(profile.avatar_url, 64)} 
                   onError={(e) => {
-                    // Phase 1 Fix: graceful avatar degradation - hide image on error to prevent double rendering
+                    // Phase 1A Fix: Hide on error to prevent double rendering
                     e.currentTarget.style.display = 'none';
                   }}
                 />
+              ) : (
+                <AvatarFallback className="gradient-secondary">
+                  {getInitials(profile?.display_name || 'U')}
+                </AvatarFallback>
               )}
-              <AvatarFallback className="gradient-secondary">
-                {getInitials(profile?.display_name || 'U')}
-              </AvatarFallback>
             </Avatar>
             {friendCount > 0 && (
               <Badge 

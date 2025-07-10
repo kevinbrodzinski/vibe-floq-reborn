@@ -20,7 +20,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { useStableMemo } from "@/hooks/useStableMemo";
 import { Z_LAYERS } from "@/lib/z-layers";
 import { getVibeColor } from "@/utils/getVibeColor";
-import { useAnalytics } from "@/hooks/useAnalytics";
+import { track } from "@/lib/analytics";
+import { useMemo } from "react";
 
 interface Person {
   id: string;
@@ -82,8 +83,6 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
-  const { trackFriendEncounter } = useAnalytics();
-  
   // Pre-load avatars for better performance - stabilized
   const friendAvatars = useStableMemo(
     () => friends.map(f => f.avatar_url), 
@@ -91,14 +90,25 @@ export const FieldVisualization = ({
   );
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
   
-  // Phase 1 Fix: Move analytics to useEffect to prevent render loop spam
+  // Phase 1A Fix: Single useEffect with stable dependency for analytics
+  const friendIdsHash = useMemo(
+    () => people.filter(p => p.isFriend).map(p => p.id).sort().join(','),
+    [people]
+  );
+
   useEffect(() => {
+    const seenIds = new Set<string>();
     people.forEach(person => {
-      if (person.isFriend) {
-        trackFriendEncounter(person.id, person.vibe, 'field_visualization');
+      if (person.isFriend && !seenIds.has(person.id)) {
+        seenIds.add(person.id);
+        track('friend_encounter', { 
+          friend_id: person.id, 
+          vibe: person.vibe,
+          location: 'field_visualization'
+        });
       }
     });
-  }, [people.filter(p => p.isFriend).map(p => p.id).join(',')]);  // Stable dependency
+  }, [friendIdsHash]);
   
   // DM state
   const [dmOpen, setDmOpen] = useState(false);
