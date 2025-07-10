@@ -129,12 +129,12 @@ export function isUserInRollout(userId?: string, config?: EnvironmentConfig): bo
     return true;
   }
   
-  // Percentage-based rollout
+  // Percentage-based rollout using djb2 hash
   if (env.rolloutPercentage > 0 && userId) {
-    // Simple hash-based rollout using user ID
-    const hash = Array.from(userId).reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const percentage = (hash % 100) + 1;
-    return percentage <= env.rolloutPercentage;
+    let h = 5381;
+    for (const ch of userId) h = ((h << 5) + h) + ch.charCodeAt(0);
+    const pct = ((h >>> 0) % 100) + 1;           // 1-100
+    return pct <= env.rolloutPercentage;
   }
   
   return false;

@@ -59,6 +59,28 @@ serve(async (req) => {
 
     if (error) {
       console.error("Presence upsert error:", error);
+      
+      // Track critical database errors
+      try {
+        const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
+        if (posthogKey) {
+          await fetch('https://app.posthog.com/capture/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api_key: posthogKey,
+              event: 'presence_upsert_error',
+              properties: {
+                msg: error.message,
+                code: error.code ?? null,
+              },
+            }),
+          }).catch(() => {/* silent */});
+        }
+      } catch (analyticsError) {
+        console.debug('Analytics tracking failed:', analyticsError);
+      }
+      
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -92,7 +114,29 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Presence function error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    // Track critical errors in PostHog
+    try {
+      const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
+      if (posthogKey) {
+        await fetch('https://app.posthog.com/capture/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            api_key: posthogKey,
+            event: 'presence_upsert_error',
+            properties: {
+              msg: (error as Error).message,
+              code: (error as any).code ?? null,
+            },
+          }),
+        }).catch(() => {/* silent */});
+      }
+    } catch (analyticsError) {
+      console.debug('Analytics tracking failed:', analyticsError);
+    }
+    
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

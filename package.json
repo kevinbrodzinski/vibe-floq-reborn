@@ -43,6 +43,7 @@
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/supabase-js": "^2.50.3",
     "@tanstack/react-query": "^5.56.2",
+    "@types/yargs": "^17.0.33",
     "@use-gesture/react": "^10.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -68,7 +69,9 @@
     "supercluster": "^8.0.1",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
     "vaul": "^0.9.3",
+    "yargs": "^17.7.2",
     "zod": "^3.23.8",
     "zustand": "^5.0.6"
   },

@@ -6,6 +6,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { differenceInMilliseconds } from 'date-fns';
 import { useStableMemo } from '@/hooks/useStableMemo';
 import { getEnvironmentConfig } from '@/lib/environment';
+import { track } from '@/lib/analytics';
 
 /** precision-6 buckets → ~1.2 km edge */
 const GH_PRECISION = 6;
@@ -21,7 +22,7 @@ export interface LivePresence {
 }
 
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: string[]) => {
-  const env = getEnvironmentConfig();
+  const env = useStableMemo(() => getEnvironmentConfig(), []);
   
   // 6.3 - Optimized friend set for O(1) lookups
   const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
@@ -169,6 +170,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
             if (env.debugNetwork) {
               console.error(`🔴 Error subscribing to presence bucket: ${geohash}`);
             }
+            // Track WebSocket errors
+            track('presence_ws_error', { geohash });
           }
         });
 
