@@ -45,12 +45,17 @@ export const AvatarDropdown = () => {
           <div className="relative">
             <Avatar className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary">
               {profile?.avatar_url ? (
-                <AvatarImage src={getAvatarUrl(profile.avatar_url, 64)} />
-              ) : (
-                <AvatarFallback className="gradient-secondary">
-                  {getInitials(profile?.display_name || 'U')}
-                </AvatarFallback>
-              )}
+                <AvatarImage 
+                  src={getAvatarUrl(profile.avatar_url, 64)} 
+                  onError={(e) => {
+                    // Graceful avatar degradation - fallback to initials if image fails
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : null}
+              <AvatarFallback className="gradient-secondary">
+                {getInitials(profile?.display_name || 'U')}
+              </AvatarFallback>
             </Avatar>
             {friendCount > 0 && (
               <Badge 

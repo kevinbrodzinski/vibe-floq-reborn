@@ -68,7 +68,7 @@ export function useFriends() {
 
   // 6.2 Prefetch friend profiles in one batched query
   const { data: profiles = [] } = useQuery({
-    queryKey: ['friend-profiles', friendIds],
+    queryKey: ['friend-profiles', friendIds.join(',')], // Fix: stringify array for proper cache key
     enabled: friendIds.length > 0 && !OFFLINE_MODE,
     staleTime: 120_000, // 2 minutes
     refetchOnWindowFocus: false,
@@ -77,8 +77,11 @@ export function useFriends() {
         .from('profiles')
         .select('id, display_name, avatar_url')
         .in('id', friendIds.slice(0, 50));
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.warn('Failed to load friend profiles:', error);
+        return []; // Graceful degradation - don't throw on profile fetch failures
+      }
+      return data || [];
     },
   });
 

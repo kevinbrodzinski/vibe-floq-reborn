@@ -19,6 +19,7 @@ import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useStableMemo } from "@/hooks/useStableMemo";
 import { Z_LAYERS } from "@/lib/z-layers";
+import { track } from "@/lib/analytics";
 
 interface Person {
   id: string;
@@ -175,7 +176,17 @@ export const FieldVisualization = ({
       )}
 
       {/* People on the field (when not in constellation mode) */}
-      {!constellationMode && people.map((person, index) => (
+      {!constellationMode && people.map((person, index) => {
+        // Analytics tracking for friend encounters
+        if (person.isFriend) {
+          track('friend_encounter', { 
+            friend_id: person.id, 
+            vibe: person.vibe,
+            location: 'field_visualization'
+          });
+        }
+        
+        return (
         <HoverCard key={person.id}>
           <HoverCardTrigger asChild>
             <div
@@ -188,16 +199,17 @@ export const FieldVisualization = ({
                 zIndex: Z_LAYERS.PEOPLE_DOTS,
               }}
             >
-              {/* 6.4 - Friend halo: subtle ring/glow effect */}
+              {/* 6.4 - Friend halo: subtle ring/glow effect using friend's vibe color */}
               {person.isFriend && (
-                <div className="absolute inset-0 rounded-full ring-2 ring-primary/60 ring-offset-2 ring-offset-background/20 animate-pulse" 
+                <div className="absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background/20 animate-pulse" 
                      style={{ 
                        width: mini ? '16px' : '24px', 
                        height: mini ? '16px' : '24px',
                        transform: 'translate(-50%, -50%)',
                        left: '50%',
-                       top: '50%'
-                     }} 
+                       top: '50%',
+                       '--tw-ring-color': `${person.color}60`, // Dynamic friend halo color from vibe
+                     } as React.CSSProperties} 
                 />
               )}
               <div
@@ -243,7 +255,8 @@ export const FieldVisualization = ({
             </HoverCardContent>
           </LayersPortal>
         </HoverCard>
-      ))}
+        );
+      })}
 
       {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
       {floqEvents.map((event, index) => {
