@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: string
+          earned_at: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achievement_type: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achievement_type?: string
+          earned_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
@@ -255,23 +279,32 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string | null
+          custom_status: string | null
           display_name: string | null
           id: string
+          interests: string[] | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
+          custom_status?: string | null
           display_name?: string | null
           id?: string
+          interests?: string[] | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string | null
+          custom_status?: string | null
           display_name?: string | null
           id?: string
+          interests?: string[] | null
           username?: string | null
         }
         Relationships: []
@@ -309,6 +342,36 @@ export type Database = {
           proj4text?: string | null
           srid?: number
           srtext?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          available_until: string | null
+          created_at: string
+          notification_preferences: Json | null
+          privacy_settings: Json | null
+          theme_preferences: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_until?: string | null
+          created_at?: string
+          notification_preferences?: Json | null
+          privacy_settings?: Json | null
+          theme_preferences?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_until?: string | null
+          created_at?: string
+          notification_preferences?: Json | null
+          privacy_settings?: Json | null
+          theme_preferences?: Json | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1035,6 +1098,10 @@ export type Database = {
           distance_meters: number
           updated_at: string
         }[]
+      }
+      get_profile_stats: {
+        Args: { target_user_id: string; metres?: number; seconds?: number }
+        Returns: Json
       }
       get_proj4_from_srid: {
         Args: { "": number }
