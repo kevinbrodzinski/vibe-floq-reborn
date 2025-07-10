@@ -439,5 +439,19 @@ All colors MUST be HSL.
     position: fixed;
     inset: 0;                 /* fills the safe-area */
     height: 100dvh;           /* iOS bottom-bar safe */
-    z-index: 10;              /* below sheets (z-30) */
+    z-index: var(--z-map, 0); /* use CSS variable */
+  }
+
+  /* Debug stacking contexts */
+  [data-debug="true"] *[style*="transform: translate"] {
+    outline: 1px solid red !important;
+  }
+
+  /* Z-index CSS custom properties */
+  :root {
+    --z-map: 0;
+    --z-people: 10;
+    --z-header: 25;
+    --z-sheet: 60;
+    --z-toast: 70;
   }

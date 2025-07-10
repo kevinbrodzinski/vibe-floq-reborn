@@ -15,6 +15,10 @@ import { useSelectedVenue } from "@/store/useSelectedVenue";
 import { useAvatarPreloader } from "@/hooks/useAvatarPreloader";
 import { latLngToField, mToPercent } from "@/utils/geoConversion";
 import type { WalkableFloq } from "@/types";
+import { LayersPortal } from "@/components/LayersPortal";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { useStableMemo } from "@/hooks/useStableMemo";
+import { Z_LAYERS } from "@/lib/z-layers";
 
 interface Person {
   id: string;
@@ -75,8 +79,11 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
-  // Pre-load avatars for better performance
-  const friendAvatars = friends.map(f => f.avatar_url);
+  // Pre-load avatars for better performance - stabilized
+  const friendAvatars = useStableMemo(
+    () => friends.map(f => f.avatar_url), 
+    [friends.length, friends.map(f => f.avatar_url).join(',')]
+  );
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
   
   // DM state
@@ -168,29 +175,54 @@ export const FieldVisualization = ({
 
       {/* People on the field (when not in constellation mode) */}
       {!constellationMode && people.map((person, index) => (
-        <div
-          key={person.id}
-          className="absolute transition-all duration-500 cursor-pointer hover:scale-110"
-          style={{
-            left: `${person.x}%`,
-            top: `${person.y}%`,
-            transform: "translate(-50%, -50%)",
-            animationDelay: `${index * 0.1}s`,
-          }}
-        >
-          <div
-            className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
-            style={{
-              backgroundColor: person.color,
-              boxShadow: `0 0 20px ${person.color}`,
-            }}
-          ></div>
-          {!mini && (
-            <div className="text-sm text-center mt-2 text-foreground/90">
-              {person.name}
+        <HoverCard key={person.id}>
+          <HoverCardTrigger asChild>
+            <div
+              className="absolute transition-all duration-500 cursor-pointer hover:scale-110 pointer-events-auto"
+              style={{
+                left: `${person.x}%`,
+                top: `${person.y}%`,
+                transform: "translate(-50%, -50%)",
+                animationDelay: `${index * 0.1}s`,
+                zIndex: Z_LAYERS.PEOPLE_DOTS,
+              }}
+            >
+              <div
+                className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
+                style={{
+                  backgroundColor: person.color,
+                  boxShadow: `0 0 20px ${person.color}`,
+                }}
+              ></div>
+              {!mini && (
+                <div className="text-sm text-center mt-2 text-foreground/90">
+                  {person.name}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </HoverCardTrigger>
+          <LayersPortal layer="popover">
+            <HoverCardContent 
+              className="w-64 p-4"
+              side="top"
+              sideOffset={8}
+            >
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">{person.name}</h4>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: person.color }}
+                  />
+                  <span className="text-xs text-muted-foreground capitalize">{person.vibe}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Currently active in the area
+                </p>
+              </div>
+            </HoverCardContent>
+          </LayersPortal>
+        </HoverCard>
       ))}
 
       {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
@@ -300,46 +332,52 @@ export const FieldVisualization = ({
 
       {!mini && (
         <>
-          <VenueDetailsSheet
-            open={detailsOpen}
-            onOpenChange={(open) => {
-              setDetailsOpen(open);
-              if (!open) setSelectedVenueId(null);
-            }}
-            venueId={selectedVenueId}
-          />
+          <LayersPortal layer="sheet">
+            <VenueDetailsSheet
+              open={detailsOpen}
+              onOpenChange={(open) => {
+                setDetailsOpen(open);
+                if (!open) setSelectedVenueId(null);
+              }}
+              venueId={selectedVenueId}
+            />
+          </LayersPortal>
 
-          <ClusterVenuesSheet
-            isOpen={clusterSheetOpen}
-            onClose={() => {
-              setClusterSheetOpen(false);
-              setActiveClusterBbox(null);
-            }}
-            clusterBbox={activeClusterBbox}
-            onVenueTap={(venueId) => {
-              // Close cluster sheet and open venue details
-              setClusterSheetOpen(false);
-              setActiveClusterBbox(null);
-              setSelectedVenueId(venueId);
-              setDetailsOpen(true);
-            }}
-            onZoomToArea={() => {
-              if (activeClusterBbox) {
-                // Pan to center of bounding box
-                const centerLat = (activeClusterBbox[1] + activeClusterBbox[3]) / 2;
-                const centerLng = (activeClusterBbox[0] + activeClusterBbox[2]) / 2;
-                viewportControls.panTo(centerLat, centerLng);
-                viewportControls.zoomIn();
-              }
-            }}
-          />
+          <LayersPortal layer="sheet">
+            <ClusterVenuesSheet
+              isOpen={clusterSheetOpen}
+              onClose={() => {
+                setClusterSheetOpen(false);
+                setActiveClusterBbox(null);
+              }}
+              clusterBbox={activeClusterBbox}
+              onVenueTap={(venueId) => {
+                // Close cluster sheet and open venue details
+                setClusterSheetOpen(false);
+                setActiveClusterBbox(null);
+                setSelectedVenueId(venueId);
+                setDetailsOpen(true);
+              }}
+              onZoomToArea={() => {
+                if (activeClusterBbox) {
+                  // Pan to center of bounding box
+                  const centerLat = (activeClusterBbox[1] + activeClusterBbox[3]) / 2;
+                  const centerLng = (activeClusterBbox[0] + activeClusterBbox[2]) / 2;
+                  viewportControls.panTo(centerLat, centerLng);
+                  viewportControls.zoomIn();
+                }
+              }}
+            />
+          </LayersPortal>
           
           {/* DM Quick Sheet */}
-          <DMQuickSheet
-            open={dmOpen}
-            onOpenChange={setDmOpen}
-            friendId={selectedFriendId}
-          />
+          <LayersPortal layer="sheet">
+            <DMQuickSheet
+              open={dmOpen}
+              onOpenChange={setDmOpen}
+              friendId={selectedFriendId}
+            />
+          </LayersPortal>
         </>
       )}
     </div>

@@ -7,21 +7,26 @@ interface FieldHeaderProps {
   locationReady?: boolean;
   currentLocation?: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const FieldHeader = ({ 
   locationReady = false, 
   currentLocation = "Locating...",
-  className 
+  className,
+  style
 }: FieldHeaderProps) => {
   return (
-    <header className={cn(
-      "flex items-center justify-between px-6 pt-safe-top h-16",
-      "pointer-events-auto z-20 relative",
-      "bg-background/60 backdrop-blur-xl",
-      "border-b border-border/20",
-      className
-    )}>
+    <header 
+      className={cn(
+        "flex items-center justify-between px-6 pt-safe-top h-16",
+        "pointer-events-auto relative",
+        "bg-background/60 backdrop-blur-xl",
+        "border-b border-border/20",
+        className
+      )}
+      style={style}
+    >
       {/* Left: Location */}
       <Button 
         variant="ghost" 
