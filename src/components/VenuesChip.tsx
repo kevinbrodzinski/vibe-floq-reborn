@@ -6,7 +6,7 @@ interface VenuesChipProps {
 }
 
 export function VenuesChip({ onOpen, venueCount = 1 }: VenuesChipProps) {
-  const gestureHandlers = useAdvancedGestures({
+  const { handlers } = useAdvancedGestures({
     onSwipeUp: onOpen,
     onTap: onOpen,
   });
@@ -14,7 +14,7 @@ export function VenuesChip({ onOpen, venueCount = 1 }: VenuesChipProps) {
   return (
     <div
       className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20"
-      {...gestureHandlers}
+      {...handlers}
     >
       <button
         className="bg-accent text-accent-foreground px-4 py-2 

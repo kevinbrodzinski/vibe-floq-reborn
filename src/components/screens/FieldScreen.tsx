@@ -236,12 +236,12 @@ export const FieldScreen = () => {
   }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
 
   // Swipe-down gesture to exit full-screen
-  const gestureHandlers = useAdvancedGestures({
+  const { handlers } = useAdvancedGestures({
     onSwipeDown: () => mode === 'full' && set('map'),
   });
 
   return (
-    <div className="relative h-svh w-full bg-background" {...gestureHandlers}>
+    <div className="relative h-svh w-full bg-background" {...handlers}>
       {/* Event Banner */}
       {currentEvent && showBanner && (
         <EventBanner

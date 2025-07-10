@@ -27,7 +27,7 @@ export const CollaborativePlanningScreen = () => {
 
   const { socialHaptics } = useHapticFeedback();
 
-  const { startListening } = useAdvancedGestures({
+  const { controls: { startListening } } = useAdvancedGestures({
     onGesture: (gesture) => {
       switch (gesture.type) {
         case 'shake':

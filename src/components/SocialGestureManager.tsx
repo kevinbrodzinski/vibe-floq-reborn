@@ -153,7 +153,7 @@ export const SocialGestureManager = ({
     }
   }, [isActive, socialActions, onSocialAction, socialHaptics]);
 
-  const { startListening, stopListening, isListening } = useAdvancedGestures({
+  const { controls: { startListening, stopListening, isListening } } = useAdvancedGestures({
     onGesture: handleGesture,
     longPressDelay: 800,
     swipeThreshold: 60,

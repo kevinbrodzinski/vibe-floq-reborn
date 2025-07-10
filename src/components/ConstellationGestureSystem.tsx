@@ -179,7 +179,7 @@ export const ConstellationGestureSystem = ({
     }
   }, [isActive, constellationActions, onConstellationAction, onOrbitalAdjustment, onEnergyShare, socialHaptics]);
 
-  const { startListening, stopListening, isListening } = useAdvancedGestures({
+  const { controls: { startListening, stopListening, isListening } } = useAdvancedGestures({
     onGesture: handleGesture,
     longPressDelay: 1000,
     swipeThreshold: 50

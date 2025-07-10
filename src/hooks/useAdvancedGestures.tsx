@@ -243,7 +243,23 @@ export const useAdvancedGestures = ({
     return () => stopListening();
   }, [stopListening]);
 
+  // Separate DOM-safe handlers from control methods
+  const handlers = {
+    onTouchStart: handleReactTouchStart,
+    onTouchMove: handleReactTouchMove,
+    onTouchEnd: handleReactTouchEnd
+  };
+
+  const controls = {
+    isListening,
+    startListening,
+    stopListening
+  };
+
   return {
+    handlers,
+    controls,
+    // Legacy API for backward compatibility
     isListening,
     startListening,
     stopListening,
