@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ngeohash from 'ngeohash';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { differenceInMilliseconds } from 'date-fns';
+import { useStableMemo } from '@/hooks/useStableMemo';
 
 /** precision-6 buckets → ~1.2 km edge */
 const GH_PRECISION = 6;
@@ -15,10 +16,14 @@ export interface LivePresence {
   lng: number;
   venue_id: string | null;
   expires_at: string; // ISO
+  isFriend?: boolean; // 6.3 - Add friend detection flag
 }
 
-export const useBucketedPresence = (lat?: number, lng?: number) => {
+export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: string[]) => {
   const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
+  // 6.3 - Optimized friend set for O(1) lookups
+  const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
   
   if (OFFLINE_MODE) {
     const people: LivePresence[] = [];
@@ -69,11 +74,13 @@ export const useBucketedPresence = (lat?: number, lng?: number) => {
           parseFloat(item.location.coordinates?.[0]) || 0 : 
           parseFloat(item.lng) || 0,
         venue_id: item.venue_id,
-        expires_at: item.expires_at || new Date(Date.now() + 2 * 60 * 1000).toISOString()
+        expires_at: item.expires_at || new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        isFriend: friendsSet.has(item.user_id) // 6.3 - Mark friends for UI enhancement
       }));
     },
     enabled: hasValidCoords,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 2 * 60 * 1000, // 6.5 - 2 minutes for performance
+    refetchOnWindowFocus: false, // 6.5 - Prevent unnecessary refetches
     refetchInterval: 60 * 1000, // Refetch every minute as backup
   });
 

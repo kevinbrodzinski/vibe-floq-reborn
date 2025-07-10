@@ -27,6 +27,7 @@ interface Person {
   y: number;
   color: string;
   vibe: string;
+  isFriend?: boolean; // 6.4 - Add friend flag for UI enhancement
 }
 
 interface FloqEvent {
@@ -187,6 +188,18 @@ export const FieldVisualization = ({
                 zIndex: Z_LAYERS.PEOPLE_DOTS,
               }}
             >
+              {/* 6.4 - Friend halo: subtle ring/glow effect */}
+              {person.isFriend && (
+                <div className="absolute inset-0 rounded-full ring-2 ring-primary/60 ring-offset-2 ring-offset-background/20 animate-pulse" 
+                     style={{ 
+                       width: mini ? '16px' : '24px', 
+                       height: mini ? '16px' : '24px',
+                       transform: 'translate(-50%, -50%)',
+                       left: '50%',
+                       top: '50%'
+                     }} 
+                />
+              )}
               <div
                 className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
                 style={{
@@ -195,7 +208,7 @@ export const FieldVisualization = ({
                 }}
               ></div>
               {!mini && (
-                <div className="text-sm text-center mt-2 text-foreground/90">
+                <div className={`text-sm text-center mt-2 ${person.isFriend ? 'text-primary font-medium' : 'text-foreground/90'}`}>
                   {person.name}
                 </div>
               )}
@@ -208,7 +221,14 @@ export const FieldVisualization = ({
               sideOffset={8}
             >
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">{person.name}</h4>
+                <div className="flex items-center gap-2">
+                  <h4 className={`font-medium text-sm ${person.isFriend ? 'text-primary' : ''}`}>
+                    {person.name}
+                  </h4>
+                  {person.isFriend && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">Friend</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full"

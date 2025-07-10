@@ -25,7 +25,7 @@ interface FriendsSheetProps {
 }
 
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
-  const { friends, friendCount, isLoading } = useFriends();
+  const { friends, friendCount, profiles, isLoading } = useFriends();
   const { lat, lng } = useGeolocation();
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();

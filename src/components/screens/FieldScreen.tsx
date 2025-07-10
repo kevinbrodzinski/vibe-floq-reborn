@@ -22,13 +22,12 @@ import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { clsx } from "clsx";
 import type { Vibe } from "@/types";
-// Temporarily remove complex dependencies to establish baseline
-// import { useStableMemo, useStableArray } from "@/hooks/useStableMemo";
-// import { Z_LAYERS } from "@/lib/z-layers";
+import { useStableMemo } from "@/hooks/useStableMemo";
+import { useFriends } from "@/hooks/useFriends";
+import { useBucketedPresence } from "@/hooks/useBucketedPresence";
 
 // Use basic hooks for stability - restore optimized versions after baseline works
 import { useGeolocation } from "@/hooks/useGeolocation";
-// import { usePresence } from "@/hooks/usePresence"; // Disabled until edge function exists
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 
@@ -39,6 +38,7 @@ interface Person {
   y: number;
   color: string;
   vibe: string;
+  isFriend?: boolean; // 6.4 - Add friend flag for UI enhancement
 }
 
 interface FloqEvent {
@@ -68,30 +68,23 @@ export const FieldScreen = () => {
   const location = useGeolocation();
   const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
   
-  // Temporarily disable presence completely to establish baseline
-  // const { updatePresence, updating } = usePresence();
+  // 6.6 - Integration: Wire up friends and presence data
+  const { friends: friendIds, profiles } = useFriends();
+  const { people: presenceData } = useBucketedPresence(location.lat, location.lng, friendIds);
   
-  // Mock presence data for now - will restore when presence works
-  const presenceData = {
-    people: [], // Empty for now to avoid errors
-    updating: false
-  };
+  // 6.6 - Create profiles map for quick lookup
+  const profilesMap = useStableMemo(() => {
+    return new Map(profiles.map(p => [p.id, p]));
+  }, [profiles.length, profiles.map(p => p.id).join(',')]);
   
-  // Temporarily disable current event to avoid side effect issues
-  // const { data: currentEvent } = useCurrentEvent(
-  //   location.lat,
-  //   location.lng,
-  //   () => setShowBanner(false)
-  // );
-  const currentEvent = null;
-  
-  // Get nearby venues for chip
+  // Get nearby venues for chip and current event
   const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
+  const { data: currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
   };
-
+  
   // Mock floqs data for now
   const walkable_floqs: any[] = [];
   const isLocationReady = !!(location.lat && location.lng);
@@ -108,35 +101,36 @@ export const FieldScreen = () => {
     }
   };
 
-  // Simple mock people data for baseline - will restore when presence works
-  const people: Person[] = [
-    {
-      id: 'mock-1',
-      name: 'Mock User 1',
-      x: 30,
-      y: 40,
-      color: getVibeColor('social'),
-      vibe: 'social',
-    },
-    {
-      id: 'mock-2', 
-      name: 'Mock User 2',
-      x: 60,
-      y: 30,
-      color: getVibeColor('chill'),
-      vibe: 'chill',
-    }
-  ];
+  // 6.6 - Convert presence data to people format with friend information
+  const people: Person[] = useStableMemo(() => {
+    return presenceData.map((presence) => {
+      const profile = profilesMap.get(presence.user_id);
+      return {
+        id: presence.user_id,
+        name: profile?.display_name || `User ${presence.user_id.slice(-4)}`,
+        x: Math.random() * 80 + 10, // TODO: Convert lat/lng to field coordinates
+        y: Math.random() * 80 + 10,
+        color: getVibeColor(presence.vibe || 'social'),
+        vibe: presence.vibe || 'social',
+        isFriend: presence.isFriend || false, // 6.4 - Pass friend flag for UI enhancement
+      };
+    });
+  }, [presenceData.length, profilesMap.size]);
 
-  // Simple friends conversion for baseline
-  const friends = people.map((person, index) => ({
-    ...person,
-    relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
-    activity: 'active' as const,
-    warmth: 60 + Math.random() * 40,
-    compatibility: 70 + Math.random() * 30,
-    lastSeen: Date.now() - Math.random() * 900000,
-  }));
+  // 6.6 - Convert friends to extended format for constellation mode
+  const friends = useStableMemo(() => {
+    return people
+      .filter(person => (person as any).isFriend)
+      .map((person, index) => ({
+        ...person,
+        relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
+        activity: 'active' as const,
+        warmth: 60 + Math.random() * 40,
+        compatibility: 70 + Math.random() * 30,
+        lastSeen: Date.now() - Math.random() * 900000,
+        avatar_url: profilesMap.get(person.id)?.avatar_url,
+      }));
+  }, [people.length, people.filter(p => (p as any).isFriend).length]);
 
   // Simple floq events conversion for baseline
   const floqEvents: FloqEvent[] = walkable_floqs.map((floq, index) => ({
@@ -315,10 +309,10 @@ export const FieldScreen = () => {
           currentVibe={currentVibe}
           nearbyUsersCount={people.length}
           walkableFloqsCount={walkable_floqs.length}
-          updating={presenceData.updating}
+          updating={false} // TODO: Add real updating state when presence is fully restored
           error={location.error}
           debug={debug}
-          onVibeChange={changeVibe}
+          onVibeChange={(vibe) => changeVibe(vibe)}
         >
           {/* Constellation Controls */}
           <ConstellationControls

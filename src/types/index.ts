@@ -46,6 +46,7 @@ export interface LivePresence {
   lng: number;
   venue_id: string | null;
   expires_at: string;
+  isFriend?: boolean; // 6.3 - Add friend detection flag
 }
 
 export interface CrossedPath {
