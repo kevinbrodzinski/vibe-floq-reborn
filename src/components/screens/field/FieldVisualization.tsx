@@ -22,7 +22,7 @@ import { Z_LAYERS } from "@/lib/z-layers";
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
 import { useMemo, Fragment } from "react";
-import { jitterPoint, groupByPosition } from '@/utils/jitter';
+import { jitterPoint, groupByPosition, sortFriendsFirst } from '@/utils/jitter';
 import ClusterBadge from '@/components/ClusterBadge';
 
 interface Person {

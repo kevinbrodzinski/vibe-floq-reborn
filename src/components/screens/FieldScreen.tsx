@@ -70,7 +70,7 @@ export const FieldScreen = () => {
   
   // 6.6 - Integration: Wire up friends and presence data
   const { friends: friendIds, profiles } = useFriends();
-  const { people: presenceData } = useBucketedPresence(location.lat, location.lng, friendIds);
+  const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.lat, location.lng, friendIds);
   
   // 6.6 - Create profiles map for quick lookup
   const profilesMap = useStableMemo(() => {
@@ -283,6 +283,7 @@ export const FieldScreen = () => {
         <FieldHeader 
           locationReady={isLocationReady} 
           currentLocation={location.error ? "Location unavailable" : "Current location"}
+          lastHeartbeat={lastHeartbeat}
           style={{ zIndex: 50 }}
         />
 

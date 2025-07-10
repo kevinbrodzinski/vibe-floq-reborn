@@ -231,7 +231,7 @@ export const FriendConstellation = ({
               }}
             />
 
-            {/* Friend Avatar */}
+            {/* Friend Avatar with Halo */}
             <div
               className="absolute cursor-pointer transition-all duration-300 hover:scale-110"
               style={{
@@ -242,8 +242,19 @@ export const FriendConstellation = ({
               }}
               onClick={() => handleFriendClick(friend)}
             >
+              {/* Friend Halo */}
               <div
-                className="w-8 h-8 rounded-full border-2 transition-all duration-300"
+                className="absolute inset-0 rounded-full animate-pulse"
+                style={{
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
+                  borderColor: friend.color,
+                  transform: 'scale(1.3)',
+                }}
+              />
+              
+              <div
+                className="w-8 h-8 rounded-full border-2 transition-all duration-300 relative"
                 style={{
                   backgroundColor: friend.color,
                   borderColor: activityColor,

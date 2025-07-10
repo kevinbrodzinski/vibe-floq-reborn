@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import ngeohash from 'ngeohash';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -23,13 +23,36 @@ export interface LivePresence {
 
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: string[]) => {
   const env = useStableMemo(() => getEnvironmentConfig(), []);
+  const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
+  const [batteryLevel, setBatteryLevel] = useState<number>(1);
   
   // 6.3 - Optimized friend set for O(1) lookups
   const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
   
+  // Battery API detection for low-power mode
+  useEffect(() => {
+    const getBattery = async () => {
+      try {
+        if ('getBattery' in navigator) {
+          const battery = await (navigator as any).getBattery();
+          setBatteryLevel(battery.level);
+          
+          battery.addEventListener('levelchange', () => {
+            setBatteryLevel(battery.level);
+          });
+        }
+      } catch (error) {
+        // Battery API not supported, assume full battery
+        setBatteryLevel(1);
+      }
+    };
+    
+    getBattery();
+  }, []);
+  
   if (env.presenceMode === 'mock') {
     const people: LivePresence[] = [];
-    return { people };
+    return { people, lastHeartbeat };
   }
   
   if (env.presenceMode === 'stub') {
@@ -55,7 +78,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       }
     ] : [];
     
-    return { people: stubPeople };
+    return { people: stubPeople, lastHeartbeat };
   }
 
   const queryClient = useQueryClient();
@@ -116,12 +139,15 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
         console.log('✅ Fetched presence data:', { count: mappedData.length, users: mappedData });
       }
       
+      // Update heartbeat on successful fetch
+      setLastHeartbeat(Date.now());
+      
       return mappedData;
     },
     enabled: hasValidCoords && env.presenceMode === 'live',
     staleTime: 2 * 60 * 1000, // 6.5 - 2 minutes for performance
     refetchOnWindowFocus: false, // 6.5 - Prevent unnecessary refetches
-    refetchInterval: 60 * 1000, // Refetch every minute as backup
+    refetchInterval: batteryLevel < 0.2 ? 30 * 1000 : 60 * 1000, // Low-power mode: 30s when battery < 20%
   });
 
   // Set up geohash-bucketed realtime subscriptions (live mode only)
@@ -160,6 +186,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
           queryClient.invalidateQueries({ 
             queryKey: ['presence-nearby', frozenLat, frozenLng] 
           });
+          
+          // Update heartbeat on realtime update
+          setLastHeartbeat(Date.now());
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
@@ -198,5 +227,5 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
     };
   }, []);
 
-  return { people };
+  return { people, lastHeartbeat };
 };

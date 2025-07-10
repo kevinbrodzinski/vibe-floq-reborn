@@ -19,7 +19,7 @@ export function groupByLocation<T extends { lat: number; lng: number }>(
 }
 
 // Special grouping function for Person objects that use x/y instead of lat/lng
-export function groupByPosition<T extends { x: number; y: number }>(
+export function groupByPosition<T extends { x: number; y: number; isFriend?: boolean }>(
   items: T[],
   precision = 1, // precision for percentage values (0-100)
 ): Record<string, T[]> {
@@ -28,4 +28,9 @@ export function groupByPosition<T extends { x: number; y: number }>(
     (acc[key] ||= []).push(item);
     return acc;
   }, {});
+}
+
+// Friend-first sorting utility for clustered positions
+export function sortFriendsFirst<T extends { isFriend?: boolean }>(items: T[]): T[] {
+  return items.sort((a, b) => Number(b.isFriend) - Number(a.isFriend));
 }
