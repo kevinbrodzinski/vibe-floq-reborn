@@ -35,7 +35,8 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   });
   
   // Get friend profile
-  const { data: friend } = useProfile(friendId || '');
+  // const { data: friend } = useProfile(friendId || '');
+  const friend = { display_name: 'Friend', avatar_url: null }; // Mock for now
 
   // Get current user ID and mark as read when sheet opens
   useEffect(() => {
@@ -54,26 +55,13 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     return Array.from(new Set(messages.map(m => m.sender_id)));
   }, [messages]);
 
-  // Fetch all sender profiles at once to avoid hook-in-loop
-  const senderProfiles = useQueries({
-    queries: senderIds.map(id => ({
-      queryKey: ['profile', id],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, avatar_url, created_at')
-          .eq('id', id)
-          .single();
-        if (error) throw error;
-        return data;
-      },
-      staleTime: 60_000,
-    })),
-  });
-
-  // Helper to get profile by sender ID
-  const getProfile = (uid: string) =>
-    senderProfiles.find(p => p.data?.id === uid)?.data;
+  // Temporarily disable sender profiles fetch
+  // const senderProfiles = useQueries({...});
+  
+  const getProfile = (uid: string) => ({ 
+    display_name: 'User', 
+    avatar_url: null 
+  }); // Mock for now
 
   // Auto-scroll to bottom with requestAnimationFrame
   useEffect(() => {

@@ -16,7 +16,8 @@ interface OnlineFriendRowProps {
 }
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
-  const { data: p } = useProfile(userId);
+  // const { data: p } = useProfile(userId);
+  const p = { display_name: 'Friend', avatar_url: null }; // Mock for now
   const statusMap = useFriendsPresence();
   const online = statusMap[userId] === 'online';
   const [dmOpen, setDmOpen] = useState(false);

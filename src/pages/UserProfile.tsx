@@ -9,7 +9,8 @@ import { getAvatarUrl, getInitials } from '@/lib/avatar';
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { data: profile } = useProfile(userId || '');
+  // const { data: profile } = useProfile(userId || '');
+  const profile = { display_name: 'User', avatar_url: null }; // Mock for now
 
   if (!userId) {
     return <div>Invalid user ID</div>;
