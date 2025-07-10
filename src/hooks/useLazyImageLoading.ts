@@ -19,7 +19,8 @@ export const useLazyImageLoading = (
 
   useEffect(() => {
     const img = imgRef.current;
-    if (!img || !src) return;
+    // SSR fallback - guard IntersectionObserver
+    if (!img || !src || typeof window === 'undefined') return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {

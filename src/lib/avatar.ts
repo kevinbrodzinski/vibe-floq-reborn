@@ -19,9 +19,10 @@ export type AvatarSize = keyof typeof AVATAR_SIZES;
  * Generate optimized avatar URL with Transform CDN
  * @param path - Storage path to the avatar file
  * @param size - Avatar size (number or size key)
+ * @param updatedAt - Timestamp for cache busting
  * @returns Transform CDN URL with optimization parameters
  */
-export const getAvatarUrl = (path?: string | null, size: number | AvatarSize = 64) => {
+export const getAvatarUrl = (path?: string | null, size: number | AvatarSize = 64, updatedAt?: string) => {
   if (!path) return undefined;
   
   const pixelSize = typeof size === 'number' ? size : AVATAR_SIZES[size];
@@ -30,8 +31,9 @@ export const getAvatarUrl = (path?: string | null, size: number | AvatarSize = 6
     .from('avatars')
     .getPublicUrl(path);
     
-  // Transform CDN with advanced optimization
-  const transformUrl = `${data.publicUrl}?width=${pixelSize}&height=${pixelSize}&resize=cover&format=webp&quality=85&dpr=2`;
+  // Transform CDN with advanced optimization + cache busting
+  const cacheParam = updatedAt ? `&v=${encodeURIComponent(updatedAt)}` : '';
+  const transformUrl = `${data.publicUrl}?width=${pixelSize}&height=${pixelSize}&resize=cover&format=webp&quality=85&dpr=2${cacheParam}`;
   
   // Pre-warm on first access
   if (!preWarmCache.has(transformUrl)) {
@@ -45,16 +47,47 @@ export const getAvatarUrl = (path?: string | null, size: number | AvatarSize = 6
 /**
  * Generate blur placeholder URL (tiny, heavily compressed)
  * @param path - Storage path to the avatar file
+ * @param updatedAt - Timestamp for cache busting
  * @returns Small blur placeholder URL
  */
-export const getAvatarBlurUrl = (path?: string | null) => {
+export const getAvatarBlurUrl = (path?: string | null, updatedAt?: string) => {
   if (!path) return undefined;
   
   const { data } = supabase.storage
     .from('avatars')
     .getPublicUrl(path);
     
-  return `${data.publicUrl}?width=20&height=20&resize=cover&format=webp&quality=20&blur=10`;
+  const cacheParam = updatedAt ? `&v=${encodeURIComponent(updatedAt)}` : '';
+  return `${data.publicUrl}?width=20&height=20&resize=cover&format=webp&quality=20&blur=10${cacheParam}`;
+};
+
+/**
+ * Generate signed avatar URL (for private bucket access)
+ * @param path - Storage path to the avatar file
+ * @param size - Avatar size (number or size key)
+ * @param expiresIn - URL expiration time in seconds (default: 3600)
+ * @param updatedAt - Timestamp for cache busting
+ * @returns Signed URL with transform parameters
+ */
+export const getSignedAvatarUrl = async (
+  path?: string | null, 
+  size: number | AvatarSize = 64, 
+  expiresIn = 3600,
+  updatedAt?: string
+) => {
+  if (!path) return undefined;
+  
+  const pixelSize = typeof size === 'number' ? size : AVATAR_SIZES[size];
+  
+  const { data, error } = await supabase.storage
+    .from('avatars')
+    .createSignedUrl(path, expiresIn);
+    
+  if (error || !data) return undefined;
+  
+  // Transform CDN with signed URL + cache busting
+  const cacheParam = updatedAt ? `&v=${encodeURIComponent(updatedAt)}` : '';
+  return `${data.signedUrl}&width=${pixelSize}&height=${pixelSize}&resize=cover&format=webp&quality=85&dpr=2${cacheParam}`;
 };
 
 /**
