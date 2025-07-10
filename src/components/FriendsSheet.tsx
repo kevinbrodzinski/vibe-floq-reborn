@@ -11,12 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFriends } from '@/hooks/useFriends';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, X } from 'lucide-react';
+import { getAvatarUrl } from '@/lib/avatar';
+import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 
 interface FriendsSheetProps {
   open: boolean;
@@ -26,6 +29,7 @@ interface FriendsSheetProps {
 
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
   const { friends, friendCount, profiles, isLoading } = useFriends();
+  const { pendingRequests, acceptRequest, declineRequest, isAccepting, isDeclining } = useFriendRequests();
   const { lat, lng } = useGeolocation();
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();
@@ -129,10 +133,56 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
               Pending requests
+              {pendingRequests.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{pendingRequests.length}</Badge>
+              )}
             </h3>
-            <div className="text-center py-4 text-muted-foreground">
-              <p className="text-sm">No pending requests</p>
-            </div>
+            
+            {pendingRequests.length > 0 ? (
+              <div className="space-y-2">
+                {pendingRequests.map((request: any) => (
+                  <div key={request.user_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <AvatarWithFallback 
+                      src={request.profiles?.avatar_url ? getAvatarUrl(request.profiles.avatar_url, 40) : null}
+                      fallbackText={request.profiles?.display_name || request.profiles?.username || 'U'}
+                      className="w-10 h-10"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">
+                        {request.profiles?.display_name || request.profiles?.username || 'Unknown User'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Wants to be friends
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => acceptRequest(request.user_id)}
+                        disabled={isAccepting || isDeclining}
+                        className="h-8 px-3"
+                      >
+                        <Check className="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => declineRequest(request.user_id)}
+                        disabled={isAccepting || isDeclining}
+                        className="h-8 px-3"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="text-sm">No pending requests</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -95,6 +95,9 @@ export function useFriends() {
     },
   }) as { data: any[] | null, isError: boolean };
 
+  // Optimized friend set for O(1) lookups
+  const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
+
   // Phase 1B Fix: Handle null profiles gracefully with explicit null checks
   if (profiles === null) {
     // Silent degradation - render without profile data until retry
@@ -112,20 +115,53 @@ export function useFriends() {
     };
   }
 
-  // Mutation placeholders - still mocked for now
-  const addFriend = async (targetUserId: string) => {
-    console.log('Mock: would add friend', targetUserId);
-  };
+  // Real mutations using Supabase RPC functions
+  const addFriend = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { error } = await supabase.rpc('add_friend', {
+        target: targetUserId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      toast({
+        title: "Friend added",
+        description: "You are now friends!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to add friend",
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
 
-  const removeFriend = async (targetUserId: string) => {
-    console.log('Mock: would remove friend', targetUserId);
-  };
+  const removeFriend = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      const { error } = await supabase.rpc('remove_friend', {
+        target: targetUserId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      toast({
+        title: "Friend removed",
+        description: "This person is no longer your friend.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to remove friend",
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
 
-  const isAddingFriend = false;
-  const isRemovingFriend = false;
-
-  // Optimized friend set for O(1) lookups
-  const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
 
   // Check if a user is a friend
   const isFriend = (userId: string) => {
@@ -137,10 +173,10 @@ export function useFriends() {
     friendCount: friendIds.length,
     profiles: profiles || [],
     isLoading,
-    addFriend,
-    removeFriend,
-    isAddingFriend,
-    isRemovingFriend,
+    addFriend: addFriend.mutate,
+    removeFriend: removeFriend.mutate,
+    isAddingFriend: addFriend.isPending,
+    isRemovingFriend: removeFriend.isPending,
     isFriend,
   };
 }

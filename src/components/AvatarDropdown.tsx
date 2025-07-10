@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useFriends } from '@/hooks/useFriends';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/providers/AuthProvider';
 import { useAvatarManager } from '@/hooks/useAvatarManager';
@@ -21,17 +23,25 @@ import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
+import { MessagesSheet } from './MessagesSheet';
 import { AvatarUpload } from './AvatarUpload';
 
 export const AvatarDropdown = () => {
   const [debug, setDebug] = useDebug();
   const [friendsSheetOpen, setFriendsSheetOpen] = useState(false);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
-  
-  // 6.4 - Use real friends data with profile information
-  const { friendCount, profiles } = useFriends();
+  const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
   
   const { user } = useAuth();
+  
+  // Use real friends data, pending requests, and unread messages for notification badge
+  const { friendCount, profiles } = useFriends();
+  const { pendingRequests } = useFriendRequests();
+  const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
+  
+  // Total notifications = pending friend requests + unread messages
+  const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.unread_count, 0);
+  const totalNotifications = pendingRequests.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
   
   const avatarMgr = useAvatarManager();
@@ -48,14 +58,14 @@ export const AvatarDropdown = () => {
               fallbackText={profile?.display_name || 'U'}
               className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
             />
-            {friendCount > 0 && (
+            {totalNotifications > 0 && (
               <Badge 
                 variant="destructive" 
                 className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0 pointer-events-none font-medium"
                 role="status"
-                aria-label={`${friendCount} friend${friendCount === 1 ? '' : 's'}`}
+                aria-label={`${totalNotifications} notification${totalNotifications === 1 ? '' : 's'}`}
               >
-                {friendCount > 99 ? '99+' : friendCount}
+                {totalNotifications > 99 ? '99+' : totalNotifications}
               </Badge>
             )}
           </div>
@@ -74,9 +84,24 @@ export const AvatarDropdown = () => {
             My vibe / status
           </DropdownMenuItem>
           
+          <DropdownMenuItem onSelect={() => setMessagesSheetOpen(true)}>
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Messages
+            {totalUnreadMessages > 0 && (
+              <Badge variant="destructive" className="ml-auto">
+                {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+              </Badge>
+            )}
+          </DropdownMenuItem>
+          
           <DropdownMenuItem onSelect={() => setFriendsSheetOpen(true)}>
             <Users className="w-4 h-4 mr-2" />
             Friends ({friendCount})
+            {pendingRequests.length > 0 && (
+              <Badge variant="destructive" className="ml-auto">
+                {pendingRequests.length}
+              </Badge>
+            )}
           </DropdownMenuItem>
           
           <DropdownMenuItem onSelect={() => setAddFriendOpen(true)}>
@@ -106,6 +131,11 @@ export const AvatarDropdown = () => {
           setFriendsSheetOpen(false);
           setAddFriendOpen(true);
         }}
+      />
+
+      <MessagesSheet 
+        open={messagesSheetOpen}
+        onOpenChange={setMessagesSheetOpen}
       />
 
       <AddFriendModal 

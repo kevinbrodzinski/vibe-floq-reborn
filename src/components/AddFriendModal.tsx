@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useFriends } from '@/hooks/useFriends';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useToast } from '@/hooks/use-toast';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { UserSearchResults } from '@/components/UserSearchResults';
@@ -21,7 +21,7 @@ interface AddFriendModalProps {
 
 export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { addFriend, isAddingFriend } = useFriends();
+  const { sendRequest, isSending } = useFriendRequests();
   const { toast } = useToast();
   const { primeProfiles } = useProfileCache();
 
@@ -32,15 +32,11 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
 
   const handleAddFriend = async (userId: string) => {
     try {
-      await addFriend(userId);
+      sendRequest(userId);
       setSearchQuery('');
       onOpenChange(false);
-      toast({
-        title: "Friend request sent",
-        description: "Your friend request has been sent successfully",
-      });
     } catch (error) {
-      // Error handling is done in the useFriends hook
+      // Error handling is done in the useFriendRequests hook
     }
   };
 
@@ -66,7 +62,7 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
               placeholder="Search by @username or name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              disabled={isAddingFriend}
+              disabled={isSending}
               className="pl-9"
               autoFocus
             />
