@@ -54,6 +54,8 @@ export type Database = {
           created_at: string | null
           id: string
           last_message_at: string | null
+          last_read_at_a: string
+          last_read_at_b: string
           member_a: string
           member_b: string
         }
@@ -61,6 +63,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_message_at?: string | null
+          last_read_at_a?: string
+          last_read_at_b?: string
           member_a: string
           member_b: string
         }
@@ -68,6 +72,8 @@ export type Database = {
           created_at?: string | null
           id?: string
           last_message_at?: string | null
+          last_read_at_a?: string
+          last_read_at_b?: string
           member_a?: string
           member_b?: string
         }
@@ -953,6 +959,14 @@ export type Database = {
       get_proj4_from_srid: {
         Args: { "": number }
         Returns: string
+      }
+      get_unread_counts: {
+        Args: { user_id_param: string }
+        Returns: {
+          thread_id: string
+          friend_id: string
+          unread_count: number
+        }[]
       }
       get_user_location: {
         Args: Record<PropertyKey, never>
@@ -2346,6 +2360,10 @@ export type Database = {
       unlockrows: {
         Args: { "": string }
         Returns: number
+      }
+      update_last_read_at: {
+        Args: { thread_id_param: string; user_id_param: string }
+        Returns: undefined
       }
       updategeometrysrid: {
         Args: {

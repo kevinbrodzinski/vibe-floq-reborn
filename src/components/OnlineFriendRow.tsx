@@ -1,10 +1,13 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfileCache';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
+import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { MapPin } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
+import { Badge } from '@/components/ui/badge';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { useLongPress } from '@/hooks/useLongPress';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnlineFriendRowProps {
   userId: string;
@@ -13,10 +16,24 @@ interface OnlineFriendRowProps {
 }
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
-  const { data: p }   = useProfile(userId);
-  const statusMap     = useFriendsPresence();
-  const online        = statusMap[userId] === 'online';
+  const { data: p } = useProfile(userId);
+  const statusMap = useFriendsPresence();
+  const online = statusMap[userId] === 'online';
   const [dmOpen, setDmOpen] = useState(false);
+  
+  // Get current user ID for unread counts
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
+  
+  // Get unread count for this friend
+  const unreadCount = unreadCounts.find(c => c.friend_id === userId)?.unread_count || 0;
+  
+  // Get current user ID on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
 
   // Long-press to open DM
   const longPressGestures = useLongPress({
@@ -49,6 +66,14 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
           />
           {online && (
             <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
+          )}
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center p-0 min-w-[20px]"
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
           )}
         </div>
 

@@ -3,6 +3,7 @@ import { Send } from 'lucide-react';
 import { useQueries } from '@tanstack/react-query';
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfileCache';
+import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { MessageBubble } from '@/components/MessageBubble';
 import {
   Sheet,
@@ -26,17 +27,27 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const [input, setInput] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, isSending, isTyping, sendTyping } = useDMThread(friendId);
+  const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
+  
+  // Swipe gesture for closing sheet
+  const swipeGestures = useAdvancedGestures({
+    onSwipeDown: () => onOpenChange(false)
+  });
   
   // Get friend profile
   const { data: friend } = useProfile(friendId || '');
 
-  // Get current user ID synchronously
+  // Get current user ID and mark as read when sheet opens
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id ?? null);
     });
-  }, []);
+    
+    // Mark as read when sheet opens
+    if (open && friendId) {
+      markAsRead();
+    }
+  }, [open, friendId, markAsRead]);
 
   // Get unique sender IDs from messages
   const senderIds = useMemo(() => {
@@ -100,7 +111,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] flex flex-col backdrop-blur-xl bg-background/80">
+      <SheetContent 
+        side="bottom" 
+        className="h-[80vh] flex flex-col backdrop-blur-xl bg-background/80"
+        {...swipeGestures.handlers}
+      >
         <SheetHeader className="pb-4 border-b border-border/50">
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">

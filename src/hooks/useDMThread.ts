@@ -155,6 +155,23 @@ export function useDMThread(friendId: string | null) {
     [sendTyping]
   );
 
+  // Function to mark thread as read
+  const markAsRead = useCallback(async () => {
+    if (!threadId || !selfId) return;
+    
+    try {
+      await supabase.rpc('update_last_read_at', {
+        thread_id_param: threadId,
+        user_id_param: selfId
+      });
+      
+      // Invalidate unread counts query
+      qc.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  }, [threadId, selfId, qc]);
+
   return {
     threadId,
     messages,
@@ -162,5 +179,6 @@ export function useDMThread(friendId: string | null) {
     isSending: send.isPending,
     sendMessage: send.mutateAsync,
     sendTyping: throttledTyping, // Throttled typing indicator
+    markAsRead, // Mark thread as read
   };
 }
