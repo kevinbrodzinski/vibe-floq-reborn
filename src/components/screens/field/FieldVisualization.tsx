@@ -209,7 +209,7 @@ export const FieldVisualization = ({
 
           // Calculate pixel coords once (each person already has x/y in percentage);
           const base = cluster[0];
-          const sorted = [...cluster].sort((a, b) => a.id.localeCompare(b.id));
+          const sorted = sortFriendsFirst([...cluster].sort((a, b) => a.id.localeCompare(b.id)));
 
           // 1️⃣ Render dots with jitter when cluster size ≤ 4
           if (sorted.length <= 4) {
@@ -292,7 +292,7 @@ export const FieldVisualization = ({
           // 2️⃣ If > 4 members → jitter first 4, then show "+N"
           return (
             <div key={`cluster-${base.x}-${base.y}`}>
-              {sorted.slice(0, 4).map((person, idx) => {
+              {sortFriendsFirst(sorted.slice(0, 4)).map((person, idx) => {
                 const { dx, dy } = jitterPoint(idx);
                 return (
                   <HoverCard key={person.id}>
@@ -371,6 +371,14 @@ export const FieldVisualization = ({
                 count={sorted.length - 4}
                 x={base.x}
                 y={base.y}
+                onClick={() => {
+                  // Create a cluster-like object for the handleClusterClick function
+                  const clusterObj = {
+                    pointCount: sorted.length,
+                    props: { cluster_id: `cluster-${base.x}-${base.y}` }
+                  };
+                  handleClusterClick(clusterObj);
+                }}
               />
             </div>
           );

@@ -35,11 +35,13 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       try {
         if ('getBattery' in navigator) {
           const battery = await (navigator as any).getBattery();
-          setBatteryLevel(battery.level);
-          
-          battery.addEventListener('levelchange', () => {
+          if (battery) {
             setBatteryLevel(battery.level);
-          });
+            
+            battery.addEventListener('levelchange', () => {
+              setBatteryLevel(battery.level);
+            });
+          }
         }
       } catch (error) {
         // Battery API not supported, assume full battery

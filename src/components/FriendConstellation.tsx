@@ -242,8 +242,9 @@ export const FriendConstellation = ({
               }}
               onClick={() => handleFriendClick(friend)}
             >
-              {/* Friend Halo */}
+            {/* Friend Halo */}
               <div
+                key={`${friend.id}-halo`}
                 className="absolute inset-0 rounded-full animate-pulse"
                 style={{
                   borderWidth: '2px',
