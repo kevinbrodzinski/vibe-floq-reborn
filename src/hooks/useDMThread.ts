@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState, useMemo } from 'react';
 
 interface DirectMessage {
   id: string;
@@ -12,128 +12,102 @@ interface DirectMessage {
 }
 
 export function useDMThread(friendId: string | null) {
-  const queryClient = useQueryClient();
-  const [threadId, setThreadId] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const [selfId, setSelfId] = useState<string | null>(null);
 
-  // Cache current user ID to avoid hook-order violations
-  const currentUserId = useMemo(async () => {
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id || null;
+  /* 1️⃣ cache current user id once – synchronous */
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setSelfId(data.user?.id ?? null);
+    });
   }, []);
 
-  // Get or create thread
-  const { data: resolvedThreadId, isLoading: isCreatingThread } = useQuery({
-    queryKey: ['dm-thread', friendId],
+  /* 2️⃣ obtain / create the thread */
+  const { data: threadId } = useQuery({
+    queryKey: ['dm-thread', friendId, selfId],
+    enabled: !!friendId && !!selfId,
     queryFn: async () => {
-      if (!friendId) return null;
-      const userId = await currentUserId;
-      if (!userId) throw new Error('Not authenticated');
-      
       const { data, error } = await supabase.rpc('find_or_create_dm', {
-        a: userId,
-        b: friendId
+        a: selfId,
+        b: friendId,
       });
       if (error) throw error;
       return data as string;
     },
-    enabled: !!friendId,
   });
 
-  useEffect(() => {
-    if (resolvedThreadId) {
-      setThreadId(resolvedThreadId);
-    }
-  }, [resolvedThreadId]);
-
-  // Fetch messages
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ['dm-messages', threadId],
+  /* 3️⃣ messages query */
+  const { data: messages = [] } = useQuery({
+    queryKey: ['dm-msgs', threadId],
+    enabled: !!threadId,
     queryFn: async () => {
-      if (!threadId) return [];
       const { data, error } = await supabase
         .from('direct_messages')
         .select('*')
-        .eq('thread_id', threadId)
+        .eq('thread_id', threadId!)
         .order('created_at', { ascending: true })
         .limit(50);
       if (error) throw error;
       return data as DirectMessage[];
     },
-    enabled: !!threadId,
   });
 
-  // Send message mutation
-  const sendMessage = useMutation({
+  /* 4️⃣ send */
+  const send = useMutation({
     mutationFn: async (content: string) => {
-      if (!threadId) throw new Error('No thread ID');
-      const userId = await currentUserId;
-      if (!userId) throw new Error('Not authenticated');
-      
-      const { error } = await supabase
-        .from('direct_messages')
-        .insert({
-          thread_id: threadId,
-          sender_id: userId,
-          content
-        });
+      if (!threadId) throw new Error('No thread');
+      if (!selfId) throw new Error('No auth');
+
+      const { error } = await supabase.from('direct_messages').insert({
+        thread_id: threadId,
+        sender_id: selfId,
+        content,
+      });
       if (error) throw error;
     },
     onMutate: async (content) => {
-      if (!threadId) return;
-      const userId = await currentUserId;
-      if (!userId) return;
+      if (!threadId || !selfId) return;
 
-      // Optimistic update
-      const optimisticMessage: DirectMessage = {
-        id: crypto.randomUUID(),
-        thread_id: threadId,
-        sender_id: userId,
-        content,
-        created_at: new Date().toISOString()
-      };
-
-      queryClient.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old) => [
+      qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => [
         ...(old ?? []),
-        optimisticMessage
+        {
+          id: crypto.randomUUID(),
+          thread_id: threadId,
+          sender_id: selfId,
+          content,
+          created_at: new Date().toISOString(),
+        },
       ]);
     },
-    onError: () => {
-      // Refetch messages on error to remove optimistic update
-      queryClient.invalidateQueries({ queryKey: ['dm-messages', threadId] });
-    }
+    onSettled: () => {
+      if (threadId) qc.invalidateQueries({ queryKey: ['dm-msgs', threadId] });
+    },
   });
 
-  // Realtime subscription for new messages
+  /* 5️⃣ realtime – LISTEN to `pg_notify` */
   useEffect(() => {
     if (!threadId) return;
-
+    
     const channel = supabase
       .channel(`dm:${threadId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'direct_messages',
-        filter: `thread_id=eq.${threadId}`
-      }, (payload) => {
-        const newMessage = payload.new as DirectMessage;
-        queryClient.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old) => {
-          const existing = old?.find(m => m.id === newMessage.id);
-          if (existing) return old;
-          return [...(old ?? []), newMessage];
+      .on('broadcast', { event: 'message' }, (payload) => {
+        const msg = payload.payload as DirectMessage;
+        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => {
+          if (old?.some((m) => m.id === msg.id)) return old;
+          return [...(old ?? []), msg];
         });
       })
       .subscribe();
-
+      
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [threadId, queryClient]);
+  }, [threadId, qc]);
 
   return {
     threadId,
     messages,
-    isLoading: isCreatingThread || isLoadingMessages,
-    sendMessage: sendMessage.mutateAsync,
-    isSending: sendMessage.isPending
+    isSending: send.isPending,
+    sendMessage: send.mutateAsync,
   };
 }

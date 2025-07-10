@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { Send } from 'lucide-react';
+import { useQueries } from '@tanstack/react-query';
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfileCache';
 import { MessageBubble } from '@/components/MessageBubble';
@@ -23,24 +24,45 @@ interface DMQuickSheetProps {
 
 export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps) {
   const [input, setInput] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage, isSending } = useDMThread(friendId);
   
   // Get friend profile
   const { data: friend } = useProfile(friendId || '');
 
-  // Cache current user ID
-  const currentUserId = useMemo(async () => {
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id || null;
+  // Get current user ID synchronously
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id ?? null);
+    });
   }, []);
 
-  // Resolve current user ID for comparison
-  const [resolvedCurrentUserId, setResolvedCurrentUserId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    currentUserId.then(setResolvedCurrentUserId);
-  }, [currentUserId]);
+  // Get unique sender IDs from messages
+  const senderIds = useMemo(() => {
+    return Array.from(new Set(messages.map(m => m.sender_id)));
+  }, [messages]);
+
+  // Fetch all sender profiles at once to avoid hook-in-loop
+  const senderProfiles = useQueries({
+    queries: senderIds.map(id => ({
+      queryKey: ['profile', id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, display_name, avatar_url, created_at')
+          .eq('id', id)
+          .single();
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 60_000,
+    })),
+  });
+
+  // Helper to get profile by sender ID
+  const getProfile = (uid: string) =>
+    senderProfiles.find(p => p.data?.id === uid)?.data;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -87,7 +109,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => {
-            const isOwn = message.sender_id === resolvedCurrentUserId;
+            const isOwn = message.sender_id === currentUserId;
             return (
               <MessageBubble
                 key={message.id}
