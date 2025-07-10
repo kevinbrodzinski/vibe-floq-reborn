@@ -16,6 +16,7 @@ import { RecentActivity } from '@/components/profile/RecentActivity';
 import { VibeHistorySparkline } from '@/components/analytics/VibeHistorySparkline';
 import { VibePersonalityChart } from '@/components/analytics/VibePersonalityChart';
 import { ProfileHero } from '@/components/profile/ProfileHero';
+import { ConnectionInsights } from '@/components/ConnectionInsights';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -145,6 +146,15 @@ const ProfileSettings = () => {
           <div className="space-y-4">
             <RecentActivity />
           </div>
+
+          <Separator />
+
+          {/* Connection Insights */}
+          {profile && (
+            <div className="space-y-4">
+              <ConnectionInsights userId={profile.id} />
+            </div>
+          )}
 
           <Separator />
 

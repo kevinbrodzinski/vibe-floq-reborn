@@ -2541,6 +2541,19 @@ export type Database = {
         Args: { "": unknown }
         Returns: number
       }
+      suggest_friends: {
+        Args: { target_user_id?: string; limit_count?: number }
+        Returns: {
+          user_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          compatibility_score: number
+          mutual_friends_count: number
+          crossed_paths_count: number
+          shared_interests: string[]
+        }[]
+      }
       text: {
         Args: { "": unknown }
         Returns: string
