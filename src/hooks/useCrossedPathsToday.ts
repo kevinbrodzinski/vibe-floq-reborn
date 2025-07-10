@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useGeolocation } from './useGeolocation';
 import { useFriends } from './useFriends';
 import { useMemo } from 'react';
+import { useAuth } from '@/providers/AuthProvider';
 
 export interface CrossedPath {
   user_id: string;
+  username: string;
   display_name: string;
   avatar_url: string;
   last_seen_ts: string;
@@ -15,7 +16,7 @@ export interface CrossedPath {
 }
 
 export function useCrossedPathsToday() {
-  const { lat, lng, loading: geoLoading } = useGeolocation();
+  const { user } = useAuth();
   const { friends } = useFriends();
 
   // Create stable cache key based on today and friend count
@@ -26,20 +27,19 @@ export function useCrossedPathsToday() {
   }, []);
 
   const { data: crossedPaths = [], isLoading, error } = useQuery({
-    queryKey: ['crossed-paths', todayStart, friends.length],
+    queryKey: ['crossed-paths', user?.id, todayStart, friends.length],
     queryFn: async () => {
-      if (!lat || !lng) return [];
+      if (!user?.id) return [];
       
       const { data, error } = await supabase.rpc('people_crossed_paths_today', {
-        user_lat: lat,
-        user_lng: lng,
+        in_me: user.id,
         proximity_meters: 20 // Start with more sensitive threshold
       });
 
       if (error) throw error;
       return (data || []) as CrossedPath[];
     },
-    enabled: !geoLoading && lat !== null && lng !== null,
+    enabled: !!user?.id,
     staleTime: 60 * 1000, // 60 seconds
     retry: 3,
     refetchOnWindowFocus: false,
@@ -53,7 +53,7 @@ export function useCrossedPathsToday() {
 
   return {
     crossedPaths: filteredCrossedPaths,
-    isLoading: isLoading || geoLoading,
+    isLoading,
     error,
     count: filteredCrossedPaths.length
   };
