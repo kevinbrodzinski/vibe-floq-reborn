@@ -707,6 +707,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_floq: {
+        Args: {
+          p_location: unknown
+          p_starts_at: string
+          p_vibe: Database["public"]["Enums"]["vibe_enum"]
+          p_visibility?: string
+          p_title?: string
+          p_invitees?: string[]
+        }
+        Returns: string
+      }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>
         Returns: string
