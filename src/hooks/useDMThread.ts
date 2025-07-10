@@ -9,11 +9,13 @@ interface DirectMessage {
   content: string;
   created_at: string;
   metadata?: any;
+  isOptimistic?: boolean; // Flag for optimistic updates
 }
 
 export function useDMThread(friendId: string | null) {
   const qc = useQueryClient();
   const [selfId, setSelfId] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   /* 1️⃣ cache current user id once – synchronous */
   useEffect(() => {
@@ -40,6 +42,7 @@ export function useDMThread(friendId: string | null) {
   const { data: messages = [] } = useQuery({
     queryKey: ['dm-msgs', threadId],
     enabled: !!threadId,
+    staleTime: 15_000, // Don't refetch immediately after optimistic update
     queryFn: async () => {
       const { data, error } = await supabase
         .from('direct_messages')
@@ -58,33 +61,56 @@ export function useDMThread(friendId: string | null) {
       if (!threadId) throw new Error('No thread');
       if (!selfId) throw new Error('No auth');
 
-      const { error } = await supabase.from('direct_messages').insert({
+      const { data, error } = await supabase.from('direct_messages').insert({
         thread_id: threadId,
         sender_id: selfId,
         content,
-      });
+      }).select().single();
+      
       if (error) throw error;
+      return data;
     },
-    onMutate: async (content) => {
+    onMutate: async (content: string) => {
       if (!threadId || !selfId) return;
+
+      const tempId = `temp-${crypto.randomUUID()}`;
+      const optimisticMessage: DirectMessage = {
+        id: tempId,
+        thread_id: threadId,
+        sender_id: selfId,
+        content,
+        created_at: new Date().toISOString(),
+        isOptimistic: true,
+      };
 
       qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => [
         ...(old ?? []),
-        {
-          id: crypto.randomUUID(),
-          thread_id: threadId,
-          sender_id: selfId,
-          content,
-          created_at: new Date().toISOString(),
-        },
+        optimisticMessage,
       ]);
+      
+      return { tempId };
     },
-    onSettled: () => {
-      if (threadId) qc.invalidateQueries({ queryKey: ['dm-msgs', threadId] });
+    onSuccess: (realMessage, content, context) => {
+      // Replace optimistic message with real one
+      if (context?.tempId && threadId) {
+        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => 
+          old?.map(msg => 
+            msg.id === context.tempId ? { ...realMessage, isOptimistic: false } : msg
+          ) ?? []
+        );
+      }
+    },
+    onError: (error, content, context) => {
+      // Remove failed optimistic message
+      if (context?.tempId && threadId) {
+        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) =>
+          old?.filter(msg => msg.id !== context.tempId) ?? []
+        );
+      }
     },
   });
 
-  /* 5️⃣ realtime – LISTEN to `pg_notify` */
+  /* 5️⃣ realtime – LISTEN to `pg_notify` + typing indicator */
   useEffect(() => {
     if (!threadId) return;
     
@@ -93,21 +119,42 @@ export function useDMThread(friendId: string | null) {
       .on('broadcast', { event: 'message' }, (payload) => {
         const msg = payload.payload as DirectMessage;
         qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => {
+          // Skip if already exists (avoids duplicates from optimistic updates)
           if (old?.some((m) => m.id === msg.id)) return old;
           return [...(old ?? []), msg];
         });
+      })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        // Extension point for typing indicators
+        if (payload.payload.user_id !== selfId) {
+          setIsTyping(true);
+          // Auto-clear after 3 seconds
+          setTimeout(() => setIsTyping(false), 3000);
+        }
       })
       .subscribe();
       
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [threadId, qc]);
+  }, [threadId, qc, selfId]);
+
+  // Helper function to send typing indicator (for future use)
+  const sendTyping = () => {
+    if (!threadId || !selfId) return;
+    supabase.channel(`dm:${threadId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { user_id: selfId }
+    });
+  };
 
   return {
     threadId,
     messages,
+    isTyping,
     isSending: send.isPending,
     sendMessage: send.mutateAsync,
+    sendTyping, // Extension point for typing indicators
   };
 }
