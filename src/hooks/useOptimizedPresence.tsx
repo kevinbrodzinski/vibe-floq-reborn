@@ -1,6 +1,9 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useBucketedPresence } from './useBucketedPresence';
+import { supabase } from '@/integrations/supabase/client';
 import type { Vibe } from '@/types';
+
+const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
 
 interface OptimizedPresenceOptions {
   vibe: Vibe;
@@ -45,6 +48,12 @@ export const useOptimizedPresence = ({
   // Optimized presence update function
   const updatePresenceOptimized = useCallback(async () => {
     if (!enabled || !lat || !lng) return;
+    
+    // Skip presence updates in offline mode
+    if (OFFLINE_MODE) {
+      console.log('Offline mode: Skipping presence update');
+      return;
+    }
 
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateRef.current;
@@ -61,22 +70,18 @@ export const useOptimizedPresence = ({
 
     setUpdating(true);
     try {
-      // Using edge function for presence updates
-      const response = await fetch('/functions/v1/upsert-presence', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Use Supabase edge function for presence updates
+      const { error } = await supabase.functions.invoke('upsert-presence', {
+        body: {
           vibe,
           lat,
           lng,
           broadcast_radius: broadcastRadius,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Presence update failed');
+      if (error) {
+        throw new Error(`Presence update failed: ${error.message}`);
       }
 
       lastUpdateRef.current = now;
