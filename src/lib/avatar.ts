@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Cache for pre-warmed images
+const preWarmCache = new Set<string>();
+
 /**
  * Generate avatar URL with Transform CDN sizing
  * @param path - Storage path to the avatar file
@@ -13,7 +16,72 @@ export const getAvatarUrl = (path?: string | null, size = 64) => {
     .from('avatars')
     .getPublicUrl(path);
     
-  return `${data.publicUrl}?width=${size}&height=${size}&format=webp`;
+  const url = `${data.publicUrl}?width=${size}&height=${size}&format=webp&quality=85`;
+  
+  // Pre-warm on first access
+  if (!preWarmCache.has(url)) {
+    preWarmImage(url);
+    preWarmCache.add(url);
+  }
+  
+  return url;
+};
+
+/**
+ * Pre-warm image for faster loading
+ */
+export const preWarmImage = (url: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.loading = 'eager';
+  img.decoding = 'async';
+  
+  // Handle load success
+  img.onload = () => {
+    console.debug('Avatar pre-warmed:', url);
+  };
+  
+  // Handle errors silently
+  img.onerror = () => {
+    console.debug('Avatar pre-warm failed:', url);
+  };
+  
+  img.src = url;
+};
+
+/**
+ * Pre-warm multiple avatar sizes
+ */
+export const preWarmAvatarSizes = (path: string, sizes: number[] = [32, 64, 128]) => {
+  sizes.forEach(size => {
+    const url = getAvatarUrl(path, size);
+    if (url) preWarmImage(url);
+  });
+};
+
+/**
+ * Verify Transform CDN is working by checking response headers
+ */
+export const verifyTransformCDN = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    const xCache = response.headers.get('x-cache');
+    const contentType = response.headers.get('content-type');
+    
+    console.log('Transform CDN verification:', {
+      url,
+      xCache,
+      contentType,
+      status: response.status
+    });
+    
+    return response.ok && contentType?.includes('image/webp');
+  } catch (error) {
+    console.error('Transform CDN verification failed:', error);
+    return false;
+  }
 };
 
 /**
@@ -47,10 +115,8 @@ export const uploadAvatar = async (file: File) => {
       
     if (updateError) throw updateError;
     
-    // Pre-warm tiny variant (non-blocking)
-    fetch(getAvatarUrl(path, 64)).catch(() => {
-      // Ignore pre-warming errors
-    });
+    // Pre-warm multiple sizes (non-blocking)
+    preWarmAvatarSizes(path, [32, 64, 128, 256]);
     
     return { path, error: null };
   } catch (error) {

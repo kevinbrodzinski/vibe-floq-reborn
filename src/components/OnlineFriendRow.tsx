@@ -1,9 +1,8 @@
 import { memo } from 'react';
 import { useProfile } from '@/hooks/useProfileCache';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MapPin } from 'lucide-react';
-import { getAvatarUrl, getInitials } from '@/lib/avatar';
+import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 
 interface OnlineFriendRowProps {
   userId: string;
@@ -29,12 +28,12 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   return (
     <div className={`flex items-center gap-3 p-2 rounded-md ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}>
       <div className="relative">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={getAvatarUrl(p.avatar_url, 32)} />
-          <AvatarFallback>
-            {getInitials(p.display_name)}
-          </AvatarFallback>
-        </Avatar>
+        <AvatarWithLoading 
+          avatarPath={p.avatar_url}
+          displayName={p.display_name}
+          size={32}
+          className="h-8 w-8"
+        />
         {online && (
           <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
         )}

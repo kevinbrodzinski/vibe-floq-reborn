@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
 import { useProfile } from '@/hooks/useProfileCache';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -118,6 +119,14 @@ const ProfileSettings = () => {
             <p>Your avatar will be automatically resized and optimized for fast loading.</p>
             <p className="mt-1">Supported formats: JPEG, PNG, WebP, GIF (max 5MB)</p>
           </div>
+
+          {/* Debug: Transform CDN Tester */}
+          {process.env.NODE_ENV === 'development' && avatarUrl && (
+            <div className="mt-8 border-t pt-6">
+              <h3 className="text-sm font-medium mb-4 text-center">Debug: Transform CDN</h3>
+              <TransformCDNTester avatarPath={avatarUrl} />
+            </div>
+          )}
         </div>
       </div>
     </div>

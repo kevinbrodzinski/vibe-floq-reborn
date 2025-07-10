@@ -10,6 +10,7 @@ import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
+import { useAvatarPreloader } from "@/hooks/useAvatarPreloader";
 import { latLngToField, mToPercent } from "@/utils/geoConversion";
 import type { WalkableFloq } from "@/types";
 
@@ -44,6 +45,7 @@ interface Friend {
   warmth: number;
   compatibility: number;
   lastSeen: number;
+  avatar_url?: string | null;
 }
 
 interface FieldVisualizationProps {
@@ -71,6 +73,10 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
+  // Pre-load avatars for better performance
+  const friendAvatars = friends.map(f => f.avatar_url);
+  useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
+  
   // Initialize viewport management
   const viewportControls = useMapViewport();
   const { viewport } = viewportControls;
