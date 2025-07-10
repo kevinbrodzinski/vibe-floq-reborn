@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Send } from 'lucide-react';
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfileCache';
@@ -25,17 +25,22 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const { messages, sendMessage, isSending } = useDMThread(friendId);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   // Get friend profile
   const { data: friend } = useProfile(friendId || '');
 
-  // Get current user
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setCurrentUserId(data.user.id);
-    });
+  // Cache current user ID
+  const currentUserId = useMemo(async () => {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id || null;
   }, []);
+
+  // Resolve current user ID for comparison
+  const [resolvedCurrentUserId, setResolvedCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    currentUserId.then(setResolvedCurrentUserId);
+  }, [currentUserId]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -82,7 +87,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((message) => {
-            const isOwn = message.sender_id === currentUserId;
+            const isOwn = message.sender_id === resolvedCurrentUserId;
             return (
               <MessageBubble
                 key={message.id}

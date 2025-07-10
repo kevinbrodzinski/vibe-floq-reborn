@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 interface DirectMessage {
   id: string;
@@ -15,13 +15,22 @@ export function useDMThread(friendId: string | null) {
   const queryClient = useQueryClient();
   const [threadId, setThreadId] = useState<string | null>(null);
 
+  // Cache current user ID to avoid hook-order violations
+  const currentUserId = useMemo(async () => {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id || null;
+  }, []);
+
   // Get or create thread
   const { data: resolvedThreadId, isLoading: isCreatingThread } = useQuery({
     queryKey: ['dm-thread', friendId],
     queryFn: async () => {
       if (!friendId) return null;
+      const userId = await currentUserId;
+      if (!userId) throw new Error('Not authenticated');
+      
       const { data, error } = await supabase.rpc('find_or_create_dm', {
-        a: (await supabase.auth.getUser()).data.user?.id!,
+        a: userId,
         b: friendId
       });
       if (error) throw error;
@@ -57,28 +66,28 @@ export function useDMThread(friendId: string | null) {
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
       if (!threadId) throw new Error('No thread ID');
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) throw new Error('Not authenticated');
+      const userId = await currentUserId;
+      if (!userId) throw new Error('Not authenticated');
       
       const { error } = await supabase
         .from('direct_messages')
         .insert({
           thread_id: threadId,
-          sender_id: user.data.user.id,
+          sender_id: userId,
           content
         });
       if (error) throw error;
     },
     onMutate: async (content) => {
       if (!threadId) return;
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) return;
+      const userId = await currentUserId;
+      if (!userId) return;
 
       // Optimistic update
       const optimisticMessage: DirectMessage = {
         id: crypto.randomUUID(),
         thread_id: threadId,
-        sender_id: user.data.user.id,
+        sender_id: userId,
         content,
         created_at: new Date().toISOString()
       };

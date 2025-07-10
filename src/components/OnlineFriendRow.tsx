@@ -36,8 +36,8 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   return (
     <>
       <div 
-        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}
         {...longPressGestures}
+        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}
         data-test-avatar={userId}
       >
         <div className="relative">
