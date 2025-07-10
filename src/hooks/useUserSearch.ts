@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SearchedUser {
   id: string;
   display_name: string;
+  username: string | null;
   avatar_url: string | null;
   created_at: string;
 }

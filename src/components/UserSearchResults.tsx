@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
@@ -39,35 +40,50 @@ export const UserSearchResults = ({
 
   return (
     <div className="space-y-1">
-      {users.map((user) => (
-        <div 
-          key={user.id} 
-          className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors"
-        >
-          <Avatar className="w-8 h-8">
-            <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
-            <AvatarFallback>
-              {getInitials(user.display_name)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user.display_name || 'Unknown User'}
-            </p>
-          </div>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onAddFriend(user.id)}
-            className="flex items-center gap-1"
+      {users.map((user) => {
+        const displayName = user.username 
+          ? `@${user.username}` 
+          : user.display_name || 'Unknown User';
+        
+        const subtitle = user.username && user.display_name 
+          ? user.display_name 
+          : null;
+
+        return (
+          <div 
+            key={user.id} 
+            className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors"
           >
-            <UserPlus className="w-3 h-3" />
-            Add
-          </Button>
-        </div>
-      ))}
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
+              <AvatarFallback>
+                {getInitials(user.display_name || user.username)}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {displayName}
+              </p>
+              {subtitle && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+            
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onAddFriend(user.id)}
+              className="flex items-center gap-1"
+            >
+              <UserPlus className="w-3 h-3" />
+              Add
+            </Button>
+          </div>
+        );
+      })}
     </div>
   );
 };

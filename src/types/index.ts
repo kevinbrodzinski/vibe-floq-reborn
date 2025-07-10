@@ -1,3 +1,4 @@
+
 // Core type definitions for floq app (aligned with Supabase types)
 import { Database } from '@/integrations/supabase/types';
 
@@ -23,6 +24,7 @@ export interface WalkableFloq {
 export interface UserProfile {
   id: string;
   display_name?: string;
+  username?: string;
   avatar_url?: string;
   created_at: string;
 }
