@@ -1,54 +1,55 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
 import { UsernameStep } from '@/components/UsernameStep';
-import { useProfile } from '@/hooks/useProfileCache';
+import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
+import { useAuth } from '@/providers/AuthProvider';
+import { useAvatarManager } from '@/hooks/useAvatarManager';
+import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState(supabase.auth.getUser());
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { hasUsername, currentUser: userProfile } = useUsername();
-
-  // Get current user's profile
-  const userId = currentUser ? 'current' : '';
-  const { data: profile, refetch } = useProfile(userId);
+  const { data: profile } = useProfile(user?.id);
+  const avatarMgr = useAvatarManager();
+  const queryClient = useQueryClient();
 
   // Initialize state from profile data
-  useState(() => {
+  useEffect(() => {
     if (profile) {
-      setAvatarUrl(profile.avatar_url);
       setDisplayName(profile.display_name || '');
     }
-  });
+  }, [profile]);
 
   const handleSaveProfile = async () => {
     setIsLoading(true);
 
     try {
-      const user = await supabase.auth.getUser();
-      if (!user.data.user) throw new Error('User not authenticated');
+      if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          display_name: displayName,
-          avatar_url: avatarUrl 
+          display_name: displayName
         })
-        .eq('id', user.data.user.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 
@@ -57,8 +58,8 @@ const ProfileSettings = () => {
         description: "Your profile has been saved successfully"
       });
 
-      // Refetch profile data
-      refetch();
+      // Refresh profile data
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     } catch (error) {
       console.error('Profile update error:', error);
       toast({
@@ -112,13 +113,23 @@ const ProfileSettings = () => {
           {/* Profile Form */}
           <div className="space-y-6">
             {/* Avatar Upload */}
-            <div className="text-center">
-              <AvatarUpload
-                currentAvatarUrl={avatarUrl}
-                displayName={displayName}
-                onAvatarChange={setAvatarUrl}
-                size={120}
-              />
+            <div className="text-center space-y-4">
+              <Avatar className="w-24 h-24 mx-auto">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={getAvatarUrl(profile.avatar_url, 256)} />
+                ) : (
+                  <AvatarFallback className="text-3xl">
+                    {getInitials(profile?.display_name || 'U')}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              <Button 
+                variant="secondary" 
+                onClick={() => avatarMgr.setOpen(true)}
+              >
+                {profile?.avatar_url ? 'Change avatar' : 'Add avatar'}
+              </Button>
             </div>
 
             {/* Display Name */}
@@ -151,15 +162,40 @@ const ProfileSettings = () => {
             </div>
 
             {/* Debug: Transform CDN Tester */}
-            {process.env.NODE_ENV === 'development' && avatarUrl && (
+            {process.env.NODE_ENV === 'development' && profile?.avatar_url && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="text-sm font-medium mb-4 text-center">Debug: Transform CDN</h3>
-                <TransformCDNTester avatarPath={avatarUrl} />
+                <TransformCDNTester avatarPath={profile.avatar_url} />
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Avatar upload sheet */}
+      <Sheet open={avatarMgr.open} onOpenChange={avatarMgr.setOpen}>
+        <SheetContent side="bottom" className="p-4">
+          <div className="max-w-sm mx-auto">
+            <h3 className="text-lg font-semibold text-center mb-4">Change Avatar</h3>
+            <AvatarUpload
+              currentAvatarUrl={profile?.avatar_url}
+              displayName={profile?.display_name}
+              onAvatarChange={async (newAvatarUrl) => {
+                // Update the database with new avatar URL
+                await supabase
+                  .from('profiles')
+                  .update({ avatar_url: newAvatarUrl })
+                  .eq('id', user?.id);
+                
+                // Refresh the profile data
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+                avatarMgr.setOpen(false);
+              }}
+              size={128}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

@@ -23,6 +23,7 @@ export const AppRoutes = () => (
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
     <Route path="/profile-settings" element={<ProfileSettings />} />
+    <Route path="/settings" element={<ProfileSettings />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
