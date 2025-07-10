@@ -7,6 +7,8 @@ import { VenuePin } from "@/components/map/VenuePin";
 import { ViewportControls } from "@/components/map/ViewportControls";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
+import { DMQuickSheet } from "@/components/DMQuickSheet";
+import { useLongPress } from "@/hooks/useLongPress";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
@@ -77,6 +79,16 @@ export const FieldVisualization = ({
   const friendAvatars = friends.map(f => f.avatar_url);
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
   
+  // DM state
+  const [dmOpen, setDmOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  
+  // Long-press handler for avatars
+  const handleAvatarLongPress = (friendId: string) => {
+    setSelectedFriendId(friendId);
+    setDmOpen(true);
+  };
+
   // Initialize viewport management
   const viewportControls = useMapViewport();
   const { viewport } = viewportControls;
@@ -304,6 +316,13 @@ export const FieldVisualization = ({
                 viewportControls.zoomIn();
               }
             }}
+          />
+          
+          {/* DM Quick Sheet */}
+          <DMQuickSheet
+            open={dmOpen}
+            onOpenChange={setDmOpen}
+            friendId={selectedFriendId}
           />
         </>
       )}

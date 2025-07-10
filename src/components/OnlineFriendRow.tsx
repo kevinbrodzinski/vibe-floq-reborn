@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useProfile } from '@/hooks/useProfileCache';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { MapPin } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
+import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { useLongPress } from '@/hooks/useLongPress';
 
 interface OnlineFriendRowProps {
   userId: string;
@@ -14,6 +16,12 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   const { data: p }   = useProfile(userId);
   const statusMap     = useFriendsPresence();
   const online        = statusMap[userId] === 'online';
+  const [dmOpen, setDmOpen] = useState(false);
+
+  // Long-press to open DM
+  const longPressGestures = useLongPress({
+    onLongPress: () => setDmOpen(true)
+  });
 
   if (!p) {
     return <div className="h-12 animate-pulse bg-muted/30 rounded" />;
@@ -26,18 +34,23 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   };
 
   return (
-    <div className={`flex items-center gap-3 p-2 rounded-md ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}>
-      <div className="relative">
-        <AvatarWithLoading 
-          avatarPath={p.avatar_url}
-          displayName={p.display_name}
-          size={32}
-          className="h-8 w-8"
-        />
-        {online && (
-          <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
-        )}
-      </div>
+    <>
+      <div 
+        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}
+        {...longPressGestures}
+        data-test-avatar={userId}
+      >
+        <div className="relative">
+          <AvatarWithLoading 
+            avatarPath={p.avatar_url}
+            displayName={p.display_name}
+            size={32}
+            className="h-8 w-8"
+          />
+          {online && (
+            <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
+          )}
+        </div>
 
       <div className="flex-1 min-w-0">
         <span className="text-sm truncate">@{p.display_name}</span>
@@ -48,7 +61,15 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
           <MapPin className="h-3 w-3" />
           <span>{formatDistance(distance)}</span>
         </div>
-      )}
-    </div>
+        )}
+      </div>
+      
+      {/* DM Quick Sheet */}
+      <DMQuickSheet
+        open={dmOpen}
+        onOpenChange={setDmOpen}
+        friendId={userId}
+      />
+    </>
   );
 });

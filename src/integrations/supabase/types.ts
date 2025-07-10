@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      direct_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          sender_id: string
+          thread_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          sender_id: string
+          thread_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          sender_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "direct_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direct_threads: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          member_a: string
+          member_b: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          member_a: string
+          member_b: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          member_a?: string
+          member_b?: string
+        }
+        Relationships: []
+      }
       event_areas: {
         Row: {
           ends_at: string | null
@@ -634,6 +693,10 @@ export type Database = {
           vibe: string
           radius_m: number
         }[]
+      }
+      find_or_create_dm: {
+        Args: { a: string; b: string }
+        Returns: string
       }
       friend_count: {
         Args: Record<PropertyKey, never>
