@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
 
 export interface ProfileStats {
   friend_count: number;
@@ -12,6 +13,7 @@ export interface ProfileStats {
 
 export const useProfileStats = (targetUserId?: string) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const userId = targetUserId || user?.id;
 
   return useQuery({
@@ -19,17 +21,32 @@ export const useProfileStats = (targetUserId?: string) => {
     queryFn: async () => {
       if (!userId) throw new Error('User ID is required');
       
-      const { data, error } = await supabase.rpc('get_profile_stats', {
-        target_user_id: userId,
-        metres: 100,
-        seconds: 3600
-      });
+      try {
+        const { data, error } = await supabase.rpc('get_profile_stats', {
+          target_user_id: userId,
+          metres: 100, // Parameter name should be 'metres' based on RPC signature
+          seconds: 3600
+        });
 
-      if (error) throw error;
-      return data as unknown as ProfileStats;
+        if (error) {
+          console.error('Profile stats RPC error:', error);
+          toast({
+            title: "Failed to load profile stats",
+            description: "Unable to fetch your profile statistics. Please try again.",
+            variant: "destructive",
+          });
+          throw error;
+        }
+        
+        return data as unknown as ProfileStats;
+      } catch (err) {
+        console.error('Profile stats error:', err);
+        throw err;
+      }
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    retry: 2,
   });
 };

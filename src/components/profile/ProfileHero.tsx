@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SimpleDateTimePicker } from '@/components/inputs/simple-date-time-picker';
+import { Clock, MapPin, Edit3, Check, X } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/providers/AuthProvider';
 import { getVibeColor } from '@/utils/getVibeColor';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProfileHeroProps {
   userId?: string;
@@ -15,9 +20,16 @@ interface ProfileHeroProps {
 
 export function ProfileHero({ userId }: ProfileHeroProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const targetUserId = userId || user?.id;
-  const { data: profile } = useProfile(targetUserId);
+  const isOwnProfile = !userId || userId === user?.id;
+  
+  const { data: profile, isLoading: profileLoading } = useProfile(targetUserId);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [statusValue, setStatusValue] = useState('');
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
 
   // Get current vibe and availability
   const { data: currentVibe } = useQuery({
@@ -38,7 +50,7 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
   });
 
   // Get user settings for availability
-  const { data: userSettings } = useQuery({
+  const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings', targetUserId],
     queryFn: async () => {
       if (!targetUserId) return null;
@@ -47,7 +59,7 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
         .from('user_settings')
         .select('available_until')
         .eq('user_id', targetUserId)
-        .single();
+        .maybeSingle();
       
       return data;
     },
@@ -88,9 +100,99 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
     return () => clearInterval(interval);
   }, [userSettings?.available_until, currentVibe?.expires_at]);
 
+  // Initialize status value when profile loads
+  useEffect(() => {
+    if (profile?.custom_status && !statusValue) {
+      setStatusValue(profile.custom_status);
+    }
+  }, [profile?.custom_status, statusValue]);
+
+  const handleStatusUpdate = async () => {
+    if (!isOwnProfile || !targetUserId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_status: statusValue.trim() || null })
+        .eq('id', targetUserId);
+
+      if (error) throw error;
+
+      // Invalidate profile cache
+      queryClient.invalidateQueries({ queryKey: ['profile', targetUserId] });
+      setIsEditingStatus(false);
+      
+      toast({
+        title: "Status updated",
+        description: "Your custom status has been updated.",
+      });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update your status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAvailabilityUpdate = async (date: Date | undefined) => {
+    if (!isOwnProfile || !targetUserId) return;
+    
+    try {
+      // Call edge function to update availability
+      const { error } = await supabase.functions.invoke('update-availability', {
+        body: { available_until: date?.toISOString() || null }
+      });
+
+      if (error) throw error;
+
+      // Invalidate cache
+      queryClient.invalidateQueries({ queryKey: ['user-settings', targetUserId] });
+      setIsEditingAvailability(false);
+      
+      toast({
+        title: "Availability updated",
+        description: date 
+          ? `You're available until ${date.toLocaleString()}`
+          : "Availability cleared",
+      });
+    } catch (error) {
+      console.error('Failed to update availability:', error);
+      toast({
+        title: "Update failed", 
+        description: "Failed to update availability. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const vibeColor = getVibeColor(currentVibe?.vibe || 'social');
   const displayName = profile?.display_name || profile?.username || 'Anonymous';
   const customStatus = profile?.custom_status;
+  const isLoading = profileLoading || settingsLoading;
+
+  if (isLoading) {
+    return (
+      <Card className="relative overflow-hidden border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
+        <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-primary/20 to-transparent" />
+        <div className="relative p-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-20 w-20 rounded-full" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-24" />
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-20" />
+              </div>
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="relative overflow-hidden border-border/30 bg-gradient-to-br from-card/50 to-card/80 backdrop-blur-sm">
@@ -135,26 +237,102 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
             </div>
 
             {/* Custom Status */}
-            {customStatus && (
-              <p className="text-sm text-muted-foreground italic">
-                "{customStatus}"
-              </p>
-            )}
+            <div className="space-y-2">
+              {isEditingStatus && isOwnProfile ? (
+                <div className="flex gap-2">
+                  <Textarea
+                    value={statusValue}
+                    onChange={(e) => setStatusValue(e.target.value)}
+                    placeholder="What's your vibe?"
+                    className="min-h-[60px] text-sm resize-none"
+                    maxLength={100}
+                  />
+                  <div className="flex flex-col gap-1">
+                    <Button size="sm" onClick={handleStatusUpdate} className="h-8">
+                      <Check className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditingStatus(false);
+                        setStatusValue(customStatus || '');
+                      }}
+                      className="h-8"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {customStatus ? (
+                    <p className="text-sm text-muted-foreground italic">
+                      "{customStatus}"
+                    </p>
+                  ) : isOwnProfile ? (
+                    <p className="text-sm text-muted-foreground/60">
+                      Add a custom status...
+                    </p>
+                  ) : null}
+                  {isOwnProfile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setStatusValue(customStatus || '');
+                        setIsEditingStatus(true);
+                      }}
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Current Vibe & Availability */}
-            <div className="flex flex-wrap gap-2">
-              {currentVibe?.vibe && (
-                <Badge variant="outline" className={`${vibeColor} border-current/20 bg-current/5`}>
-                  <div className="h-2 w-2 rounded-full bg-current mr-1.5" />
-                  {currentVibe.vibe}
-                </Badge>
-              )}
-              
-              {timeLeft && (
-                <Badge variant="outline" className="text-muted-foreground">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Available for {timeLeft}
-                </Badge>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {currentVibe?.vibe && (
+                  <Badge variant="outline" className={`${vibeColor} border-current/20 bg-current/5`}>
+                    <div className="h-2 w-2 rounded-full bg-current mr-1.5" />
+                    {currentVibe.vibe}
+                  </Badge>
+                )}
+                
+                {timeLeft && (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Available for {timeLeft}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Availability Editor */}
+              {isOwnProfile && (
+                <div className="flex items-center gap-2">
+                  {isEditingAvailability ? (
+                    <div className="flex-1">
+                      <SimpleDateTimePicker
+                        date={userSettings?.available_until ? new Date(userSettings.available_until) : undefined}
+                        onDateChange={handleAvailabilityUpdate}
+                        placeholder="Set availability"
+                        className="text-xs h-8"
+                      />
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingAvailability(true)}
+                      className="text-xs h-6 text-muted-foreground hover:text-foreground"
+                    >
+                      {userSettings?.available_until ? 'Update availability' : 'Set availability'}
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
