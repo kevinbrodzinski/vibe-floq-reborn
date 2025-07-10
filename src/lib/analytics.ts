@@ -1,17 +1,32 @@
-// Analytics wrapper for PostHog, Umami, or other analytics SDKs
+// Analytics wrapper for PostHog
+const POSTHOG_PUBLIC_KEY = 'phc_nHiyd2XAzSYoFQXWVAhG9yrjQvsX6oQTod6eANt1Jnq';
+const POSTHOG_HOST = 'https://us.i.posthog.com';
+
 export const track = (event: string, properties?: Record<string, any>) => {
   try {
-    // Check for analytics on window object (PostHog, Umami, etc.)
-    if (typeof window !== 'undefined' && (window as any).analytics?.track) {
-      (window as any).analytics.track(event, properties);
+    // Send directly to PostHog API
+    if (typeof window !== 'undefined') {
+      fetch(`${POSTHOG_HOST}/capture/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          api_key: POSTHOG_PUBLIC_KEY,
+          event,
+          properties: {
+            ...properties,
+            $current_url: window.location.href,
+            $browser: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+          },
+          distinct_id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        }),
+      }).catch((error) => {
+        console.debug('PostHog tracking failed:', error);
+      });
     }
-    
-    // Add other analytics providers here as needed
-    // e.g., PostHog: window.posthog?.capture(event, properties)
-    // e.g., Umami: window.umami?.track(event, properties)
-    
   } catch (error) {
-    // Silently fail in case analytics isn't configured
     console.debug('Analytics tracking failed:', error);
   }
 };
