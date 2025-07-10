@@ -6,6 +6,9 @@ export type Profile = {
   username?: string | null;
   display_name?: string | null;
   avatar_url?: string | null;
+  bio?: string | null;
+  interests?: string[] | null;
+  custom_status?: string | null;
   created_at: string;
 };
 

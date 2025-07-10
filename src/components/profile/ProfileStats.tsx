@@ -1,103 +1,75 @@
-import { TrendingUp, Users, Zap, Calendar } from 'lucide-react';
+import { TrendingUp, Users, Zap, Calendar, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useCrossedPathsToday } from '@/hooks/useCrossedPathsToday';
-import { useFriends } from '@/hooks/useFriends';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { CountUp } from '@/components/ui/count-up';
+import { useProfileStats } from '@/hooks/useProfileStats';
+import { getVibeColor } from '@/utils/getVibeColor';
 
 export function ProfileStats() {
-  const { count: crossedPathsCount } = useCrossedPathsToday();
-  const { friendCount } = useFriends();
-  const { user } = useAuth();
+  const { data: stats, isLoading } = useProfileStats();
 
-  // Get user's vibe activity stats
-  const { data: vibeStats } = useQuery({
-    queryKey: ['vibe-stats', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-
-      // Get most frequent vibe this week
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - 7);
-      
-      const { data: vibeData } = await supabase
-        .from('vibes_log')
-        .select('vibe')
-        .eq('user_id', user.id)
-        .gte('ts', weekStart.toISOString());
-
-      // Get days active this month
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-
-      const { data: activityData } = await supabase
-        .from('vibes_log')
-        .select('ts')
-        .eq('user_id', user.id)
-        .gte('ts', monthStart.toISOString());
-
-      // Calculate most frequent vibe
-      const vibeCounts = (vibeData || []).reduce((acc, { vibe }) => {
-        acc[vibe] = (acc[vibe] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const mostFrequentVibe = Object.entries(vibeCounts)
-        .sort(([,a], [,b]) => b - a)[0]?.[0] || 'social';
-
-      // Calculate unique days active
-      const uniqueDays = new Set(
-        (activityData || []).map(({ ts }) => 
-          new Date(ts).toDateString()
-        )
-      ).size;
-
-      return {
-        mostFrequentVibe,
-        daysActiveThisMonth: uniqueDays,
-        totalVibeChanges: vibeData?.length || 0
-      };
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const stats = [
+  // Define stats configuration with server-side data
+  const statsConfig = [
     {
       label: 'Crossed Paths',
-      value: crossedPathsCount,
-      subtext: 'today',
+      value: stats?.crossings_7d || 0,
+      subtext: 'last 7 days',
       icon: TrendingUp,
-      color: 'text-primary'
+      color: 'text-primary',
+      isNumeric: true
     },
     {
       label: 'Friends',
-      value: friendCount,
+      value: stats?.friend_count || 0,
       subtext: 'connections',
       icon: Users,
-      color: 'text-secondary'
+      color: 'text-secondary',
+      isNumeric: true
     },
     {
       label: 'Most Active Vibe',
-      value: vibeStats?.mostFrequentVibe || 'social',
+      value: stats?.most_active_vibe || 'unknown',
       subtext: 'this week',
       icon: Zap,
-      color: 'text-accent'
+      color: getVibeColor(stats?.most_active_vibe || 'social'),
+      isNumeric: false
     },
     {
       label: 'Days Active',
-      value: vibeStats?.daysActiveThisMonth || 0,
+      value: stats?.days_active_this_month || 0,
       subtext: 'this month',
       icon: Calendar,
-      color: 'text-muted-foreground'
+      color: 'text-muted-foreground',
+      isNumeric: true
+    },
+    {
+      label: 'Achievements',
+      value: stats?.total_achievements || 0,
+      subtext: 'earned',
+      icon: Trophy,
+      color: 'text-accent',
+      isNumeric: true
     }
   ];
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="p-4 bg-card/50 backdrop-blur-sm border-border/30">
+            <div className="animate-pulse">
+              <div className="h-3 bg-muted rounded w-16 mb-2"></div>
+              <div className="h-6 bg-muted rounded w-8 mb-1"></div>
+              <div className="h-3 bg-muted rounded w-12"></div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3">
-      {stats.map((stat, index) => {
+      {statsConfig.slice(0, 4).map((stat, index) => {
         const IconComponent = stat.icon;
         return (
           <Card key={index} className="p-4 bg-card/50 backdrop-blur-sm border-border/30">
@@ -107,7 +79,11 @@ export function ProfileStats() {
                   {stat.label}
                 </p>
                 <p className="text-lg font-semibold text-foreground">
-                  {typeof stat.value === 'string' ? stat.value : stat.value}
+                  {stat.isNumeric ? (
+                    <CountUp end={stat.value as number} duration={800} />
+                  ) : (
+                    <span className="capitalize">{stat.value}</span>
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {stat.subtext}

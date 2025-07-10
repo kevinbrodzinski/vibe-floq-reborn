@@ -13,6 +13,7 @@ import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
 import { UsernameStep } from '@/components/UsernameStep';
 import { ProfileStats } from '@/components/profile/ProfileStats';
 import { RecentActivity } from '@/components/profile/RecentActivity';
+import { ProfileHero } from '@/components/profile/ProfileHero';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -91,6 +92,13 @@ const ProfileSettings = () => {
         </div>
 
         <div className="space-y-6">
+          {/* Profile Hero - takes up 35% of screen real estate */}
+          <div className="h-[35vh] min-h-[300px]">
+            <ProfileHero />
+          </div>
+
+          <Separator />
+
           {/* Username Section */}
           <div className="space-y-3">
             <h2 className="text-base font-medium">Username</h2>
