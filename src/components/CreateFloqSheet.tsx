@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Calendar, Clock, MapPin, Users, Globe, Heart, Eye, CalendarIcon } from "lucide-react";
+import { Clock, MapPin, Users, Globe, Heart, Eye } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -13,12 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DateTimePicker } from "@/components/inputs/DateTimePicker";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -103,10 +98,6 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
         invitees: visibility === 'invite' ? selectedFriends : [],
       });
       
-      // Analytics tracking
-      if (typeof window !== 'undefined' && (window as any).analytics?.track) {
-        (window as any).analytics.track('floq_created', { vibe, visibility });
-      }
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in the hook
@@ -196,30 +187,11 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
               <Clock className="h-4 w-4" />
               Start time
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !startsAt && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startsAt ? format(startsAt, "PPP 'at' p") : <span>Pick a date and time</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={startsAt}
-                  onSelect={(date) => date && setStartsAt(date)}
-                  disabled={(date) => date < new Date(Date.now() - 60 * 60 * 1000)} // 1 hour ago
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
+            <DateTimePicker
+              value={startsAt}
+              onChange={setStartsAt}
+              min={new Date(Date.now() - 60 * 60 * 1000)} // ≤ 1 h ago disabled
+            />
           </div>
 
           <Separator />

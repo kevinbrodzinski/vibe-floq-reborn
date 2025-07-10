@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { track } from '@/lib/analytics';
 import type { Database } from '@/integrations/supabase/types';
 
 type VibeEnum = Database['public']['Enums']['vibe_enum'];
@@ -39,7 +40,7 @@ export function useCreateFloq() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (floqId) => {
+    onSuccess: (floqId, vars) => {
       // Invalidate nearby floqs queries to show the new floq
       queryClient.invalidateQueries({ queryKey: ['nearby-floqs'] });
       queryClient.invalidateQueries({ queryKey: ['walkable-floqs'] });
@@ -51,6 +52,12 @@ export function useCreateFloq() {
       
       // Navigate to the created floq
       navigate(`/floqs/${floqId}`);
+      
+      // 🔥 analytics
+      track("floq_created", {
+        vibe: vars.vibe,          // e.g. "chill"
+        visibility: vars.visibility, // "public" | "friends" | "invite"
+      });
       
       return floqId;
     },
