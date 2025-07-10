@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FriendConstellation } from "@/components/FriendConstellation";
 import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
@@ -83,24 +83,24 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
-  // Pre-load avatars for better performance - stabilized
+  // Phase 1C Fix: Optimized avatar preloader dependencies
   const friendAvatars = useStableMemo(
     () => friends.map(f => f.avatar_url), 
-    [friends.length, friends.map(f => f.avatar_url).join(',')]
+    [friends]
   );
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
   
-  // Phase 1A Fix: Single useEffect with stable dependency for analytics
+  // Phase 1B Fix: Analytics de-dupe with persistent seenRef
+  const seenRef = useRef<Set<string>>(new Set());
   const friendIdsHash = useMemo(
     () => people.filter(p => p.isFriend).map(p => p.id).sort().join(','),
     [people]
   );
 
   useEffect(() => {
-    const seenIds = new Set<string>();
     people.forEach(person => {
-      if (person.isFriend && !seenIds.has(person.id)) {
-        seenIds.add(person.id);
+      if (person.isFriend && !seenRef.current.has(person.id)) {
+        seenRef.current.add(person.id);
         track('friend_encounter', { 
           friend_id: person.id, 
           vibe: person.vibe,

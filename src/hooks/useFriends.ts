@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { useMemo } from 'react';
-import { sha1 } from 'crypto-hash';
 import { track } from '@/lib/analytics';
 
 export function useFriends() {
@@ -68,16 +67,16 @@ export function useFriends() {
     },
   });
 
-  // Phase 1A Fix: Stable cache key with hashing for large friend lists
-  const stableCacheKey = useMemo(async () => {
-    const sortedIds = [...friendIds].sort();
-    const keyRaw = sortedIds.join(',');
-    // Hash if cache key is too large to prevent localStorage overflow
-    return sortedIds.length > 200 ? await sha1(keyRaw) : keyRaw;
+  // Phase 1B Fix: Synchronous cache key with simple truncation
+  const stableCacheKey = useMemo(() => {
+    const keyRaw = [...friendIds].sort().join(',');
+    return friendIds.length > 200 
+      ? keyRaw.slice(0, 48) + '...' + keyRaw.slice(-48) 
+      : keyRaw;
   }, [friendIds]);
 
   // 6.2 Prefetch friend profiles in one batched query
-  const { data: profiles = [], isError: profilesError } = useQuery({
+  const { data: profiles, isError: profilesError } = useQuery({
     queryKey: ['friend-profiles', stableCacheKey],
     enabled: friendIds.length > 0 && !OFFLINE_MODE,
     staleTime: 120_000, // 2 minutes
@@ -88,16 +87,30 @@ export function useFriends() {
         .select('id, display_name, avatar_url')
         .in('id', friendIds.slice(0, 50));
       if (error) {
-        // Phase 1A Fix: Silent error telemetry without user-facing toasts
+        // Phase 1B Fix: Silent error telemetry without user-facing toasts
         track('profile_prefetch_error', { msg: error.message });
         return null; // Return null for better unknown state handling
       }
       return data || [];
     },
-  });
+  }) as { data: any[] | null, isError: boolean };
 
-  // Phase 1A Fix: Handle null profiles gracefully
-  const safeProfiles = profiles === null ? [] : profiles;
+  // Phase 1B Fix: Handle null profiles gracefully with explicit null checks
+  if (profiles === null) {
+    // Silent degradation - render without profile data until retry
+    const safeFallback: any[] = [];
+    return {
+      friends: friendIds,
+      friendCount: friendIds.length,
+      profiles: safeFallback,
+      isLoading,
+      addFriend: async (targetUserId: string) => console.log('Mock: would add friend', targetUserId),
+      removeFriend: async (targetUserId: string) => console.log('Mock: would remove friend', targetUserId),
+      isAddingFriend: false,
+      isRemovingFriend: false,
+      isFriend: (userId: string) => friendsSet.has(userId),
+    };
+  }
 
   // Mutation placeholders - still mocked for now
   const addFriend = async (targetUserId: string) => {
@@ -122,7 +135,7 @@ export function useFriends() {
   return {
     friends: friendIds,
     friendCount: friendIds.length,
-    profiles: safeProfiles,
+    profiles: profiles || [],
     isLoading,
     addFriend,
     removeFriend,

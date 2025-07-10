@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
@@ -43,21 +43,11 @@ export const AvatarDropdown = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="relative">
-            <Avatar className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary">
-              {profile?.avatar_url ? (
-                <AvatarImage 
-                  src={getAvatarUrl(profile.avatar_url, 64)} 
-                  onError={(e) => {
-                    // Phase 1A Fix: Hide on error to prevent double rendering
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <AvatarFallback className="gradient-secondary">
-                  {getInitials(profile?.display_name || 'U')}
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <AvatarWithFallback 
+              src={profile?.avatar_url ? getAvatarUrl(profile.avatar_url, 64) : null}
+              fallbackText={profile?.display_name || 'U'}
+              className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
+            />
             {friendCount > 0 && (
               <Badge 
                 variant="destructive" 
