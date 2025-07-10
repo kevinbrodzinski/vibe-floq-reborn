@@ -994,6 +994,25 @@ export type Database = {
         Args: { "": string }
         Returns: unknown
       }
+      get_cluster_venues: {
+        Args: {
+          min_lng: number
+          min_lat: number
+          max_lng: number
+          max_lat: number
+          limit_n?: number
+        }
+        Returns: {
+          id: string
+          name: string
+          category: string
+          lat: number
+          lng: number
+          vibe_score: number
+          live_count: number
+          check_ins: number
+        }[]
+      }
       get_nearby_presence: {
         Args: { user_lat: number; user_lng: number; radius_meters?: number }
         Returns: {

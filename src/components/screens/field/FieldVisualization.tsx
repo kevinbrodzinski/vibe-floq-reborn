@@ -102,14 +102,21 @@ export const FieldVisualization = ({
   
   // Cluster sheet state
   const [clusterSheetOpen, setClusterSheetOpen] = useState(false);
-  const [activeCluster, setActiveCluster] = useState<{ id: number; lat: number; lng: number } | null>(null);
+  const [activeClusterBbox, setActiveClusterBbox] = useState<[number, number, number, number] | null>(null);
 
   // Handle cluster click - open details sheet for clusters
   const handleClusterClick = (cluster: any) => {
     if (cluster.pointCount > 0) {
-      // Extract numeric cluster ID from supercluster properties
-      const clusterId = cluster.props.cluster_id;
-      setActiveCluster({ id: clusterId, lat: cluster.lat, lng: cluster.lng });
+      // Calculate a bounding box around the cluster center
+      // This is a simple approximation - you can enhance this with actual cluster bounds
+      const radius = 0.005; // ~500m in degrees (rough approximation)
+      const bbox: [number, number, number, number] = [
+        cluster.lng - radius, // west
+        cluster.lat - radius, // south  
+        cluster.lng + radius, // east
+        cluster.lat + radius  // north
+      ];
+      setActiveClusterBbox(bbox);
       setClusterSheetOpen(true);
     }
   };
@@ -128,17 +135,11 @@ export const FieldVisualization = ({
 
   // Auto-dismiss cluster sheet when cluster dissolves on zoom
   useEffect(() => {
-    if (!activeCluster || !clusterSheetOpen) return;
+    if (!activeClusterBbox || !clusterSheetOpen) return;
     
-    const stillExists = venueClusters.some(
-      (c) => c.props.cluster_id === activeCluster.id && c.pointCount > 0
-    );
-    
-    if (!stillExists) {
-      setClusterSheetOpen(false);
-      setActiveCluster(null);
-    }
-  }, [venueClusters, activeCluster, clusterSheetOpen]);
+    // For simplicity, we keep the sheet open when zooming
+    // You could enhance this to check if the bbox still contains clusters
+  }, [venueClusters, activeClusterBbox, clusterSheetOpen]);
 
   return (
     <div className={`relative h-full ${mini ? 'pt-2 pb-2' : 'pt-48 pb-32'} ${className}`}>
@@ -300,19 +301,22 @@ export const FieldVisualization = ({
             isOpen={clusterSheetOpen}
             onClose={() => {
               setClusterSheetOpen(false);
-              setActiveCluster(null);
+              setActiveClusterBbox(null);
             }}
-            clusterId={activeCluster?.id || null}
+            clusterBbox={activeClusterBbox}
             onVenueTap={(venueId) => {
               // Close cluster sheet and open venue details
               setClusterSheetOpen(false);
-              setActiveCluster(null);
+              setActiveClusterBbox(null);
               setSelectedVenueId(venueId);
               setDetailsOpen(true);
             }}
             onZoomToArea={() => {
-              if (activeCluster) {
-                viewportControls.panTo(activeCluster.lat, activeCluster.lng);
+              if (activeClusterBbox) {
+                // Pan to center of bounding box
+                const centerLat = (activeClusterBbox[1] + activeClusterBbox[3]) / 2;
+                const centerLng = (activeClusterBbox[0] + activeClusterBbox[2]) / 2;
+                viewportControls.panTo(centerLat, centerLng);
                 viewportControls.zoomIn();
               }
             }}

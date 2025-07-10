@@ -7,12 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VenueListItem } from './VenueListItem';
 import { useClusterVenues } from '@/hooks/useClusterVenues';
-import { useLiveCounts } from '@/hooks/useLiveCounts';
 
 interface ClusterVenuesSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  clusterId: number | null;
+  clusterBbox: [number, number, number, number] | null;
   onVenueTap: (venueId: string) => void;
   onZoomToArea?: () => void;
 }
@@ -20,18 +19,14 @@ interface ClusterVenuesSheetProps {
 export function ClusterVenuesSheet({ 
   isOpen, 
   onClose, 
-  clusterId, 
+  clusterBbox, 
   onVenueTap, 
   onZoomToArea 
 }: ClusterVenuesSheetProps) {
-  const { data: venues = [], isLoading } = useClusterVenues(clusterId);
+  const { data: venues = [], isLoading, error, refetch } = useClusterVenues(clusterBbox);
   
-  // Batch-fetch live counts for all venues in this cluster
-  const venueIds = venues.map(venue => venue.id);
-  const { data: liveCounts = {} } = useLiveCounts(venueIds);
-  
-  // Calculate total live count from batch query results
-  const totalLiveCount = Object.values(liveCounts).reduce((sum, count) => sum + count, 0);
+  // Calculate total live count from the new RPC data
+  const totalLiveCount = venues.reduce((sum, venue) => sum + venue.live_count, 0);
 
   // Add haptic feedback when sheet opens
   React.useEffect(() => {
@@ -82,7 +77,24 @@ export function ClusterVenuesSheet({
         {/* Content */}
         <ScrollArea className="flex-1">
           <div className="p-4">
-            {isLoading ? (
+            {error ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+                    <X className="h-6 w-6 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Couldn't load venues</p>
+                    <p className="text-sm text-muted-foreground">
+                      Please try again
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="space-y-0" role="status" aria-label="Loading venues">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-3 border-b border-border/40 last:border-0">
@@ -123,9 +135,14 @@ export function ClusterVenuesSheet({
                     >
                       <VenueListItem
                         venue={{
-                          ...venue,
+                          id: venue.id,
+                          name: venue.name,
+                          lat: venue.lat,
+                          lng: venue.lng,
+                          vibe: venue.category, // Map category to vibe for VenueListItem
+                          source: 'cluster', // Static source for cluster venues
                           distance_m: undefined, // Cluster venues don't have distance
-                          live_count: liveCounts[venue.id] || 0, // Use batch-fetched live count
+                          live_count: venue.live_count,
                         }}
                         onTap={onVenueTap}
                       />
