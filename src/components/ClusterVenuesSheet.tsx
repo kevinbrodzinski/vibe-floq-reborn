@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, MapPin, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VenueListItem } from './VenueListItem';
@@ -23,7 +23,13 @@ export function ClusterVenuesSheet({
   onVenueTap, 
   onZoomToArea 
 }: ClusterVenuesSheetProps) {
-  const { data: venues = [], isLoading, error, refetch } = useClusterVenues(clusterBbox);
+  // Stabilize the bbox to prevent constant React Query refetches
+  const stableBbox = useMemo(() => {
+    if (!clusterBbox) return null;
+    return clusterBbox.map(n => +n.toFixed(6)) as [number, number, number, number];
+  }, [clusterBbox]);
+
+  const { data: venues = [], isLoading, error, refetch } = useClusterVenues(stableBbox);
   
   // Calculate total live count from the new RPC data
   const totalLiveCount = venues.reduce((sum, venue) => sum + venue.live_count, 0);
@@ -41,6 +47,9 @@ export function ClusterVenuesSheet({
         side="bottom" 
         className="max-h-[65vh] flex flex-col p-0 gap-0 rounded-t-3xl border-0 bg-background/95 backdrop-blur-md"
       >
+        {/* Accessibility title */}
+        <SheetTitle className="sr-only">Cluster venues</SheetTitle>
+        
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />

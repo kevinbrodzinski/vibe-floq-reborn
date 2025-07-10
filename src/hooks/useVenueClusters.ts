@@ -153,5 +153,5 @@ export function useVenueClusters(viewport: Viewport) {
     []
   );
 
-  return { clusters, getClusterVenues };
+  return { clusters, getClusterVenues, supercluster: indexRef.current };
 }

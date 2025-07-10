@@ -94,7 +94,7 @@ export const FieldVisualization = ({
   const { viewport } = viewportControls;
   
   // Get venue clusters for current viewport
-  const { clusters: venueClusters } = useVenueClusters(viewport);
+  const { clusters: venueClusters, supercluster } = useVenueClusters(viewport);
   
   // Use centralized selected venue store
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
@@ -106,18 +106,30 @@ export const FieldVisualization = ({
 
   // Handle cluster click - open details sheet for clusters
   const handleClusterClick = (cluster: any) => {
-    if (cluster.pointCount > 0) {
-      // Calculate a bounding box around the cluster center
-      // This is a simple approximation - you can enhance this with actual cluster bounds
-      const radius = 0.005; // ~500m in degrees (rough approximation)
-      const bbox: [number, number, number, number] = [
-        cluster.lng - radius, // west
-        cluster.lat - radius, // south  
-        cluster.lng + radius, // east
-        cluster.lat + radius  // north
-      ];
-      setActiveClusterBbox(bbox);
-      setClusterSheetOpen(true);
+    if (cluster.pointCount > 0 && supercluster) {
+      // Extract the actual cluster ID from props
+      const clusterId = cluster.props?.cluster_id;
+      
+      if (clusterId) {
+        // Get the real cluster expansion bbox using Supercluster
+        const leaves = supercluster.getLeaves(clusterId, Infinity);
+        
+        if (leaves.length > 0) {
+          // Calculate bbox from actual cluster venues
+          const lngs = leaves.map((leaf: any) => leaf.geometry.coordinates[0]);
+          const lats = leaves.map((leaf: any) => leaf.geometry.coordinates[1]);
+          
+          const bbox: [number, number, number, number] = [
+            Math.min(...lngs), // west
+            Math.min(...lats), // south
+            Math.max(...lngs), // east
+            Math.max(...lats)  // north
+          ];
+          
+          setActiveClusterBbox(bbox);
+          setClusterSheetOpen(true);
+        }
+      }
     }
   };
 
