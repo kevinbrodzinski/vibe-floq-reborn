@@ -214,18 +214,21 @@ export type Database = {
         Row: {
           created_at: string | null
           friend_id: string
+          responded_at: string | null
           status: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           friend_id: string
+          responded_at?: string | null
           status?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           friend_id?: string
+          responded_at?: string | null
           status?: string | null
           user_id?: string
         }
@@ -1350,6 +1353,16 @@ export type Database = {
       remove_friend: {
         Args: { target: string }
         Returns: undefined
+      }
+      respond_friend_request: {
+        Args: { request_user_id: string; response_type: string }
+        Returns: {
+          created_at: string | null
+          friend_id: string
+          responded_at: string | null
+          status: string | null
+          user_id: string
+        }
       }
       search_everything: {
         Args: { query: string; limit_count?: number }

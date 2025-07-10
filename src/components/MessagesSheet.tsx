@@ -164,7 +164,10 @@ export const MessagesSheet = ({ open, onOpenChange }: MessagesSheetProps) => {
                         {lastMessage && (
                           <p className="text-xs text-muted-foreground truncate mt-1">
                             {lastMessage.sender_id === user?.id ? 'You: ' : ''}
-                            {lastMessage.content}
+                            {lastMessage.content.length > 40 ? 
+                              `${lastMessage.content.substring(0, 40)}...` : 
+                              lastMessage.content
+                            }
                           </p>
                         )}
                         
@@ -179,9 +182,19 @@ export const MessagesSheet = ({ open, onOpenChange }: MessagesSheetProps) => {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>No messages yet</p>
-              <p className="text-sm">Start a conversation with your friends</p>
+              <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium">No messages yet</p>
+              <p className="text-sm mb-4">Start a conversation with your friends</p>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  // This could navigate to friends list or add friend modal
+                }}
+              >
+                View Friends
+              </Button>
             </div>
           )}
         </div>

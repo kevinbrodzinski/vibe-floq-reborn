@@ -45,21 +45,13 @@ export function useFriendRequests() {
   // Accept friend request mutation
   const acceptRequest = useMutation({
     mutationFn: async (requesterId: string) => {
-      // Update the request status to accepted
-      const { error: updateError } = await supabase
-        .from('friend_requests')
-        .update({ status: 'accepted' })
-        .eq('user_id', requesterId)
-        .eq('friend_id', user!.id);
-
-      if (updateError) throw updateError;
-
-      // Add the friendship using the RPC function
-      const { error: addError } = await supabase.rpc('add_friend', {
-        target: requesterId
+      const { data, error } = await supabase.rpc('respond_friend_request', {
+        request_user_id: requesterId,
+        response_type: 'accepted'
       });
 
-      if (addError) throw addError;
+      if (error) throw error;
+      return data;
     },
     onSuccess: (_, requesterId) => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
@@ -81,13 +73,13 @@ export function useFriendRequests() {
   // Decline friend request mutation
   const declineRequest = useMutation({
     mutationFn: async (requesterId: string) => {
-      const { error } = await supabase
-        .from('friend_requests')
-        .update({ status: 'declined' })
-        .eq('user_id', requesterId)
-        .eq('friend_id', user!.id);
+      const { data, error } = await supabase.rpc('respond_friend_request', {
+        request_user_id: requesterId,
+        response_type: 'declined'
+      });
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });

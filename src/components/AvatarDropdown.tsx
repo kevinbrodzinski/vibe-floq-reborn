@@ -61,7 +61,7 @@ export const AvatarDropdown = () => {
             {totalNotifications > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center p-0 pointer-events-none font-medium"
+                className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center px-1 pointer-events-none font-medium"
                 role="status"
                 aria-label={`${totalNotifications} notification${totalNotifications === 1 ? '' : 's'}`}
               >
