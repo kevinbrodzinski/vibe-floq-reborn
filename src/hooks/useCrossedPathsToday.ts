@@ -3,17 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useFriends } from './useFriends';
 import { useMemo } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-
-export interface CrossedPath {
-  user_id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  last_seen_ts: string;
-  last_seen_vibe: string;
-  venue_name: string | null;
-  distance_meters: number;
-}
+import type { CrossedPath } from '@/types';
 
 export function useCrossedPathsToday() {
   const { user } = useAuth();
@@ -33,14 +23,18 @@ export function useCrossedPathsToday() {
       
       const { data, error } = await supabase.rpc('people_crossed_paths_today', {
         in_me: user.id,
-        proximity_meters: 20 // Start with more sensitive threshold
+        proximity_meters: 25
       });
 
-      if (error) throw error;
-      return (data || []) as CrossedPath[];
+      if (error) {
+        console.error('Failed to load crossed paths:', error);
+        throw error;
+      }
+      return (data || []) as unknown as CrossedPath[];
     },
     enabled: !!user?.id,
-    staleTime: 60 * 1000, // 60 seconds
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000, // Live refresh while Afterglow open
     retry: 3,
     refetchOnWindowFocus: false,
   });

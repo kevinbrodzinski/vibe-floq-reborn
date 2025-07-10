@@ -3,7 +3,7 @@ import { LazyAvatar } from "@/components/ui/lazy-avatar";
 import { UserPlus, MapPin, Clock } from "lucide-react";
 import { useFriends } from "@/hooks/useFriends";
 import { useToast } from "@/hooks/use-toast";
-import type { CrossedPath } from "@/hooks/useCrossedPathsToday";
+import type { CrossedPath } from "@/types";
 
 interface CrossedPathsCardProps {
   person: CrossedPath;
@@ -12,6 +12,13 @@ interface CrossedPathsCardProps {
 export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
   const { addFriend, isAddingFriend } = useFriends();
   const { toast } = useToast();
+
+  // Display logic with username fallback
+  const label = person.username ? `@${person.username}` : person.display_name ?? 'Unknown';
+  const mins = Math.round(person.overlap_sec / 60);
+  const dist = person.distance_meters < 50 ? 'very close'
+             : person.distance_meters < 200 ? '~1 block'
+             : `${(person.distance_meters/1000).toFixed(1)} km`;
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -29,19 +36,12 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
     return date.toLocaleDateString();
   };
 
-  const formatDistance = (meters: number) => {
-    if (meters < 50) return "very close";
-    if (meters < 200) return "~1 block away";
-    if (meters < 500) return "~2 blocks away";
-    return "nearby";
-  };
-
   const handleAddFriend = async () => {
     try {
       await addFriend(person.user_id);
       toast({
         title: "Friend request sent",
-        description: `Sent friend request to ${person.display_name}`,
+        description: `Sent friend request to ${label}`,
       });
     } catch (error) {
       console.error('Failed to add friend:', error);
@@ -54,7 +54,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
         <div className="relative">
           <LazyAvatar
             avatarPath={person.avatar_url}
-            displayName={person.display_name}
+            displayName={person.display_name || person.username}
             size={48}
             className="border-2 border-border/40 transition-transform duration-300 group-hover:scale-110"
           />
@@ -64,7 +64,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
         
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-foreground truncate">
-            {person.display_name}
+            {label}
           </h3>
           
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -75,14 +75,8 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
           <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
             <MapPin className="w-3 h-3" />
             <span>
-              {person.venue_name || formatDistance(person.distance_meters)}
+              {dist} • crossed for {mins} min
             </span>
-            {person.last_seen_vibe && (
-              <>
-                <span>•</span>
-                <span className="text-accent font-medium">{person.last_seen_vibe}</span>
-              </>
-            )}
           </div>
         </div>
       </div>

@@ -47,3 +47,14 @@ export interface LivePresence {
   venue_id: string | null;
   expires_at: string;
 }
+
+export interface CrossedPath {
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  last_seen_ts: string;
+  overlap_sec: number;
+  venue_id: string | null;
+  distance_meters: number;
+}
