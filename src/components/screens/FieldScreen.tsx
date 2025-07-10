@@ -28,7 +28,7 @@ import type { Vibe } from "@/types";
 
 // Use basic hooks for stability - restore optimized versions after baseline works
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { usePresence } from "@/hooks/usePresence";
+// import { usePresence } from "@/hooks/usePresence"; // Disabled until edge function exists
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 
@@ -68,7 +68,7 @@ export const FieldScreen = () => {
   const location = useGeolocation();
   const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
   
-  // Temporarily disable presence to establish baseline
+  // Temporarily disable presence completely to establish baseline
   // const { updatePresence, updating } = usePresence();
   
   // Mock presence data for now - will restore when presence works
