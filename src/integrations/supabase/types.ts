@@ -1104,9 +1104,10 @@ export type Database = {
         Returns: unknown
       }
       people_crossed_paths_today: {
-        Args: { user_lat: number; user_lng: number; proximity_meters?: number }
+        Args: { in_me: string; proximity_meters?: number }
         Returns: {
           user_id: string
+          username: string
           display_name: string
           avatar_url: string
           last_seen_ts: string
