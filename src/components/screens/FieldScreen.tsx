@@ -22,15 +22,15 @@ import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { clsx } from "clsx";
 import type { Vibe } from "@/types";
-import { useStableMemo, useStableArray } from "@/hooks/useStableMemo";
-import { Z_LAYERS } from "@/lib/z-layers";
+// Temporarily remove complex dependencies to establish baseline
+// import { useStableMemo, useStableArray } from "@/hooks/useStableMemo";
+// import { Z_LAYERS } from "@/lib/z-layers";
 
-// Use the optimized hooks for better performance
-import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
-import { useOptimizedPresence } from "@/hooks/useOptimizedPresence";
+// Use basic hooks for stability - restore optimized versions after baseline works
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { usePresence } from "@/hooks/usePresence";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
-import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 
 interface Person {
   id: string;
@@ -64,23 +64,26 @@ export const FieldScreen = () => {
   
   const { mode, set } = useFullscreenMap();
   
-  // Use optimized hooks for better performance
-  const location = useOptimizedGeolocation();
+  // Use basic hooks for stability
+  const location = useGeolocation();
   const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
   
-  // Use optimized presence hook instead of separate hooks
-  const presenceData = useOptimizedPresence({
-    vibe: currentVibe,
-    lat: location.lat,
-    lng: location.lng,
-    enabled: !location.loading && !location.error
-  });
+  // Temporarily disable presence to establish baseline
+  // const { updatePresence, updating } = usePresence();
   
-  const { data: currentEvent } = useCurrentEvent(
-    location.lat,
-    location.lng,
-    () => setShowBanner(false)
-  );
+  // Mock presence data for now - will restore when presence works
+  const presenceData = {
+    people: [], // Empty for now to avoid errors
+    updating: false
+  };
+  
+  // Temporarily disable current event to avoid side effect issues
+  // const { data: currentEvent } = useCurrentEvent(
+  //   location.lat,
+  //   location.lng,
+  //   () => setShowBanner(false)
+  // );
+  const currentEvent = null;
   
   // Get nearby venues for chip
   const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
@@ -105,45 +108,46 @@ export const FieldScreen = () => {
     }
   };
 
-  // Convert nearby users to people format - stabilized to prevent re-renders
-  const people: Person[] = useStableMemo(() => 
-    presenceData.people.map((user, index) => ({
-      id: user.user_id,
-      name: `User ${index + 1}`, // Could be enhanced with profiles
-      x: 20 + (index * 15) % 60, // Distribute across field
-      y: 20 + (index * 20) % 60,
-      color: getVibeColor(user.vibe || 'chill'),
-      vibe: user.vibe || 'chill',
-    })), 
-    [presenceData.people.length, presenceData.people.map(p => `${p.user_id}-${p.vibe}`).join(',')]
-  );
+  // Simple mock people data for baseline - will restore when presence works
+  const people: Person[] = [
+    {
+      id: 'mock-1',
+      name: 'Mock User 1',
+      x: 30,
+      y: 40,
+      color: getVibeColor('social'),
+      vibe: 'social',
+    },
+    {
+      id: 'mock-2', 
+      name: 'Mock User 2',
+      x: 60,
+      y: 30,
+      color: getVibeColor('chill'),
+      vibe: 'chill',
+    }
+  ];
 
-  // Convert people to friends for constellation system - stabilized
-  const friends = useStableMemo(() => 
-    people.map((person, index) => ({
-      ...person,
-      relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
-      activity: 'active' as const,
-      warmth: 60 + Math.random() * 40,
-      compatibility: 70 + Math.random() * 30,
-      lastSeen: Date.now() - Math.random() * 900000,
-    })), 
-    [people.length, people.map(p => p.id).join(',')]
-  );
+  // Simple friends conversion for baseline
+  const friends = people.map((person, index) => ({
+    ...person,
+    relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
+    activity: 'active' as const,
+    warmth: 60 + Math.random() * 40,
+    compatibility: 70 + Math.random() * 30,
+    lastSeen: Date.now() - Math.random() * 900000,
+  }));
 
-  // Convert walkable floqs to floq events format - stabilized
-  const floqEvents: FloqEvent[] = useStableMemo(() =>
-    walkable_floqs.map((floq, index) => ({
-      id: floq.id,
-      title: floq.title,
-      x: 30 + (index * 25) % 50,
-      y: 40 + (index * 20) % 40,
-      size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
-      participants: floq.participant_count,
-      vibe: floq.primary_vibe,
-    })),
-    [walkable_floqs.length, walkable_floqs.map(f => `${f.id}-${f.participant_count}`).join(',')]
-  );
+  // Simple floq events conversion for baseline
+  const floqEvents: FloqEvent[] = walkable_floqs.map((floq, index) => ({
+    id: floq.id,
+    title: floq.title,
+    x: 30 + (index * 25) % 50,
+    y: 40 + (index * 20) % 40,
+    size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
+    participants: floq.participant_count,
+    vibe: floq.primary_vibe,
+  }));
 
   const handleSocialAction = (action: any) => {
     console.log('Social action triggered:', action);
@@ -229,10 +233,11 @@ export const FieldScreen = () => {
     }
   }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
 
-  // Swipe-down gesture to exit full-screen
-  const { handlers } = useAdvancedGestures({
-    onSwipeDown: () => mode === 'full' && set('map'),
-  });
+  // Temporarily disable advanced gestures for baseline
+  // const { handlers } = useAdvancedGestures({
+  //   onSwipeDown: () => mode === 'full' && set('map'),
+  // });
+  const handlers = {};
 
   if (location.loading && !location.lat) {
     return (
@@ -253,9 +258,9 @@ export const FieldScreen = () => {
   return (
     <ErrorBoundary>
       <div className="relative h-svh w-full bg-background" {...handlers}>
-        {/* Event Banner */}
+        {/* Event Banner - temporarily disabled for baseline */}
         {currentEvent && showBanner && (
-          <div style={{ zIndex: Z_LAYERS.BANNERS }}>
+          <div style={{ zIndex: 1000 }}>
             <EventBanner
               key={currentEvent.id}
               eventId={currentEvent.id}
@@ -284,7 +289,7 @@ export const FieldScreen = () => {
         <FieldHeader 
           locationReady={isLocationReady} 
           currentLocation={location.error ? "Location unavailable" : "Current location"}
-          style={{ zIndex: Z_LAYERS.FIELD_HEADER }}
+          style={{ zIndex: 50 }}
         />
 
         {/* Map canvas */}
@@ -356,7 +361,7 @@ export const FieldScreen = () => {
         {/* Time-Based Bottom Action Card */}
         <div 
           className="absolute bottom-24 left-4 right-4"
-          style={{ zIndex: Z_LAYERS.FLOATING_BUTTONS }}
+          style={{ zIndex: 40 }}
         >
           <TimeBasedActionCard
             timeState={timeState}
