@@ -8,6 +8,7 @@ import { ViewportControls } from "@/components/map/ViewportControls";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { DMQuickSheet } from "@/components/DMQuickSheet";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useLongPress } from "@/hooks/useLongPress";
 import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
@@ -168,29 +169,55 @@ export const FieldVisualization = ({
 
       {/* People on the field (when not in constellation mode) */}
       {!constellationMode && people.map((person, index) => (
-        <div
-          key={person.id}
-          className="absolute transition-all duration-500 cursor-pointer hover:scale-110"
-          style={{
-            left: `${person.x}%`,
-            top: `${person.y}%`,
-            transform: "translate(-50%, -50%)",
-            animationDelay: `${index * 0.1}s`,
-          }}
-        >
-          <div
-            className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
-            style={{
-              backgroundColor: person.color,
-              boxShadow: `0 0 20px ${person.color}`,
-            }}
-          ></div>
-          {!mini && (
-            <div className="text-sm text-center mt-2 text-foreground/90">
-              {person.name}
+        <HoverCard key={person.id}>
+          <HoverCardTrigger asChild>
+            <div
+              className="absolute transition-all duration-500 cursor-pointer hover:scale-110"
+              style={{
+                left: `${person.x}%`,
+                top: `${person.y}%`,
+                transform: "translate(-50%, -50%)",
+                animationDelay: `${index * 0.1}s`,
+                pointerEvents: 'auto',
+              }}
+            >
+              <div
+                className={`rounded-full animate-pulse-glow ${mini ? 'w-2 h-2' : 'w-4 h-4'}`}
+                style={{
+                  backgroundColor: person.color,
+                  boxShadow: `0 0 20px ${person.color}`,
+                }}
+              ></div>
+              {!mini && (
+                <div className="text-sm text-center mt-2 text-foreground/90">
+                  {person.name}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-80">
+            <div className="flex items-center space-x-4">
+              <div
+                className="w-12 h-12 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: person.color,
+                  boxShadow: `0 0 20px ${person.color}`,
+                }}
+              ></div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold">{person.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Vibing: {person.vibe}
+                </p>
+                <div className="flex items-center pt-2">
+                  <span className="text-xs text-muted-foreground">
+                    Currently in your area
+                  </span>
+                </div>
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
       ))}
 
       {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}

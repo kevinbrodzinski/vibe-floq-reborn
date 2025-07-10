@@ -84,7 +84,7 @@ export const FieldScreen = () => {
   );
   
   // Get nearby venues for chip
-  const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
+  const nearbyVenues = useNearbyVenues(location.lat, location.lng, 0.3);
   
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
@@ -384,10 +384,10 @@ export const FieldScreen = () => {
         </div>
 
         {/* Swipeable Venues Chip */}
-        {nearbyVenues.length > 0 && !currentEvent && (
+        {(nearbyVenues.data?.length || 0) > 0 && !currentEvent && (
           <VenuesChip
-            onOpen={() => setVenuesSheetOpen(true)}
-            venueCount={nearbyVenues.length}
+            onClick={() => setVenuesSheetOpen(true)}
+            venueCount={nearbyVenues.data?.length || 0}
           />
         )}
 

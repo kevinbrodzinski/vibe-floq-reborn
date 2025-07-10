@@ -1,14 +1,14 @@
 import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 
 interface VenuesChipProps {
-  onOpen: () => void;
+  onClick: () => void;
   venueCount?: number;
 }
 
-export function VenuesChip({ onOpen, venueCount = 1 }: VenuesChipProps) {
+export function VenuesChip({ onClick, venueCount = 1 }: VenuesChipProps) {
   const { handlers } = useAdvancedGestures({
-    onSwipeUp: onOpen,
-    onTap: onOpen,
+    onSwipeUp: onClick,
+    onTap: onClick,
   });
 
   return (
