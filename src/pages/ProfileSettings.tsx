@@ -94,7 +94,7 @@ const ProfileSettings = () => {
             {hasUsername ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-                  <span className="text-sm">@{userProfile?.username}</span>
+                  <span className="text-sm">@{(userProfile as any)?.username}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Your username helps friends find you. Changing usernames is not currently supported.

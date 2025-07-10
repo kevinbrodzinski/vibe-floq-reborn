@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
@@ -46,6 +47,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
         primeProfiles([{
           id: userId,
           display_name: user.label,
+          username: null, // Add username property
           avatar_url: null,
           created_at: ''
         }]);

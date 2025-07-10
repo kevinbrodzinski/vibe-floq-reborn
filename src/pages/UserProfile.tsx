@@ -15,11 +15,11 @@ const UserProfile = () => {
     return <div>Invalid user ID</div>;
   }
 
-  const displayName = profile?.username 
-    ? `@${profile.username}`
+  const displayName = (profile as any)?.username 
+    ? `@${(profile as any).username}`
     : profile?.display_name || 'Unknown User';
 
-  const subtitle = profile?.username && profile?.display_name 
+  const subtitle = (profile as any)?.username && profile?.display_name 
     ? profile.display_name 
     : null;
 
@@ -46,7 +46,7 @@ const UserProfile = () => {
               <Avatar className="w-24 h-24 mx-auto mb-4">
                 <AvatarImage src={getAvatarUrl(profile.avatar_url, 96)} />
                 <AvatarFallback className="text-xl">
-                  {getInitials(profile.display_name || profile.username)}
+                  {getInitials(profile.display_name || (profile as any).username)}
                 </AvatarFallback>
               </Avatar>
               
