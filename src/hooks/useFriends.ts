@@ -4,76 +4,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useMemo } from 'react';
 
 export function useFriends() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+  // EMERGENCY STABILIZATION: Disabled all network activity
+  // TODO: Re-enable after fixing network cascade issues
+  
+  // Mock data to prevent network requests
+  const friends = ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
+  const friendCount = 1;
+  const isLoading = false;
 
-  // List all friends
-  const { data: friends = [], isLoading } = useQuery({
-    queryKey: ['friends'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('list_friends');
-      if (error) throw error;
-      return data as string[];
-    },
-  });
+  // Disabled mutations - return noop functions
+  const addFriend = async (targetUserId: string) => {
+    console.log('Mock: would add friend', targetUserId);
+  };
 
-  // Get friend count
-  const { data: friendCount = 0 } = useQuery({
-    queryKey: ['friends', 'count'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('friend_count');
-      if (error) throw error;
-      return (data ?? 0) as number;
-    },
-  });
-
-  // Add friend mutation
-  const addFriendMutation = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('add_friend', { target: targetUserId });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
-      queryClient.invalidateQueries({ queryKey: ['friends', 'count'] });
-      queryClient.invalidateQueries({ queryKey: ['presence-nearby'] });
-      toast({
-        title: "Friend added",
-      });
-    },
-    onError: (error) => {
-      console.error('Failed to add friend:', error);
-      toast({
-        title: "Failed to add friend",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Remove friend mutation
-  const removeFriendMutation = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('remove_friend', { target: targetUserId });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
-      queryClient.invalidateQueries({ queryKey: ['friends', 'count'] });
-      queryClient.invalidateQueries({ queryKey: ['presence-nearby'] });
-      toast({
-        title: "Friend removed",
-      });
-    },
-    onError: (error) => {
-      console.error('Failed to remove friend:', error);
-      toast({
-        title: "Failed to remove friend",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    },
-  });
+  const removeFriend = async (targetUserId: string) => {
+    console.log('Mock: would remove friend', targetUserId);
+  };
 
   // Optimized friend set for O(1) lookups
   const friendsSet = useMemo(() => new Set(friends), [friends]);
@@ -87,10 +33,10 @@ export function useFriends() {
     friends,
     friendCount,
     isLoading,
-    addFriend: addFriendMutation.mutateAsync,
-    removeFriend: removeFriendMutation.mutateAsync,
-    isAddingFriend: addFriendMutation.isPending,
-    isRemovingFriend: removeFriendMutation.isPending,
+    addFriend,
+    removeFriend,
+    isAddingFriend: false,
+    isRemovingFriend: false,
     isFriend,
   };
 }

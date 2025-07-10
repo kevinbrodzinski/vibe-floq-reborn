@@ -30,126 +30,15 @@ export const useBucketedPresence = (lat?: number, lng?: number) => {
     lastLngRef.current = lng;
   }
 
-  // React Query for fetching initial presence data
-  const { data: people = [] } = useQuery({
-    queryKey: ['bucketed-presence', lastLatRef.current, lastLngRef.current],
-    enabled: Number.isFinite(lat) && Number.isFinite(lng),
-    queryFn: async () => {
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
-      
-      // Get initial presence data using proximity query
-      const { data, error } = await supabase.rpc('presence_nearby', {
-        lat: lat!,
-        lng: lng!,
-        km: 2, // 2km radius for initial fetch
-        include_self: false
-      });
+  // EMERGENCY STABILIZATION: Disabled presence queries
+  const people: LivePresence[] = [];
 
-      if (error) throw error;
+  // EMERGENCY STABILIZATION: Disabled all bucket computation and subscription logic
 
-      return (data || []).map((row: any) => ({
-        user_id: row.user_id,
-        vibe: row.vibe,
-        lat: row.location?.coordinates?.[1] ?? 0,
-        lng: row.location?.coordinates?.[0] ?? 0,
-        venue_id: row.venue_id,
-        expires_at: row.expires_at,
-      })) as LivePresence[];
-    },
-    staleTime: 30_000, // 30 seconds
-    refetchInterval: 60_000, // 1 minute
-  });
+  // EMERGENCY STABILIZATION: Disabled all WebSocket subscriptions
+  // useEffect(() => { ... maybeResubscribe(); }, [lat, lng]);
+  // useEffect(() => { ... cleanup channels; }, []);
 
-  // Compute buckets when location changes
-  const buckets = Number.isFinite(lat) && Number.isFinite(lng) 
-    ? [...ngeohash.neighbors(ngeohash.encode(lat!, lng!, GH_PRECISION)), ngeohash.encode(lat!, lng!, GH_PRECISION)].sort()
-    : [];
-
-  // Helper function to upsert presence data
-  const upsertPresence = (current: LivePresence[], row: any): LivePresence[] => {
-    const presence: LivePresence = {
-      user_id: row.user_id,
-      vibe: row.vibe,
-      lat: row.location?.coordinates?.[1] ?? 0,
-      lng: row.location?.coordinates?.[0] ?? 0,
-      venue_id: row.venue_id,
-      expires_at: row.expires_at,
-    };
-
-    const index = current.findIndex(p => p.user_id === presence.user_id);
-    if (index >= 0) {
-      const updated = [...current];
-      updated[index] = presence;
-      return updated;
-    }
-    return [...current, presence];
-  };
-
-  // Subscription management - no throttling needed
-  const maybeResubscribe = () => {
-    if (!buckets.length) return;
-
-    const last = geosLastRef.current.join(',');
-    const next = buckets.join(',');
-    if (last === next) return;
-
-    geosLastRef.current = buckets;
-
-    // Tear down old channels (copy array to avoid mutation during iteration)
-    const oldChannels = [...channelsRef.current];
-    channelsRef.current = [];
-    oldChannels.forEach(ch => supabase.removeChannel(ch));
-
-    // Build new channels for realtime updates
-    buckets.forEach(code => {
-      const ch = supabase
-        .channel(`presence:${code}`)
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'vibes_now' },
-            ({ new: row, old, eventType }) => {
-              // Use stable cache key with frozen coordinates
-              const key = ['bucketed-presence', lastLatRef.current, lastLngRef.current];
-
-              queryClient.setQueryData<LivePresence[]>(key, current => {
-                if (!current) return current;
-
-                switch (eventType) {
-                  case 'INSERT':
-                  case 'UPDATE':
-                    return upsertPresence(current, row);
-                  case 'DELETE':
-                    return current.filter(p => p.user_id !== old?.user_id);
-                  default:
-                    return current;
-                }
-              });
-            })
-        .subscribe();
-
-      channelsRef.current.push(ch);
-    });
-  };
-
-  // React to bucket changes
-  useEffect(() => {
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      maybeResubscribe();
-    }
-  }, [lat, lng]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      const oldChannels = [...channelsRef.current];
-      channelsRef.current = [];
-      oldChannels.forEach(ch => supabase.removeChannel(ch));
-    };
-  }, []);
-
-  // Filter out expired presence
-  const activePeople = people.filter(person => 
-    differenceInMilliseconds(new Date(person.expires_at), Date.now()) > 0
-  );
-
-  return { people: activePeople };
+  // Return empty array for now
+  return { people };
 };

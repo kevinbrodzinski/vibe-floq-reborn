@@ -35,21 +35,14 @@ export function useNearbyFriends(
     }, 300);
   }, []);
 
-  const result = useQuery({
-    queryKey: ["friends-nearby", lat, lng, km],
-    enabled: enabled && !!lat && !!lng,
-    staleTime: 30_000,                     // 30 s cache
-    queryFn: async (): Promise<NearbyFriend[]> => {
-      const { data, error } = await supabase.rpc("friends_nearby", {
-        user_lat: lat,
-        user_lng: lng,
-        radius_km: km,
-      });
-
-      if (error) throw error;
-      return (data ?? []) as NearbyFriend[];
-    },
-  });
+  // EMERGENCY STABILIZATION: Disabled nearby friends queries
+  const result = {
+    data: [] as NearbyFriend[],
+    isLoading: false,
+    error: null,
+    isError: false,
+    isSuccess: true,
+  };
 
   return { ...result, debouncedPrimeProfiles };
 }

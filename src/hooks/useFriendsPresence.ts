@@ -5,27 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 type StatusMap = Record<string, 'online' | 'away'>;
 
 export function useFriendsPresence() {
-  const { friends } = useFriends();
-  const [status, setStatus] = useState<StatusMap>({});
+  // EMERGENCY STABILIZATION: Disabled WebSocket subscriptions
+  // TODO: Re-enable after fixing cascade issues
+  
+  // Return mock status to prevent errors
+  const mockStatus: StatusMap = {
+    'b25fd249-5bc0-4b67-a012-f64dacbaef1a': 'online'
+  };
 
-  useEffect(() => {
-    if (friends.length === 0) return;
-
-    const channel = supabase.channel('friends-presence');
-
-    friends.forEach(id => {
-      channel.on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${id}` },
-        payload => {
-          setStatus(s => ({ ...s, [id]: payload.new ? 'online' : 'away' }));
-        }
-      );
-    });
-
-    channel.subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [friends]);
-
-  return status;       // { userId: 'online' | 'away' }
+  return mockStatus;
 }
