@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Compass } from "lucide-react";
 import { AvatarDropdown } from "@/components/AvatarDropdown";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 interface FieldHeaderProps {
   locationReady?: boolean;
@@ -48,7 +49,17 @@ export const FieldHeader = ({
       </Button>
       
       {/* Center: Logo */}
-      <div className="text-2xl font-light tracking-wide text-primary">
+      <div 
+        className="text-2xl font-light tracking-wide text-primary cursor-pointer"
+        onClick={() => {
+          track('posthog_test', { 
+            source: 'field_header',
+            timestamp: new Date().toISOString(),
+            test: true
+          });
+          console.log('PostHog test event sent!');
+        }}
+      >
         floq
       </div>
       
