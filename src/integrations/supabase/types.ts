@@ -378,6 +378,30 @@ export type Database = {
         }
         Relationships: []
       }
+      vibes_log: {
+        Row: {
+          location: unknown
+          ts: string
+          user_id: string
+          venue_id: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Insert: {
+          location: unknown
+          ts?: string
+          user_id: string
+          venue_id?: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Update: {
+          location?: unknown
+          ts?: string
+          user_id?: string
+          venue_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Relationships: []
+      }
       vibes_now: {
         Row: {
           broadcast_radius: number | null
@@ -678,6 +702,10 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      cleanup_old_vibes_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>
@@ -1075,6 +1103,18 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      people_crossed_paths_today: {
+        Args: { user_lat: number; user_lng: number; proximity_meters?: number }
+        Returns: {
+          user_id: string
+          display_name: string
+          avatar_url: string
+          last_seen_ts: string
+          last_seen_vibe: Database["public"]["Enums"]["vibe_enum"]
+          venue_name: string
+          distance_meters: number
+        }[]
+      }
       pgis_asflatgeobuf_finalfn: {
         Args: { "": unknown }
         Returns: string
@@ -1304,6 +1344,10 @@ export type Database = {
       set_limit: {
         Args: { "": number }
         Returns: number
+      }
+      should_log_presence: {
+        Args: { p_user: string; p_loc: unknown; p_now?: string }
+        Returns: boolean
       }
       show_limit: {
         Args: Record<PropertyKey, never>
