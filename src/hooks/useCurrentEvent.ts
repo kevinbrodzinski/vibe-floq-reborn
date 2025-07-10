@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CurrentEvent {
@@ -14,8 +14,6 @@ export function useCurrentEvent(
   lng?: number,
   onDismiss?: () => void
 ) {
-  // Prevent recursive calls by tracking if we've already fired the callback
-  const onceRef = useRef(false);
   const query = useQuery<CurrentEvent | null>({
     queryKey: ['current-event', lat, lng],
     queryFn: async () => {
@@ -31,16 +29,10 @@ export function useCurrentEvent(
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
   });
 
-  // Handle event detection - moved callback outside to prevent recursive loops
-  // Use onceRef to prevent recursive state updates
+  // Handle event detection
   useEffect(() => {
-    if (query.data && onDismiss && !onceRef.current) {
-      onceRef.current = true;
+    if (query.data && onDismiss) {
       onDismiss();
-    }
-    // Reset flag when event changes
-    if (!query.data) {
-      onceRef.current = false;
     }
   }, [query.data, onDismiss]);
 
