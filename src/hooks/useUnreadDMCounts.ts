@@ -23,18 +23,28 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     staleTime: 30_000, // 30 seconds
   });
 
-  // Listen for read status changes to invalidate cache
+  // Listen only for threads that involve this user to reduce noise
   useEffect(() => {
     if (!selfId) return;
 
     const channel = supabase
-      .channel('dm_read_notifications')
+      .channel(`unread_updates:${selfId}`)
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages'
+        table: 'direct_messages',
+        filter: `thread_id=in.(SELECT id FROM direct_threads WHERE member_a=eq.${selfId} OR member_b=eq.${selfId})`
       }, () => {
-        // Invalidate on any message changes
+        // Only invalidate when new messages arrive for threads involving this user
+        queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'direct_threads',
+        filter: `member_a=eq.${selfId},member_b=eq.${selfId}`
+      }, () => {
+        // Invalidate when read timestamps are updated
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .subscribe();

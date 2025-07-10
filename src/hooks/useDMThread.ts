@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import throttle from 'lodash.throttle';
 import { supabase } from '@/integrations/supabase/client';
@@ -155,22 +155,32 @@ export function useDMThread(friendId: string | null) {
     [sendTyping]
   );
 
-  // Function to mark thread as read
-  const markAsRead = useCallback(async () => {
+  // Throttled function to mark thread as read (prevent database hammering)
+  const markAsReadRef = useRef<() => Promise<void>>();
+  
+  useEffect(() => {
     if (!threadId || !selfId) return;
     
-    try {
-      await supabase.rpc('update_last_read_at', {
-        thread_id_param: threadId,
-        user_id_param: selfId
-      });
-      
-      // Invalidate unread counts query
-      qc.invalidateQueries({ queryKey: ['dm-unread', selfId] });
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
-    }
+    markAsReadRef.current = throttle(async () => {
+      try {
+        await supabase.rpc('update_last_read_at', {
+          thread_id_param: threadId,
+          user_id_param: selfId
+        });
+        
+        // Invalidate unread counts query
+        qc.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+      } catch (error) {
+        console.error('Failed to mark as read:', error);
+      }
+    }, 1000, { leading: true, trailing: false }); // Only fire once per second max
   }, [threadId, selfId, qc]);
+
+  const markAsRead = useCallback(async () => {
+    if (markAsReadRef.current) {
+      await markAsReadRef.current();
+    }
+  }, []);
 
   return {
     threadId,
