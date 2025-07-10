@@ -1,381 +1,272 @@
-import { useState } from "react";
-import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
-import { useTimeSyncContext } from "@/components/TimeSyncProvider";
-import { TimeWarpSlider } from "@/components/TimeWarpSlider";
-import { SocialGestureManager } from "@/components/SocialGestureManager";
-import { FieldHeader } from "./field/FieldHeader";
-import { FieldOverlay } from "./field/FieldOverlay";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { FieldVisualization } from './field/FieldVisualization';
+import { FieldOverlay } from './field/FieldOverlay';
+import { FieldHeader } from './field/FieldHeader';
+import { ConstellationControls } from './field/ConstellationControls';
+import { TimeBasedActionCard } from './field/TimeBasedActionCard';
+import { EventBanner } from '@/components/EventBanner';
+import { EventDetailsSheet } from '@/components/EventDetailsSheet';
+import { NearbyVenuesSheet } from '@/components/NearbyVenuesSheet';
+import { VenueDetailsSheet } from '@/components/VenueDetailsSheet';
+import { VenuesChip } from '@/components/VenuesChip';
+import { SocialGestureManager } from '@/components/SocialGestureManager';
+import { MiniMap } from '@/components/map/MiniMap';
+import { ListModeContainer } from '@/components/lists/ListModeContainer';
+import { TimeWarpSlider } from '@/components/TimeWarpSlider';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { FieldSkeleton } from '@/components/ui/skeleton-loader';
+import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
+import { useCurrentEvent } from '@/hooks/useCurrentEvent';
+import { useOptimizedPresence } from '@/hooks/useOptimizedPresence';
+import { useNearbyVenues } from '@/hooks/useNearbyVenues';
+import { useFieldState } from '@/hooks/useFieldState';
+import { useFullscreenMap } from '@/store/useFullscreenMap';
+import type { Vibe } from '@/types';
+import { setDocumentTitle } from '@/utils/setDocumentTitle';
 
-import { FieldVisualization } from "./field/FieldVisualization";
-import { ConstellationControls } from "./field/ConstellationControls";
-import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
-import { usePresence } from "@/hooks/usePresence";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { useBucketedPresence } from "@/hooks/useBucketedPresence";
-import { useCurrentEvent } from "@/hooks/useCurrentEvent";
-import { useNearbyVenues } from "@/hooks/useNearbyVenues";
-import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
-import { EventBanner } from "@/components/EventBanner";
-import { EventDetailsSheet } from "@/components/EventDetailsSheet";
-import { NearbyVenuesSheet } from "@/components/NearbyVenuesSheet";
-import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { VenuesChip } from "@/components/VenuesChip";
-import { Badge } from "@/components/ui/badge";
-import { useDebug } from "@/lib/useDebug";
-import { useFullscreenMap } from "@/store/useFullscreenMap";
-import { useSelectedVenue } from "@/store/useSelectedVenue";
-import { FullscreenFab } from "@/components/map/FullscreenFab";
-import { MiniMap } from "@/components/map/MiniMap";
-import { ListModeContainer } from "@/components/lists/ListModeContainer";
-import { useEffect } from "react";
-import { clsx } from "clsx";
-import type { Vibe } from "@/types";
-
+// Data interfaces
 interface Person {
   id: string;
+  lat: number;
+  lng: number;
+  vibe: Vibe;
+  avatar: string;
   name: string;
-  x: number;
-  y: number;
-  color: string;
-  vibe: string;
+  displayName: string;
+  distance: number;
 }
 
 interface FloqEvent {
   id: string;
   title: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   size: number;
   participants: number;
-  vibe: string;
+  vibe: Vibe;
+  startsAt: string;
 }
 
 export const FieldScreen = () => {
-  const [debug] = useDebug();
-  const { timeState, shouldShowModule } = useTimeSyncContext();
-  const [showTimeWarp, setShowTimeWarp] = useState(false);
-  const [currentTimeWarpData, setCurrentTimeWarpData] = useState<any>(null);
-  const [constellationMode, setConstellationMode] = useState(false);
-  const [showBanner, setShowBanner] = useState(true);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
-  const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
-  
-  const { mode, set } = useFullscreenMap();
-  
-  // Use enhanced presence hook for live data
-  const location = useGeolocation();
-  const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
-  
-  // Use the bulletproof presence hook for sending
-  usePresence(currentVibe, location.lat, location.lng);
-  
-  // Use the bucketed presence hook for receiving
-  const { people: nearby_users } = useBucketedPresence(location.lat, location.lng);
-  const updating = false; // No loading state needed with realtime
-  const error = null; // Error handling is done in the hook
-  
-  const { data: currentEvent } = useCurrentEvent(
-    location.lat,
-    location.lng,
-    () => setShowBanner(false)
-  );
-  
-  // Get nearby venues for chip
-  const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
-  
-  const changeVibe = (newVibe: Vibe) => {
-    setCurrentVibe(newVibe);
-  };
+  // Centralized state management
+  const [fieldState, fieldActions] = useFieldState();
+  const { mode } = useFullscreenMap();
+  const mini = mode === 'map';
 
-  // Mock floqs data for now
-  const walkable_floqs: any[] = [];
-  const isLocationReady = !!(location.lat && location.lng);
+  // Optimized data hooks
+  const location = useOptimizedGeolocation();
+  const currentEvent = useCurrentEvent(location.lat, location.lng);
+  const presenceData = useOptimizedPresence({
+    vibe: fieldState.currentVibe,
+    lat: location.lat,
+    lng: location.lng,
+    enabled: !location.loading && !location.error
+  });
+  const venues = useNearbyVenues(location.lat || 0, location.lng || 0);
 
-  // Convert nearby users to people format for visualization
-  const getVibeColor = (vibe: string) => {
-    switch (vibe) {
-      case 'hype': return 'hsl(280 70% 60%)';
-      case 'social': return 'hsl(30 70% 60%)';
-      case 'chill': return 'hsl(240 70% 60%)';
-      case 'flowing': return 'hsl(200 70% 60%)';
-      case 'open': return 'hsl(120 70% 60%)';
-      default: return 'hsl(240 70% 60%)';
-    }
-  };
+  // Set loading state based on location
+  useEffect(() => {
+    fieldActions.setLoading(location.loading);
+    fieldActions.setError(location.error);
+  }, [location.loading, location.error, fieldActions]);
 
-  // Convert nearby users to people format for existing visualization
-  const people: Person[] = nearby_users.map((user, index) => ({
-    id: user.user_id,
-    name: `User ${index + 1}`, // Could be enhanced with profiles
-    x: 20 + (index * 15) % 60, // Distribute across field
-    y: 20 + (index * 20) % 60,
-    color: getVibeColor(user.vibe || 'chill'),
-    vibe: user.vibe || 'chill',
-  }));
-
-  // Convert people to friends for constellation system
-  const friends = people.map((person, index) => ({
-    ...person,
-    relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
-    activity: 'active' as const,
-    warmth: 60 + Math.random() * 40,
-    compatibility: 70 + Math.random() * 30,
-    lastSeen: Date.now() - Math.random() * 900000,
-  }));
+  // Transform nearby users into people format
+  const transformedPeople = useMemo(() => {
+    if (!presenceData.people || presenceData.people.length === 0) return [];
+    
+    return presenceData.people.map((person: any, index: number) => ({
+      id: person.user_id,
+      x: 20 + (index * 15) % 60,
+      y: 20 + (index * 20) % 60,
+      lat: person.lat || (person.location ? person.location.coordinates[1] : 0),
+      lng: person.lng || (person.location ? person.location.coordinates[0] : 0),
+      vibe: person.vibe || 'chill',
+      color: 'hsl(240 70% 60%)',
+      avatar: '',
+      name: person.user_id,
+      displayName: person.display_name || person.user_id,
+      distance: person.distance_meters || 0,
+    }));
+  }, [presenceData.people]);
 
   // Convert walkable floqs to floq events format
-  const floqEvents: FloqEvent[] = walkable_floqs.map((floq, index) => ({
-    id: floq.id,
-    title: floq.title,
-    x: 30 + (index * 25) % 50,
-    y: 40 + (index * 20) % 40,
-    size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
-    participants: floq.participant_count,
-    vibe: floq.primary_vibe,
-  }));
+  const floqEvents = useMemo<FloqEvent[]>(() => {
+    // Mock data for now - will be replaced with real floq data
+    return [];
+  }, []);
 
-  // Moved to TimeBasedActionCard component
+  // Event handlers with optimized callbacks
+  const changeVibe = useCallback((newVibe: Vibe) => {
+    fieldActions.changeVibe(newVibe);
+    // Presence will be updated automatically by useOptimizedPresence
+  }, [fieldActions]);
 
-  const handleSocialAction = (action: any) => {
-    console.log('Social action triggered:', action);
-    // Handle various social actions from gestures
-    switch (action.type) {
-      case 'shake-pulse':
-        // Show active friends with pulse effect
-        setConstellationMode(true);
-        break;
-      case 'social-radar':
-        // Show social connections
-        setConstellationMode(!constellationMode);
-        break;
-      case 'quick-join':
-        // Find and join nearby floqs
-        break;
-      case 'vibe-broadcast':
-        // Broadcast current vibe
-        break;
-    }
-  };
+  const handleSocialAction = useCallback((action: string, targetId: string) => {
+    console.log('Social action:', action, 'for user:', targetId);
+  }, []);
 
-  const handleConstellationAction = (action: any) => {
+  const handleConstellationAction = useCallback((action: any) => {
     console.log('Constellation action:', action);
-    switch (action.type) {
-      case 'orbital-adjust':
-        // Handle orbital adjustments
-        break;
-      case 'constellation-create':
-        // Create new constellation group
-        break;
-      case 'energy-share':
-        // Share energy between friends
-        break;
-      case 'group-plan':
-        // Start group planning mode
-        break;
-      case 'temporal-view':
-        setShowTimeWarp(true);
-        break;
-    }
-  };
+  }, []);
 
-  const handleOrbitalAdjustment = (direction: 'expand' | 'contract', intensity: number) => {
+  const handleOrbitalAdjustment = useCallback((direction: 'expand' | 'contract', intensity: number) => {
     console.log('Orbital adjustment:', direction, intensity);
-    // Handle orbital distance changes
-  };
+  }, []);
 
-  const handleEnergyShare = (fromId: string, toId: string, energy: number) => {
-    console.log('Energy sharing:', fromId, 'to', toId, 'energy:', energy);
-    // Handle energy sharing between friends
-  };
+  const handleEnergyShare = useCallback((fromId: string, toId: string, energy: number) => {
+    console.log('Energy share:', fromId, '->', toId, energy);
+  }, []);
 
-  const handleFriendInteraction = (friend: any, action: string) => {
-    console.log('Friend interaction:', friend.name, action);
-    // Handle friend-specific interactions
-  };
-
-  const handleConstellationGesture = (gesture: string, friends: any[]) => {
-    console.log('Constellation gesture:', gesture, friends.length, 'friends');
-    // Handle constellation-level gestures
-  };
-
-  const handleAvatarInteraction = (interaction: any) => {
-    console.log('Avatar interaction:', interaction);
-    // Handle avatar-to-avatar interactions
-  };
-
-  const handleTimeWarpChange = (hour: number, data: any) => {
-    setCurrentTimeWarpData(data);
-    console.log('Time warp:', hour, data);
-  };
-
-  // ESC key to exit full-screen mode
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mode === 'full') set('map')
+  const handleFriendInteraction = useCallback((friend: any, action: string) => {
+    if (action === 'dm') {
+      fieldActions.openDMSheet(friend);
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [mode, set])
+  }, [fieldActions]);
 
-  // URL sync
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (mode === 'full') params.set('full', '1')
-    else params.delete('full')
-    if (mode === 'list') params.set('view', 'list')
-    else params.delete('view')
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
-  }, [mode])
+  const handleConstellationGesture = useCallback((gesture: any) => {
+    console.log('Constellation gesture:', gesture);
+  }, []);
 
-  // Auto-exit full-screen when any sheet opens
-  useEffect(() => {
-    if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
-      set('map')
-    }
-  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
+  const handleAvatarInteraction = useCallback((person: any, action: string) => {
+    console.log('Avatar interaction:', person, action);
+  }, []);
 
-  // Swipe-down gesture to exit full-screen
-  const { handlers } = useAdvancedGestures({
-    onSwipeDown: () => mode === 'full' && set('map'),
-  });
+  // Set document title
+  setDocumentTitle('Field');
+
+  const timeState = 'day'; // Simplified for now
+
+  // Show loading skeleton if still loading location
+  if (fieldState.isLoading && !location.lat) {
+    return (
+      <div className="relative w-full h-screen bg-background overflow-hidden">
+        <FieldHeader locationReady={false} />
+        <FieldSkeleton />
+      </div>
+    );
+  }
 
   return (
-    <div className="relative h-svh w-full bg-background" {...handlers}>
-      {/* Event Banner */}
-      {currentEvent && showBanner && (
-        <EventBanner
-          key={currentEvent.id}
-          eventId={currentEvent.id}
-          name={currentEvent.name}
-          vibe={currentEvent.vibe}
-          liveCount={undefined} // TODO: Add live count from SQL
-          aiSummary={undefined} // TODO: Add AI summary
-          onDetails={() => setDetailsOpen(true)}
-          onDismiss={() => setShowBanner(false)}
+    <ErrorBoundary>
+      <div className="relative w-full h-screen bg-background overflow-hidden">
+        <FieldHeader 
+          locationReady={!location.loading}
+          currentLocation={location.error ? "Location unavailable" : "Current location"}
         />
-      )}
+        
+        <FieldVisualization
+          people={transformedPeople}
+          events={floqEvents}
+          friends={[]}
+          constellationMode={fieldState.constellationMode}
+          onSocialAction={handleSocialAction}
+          onFriendInteraction={handleFriendInteraction}
+          onConstellationGesture={handleConstellationGesture}
+          onAvatarInteraction={handleAvatarInteraction}
+          viewport={fieldState.viewport}
+          onViewportChange={fieldActions.setViewport}
+          mini={mini}
+        />
 
-      {currentEvent && (
-        <EventDetailsSheet
-          open={detailsOpen}
-          onOpenChange={setDetailsOpen}
-          event={{
-            ...currentEvent,
-            people: walkable_floqs.length,   // placeholder
+        <FieldOverlay
+          isLocationReady={!location.loading}
+          currentVibe={fieldState.currentVibe}
+          nearbyUsersCount={transformedPeople.length}
+          walkableFloqsCount={floqEvents.length}
+          updating={presenceData.updating}
+          error={location.error}
+          debug={false}
+          onVibeChange={changeVibe}
+        >
+          <ConstellationControls
+            timeState={timeState}
+            constellationMode={fieldState.constellationMode}
+            onConstellationToggle={fieldActions.toggleConstellationMode}
+            onConstellationAction={handleConstellationAction}
+            onOrbitalAdjustment={handleOrbitalAdjustment}
+            onEnergyShare={handleEnergyShare}
+          />
+
+          <TimeBasedActionCard
+            timeState={timeState}
+            currentVibe={fieldState.currentVibe}
+            nearbyCount={transformedPeople.length}
+            onVibeChange={changeVibe}
+          />
+
+          <VenuesChip
+            venueCount={venues?.length || 0}
+            onOpenVenues={fieldActions.openNearbyVenues}
+          />
+        </FieldOverlay>
+
+        <SocialGestureManager
+          people={transformedPeople}
+          onSocialAction={handleSocialAction}
+        />
+
+        {/* Mini Map */}
+        <MiniMap
+          center={location.lat && location.lng ? { lat: location.lat, lng: location.lng } : null}
+          people={transformedPeople}
+          venues={venues || []}
+          events={floqEvents}
+          radius={500}
+          className="absolute bottom-4 left-4 z-20"
+        />
+
+        {/* List Mode Container */}
+        <ListModeContainer
+          people={transformedPeople}
+          venues={venues || []}
+          events={floqEvents}
+          onItemSelect={(item) => {
+            if (item.type === 'venue') {
+              fieldActions.openVenueDetails(item);
+            } else if (item.type === 'event') {
+              fieldActions.openEventDetails(item);
+            }
           }}
         />
-      )}
-      
-      {/* Header */}
-      <FieldHeader />
 
-      {/* Map canvas */}
-      {(mode === 'map' || mode === 'full') && (
-        <FieldVisualization
-          className={clsx('absolute inset-0 top-12 transition-all duration-300',
-            mode === 'full' && 'fullscreen-map'
-          )}
-          constellationMode={constellationMode}
-          people={people}
-          friends={friends}
-          floqEvents={floqEvents}
-          walkableFloqs={walkable_floqs}
-          onFriendInteraction={handleFriendInteraction}
-          onConstellationGesture={handleConstellationGesture}
-          onAvatarInteraction={handleAvatarInteraction}
+        {/* Time Warp Controls */}
+        <TimeWarpSlider
+          enabled={fieldState.timeWarpEnabled}
+          onToggle={fieldActions.toggleTimeWarp}
+          className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20"
         />
-      )}
 
-      {/* Overlay system */}
-      <FieldOverlay
-        isLocationReady={isLocationReady}
-        currentVibe={currentVibe}
-        nearbyUsersCount={nearby_users.length}
-        walkableFloqsCount={walkable_floqs.length}
-        updating={updating}
-        error={error}
-        debug={debug}
-        onVibeChange={changeVibe}
-      >
-        {/* Constellation Controls */}
-        <ConstellationControls
-          timeState={timeState}
-          constellationMode={constellationMode}
-          onConstellationToggle={() => setConstellationMode(!constellationMode)}
-          onConstellationAction={handleConstellationAction}
-          onOrbitalAdjustment={handleOrbitalAdjustment}
-          onEnergyShare={handleEnergyShare}
+        {/* Event Banner */}
+        {currentEvent && (
+          <EventBanner
+            event={currentEvent}
+            onViewDetails={() => fieldActions.openEventDetails(currentEvent)}
+          />
+        )}
+
+        {/* Sheets */}
+        <EventDetailsSheet
+          event={fieldState.selectedEvent}
+          open={fieldState.eventDetailsSheetOpen}
+          onOpenChange={fieldActions.closeEventDetails}
         />
-      </FieldOverlay>
 
-      {/* List mode container */}
-      {mode === 'list' && <ListModeContainer />}
-
-      {/* Mini-map overlay (list mode only) */}
-      {mode === 'list' && (
-        <MiniMap
-          constellationMode={constellationMode}
-          people={people}
-          friends={friends}
-          floqEvents={floqEvents}
-          walkableFloqs={walkable_floqs}
-          onFriendInteraction={handleFriendInteraction}
-          onConstellationGesture={handleConstellationGesture}
-          onAvatarInteraction={handleAvatarInteraction}
+        <NearbyVenuesSheet
+          venues={venues || []}
+          open={fieldState.nearbyVenuesSheetOpen}
+          onOpenChange={fieldActions.closeNearbyVenues}
+          onVenueSelect={(venue) => {
+            fieldActions.openVenueDetails(venue);
+            fieldActions.closeNearbyVenues();
+          }}
         />
-      )}
 
-
-      {/* Social Gesture Manager */}
-      <SocialGestureManager onSocialAction={handleSocialAction} />
-
-      {/* Time Warp Slider */}
-      <TimeWarpSlider 
-        isVisible={showTimeWarp}
-        onClose={() => setShowTimeWarp(false)}
-        onTimeChange={handleTimeWarpChange}
-      />
-
-      {/* Time-Based Bottom Action Card */}
-      <div className="absolute bottom-24 left-4 right-4 z-10">
-        <TimeBasedActionCard
-          timeState={timeState}
-          onTimeWarpToggle={() => setShowTimeWarp(true)}
+        <VenueDetailsSheet
+          venue={fieldState.selectedVenue}
+          open={fieldState.venueDetailsSheetOpen}
+          onOpenChange={fieldActions.closeVenueDetails}
         />
       </div>
-
-      {/* Swipeable Venues Chip */}
-      {nearbyVenues.length > 0 && !currentEvent && (
-        <VenuesChip
-          onOpen={() => setVenuesSheetOpen(true)}
-          venueCount={nearbyVenues.length}
-        />
-      )}
-
-      {/* Nearby Venues Sheet */}
-      <NearbyVenuesSheet
-        isOpen={venuesSheetOpen}
-        onClose={() => setVenuesSheetOpen(false)}
-        onVenueTap={(venueId) => {
-          setSelectedVenueId(venueId);
-          setVenuesSheetOpen(false);
-          // Add subtle haptic feedback
-          if ('vibrate' in navigator) {
-            navigator.vibrate(4);
-          }
-        }}
-      />
-
-      {/* Venue Details Sheet */}
-      <VenueDetailsSheet
-        open={!!selectedVenueId}
-        onOpenChange={(open) => !open && setSelectedVenueId(null)}
-        venueId={selectedVenueId}
-      />
-
-      {/* Full-screen toggle FAB */}
-      <FullscreenFab />
-    </div>
+    </ErrorBoundary>
   );
 };

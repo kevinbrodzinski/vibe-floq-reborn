@@ -1,23 +1,56 @@
 import { Button } from "@/components/ui/button";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Compass } from "lucide-react";
 import { AvatarDropdown } from "@/components/AvatarDropdown";
-export const FieldHeader = () => {
-  return <header className="flex items-center justify-between px-4 pt-safe-top h-12 pointer-events-auto z-20 relative">
+import { cn } from "@/lib/utils";
+
+interface FieldHeaderProps {
+  locationReady?: boolean;
+  currentLocation?: string;
+  className?: string;
+}
+
+export const FieldHeader = ({ 
+  locationReady = false, 
+  currentLocation = "Locating...",
+  className 
+}: FieldHeaderProps) => {
+  return (
+    <header className={cn(
+      "flex items-center justify-between px-6 pt-safe-top h-16",
+      "pointer-events-auto z-20 relative",
+      "bg-background/60 backdrop-blur-xl",
+      "border-b border-border/20",
+      className
+    )}>
       {/* Left: Location */}
-      <Button variant="ghost" className="flex items-center space-x-2 text-foreground hover:glow-secondary">
-        <MapPin className="w-4 h-4 text-primary" />
-        <span className="text-sm font-medium">Downtown</span>
+      <Button 
+        variant="ghost" 
+        size="sm"
+        className={cn(
+          "flex items-center space-x-2 text-foreground/80 hover:text-foreground",
+          "hover:bg-accent/50 transition-all duration-200",
+          "min-h-[44px] px-3" // Touch-friendly
+        )}
+      >
+        {locationReady ? (
+          <MapPin className="w-4 h-4 text-primary" />
+        ) : (
+          <Compass className="w-4 h-4 text-muted-foreground animate-spin" />
+        )}
+        <span className="text-sm font-medium truncate max-w-[120px]">
+          {currentLocation}
+        </span>
       </Button>
       
       {/* Center: Logo */}
-      <div className="text-3xl font-light glow-primary">
+      <div className="text-2xl font-light tracking-wide text-primary">
         floq
       </div>
       
       {/* Right: Actions */}
-      <div className="flex items-center gap-3">
-        
+      <div className="flex items-center">
         <AvatarDropdown />
       </div>
-    </header>;
+    </header>
+  );
 };
