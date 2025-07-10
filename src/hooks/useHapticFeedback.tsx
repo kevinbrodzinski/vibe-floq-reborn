@@ -12,7 +12,8 @@ export type HapticPattern =
   | 'social-proximity'
   | 'time-transition'
   | 'gesture-success'
-  | 'gesture-error';
+  | 'gesture-error'
+  | 'crossed-paths';
 
 export interface HapticOptions {
   duration?: number;
@@ -63,6 +64,8 @@ export const useHapticFeedback = () => {
           return [25, 25, 50]; // Success confirmation
         case 'gesture-error':
           return [100, 50, 100]; // Error indication
+        case 'crossed-paths':
+          return [30, 50, 60]; // Discovery pulse pattern
         default:
           return hapticOptions.pattern || [50];
       }
@@ -95,7 +98,8 @@ export const useHapticFeedback = () => {
     shakeActivated: () => triggerHaptic('impact-heavy'),
     swipeSuccess: () => triggerHaptic('gesture-success'),
     longPressActivated: () => triggerHaptic('medium'),
-    avatarInteraction: () => triggerHaptic('light')
+    avatarInteraction: () => triggerHaptic('light'),
+    crossedPathsDetected: () => triggerHaptic('crossed-paths')
   };
 
   return {

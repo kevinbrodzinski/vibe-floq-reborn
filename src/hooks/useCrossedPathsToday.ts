@@ -1,15 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFriends } from './useFriends';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import type { CrossedPath } from '@/types';
 
 export function useCrossedPathsToday() {
   const { user } = useAuth();
   const { friends } = useFriends();
   const { toast } = useToast();
+  const { socialHaptics } = useHapticFeedback();
+  
+  // Track previous count for haptic feedback
+  const prevCountRef = useRef(0);
 
   // Create stable cache key based on today and friend count
   const todayStart = useMemo(() => {
@@ -51,6 +56,21 @@ export function useCrossedPathsToday() {
     const friendsSet = new Set(friends);
     return crossedPaths.filter(person => !friendsSet.has(person.user_id));
   }, [crossedPaths, friends]);
+
+  // Trigger haptic feedback when new crossed paths are detected
+  useEffect(() => {
+    if (!filteredCrossedPaths) return;
+
+    const newCount = filteredCrossedPaths.length;
+    const prevCount = prevCountRef.current;
+
+    // Only trigger haptic if count increased (new paths found)
+    if (newCount > prevCount && prevCount > 0) {
+      socialHaptics.crossedPathsDetected();
+    }
+    
+    prevCountRef.current = newCount;
+  }, [filteredCrossedPaths, socialHaptics]);
 
   return {
     crossedPaths: filteredCrossedPaths,
