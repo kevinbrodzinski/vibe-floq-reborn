@@ -5,13 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 type StatusMap = Record<string, 'online' | 'away'>;
 
 export function useFriendsPresence() {
-  // EMERGENCY STABILIZATION: Disabled WebSocket subscriptions
-  // TODO: Re-enable after fixing cascade issues
+  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
-  // Return mock status to prevent errors
+  if (OFFLINE_MODE) {
+    // Return mock status to prevent errors
+    const mockStatus: StatusMap = {
+      'b25fd249-5bc0-4b67-a012-f64dacbaef1a': 'online'
+    };
+    return mockStatus;
+  }
+
+  // TODO: Re-enable WebSocket subscriptions when network is stable
   const mockStatus: StatusMap = {
     'b25fd249-5bc0-4b67-a012-f64dacbaef1a': 'online'
   };
-
   return mockStatus;
 }

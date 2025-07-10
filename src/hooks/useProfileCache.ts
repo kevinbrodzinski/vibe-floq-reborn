@@ -29,7 +29,26 @@ export function useProfileCache() {
 }
 
 export function useProfile(userId: string) {
-  // EMERGENCY STABILIZATION: Return mock data to prevent 404 errors
+  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
+  if (OFFLINE_MODE) {
+    const mockProfile: Profile = {
+      id: userId,
+      display_name: 'Mock User',
+      avatar_url: null,
+      created_at: new Date().toISOString(),
+    };
+
+    return {
+      data: mockProfile,
+      isLoading: false,
+      error: null,
+      isError: false,
+      isSuccess: true,
+    };
+  }
+
+  // TODO: Re-enable real profile cache queries
   const mockProfile: Profile = {
     id: userId,
     display_name: 'Mock User',

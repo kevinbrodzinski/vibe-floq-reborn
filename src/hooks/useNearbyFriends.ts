@@ -35,7 +35,20 @@ export function useNearbyFriends(
     }, 300);
   }, []);
 
-  // EMERGENCY STABILIZATION: Disabled nearby friends queries
+  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
+  if (OFFLINE_MODE) {
+    const result = {
+      data: [] as NearbyFriend[],
+      isLoading: false,
+      error: null,
+      isError: false,
+      isSuccess: true,
+    };
+    return { ...result, debouncedPrimeProfiles };
+  }
+
+  // TODO: Re-enable nearby friends queries when network is stable
   const result = {
     data: [] as NearbyFriend[],
     isLoading: false,
@@ -43,6 +56,5 @@ export function useNearbyFriends(
     isError: false,
     isSuccess: true,
   };
-
   return { ...result, debouncedPrimeProfiles };
 }

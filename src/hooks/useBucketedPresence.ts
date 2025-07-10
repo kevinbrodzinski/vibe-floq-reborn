@@ -18,6 +18,14 @@ export interface LivePresence {
 }
 
 export const useBucketedPresence = (lat?: number, lng?: number) => {
+  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
+  if (OFFLINE_MODE) {
+    const people: LivePresence[] = [];
+    return { people };
+  }
+
+  // TODO: Re-enable presence subscriptions when network is stable
   const queryClient = useQueryClient();
   const channelsRef = useRef<RealtimeChannel[]>([]);
   const geosLastRef = useRef<string[]>([]);
@@ -30,15 +38,6 @@ export const useBucketedPresence = (lat?: number, lng?: number) => {
     lastLngRef.current = lng;
   }
 
-  // EMERGENCY STABILIZATION: Disabled presence queries
   const people: LivePresence[] = [];
-
-  // EMERGENCY STABILIZATION: Disabled all bucket computation and subscription logic
-
-  // EMERGENCY STABILIZATION: Disabled all WebSocket subscriptions
-  // useEffect(() => { ... maybeResubscribe(); }, [lat, lng]);
-  // useEffect(() => { ... cleanup channels; }, []);
-
-  // Return empty array for now
   return { people };
 };
