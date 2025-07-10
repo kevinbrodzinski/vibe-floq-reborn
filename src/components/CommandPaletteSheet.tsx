@@ -47,7 +47,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
         primeProfiles([{
           id: userId,
           display_name: user.label,
-          username: null, // Add username property
+          username: null,
           avatar_url: null,
           created_at: ''
         }]);
@@ -56,7 +56,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
 
     // Check if already a friend, if so navigate to profile
     if (isFriend(userId)) {
-      navigate(`/u/${userId}`);
+      navigate(`/profile/${userId}`); // Use legacy route for now since search doesn't return username
     } else {
       // Send friend request
       await addFriend(userId);

@@ -255,18 +255,33 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      reserved_usernames: {
+        Row: {
+          name: string
+        }
+        Insert: {
+          name: string
+        }
+        Update: {
+          name?: string
         }
         Relationships: []
       }
@@ -615,6 +630,10 @@ export type Database = {
               use_typmod?: boolean
             }
         Returns: string
+      }
+      attempt_claim_username: {
+        Args: { desired: string }
+        Returns: boolean
       }
       box: {
         Args: { "": unknown } | { "": unknown }
@@ -966,6 +985,16 @@ export type Database = {
           thread_id: string
           friend_id: string
           unread_count: number
+        }[]
+      }
+      get_user_by_username: {
+        Args: { lookup_username: string }
+        Returns: {
+          id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          created_at: string
         }[]
       }
       get_user_location: {
@@ -2374,6 +2403,10 @@ export type Database = {
           new_srid_in: number
         }
         Returns: string
+      }
+      username_available: {
+        Args: { u: string }
+        Returns: boolean
       }
       venue_details: {
         Args: { v_id: string }

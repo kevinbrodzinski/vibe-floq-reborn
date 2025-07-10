@@ -44,7 +44,7 @@ export function useUsername() {
 
     setIsCheckingAvailability(true);
     try {
-      const { data, error } = await supabase.rpc('username_available' as any, { u: username });
+      const { data, error } = await supabase.rpc('username_available', { u: username });
       
       if (error) {
         console.error('Availability check error:', error);
@@ -52,9 +52,8 @@ export function useUsername() {
         return false;
       }
 
-      const available = data as boolean;
-      setIsAvailable(available);
-      return available;
+      setIsAvailable(data);
+      return data;
     } catch (error) {
       console.error('Availability check error:', error);
       setIsAvailable(false);
@@ -86,7 +85,7 @@ export function useUsername() {
   // Claim username mutation
   const claimMutation = useMutation({
     mutationFn: async (username: string) => {
-      const { data, error } = await supabase.rpc('attempt_claim_username' as any, { 
+      const { data, error } = await supabase.rpc('attempt_claim_username', { 
         desired: username 
       });
 
@@ -94,12 +93,11 @@ export function useUsername() {
         throw error;
       }
 
-      const success = data as boolean;
-      if (!success) {
+      if (!data) {
         throw new Error('Username is not available or invalid format');
       }
 
-      return success;
+      return data;
     },
     onSuccess: () => {
       toast({

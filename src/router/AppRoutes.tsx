@@ -6,7 +6,9 @@ import { VibeScreen } from '@/components/screens/VibeScreen';
 import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
 import { LegacyRedirect } from '@/components/LegacyRedirect';
+import { UserProfileByUsername } from '@/components/UserProfileByUsername';
 import ProfileSettings from '@/pages/ProfileSettings';
+import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 
 export const AppRoutes = () => (
@@ -18,6 +20,8 @@ export const AppRoutes = () => (
     <Route path="/vibe" element={<VibeScreen />} />
     <Route path="/afterglow" element={<AfterglowScreen />} />
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
+    <Route path="/u/:username" element={<UserProfileByUsername />} />
+    <Route path="/profile/:userId" element={<UserProfile />} />
     <Route path="/profile-settings" element={<ProfileSettings />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
