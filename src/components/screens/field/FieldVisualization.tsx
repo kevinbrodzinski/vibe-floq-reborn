@@ -372,12 +372,9 @@ export const FieldVisualization = ({
                 x={base.x}
                 y={base.y}
                 onClick={() => {
-                  // Create a cluster-like object for the handleClusterClick function
-                  const clusterObj = {
-                    pointCount: sorted.length,
-                    props: { cluster_id: `cluster-${base.x}-${base.y}` }
-                  };
-                  handleClusterClick(clusterObj);
+                  // Pass sorted people directly to avoid synthetic object creation
+                  setActiveClusterBbox([base.x - 0.01, base.y - 0.01, base.x + 0.01, base.y + 0.01]);
+                  setClusterSheetOpen(true);
                 }}
               />
             </div>

@@ -29,14 +29,13 @@ export const HeartbeatIndicator = ({ lastHeartbeat, className }: HeartbeatIndica
   return (
     <div className={cn(
       "flex items-center justify-center w-6 h-6 rounded-full",
-      isStale ? "bg-destructive/20 animate-pulse" : "bg-primary/20",
+      isStale ? "bg-destructive/20" : "bg-primary/20",
       className
     )}>
-      {isStale ? (
-        <WifiOff className="w-3 h-3 text-destructive animate-pulse" />
-      ) : (
-        <Wifi className="w-3 h-3 text-primary animate-ping" />
-      )}
+      <Wifi className={cn(
+        "w-3 h-3 transition-colors duration-300",
+        isStale ? "text-destructive animate-pulse" : "text-primary animate-ping"
+      )} />
     </div>
   );
 };
