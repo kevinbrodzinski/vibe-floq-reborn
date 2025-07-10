@@ -1,13 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { useMemo } from 'react';
 
 export function useFriends() {
   const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
-  
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Mock data for offline mode
   if (OFFLINE_MODE) {
-    // Mock data for offline mode
     const friends = ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
     const friendCount = 1;
     const isLoading = false;
@@ -41,17 +45,21 @@ export function useFriends() {
     };
   }
 
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const { data: friends = [], isLoading } = useQuery({
-    queryKey: ['friends'],
+  // Real query for friends list using lean select
+  const { data: friendIds = [], isLoading } = useQuery({
+    queryKey: ['friends', user?.id],
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('list_friends');
+      const { data, error } = await supabase
+        .from('friendships')
+        .select('friend_id')
+        .eq('user_id', user!.id);
+      
       if (error) throw error;
-      return data || [];
+      return (data || []).map(row => row.friend_id as string);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { mutateAsync: addFriend, isPending: isAddingFriend } = useMutation({
@@ -60,7 +68,7 @@ export function useFriends() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friends', user?.id] });
       toast({
         title: "Friend added",
         description: "Successfully added friend!",
@@ -81,7 +89,7 @@ export function useFriends() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friends', user?.id] });
       toast({
         title: "Friend removed",
         description: "Successfully removed friend.",
@@ -97,7 +105,7 @@ export function useFriends() {
   });
 
   // Optimized friend set for O(1) lookups
-  const friendsSet = useMemo(() => new Set(friends), [friends]);
+  const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
 
   // Check if a user is a friend
   const isFriend = (userId: string) => {
@@ -105,8 +113,8 @@ export function useFriends() {
   };
 
   return {
-    friends,
-    friendCount: friends.length,
+    friends: friendIds, // Keep friends as the return property name for backward compatibility
+    friendCount: friendIds.length,
     isLoading,
     addFriend,
     removeFriend,
