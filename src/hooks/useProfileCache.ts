@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SearchedUser } from '@/hooks/useUserSearch';
+import { getEnvironmentConfig } from '@/lib/environment';
 
 export interface Profile {
   id: string;
@@ -29,9 +30,9 @@ export function useProfileCache() {
 }
 
 export function useProfile(userId: string) {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const env = getEnvironmentConfig();
   
-  if (OFFLINE_MODE) {
+  if (env.presenceMode === 'mock') {
     const mockProfile: Profile = {
       id: userId,
       display_name: 'Mock User',
@@ -48,16 +49,42 @@ export function useProfile(userId: string) {
     };
   }
 
-  // TODO: Re-enable real profile cache queries
-  const mockProfile: Profile = {
+  if (env.presenceMode === 'stub') {
+    // Return more realistic stub data
+    const stubNames = ['Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim'];
+    const name = stubNames[Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % stubNames.length];
+    
+    const stubProfile: Profile = {
+      id: userId,
+      display_name: name,
+      avatar_url: null,
+      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    return {
+      data: stubProfile,
+      isLoading: false,
+      error: null,
+      isError: false,
+      isSuccess: true,
+    };
+  }
+
+  // TODO: Implement real profile cache queries using Supabase
+  // For now, return stub data even in live mode until implementation is ready
+  const stubProfile: Profile = {
     id: userId,
-    display_name: 'Mock User',
+    display_name: 'Live User',
     avatar_url: null,
     created_at: new Date().toISOString(),
   };
+  
+  if (env.debugPresence) {
+    console.log('🔴 useProfile - Live mode not yet implemented, using stub data for:', userId);
+  }
 
   return {
-    data: mockProfile,
+    data: stubProfile,
     isLoading: false,
     error: null,
     isError: false,

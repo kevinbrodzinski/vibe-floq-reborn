@@ -1,9 +1,8 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useBucketedPresence } from './useBucketedPresence';
 import { supabase } from '@/integrations/supabase/client';
+import { getEnvironmentConfig } from '@/lib/environment';
 import type { Vibe } from '@/types';
-
-const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
 
 interface OptimizedPresenceOptions {
   vibe: Vibe;
@@ -19,9 +18,6 @@ interface PresenceData {
   error: string | null;
 }
 
-const PRESENCE_UPDATE_INTERVAL = 10000; // 10 seconds
-const PRESENCE_RETRY_DELAY = 5000; // 5 seconds
-
 export const useOptimizedPresence = ({
   vibe,
   lat,
@@ -29,6 +25,7 @@ export const useOptimizedPresence = ({
   broadcastRadius = 500,
   enabled = true
 }: OptimizedPresenceOptions): PresenceData => {
+  const env = getEnvironmentConfig();
   const { people } = useBucketedPresence(lat, lng);
   
   const lastUpdateRef = useRef<number>(0);
@@ -37,6 +34,10 @@ export const useOptimizedPresence = ({
   const lastVibe = useRef<Vibe>(vibe);
   const lastPosition = useRef<{ lat: number; lng: number } | null>(null);
   const [updating, setUpdating] = useState(false);
+  
+  // Use environment-specific intervals
+  const PRESENCE_UPDATE_INTERVAL = env.presenceUpdateInterval;
+  const PRESENCE_RETRY_DELAY = env.presenceRetryDelay;
 
   // Memoized presence data to prevent unnecessary re-renders
   const presenceData = useMemo(() => ({
@@ -49,9 +50,11 @@ export const useOptimizedPresence = ({
   const updatePresenceOptimized = useCallback(async () => {
     if (!enabled || !lat || !lng) return;
     
-    // Skip presence updates in offline mode
-    if (OFFLINE_MODE) {
-      console.log('Offline mode: Skipping presence update');
+    // Skip presence updates based on environment mode
+    if (!env.enablePresenceUpdates) {
+      if (env.debugPresence) {
+        console.log(`🔴 Presence updates disabled in ${env.presenceMode} mode`);
+      }
       return;
     }
 
@@ -88,13 +91,19 @@ export const useOptimizedPresence = ({
       lastVibe.current = vibe;
       lastPosition.current = { lat, lng };
       
+      if (env.debugPresence) {
+        console.log('✅ Presence update successful:', { vibe, lat, lng, broadcastRadius });
+      }
+      
       // Clear any retry timeout
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
     } catch (error) {
-      console.warn('Presence update failed, will retry:', error);
+      if (env.debugNetwork) {
+        console.warn('🔴 Presence update failed, will retry:', error);
+      }
       
       // Retry after delay
       if (retryTimeoutRef.current) {
@@ -106,7 +115,7 @@ export const useOptimizedPresence = ({
     } finally {
       setUpdating(false);
     }
-  }, [enabled, lat, lng, vibe, broadcastRadius]);
+  }, [enabled, lat, lng, vibe, broadcastRadius, env.enablePresenceUpdates, env.debugPresence, env.debugNetwork, PRESENCE_RETRY_DELAY]);
 
   // Set up presence updates
   useEffect(() => {

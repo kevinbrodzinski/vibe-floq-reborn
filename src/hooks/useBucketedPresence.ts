@@ -5,6 +5,7 @@ import ngeohash from 'ngeohash';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { differenceInMilliseconds } from 'date-fns';
 import { useStableMemo } from '@/hooks/useStableMemo';
+import { getEnvironmentConfig } from '@/lib/environment';
 
 /** precision-6 buckets → ~1.2 km edge */
 const GH_PRECISION = 6;
@@ -20,14 +21,40 @@ export interface LivePresence {
 }
 
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: string[]) => {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const env = getEnvironmentConfig();
   
   // 6.3 - Optimized friend set for O(1) lookups
   const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
   
-  if (OFFLINE_MODE) {
+  if (env.presenceMode === 'mock') {
     const people: LivePresence[] = [];
     return { people };
+  }
+  
+  if (env.presenceMode === 'stub') {
+    // Return stub presence data for testing
+    const stubPeople: LivePresence[] = lat && lng ? [
+      {
+        user_id: 'stub-user-1',
+        vibe: 'social',
+        lat: lat + 0.0005,
+        lng: lng - 0.0005,
+        venue_id: null,
+        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        isFriend: friendsSet.has('stub-user-1')
+      },
+      {
+        user_id: 'stub-user-2',
+        vibe: 'focused',
+        lat: lat - 0.0008,
+        lng: lng + 0.0003,
+        venue_id: null,
+        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        isFriend: friendsSet.has('stub-user-2')
+      }
+    ] : [];
+    
+    return { people: stubPeople };
   }
 
   const queryClient = useQueryClient();
@@ -46,11 +73,15 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
   const frozenLng = lastLngRef.current;
   const hasValidCoords = Number.isFinite(frozenLat) && Number.isFinite(frozenLng);
 
-  // Query for initial presence data
+  // Query for initial presence data (live mode only)
   const { data: people = [] } = useQuery({
     queryKey: ['presence-nearby', frozenLat, frozenLng],
     queryFn: async () => {
       if (!hasValidCoords) return [];
+      
+      if (env.debugPresence) {
+        console.log('🔄 Fetching nearby presence data:', { lat: frozenLat, lng: frozenLng });
+      }
       
       const { data, error } = await supabase.rpc('presence_nearby', {
         lat: frozenLat!,
@@ -60,11 +91,13 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       });
 
       if (error) {
-        console.error('Error fetching nearby presence:', error);
+        if (env.debugNetwork) {
+          console.error('🔴 Error fetching nearby presence:', error);
+        }
         return [];
       }
 
-      return (data || []).map((item: any): LivePresence => ({
+      const mappedData = (data || []).map((item: any): LivePresence => ({
         user_id: item.user_id,
         vibe: item.vibe,
         lat: typeof item.location === 'object' ? 
@@ -77,16 +110,22 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
         expires_at: item.expires_at || new Date(Date.now() + 2 * 60 * 1000).toISOString(),
         isFriend: friendsSet.has(item.user_id) // 6.3 - Mark friends for UI enhancement
       }));
+      
+      if (env.debugPresence) {
+        console.log('✅ Fetched presence data:', { count: mappedData.length, users: mappedData });
+      }
+      
+      return mappedData;
     },
-    enabled: hasValidCoords,
+    enabled: hasValidCoords && env.presenceMode === 'live',
     staleTime: 2 * 60 * 1000, // 6.5 - 2 minutes for performance
     refetchOnWindowFocus: false, // 6.5 - Prevent unnecessary refetches
     refetchInterval: 60 * 1000, // Refetch every minute as backup
   });
 
-  // Set up geohash-bucketed realtime subscriptions
+  // Set up geohash-bucketed realtime subscriptions (live mode only)
   useEffect(() => {
-    if (!hasValidCoords) return;
+    if (!hasValidCoords || !env.enableRealtime) return;
 
     // Generate geohashes for current location and surrounding area
     const centerHash = ngeohash.encode(frozenLat!, frozenLng!, GH_PRECISION);
@@ -112,7 +151,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
           table: 'vibes_now',
           filter: `geohash6=eq.${geohash}`
         }, (payload) => {
-          console.log('Presence update:', payload);
+          if (env.debugPresence) {
+            console.log('🔄 Presence update received:', payload);
+          }
           
           // Invalidate and refetch the query to get fresh data
           queryClient.invalidateQueries({ 
@@ -121,9 +162,13 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
-            console.log(`Subscribed to presence bucket: ${geohash}`);
+            if (env.debugPresence) {
+              console.log(`✅ Subscribed to presence bucket: ${geohash}`);
+            }
           } else if (status === 'CHANNEL_ERROR') {
-            console.error(`Error subscribing to presence bucket: ${geohash}`);
+            if (env.debugNetwork) {
+              console.error(`🔴 Error subscribing to presence bucket: ${geohash}`);
+            }
           }
         });
 
@@ -139,7 +184,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       });
       channelsRef.current = [];
     };
-  }, [hasValidCoords, frozenLat, frozenLng, queryClient]);
+  }, [hasValidCoords, frozenLat, frozenLng, queryClient, env.enableRealtime, env.debugPresence, env.debugNetwork]);
 
   // Cleanup on unmount
   useEffect(() => {
