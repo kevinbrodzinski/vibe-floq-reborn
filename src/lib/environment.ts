@@ -1,3 +1,5 @@
+import { getPercentageBucket } from '@/lib/hash';
+
 /**
  * Environment Detection and Presence Control System
  * 
@@ -131,9 +133,7 @@ export function isUserInRollout(userId?: string, config?: EnvironmentConfig): bo
   
   // Percentage-based rollout using djb2 hash
   if (env.rolloutPercentage > 0 && userId) {
-    let h = 5381;
-    for (const ch of userId) h = ((h << 5) + h) + ch.charCodeAt(0);
-    const pct = ((h >>> 0) % 100) + 1;           // 1-100
+    const pct = getPercentageBucket(userId);
     return pct <= env.rolloutPercentage;
   }
   

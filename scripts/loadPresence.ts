@@ -15,6 +15,7 @@ const argv = yargs(hideBin(process.argv))
   .argv as { count: number };
 
 const DOWNTOWN = { lat: 34.05223, lng: -118.24368 };
+const LOAD_RADIUS_METERS = parseInt(process.env.LOAD_RADIUS_METERS || '500');
 const vibes = ['hype', 'chill', 'social', 'open', 'solo', 'curious'];
 
 function jitter(v = 0.01) {
@@ -48,19 +49,25 @@ async function tick(jwt: string, uid: string) {
     }
   );
 
+  const startTime = Date.now();
   const { error } = await client.functions.invoke('upsert-presence', {
     body: {
-      lat: DOWNTOWN.lat + jitter(),
-      lng: DOWNTOWN.lng + jitter(),
+      lat: DOWNTOWN.lat + jitter(LOAD_RADIUS_METERS / 111000), // Convert meters to degrees
+      lng: DOWNTOWN.lng + jitter(LOAD_RADIUS_METERS / 111000),
       vibe: vibes[Math.floor(Math.random() * vibes.length)],
       venue_id: null,
     },
   });
+  const latency = Date.now() - startTime;
   
   if (error) {
-    console.error(`${uid}: ${error.message}`);
+    console.error(`${uid}: ${error.message} (${latency}ms)`);
   } else {
-    process.stdout.write('.');
+    if (latency > 1000) {
+      process.stdout.write(`!(${latency}ms)`);
+    } else {
+      process.stdout.write('.');
+    }
   }
 }
 

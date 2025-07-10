@@ -8,7 +8,8 @@ import { getEnvironmentConfig } from '@/lib/environment';
 
 export const ProductionModeGuard = ({ children }: { children: React.ReactNode }) => {
   const env = getEnvironmentConfig();
-  const isProduction = window.location.hostname === 'app.floq.com' || window.location.hostname.includes('floq.app');
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname === 'app.floq.com' || window.location.hostname.includes('floq.app'));
   
   useEffect(() => {
     // Only redirect in production if user is trying to use debug modes
@@ -33,7 +34,7 @@ export const ProductionModeGuard = ({ children }: { children: React.ReactNode })
         url.searchParams.delete('debug_network');
         
         // Show warning and redirect
-        alert('Debug modes are disabled in production. Redirecting to live mode...');
+        console.warn('Debug modes are disabled in production. Redirecting to live mode...');
         window.location.href = url.toString();
       }
     }

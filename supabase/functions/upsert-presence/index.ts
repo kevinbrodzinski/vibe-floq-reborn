@@ -63,10 +63,10 @@ serve(async (req) => {
       // Track critical database errors
       try {
         const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
-        if (posthogKey) {
+        if (posthogKey && Deno.env.get("DEV") !== "true") {
           await fetch('https://app.posthog.com/capture/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Keep-Alive': 'timeout=5' },
             body: JSON.stringify({
               api_key: posthogKey,
               event: 'presence_upsert_error',
@@ -75,6 +75,7 @@ serve(async (req) => {
                 code: error.code ?? null,
               },
             }),
+            keepalive: true,
           }).catch(() => {/* silent */});
         }
       } catch (analyticsError) {
@@ -118,18 +119,19 @@ serve(async (req) => {
     // Track critical errors in PostHog
     try {
       const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
-      if (posthogKey) {
+      if (posthogKey && Deno.env.get("DEV") !== "true") {
         await fetch('https://app.posthog.com/capture/', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Keep-Alive': 'timeout=5' },
           body: JSON.stringify({
             api_key: posthogKey,
-            event: 'presence_upsert_error',
+            event: 'presence_ws_error',
             properties: {
               msg: (error as Error).message,
               code: (error as any).code ?? null,
             },
           }),
+          keepalive: true,
         }).catch(() => {/* silent */});
       }
     } catch (analyticsError) {

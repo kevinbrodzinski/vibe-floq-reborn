@@ -24,8 +24,8 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
   onClose 
 }) => {
   const { session } = useAuth();
-  const [config, setConfig] = useState(getEnvironmentConfig());
-  const [rolloutPercentage, setRolloutPercentage] = useState(config.rolloutPercentage.toString());
+  const [config, setConfig] = useState(() => getEnvironmentConfig());
+  const [rolloutPercentage, setRolloutPercentage] = useState(() => config.rolloutPercentage.toString());
 
   if (!isOpen) return null;
 
@@ -40,6 +40,7 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
     };
     setEnvironmentConfig(newConfig);
     setConfig(newConfig);
+    console.log('Environment config updated:', newConfig);
   };
 
   const handleClearOverrides = () => {
