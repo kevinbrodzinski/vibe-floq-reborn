@@ -16,6 +16,7 @@ const ClusterBadge: FC<Props> = ({ count, x, y }) => (
       transform: 'translate(-50%, -50%)',
       zIndex: 1000
     }}
+    aria-label={`+${count} more people`}
   >
     +{count}
   </div>

@@ -21,7 +21,7 @@ import { useStableMemo } from "@/hooks/useStableMemo";
 import { Z_LAYERS } from "@/lib/z-layers";
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
-import { useMemo } from "react";
+import { useMemo, Fragment } from "react";
 import { jitterPoint, groupByPosition } from '@/utils/jitter';
 import ClusterBadge from '@/components/ClusterBadge';
 
@@ -200,17 +200,20 @@ export const FieldVisualization = ({
       )}
 
       {/* People on the field with collision detection (when not in constellation mode) */}
-      {!constellationMode &&
-        /* ---- Phase 2: Collision handling ---- */
-        Object.values(groupByPosition(people)).map(cluster => {
+      {!constellationMode && (() => {
+        /* ---- Phase 2: Collision handling with memoization ---- */
+        const clusters = useMemo(() => Object.values(groupByPosition(people)), [people]);
+        
+        return clusters.map(cluster => {
           if (cluster.length === 0) return null;
 
           // Calculate pixel coords once (each person already has x/y in percentage);
           const base = cluster[0];
+          const sorted = [...cluster].sort((a, b) => a.id.localeCompare(b.id));
 
           // 1️⃣ Render dots with jitter when cluster size ≤ 4
-          if (cluster.length <= 4) {
-            return cluster.map((person, idx) => {
+          if (sorted.length <= 4) {
+            return sorted.map((person, idx) => {
               const { dx, dy } = jitterPoint(idx);
               return (
                 <HoverCard key={person.id}>
@@ -289,7 +292,7 @@ export const FieldVisualization = ({
           // 2️⃣ If > 4 members → jitter first 4, then show "+N"
           return (
             <div key={`cluster-${base.x}-${base.y}`}>
-              {cluster.slice(0, 4).map((person, idx) => {
+              {sorted.slice(0, 4).map((person, idx) => {
                 const { dx, dy } = jitterPoint(idx);
                 return (
                   <HoverCard key={person.id}>
@@ -365,13 +368,14 @@ export const FieldVisualization = ({
                 );
               })}
               <ClusterBadge
-                count={cluster.length - 4}
+                count={sorted.length - 4}
                 x={base.x}
                 y={base.y}
               />
             </div>
           );
-        })}
+        });
+      })()}
 
       {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
       {floqEvents.map((event, index) => {
