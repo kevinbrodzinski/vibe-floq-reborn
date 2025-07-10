@@ -29,12 +29,13 @@ export function useCurrentEvent(
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
   });
 
-  // Handle event detection
+  // Handle event detection - moved callback outside to prevent recursive loops
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (query.data && onDismiss) {
       onDismiss();
     }
-  }, [query.data, onDismiss]);
+  }, [query.data]); // Only depend on data, not onDismiss to prevent loops
 
   // Handle errors
   useEffect(() => {

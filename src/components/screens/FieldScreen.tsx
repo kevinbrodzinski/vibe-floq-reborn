@@ -20,8 +20,11 @@ import { FullscreenFab } from "@/components/map/FullscreenFab";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { LayersPortal } from "@/components/ui/layers-portal";
 import { clsx } from "clsx";
 import type { Vibe } from "@/types";
+import { Z } from "@/lib/z-index";
+import { useStableMemo } from "@/hooks/useStableMemo";
 
 // Use the optimized hooks for better performance
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
@@ -103,36 +106,42 @@ export const FieldScreen = () => {
     }
   };
 
-  // Convert nearby users to people format for existing visualization
-  const people: Person[] = presenceData.people.map((user, index) => ({
-    id: user.user_id,
-    name: `User ${index + 1}`, // Could be enhanced with profiles
-    x: 20 + (index * 15) % 60, // Distribute across field
-    y: 20 + (index * 20) % 60,
-    color: getVibeColor(user.vibe || 'chill'),
-    vibe: user.vibe || 'chill',
-  }));
+  // Memoize heavy array transformations with stable keys to prevent re-renders
+  const people: Person[] = useStableMemo(() => 
+    presenceData.people.map((user, index) => ({
+      id: user.user_id,
+      name: `User ${index + 1}`, // Could be enhanced with profiles
+      x: 20 + (index * 15) % 60, // Distribute across field
+      y: 20 + (index * 20) % 60,
+      color: getVibeColor(user.vibe || 'chill'),
+      vibe: user.vibe || 'chill',
+    })), [presenceData.people]
+  );
 
-  // Convert people to friends for constellation system
-  const friends = people.map((person, index) => ({
-    ...person,
-    relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
-    activity: 'active' as const,
-    warmth: 60 + Math.random() * 40,
-    compatibility: 70 + Math.random() * 30,
-    lastSeen: Date.now() - Math.random() * 900000,
-  }));
+  // Memoize friends array to prevent constellation re-renders
+  const friends = useStableMemo(() => 
+    people.map((person, index) => ({
+      ...person,
+      relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
+      activity: 'active' as const,
+      warmth: 60 + Math.random() * 40,
+      compatibility: 70 + Math.random() * 30,
+      lastSeen: Date.now() - Math.random() * 900000,
+    })), [people]
+  );
 
-  // Convert walkable floqs to floq events format
-  const floqEvents: FloqEvent[] = walkable_floqs.map((floq, index) => ({
-    id: floq.id,
-    title: floq.title,
-    x: 30 + (index * 25) % 50,
-    y: 40 + (index * 20) % 40,
-    size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
-    participants: floq.participant_count,
-    vibe: floq.primary_vibe,
-  }));
+  // Memoize floq events transformation
+  const floqEvents: FloqEvent[] = useStableMemo(() => 
+    walkable_floqs.map((floq, index) => ({
+      id: floq.id,
+      title: floq.title,
+      x: 30 + (index * 25) % 50,
+      y: 40 + (index * 20) % 40,
+      size: Math.min(Math.max(40 + floq.participant_count * 8, 40), 100),
+      participants: floq.participant_count,
+      vibe: floq.primary_vibe,
+    })), [walkable_floqs]
+  );
 
   const handleSocialAction = (action: any) => {
     console.log('Social action triggered:', action);
@@ -212,11 +221,12 @@ export const FieldScreen = () => {
   }, [mode])
 
   // Auto-exit full-screen when any sheet opens
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
       set('map')
     }
-  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
+  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId]) // Removed 'set' to prevent loops
 
   // Swipe-down gesture to exit full-screen
   const { handlers } = useAdvancedGestures({
@@ -242,30 +252,36 @@ export const FieldScreen = () => {
   return (
     <ErrorBoundary>
       <div className="relative h-svh w-full bg-background" {...handlers}>
-        {/* Event Banner */}
-        {currentEvent && showBanner && (
-          <EventBanner
-            key={currentEvent.id}
-            eventId={currentEvent.id}
-            name={currentEvent.name}
-            vibe={currentEvent.vibe}
-            liveCount={undefined}
-            aiSummary={undefined}
-            onDetails={() => setDetailsOpen(true)}
-            onDismiss={() => setShowBanner(false)}
-          />
-        )}
+        {/* Event Banner and Sheets moved to portal for proper layering */}
+        <LayersPortal>
+          {currentEvent && showBanner && (
+            <div style={{ zIndex: Z.banner }}>
+              <EventBanner
+                key={currentEvent.id}
+                eventId={currentEvent.id}
+                name={currentEvent.name}
+                vibe={currentEvent.vibe}
+                liveCount={undefined}
+                aiSummary={undefined}
+                onDetails={() => setDetailsOpen(true)}
+                onDismiss={() => setShowBanner(false)}
+              />
+            </div>
+          )}
 
-        {currentEvent && (
-          <EventDetailsSheet
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-            event={{
-              ...currentEvent,
-              people: people.length,
-            }}
-          />
-        )}
+          {currentEvent && (
+            <div style={{ zIndex: Z.sheet }}>
+              <EventDetailsSheet
+                open={detailsOpen}
+                onOpenChange={setDetailsOpen}
+                event={{
+                  ...currentEvent,
+                  people: people.length,
+                }}
+              />
+            </div>
+          )}
+        </LayersPortal>
         
         {/* Header */}
         <FieldHeader 
@@ -273,21 +289,30 @@ export const FieldScreen = () => {
           currentLocation={location.error ? "Location unavailable" : "Current location"}
         />
 
-        {/* Map canvas */}
+        {/* Map canvas with proper z-index and constellation dimming */}
         {(mode === 'map' || mode === 'full') && (
-          <FieldVisualization
-            className={clsx('absolute inset-0 top-12 transition-all duration-300',
-              mode === 'full' && 'fullscreen-map'
-            )}
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkable_floqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
+          <div 
+            className="absolute inset-0 top-12" 
+            style={{ 
+              zIndex: Z.map,
+              pointerEvents: 'auto',
+              filter: constellationMode ? 'brightness(0.3)' : 'none'
+            }}
+          >
+            <FieldVisualization
+              className={clsx('transition-all duration-300',
+                mode === 'full' && 'fullscreen-map'
+              )}
+              constellationMode={constellationMode}
+              people={people}
+              friends={friends}
+              floqEvents={floqEvents}
+              walkableFloqs={walkable_floqs}
+              onFriendInteraction={handleFriendInteraction}
+              onConstellationGesture={handleConstellationGesture}
+              onAvatarInteraction={handleAvatarInteraction}
+            />
+          </div>
         )}
 
         {/* Overlay system */}
@@ -312,21 +337,27 @@ export const FieldScreen = () => {
           />
         </FieldOverlay>
 
-        {/* List mode container */}
-        {mode === 'list' && <ListModeContainer />}
-
-        {/* Mini-map overlay (list mode only) */}
+        {/* List mode container with proper z-index */}
         {mode === 'list' && (
-          <MiniMap
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkable_floqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
+          <div style={{ zIndex: Z.sheet }}>
+            <ListModeContainer />
+          </div>
+        )}
+
+        {/* Mini-map overlay (list mode only) with proper z-index */}
+        {mode === 'list' && (
+          <div style={{ zIndex: Z.miniMap }}>
+            <MiniMap
+              constellationMode={constellationMode}
+              people={people}
+              friends={friends}
+              floqEvents={floqEvents}
+              walkableFloqs={walkable_floqs}
+              onFriendInteraction={handleFriendInteraction}
+              onConstellationGesture={handleConstellationGesture}
+              onAvatarInteraction={handleAvatarInteraction}
+            />
+          </div>
         )}
 
         {/* Social Gesture Manager */}
@@ -339,12 +370,17 @@ export const FieldScreen = () => {
           onTimeChange={handleTimeWarpChange}
         />
 
-        {/* Time-Based Bottom Action Card */}
-        <div className="absolute bottom-24 left-4 right-4 z-10">
-          <TimeBasedActionCard
-            timeState={timeState}
-            onTimeWarpToggle={() => setShowTimeWarp(true)}
-          />
+        {/* Time-Based Bottom Action Card with safe area positioning */}
+        <div 
+          className="fixed bottom-0 left-4 right-4 pb-safe"
+          style={{ zIndex: Z.banner }}
+        >
+          <div className="pb-24"> {/* Space for bottom nav */}
+            <TimeBasedActionCard
+              timeState={timeState}
+              onTimeWarpToggle={() => setShowTimeWarp(true)}
+            />
+          </div>
         </div>
 
         {/* Swipeable Venues Chip */}
@@ -355,28 +391,31 @@ export const FieldScreen = () => {
           />
         )}
 
-        {/* Nearby Venues Sheet */}
-        <NearbyVenuesSheet
-          isOpen={venuesSheetOpen}
-          onClose={() => setVenuesSheetOpen(false)}
-          onVenueTap={(venueId) => {
-            setSelectedVenueId(venueId);
-            setVenuesSheetOpen(false);
-            if ('vibrate' in navigator) {
-              navigator.vibrate(4);
-            }
-          }}
-        />
+        {/* Venue Sheets moved to portal for proper layering */}
+        <LayersPortal>
+          <div style={{ zIndex: Z.sheet }}>
+            <NearbyVenuesSheet
+              isOpen={venuesSheetOpen}
+              onClose={() => setVenuesSheetOpen(false)}
+              onVenueTap={(venueId) => {
+                setSelectedVenueId(venueId);
+                setVenuesSheetOpen(false);
+                if ('vibrate' in navigator) {
+                  navigator.vibrate(4);
+                }
+              }}
+            />
 
-        {/* Venue Details Sheet */}
-        <VenueDetailsSheet
-          open={!!selectedVenueId}
-          onOpenChange={(open) => !open && setSelectedVenueId(null)}
-          venueId={selectedVenueId}
-        />
+            <VenueDetailsSheet
+              open={!!selectedVenueId}
+              onOpenChange={(open) => !open && setSelectedVenueId(null)}
+              venueId={selectedVenueId}
+            />
+          </div>
+        </LayersPortal>
 
-        {/* Full-screen toggle FAB */}
-        <FullscreenFab />
+        {/* Contextual FAB - only show full-screen toggle when not in list mode */}
+        {mode !== 'list' && <FullscreenFab />}
       </div>
     </ErrorBoundary>
   );
