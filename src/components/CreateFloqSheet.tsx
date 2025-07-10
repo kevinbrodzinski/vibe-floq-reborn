@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, Users, Globe, Heart, Eye } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar, Clock, MapPin, Users, Globe, Heart, Eye, CalendarIcon } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,6 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -56,7 +64,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
   const [startsAt, setStartsAt] = useState(() => {
     const now = new Date();
     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round to next 15min
-    return now.toISOString().slice(0, 16); // Format for datetime-local input
+    return now;
   });
 
   const { createFloq, isCreating } = useCreateFloq();
@@ -76,7 +84,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
       setSelectedFriends([]);
       const now = new Date();
       now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
-      setStartsAt(now.toISOString().slice(0, 16));
+      setStartsAt(now);
     }
   }, [open, preselectedVenueId]);
 
@@ -88,12 +96,17 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
     try {
       await createFloq({
         location: [selectedVenue.lng, selectedVenue.lat], // [lng, lat] tuple format
-        startsAt: new Date(startsAt),
+        startsAt: startsAt,
         vibe: vibe as VibeEnum,
         visibility,
         title: title.trim() || selectedVenue.name,
         invitees: visibility === 'invite' ? selectedFriends : [],
       });
+      
+      // Analytics tracking
+      if (typeof window !== 'undefined' && (window as any).analytics?.track) {
+        (window as any).analytics.track('floq_created', { vibe, visibility });
+      }
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in the hook
@@ -179,17 +192,34 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
 
           {/* Start Time */}
           <div className="space-y-3">
-            <Label htmlFor="start-time" className="flex items-center gap-2">
+            <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Start time
             </Label>
-            <Input
-              id="start-time"
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-              min={new Date(Date.now() - 60 * 60 * 1000).toISOString().slice(0, 16)} // 1 hour ago
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !startsAt && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startsAt ? format(startsAt, "PPP 'at' p") : <span>Pick a date and time</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={startsAt}
+                  onSelect={(date) => date && setStartsAt(date)}
+                  disabled={(date) => date < new Date(Date.now() - 60 * 60 * 1000)} // 1 hour ago
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           <Separator />
@@ -242,32 +272,32 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
                 Invite friends
               </Label>
               {friends.length > 0 ? (
-                <div className="space-y-2">
-                  {friends.map((friendId) => (
-                    <div key={friendId} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={`friend-${friendId}`}
-                        checked={selectedFriends.includes(friendId)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedFriends([...selectedFriends, friendId]);
-                          } else {
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {friends.map((friendId) => (
+                      <Button
+                        key={friendId}
+                        variant={selectedFriends.includes(friendId) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (selectedFriends.includes(friendId)) {
                             setSelectedFriends(selectedFriends.filter(id => id !== friendId));
+                          } else {
+                            setSelectedFriends([...selectedFriends, friendId]);
                           }
                         }}
-                        className="rounded"
-                      />
-                      <Label htmlFor={`friend-${friendId}`} className="text-sm">
-                        {friendId.slice(0, 8)}...
-                      </Label>
-                    </div>
-                  ))}
+                        className="justify-start h-auto p-2"
+                      >
+                        <span className="truncate">{friendId.slice(0, 8)}...</span>
+                      </Button>
+                    ))}
+                  </div>
                   {selectedFriends.length > 0 && (
                     <div className="flex flex-wrap gap-1">
+                      <span className="text-sm text-muted-foreground">Selected:</span>
                       {selectedFriends.map((friendId) => (
-                        <Badge key={friendId} variant="secondary">
-                          {friendId.slice(0, 8)}...
+                        <Badge key={friendId} variant="secondary" className="text-xs">
+                          {friendId.slice(0, 6)}...
                         </Badge>
                       ))}
                     </div>
@@ -302,7 +332,7 @@ export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: Crea
                 <p><strong>Venue:</strong> {selectedVenue.name}</p>
                 <p><strong>Vibe:</strong> {vibeEmoji(vibe as VibeEnum)} {vibe}</p>
                 <p><strong>Visibility:</strong> {visibility}</p>
-                <p><strong>Starts:</strong> {new Date(startsAt).toLocaleString()}</p>
+                <p><strong>Starts:</strong> {format(startsAt, "PPP 'at' p")}</p>
                 {visibility === 'invite' && selectedFriends.length > 0 && (
                   <p><strong>Invitees:</strong> {selectedFriends.length} friends</p>
                 )}

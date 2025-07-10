@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -16,6 +17,7 @@ interface CreateFloqParams {
 
 export function useCreateFloq() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const createFloqMutation = useMutation({
@@ -46,6 +48,9 @@ export function useCreateFloq() {
         title: "Floq created successfully!",
         description: "Your floq is now live and visible to others.",
       });
+      
+      // Navigate to the created floq
+      navigate(`/floqs/${floqId}`);
       
       return floqId;
     },
