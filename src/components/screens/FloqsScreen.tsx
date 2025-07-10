@@ -3,6 +3,7 @@ import { Search, Plus, Armchair, MessageCircle } from "lucide-react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
 import { RadiusSlider } from "@/components/RadiusSlider";
+import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { useDebug } from "@/lib/useDebug";
 
 interface FloqCard {
@@ -21,6 +22,7 @@ interface FloqCard {
 
 export const FloqsScreen = () => {
   const [debug] = useDebug();
+  const [createFloqOpen, setCreateFloqOpen] = useState(false);
   
   // Get stored radius preference or default to 1km with robust parsing
   const getStoredRadius = () => {
@@ -101,7 +103,10 @@ export const FloqsScreen = () => {
         <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
           floqs
         </h1>
-        <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
+        <button 
+          onClick={() => setCreateFloqOpen(true)}
+          className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
+        >
           <Plus size={20} className="text-muted-foreground" />
         </button>
       </div>
@@ -227,6 +232,12 @@ export const FloqsScreen = () => {
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
+
+      {/* Create Floq Sheet */}
+      <CreateFloqSheet 
+        open={createFloqOpen} 
+        onOpenChange={setCreateFloqOpen} 
+      />
     </div>
   );
 };

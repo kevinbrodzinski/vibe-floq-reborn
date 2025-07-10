@@ -1,6 +1,6 @@
 
-import { useEffect } from "react";
-import { MapPin, Users, Info, Navigation } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MapPin, Users, Info, Navigation, Plus } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +15,7 @@ import { useVenueDetails } from "@/hooks/useVenueDetails";
 import { vibeEmoji } from "@/utils/vibe";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { lat, lng } = useGeolocation();
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
+  const [createFloqOpen, setCreateFloqOpen] = useState(false);
 
   // Handle browser back button
   useEffect(() => {
@@ -146,6 +148,15 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
               )}
               
               <Button 
+                onClick={() => setCreateFloqOpen(true)}
+                size="lg" 
+                className="flex items-center gap-2 col-span-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Floq Here
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 size="lg" 
                 className="flex items-center gap-2 col-span-2"
@@ -172,6 +183,13 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
             </div>
           </div>
         )}
+
+        {/* Create Floq Sheet */}
+        <CreateFloqSheet 
+          open={createFloqOpen} 
+          onOpenChange={setCreateFloqOpen}
+          preselectedVenueId={venue?.id}
+        />
       </SheetContent>
     </Sheet>
   );

@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Coffee, Zap, Users, Navigation, Plus, Heart, Star, Sparkles, Sliders } from "lucide-react";
+import { CreateFloqSheet } from "@/components/CreateFloqSheet";
+import { useState } from "react";
 
 interface TimeBasedActionCardProps {
   timeState: string;
@@ -7,6 +9,8 @@ interface TimeBasedActionCardProps {
 }
 
 export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedActionCardProps) => {
+  const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  
   const getTimeBasedActionCard = () => {
     switch (timeState) {
       case 'dawn':
@@ -41,7 +45,11 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedAc
                 <Zap className="w-4 h-4" />
                 <span>Find Energy</span>
               </Button>
-              <Button variant="secondary" className="flex-1 py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-secondary flex items-center justify-center space-x-2">
+              <Button 
+                variant="secondary" 
+                className="flex-1 py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-secondary flex items-center justify-center space-x-2"
+                onClick={() => setCreateFloqOpen(true)}
+              >
                 <Plus className="w-4 h-4" />
                 <span>Start Something</span>
               </Button>
@@ -86,7 +94,11 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedAc
                 <Navigation className="w-4 h-4" />
                 <span>Let Pulse Guide Me</span>
               </Button>
-              <Button variant="secondary" className="flex-1 py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-secondary flex items-center justify-center space-x-2">
+              <Button 
+                variant="secondary" 
+                className="flex-1 py-3 px-4 rounded-2xl font-medium transition-smooth hover:glow-secondary flex items-center justify-center space-x-2"
+                onClick={() => setCreateFloqOpen(true)}
+              >
                 <Plus className="w-4 h-4" />
                 <span>Create New Floq</span>
               </Button>
@@ -127,5 +139,13 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedAc
     }
   };
 
-  return getTimeBasedActionCard();
+  return (
+    <>
+      {getTimeBasedActionCard()}
+      <CreateFloqSheet 
+        open={createFloqOpen} 
+        onOpenChange={setCreateFloqOpen} 
+      />
+    </>
+  );
 };
