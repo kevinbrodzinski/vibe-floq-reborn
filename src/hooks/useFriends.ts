@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMemo } from 'react';
 
 export function useFriends() {
-  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     // Mock data for offline mode

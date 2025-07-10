@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 type StatusMap = Record<string, 'online' | 'away'>;
 
 export function useFriendsPresence() {
-  const OFFLINE_MODE = process.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     // Return mock status to prevent errors

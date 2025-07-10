@@ -8,6 +8,8 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import type { CrossedPath } from '@/types';
 
 export function useCrossedPathsToday() {
+  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
   const { user } = useAuth();
   const { friends } = useFriends();
   const { toast } = useToast();
@@ -26,6 +28,10 @@ export function useCrossedPathsToday() {
   const { data: crossedPaths = [], isLoading, error, refetch } = useQuery({
     queryKey: ['crossed-paths', user?.id, todayStart, friends.length],
     queryFn: async () => {
+      if (OFFLINE_MODE) {
+        return [] as CrossedPath[];
+      }
+      
       if (!user?.id) return [];
       
       const { data, error } = await supabase.rpc('people_crossed_paths_today', {
@@ -44,7 +50,7 @@ export function useCrossedPathsToday() {
       }
       return (data || []) as unknown as CrossedPath[];
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !OFFLINE_MODE,
     staleTime: 60 * 1000,
     refetchInterval: 60 * 1000, // Live refresh while Afterglow open
     retry: 3,
