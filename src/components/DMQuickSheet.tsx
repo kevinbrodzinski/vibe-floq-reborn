@@ -26,7 +26,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const [input, setInput] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, isSending } = useDMThread(friendId);
+  const { messages, sendMessage, isSending, isTyping, sendTyping } = useDMThread(friendId);
   
   // Get friend profile
   const { data: friend } = useProfile(friendId || '');
@@ -64,12 +64,21 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const getProfile = (uid: string) =>
     senderProfiles.find(p => p.data?.id === uid)?.data;
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom with requestAnimationFrame
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const id = requestAnimationFrame(() =>
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [messages.length]);
 
-  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    // Send typing indicator on input
+    if (e.target.value.length > 0) {
+      sendTyping();
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isSending) return;
@@ -107,7 +116,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
         </SheetHeader>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div 
+          className="flex-1 overflow-y-auto p-4 space-y-4"
+          role="log"
+          aria-label="Direct message conversation"
+        >
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
             return (
@@ -118,6 +131,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
               />
             );
           })}
+          {isTyping && (
+            <div className="text-sm text-muted-foreground italic animate-pulse">
+              {friend?.display_name} is typing...
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
@@ -126,11 +144,12 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
           <div className="flex gap-2">
             <Input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1 bg-background/50 border-border/50"
               disabled={isSending}
+              aria-label="Direct message input"
             />
             <Button
               onClick={handleSend}

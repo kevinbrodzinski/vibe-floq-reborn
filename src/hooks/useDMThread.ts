@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import throttle from 'lodash.throttle';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DirectMessage {
@@ -139,15 +140,20 @@ export function useDMThread(friendId: string | null) {
     };
   }, [threadId, qc, selfId]);
 
-  // Helper function to send typing indicator (for future use)
-  const sendTyping = () => {
+  // Helper function to send typing indicator (throttled)
+  const sendTyping = useCallback(() => {
     if (!threadId || !selfId) return;
     supabase.channel(`dm:${threadId}`).send({
       type: 'broadcast',
       event: 'typing',
       payload: { user_id: selfId }
     });
-  };
+  }, [threadId, selfId]);
+
+  const throttledTyping = useCallback(
+    throttle(() => sendTyping(), 2000, { trailing: false }),
+    [sendTyping]
+  );
 
   return {
     threadId,
@@ -155,6 +161,6 @@ export function useDMThread(friendId: string | null) {
     isTyping,
     isSending: send.isPending,
     sendMessage: send.mutateAsync,
-    sendTyping, // Extension point for typing indicators
+    sendTyping: throttledTyping, // Throttled typing indicator
   };
 }
