@@ -3,12 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
+export interface VibeEntry {
+  vibe: string;
+  timestamp: number;
+  ts: string;
+}
+
+export interface VibeDistribution {
+  vibe: string;
+  count: number;
+  percentage: number;
+}
+
 export interface ProfileStats {
   friend_count: number;
   crossings_7d: number;
   most_active_vibe: string;
   days_active_this_month: number;
   total_achievements: number;
+  vibe_distribution: VibeDistribution[];
+  recent_vibes: VibeEntry[];
 }
 
 export const useProfileStats = (targetUserId?: string) => {

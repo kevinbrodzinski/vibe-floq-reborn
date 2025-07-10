@@ -13,6 +13,8 @@ import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
 import { UsernameStep } from '@/components/UsernameStep';
 import { ProfileStats } from '@/components/profile/ProfileStats';
 import { RecentActivity } from '@/components/profile/RecentActivity';
+import { VibeHistorySparkline } from '@/components/analytics/VibeHistorySparkline';
+import { VibePersonalityChart } from '@/components/analytics/VibePersonalityChart';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
@@ -124,6 +126,17 @@ const ProfileSettings = () => {
           <div className="space-y-4">
             <h2 className="text-base font-medium">Your Activity</h2>
             <ProfileStats />
+          </div>
+
+          <Separator />
+
+          {/* Vibe Analytics */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">Vibe Analytics</h2>
+            <div className="grid gap-4">
+              <VibeHistorySparkline />
+              <VibePersonalityChart />
+            </div>
           </div>
 
           <Separator />
