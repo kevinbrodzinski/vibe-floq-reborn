@@ -25,7 +25,6 @@ import type { Vibe } from "@/types";
 import { useStableMemo } from "@/hooks/useStableMemo";
 import { useFriends } from "@/hooks/useFriends";
 import { useBucketedPresence } from "@/hooks/useBucketedPresence";
-import { useCurrentFlow } from "@/hooks/useCurrentFlow";
 
 // Use basic hooks for stability - restore optimized versions after baseline works
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -82,9 +81,6 @@ export const FieldScreen = () => {
   const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
   const { data: currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
   
-  // Get current flow state
-  const currentFlow = useCurrentFlow();
-  
   const changeVibe = (newVibe: Vibe) => {
     setCurrentVibe(newVibe);
   };
@@ -98,11 +94,10 @@ export const FieldScreen = () => {
     switch (vibe) {
       case 'hype': return 'hsl(280 70% 60%)';
       case 'social': return 'hsl(30 70% 60%)';
-      case 'chill': return 'hsl(200 70% 60%)';
+      case 'chill': return 'hsl(240 70% 60%)';
       case 'flowing': return 'hsl(200 70% 60%)';
       case 'open': return 'hsl(120 70% 60%)';
-      case 'romantic': return 'hsl(340 70% 65%)';
-      default: return 'hsl(200 70% 60%)';
+      default: return 'hsl(240 70% 60%)';
     }
   };
 
@@ -278,29 +273,22 @@ export const FieldScreen = () => {
           lastHeartbeat={lastHeartbeat}
           style={{ zIndex: 50 }}
         />
-        
-        {/* Flow Status Line */}
-        <div className="px-4 pb-2 text-sm font-medium pointer-events-auto relative" style={{ zIndex: 50 }}>
-          You're in: <span className="text-primary">{currentFlow.emoji} {currentFlow.text}</span>
-        </div>
 
-        {/* Map canvas with rounded edges */}
+        {/* Map canvas */}
         {(mode === 'map' || mode === 'full') && (
-          <div className="relative flex-1 overflow-hidden rounded-2xl mx-4">
-            <FieldVisualization
-              className={clsx('absolute inset-0 transition-all duration-300',
-                mode === 'full' && 'fullscreen-map'
-              )}
-              constellationMode={constellationMode}
-              people={people}
-              friends={friends}
-              floqEvents={floqEvents}
-              walkableFloqs={walkable_floqs}
-              onFriendInteraction={handleFriendInteraction}
-              onConstellationGesture={handleConstellationGesture}
-              onAvatarInteraction={handleAvatarInteraction}
-            />
-          </div>
+          <FieldVisualization
+            className={clsx('absolute inset-0 top-12 transition-all duration-300',
+              mode === 'full' && 'fullscreen-map'
+            )}
+            constellationMode={constellationMode}
+            people={people}
+            friends={friends}
+            floqEvents={floqEvents}
+            walkableFloqs={walkable_floqs}
+            onFriendInteraction={handleFriendInteraction}
+            onConstellationGesture={handleConstellationGesture}
+            onAvatarInteraction={handleAvatarInteraction}
+          />
         )}
 
         {/* Overlay system */}
