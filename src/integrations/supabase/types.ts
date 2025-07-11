@@ -590,6 +590,13 @@ export type Database = {
       }
     }
     Views: {
+      achievement_system_metrics: {
+        Row: {
+          metric: string | null
+          value: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -790,6 +797,10 @@ export type Database = {
       attempt_claim_username: {
         Args: { desired: string }
         Returns: boolean
+      }
+      award_achievement_optimized: {
+        Args: { _user: string; _code: string; _increment: number }
+        Returns: Json
       }
       award_if_goal_met: {
         Args: { _user: string; _code: string; _increment: number }
@@ -1140,6 +1151,14 @@ export type Database = {
       geomfromewkt: {
         Args: { "": string }
         Returns: unknown
+      }
+      get_achievement_progress: {
+        Args: { _user_id?: string; _codes?: string[] }
+        Returns: Json
+      }
+      get_achievement_stats: {
+        Args: { target_user_id?: string }
+        Returns: Json
       }
       get_achievement_system_health: {
         Args: Record<PropertyKey, never>
