@@ -42,9 +42,10 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
     }
   };
 
-  const isValidFormat = /^[a-z0-9_]{3,32}$/.test(localValue);
+  const isValidFormat = /^[a-zA-Z0-9_]{3,32}$/.test(localValue);
   const showValidation = localValue.length >= 3;
   const canSubmit = isAvailable && draft.trim() && !isClaimingUsername;
+  const previewUsername = localValue.toLowerCase();
 
   const ValidationIcon = () => {
     if (isCheckingAvailability) return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
@@ -59,7 +60,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
     if (!showValidation) return "3-32 characters: letters, numbers, underscore";
     if (!isValidFormat) return "Invalid format. Use letters, numbers, underscore only";
     if (isCheckingAvailability) return "Checking availability...";
-    if (isAvailable === true) return "Username is available!";
+    if (isAvailable === true) return `Username @${previewUsername} is available!`;
     if (isAvailable === false) return "Username is taken";
     return "";
   };
@@ -97,7 +98,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
                 type="text"
                 placeholder="your_username"
                 value={localValue}
-                onChange={(e) => setLocalValue(e.target.value.toLowerCase())}
+                onChange={(e) => setLocalValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="pl-8 pr-10"
                 autoFocus
@@ -110,6 +111,11 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
             <p className="text-sm text-muted-foreground">
               {getHelperText()}
             </p>
+            {localValue && localValue !== previewUsername && (
+              <p className="text-xs text-muted-foreground">
+                Will be stored as: @{previewUsername}
+              </p>
+            )}
           </div>
 
           <Button 

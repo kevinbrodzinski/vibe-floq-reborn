@@ -36,8 +36,8 @@ export function useUsername() {
       return false;
     }
 
-    // Validate format client-side first
-    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+    // Validate format client-side first (allow capitals, backend will convert)
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(username)) {
       setIsAvailable(false);
       return false;
     }
@@ -79,7 +79,8 @@ export function useUsername() {
       return;
     }
 
-    debouncedCheck(username);
+    // Check availability with lowercase version since backend stores lowercase
+    debouncedCheck(username.toLowerCase());
   }, [debouncedCheck]);
 
   // Claim username mutation
