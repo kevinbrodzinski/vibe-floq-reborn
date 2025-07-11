@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useVenuePosts } from "@/hooks/useVenuePosts";
 import { vibeEmoji } from "@/utils/vibe";
@@ -11,7 +12,7 @@ interface VenuePostsTabProps {
 }
 
 function VenuePostsContent({ venueId }: VenuePostsTabProps) {
-  const { data: posts, isLoading, error } = useVenuePosts(venueId);
+  const { data: posts, isLoading, error, refetch } = useVenuePosts(venueId);
 
   if (isLoading) {
     return (
@@ -34,8 +35,14 @@ function VenuePostsContent({ venueId }: VenuePostsTabProps) {
 
   if (error || !posts) {
     return (
-      <div className="p-6 text-center text-muted-foreground">
-        Unable to load posts
+      <div className="p-6 text-center space-y-4">
+        <div className="text-muted-foreground">
+          <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p>Couldn't load posts</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => refetch()}>
+          Try Again
+        </Button>
       </div>
     );
   }

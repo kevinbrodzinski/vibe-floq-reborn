@@ -28,11 +28,12 @@ export const useVenuePosts = (venueId: string | null) => {
       const { data, error } = await supabase.functions.invoke(
         "get-venue-recent-posts",
         {
-          body: { venueId }
+          body: { venue_id: venueId }
         }
       );
 
       if (error) {
+        console.error('useVenuePosts error:', error);
         throw error;
       }
 
@@ -41,5 +42,10 @@ export const useVenuePosts = (venueId: string | null) => {
     enabled: !!venueId,
     staleTime: 30000,
     refetchInterval: 60000,
+    retry: (failureCount, error) => {
+      console.log('useVenuePosts retry attempt:', failureCount, error?.message);
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 };

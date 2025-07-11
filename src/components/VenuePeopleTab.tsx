@@ -12,7 +12,7 @@ interface VenuePeopleTabProps {
 }
 
 function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
-  const { data: people, isLoading, error } = useVenuePeople(venueId);
+  const { data: people, isLoading, error, refetch } = useVenuePeople(venueId);
 
   if (isLoading) {
     return (
@@ -32,8 +32,14 @@ function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
 
   if (error || !people) {
     return (
-      <div className="p-6 text-center text-muted-foreground">
-        Unable to load people data
+      <div className="p-6 text-center space-y-4">
+        <div className="text-muted-foreground">
+          <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p>Couldn't load people data</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => refetch()}>
+          Try Again
+        </Button>
       </div>
     );
   }

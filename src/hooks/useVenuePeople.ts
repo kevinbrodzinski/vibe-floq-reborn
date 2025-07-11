@@ -24,18 +24,24 @@ export const useVenuePeople = (venueId: string | null) => {
       const { data, error } = await supabase.functions.invoke(
         "get-venue-people-list",
         {
-          body: { venueId }
+          body: { venue_id: venueId }
         }
       );
 
       if (error) {
+        console.error('useVenuePeople error:', error);
         throw error;
       }
 
       return data || [];
     },
     enabled: !!venueId,
-    staleTime: 10000,
-    refetchInterval: 20000,
+    staleTime: 30000,
+    refetchInterval: 60000,
+    retry: (failureCount, error) => {
+      console.log('useVenuePeople retry attempt:', failureCount, error?.message);
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 };

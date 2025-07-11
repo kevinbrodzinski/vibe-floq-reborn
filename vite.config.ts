@@ -12,13 +12,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: (DISABLE_HMR || IS_HOSTED_PREVIEW) ? false : PREVIEW_HMR_HOST
+    hmr: mode === 'development' && !IS_HOSTED_PREVIEW ? PREVIEW_HMR_HOST
       ? {
           protocol: 'wss',
           host: PREVIEW_HMR_HOST,
           port: 443,
         }
-      : true,
+      : true : false,
   },
   plugins: [
     react(),
