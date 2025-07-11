@@ -71,10 +71,22 @@ export function useFriends() {
   const addFriend = useMutation({
     mutationFn: async (targetUserId: string) => {
       if (OFFLINE_MODE) return; // Short-circuit in offline mode
-      const { error } = await supabase.rpc('add_friend', {
-        target: targetUserId
-      });
-      if (error) throw error;
+      
+      try {
+        const { error } = await supabase.rpc('add_friend', {
+          target: targetUserId
+        });
+        if (error) throw error;
+      } catch (error: any) {
+        // Handle specific error cases gracefully
+        if (error.message?.includes('already friends')) {
+          throw new Error('Already friends with this user');
+        }
+        if (error.message?.includes('user not found')) {
+          throw new Error('User not found');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
@@ -87,11 +99,12 @@ export function useFriends() {
         pushAchievementEvent('friend_added');
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (!OFFLINE_MODE) {
+        console.warn('Add friend error:', error);
         toast({
           title: "Failed to add friend",
-          description: error.message,
+          description: error.message || "Please try again later",
           variant: 'destructive',
         });
       }
@@ -101,10 +114,19 @@ export function useFriends() {
   const removeFriend = useMutation({
     mutationFn: async (targetUserId: string) => {
       if (OFFLINE_MODE) return; // Short-circuit in offline mode
-      const { error } = await supabase.rpc('remove_friend', {
-        target: targetUserId
-      });
-      if (error) throw error;
+      
+      try {
+        const { error } = await supabase.rpc('remove_friend', {
+          target: targetUserId
+        });
+        if (error) throw error;
+      } catch (error: any) {
+        // Handle specific error cases gracefully
+        if (error.message?.includes('not friends')) {
+          throw new Error('Not currently friends with this user');
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
@@ -115,11 +137,12 @@ export function useFriends() {
         });
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (!OFFLINE_MODE) {
+        console.warn('Remove friend error:', error);
         toast({
           title: "Failed to remove friend",
-          description: error.message,
+          description: error.message || "Please try again later",
           variant: 'destructive',
         });
       }

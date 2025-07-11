@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface GeolocationState {
   lat: number | null;
@@ -6,6 +6,7 @@ interface GeolocationState {
   accuracy: number | null;
   loading: boolean;
   error: string | null;
+  hasPermission: boolean;
 }
 
 export const useGeolocation = () => {
@@ -13,28 +14,54 @@ export const useGeolocation = () => {
     lat: null,
     lng: null,
     accuracy: null,
-    loading: true,
+    loading: false, // Start as false, require user gesture
     error: null,
+    hasPermission: false,
   });
   
   const permissionChecked = useRef(false);
   const watchIdRef = useRef<number | null>(null);
 
+  // Check permission status without requesting location
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocation(prev => ({
         ...prev,
-        loading: false,
         error: 'Geolocation not supported',
       }));
       return;
     }
 
-    // Prevent multiple permission requests
+    // Check if we have permission without triggering a request
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        setLocation(prev => ({
+          ...prev,
+          hasPermission: result.state === 'granted',
+        }));
+      }).catch(() => {
+        // Fallback - permission API not supported
+        setLocation(prev => ({ ...prev, hasPermission: false }));
+      });
+    }
+  }, []);
+
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocation(prev => ({
+        ...prev,
+        error: 'Geolocation not supported',
+      }));
+      return;
+    }
+
+    // Prevent multiple simultaneous requests
     if (permissionChecked.current) {
       return;
     }
     permissionChecked.current = true;
+
+    setLocation(prev => ({ ...prev, loading: true, error: null }));
 
     const successHandler = (position: GeolocationPosition) => {
       setLocation({
@@ -43,7 +70,9 @@ export const useGeolocation = () => {
         accuracy: position.coords.accuracy,
         loading: false,
         error: null,
+        hasPermission: true,
       });
+      permissionChecked.current = false; // Allow future requests
     };
 
     const errorHandler = (error: GeolocationPositionError) => {
@@ -60,7 +89,9 @@ export const useGeolocation = () => {
         ...prev,
         loading: false,
         error: errorMessage,
+        hasPermission: error.code !== error.PERMISSION_DENIED,
       }));
+      permissionChecked.current = false; // Allow future requests
     };
 
     // Get initial position with safer options
@@ -69,14 +100,18 @@ export const useGeolocation = () => {
       timeout: 8000,
       maximumAge: 300000, // 5 minutes cache
     });
-
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
   }, []);
 
-  return location;
+  const clearWatch = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  }, []);
+
+  return {
+    ...location,
+    requestLocation,
+    clearWatch,
+  };
 };

@@ -166,12 +166,20 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
             if (env.debugPresence) {
               console.log(`✅ Subscribed to presence bucket: ${geohash}`);
             }
-          } else if (status === 'CHANNEL_ERROR') {
+          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
             if (env.debugNetwork) {
-              console.error(`🔴 Error subscribing to presence bucket: ${geohash}`);
+              console.warn(`⚠️ WebSocket connection issue for bucket: ${geohash}, status: ${status}`);
             }
-            // Track WebSocket errors
-            track('presence_ws_error', { geohash });
+            // Track WebSocket errors but don't spam logs
+            track('presence_ws_error', { geohash, status });
+            
+            // Attempt reconnection after delay
+            setTimeout(() => {
+              if (env.debugNetwork) {
+                console.log(`🔄 Attempting to reconnect to bucket: ${geohash}`);
+              }
+              channel.subscribe();
+            }, env.presenceRetryDelay);
           }
         });
 

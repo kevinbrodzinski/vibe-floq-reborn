@@ -26,7 +26,7 @@ import { useStableMemo } from "@/hooks/useStableMemo";
 import { useFriends } from "@/hooks/useFriends";
 import { useBucketedPresence } from "@/hooks/useBucketedPresence";
 
-// Use basic hooks for stability - restore optimized versions after baseline works
+// Use enhanced geolocation hook with user gesture requirement
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
@@ -64,7 +64,7 @@ export const FieldScreen = () => {
   
   const { mode, set } = useFullscreenMap();
   
-  // Use basic hooks for stability
+  // Use enhanced geolocation hook
   const location = useGeolocation();
   const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
   

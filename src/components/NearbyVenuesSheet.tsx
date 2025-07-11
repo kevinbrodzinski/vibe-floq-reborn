@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { VenueListItem } from './VenueListItem';
 import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
 
 interface NearbyVenuesSheetProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface NearbyVenuesSheetProps {
 }
 
 export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesSheetProps) {
-  const { lat, lng, loading: locationLoading } = useGeolocation();
+  const { lat, lng, loading: locationLoading, hasPermission, requestLocation } = useGeolocation();
   const { 
     data, 
     isLoading, 
@@ -72,7 +73,11 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
         {/* Content */}
         <ScrollArea className="flex-1">
           <div className="p-4">
-            {locationLoading ? (
+            {!hasPermission && !lat && !lng ? (
+              <div className="flex items-center justify-center py-12">
+                <GeolocationPrompt onRequestLocation={requestLocation} isLoading={locationLoading} />
+              </div>
+            ) : locationLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center space-y-2">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
