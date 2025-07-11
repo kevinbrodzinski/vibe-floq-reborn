@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useGalaxyNodes } from '@/hooks/useGalaxyNodes';
 import { vibeColor } from '@/utils/getVibeColor';
+import { useDebug } from '@/lib/useDebug';
 
 interface Props {
   zoom: number; // 0.5 → 4.0
@@ -14,6 +15,7 @@ interface Props {
  */
 export const FieldGalaxy = memo(({ zoom, className }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [debug] = useDebug();
   
   // Track canvas dimensions for node positioning
   const [dims, setDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
@@ -41,8 +43,8 @@ export const FieldGalaxy = memo(({ zoom, className }: Props) => {
       const { width, height } = canvas;
       ctx.clearRect(0, 0, width / DPR, height / DPR);
       
-      // Hide grid at high zoom when it becomes too dense
-      if (zoom < 3) {
+      // Debug grid (only show in development)
+      if (debug && zoom < 3) {
         ctx.strokeStyle = 'hsl(var(--border) / 0.06)';
         ctx.lineWidth = 1;
         const step = 64 * zoom;

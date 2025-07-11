@@ -6,6 +6,7 @@ import { AvatarDropdown } from "@/components/AvatarDropdown";
 interface FieldHeaderProps {
   locality?: string;
   connectionLost?: boolean;
+  className?: string;
 }
 
 /**
@@ -14,13 +15,15 @@ interface FieldHeaderProps {
  */
 export const FieldHeader: React.FC<FieldHeaderProps> = ({ 
   locality = "Current location", 
-  connectionLost = false 
+  connectionLost = false,
+  className
 }) => {
   return (
     <header
       className={cn(
         "pt-safe-top sticky top-0 z-20 flex h-12 w-full items-center justify-between px-3",
-        "bg-black/40 backdrop-blur ring-1 ring-white/10"
+        "bg-black/40 backdrop-blur ring-1 ring-white/10",
+        className
       )}
     >
       {/* Left — location pill */}

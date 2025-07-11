@@ -254,7 +254,7 @@ export const FieldScreen = () => {
 
   return (
     <ErrorBoundary>
-      <div className="relative h-svh w-full bg-background" {...handlers}>
+      <div className="flex flex-col h-svh w-full bg-background" {...handlers}>
         {/* Place-aware Banner System */}
         <BannerManager />
 
@@ -273,13 +273,14 @@ export const FieldScreen = () => {
         <FieldHeader 
           locality={location.error ? "Location unavailable" : "Current location"}
           connectionLost={location.error !== null}
+          className="pt-[env(safe-area-inset-top)]"
         />
         
         <FieldHeroInfo className="mt-2" />
 
         {/* Galaxy viewport */}
         <div className="relative flex-1 overflow-hidden">
-          <FieldGalaxy zoom={zoom} />
+          <FieldGalaxy zoom={zoom} className="absolute inset-0" />
           <FieldZoomButtons zoom={zoom} setZoom={setZoom} />
         </div>
 

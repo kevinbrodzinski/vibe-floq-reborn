@@ -12,6 +12,8 @@ export const FieldHeroInfo = ({ className }: Props) => {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={cn(
         'w-full flex items-center justify-center gap-2 text-sm',
         'font-medium tracking-wide text-foreground/80',
