@@ -26,12 +26,36 @@ serve(async (req) => {
       );
     }
 
-    // Get venue info
-    const { data: venue, error: venueError } = await supabase
-      .from('venues')
-      .select('id, name, lat, lng, description')
-      .eq('id', venueId)
-      .single();
+    // Parallelize all data fetching for better performance
+    const [
+      { data: venue, error: venueError },
+      { data: allPresence },
+      { data: recentPosts }
+    ] = await Promise.all([
+      supabase
+        .from('venues')
+        .select('id, name, lat, lng, description')
+        .eq('id', venueId)
+        .single(),
+      
+      supabase
+        .from('venue_live_presence')
+        .select('user_id, vibe, checked_in_at, last_heartbeat')
+        .eq('venue_id', venueId)
+        .gt('expires_at', new Date().toISOString()),
+      
+      supabase
+        .from('venue_feed_posts')
+        .select(`
+          id, content_type, text_content, vibe, mood_tags, created_at,
+          view_count, reaction_count,
+          profiles!inner(username, display_name, avatar_url)
+        `)
+        .eq('venue_id', venueId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10)
+    ]);
 
     if (venueError || !venue) {
       console.error('Venue error:', venueError);
@@ -40,13 +64,6 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Compute metrics on-demand from live presence data
-    const { data: allPresence } = await supabase
-      .from('venue_live_presence')
-      .select('user_id, vibe, checked_in_at, last_heartbeat')
-      .eq('venue_id', venueId)
-      .gt('expires_at', new Date().toISOString());
 
     // Calculate metrics from live data
     const peopleCount = allPresence?.length || 0;

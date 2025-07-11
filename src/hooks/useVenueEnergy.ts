@@ -34,7 +34,7 @@ export const useVenueEnergy = (venueId: string | null) => {
       }
 
       const { data, error } = await supabase.functions.invoke(
-        "get-venue-energy-metrics",
+        "get-venue-social-energy",
         {
           body: { venueId }
         }
@@ -47,7 +47,13 @@ export const useVenueEnergy = (venueId: string | null) => {
       return data;
     },
     enabled: !!venueId,
-    staleTime: 15000,
-    refetchInterval: 30000,
+    staleTime: 10000, // 10 seconds
+    refetchInterval: 25000, // 25 seconds - slightly faster refresh
+    retry: (failureCount, error) => {
+      // Retry up to 2 times, but not for 404s
+      if (error?.message?.includes('not found')) return false;
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 };
