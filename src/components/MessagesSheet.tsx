@@ -14,9 +14,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { getAvatarUrl } from '@/lib/avatar';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
-import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAvatarPreloader } from '@/hooks/useAvatarPreloader';
+import { DMQuickSheet } from '@/components/DMQuickSheet';
 
 interface MessagesSheetProps {
   open: boolean;
@@ -43,8 +43,9 @@ interface DMThread {
 
 export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: MessagesSheetProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
+  const [dmSheetOpen, setDmSheetOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
   // Get all DM threads for the current user
   const { data: threads = [], isLoading } = useQuery({
@@ -103,9 +104,11 @@ export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: Messag
   const avatarPaths = threads.map(thread => thread.other_user?.avatar_url).filter(Boolean);
   useAvatarPreloader(avatarPaths, [48]);
 
-  const handleThreadClick = (threadId: string) => {
+  const handleThreadClick = (thread: DMThread) => {
+    const otherUserId = thread.member_a === user?.id ? thread.member_b : thread.member_a;
+    setSelectedFriendId(otherUserId);
+    setDmSheetOpen(true);
     onOpenChange(false);
-    navigate(`/dm/${threadId}`);
   };
 
   const getUnreadCount = (threadId: string) => {
@@ -143,7 +146,7 @@ export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: Messag
                     key={thread.id}
                     variant="ghost"
                     className="w-full h-auto p-4 justify-start hover:bg-accent/50"
-                    onClick={() => handleThreadClick(thread.id)}
+                    onClick={() => handleThreadClick(thread)}
                   >
                     <div className="flex items-center gap-3 w-full">
                       <AvatarWithFallback 
@@ -205,6 +208,12 @@ export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: Messag
           )}
         </div>
       </SheetContent>
+      
+      <DMQuickSheet 
+        open={dmSheetOpen} 
+        onOpenChange={setDmSheetOpen}
+        friendId={selectedFriendId}
+      />
     </Sheet>
   );
 };
