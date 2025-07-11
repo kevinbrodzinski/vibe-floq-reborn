@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { useMemo } from 'react';
 import { track } from '@/lib/analytics';
+import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 
 export function useFriends() {
   const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
@@ -82,6 +83,8 @@ export function useFriends() {
           title: "Friend added",
           description: "You are now friends!",
         });
+        // Trigger achievement check
+        pushAchievementEvent('friend_added');
       }
     },
     onError: (error) => {

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_catalogue: {
+        Row: {
+          code: string
+          description: string
+          family: Database["public"]["Enums"]["achievement_family"]
+          goal: number | null
+          icon: string | null
+          metadata: Json | null
+          name: string
+        }
+        Insert: {
+          code: string
+          description: string
+          family: Database["public"]["Enums"]["achievement_family"]
+          goal?: number | null
+          icon?: string | null
+          metadata?: Json | null
+          name: string
+        }
+        Update: {
+          code?: string
+          description?: string
+          family?: Database["public"]["Enums"]["achievement_family"]
+          goal?: number | null
+          icon?: string | null
+          metadata?: Json | null
+          name?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           achievement_type: string
@@ -344,6 +374,42 @@ export type Database = {
           srtext?: string | null
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          code: string
+          earned_at: string | null
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          earned_at?: string | null
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          earned_at?: string | null
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "achievement_catalogue"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_settings: {
         Row: {
@@ -723,6 +789,10 @@ export type Database = {
       }
       attempt_claim_username: {
         Args: { desired: string }
+        Returns: boolean
+      }
+      award_if_goal_met: {
+        Args: { _user: string; _code: string; _increment: number }
         Returns: boolean
       }
       box: {
@@ -2618,6 +2688,13 @@ export type Database = {
       }
     }
     Enums: {
+      achievement_family:
+        | "social"
+        | "location"
+        | "vibe"
+        | "activity"
+        | "milestone"
+        | "special"
       cluster_type_enum:
         | "nightlife"
         | "cafe"
@@ -2773,6 +2850,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      achievement_family: [
+        "social",
+        "location",
+        "vibe",
+        "activity",
+        "milestone",
+        "special",
+      ],
       cluster_type_enum: [
         "nightlife",
         "cafe",

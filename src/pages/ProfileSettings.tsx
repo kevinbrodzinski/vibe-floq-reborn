@@ -19,6 +19,7 @@ import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ConnectionInsights } from '@/components/ConnectionInsights';
 import { AboutMeEditor } from '@/components/profile/AboutMeEditor';
 import { PresenceSettings } from '@/components/profile/PresenceSettings';
+import { AchievementsSection } from '@/components/profile/AchievementsSection';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -157,6 +158,14 @@ const ProfileSettings = () => {
               <ConnectionInsights userId={profile.id} />
             </div>
           )}
+
+          <Separator />
+
+          {/* Achievements Section */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">Achievements</h2>
+            <AchievementsSection />
+          </div>
 
           <Separator />
 
