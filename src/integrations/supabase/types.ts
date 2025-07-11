@@ -643,6 +643,7 @@ export type Database = {
         Row: {
           earned_count: number | null
           rank: number | null
+          total_users: number | null
           user_id: string | null
         }
         Relationships: [

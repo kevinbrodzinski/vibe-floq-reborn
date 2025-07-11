@@ -14,33 +14,36 @@ export function useLeaderboardStats() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Early return for unauthenticated users instead of throwing
       if (!user) {
-        throw new Error('User not authenticated');
+        return {
+          user_rank: null,
+          total_users: 0,
+          percentile: 0,
+        };
       }
 
-      // Get user's rank from materialized view
+      // Single query to get user rank and total users
       const { data, error } = await supabase
         .from('leaderboard_cache')
-        .select('rank')
+        .select('rank, total_users')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
 
-      // Get total users count
-      const { count } = await supabase
-        .from('leaderboard_cache')
-        .select('*', { count: 'exact', head: true });
-
-      const totalUsers = count ?? 0;
+      const totalUsers = data?.total_users ?? 0;
       const userRank = data?.rank ?? null;
+
+      // Zero-division guard for percentile calculation
+      const percentile = userRank && totalUsers > 0
+        ? Math.round((1 - userRank / totalUsers) * 1000) / 10
+        : 0;
 
       return {
         user_rank: userRank,
         total_users: totalUsers,
-        percentile: userRank && totalUsers > 0
-          ? Math.round((1 - userRank / totalUsers) * 1000) / 10 // 1 decimal
-          : 0,
+        percentile,
       };
     },
   });
