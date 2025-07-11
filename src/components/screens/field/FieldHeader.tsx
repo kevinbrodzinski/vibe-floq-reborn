@@ -1,50 +1,93 @@
-import React from "react";
-import { MapPin, WifiOff } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MapPin, Compass } from "lucide-react";
 import { AvatarDropdown } from "@/components/AvatarDropdown";
+import { HeartbeatIndicator } from "@/components/HeartbeatIndicator";
+import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 interface FieldHeaderProps {
-  locality?: string;
-  connectionLost?: boolean;
+  locationReady?: boolean;
+  currentLocation?: string;
   className?: string;
+  style?: React.CSSProperties;
+  onNavigate?: () => void;
+  showMiniMap?: boolean;
+  onToggleMiniMap?: () => void;
+  lastHeartbeat?: number;
 }
 
-/**
- * Compact, frosted header bar used on the Field screen
- * Matches the reference mock (12 pt height, blurred glass, centered logo)
- */
-export const FieldHeader: React.FC<FieldHeaderProps> = ({ 
-  locality = "Current location", 
-  connectionLost = false,
-  className
-}) => {
+export const FieldHeader = ({ 
+  locationReady = false, 
+  currentLocation = "Locating...",
+  className,
+  style,
+  onNavigate,
+  showMiniMap,
+  onToggleMiniMap,
+  lastHeartbeat
+}: FieldHeaderProps) => {
   return (
-    <header
+    <header 
       className={cn(
-        "pt-safe-top sticky top-0 z-20 flex h-12 w-full items-center justify-between px-3",
-        "bg-black/40 backdrop-blur ring-1 ring-white/10",
+        "flex items-center justify-between px-6 pt-safe-top h-16",
+        "pointer-events-auto relative",
+        "bg-background/60 backdrop-blur-xl",
+        "border-b border-border/20",
         className
       )}
+      style={style}
     >
-      {/* Left — location pill */}
-      <div
+      {/* Left: Location */}
+      <Button 
+        variant="ghost" 
+        size="sm"
         className={cn(
-          "flex items-center gap-1 rounded-full px-3 py-1 text-sm text-indigo-200",
-          "bg-white/5 ring-1 ring-white/10"
+          "flex items-center space-x-2 text-foreground/80 hover:text-foreground",
+          "hover:bg-accent/50 transition-all duration-200",
+          "min-h-[44px] px-3" // Touch-friendly
         )}
       >
-        <MapPin className="h-4 w-4" />
-        <span>{locality}</span>
-      </div>
-
-      {/* Center — App wordmark */}
-      <h1 className="pointer-events-none select-none text-2xl font-semibold tracking-wide text-brand-primary">
+        {locationReady ? (
+          <MapPin className="w-4 h-4 text-primary" />
+        ) : (
+          <Compass className="w-4 h-4 text-muted-foreground animate-spin" />
+        )}
+        <span className="text-sm font-medium truncate max-w-[120px]">
+          {currentLocation}
+        </span>
+      </Button>
+      
+      {/* Center: Logo */}
+      <div 
+        className="text-2xl font-light tracking-wide text-primary cursor-pointer"
+        onClick={() => {
+          track('posthog_test', { 
+            source: 'field_header',
+            timestamp: new Date().toISOString(),
+            test: true
+          });
+          console.log('PostHog test event sent!');
+        }}
+      >
         floq
-      </h1>
-
-      {/* Right — connection / avatar */}
+      </div>
+      
+      {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {connectionLost && <WifiOff className="h-5 w-5 text-rose-400" />}
+        <HeartbeatIndicator lastHeartbeat={lastHeartbeat} />
+        {onToggleMiniMap && (
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={onToggleMiniMap}
+            className={cn(
+              "p-2 transition-colors",
+              showMiniMap ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <Compass className="w-4 h-4" />
+          </Button>
+        )}
         <AvatarDropdown />
       </div>
     </header>

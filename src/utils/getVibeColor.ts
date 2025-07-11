@@ -1,21 +1,17 @@
 // Utility to get consistent vibe colors across the app
-export const getVibeColor = (vibe: string, opacity = 1): string => {
+export const getVibeColor = (vibe: string): string => {
   const vibeColors: Record<string, string> = {
-    hype: '280 70% 60%',
-    social: '30 70% 60%', 
-    chill: '240 70% 60%',
-    flowing: '200 70% 60%',
-    open: '120 70% 60%',
-    curious: '260 70% 60%',
-    solo: '180 70% 60%',
-    romantic: '320 70% 60%',
-    weird: '60 70% 60%',
-    down: '210 30% 40%',
+    hype: 'hsl(280 70% 60%)',
+    social: 'hsl(30 70% 60%)', 
+    chill: 'hsl(240 70% 60%)',
+    flowing: 'hsl(200 70% 60%)',
+    open: 'hsl(120 70% 60%)',
+    curious: 'hsl(260 70% 60%)',
+    solo: 'hsl(180 70% 60%)',
+    romantic: 'hsl(320 70% 60%)',
+    weird: 'hsl(60 70% 60%)',
+    down: 'hsl(210 30% 40%)',
   };
   
-  const hslValues = vibeColors[vibe?.toLowerCase()] ?? '240 70% 60%';
-  return `hsl(${hslValues} / ${opacity})`;
+  return vibeColors[vibe?.toLowerCase()] ?? 'hsl(240 70% 60%)';
 };
-
-// Helper for canvas rendering with direct HSL values
-export const vibeColor = (vibe: string, opacity = 1): string => getVibeColor(vibe, opacity);

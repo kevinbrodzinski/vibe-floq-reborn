@@ -4,10 +4,8 @@ import { useTimeSyncContext } from "@/components/TimeSyncProvider";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { FieldHeader } from "./field/FieldHeader";
-import { FieldHeroInfo } from "@/components/field/FieldHeroInfo";
-import { FieldGalaxy } from "@/components/field/FieldGalaxy";
-import { FieldZoomButtons } from "@/components/field/FieldZoomButtons";
 import { FieldOverlay } from "./field/FieldOverlay";
+import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
 import { BannerManager } from "@/components/BannerManager";
@@ -63,7 +61,6 @@ export const FieldScreen = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
-  const [zoom, setZoom] = useState(1);
   
   const { mode, set } = useFullscreenMap();
   
@@ -240,7 +237,7 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locality="Locating..." />
+          <FieldHeader locationReady={false} />
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -254,7 +251,7 @@ export const FieldScreen = () => {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-svh w-full bg-background" {...handlers}>
+      <div className="relative h-svh w-full bg-background" {...handlers}>
         {/* Place-aware Banner System */}
         <BannerManager />
 
@@ -271,18 +268,28 @@ export const FieldScreen = () => {
         
         {/* Header */}
         <FieldHeader 
-          locality={location.error ? "Location unavailable" : "Current location"}
-          connectionLost={location.error !== null}
-          className="pt-[env(safe-area-inset-top)]"
+          locationReady={isLocationReady} 
+          currentLocation={location.error ? "Location unavailable" : "Current location"}
+          lastHeartbeat={lastHeartbeat}
+          style={{ zIndex: 50 }}
         />
-        
-        <FieldHeroInfo className="mt-2" />
 
-        {/* Galaxy viewport */}
-        <div className="relative flex-1 overflow-hidden">
-          <FieldGalaxy zoom={zoom} className="absolute inset-0" />
-          <FieldZoomButtons zoom={zoom} setZoom={setZoom} />
-        </div>
+        {/* Map canvas */}
+        {(mode === 'map' || mode === 'full') && (
+          <FieldVisualization
+            className={clsx('absolute inset-0 top-12 transition-all duration-300',
+              mode === 'full' && 'fullscreen-map'
+            )}
+            constellationMode={constellationMode}
+            people={people}
+            friends={friends}
+            floqEvents={floqEvents}
+            walkableFloqs={walkable_floqs}
+            onFriendInteraction={handleFriendInteraction}
+            onConstellationGesture={handleConstellationGesture}
+            onAvatarInteraction={handleAvatarInteraction}
+          />
+        )}
 
         {/* Overlay system */}
         <FieldOverlay
