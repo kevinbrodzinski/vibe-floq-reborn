@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import * as geohash from 'ngeohash';
@@ -20,6 +20,7 @@ export interface PlaceBanner {
  */
 export function usePlaceBanners(lat?: number, lng?: number) {
   const [realtimeBanners, setRealtimeBanners] = useState<PlaceBanner[]>([]);
+  const prevHash = useRef<string | null>(null);
   
   // Generate geohash4 channel for this location
   const geohash4 = lat && lng ? geohash.encode(lat, lng, 4) : null;
@@ -51,7 +52,8 @@ export function usePlaceBanners(lat?: number, lng?: number) {
 
   // Subscribe to realtime updates for this geohash channel
   useEffect(() => {
-    if (!geohash4) return;
+    if (!geohash4 || geohash4 === prevHash.current) return;
+    prevHash.current = geohash4;
 
     const channel = supabase
       .channel(`banners:${geohash4}`)
@@ -95,7 +97,7 @@ export function usePlaceBanners(lat?: number, lng?: number) {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [geohash4]);
 

@@ -36,6 +36,7 @@ export const EventBanner = ({
           exit={{ y: 96, opacity: 0, transition: { duration: 0.2 } }}
           role="button"
           aria-label="Open event details"
+          aria-live="polite"
           onClick={onDetails}
           className={clsx(
             "fixed bottom-24 left-1/2 -translate-x-1/2 z-30",

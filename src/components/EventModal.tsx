@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, X, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,14 @@ interface EventModalProps {
 export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   const { dismissBanner } = useBannerContext();
   const { data: venue, isLoading } = useVenueDetails(banner?.venue_id || null);
+
+  // Track banner view analytics
+  useEffect(() => {
+    if (open && banner) {
+      // Analytics: banner viewed
+      console.log('Analytics: banner_view', { banner_id: banner.id, venue_id: banner.venue_id });
+    }
+  }, [open, banner]);
   
   const handleClose = () => {
     if (banner) {
@@ -29,6 +37,13 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
     if (!banner || !venue) return;
     
     try {
+      // Analytics: CTA clicked
+      console.log('Analytics: modal_cta_click', { 
+        banner_id: banner.id, 
+        venue_id: banner.venue_id, 
+        action: 'join' 
+      });
+      
       // TODO: Implement venue join logic
       console.log('Joining venue:', venue.id);
       
@@ -43,7 +58,14 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   };
 
   const handleShowRoute = () => {
-    if (!venue) return;
+    if (!venue || !banner) return;
+    
+    // Analytics: Route CTA clicked
+    console.log('Analytics: modal_cta_click', { 
+      banner_id: banner.id, 
+      venue_id: banner.venue_id, 
+      action: 'route' 
+    });
     
     // TODO: Open Pulse AI map route
     console.log('Opening route to venue:', venue.id);

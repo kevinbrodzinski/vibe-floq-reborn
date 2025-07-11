@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { EventBanner } from '@/components/EventBanner';
 import { EventModal } from '@/components/EventModal';
 import { usePlaceBanners } from '@/hooks/usePlaceBanners';
@@ -20,7 +20,7 @@ export const BannerManager = () => {
   } = useBannerContext();
   
   const [modalOpen, setModalOpen] = useState(false);
-  const [autoDismissTimer, setAutoDismissTimer] = useState<NodeJS.Timeout | null>(null);
+  const autoDismissTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-show first eligible banner
   useEffect(() => {
@@ -33,24 +33,24 @@ export const BannerManager = () => {
         const timer = setTimeout(() => {
           dismissBanner(eligibleBanner.id);
         }, 30_000);
-        setAutoDismissTimer(timer);
+        autoDismissTimer.current = timer;
       }
     }
   }, [banners, activeBanner, shouldShowBanner, setActiveBanner, dismissBanner]);
 
-  // Clear timer when banner changes
+  // Clear timer on cleanup
   useEffect(() => {
     return () => {
-      if (autoDismissTimer) {
-        clearTimeout(autoDismissTimer);
+      if (autoDismissTimer.current) {
+        clearTimeout(autoDismissTimer.current);
       }
     };
-  }, [autoDismissTimer]);
+  }, []);
 
   const handleOpenModal = () => {
-    if (autoDismissTimer) {
-      clearTimeout(autoDismissTimer);
-      setAutoDismissTimer(null);
+    if (autoDismissTimer.current) {
+      clearTimeout(autoDismissTimer.current);
+      autoDismissTimer.current = null;
     }
     setModalOpen(true);
   };
@@ -59,9 +59,9 @@ export const BannerManager = () => {
     if (activeBanner) {
       dismissBanner(activeBanner.id);
     }
-    if (autoDismissTimer) {
-      clearTimeout(autoDismissTimer);
-      setAutoDismissTimer(null);
+    if (autoDismissTimer.current) {
+      clearTimeout(autoDismissTimer.current);
+      autoDismissTimer.current = null;
     }
   };
 
