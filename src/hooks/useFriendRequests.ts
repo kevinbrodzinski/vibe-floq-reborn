@@ -6,6 +6,7 @@ import { track } from '@/lib/analytics';
 import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 
 export interface FriendRequest {
+  id: string;
   user_id: string;
   friend_id: string;
   status: 'pending' | 'accepted' | 'declined';
@@ -25,6 +26,7 @@ export function useFriendRequests() {
       const { data, error } = await supabase
         .from('friend_requests')
         .select(`
+          id,
           user_id,
           friend_id,
           status,
@@ -46,21 +48,21 @@ export function useFriendRequests() {
 
   // Accept friend request mutation
   const acceptRequest = useMutation({
-    mutationFn: async (requesterId: string) => {
-      const { data, error } = await supabase.rpc('respond_friend_request', {
-        request_user_id: requesterId,
-        response_type: 'accepted'
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await supabase.rpc('accept_friend_request', {
+        req_id: requestId
       });
 
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, requesterId) => {
+    onSuccess: (data, requestId) => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
       queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
       
       // Track friend achievement
-      pushAchievementEvent('friend_added', { friend_id: requesterId });
+      pushAchievementEvent('friend_added', { friend_id: data?.user_id });
       
       toast({
         title: "Friend request accepted",
@@ -76,13 +78,14 @@ export function useFriendRequests() {
     },
   });
 
-  // Decline friend request mutation
+  // Decline friend request mutation  
   const declineRequest = useMutation({
-    mutationFn: async (requesterId: string) => {
-      const { data, error } = await supabase.rpc('respond_friend_request', {
-        request_user_id: requesterId,
-        response_type: 'declined'
-      });
+    mutationFn: async (requestId: string) => {
+      const { data, error } = await supabase
+        .from('friend_requests')
+        .update({ status: 'declined', responded_at: new Date().toISOString() })
+        .eq('id', requestId)
+        .eq('friend_id', user!.id); // Only allow declining requests sent to you
 
       if (error) throw error;
       return data;

@@ -981,8 +981,15 @@ export type Database = {
         Returns: boolean
       }
       accept_friend_request: {
-        Args: { source: string }
-        Returns: undefined
+        Args: { req_id: string }
+        Returns: {
+          created_at: string | null
+          friend_id: string
+          id: string
+          responded_at: string | null
+          status: string | null
+          user_id: string
+        }
       }
       add_friend: {
         Args: { target: string }

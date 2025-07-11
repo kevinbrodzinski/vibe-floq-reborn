@@ -140,7 +140,7 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
             {pendingRequests.length > 0 ? (
               <div className="space-y-2">
                 {pendingRequests.map((request: any) => (
-                  <div key={request.user_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <div key={request.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                     <AvatarWithFallback 
                       src={request.profiles?.avatar_url ? getAvatarUrl(request.profiles.avatar_url, 40) : null}
                       fallbackText={request.profiles?.display_name || request.profiles?.username || 'U'}
@@ -158,7 +158,7 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                       <Button 
                         size="sm" 
                         variant="default"
-                        onClick={() => acceptRequest(request.user_id)}
+                        onClick={() => acceptRequest(request.id)}
                         disabled={isAccepting || isDeclining}
                         className="h-8 px-3"
                       >
@@ -167,7 +167,7 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => declineRequest(request.user_id)}
+                        onClick={() => declineRequest(request.id)}
                         disabled={isAccepting || isDeclining}
                         className="h-8 px-3"
                       >

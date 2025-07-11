@@ -86,8 +86,11 @@ export function useUsername() {
   // Claim username mutation
   const claimMutation = useMutation({
     mutationFn: async (username: string) => {
+      // Always convert to lowercase before sending to backend
+      const cleanUsername = username.toLowerCase().trim();
+      
       const { data, error } = await supabase.rpc('attempt_claim_username', { 
-        desired: username 
+        desired: cleanUsername 
       });
 
       if (error) {
@@ -103,7 +106,7 @@ export function useUsername() {
     onSuccess: () => {
       toast({
         title: "Username claimed!",
-        description: `@${draft} is now yours`,
+        description: `@${draft.toLowerCase()} is now yours`,
       });
 
       // Invalidate relevant queries

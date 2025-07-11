@@ -32,7 +32,8 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isAvailable && draft.trim()) {
-      claimUsername(draft.trim());
+      // Always submit lowercase username
+      claimUsername(draft.toLowerCase().trim());
     }
   };
 
