@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => ({
         }
       : true,
   },
+  define: {
+    // Disable HMR in preview environments to prevent localhost WebSocket errors
+    'import.meta.hot': IS_HOSTED_PREVIEW ? 'undefined' : 'import.meta.hot',
+  },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
