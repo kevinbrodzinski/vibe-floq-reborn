@@ -50,9 +50,9 @@ CREATE INDEX CONCURRENTLY idx_vibes_now_bloom
 ON vibes_now USING bloom (user_id, vibe, visibility, venue_id)
 WITH (length=80, col1=2, col2=1, col3=1, col4=2);
 
--- Hash indexes for exact equality lookups
-CREATE INDEX CONCURRENTLY idx_vibes_now_user_hash
-ON vibes_now USING hash (user_id);
+-- B-tree indexes for exact equality lookups (WAL-logged, more reliable)
+CREATE INDEX idx_vibes_now_user_btree
+ON vibes_now USING btree (user_id);
 
 -- Geospatial optimization with proper GIST and partial condition
 CREATE INDEX CONCURRENTLY idx_vibes_now_location_gist
@@ -68,7 +68,7 @@ WHERE venue_id IS NOT NULL AND expires_at > now();
 
 -- Set FILLFACTOR for high-update tables (leave room for HOT updates)
 ALTER TABLE venue_live_presence SET (fillfactor = 80);
-ALTER TABLE vibes_now SET (fillfactor = 70);
+ALTER TABLE vibes_now SET (fillfactor = 85);
 ALTER TABLE venue_feed_posts SET (fillfactor = 85);
 
 -- Optimize statistics targets for better query planning
@@ -292,21 +292,21 @@ $$;
 
 -- High-frequency cleanup (every 2 minutes)
 SELECT cron.schedule(
-  'venue-data-cleanup-fast',
+  'floq-venue-data-cleanup-fast',
   '*/2 * * * *',
   $$SELECT cleanup_expired_venue_data();$$
 );
 
--- Real-time metrics refresh (every 15 seconds for live social energy)
+-- Real-time metrics refresh (every 30 seconds for live social energy)
 SELECT cron.schedule(
-  'refresh-venue-metrics-realtime',
-  '*/15 * * * * *',
+  'floq-refresh-venue-metrics-realtime',
+  '*/30 * * * * *',
   $$REFRESH MATERIALIZED VIEW CONCURRENTLY venue_social_metrics;$$
 );
 
 -- Weekly maintenance for index optimization
 SELECT cron.schedule(
-  'weekly-performance-maintenance',
+  'floq-weekly-performance-maintenance',
   '0 3 * * 0', -- Sundays at 3 AM
   $$
   VACUUM (ANALYZE, VERBOSE) venue_live_presence;
@@ -316,6 +316,19 @@ SELECT cron.schedule(
   REINDEX INDEX CONCURRENTLY idx_vibes_now_location_gist;
   $$
 );
+
+-- 10. Additional Performance Indexes (from your notes)
+
+-- BRIN index for time-range pruning on presence (keeps vacuum cheap where rows age out in time-order)
+CREATE INDEX brin_presence_expires
+ON venue_live_presence
+USING brin (expires_at)
+WITH (pages_per_range = 4);
+
+-- Keep last-seen heartbeat per user fast (single buffer hit for "is user already in vibes_now and still fresh?")
+CREATE UNIQUE INDEX vibes_now_user_id_expires_idx
+ON vibes_now (user_id)
+INCLUDE (expires_at);
 
 -- 9. Performance Monitoring Functions
 
