@@ -26,36 +26,14 @@ serve(async (req) => {
       );
     }
 
-    // Parallelize all data fetching for better performance
-    const [
-      { data: venue, error: venueError },
-      { data: allPresence },
-      { data: recentPosts }
-    ] = await Promise.all([
-      supabase
-        .from('venues')
-        .select('id, name, lat, lng, description')
-        .eq('id', venueId)
-        .single(),
-      
-      supabase
-        .from('venue_live_presence')
-        .select('user_id, vibe, checked_in_at, last_heartbeat')
-        .eq('venue_id', venueId)
-        .gt('expires_at', new Date().toISOString()),
-      
-      supabase
-        .from('venue_feed_posts')
-        .select(`
-          id, content_type, text_content, vibe, mood_tags, created_at,
-          view_count, reaction_count,
-          profiles!inner(username, display_name, avatar_url)
-        `)
-        .eq('venue_id', venueId)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(10)
-    ]);
+    console.log('Fetching venue social energy for:', venueId);
+
+    // Get venue details first
+    const { data: venue, error: venueError } = await supabase
+      .from('venues')
+      .select('id, name, lat, lng, description')
+      .eq('id', venueId)
+      .single();
 
     if (venueError || !venue) {
       console.error('Venue error:', venueError);
@@ -64,6 +42,60 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Parallelize data fetching
+    const [
+      { data: allPresence },
+      { data: livePresence },
+      { data: recentPosts }
+    ] = await Promise.all([
+      supabase
+        .from('venue_live_presence')
+        .select('user_id, vibe, checked_in_at, last_heartbeat')
+        .eq('venue_id', venueId)
+        .gt('expires_at', new Date().toISOString()),
+      
+      supabase
+        .from('venue_live_presence')
+        .select(`
+          user_id,
+          vibe,
+          checked_in_at,
+          session_duration,
+          profiles:user_id (
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('venue_id', venueId)
+        .gt('expires_at', new Date().toISOString())
+        .order('checked_in_at', { ascending: false }),
+      
+      supabase
+        .from('venue_feed_posts')
+        .select(`
+          id,
+          content_type,
+          text_content,
+          vibe,
+          mood_tags,
+          created_at,
+          view_count,
+          reaction_count,
+          profiles:user_id (
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('venue_id', venueId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(5)
+    ]);
+
+    console.log('Found venue:', venue.name, 'with', allPresence?.length || 0, 'people present');
 
     // Calculate metrics from live data
     const peopleCount = allPresence?.length || 0;
@@ -104,54 +136,7 @@ serve(async (req) => {
       last_updated: new Date().toISOString()
     };
 
-    // Get live presence details (who's there right now)
-    const { data: livePresence, error: presenceError } = await supabase
-      .from('venue_live_presence')
-      .select(`
-        user_id,
-        vibe,
-        checked_in_at,
-        session_duration,
-        profiles:user_id (
-          username,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('venue_id', venueId)
-      .gt('expires_at', new Date().toISOString())
-      .order('checked_in_at', { ascending: false });
-
-    if (presenceError) {
-      console.error('Presence error:', presenceError);
-    }
-
-    // Get recent vibe feed posts
-    const { data: recentPosts, error: postsError } = await supabase
-      .from('venue_feed_posts')
-      .select(`
-        id,
-        content_type,
-        text_content,
-        vibe,
-        mood_tags,
-        created_at,
-        view_count,
-        reaction_count,
-        profiles:user_id (
-          username,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('venue_id', venueId)
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (postsError) {
-      console.error('Posts error:', postsError);
-    }
+    console.log('Data fetched successfully - People:', livePresence?.length || 0, 'Posts:', recentPosts?.length || 0);
 
     // Calculate social texture insights
     const socialTexture = {

@@ -33,6 +33,8 @@ export const useVenueEnergy = (venueId: string | null) => {
         throw new Error("Venue ID is required");
       }
 
+      console.log('useVenueEnergy calling edge function for:', venueId);
+
       const { data, error } = await supabase.functions.invoke(
         "get-venue-social-energy",
         {
@@ -41,15 +43,23 @@ export const useVenueEnergy = (venueId: string | null) => {
       );
 
       if (error) {
+        console.error('useVenueEnergy error:', error);
         throw error;
       }
 
+      if (!data) {
+        console.error('useVenueEnergy: no data returned');
+        throw new Error("No data returned from venue energy function");
+      }
+
+      console.log('useVenueEnergy success:', data.name, data.people_count, 'people');
       return data;
     },
     enabled: !!venueId,
     staleTime: 10000, // 10 seconds
     refetchInterval: 25000, // 25 seconds - slightly faster refresh
     retry: (failureCount, error) => {
+      console.log('useVenueEnergy retry attempt:', failureCount, error?.message);
       // Retry up to 2 times, but not for 404s
       if (error?.message?.includes('not found')) return false;
       return failureCount < 2;

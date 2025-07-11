@@ -64,6 +64,8 @@ export const useEnhancedVenueDetails = (venueId: string | null) => {
         throw new Error("Venue ID is required");
       }
 
+      console.log('useEnhancedVenueDetails calling edge function for:', venueId);
+
       const { data, error } = await supabase.functions.invoke(
         "get-venue-social-energy",
         {
@@ -72,18 +74,28 @@ export const useEnhancedVenueDetails = (venueId: string | null) => {
       );
 
       if (error) {
+        console.error('useEnhancedVenueDetails error:', error);
         throw error;
       }
 
       if (!data) {
+        console.error('useEnhancedVenueDetails: no data returned');
         throw new Error("No venue data found");
       }
 
+      console.log('useEnhancedVenueDetails success:', data.name, data.people_count, 'people');
       return data;
     },
     enabled: !!venueId,
     staleTime: 15000, // 15 seconds
     refetchInterval: 30000, // Refetch every 30 seconds for live data
+    retry: (failureCount, error) => {
+      console.log('useEnhancedVenueDetails retry attempt:', failureCount, error?.message);
+      // Don't retry on 404s
+      if (error?.message?.includes('not found')) return false;
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 };
 

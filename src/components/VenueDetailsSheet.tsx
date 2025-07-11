@@ -76,11 +76,20 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
+  console.log('VenueDetailsSheet debug:', {
+    venue: !!venue,
+    isSocialLoading,
+    socialError: socialError?.message,
+    settings: settings?.privacy_settings?.always_immersive_venues,
+    socialData: !!socialData
+  });
+
   // Use social portal as default when data is ready and user hasn't disabled it
   const shouldUseSocialPortal = 
     venue && 
     !isSocialLoading && 
     !socialError &&
+    socialData &&
     (settings?.privacy_settings?.always_immersive_venues !== false);
 
   if (shouldUseSocialPortal) {
@@ -94,7 +103,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   }
 
   // Show loading state while social data is fetching
-  if (venue && isSocialLoading && settings?.privacy_settings?.always_immersive_venues !== false) {
+  if (venue && isSocialLoading) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
