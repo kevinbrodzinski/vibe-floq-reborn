@@ -211,14 +211,18 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           ends_at: string | null
+          expires_at: string | null
           geo: unknown | null
           id: string
           location: unknown
           max_participants: number | null
+          name: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m: number | null
           starts_at: string | null
           title: string
+          type: string | null
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
           visibility: string | null
           walkable_zone: unknown | null
         }
@@ -227,14 +231,18 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
+          expires_at?: string | null
           geo?: unknown | null
           id?: string
           location: unknown
           max_participants?: number | null
+          name?: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
           starts_at?: string | null
           title: string
+          type?: string | null
+          vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
           visibility?: string | null
           walkable_zone?: unknown | null
         }
@@ -243,14 +251,18 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
+          expires_at?: string | null
           geo?: unknown | null
           id?: string
           location?: unknown
           max_participants?: number | null
+          name?: string | null
           primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
           starts_at?: string | null
           title?: string
+          type?: string | null
+          vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
           visibility?: string | null
           walkable_zone?: unknown | null
         }
@@ -482,6 +494,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_vibe_states: {
+        Row: {
+          active: boolean | null
+          location: unknown | null
+          started_at: string
+          user_id: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          visible_to: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          location?: unknown | null
+          started_at?: string
+          user_id: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          visible_to?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          location?: unknown | null
+          started_at?: string
+          user_id?: string
+          vibe_tag?: Database["public"]["Enums"]["vibe_enum"]
+          visible_to?: string | null
+        }
+        Relationships: []
+      }
       venue_clusters: {
         Row: {
           active_hours: unknown | null
@@ -570,6 +609,7 @@ export type Database = {
       }
       venue_live_presence: {
         Row: {
+          checked_in: string | null
           checked_in_at: string
           expires_at: string
           last_heartbeat: string
@@ -579,6 +619,7 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
         Insert: {
+          checked_in?: string | null
           checked_in_at?: string
           expires_at?: string
           last_heartbeat?: string
@@ -588,6 +629,7 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
         Update: {
+          checked_in?: string | null
           checked_in_at?: string
           expires_at?: string
           last_heartbeat?: string
@@ -1005,6 +1047,10 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      cleanup_expired_rows: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_expired_venue_data: {
         Args: Record<PropertyKey, never>
