@@ -70,27 +70,30 @@ export const FieldGalaxy = memo(({ zoom, className }: Props) => {
       
       // === GALAXY NODES ===
       nodes.forEach(node => {
-        const rOuter = 32 * zoom * node.weight;
-        const rInner = 4;
+        // Improved glow radius scaling - caps at 2x zoom to prevent oversized glows
+        const baseSize = node.kind === 'venue' ? 20 : node.kind === 'floq' ? 16 : 12;
+        const rOuter = (baseSize + 8 * node.weight) * Math.min(zoom, 2);
         
-        // Outer glow
+        // Different core sizes for visual hierarchy
+        const rInner = node.kind === 'venue' ? 5 : node.kind === 'floq' ? 4 : 3;
+        
+        // Outer glow with gradient for smoother falloff
+        const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, rOuter);
+        gradient.addColorStop(0, vibeColor(node.vibe, 0.4));
+        gradient.addColorStop(0.5, vibeColor(node.vibe, 0.15));
+        gradient.addColorStop(1, vibeColor(node.vibe, 0));
+        
         ctx.beginPath();
-        ctx.fillStyle = vibeColor(node.vibe, 0.15);
+        ctx.fillStyle = gradient;
         ctx.arc(node.x, node.y, rOuter, 0, Math.PI * 2);
         ctx.fill();
         
         // Core dot
         ctx.beginPath();
-        ctx.fillStyle = vibeColor(node.vibe, node.isSelf ? 1 : 0.75);
+        ctx.fillStyle = vibeColor(node.vibe, node.isSelf ? 1 : 0.8);
         ctx.arc(node.x, node.y, rInner, 0, Math.PI * 2);
         ctx.fill();
       });
-      
-      // Center dot (keep for reference)
-      ctx.fillStyle = 'hsl(var(--primary))';
-      ctx.beginPath();
-      ctx.arc((width / DPR) / 2, (height / DPR) / 2, 4, 0, Math.PI * 2);
-      ctx.fill();
     };
     
     // Node interaction handling
