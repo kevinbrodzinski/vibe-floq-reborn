@@ -77,7 +77,7 @@ export function VenueSocialPortal({ open, onOpenChange, venueId }: VenueSocialPo
     }
   };
 
-  if (!venue || !energyData) return null;
+  if (!venue) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -128,25 +128,25 @@ export function VenueSocialPortal({ open, onOpenChange, venueId }: VenueSocialPo
                   <div className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-white">
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">{energyData.people_count} here now</span>
+                      <span className="text-sm font-medium">{energyData?.people_count ?? venue.live_count} here now</span>
                     </div>
                   </div>
                 </div>
                 <h1 className="text-3xl font-bold text-white mb-1">{venue.name}</h1>
-                <p className="text-white/80 text-lg">{energyData.socialTexture.moodDescription}</p>
+                <p className="text-white/80 text-lg">{energyData?.socialTexture?.moodDescription ?? 'Discover what\'s happening here'}</p>
               </div>
               
               {/* Energy Level Indicator */}
               <div className="text-right">
                 <div className="flex items-center gap-2 text-white mb-1">
                   <Zap className="w-5 h-5" />
-                  <span className="text-lg font-semibold">{Math.round(energyData.energy_level)}%</span>
+                  <span className="text-lg font-semibold">{Math.round(energyData?.energy_level ?? 0)}%</span>
                 </div>
                 <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-yellow-400 to-red-400"
                     initial={{ width: 0 }}
-                    animate={{ width: `${energyData.energy_level}%` }}
+                    animate={{ width: `${energyData?.energy_level ?? 0}%` }}
                     transition={{ delay: 0.5, duration: 1 }}
                   />
                 </div>

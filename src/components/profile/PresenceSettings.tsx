@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Battery, Shield, Zap } from 'lucide-react';
+import { MapPin, Battery, Shield, Zap, Sparkles } from 'lucide-react';
 import { RadiusSlider } from '@/components/RadiusSlider';
 import { useUserSettings } from '@/hooks/useUserSettings';
 
@@ -26,6 +26,7 @@ export function PresenceSettings() {
   const isLocationSharing = privacy_settings?.location_sharing ?? true;
   const broadcastRadius = privacy_settings?.broadcast_radius ?? 500;
   const batterySaveMode = privacy_settings?.battery_save_mode ?? false;
+  const immersiveVenues = privacy_settings?.always_immersive_venues !== false;
 
   const handleLocationSharingToggle = (enabled: boolean) => {
     updatePrivacySetting('location_sharing', enabled);
@@ -33,6 +34,10 @@ export function PresenceSettings() {
 
   const handleBatterySaveToggle = (enabled: boolean) => {
     updatePrivacySetting('battery_save_mode', enabled);
+  };
+
+  const handleImmersiveVenuesToggle = (enabled: boolean) => {
+    updatePrivacySetting('always_immersive_venues', enabled);
   };
 
   const handleRadiusChange = (radius: number) => {
@@ -116,6 +121,37 @@ export function PresenceSettings() {
           </div>
         </Card>
       )}
+
+      {/* Immersive Venue Experience */}
+      <Card className="p-4 border-border/50">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <Label htmlFor="immersive-venues" className="font-medium">
+              Immersive Venue Experience
+            </Label>
+          </div>
+          <Switch
+            id="immersive-venues"
+            checked={immersiveVenues}
+            onCheckedChange={handleImmersiveVenuesToggle}
+            disabled={isUpdating}
+          />
+        </div>
+        
+        <p className="text-xs text-muted-foreground mb-3">
+          Experience venues with enhanced social features, live energy tracking, and interactive content when available.
+        </p>
+        
+        {!immersiveVenues && (
+          <div className="flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded-md">
+            <Shield className="h-4 w-4 text-blue-500" />
+            <span className="text-xs text-blue-600 dark:text-blue-400">
+              Using simplified venue view. Social features disabled.
+            </span>
+          </div>
+        )}
+      </Card>
 
       {/* Battery Save Mode */}
       <Card className="p-4 border-border/50">

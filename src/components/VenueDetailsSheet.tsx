@@ -77,11 +77,10 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
-  // Use social portal based on user preference or crowd size
+  // Use social portal as the default experience unless explicitly disabled
   const shouldUseSocialPortal = 
-    settings?.privacy_settings?.always_immersive_venues ||
-    useSocialPortal ||
-    (socialData && socialData.people_count >= 0); // Temporarily lowered for testing
+    (settings?.privacy_settings?.always_immersive_venues !== false) &&
+    venue; // Only need a valid venue to show social portal
 
   if (shouldUseSocialPortal) {
     return (
@@ -129,17 +128,15 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                     <Users className="h-4 w-4" />
                     <span>{venue.live_count} here now</span>
                   </div>
-                  {venue.live_count > 3 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setUseSocialPortal(true)}
-                      className="h-6 px-2 text-xs"
-                    >
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Social View
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setUseSocialPortal(true)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Social View
+                  </Button>
                 </div>
               </div>
 
