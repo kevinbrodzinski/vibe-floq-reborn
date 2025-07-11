@@ -22,5 +22,5 @@ export function useLongPress({ onLongPress, delay = 800 }: UseLongPressProps) {
     }
   });
 
-  return gestures;
+  return { handlers: gestures.handlers };
 }
