@@ -26,31 +26,66 @@ serve(async (req) => {
       );
     }
 
-    // Get real-time social metrics from materialized view
-    const { data: metrics, error: metricsError } = await supabase
-      .from('venue_social_metrics')
-      .select(`
-        venue_id,
-        name,
-        people_count,
-        avg_session_minutes,
-        dominant_vibe,
-        vibe_diversity_score,
-        energy_level,
-        active_floq_count,
-        total_floq_members,
-        last_updated
-      `)
-      .eq('venue_id', venueId)
+    // Get venue info
+    const { data: venue, error: venueError } = await supabase
+      .from('venues')
+      .select('id, name, lat, lng, description')
+      .eq('id', venueId)
       .single();
 
-    if (metricsError) {
-      console.error('Metrics error:', metricsError);
+    if (venueError || !venue) {
+      console.error('Venue error:', venueError);
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch venue metrics' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Venue not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Compute metrics on-demand from live presence data
+    const { data: allPresence } = await supabase
+      .from('venue_live_presence')
+      .select('user_id, vibe, checked_in_at, last_heartbeat')
+      .eq('venue_id', venueId)
+      .gt('expires_at', new Date().toISOString());
+
+    // Calculate metrics from live data
+    const peopleCount = allPresence?.length || 0;
+    const vibes = allPresence?.map(p => p.vibe) || [];
+    const vibeCounts = vibes.reduce((acc: any, vibe) => {
+      acc[vibe] = (acc[vibe] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const dominantVibe = Object.keys(vibeCounts).reduce((a, b) => 
+      vibeCounts[a] > vibeCounts[b] ? a : b, vibes[0] || 'chill');
+    
+    const vibe_diversity_score = Math.min(Object.keys(vibeCounts).length * 20, 100);
+    
+    // Calculate average session duration
+    const now = new Date();
+    const sessionDurations = allPresence?.map(p => {
+      const checkedIn = new Date(p.checked_in_at);
+      return (now.getTime() - checkedIn.getTime()) / 1000 / 60; // minutes
+    }) || [];
+    
+    const avg_session_minutes = sessionDurations.length > 0 
+      ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length 
+      : 0;
+
+    const energy_level = Math.min(peopleCount * 10 + vibe_diversity_score, 100);
+
+    const metrics = {
+      venue_id: venueId,
+      name: venue.name,
+      people_count: peopleCount,
+      avg_session_minutes,
+      dominant_vibe: dominantVibe,
+      vibe_diversity_score,
+      energy_level,
+      active_floq_count: 0, // TODO: Add floq count calculation
+      total_floq_members: 0,
+      last_updated: new Date().toISOString()
+    };
 
     // Get live presence details (who's there right now)
     const { data: livePresence, error: presenceError } = await supabase
@@ -115,7 +150,7 @@ serve(async (req) => {
       
       // Social dynamics
       socialDynamics: {
-        crowdSize: categorizecrowd(metrics?.people_count || 0),
+        crowdSize: categorizeCloud(metrics?.people_count || 0),
         vibeStability: metrics?.vibe_diversity_score || 0,
         sessionIntensity: categorizeIntensity(metrics?.avg_session_minutes || 0),
       },
