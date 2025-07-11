@@ -5,7 +5,7 @@ import { FloqOrb } from "@/components/FloqOrb";
 import { ClusterPin } from "@/components/map/ClusterPin";
 import { VenuePin } from "@/components/map/VenuePin";
 import { ViewportControls } from "@/components/map/ViewportControls";
-import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
+
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
 import { DMQuickSheet } from "@/components/DMQuickSheet";
 import { useLongPress } from "@/hooks/useLongPress";
@@ -131,7 +131,6 @@ export const FieldVisualization = ({
   
   // Use centralized selected venue store
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
-  const [detailsOpen, setDetailsOpen] = useState(false);
   
   // Cluster sheet state
   const [clusterSheetOpen, setClusterSheetOpen] = useState(false);
@@ -175,7 +174,6 @@ export const FieldVisualization = ({
 
     // single venue → open details sheet
     setSelectedVenueId(v.id);
-    setDetailsOpen(true);
   };
 
   // Auto-dismiss cluster sheet when cluster dissolves on zoom
@@ -490,17 +488,6 @@ export const FieldVisualization = ({
       {!mini && (
         <>
           <LayersPortal layer="sheet">
-            <VenueDetailsSheet
-              open={detailsOpen}
-              onOpenChange={(open) => {
-                setDetailsOpen(open);
-                if (!open) setSelectedVenueId(null);
-              }}
-              venueId={selectedVenueId}
-            />
-          </LayersPortal>
-
-          <LayersPortal layer="sheet">
             <ClusterVenuesSheet
               isOpen={clusterSheetOpen}
               onClose={() => {
@@ -513,7 +500,6 @@ export const FieldVisualization = ({
                 setClusterSheetOpen(false);
                 setActiveClusterBbox(null);
                 setSelectedVenueId(venueId);
-                setDetailsOpen(true);
               }}
               onZoomToArea={() => {
                 if (activeClusterBbox) {
