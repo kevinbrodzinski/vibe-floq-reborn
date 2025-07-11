@@ -5,8 +5,9 @@ import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { FieldHeader } from "./field/FieldHeader";
 import { FieldHeroInfo } from "@/components/field/FieldHeroInfo";
+import { FieldGalaxy } from "@/components/field/FieldGalaxy";
+import { FieldZoomButtons } from "@/components/field/FieldZoomButtons";
 import { FieldOverlay } from "./field/FieldOverlay";
-import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
 import { BannerManager } from "@/components/BannerManager";
@@ -62,6 +63,7 @@ export const FieldScreen = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
+  const [zoom, setZoom] = useState(1);
   
   const { mode, set } = useFullscreenMap();
   
@@ -275,22 +277,11 @@ export const FieldScreen = () => {
         
         <FieldHeroInfo className="mt-2" />
 
-        {/* Map canvas */}
-        {(mode === 'map' || mode === 'full') && (
-          <FieldVisualization
-            className={clsx('absolute inset-0 top-12 transition-all duration-300',
-              mode === 'full' && 'fullscreen-map'
-            )}
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkable_floqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
-        )}
+        {/* Galaxy viewport */}
+        <div className="relative flex-1 overflow-hidden">
+          <FieldGalaxy zoom={zoom} />
+          <FieldZoomButtons zoom={zoom} setZoom={setZoom} />
+        </div>
 
         {/* Overlay system */}
         <FieldOverlay
