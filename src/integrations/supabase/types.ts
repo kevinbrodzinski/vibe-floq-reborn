@@ -1141,6 +1141,10 @@ export type Database = {
         Args: { "": string }
         Returns: unknown
       }
+      get_achievement_system_health: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_cluster_venues: {
         Args: {
           min_lng: number
