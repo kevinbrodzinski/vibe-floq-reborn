@@ -8,7 +8,7 @@ import { FieldOverlay } from "./field/FieldOverlay";
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
-import { EventBanner } from "@/components/EventBanner";
+import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { NearbyVenuesSheet } from "@/components/NearbyVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
@@ -252,21 +252,8 @@ export const FieldScreen = () => {
   return (
     <ErrorBoundary>
       <div className="relative h-svh w-full bg-background" {...handlers}>
-        {/* Event Banner - temporarily disabled for baseline */}
-        {currentEvent && showBanner && (
-          <div style={{ zIndex: 1000 }}>
-            <EventBanner
-              key={currentEvent.id}
-              eventId={currentEvent.id}
-              name={currentEvent.name}
-              vibe={currentEvent.vibe}
-              liveCount={undefined}
-              aiSummary={undefined}
-              onDetails={() => setDetailsOpen(true)}
-              onDismiss={() => setShowBanner(false)}
-            />
-          </div>
-        )}
+        {/* Place-aware Banner System */}
+        <BannerManager />
 
         {currentEvent && (
           <EventDetailsSheet

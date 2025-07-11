@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { BannerProvider } from "@/providers/BannerProvider";
 import { UsernameBanner } from "@/components/UsernameBanner";
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
@@ -22,7 +23,8 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
+        <BannerProvider>
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -40,7 +42,8 @@ const App = () => {
               onClose={() => setIsDebugPanelOpen(false)} 
             />
           </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </BannerProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
