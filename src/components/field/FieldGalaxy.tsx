@@ -20,6 +20,8 @@ export const FieldGalaxy = memo(({ zoom, className }: Props) => {
     const DPR = window.devicePixelRatio || 1;
     
     const resize = () => {
+      // Fix canvas scaling - clear transforms before applying new DPR
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       canvas.width = canvas.offsetWidth * DPR;
       canvas.height = canvas.offsetHeight * DPR;
       ctx.scale(DPR, DPR);
@@ -27,31 +29,38 @@ export const FieldGalaxy = memo(({ zoom, className }: Props) => {
     };
     
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const { width, height } = canvas;
+      ctx.clearRect(0, 0, width / DPR, height / DPR);
       
-      // Grid (debug)
-      ctx.strokeStyle = 'hsl(var(--border) / 0.06)';
-      ctx.lineWidth = 1;
-      const step = 64 * zoom;
-      
-      for (let x = 0; x < canvas.width; x += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      
-      for (let y = 0; y < canvas.height; y += step) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
+      // Hide grid at high zoom when it becomes too dense
+      if (zoom < 3) {
+        ctx.strokeStyle = 'hsl(var(--border) / 0.06)';
+        ctx.lineWidth = 1;
+        const step = 64 * zoom;
+        
+        // Optimize grid rendering - only draw visible lines
+        const canvasWidth = width / DPR;
+        const canvasHeight = height / DPR;
+        
+        for (let x = 0; x < canvasWidth; x += step) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvasHeight);
+          ctx.stroke();
+        }
+        
+        for (let y = 0; y < canvasHeight; y += step) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvasWidth, y);
+          ctx.stroke();
+        }
       }
       
       // Center dot
       ctx.fillStyle = 'hsl(var(--primary))';
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 4, 0, Math.PI * 2);
+      ctx.arc((width / DPR) / 2, (height / DPR) / 2, 4, 0, Math.PI * 2);
       ctx.fill();
     };
     
