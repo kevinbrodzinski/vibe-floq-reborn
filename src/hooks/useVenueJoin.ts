@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { pushAchievementEvent } from "@/lib/achievements/pushEvent";
 
 interface JoinOptions {
   // allow caller to override vibe if they like
@@ -43,6 +44,11 @@ export function useVenueJoin(venueId: string | null, lat: number | null, lng: nu
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["venue-details", venueId] });
       qc.invalidateQueries({ queryKey: ["presence-nearby"] });
+      
+      // Track venue check-in achievement
+      if (venueId) {
+        pushAchievementEvent('venue_checkin', { venue_id: venueId });
+      }
     },
   });
 

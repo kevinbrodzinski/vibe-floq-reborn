@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { track } from '@/lib/analytics';
+import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 
 export interface FriendRequest {
   user_id: string;
@@ -57,6 +58,10 @@ export function useFriendRequests() {
     onSuccess: (_, requesterId) => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
       queryClient.invalidateQueries({ queryKey: ['friends'] });
+      
+      // Track friend achievement
+      pushAchievementEvent('friend_added', { friend_id: requesterId });
+      
       toast({
         title: "Friend request accepted",
         description: "You are now friends!",

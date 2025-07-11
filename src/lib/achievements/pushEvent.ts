@@ -10,13 +10,26 @@ const ACHIEVEMENT_MAP: Record<string, { name: string; description: string; icon:
 
 export type AchievementEvent = 'friend_added' | 'vibe_logged' | 'venue_checkin';
 
+// Debouncing for vibe events to prevent spam
+const vibeEventDebounce = new Map<string, number>();
+const VIBE_DEBOUNCE_MS = 10_000; // 10 seconds between vibe events
+
 export async function pushAchievementEvent(
   event: AchievementEvent,
   payload: Record<string, any> = {}
 ) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.warn('Achievement event ignored: user not authenticated');
+      return;
+    }
+
+    // Validate payload for each event type
+    if (!validateEventPayload(event, payload)) {
+      console.warn(`Invalid payload for ${event}:`, payload);
+      return;
+    }
 
     switch (event) {
       case 'friend_added':
@@ -24,17 +37,44 @@ export async function pushAchievementEvent(
         break;
 
       case 'vibe_logged':
-        if (payload.vibe === 'social' && payload.duration_sec) {
+        if (payload.vibe === 'social' && payload.duration_sec > 0) {
+          // Debounce vibe events to prevent spam
+          const debounceKey = `${user.id}-vibe-${payload.vibe}`;
+          const lastEvent = vibeEventDebounce.get(debounceKey) || 0;
+          const now = Date.now();
+          
+          if (now - lastEvent < VIBE_DEBOUNCE_MS) {
+            console.debug('Vibe event debounced');
+            return;
+          }
+          
+          vibeEventDebounce.set(debounceKey, now);
           await maybeAward(user.id, 'social_vibe_master', payload.duration_sec);
         }
         break;
 
       case 'venue_checkin':
-        await maybeAward(user.id, 'explorer', 1);
+        if (payload.venue_id) {
+          await maybeAward(user.id, 'explorer', 1);
+        }
         break;
     }
   } catch (error) {
     console.error('Achievement event error:', error);
+    // Don't rethrow - achievements should never break app flow
+  }
+}
+
+function validateEventPayload(event: AchievementEvent, payload: Record<string, any>): boolean {
+  switch (event) {
+    case 'friend_added':
+      return true; // No additional payload required
+    case 'vibe_logged':
+      return payload.vibe && typeof payload.duration_sec === 'number' && payload.duration_sec > 0;
+    case 'venue_checkin':
+      return !!payload.venue_id;
+    default:
+      return false;
   }
 }
 

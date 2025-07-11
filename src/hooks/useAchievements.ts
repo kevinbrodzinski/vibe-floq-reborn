@@ -16,6 +16,33 @@ export interface Achievement {
   progress_percentage: number;
 }
 
+// Cache achievement catalogue to reduce DB calls
+let achievementCatalogueCache: any[] | null = null;
+let catalogueCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getCachedCatalogue() {
+  const now = Date.now();
+  
+  // Return cache if valid
+  if (achievementCatalogueCache && (now - catalogueCacheTime) < CACHE_DURATION) {
+    return achievementCatalogueCache;
+  }
+
+  // Fetch fresh data
+  const { data, error } = await supabase
+    .from('achievement_catalogue')
+    .select('*');
+
+  if (error) throw error;
+
+  // Update cache
+  achievementCatalogueCache = data || [];
+  catalogueCacheTime = now;
+  
+  return achievementCatalogueCache;
+}
+
 export function useAchievements() {
   const { user } = useAuth();
 
@@ -24,43 +51,44 @@ export function useAchievements() {
     enabled: !!user?.id,
     staleTime: 60_000, // 1 minute
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     queryFn: async (): Promise<Achievement[]> => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Get all achievements with user progress
-      const { data, error } = await supabase
-        .from('user_achievements')
-        .select(`
-          code,
-          progress,
-          earned_at,
-          achievement_catalogue (
-            code,
-            family,
-            name,
-            description,
-            icon,
-            goal,
-            metadata
-          )
-        `)
-        .eq('user_id', user.id);
+      try {
+        // Get user progress and cached catalogue in parallel
+        const [userProgressResult, allCatalogue] = await Promise.all([
+          supabase
+            .from('user_achievements')
+            .select(`
+              code,
+              progress,
+              earned_at,
+              achievement_catalogue (
+                code,
+                family,
+                name,
+                description,
+                icon,
+                goal,
+                metadata
+              )
+            `)
+            .eq('user_id', user.id),
+          getCachedCatalogue()
+        ]);
 
-      if (error) throw error;
+        if (userProgressResult.error) throw userProgressResult.error;
 
-      // Also get achievements user hasn't started yet
-      const { data: allCatalogue, error: catalogueError } = await supabase
-        .from('achievement_catalogue')
-        .select('*');
+        const data = userProgressResult.data;
 
-      if (catalogueError) throw catalogueError;
+        // Merge user progress with full catalogue
+        const userAchievementCodes = new Set(data?.map(a => a.code) || []);
+        const achievements: Achievement[] = [];
 
-      // Merge user progress with full catalogue
-      const userAchievementCodes = new Set(data?.map(a => a.code) || []);
-      const achievements: Achievement[] = [];
-
-      // Add achievements with progress
-      data?.forEach(userAchievement => {
+        // Add achievements with progress
+        data?.forEach(userAchievement => {
         const catalogue = userAchievement.achievement_catalogue;
         if (catalogue) {
           achievements.push({
@@ -98,16 +126,20 @@ export function useAchievements() {
         }
       });
 
-      return achievements.sort((a, b) => {
-        // Sort by: earned first, then by family, then by name
-        if (a.is_earned !== b.is_earned) {
-          return a.is_earned ? -1 : 1;
-        }
-        if (a.family !== b.family) {
-          return a.family.localeCompare(b.family);
-        }
-        return a.name.localeCompare(b.name);
-      });
+        return achievements.sort((a, b) => {
+          // Sort by: earned first, then by family, then by name
+          if (a.is_earned !== b.is_earned) {
+            return a.is_earned ? -1 : 1;
+          }
+          if (a.family !== b.family) {
+            return a.family.localeCompare(b.family);
+          }
+          return a.name.localeCompare(b.name);
+        });
+      } catch (error) {
+        console.error('Achievement fetch error:', error);
+        throw error;
+      }
     },
   });
 }

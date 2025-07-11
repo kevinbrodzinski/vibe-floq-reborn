@@ -2,6 +2,7 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useBucketedPresence } from './useBucketedPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
+import { useVibeSessionTracker } from './useVibeSessionTracker';
 import type { Vibe } from '@/types';
 
 interface OptimizedPresenceOptions {
@@ -27,6 +28,9 @@ export const useOptimizedPresence = ({
 }: OptimizedPresenceOptions): PresenceData => {
   const env = getEnvironmentConfig();
   const { people } = useBucketedPresence(lat, lng);
+  
+  // Track vibe sessions for achievements
+  useVibeSessionTracker(vibe, enabled && !!lat && !!lng);
   
   const lastUpdateRef = useRef<number>(0);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
