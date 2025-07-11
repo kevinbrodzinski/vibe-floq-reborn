@@ -28,13 +28,12 @@ interface VenueDetailsSheetProps {
 
 export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsSheetProps) {
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
-  const { data: socialData } = useEnhancedVenueDetails(venueId);
+  const { data: socialData, isLoading: isSocialLoading, error: socialError } = useEnhancedVenueDetails(venueId);
   const { lat, lng } = useGeolocation();
   const { settings } = useUserSettings();
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
-  const [useSocialPortal, setUseSocialPortal] = useState(false);
 
   // Handle browser back button
   useEffect(() => {
@@ -77,10 +76,12 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
-  // Use social portal as the default experience unless explicitly disabled
+  // Use social portal as default when data is ready and user hasn't disabled it
   const shouldUseSocialPortal = 
-    (settings?.privacy_settings?.always_immersive_venues !== false) &&
-    venue; // Only need a valid venue to show social portal
+    venue && 
+    !isSocialLoading && 
+    !socialError &&
+    (settings?.privacy_settings?.always_immersive_venues !== false);
 
   if (shouldUseSocialPortal) {
     return (
@@ -89,6 +90,22 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
         onOpenChange={onOpenChange} 
         venueId={venueId} 
       />
+    );
+  }
+
+  // Show loading state while social data is fetching
+  if (venue && isSocialLoading && settings?.privacy_settings?.always_immersive_venues !== false) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">Loading social data...</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     );
   }
 
@@ -128,15 +145,11 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                     <Users className="h-4 w-4" />
                     <span>{venue.live_count} here now</span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setUseSocialPortal(true)}
-                    className="h-6 px-2 text-xs"
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Social View
-                  </Button>
+                  {socialError && (
+                    <Badge variant="outline" className="text-xs text-orange-600">
+                      Enhanced view unavailable
+                    </Badge>
+                  )}
                 </div>
               </div>
 
