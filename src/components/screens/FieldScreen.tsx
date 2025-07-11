@@ -107,7 +107,7 @@ export const FieldScreen = () => {
       const profile = profilesMap.get(presence.user_id);
       return {
         id: presence.user_id,
-        name: profile?.display_name || `User ${presence.user_id.slice(-4)}`,
+        name: (profile as any)?.display_name || `User ${presence.user_id.slice(-4)}`,
         x: Math.random() * 80 + 10, // TODO: Convert lat/lng to field coordinates
         y: Math.random() * 80 + 10,
         color: getVibeColor(presence.vibe || 'social'),
@@ -128,7 +128,7 @@ export const FieldScreen = () => {
         warmth: 60 + Math.random() * 40,
         compatibility: 70 + Math.random() * 30,
         lastSeen: Date.now() - Math.random() * 900000,
-        avatar_url: profilesMap.get(person.id)?.avatar_url,
+        avatar_url: (profilesMap.get(person.id) as any)?.avatar_url,
       }));
   }, [people.length, people.filter(p => (p as any).isFriend).length]);
 

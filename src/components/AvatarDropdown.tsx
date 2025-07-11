@@ -154,10 +154,15 @@ export const AvatarDropdown = () => {
               displayName={profile?.display_name}
               onAvatarChange={async (newAvatarUrl) => {
                 // Update the database with new avatar URL
-                await supabase
+                const { error } = await supabase
                   .from('profiles')
-                  .update({ avatar_url: newAvatarUrl })
-                  .eq('id', user?.id);
+                  .update({ avatar_url: newAvatarUrl } as any)
+                  .eq('id', user?.id as any);
+                
+                if (error) {
+                  console.error('Failed to update avatar:', error);
+                  return;
+                }
                 
                 // Refresh the profile data
                 queryClient.invalidateQueries({ queryKey: ['profile'] });

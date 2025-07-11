@@ -35,17 +35,19 @@ export const useProfile = (userId: string | undefined) => {
 
   return useQuery({
     queryKey: ['profile', userId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Profile> => {
       if (!userId) throw new Error('User ID is required');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error('Profile not found');
+      
+      return data as Profile;
     },
     enabled: !!userId,
   });
@@ -74,17 +76,19 @@ export const useProfileByUsername = (username: string | undefined) => {
 
   return useQuery({
     queryKey: ['profile-by-username', username],
-    queryFn: async () => {
+    queryFn: async (): Promise<Profile> => {
       if (!username) throw new Error('Username is required');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error('Profile not found');
+      
+      return data as Profile;
     },
     enabled: !!username,
   });

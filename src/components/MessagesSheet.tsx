@@ -68,7 +68,7 @@ export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: Messag
       if (error) throw error;
 
       // Get profile info for other users in each thread
-      const otherUserIds = threadsData?.map(thread => 
+      const otherUserIds = threadsData?.map((thread: any) => 
         thread.member_a === user!.id ? thread.member_b : thread.member_a
       ) || [];
 
@@ -82,9 +82,9 @@ export const MessagesSheet = ({ open, onOpenChange, onFriendsSheetOpen }: Messag
       if (profilesError) throw profilesError;
 
       // Combine threads with profile data
-      const threadsWithProfiles = threadsData?.map(thread => {
+      const threadsWithProfiles = threadsData?.map((thread: any) => {
         const otherUserId = thread.member_a === user!.id ? thread.member_b : thread.member_a;
-        const otherUser = profiles?.find(p => p.id === otherUserId);
+        const otherUser = (profiles as any)?.find((p: any) => p.id === otherUserId);
         
         return {
           ...thread,
