@@ -237,7 +237,7 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locationReady={false} />
+          <FieldHeader locality="Locating..." />
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -268,10 +268,8 @@ export const FieldScreen = () => {
         
         {/* Header */}
         <FieldHeader 
-          locationReady={isLocationReady} 
-          currentLocation={location.error ? "Location unavailable" : "Current location"}
-          lastHeartbeat={lastHeartbeat}
-          style={{ zIndex: 50 }}
+          locality={location.error ? "Location unavailable" : "Current location"}
+          connectionLost={location.error !== null}
         />
 
         {/* Map canvas */}
