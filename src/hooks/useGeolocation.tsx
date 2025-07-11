@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface GeolocationState {
   lat: number | null;
@@ -16,6 +16,9 @@ export const useGeolocation = () => {
     loading: true,
     error: null,
   });
+  
+  const permissionChecked = useRef(false);
+  const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -26,6 +29,12 @@ export const useGeolocation = () => {
       }));
       return;
     }
+
+    // Prevent multiple permission requests
+    if (permissionChecked.current) {
+      return;
+    }
+    permissionChecked.current = true;
 
     const successHandler = (position: GeolocationPosition) => {
       setLocation({
@@ -38,32 +47,35 @@ export const useGeolocation = () => {
     };
 
     const errorHandler = (error: GeolocationPositionError) => {
+      let errorMessage = 'Location access denied';
+      if (error.code === error.PERMISSION_DENIED) {
+        errorMessage = 'Location permission denied';
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        errorMessage = 'Location unavailable';
+      } else if (error.code === error.TIMEOUT) {
+        errorMessage = 'Location request timeout';
+      }
+      
       setLocation(prev => ({
         ...prev,
         loading: false,
-        error: error.message,
+        error: errorMessage,
       }));
     };
 
-    // Get initial position
+    // Get initial position with safer options
     navigator.geolocation.getCurrentPosition(successHandler, errorHandler, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000, // Cache for 1 minute
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 300000, // 5 minutes cache
     });
 
-    // Watch position changes
-    const watchId = navigator.geolocation.watchPosition(
-      successHandler,
-      errorHandler,
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 30000, // Cache for 30 seconds
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   return location;

@@ -62,6 +62,9 @@ export const useUserSettings = () => {
 
   const { data: settings, isLoading, error } = useQuery({
     queryKey: ['user-settings', user?.id],
+    enabled: !!user?.id,
+    retry: 1,
+    staleTime: 60000, // 1 minute
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
@@ -71,7 +74,10 @@ export const useUserSettings = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('User settings error:', error);
+        throw error;
+      }
       
       // Return merged settings with defaults
       if (data) {
@@ -104,7 +110,6 @@ export const useUserSettings = () => {
         updated_at: new Date().toISOString(),
       } as UserSettings;
     },
-    enabled: !!user?.id,
   });
 
   const updateSettingsMutation = useMutation({

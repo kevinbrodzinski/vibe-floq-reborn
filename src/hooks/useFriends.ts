@@ -48,19 +48,23 @@ export function useFriends() {
   }
 
   // Real query for friends list using lean select
-  const { data: friendIds = [], isLoading } = useQuery({
+  const { data: friendIds = [], isLoading, error: friendsError } = useQuery({
     queryKey: ['friends', user?.id, OFFLINE_MODE],
     enabled: !!user?.id && !OFFLINE_MODE,
     staleTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: 1000,
     queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('friendships')
         .select('friend_id')
-        .eq('user_id', user!.id);
+        .eq('user_id', user.id);
       
       if (error) {
-        toast({ title: 'Could not load friends', variant: 'destructive' });
+        console.error('Friends query error:', error);
         throw error;
       }
       return (data ?? []).map(row => row.friend_id as string);
@@ -78,18 +82,21 @@ export function useFriends() {
   // 6.2 Prefetch friend profiles in one batched query
   const { data: profiles, isError: profilesError } = useQuery({
     queryKey: ['friend-profiles', stableCacheKey],
-    enabled: friendIds.length > 0 && !OFFLINE_MODE,
+    enabled: friendIds.length > 0 && !OFFLINE_MODE && !!user?.id,
     staleTime: 120_000, // 2 minutes
     refetchOnWindowFocus: false,
+    retry: 1,
     queryFn: async () => {
+      if (friendIds.length === 0) return [];
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_url')
         .in('id', friendIds.slice(0, 50));
       if (error) {
-        // Phase 1B Fix: Silent error telemetry without user-facing toasts
+        console.error('Profile prefetch error:', error);
         track('profile_prefetch_error', { msg: error.message });
-        return null; // Return null for better unknown state handling
+        return []; // Return empty array instead of null
       }
       return data || [];
     },
@@ -98,20 +105,18 @@ export function useFriends() {
   // Optimized friend set for O(1) lookups
   const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
 
-  // Phase 1B Fix: Handle null profiles gracefully with explicit null checks
-  if (profiles === null) {
-    // Silent degradation - render without profile data until retry
-    const safeFallback: any[] = [];
+  // Handle auth/loading states gracefully
+  if (!user?.id || isLoading || friendsError) {
     return {
-      friends: friendIds,
-      friendCount: friendIds.length,
-      profiles: safeFallback,
-      isLoading,
-      addFriend: async (targetUserId: string) => console.log('Mock: would add friend', targetUserId),
-      removeFriend: async (targetUserId: string) => console.log('Mock: would remove friend', targetUserId),
+      friends: [],
+      friendCount: 0,
+      profiles: [],
+      isLoading: isLoading || !user?.id,
+      addFriend: async () => {},
+      removeFriend: async () => {},
       isAddingFriend: false,
       isRemovingFriend: false,
-      isFriend: (userId: string) => friendsSet.has(userId),
+      isFriend: () => false,
     };
   }
 
