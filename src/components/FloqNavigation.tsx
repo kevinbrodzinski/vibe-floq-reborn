@@ -26,16 +26,15 @@ export const FloqNavigation = () => {
             onMouseEnter={() => prefetchTab(id)}
             onTouchStart={() => prefetchTab(id)}
             aria-label={`Navigate to ${label} section`}
-            className={({ isActive }) =>
-              `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
-                isActive
-                  ? "bg-gradient-primary text-primary-foreground shadow-lg scale-110 animate-pulse-glow"
-                  : "text-white/60 hover:text-foreground hover:bg-secondary/50"
-              }`
-            }
           >
             {({ isActive }) => (
-              <>
+              <div
+                className={`flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
+                  isActive
+                    ? "bg-gradient-primary text-primary-foreground shadow-lg scale-110 animate-pulse-glow"
+                    : "text-white/60 hover:text-foreground hover:bg-secondary/50"
+                }`}
+              >
                 <Icon 
                   size={24} 
                   className={`mb-1 transition-transform ${
@@ -44,7 +43,7 @@ export const FloqNavigation = () => {
                   aria-hidden="true" 
                 />
                 <span className="text-xs font-medium">{label}</span>
-              </>
+              </div>
             )}
           </NavLink>
         ))}
