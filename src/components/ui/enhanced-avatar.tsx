@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAvatarUrl, getAvatarBlurUrl, getInitials, AVATAR_SIZES, type AvatarSize } from '@/lib/avatar';
+import { getInitials, AVATAR_SIZES, type AvatarSize } from '@/lib/avatar';
+import { useAvatarUrl, useAvatarBlurUrl } from '@/hooks/useAvatarUrl';
 import { useLazyImageLoading } from '@/hooks/useLazyImageLoading';
 import { cn } from '@/lib/utils';
 
@@ -26,8 +27,8 @@ export const EnhancedAvatar = ({
   const imgRef = useRef<HTMLImageElement>(null);
 
   const pixelSize = typeof size === 'number' ? size : AVATAR_SIZES[size];
-  const avatarUrl = getAvatarUrl(avatarPath, size);
-  const blurUrl = enableBlur ? getAvatarBlurUrl(avatarPath) : undefined;
+  const avatarUrl = useAvatarUrl(avatarPath, size);
+  const blurUrl = useAvatarBlurUrl(avatarPath);
   
   const { src, isVisible } = useLazyImageLoading(priority ? avatarUrl : avatarUrl, {
     threshold: 0.1,

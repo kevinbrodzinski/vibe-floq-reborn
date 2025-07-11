@@ -91,33 +91,27 @@ export const getSignedAvatarUrl = async (
 };
 
 /**
- * Pre-warm image for faster loading
+ * Pre-warm image for faster loading (optimized for public bucket)
  */
 export const preWarmImage = (url: string) => {
   if (typeof window === 'undefined') return;
   
-  // Skip pre-warming for unsigned storage URLs to prevent 400 errors
-  if (url.includes('.supabase.co/storage/') && !url.includes('signed')) {
-    console.debug('Skipping pre-warm of unsigned storage URL:', url);
-    return;
-  }
+  // Use browser-native preloading for public URLs - no manual image loading needed
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'image';
+  link.href = url;
+  link.crossOrigin = 'anonymous';
   
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.loading = 'eager';
-  img.decoding = 'async';
+  // Add to document head temporarily
+  document.head.appendChild(link);
   
-  // Handle load success
-  img.onload = () => {
-    console.debug('Avatar pre-warmed:', url);
-  };
-  
-  // Handle errors silently
-  img.onerror = () => {
-    console.debug('Avatar pre-warm failed:', url);
-  };
-  
-  img.src = url;
+  // Clean up after a short delay
+  setTimeout(() => {
+    if (link.parentNode) {
+      link.parentNode.removeChild(link);
+    }
+  }, 1000);
 };
 
 /**
