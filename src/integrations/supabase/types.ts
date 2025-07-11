@@ -949,6 +949,10 @@ export type Database = {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
       }
+      accept_friend_request: {
+        Args: { source: string }
+        Returns: undefined
+      }
       add_friend: {
         Args: { target: string }
         Returns: undefined
