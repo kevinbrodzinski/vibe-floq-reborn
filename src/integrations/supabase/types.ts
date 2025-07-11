@@ -342,6 +342,13 @@ export type Database = {
             foreignKeyName: "place_banners_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -512,6 +519,114 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_feed_posts: {
+        Row: {
+          content_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          location: unknown
+          mood_tags: string[] | null
+          reaction_count: number | null
+          storage_path: string | null
+          text_content: string | null
+          user_id: string
+          venue_id: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+          view_count: number | null
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          location: unknown
+          mood_tags?: string[] | null
+          reaction_count?: number | null
+          storage_path?: string | null
+          text_content?: string | null
+          user_id: string
+          venue_id: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+          view_count?: number | null
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          location?: unknown
+          mood_tags?: string[] | null
+          reaction_count?: number | null
+          storage_path?: string | null
+          text_content?: string | null
+          user_id?: string
+          venue_id?: string
+          vibe?: Database["public"]["Enums"]["vibe_enum"]
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_feed_posts_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_live_presence: {
+        Row: {
+          checked_in_at: string
+          expires_at: string
+          last_heartbeat: string
+          session_duration: unknown | null
+          user_id: string
+          venue_id: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Insert: {
+          checked_in_at?: string
+          expires_at?: string
+          last_heartbeat?: string
+          session_duration?: unknown | null
+          user_id: string
+          venue_id: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Update: {
+          checked_in_at?: string
+          expires_at?: string
+          last_heartbeat?: string
+          session_duration?: unknown | null
+          user_id?: string
+          venue_id?: string
+          vibe?: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "venue_live_presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           created_at: string | null
@@ -624,6 +739,13 @@ export type Database = {
             foreignKeyName: "vibes_now_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
+            referencedRelation: "venue_social_metrics"
+            referencedColumns: ["venue_id"]
+          },
+          {
+            foreignKeyName: "vibes_now_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -696,6 +818,23 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venue_social_metrics: {
+        Row: {
+          active_floq_count: number | null
+          avg_session_minutes: number | null
+          dominant_vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          energy_level: number | null
+          last_updated: string | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+          people_count: number | null
+          total_floq_members: number | null
+          venue_id: string | null
+          vibe_diversity_score: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -1579,6 +1718,10 @@ export type Database = {
         }[]
       }
       refresh_leaderboard_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_venue_social_metrics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
