@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -53,6 +54,9 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
             <UserPlus className="w-5 h-5" />
             Add friend
           </DialogTitle>
+          <DialogDescription>
+            Search for users by username or display name to send friend requests.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

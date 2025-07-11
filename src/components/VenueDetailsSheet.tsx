@@ -76,13 +76,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
-  console.log('VenueDetailsSheet debug:', {
-    venue: !!venue,
-    isSocialLoading,
-    socialError: socialError?.message,
-    settings: settings?.privacy_settings?.always_immersive_venues,
-    socialData: !!socialData
-  });
+  // Debug logging removed for production
 
   // Use social portal as default when data is ready and user hasn't disabled it
   const shouldUseSocialPortal = 

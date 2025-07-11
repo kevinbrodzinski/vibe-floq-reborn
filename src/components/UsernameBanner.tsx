@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { UsernameStep } from '@/components/UsernameStep';
 import { useUsername } from '@/hooks/useUsername';
 
@@ -53,6 +53,9 @@ export const UsernameBanner = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Choose your username</DialogTitle>
+            <DialogDescription>
+              Create a unique username that others can use to find and connect with you.
+            </DialogDescription>
           </DialogHeader>
           <UsernameStep 
             onComplete={() => setIsOpen(false)}

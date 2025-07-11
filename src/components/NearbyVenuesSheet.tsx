@@ -156,7 +156,6 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
             </Button>
             <Button className="flex-1" onClick={() => {
               // Navigate to full venues view
-              console.log('Navigate to full venues view');
             }}>
               <Users className="w-4 h-4 mr-2" />
               View All

@@ -66,7 +66,7 @@ export const FieldHeader = ({
             timestamp: new Date().toISOString(),
             test: true
           });
-          console.log('PostHog test event sent!');
+          // Analytics event sent
         }}
       >
         floq

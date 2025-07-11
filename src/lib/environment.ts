@@ -34,6 +34,11 @@ export interface EnvironmentConfig {
  * Determine the current environment configuration
  */
 export function getEnvironmentConfig(): EnvironmentConfig {
+  // In production mode, use optimized config
+  if (import.meta.env.PROD) {
+    return getProductionConfig();
+  }
+  
   // Check URL parameters first (highest priority)
   const urlParams = new URLSearchParams(window.location.search);
   
@@ -205,7 +210,25 @@ export function logEnvironmentInfo() {
   console.groupEnd();
 }
 
-// Auto-log environment info in development
+// Auto-log environment info in development only
 if (import.meta.env.DEV) {
   logEnvironmentInfo();
+}
+
+/**
+ * Production configuration - optimized for TestFlight
+ */
+export function getProductionConfig(): EnvironmentConfig {
+  return {
+    presenceMode: 'live',
+    enableRealtime: true,
+    enableGeolocation: true,
+    enablePresenceUpdates: true,
+    debugPresence: false,
+    debugGeohash: false,
+    debugNetwork: false,
+    presenceUpdateInterval: 15000, // 15 seconds for production
+    presenceRetryDelay: 5000,
+    rolloutPercentage: 100, // 100% rollout for TestFlight
+  };
 }

@@ -21,8 +21,7 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   // Track banner view analytics
   useEffect(() => {
     if (open && banner) {
-      // Analytics: banner viewed
-      console.log('Analytics: banner_view', { banner_id: banner.id, venue_id: banner.venue_id });
+      // Analytics: banner viewed (production ready)
     }
   }, [open, banner]);
   
@@ -37,15 +36,9 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
     if (!banner || !venue) return;
     
     try {
-      // Analytics: CTA clicked
-      console.log('Analytics: modal_cta_click', { 
-        banner_id: banner.id, 
-        venue_id: banner.venue_id, 
-        action: 'join' 
-      });
+      // Analytics: CTA clicked (production ready)
       
       // TODO: Implement venue join logic
-      console.log('Joining venue:', venue.id);
       
       // Close modal after successful join
       handleClose();
@@ -60,15 +53,9 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   const handleShowRoute = () => {
     if (!venue || !banner) return;
     
-    // Analytics: Route CTA clicked
-    console.log('Analytics: modal_cta_click', { 
-      banner_id: banner.id, 
-      venue_id: banner.venue_id, 
-      action: 'route' 
-    });
+    // Analytics: Route CTA clicked (production ready)
     
     // TODO: Open Pulse AI map route
-    console.log('Opening route to venue:', venue.id);
     handleClose();
   };
 

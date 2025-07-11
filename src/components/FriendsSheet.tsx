@@ -57,7 +57,6 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
   const handleNearbyBadgeClick = () => {
     // Scroll to friends list or highlight nearby friends
     // For now, we'll just close the sheet and potentially show on map
-    console.log('Nearby friends:', friendsNearby);
   };
 
   return (

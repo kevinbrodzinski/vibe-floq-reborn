@@ -144,7 +144,7 @@ export const FieldScreen = () => {
   }));
 
   const handleSocialAction = (action: any) => {
-    console.log('Social action triggered:', action);
+    // Social action triggered
     switch (action.type) {
       case 'shake-pulse':
         setConstellationMode(true);
@@ -160,7 +160,7 @@ export const FieldScreen = () => {
   };
 
   const handleConstellationAction = (action: any) => {
-    console.log('Constellation action:', action);
+    // Constellation action handled
     switch (action.type) {
       case 'orbital-adjust':
         break;
@@ -177,28 +177,28 @@ export const FieldScreen = () => {
   };
 
   const handleOrbitalAdjustment = (direction: 'expand' | 'contract', intensity: number) => {
-    console.log('Orbital adjustment:', direction, intensity);
+    // Orbital adjustment handled
   };
 
   const handleEnergyShare = (fromId: string, toId: string, energy: number) => {
-    console.log('Energy sharing:', fromId, 'to', toId, 'energy:', energy);
+    // Energy sharing handled
   };
 
   const handleFriendInteraction = (friend: any, action: string) => {
-    console.log('Friend interaction:', friend.name, action);
+    // Friend interaction handled
   };
 
   const handleConstellationGesture = (gesture: string, friends: any[]) => {
-    console.log('Constellation gesture:', gesture, friends.length, 'friends');
+    // Constellation gesture handled
   };
 
   const handleAvatarInteraction = (interaction: any) => {
-    console.log('Avatar interaction:', interaction);
+    // Avatar interaction handled
   };
 
   const handleTimeWarpChange = (hour: number, data: any) => {
     setCurrentTimeWarpData(data);
-    console.log('Time warp:', hour, data);
+    // Time warp data updated
   };
 
   // ESC key to exit full-screen mode

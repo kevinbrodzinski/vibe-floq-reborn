@@ -220,7 +220,6 @@ export function FloqAutoMatchCard({ userId, venueId, onCreateFloq }: FloqAutoMat
           className="w-full gradient-primary text-white"
           onClick={() => {
             // Handle starting conversations or creating floqs
-            console.log('Starting social interactions');
           }}
         >
           <MessageCircle className="w-4 h-4 mr-2" />
