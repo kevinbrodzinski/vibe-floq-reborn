@@ -44,7 +44,11 @@ export class ErrorBoundary extends Component<Props, State> {
             We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
           </p>
           <Button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }}
             variant="outline"
             className="gap-2"
           >

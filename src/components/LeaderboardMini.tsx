@@ -34,7 +34,8 @@ const LeaderboardMiniContent = () => {
             innerRadius="70%" 
             outerRadius="100%" 
             data={chartData}
-            aria-label={`You are in the top ${data.percentile}% of players`}
+            role="img"
+            aria-label={`Leaderboard position: You are in the top ${data.percentile}% of ${data.total_users.toLocaleString()} players`}
           >
             <RadialBar
               background

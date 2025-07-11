@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
 
 export interface LeaderboardStats {
   user_rank: number | null;
@@ -8,13 +9,13 @@ export interface LeaderboardStats {
 }
 
 export function useLeaderboardStats() {
+  const { user } = useAuth();
+  
   return useQuery<LeaderboardStats>({
-    queryKey: ['leaderboard-stats'],
+    queryKey: ['leaderboard-stats', user?.id],
     staleTime: 60_000, // 1 min
+    enabled: !!user, // Only run query when user is authenticated
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Early return for unauthenticated users instead of throwing
       if (!user) {
         return {
           user_rank: null,
