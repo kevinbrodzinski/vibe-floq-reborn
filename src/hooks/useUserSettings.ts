@@ -81,9 +81,9 @@ export const useUserSettings = () => {
       
       // Return merged settings with defaults
       if (data) {
-        const notificationPrefs = (data.notification_preferences as any) || {};
-        const privacySettings = (data.privacy_settings as any) || {};
-        const themePrefs = (data.theme_preferences as any) || {};
+        const notificationPrefs = (data.notification_preferences as Record<string, any>) || {};
+        const privacySettings = (data.privacy_settings as Record<string, any>) || {};
+        const themePrefs = (data.theme_preferences as Record<string, any>) || {};
         
         return {
           ...data,

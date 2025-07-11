@@ -23,9 +23,9 @@ export function PresenceSettings() {
   }
 
   const { privacy_settings } = settings;
-  const isLocationSharing = privacy_settings.location_sharing;
-  const broadcastRadius = privacy_settings.broadcast_radius;
-  const batterySaveMode = privacy_settings.battery_save_mode;
+  const isLocationSharing = privacy_settings?.location_sharing ?? true;
+  const broadcastRadius = privacy_settings?.broadcast_radius ?? 500;
+  const batterySaveMode = privacy_settings?.battery_save_mode ?? false;
 
   const handleLocationSharingToggle = (enabled: boolean) => {
     updatePrivacySetting('location_sharing', enabled);
