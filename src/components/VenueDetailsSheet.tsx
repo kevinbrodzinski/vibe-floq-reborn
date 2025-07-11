@@ -81,7 +81,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const shouldUseSocialPortal = 
     settings?.privacy_settings?.always_immersive_venues ||
     useSocialPortal ||
-    (socialData && socialData.people_count > 3);
+    (socialData && socialData.people_count >= 0); // Temporarily lowered for testing
 
   if (shouldUseSocialPortal) {
     return (
