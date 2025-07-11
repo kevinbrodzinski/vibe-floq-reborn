@@ -342,13 +342,6 @@ export type Database = {
             foreignKeyName: "place_banners_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "place_banners_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -570,13 +563,6 @@ export type Database = {
             foreignKeyName: "venue_feed_posts_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "venue_feed_posts_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -611,13 +597,6 @@ export type Database = {
           vibe?: Database["public"]["Enums"]["vibe_enum"]
         }
         Relationships: [
-          {
-            foreignKeyName: "venue_live_presence_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
           {
             foreignKeyName: "venue_live_presence_venue_id_fkey"
             columns: ["venue_id"]
@@ -739,13 +718,6 @@ export type Database = {
             foreignKeyName: "vibes_now_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
-            referencedRelation: "venue_social_metrics"
-            referencedColumns: ["venue_id"]
-          },
-          {
-            foreignKeyName: "vibes_now_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
             referencedRelation: "venues"
             referencedColumns: ["id"]
           },
@@ -818,23 +790,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      venue_social_metrics: {
-        Row: {
-          active_floq_count: number | null
-          avg_session_minutes: number | null
-          dominant_vibe: Database["public"]["Enums"]["vibe_enum"] | null
-          energy_level: number | null
-          last_updated: string | null
-          lat: number | null
-          lng: number | null
-          name: string | null
-          people_count: number | null
-          total_floq_members: number | null
-          venue_id: string | null
-          vibe_diversity_score: number | null
-        }
-        Relationships: []
       }
     }
     Functions: {
@@ -1003,6 +958,10 @@ export type Database = {
         Args: { _user: string; _code: string; _increment: number }
         Returns: boolean
       }
+      blhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       box: {
         Args: { "": unknown } | { "": unknown }
         Returns: unknown
@@ -1046,6 +1005,10 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      cleanup_expired_venue_data: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_old_vibes_logs: {
         Args: Record<PropertyKey, never>
@@ -2883,6 +2846,25 @@ export type Database = {
           new_srid_in: number
         }
         Returns: string
+      }
+      upsert_venue_presence_smart: {
+        Args: {
+          _venue_id: string
+          _user_id: string
+          _vibe: Database["public"]["Enums"]["vibe_enum"]
+          _heartbeat_ts?: string
+        }
+        Returns: boolean
+      }
+      upsert_vibes_now_smart: {
+        Args: {
+          _user_id: string
+          _vibe: Database["public"]["Enums"]["vibe_enum"]
+          _location: unknown
+          _venue_id?: string
+          _visibility?: string
+        }
+        Returns: boolean
       }
       username_available: {
         Args: { u: string }
