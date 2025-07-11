@@ -96,6 +96,12 @@ export const getSignedAvatarUrl = async (
 export const preWarmImage = (url: string) => {
   if (typeof window === 'undefined') return;
   
+  // Skip pre-warming for unsigned storage URLs to prevent 400 errors
+  if (url.includes('.supabase.co/storage/') && !url.includes('signed')) {
+    console.debug('Skipping pre-warm of unsigned storage URL:', url);
+    return;
+  }
+  
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.loading = 'eager';

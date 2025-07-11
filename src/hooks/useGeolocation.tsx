@@ -73,6 +73,26 @@ export const useGeolocation = () => {
         hasPermission: true,
       });
       permissionChecked.current = false; // Allow future requests
+      
+      // Set up automatic refresh every 30 seconds if tab is visible
+      if (document.visibilityState === 'visible') {
+        setTimeout(() => {
+          if (document.visibilityState === 'visible' && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setLocation(prev => ({
+                  ...prev,
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy,
+                }));
+              },
+              () => {}, // Ignore errors on auto-refresh
+              { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+            );
+          }
+        }, 30000);
+      }
     };
 
     const errorHandler = (error: GeolocationPositionError) => {

@@ -76,16 +76,25 @@ export function useFriends() {
         const { error } = await supabase.rpc('add_friend', {
           target: targetUserId
         });
-        if (error) throw error;
+        if (error) {
+          // Log the error for debugging but don't crash the UI
+          console.error('[add_friend] RPC error:', error);
+          toast({
+            title: "Could not add friend",
+            description: "Please try again later",
+            variant: 'destructive',
+          });
+          return;
+        }
       } catch (error: any) {
-        // Handle specific error cases gracefully
-        if (error.message?.includes('already friends')) {
-          throw new Error('Already friends with this user');
-        }
-        if (error.message?.includes('user not found')) {
-          throw new Error('User not found');
-        }
-        throw error;
+        // Handle network/connection errors gracefully
+        console.error('[add_friend] Network error:', error);
+        toast({
+          title: "Connection error", 
+          description: "Check your internet connection and try again",
+          variant: 'destructive',
+        });
+        return;
       }
     },
     onSuccess: () => {
@@ -100,13 +109,9 @@ export function useFriends() {
       }
     },
     onError: (error: any) => {
+      // Additional fallback for any errors that slip through
       if (!OFFLINE_MODE) {
-        console.warn('Add friend error:', error);
-        toast({
-          title: "Failed to add friend",
-          description: error.message || "Please try again later",
-          variant: 'destructive',
-        });
+        console.warn('Add friend mutation error:', error);
       }
     },
   });
@@ -119,13 +124,25 @@ export function useFriends() {
         const { error } = await supabase.rpc('remove_friend', {
           target: targetUserId
         });
-        if (error) throw error;
-      } catch (error: any) {
-        // Handle specific error cases gracefully
-        if (error.message?.includes('not friends')) {
-          throw new Error('Not currently friends with this user');
+        if (error) {
+          // Log the error for debugging but don't crash the UI
+          console.error('[remove_friend] RPC error:', error);
+          toast({
+            title: "Could not remove friend",
+            description: "Please try again later",
+            variant: 'destructive',
+          });
+          return;
         }
-        throw error;
+      } catch (error: any) {
+        // Handle network/connection errors gracefully
+        console.error('[remove_friend] Network error:', error);
+        toast({
+          title: "Connection error",
+          description: "Check your internet connection and try again", 
+          variant: 'destructive',
+        });
+        return;
       }
     },
     onSuccess: () => {
@@ -138,13 +155,9 @@ export function useFriends() {
       }
     },
     onError: (error: any) => {
+      // Additional fallback for any errors that slip through
       if (!OFFLINE_MODE) {
-        console.warn('Remove friend error:', error);
-        toast({
-          title: "Failed to remove friend",
-          description: error.message || "Please try again later",
-          variant: 'destructive',
-        });
+        console.warn('Remove friend mutation error:', error);
       }
     },
   });
