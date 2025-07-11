@@ -18,6 +18,7 @@ export interface UserSettings {
     profile_visibility: 'public' | 'friends' | 'private';
     broadcast_radius: number;
     battery_save_mode: boolean;
+    always_immersive_venues: boolean;
   };
   theme_preferences: {
     dark_mode: boolean;
@@ -42,6 +43,7 @@ const DEFAULT_PRIVACY_SETTINGS = {
   profile_visibility: 'public' as const,
   broadcast_radius: 500,
   battery_save_mode: false,
+  always_immersive_venues: false,
 };
 
 const DEFAULT_THEME_PREFERENCES = {

@@ -16,6 +16,7 @@ import { useEnhancedVenueDetails } from "@/hooks/useEnhancedVenueDetails";
 import { vibeEmoji } from "@/utils/vibe";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { VenueSocialPortal } from "@/components/VenueSocialPortal";
 
@@ -29,6 +30,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
   const { data: socialData } = useEnhancedVenueDetails(venueId);
   const { lat, lng } = useGeolocation();
+  const { settings } = useUserSettings();
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
@@ -75,10 +77,13 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
-  // Use social portal if we have enhanced data and multiple people
-  const shouldUseSocialPortal = socialData && socialData.people_count > 3;
+  // Use social portal based on user preference or crowd size
+  const shouldUseSocialPortal = 
+    settings?.privacy_settings?.always_immersive_venues ||
+    useSocialPortal ||
+    (socialData && socialData.people_count > 3);
 
-  if (shouldUseSocialPortal || useSocialPortal) {
+  if (shouldUseSocialPortal) {
     return (
       <VenueSocialPortal 
         open={open} 
