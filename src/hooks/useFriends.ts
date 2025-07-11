@@ -12,9 +12,9 @@ export function useFriends() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Real query for friends list using lean select
-  const { data: friendIds = [], isLoading, error: friendsError } = useQuery({
-    queryKey: ['friends', user?.id, OFFLINE_MODE],
+  // Optimized query using RPC function for friends with profile data
+  const { data: friendsWithProfile = [], isLoading, error: friendsError } = useQuery({
+    queryKey: ['friends-with-profile', user?.id, OFFLINE_MODE],
     enabled: !!user?.id && !OFFLINE_MODE,
     staleTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: false,
@@ -23,49 +23,35 @@ export function useFriends() {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
-        .from('friendships')
-        .select('friend_id')
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.rpc('get_friends_with_profile');
       
       if (error) {
-        console.error('Friends query error:', error);
+        console.error('Friends with profile query error:', error);
         throw error;
       }
-      return (data ?? []).map(row => row.friend_id as string);
+      return data ?? [];
     },
   });
 
-  // Phase 1B Fix: Synchronous cache key with simple truncation
-  const stableCacheKey = useMemo(() => {
-    const keyRaw = [...friendIds].sort().join(',');
-    return friendIds.length > 200 
-      ? keyRaw.slice(0, 48) + '...' + keyRaw.slice(-48) 
-      : keyRaw;
-  }, [friendIds]);
+  // Extract friend IDs for compatibility
+  const friendIds = useMemo(() => 
+    friendsWithProfile.map(friend => friend.friend_id), 
+    [friendsWithProfile]
+  );
 
-  // 6.2 Prefetch friend profiles in one batched query
-  const { data: profiles, isError: profilesError } = useQuery({
-    queryKey: ['friend-profiles', stableCacheKey],
-    enabled: friendIds.length > 0 && !OFFLINE_MODE && !!user?.id,
-    staleTime: 120_000, // 2 minutes
-    refetchOnWindowFocus: false,
-    retry: 1,
-    queryFn: async () => {
-      if (friendIds.length === 0) return [];
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_url')
-        .in('id', friendIds.slice(0, 50));
-      if (error) {
-        console.error('Profile prefetch error:', error);
-        track('profile_prefetch_error', { msg: error.message });
-        return []; // Return empty array instead of null
-      }
-      return data || [];
-    },
-  }) as { data: any[] | null, isError: boolean };
+  // Profiles are already included in the RPC result
+  const profiles = useMemo(() => 
+    friendsWithProfile.map(friend => ({
+      id: friend.friend_id,
+      display_name: friend.display_name,
+      avatar_url: friend.avatar_url,
+      username: friend.username,
+      bio: friend.bio
+    })), 
+    [friendsWithProfile]
+  );
+
+  const profilesError = false; // No separate profiles query
 
   // Real mutations using Supabase RPC functions
   const addFriend = useMutation({
@@ -99,7 +85,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
         toast({
           title: "Friend added",
           description: "You are now friends!",
@@ -147,7 +133,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
         toast({
           title: "Friend removed",
           description: "This person is no longer your friend.",

@@ -851,6 +851,19 @@ export type Database = {
           },
         ]
       }
+      v_friends_with_profile: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          display_name: string | null
+          friend_id: string | null
+          friend_since: string | null
+          friendship_created_at: string | null
+          friendship_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -1419,6 +1432,19 @@ export type Database = {
           vibe_score: number
           live_count: number
           check_ins: number
+        }[]
+      }
+      get_friends_with_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          friendship_id: string
+          friend_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          bio: string
+          friend_since: string
+          friendship_created_at: string
         }[]
       }
       get_nearby_presence: {
