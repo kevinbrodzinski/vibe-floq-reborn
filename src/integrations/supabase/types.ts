@@ -306,6 +306,47 @@ export type Database = {
         }
         Relationships: []
       }
+      place_banners: {
+        Row: {
+          channel: string | null
+          created_at: string | null
+          cta_type: string
+          expires_at: string
+          headline: string
+          id: string
+          metadata: Json | null
+          venue_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string | null
+          cta_type?: string
+          expires_at?: string
+          headline: string
+          id?: string
+          metadata?: Json | null
+          venue_id: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string | null
+          cta_type?: string
+          expires_at?: string
+          headline?: string
+          id?: string
+          metadata?: Json | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_banners_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -879,6 +920,16 @@ export type Database = {
           p_visibility?: string
           p_title?: string
           p_invitees?: string[]
+        }
+        Returns: string
+      }
+      create_place_banner: {
+        Args: {
+          _venue_id: string
+          _headline: string
+          _cta_type?: string
+          _ttl_secs?: number
+          _metadata?: Json
         }
         Returns: string
       }
