@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { MapPin, Users, Info, Navigation, Plus } from "lucide-react";
+import { MapPin, Users, Info, Navigation, Plus, Sparkles } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVenueDetails } from "@/hooks/useVenueDetails";
+import { useEnhancedVenueDetails } from "@/hooks/useEnhancedVenueDetails";
 import { vibeEmoji } from "@/utils/vibe";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
+import { VenueSocialPortal } from "@/components/VenueSocialPortal";
 
 interface VenueDetailsSheetProps {
   open: boolean;
@@ -25,10 +27,12 @@ interface VenueDetailsSheetProps {
 
 export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsSheetProps) {
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
+  const { data: socialData } = useEnhancedVenueDetails(venueId);
   const { lat, lng } = useGeolocation();
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  const [useSocialPortal, setUseSocialPortal] = useState(false);
 
   // Handle browser back button
   useEffect(() => {
@@ -71,6 +75,19 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
     }
   };
 
+  // Use social portal if we have enhanced data and multiple people
+  const shouldUseSocialPortal = socialData && socialData.people_count > 3;
+
+  if (shouldUseSocialPortal || useSocialPortal) {
+    return (
+      <VenueSocialPortal 
+        open={open} 
+        onOpenChange={onOpenChange} 
+        venueId={venueId} 
+      />
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
@@ -102,9 +119,22 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>{venue.live_count} here now</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>{venue.live_count} here now</span>
+                  </div>
+                  {venue.live_count > 3 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setUseSocialPortal(true)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      Social View
+                    </Button>
+                  )}
                 </div>
               </div>
 
