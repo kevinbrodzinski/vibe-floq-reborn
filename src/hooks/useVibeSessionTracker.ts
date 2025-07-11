@@ -2,12 +2,40 @@ import { useEffect, useRef } from 'react';
 import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 import type { Vibe } from '@/types';
 
-// Track vibe sessions for achievement progress
-const vibeSessionTracker = new Map<string, {
+// Track vibe sessions for achievement progress with localStorage persistence
+const SESSION_STORAGE_KEY = 'vibe_sessions';
+
+interface VibeSession {
   vibe: Vibe;
   startTime: number;
   lastUpdate: number;
-}>();
+}
+
+// Load sessions from localStorage
+function loadSessions(): Map<string, VibeSession> {
+  try {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      const data = JSON.parse(stored);
+      return new Map(Object.entries(data));
+    }
+  } catch (error) {
+    console.warn('Failed to load vibe sessions:', error);
+  }
+  return new Map();
+}
+
+// Save sessions to localStorage
+function saveSessions(sessions: Map<string, VibeSession>) {
+  try {
+    const data = Object.fromEntries(sessions);
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to save vibe sessions:', error);
+  }
+}
+
+const vibeSessionTracker = loadSessions();
 
 export function useVibeSessionTracker(vibe: Vibe, enabled: boolean = true) {
   const sessionId = useRef<string | null>(null);
@@ -60,6 +88,7 @@ function startVibeSession(sessionId: string, vibe: Vibe) {
     lastUpdate: now
   });
   
+  saveSessions(vibeSessionTracker);
   console.debug(`Started vibe session: ${vibe}`, sessionId);
 }
 
@@ -68,6 +97,7 @@ function updateVibeSession(sessionId: string) {
   if (!session) return;
 
   session.lastUpdate = Date.now();
+  saveSessions(vibeSessionTracker);
   console.debug(`Updated vibe session: ${session.vibe}`, sessionId);
 }
 
@@ -91,4 +121,5 @@ function endVibeSession(sessionId: string) {
   }
 
   vibeSessionTracker.delete(sessionId);
+  saveSessions(vibeSessionTracker);
 }
