@@ -16,8 +16,8 @@ export const FloqNavigation = () => {
   const { setTab } = useActiveTab();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 z-30">
-      <div className="flex justify-around items-center py-2 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 bg-black/50 backdrop-blur-xl border-t border-white/10 z-30 pb-safe-bottom">
+      <div className="flex justify-around items-center py-2 px-2 h-16">
         {TABS.map(({ id, label, Icon }) => (
           <NavLink
             key={id}
@@ -30,12 +30,22 @@ export const FloqNavigation = () => {
               `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
                 isActive
                   ? "bg-gradient-primary text-primary-foreground shadow-lg scale-110 animate-pulse-glow"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  : "text-white/60 hover:text-foreground hover:bg-secondary/50"
               }`
             }
           >
-            <Icon size={20} className="mb-1" aria-hidden="true" />
-            <span className="text-xs font-medium">{label}</span>
+            {({ isActive }) => (
+              <>
+                <Icon 
+                  size={24} 
+                  className={`mb-1 transition-transform ${
+                    isActive ? "text-primary scale-110" : "text-white/60"
+                  }`} 
+                  aria-hidden="true" 
+                />
+                <span className="text-xs font-medium">{label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>

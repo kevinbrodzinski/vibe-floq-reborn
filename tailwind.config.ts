@@ -61,6 +61,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				vibe: {
+					chill: '200 70% 60%',
+					hype: '280 70% 60%',
+					romantic: '340 70% 65%',
+					social: '30 70% 60%',
+					flowing: '200 70% 60%',
+					open: '120 70% 60%'
 				}
 			},
 			backgroundImage: {
