@@ -124,6 +124,6 @@ export function AchievementBadge({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
