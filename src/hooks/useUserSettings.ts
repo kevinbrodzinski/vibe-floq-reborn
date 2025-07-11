@@ -1,0 +1,207 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
+
+export interface UserSettings {
+  user_id: string;
+  notification_preferences: {
+    push: boolean;
+    email: boolean;
+    new_friend: boolean;
+    dm: boolean;
+    nearby_friend: boolean;
+    afterglow_recap: boolean;
+  };
+  privacy_settings: {
+    location_sharing: boolean;
+    profile_visibility: 'public' | 'friends' | 'private';
+    broadcast_radius: number;
+    battery_save_mode: boolean;
+  };
+  theme_preferences: {
+    dark_mode: boolean;
+    accent_color: string;
+  };
+  available_until?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+  push: true,
+  email: false,
+  new_friend: true,
+  dm: true,
+  nearby_friend: true,
+  afterglow_recap: true,
+};
+
+const DEFAULT_PRIVACY_SETTINGS = {
+  location_sharing: true,
+  profile_visibility: 'public' as const,
+  broadcast_radius: 500,
+  battery_save_mode: false,
+};
+
+const DEFAULT_THEME_PREFERENCES = {
+  dark_mode: true,
+  accent_color: 'purple',
+};
+
+const DEFAULT_SETTINGS: Partial<UserSettings> = {
+  notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
+  privacy_settings: DEFAULT_PRIVACY_SETTINGS,
+  theme_preferences: DEFAULT_THEME_PREFERENCES,
+};
+
+export const useUserSettings = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading, error } = useQuery({
+    queryKey: ['user-settings', user?.id],
+    queryFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      // Return merged settings with defaults
+      if (data) {
+        const notificationPrefs = (data.notification_preferences as any) || {};
+        const privacySettings = (data.privacy_settings as any) || {};
+        const themePrefs = (data.theme_preferences as any) || {};
+        
+        return {
+          ...data,
+          notification_preferences: { 
+            ...DEFAULT_NOTIFICATION_PREFERENCES, 
+            ...notificationPrefs
+          },
+          privacy_settings: { 
+            ...DEFAULT_PRIVACY_SETTINGS, 
+            ...privacySettings
+          },
+          theme_preferences: { 
+            ...DEFAULT_THEME_PREFERENCES, 
+            ...themePrefs
+          },
+        } as UserSettings;
+      }
+      return {
+        user_id: user.id,
+        notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
+        privacy_settings: DEFAULT_PRIVACY_SETTINGS,
+        theme_preferences: DEFAULT_THEME_PREFERENCES,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as UserSettings;
+    },
+    enabled: !!user?.id,
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (updates: Partial<UserSettings>) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Failed to update user settings:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateNotificationPreference = (key: keyof UserSettings['notification_preferences'], value: boolean) => {
+    if (!settings || !settings.notification_preferences) return;
+    
+    updateSettingsMutation.mutate({
+      notification_preferences: {
+        ...settings.notification_preferences,
+        [key]: value,
+      },
+    });
+  };
+
+  const updatePrivacySetting = (key: keyof UserSettings['privacy_settings'], value: any) => {
+    if (!settings || !settings.privacy_settings) return;
+    
+    updateSettingsMutation.mutate({
+      privacy_settings: {
+        ...settings.privacy_settings,
+        [key]: value,
+      },
+    });
+  };
+
+  const updateBroadcastRadius = async (radius: number) => {
+    if (!user?.id || !settings) return;
+    
+    try {
+      if (!settings.privacy_settings) return;
+      
+      // Update user settings
+      updateSettingsMutation.mutate({
+        privacy_settings: {
+          ...settings.privacy_settings,
+          broadcast_radius: radius,
+        },
+      });
+
+      // Update current presence with new broadcast radius
+      const { error } = await supabase
+        .from('vibes_now')
+        .update({ broadcast_radius: radius })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Broadcast radius updated",
+        description: `Your presence radius is now ${radius}m`,
+      });
+    } catch (error) {
+      console.error('Failed to update broadcast radius:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update broadcast radius. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return {
+    settings: settings as UserSettings | undefined,
+    isLoading,
+    error,
+    updateNotificationPreference,
+    updatePrivacySetting,
+    updateBroadcastRadius,
+    isUpdating: updateSettingsMutation.isPending,
+  };
+};

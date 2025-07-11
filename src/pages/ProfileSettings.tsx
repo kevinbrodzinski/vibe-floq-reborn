@@ -17,6 +17,8 @@ import { VibeHistorySparkline } from '@/components/analytics/VibeHistorySparklin
 import { VibePersonalityChart } from '@/components/analytics/VibePersonalityChart';
 import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ConnectionInsights } from '@/components/ConnectionInsights';
+import { AboutMeEditor } from '@/components/profile/AboutMeEditor';
+import { PresenceSettings } from '@/components/profile/PresenceSettings';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -155,6 +157,22 @@ const ProfileSettings = () => {
               <ConnectionInsights userId={profile.id} />
             </div>
           )}
+
+          <Separator />
+
+          {/* About Me Editor */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">About Me</h2>
+            <AboutMeEditor />
+          </div>
+
+          <Separator />
+
+          {/* Presence Settings */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">Presence Settings</h2>
+            <PresenceSettings />
+          </div>
 
           <Separator />
 

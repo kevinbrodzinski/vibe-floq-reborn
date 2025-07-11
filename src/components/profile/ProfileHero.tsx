@@ -336,6 +336,22 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
               )}
             </div>
 
+            {/* Interests */}
+            {profile?.interests && profile.interests.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {profile.interests.slice(0, 3).map((interest) => (
+                  <Badge key={interest} variant="secondary" className="text-xs px-2 py-0.5">
+                    {interest}
+                  </Badge>
+                ))}
+                {profile.interests.length > 3 && (
+                  <Badge variant="outline" className="text-xs px-2 py-0.5 text-muted-foreground">
+                    +{profile.interests.length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
+
             {/* Bio */}
             {profile?.bio && (
               <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
