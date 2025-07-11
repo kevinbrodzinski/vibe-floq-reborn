@@ -280,6 +280,7 @@ export type Database = {
         Row: {
           created_at: string | null
           friend_id: string
+          id: string
           responded_at: string | null
           status: string | null
           user_id: string
@@ -287,6 +288,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           friend_id: string
+          id?: string
           responded_at?: string | null
           status?: string | null
           user_id: string
@@ -294,6 +296,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           friend_id?: string
+          id?: string
           responded_at?: string | null
           status?: string | null
           user_id?: string
@@ -1751,6 +1754,7 @@ export type Database = {
         Returns: {
           created_at: string | null
           friend_id: string
+          id: string
           responded_at: string | null
           status: string | null
           user_id: string
