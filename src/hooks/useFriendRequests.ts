@@ -106,8 +106,8 @@ export function useFriendRequests() {
   // Send friend request mutation
   const sendRequest = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('request_friendship', {
-        _target: targetUserId
+      const { error } = await supabase.rpc('add_friend', {
+        target: targetUserId
       });
 
       if (error) throw error;
