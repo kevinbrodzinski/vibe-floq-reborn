@@ -639,6 +639,22 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_cache: {
+        Row: {
+          earned_count: number | null
+          rank: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -1509,6 +1525,10 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility: string | null
         }[]
+      }
+      refresh_leaderboard_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       remove_friend: {
         Args: { target: string }

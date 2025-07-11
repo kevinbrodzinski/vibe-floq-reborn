@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { CountUp } from '@/components/ui/count-up';
 import { useProfileStats } from '@/hooks/useProfileStats';
 import { getVibeColor } from '@/utils/getVibeColor';
+import { LeaderboardMini } from '@/components/LeaderboardMini';
 
 export function ProfileStats() {
   const { data: stats, isLoading } = useProfileStats();
@@ -68,32 +69,49 @@ export function ProfileStats() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {statsConfig.slice(0, 4).map((stat, index) => {
-        const IconComponent = stat.icon;
-        return (
-          <Card key={index} className="p-4 bg-card/50 backdrop-blur-sm border-border/30">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  {stat.label}
-                </p>
-                <p className="text-lg font-semibold text-foreground">
-                  {stat.isNumeric ? (
-                    <CountUp end={stat.value as number} duration={800} />
-                  ) : (
-                    <span className="capitalize">{stat.value}</span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {stat.subtext}
-                </p>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        {statsConfig.slice(0, 4).map((stat, index) => {
+          const IconComponent = stat.icon;
+          return (
+            <Card key={index} className="p-4 bg-card/50 backdrop-blur-sm border-border/30">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {stat.label}
+                  </p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {stat.isNumeric ? (
+                      <CountUp end={stat.value as number} duration={800} />
+                    ) : (
+                      <span className="capitalize">{stat.value}</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {stat.subtext}
+                  </p>
+                </div>
+                <IconComponent className={`h-4 w-4 ${stat.color}`} />
               </div>
-              <IconComponent className={`h-4 w-4 ${stat.color}`} />
-            </div>
-          </Card>
-        );
-      })}
+            </Card>
+          );
+        })}
+      </div>
+      
+      {/* Leaderboard Section */}
+      <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/30">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              Leaderboard Position
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Achievement ranking
+            </p>
+          </div>
+          <LeaderboardMini />
+        </div>
+      </Card>
     </div>
   );
 }
