@@ -4,6 +4,7 @@ import { useTimeSyncContext } from "@/components/TimeSyncProvider";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { FieldHeader } from "./field/FieldHeader";
+import { FieldHeroInfo } from "@/components/field/FieldHeroInfo";
 import { FieldOverlay } from "./field/FieldOverlay";
 import { FieldVisualization } from "./field/FieldVisualization";
 import { ConstellationControls } from "./field/ConstellationControls";
@@ -271,6 +272,8 @@ export const FieldScreen = () => {
           locality={location.error ? "Location unavailable" : "Current location"}
           connectionLost={location.error !== null}
         />
+        
+        <FieldHeroInfo className="mt-2" />
 
         {/* Map canvas */}
         {(mode === 'map' || mode === 'full') && (
