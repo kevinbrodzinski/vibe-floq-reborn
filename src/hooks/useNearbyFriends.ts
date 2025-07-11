@@ -26,6 +26,7 @@ export function useNearbyFriends(
   { km = 1, enabled = true }: UseNearbyFriendsOptions = {}
 ) {
   const debounceRef = useRef<NodeJS.Timeout>();
+  const env = getEnvironmentConfig();
 
   const debouncedPrimeProfiles = useCallback((primeProfiles: (users: any[]) => void, users: any[]) => {
     if (debounceRef.current) {
@@ -36,7 +37,14 @@ export function useNearbyFriends(
     }, 300);
   }, []);
 
-  const env = getEnvironmentConfig();
+  // TODO: Add real useQuery hook here when implementing live mode
+  // const { data: nearbyFriends = [] } = useQuery({
+  //   queryKey: ['nearby-friends', lat, lng, km],
+  //   enabled: enabled && !!lat && !!lng && env.presenceMode === 'live',
+  //   queryFn: async () => {
+  //     // Implementation will go here
+  //   }
+  // });
   
   if (env.presenceMode === 'mock') {
     const result = {

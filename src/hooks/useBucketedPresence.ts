@@ -29,60 +29,6 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
   // 6.3 - Optimized friend set for O(1) lookups
   const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
   
-  // Battery API detection for low-power mode
-  useEffect(() => {
-    const getBattery = async () => {
-      try {
-        if ('getBattery' in navigator) {
-          const battery = await (navigator as any).getBattery();
-          if (battery) {
-            setBatteryLevel(battery.level);
-            
-            battery.addEventListener('levelchange', () => {
-              setBatteryLevel(battery.level);
-            });
-          }
-        }
-      } catch (error) {
-        // Battery API not supported, assume full battery
-        setBatteryLevel(1);
-      }
-    };
-    
-    getBattery();
-  }, []);
-  
-  if (env.presenceMode === 'mock') {
-    const people: LivePresence[] = [];
-    return { people, lastHeartbeat };
-  }
-  
-  if (env.presenceMode === 'stub') {
-    // Return stub presence data for testing
-    const stubPeople: LivePresence[] = lat && lng ? [
-      {
-        user_id: 'stub-user-1',
-        vibe: 'social',
-        lat: lat + 0.0005,
-        lng: lng - 0.0005,
-        venue_id: null,
-        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-        isFriend: friendsSet.has('stub-user-1')
-      },
-      {
-        user_id: 'stub-user-2',
-        vibe: 'focused',
-        lat: lat - 0.0008,
-        lng: lng + 0.0003,
-        venue_id: null,
-        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-        isFriend: friendsSet.has('stub-user-2')
-      }
-    ] : [];
-    
-    return { people: stubPeople, lastHeartbeat };
-  }
-
   const queryClient = useQueryClient();
   const channelsRef = useRef<RealtimeChannel[]>([]);
   const geosLastRef = useRef<string[]>([]);
@@ -152,9 +98,32 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
     refetchInterval: batteryLevel < 0.2 ? 30 * 1000 : 60 * 1000, // Low-power mode: 30s when battery < 20%
   });
 
+  // Battery API detection for low-power mode
+  useEffect(() => {
+    const getBattery = async () => {
+      try {
+        if ('getBattery' in navigator) {
+          const battery = await (navigator as any).getBattery();
+          if (battery) {
+            setBatteryLevel(battery.level);
+            
+            battery.addEventListener('levelchange', () => {
+              setBatteryLevel(battery.level);
+            });
+          }
+        }
+      } catch (error) {
+        // Battery API not supported, assume full battery
+        setBatteryLevel(1);
+      }
+    };
+    
+    getBattery();
+  }, []);
+  
   // Set up geohash-bucketed realtime subscriptions (live mode only)
   useEffect(() => {
-    if (!hasValidCoords || !env.enableRealtime) return;
+    if (!hasValidCoords || !env.enableRealtime || env.presenceMode !== 'live') return;
 
     // Generate geohashes for current location and surrounding area
     const centerHash = ngeohash.encode(frozenLat!, frozenLng!, GH_PRECISION);
@@ -218,7 +187,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       });
       channelsRef.current = [];
     };
-  }, [hasValidCoords, frozenLat, frozenLng, queryClient, env.enableRealtime, env.debugPresence, env.debugNetwork]);
+  }, [hasValidCoords, frozenLat, frozenLng, queryClient, env.enableRealtime, env.debugPresence, env.debugNetwork, env.presenceMode]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -228,6 +197,43 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       });
     };
   }, []);
+  
+  if (env.presenceMode === 'mock') {
+    const people: LivePresence[] = [];
+    return { people, lastHeartbeat };
+  }
+  
+  if (env.presenceMode === 'stub') {
+    // Return stub presence data for testing
+    const stubPeople: LivePresence[] = lat && lng ? [
+      {
+        user_id: 'stub-user-1',
+        vibe: 'social',
+        lat: lat + 0.0005,
+        lng: lng - 0.0005,
+        venue_id: null,
+        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        isFriend: friendsSet.has('stub-user-1')
+      },
+      {
+        user_id: 'stub-user-2',
+        vibe: 'focused',
+        lat: lat - 0.0008,
+        lng: lng + 0.0003,
+        venue_id: null,
+        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
+        isFriend: friendsSet.has('stub-user-2')
+      }
+    ] : [];
+    
+    return { people: stubPeople, lastHeartbeat };
+  }
 
-  return { people, lastHeartbeat };
+  // Live mode returns actual data from the query
+  if (env.presenceMode === 'live') {
+    return { people, lastHeartbeat };
+  }
+
+  // For all other modes, return empty
+  return { people: [], lastHeartbeat };
 };

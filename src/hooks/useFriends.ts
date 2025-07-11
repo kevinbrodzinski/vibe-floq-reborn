@@ -11,42 +11,6 @@ export function useFriends() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Mock data for offline mode
-  if (OFFLINE_MODE) {
-    const friends = ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
-    const friendCount = 1;
-    const isLoading = false;
-
-    // Disabled mutations - return noop functions
-    const addFriend = async (targetUserId: string) => {
-      console.log('Mock: would add friend', targetUserId);
-    };
-
-    const removeFriend = async (targetUserId: string) => {
-      console.log('Mock: would remove friend', targetUserId);
-    };
-
-    // Optimized friend set for O(1) lookups
-    const friendsSet = useMemo(() => new Set(friends), [friends]);
-
-    // Check if a user is a friend
-    const isFriend = (userId: string) => {
-      return friendsSet.has(userId);
-    };
-
-    return {
-      friends,
-      friendCount,
-      profiles: [], // Mock empty profiles for offline mode
-      isLoading,
-      addFriend,
-      removeFriend,
-      isAddingFriend: false,
-      isRemovingFriend: false,
-      isFriend,
-    };
-  }
-
   // Real query for friends list using lean select
   const { data: friendIds = [], isLoading, error: friendsError } = useQuery({
     queryKey: ['friends', user?.id, OFFLINE_MODE],
@@ -102,8 +66,87 @@ export function useFriends() {
     },
   }) as { data: any[] | null, isError: boolean };
 
+  // Real mutations using Supabase RPC functions
+  const addFriend = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      if (OFFLINE_MODE) return; // Short-circuit in offline mode
+      const { error } = await supabase.rpc('add_friend', {
+        target: targetUserId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (!OFFLINE_MODE) {
+        queryClient.invalidateQueries({ queryKey: ['friends'] });
+        toast({
+          title: "Friend added",
+          description: "You are now friends!",
+        });
+      }
+    },
+    onError: (error) => {
+      if (!OFFLINE_MODE) {
+        toast({
+          title: "Failed to add friend",
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+
+  const removeFriend = useMutation({
+    mutationFn: async (targetUserId: string) => {
+      if (OFFLINE_MODE) return; // Short-circuit in offline mode
+      const { error } = await supabase.rpc('remove_friend', {
+        target: targetUserId
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (!OFFLINE_MODE) {
+        queryClient.invalidateQueries({ queryKey: ['friends'] });
+        toast({
+          title: "Friend removed",
+          description: "This person is no longer your friend.",
+        });
+      }
+    },
+    onError: (error) => {
+      if (!OFFLINE_MODE) {
+        toast({
+          title: "Failed to remove friend",
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+
   // Optimized friend set for O(1) lookups
   const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
+
+  // Mock data for offline mode
+  if (OFFLINE_MODE) {
+    const mockFriends = ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
+    const mockFriendsSet = new Set(mockFriends);
+
+    return {
+      friends: mockFriends,
+      friendCount: 1,
+      profiles: [], // Mock empty profiles for offline mode
+      isLoading: false,
+      addFriend: (targetUserId: string) => {
+        console.log('Mock: would add friend', targetUserId);
+      },
+      removeFriend: (targetUserId: string) => {
+        console.log('Mock: would remove friend', targetUserId);
+      },
+      isAddingFriend: false,
+      isRemovingFriend: false,
+      isFriend: (userId: string) => mockFriendsSet.has(userId),
+    };
+  }
 
   // Handle auth/loading states gracefully
   if (!user?.id || isLoading || friendsError) {
@@ -112,61 +155,13 @@ export function useFriends() {
       friendCount: 0,
       profiles: [],
       isLoading: isLoading || !user?.id,
-      addFriend: async () => {},
-      removeFriend: async () => {},
+      addFriend: () => {},
+      removeFriend: () => {},
       isAddingFriend: false,
       isRemovingFriend: false,
       isFriend: () => false,
     };
   }
-
-  // Real mutations using Supabase RPC functions
-  const addFriend = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('add_friend', {
-        target: targetUserId
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
-      toast({
-        title: "Friend added",
-        description: "You are now friends!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to add friend",
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const removeFriend = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('remove_friend', {
-        target: targetUserId
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
-      toast({
-        title: "Friend removed",
-        description: "This person is no longer your friend.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to remove friend",
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
 
   // Check if a user is a friend
   const isFriend = (userId: string) => {
