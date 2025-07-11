@@ -43,7 +43,7 @@ const DEFAULT_PRIVACY_SETTINGS = {
   profile_visibility: 'public' as const,
   broadcast_radius: 500,
   battery_save_mode: false,
-  always_immersive_venues: false,
+  always_immersive_venues: true, // Default to enhanced venue experience
 };
 
 const DEFAULT_THEME_PREFERENCES = {

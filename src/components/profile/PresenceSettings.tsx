@@ -26,7 +26,7 @@ export function PresenceSettings() {
   const isLocationSharing = privacy_settings?.location_sharing ?? true;
   const broadcastRadius = privacy_settings?.broadcast_radius ?? 500;
   const batterySaveMode = privacy_settings?.battery_save_mode ?? false;
-  const immersiveVenues = privacy_settings?.always_immersive_venues !== false;
+  const immersiveVenues = privacy_settings?.always_immersive_venues ?? true;
 
   const handleLocationSharingToggle = (enabled: boolean) => {
     updatePrivacySetting('location_sharing', enabled);
