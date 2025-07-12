@@ -236,7 +236,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedAc
         aria-expanded={!isCollapsed}
         tabIndex={-1}
       >
-        <div className="bg-card/95 backdrop-blur-xl rounded-t-3xl border border-border/30 glow-secondary overflow-hidden">
+        <div className="bg-card/95 backdrop-blur-xl rounded-t-3xl border border-border/30 glow-secondary overflow-hidden" style={{ outline: 'none' }}>
           {/* Grabber Handle */}
           <motion.button
             onClick={handleToggleExpansion}
