@@ -6,6 +6,8 @@ import { MapPin } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Badge } from '@/components/ui/badge';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { FriendRowSkeleton } from '@/components/ui/friend-row-skeleton';
+import { UserTag } from '@/components/ui/user-tag';
 import { useLongPress } from '@/hooks/useLongPress';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,7 +18,7 @@ interface OnlineFriendRowProps {
 }
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
-  const { data: p, isLoading } = useProfile(userId);
+  const { data: p, isLoading, isError } = useProfile(userId);
   const statusMap = useFriendsPresence();
   const online = statusMap[userId] === 'online';
   const [dmOpen, setDmOpen] = useState(false);
@@ -40,8 +42,13 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
     onLongPress: () => setDmOpen(true)
   });
 
-  if (isLoading || !p) {
-    return <div className="h-12 animate-pulse bg-muted/30 rounded" />;
+  if (isLoading) {
+    return <FriendRowSkeleton showDistance={isNearby} />;
+  }
+
+  if (isError || !p) {
+    console.error(`❌ [FRIEND_ROW] Failed to load profile for user: ${userId}`);
+    return null; // Don't render broken friend rows
   }
 
   const formatDistance = (distanceM?: number) => {
@@ -61,6 +68,8 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
           <AvatarWithLoading 
             avatarPath={p.avatar_url}
             displayName={p.display_name}
+            username={p.username}
+            userId={p.id}
             size={32}
             className="h-8 w-8"
           />
@@ -78,8 +87,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
         </div>
 
       <div className="flex-1 min-w-0">
-        <div className="text-sm truncate">{p.display_name}</div>
-        <div className="text-xs text-muted-foreground truncate">@{p.username}</div>
+        <UserTag profile={p} className="flex-col items-start sm:flex-row sm:items-center" />
       </div>
 
       {isNearby && (

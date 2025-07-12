@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getAvatarUrl, getInitials } from '@/lib/avatar';
+import { getAvatarUrl, getInitials, getAvatarFallbackColor } from '@/lib/avatar';
 
 interface AvatarWithLoadingProps {
   avatarPath?: string | null;
   displayName?: string | null;
+  username?: string | null;
+  userId?: string;
   size?: number;
   className?: string;
 }
 
 export const AvatarWithLoading = ({ 
   avatarPath, 
-  displayName, 
+  displayName,
+  username,
+  userId,
   size = 64,
   className 
 }: AvatarWithLoadingProps) => {
@@ -20,12 +24,17 @@ export const AvatarWithLoading = ({
   const [hasError, setHasError] = useState(false);
 
   const avatarUrl = getAvatarUrl(avatarPath, size);
+  const initials = getInitials(displayName, username);
+  const fallbackColor = userId ? getAvatarFallbackColor(userId) : undefined;
 
   if (!avatarUrl || hasError) {
     return (
       <Avatar className={className} style={{ width: size, height: size }}>
-        <AvatarFallback>
-          {getInitials(displayName)}
+        <AvatarFallback 
+          className="text-white font-medium"
+          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
+        >
+          {initials}
         </AvatarFallback>
       </Avatar>
     );
@@ -51,8 +60,11 @@ export const AvatarWithLoading = ({
             setHasError(true);
           }}
         />
-        <AvatarFallback>
-          {getInitials(displayName)}
+        <AvatarFallback 
+          className="text-white font-medium"
+          style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
+        >
+          {initials}
         </AvatarFallback>
       </Avatar>
     </div>

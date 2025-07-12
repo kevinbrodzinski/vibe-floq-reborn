@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import { SearchedUser } from '@/hooks/useUserSearch';
+import { UserTag } from '@/components/ui/user-tag';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 
 interface UserSearchResultsProps {
@@ -41,13 +42,14 @@ export const UserSearchResults = ({
   return (
     <div className="space-y-1">
       {users.map((user) => {
-        const displayName = user.username 
-          ? `@${user.username}` 
-          : user.display_name || 'Unknown User';
-        
-        const subtitle = user.username && user.display_name 
-          ? user.display_name 
-          : null;
+        // Convert SearchedUser to Profile format for UserTag
+        const userAsProfile = {
+          id: user.id,
+          username: user.username,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          created_at: user.created_at,
+        };
 
         return (
           <div 
@@ -57,19 +59,12 @@ export const UserSearchResults = ({
             <Avatar className="w-8 h-8">
               <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
               <AvatarFallback>
-                {getInitials(user.display_name || user.username)}
+                {getInitials(user.display_name, user.username)}
               </AvatarFallback>
             </Avatar>
             
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {displayName}
-              </p>
-              {subtitle && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {subtitle}
-                </p>
-              )}
+              <UserTag profile={userAsProfile} />
             </div>
             
             <Button

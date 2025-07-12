@@ -217,13 +217,40 @@ export const deleteAvatar = async (path: string) => {
 };
 
 /**
- * Generate initials from display name
+ * Generate initials from display name or username
  */
-export const getInitials = (displayName?: string | null) => {
-  if (!displayName) return '??';
-  return displayName
+export const getInitials = (displayName?: string | null, username?: string | null) => {
+  const name = displayName || username;
+  if (!name) return '??';
+  
+  return name
     .split(' ')
     .map(word => word.charAt(0).toUpperCase())
     .slice(0, 2)
     .join('');
+};
+
+/**
+ * Generate deterministic color for user avatar fallback based on user ID
+ */
+export const getAvatarFallbackColor = (userId: string) => {
+  // Generate hash from user ID
+  const hash = userId.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a; // Convert to 32bit integer
+  }, 0);
+  
+  // Use hash to pick from predefined color palette
+  const colors = [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))', 
+    'hsl(210, 40%, 60%)', // blue
+    'hsl(120, 40%, 60%)', // green
+    'hsl(30, 40%, 60%)',  // orange
+    'hsl(270, 40%, 60%)', // purple
+    'hsl(180, 40%, 60%)', // teal
+    'hsl(350, 40%, 60%)', // pink
+  ];
+  
+  return colors[Math.abs(hash) % colors.length];
 };

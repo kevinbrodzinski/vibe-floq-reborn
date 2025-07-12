@@ -67,15 +67,25 @@ export function useProfile(userId: string) {
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: async (): Promise<Profile> => {
+      console.log(`🔍 [PROFILE] Fetching profile for user: ${userId}`);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) throw new Error('Profile not found');
+      if (error) {
+        console.error(`❌ [PROFILE] Error fetching profile for ${userId}:`, error);
+        throw error;
+      }
       
+      if (!data) {
+        console.warn(`⚠️ [PROFILE] No profile found for user: ${userId}`);
+        throw new Error(`Profile not found for user ${userId}`);
+      }
+      
+      console.log(`✅ [PROFILE] Successfully fetched profile for ${userId}:`, data.username);
       return data as Profile;
     },
     enabled: !!userId,
