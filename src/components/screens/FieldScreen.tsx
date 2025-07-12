@@ -14,7 +14,7 @@ import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { VenuesChip } from "@/components/VenuesChip";
+
 import { useDebug } from "@/lib/useDebug";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
@@ -354,7 +354,11 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locationReady={false} />
+          <FieldHeader 
+            locationReady={false} 
+            venueCount={0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt 
               onRequestLocation={requestLocation} 
@@ -372,7 +376,11 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locationReady={false} />
+          <FieldHeader 
+            locationReady={false} 
+            venueCount={0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -469,6 +477,8 @@ export const FieldScreen = () => {
             locationReady={isLocationReady} 
             currentLocation={location.error ? "Location unavailable" : "Current location"}
             lastHeartbeat={lastHeartbeat}
+            venueCount={nearbyVenues?.length || 0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
           />
         </motion.div>
 
@@ -548,13 +558,6 @@ export const FieldScreen = () => {
             onTimeWarpToggle={() => setShowTimeWarp(true)}
           />
 
-          {/* Swipeable Venues Chip */}
-          {nearbyVenues.length > 0 && !currentEvent && (
-            <VenuesChip
-              onOpen={() => setVenuesSheetOpen(true)}
-              venueCount={nearbyVenues.length}
-            />
-          )}
 
           {/* Resizable Venues Sheet */}
           <ResizableVenuesSheet

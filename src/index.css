@@ -230,11 +230,6 @@ All colors MUST be HSL.
       transform: translateY(calc(var(--fab-size) + var(--fab-gap)));
     }
     
-    .venues-chip {
-      @apply fixed left-1/2 -translate-x-1/2 z-30
-             px-4 py-2 rounded-full bg-primary text-primary-foreground shadow-md;
-      bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 12px);
-    }
     
     .fullscreen-map-wrapper {
       padding-top: env(safe-area-inset-top);
