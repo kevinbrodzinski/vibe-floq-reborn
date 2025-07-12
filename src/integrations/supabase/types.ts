@@ -428,30 +428,36 @@ export type Database = {
           bio: string | null
           created_at: string | null
           custom_status: string | null
-          display_name: string | null
+          display_name: string
+          first_name: string | null
           id: string
           interests: string[] | null
-          username: string | null
+          last_name: string | null
+          username: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           custom_status?: string | null
-          display_name?: string | null
+          display_name: string
+          first_name?: string | null
           id?: string
           interests?: string[] | null
-          username?: string | null
+          last_name?: string | null
+          username: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
           custom_status?: string | null
-          display_name?: string | null
+          display_name?: string
+          first_name?: string | null
           id?: string
           interests?: string[] | null
-          username?: string | null
+          last_name?: string | null
+          username?: string
         }
         Relationships: []
       }
@@ -1133,6 +1139,30 @@ export type Database = {
       }
       bytea: {
         Args: { "": unknown } | { "": unknown }
+        Returns: string
+      }
+      citext: {
+        Args: { "": boolean } | { "": string } | { "": unknown }
+        Returns: string
+      }
+      citext_hash: {
+        Args: { "": string }
+        Returns: number
+      }
+      citextin: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextout: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      citextrecv: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextsend: {
+        Args: { "": string }
         Returns: string
       }
       cleanup_expired_floq_boosts: {
