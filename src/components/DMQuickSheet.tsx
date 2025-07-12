@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
-import { useQueries } from '@tanstack/react-query';
+
 import { useDMThread } from '@/hooks/useDMThread';
-import { useProfile } from '@/hooks/useProfileCache';
+import { useProfile } from '@/hooks/useProfile';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { MessageBubble } from '@/components/MessageBubble';
+import { UserTag } from '@/components/ui/user-tag';
 import {
   Sheet,
   SheetContent,
@@ -35,8 +36,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   });
   
   // Get friend profile
-  // const { data: friend } = useProfile(friendId || '');
-  const friend = { display_name: 'Friend', avatar_url: null }; // Mock for now
+  const { data: friend, isLoading: friendLoading } = useProfile(friendId || undefined);
 
   // Get current user ID and mark as read when sheet opens
   useEffect(() => {
@@ -50,18 +50,6 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     }
   }, [open, friendId, markAsRead]);
 
-  // Get unique sender IDs from messages
-  const senderIds = useMemo(() => {
-    return Array.from(new Set(messages.map(m => m.sender_id)));
-  }, [messages]);
-
-  // Temporarily disable sender profiles fetch
-  // const senderProfiles = useQueries({...});
-  
-  const getProfile = (uid: string) => ({ 
-    display_name: 'User', 
-    avatar_url: null 
-  }); // Mock for now
 
   // Auto-scroll to bottom with requestAnimationFrame
   useEffect(() => {
@@ -112,9 +100,13 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
                 {friend?.display_name?.[0]?.toUpperCase() ?? '?'}
               </AvatarFallback>
             </Avatar>
-            <SheetTitle className="text-left">
-              {friend?.display_name ?? 'Direct Message'}
-            </SheetTitle>
+            {friend ? (
+              <UserTag profile={friend} showUsername={true} className="flex-1" />
+            ) : (
+              <SheetTitle className="text-left">
+                {friendLoading ? 'Loading...' : 'Direct Message'}
+              </SheetTitle>
+            )}
           </div>
         </SheetHeader>
 
