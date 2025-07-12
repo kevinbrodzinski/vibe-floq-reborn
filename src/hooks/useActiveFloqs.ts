@@ -61,7 +61,7 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
         distance_meters: floq.distance_meters
       }));
     },
-    // Only enable if we have basic requirements
-    enabled: includeDistance ? !!(lat && lng) : true,
+    // Always enable the query - don't wait for geolocation
+    enabled: true,
   });
 };
