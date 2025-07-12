@@ -1422,6 +1422,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_active_floqs_with_members: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          title: string
+          name: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          type: string
+          starts_at: string
+          ends_at: string
+          participant_count: number
+          starts_in_min: number
+          members: Json
+        }[]
+      }
       get_cluster_venues: {
         Args: {
           min_lng: number
@@ -1547,12 +1563,20 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      join_floq: {
+        Args: { p_floq_id: string; p_user_id?: string }
+        Returns: Json
+      }
       json: {
         Args: { "": unknown }
         Returns: Json
       }
       jsonb: {
         Args: { "": unknown }
+        Returns: Json
+      }
+      leave_floq: {
+        Args: { p_floq_id: string; p_user_id?: string }
         Returns: Json
       }
       list_friends: {
