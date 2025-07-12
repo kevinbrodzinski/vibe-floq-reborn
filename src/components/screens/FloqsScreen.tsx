@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
-import { Search, Plus, Coffee, MessageCircle, Heart, Zap, Users } from "lucide-react";
+import { Search, Plus, Coffee, MessageCircle, Users, MapPin } from "lucide-react";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
+import { BoostButton } from "@/components/BoostButton";
 
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
@@ -21,14 +23,20 @@ const vibeColor: Record<string, string> = {
 };
 
 // Component for individual floq cards
-const FloqCard = ({ row, onJoin, onChat, onBoost }: { 
+const FloqCard = ({ row, onJoin, onChat }: { 
   row: FloqRow; 
   onJoin: () => void;
   onChat: () => void;
-  onBoost: () => void;
 }) => {
   const primary = vibeColor[row.vibe_tag] || vibeColor.social;
   const isStartingSoon = row.starts_in_min <= 30;
+
+  // Format distance for display
+  const formatDistance = (meters: number | null) => {
+    if (!meters) return null;
+    if (meters < 1000) return `${Math.round(meters)}m`;
+    return `${(meters / 1000).toFixed(1)}km`;
+  };
 
   return (
     <div className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-2px] hover:bg-card/60">
@@ -50,6 +58,15 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
             <span className="capitalize font-medium">{row.vibe_tag}</span>
             <span>•</span>
             <span>Starts in {row.starts_in_min} min</span>
+            {row.distance_meters && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <MapPin size={12} />
+                  <span>{formatDistance(row.distance_meters)}</span>
+                </div>
+              </>
+            )}
           </div>
           
           {/* Participant avatars */}
@@ -96,7 +113,7 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
         )}
       </div>
 
-      {/* Action buttons */}
+      {/* Action buttons with boost button */}
       <div className="grid grid-cols-3 gap-3">
         <button 
           onClick={onJoin}
@@ -110,12 +127,14 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
         >
           Chat
         </button>
-        <button 
-          onClick={onBoost}
-          className="bg-accent/20 text-accent py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-accent/30 text-sm"
-        >
-          Boost
-        </button>
+        <div className="flex justify-center">
+          <BoostButton 
+            floqId={row.id} 
+            boostCount={row.boost_count}
+            size="md"
+            className="w-full justify-center"
+          />
+        </div>
       </div>
     </div>
   );
@@ -140,7 +159,10 @@ export const FloqsScreen = () => {
   };
 
   const [radiusKm, setRadiusKm] = useState(getStoredRadius);
-  const { data: floqs = [], isLoading } = useActiveFloqs();
+  const { data: floqs = [], isLoading } = useActiveFloqs({
+    limit: 50,
+    includeDistance: true
+  });
   const { join, isPending } = useFloqJoin();
 
   // Persist radius preference
@@ -164,11 +186,6 @@ export const FloqsScreen = () => {
     
     setSelectedFriendId(creator.id);
     setDmSheetOpen(true);
-  };
-
-  const handleBoost = (floqId: string) => {
-    // TODO: Implement boost floq vibe edge function
-    console.log('Boosting vibe for floq:', floqId);
   };
 
   return (
@@ -227,27 +244,8 @@ export const FloqsScreen = () => {
               row={floq}
               onJoin={() => handleJoinFloq(floq.id)}
               onChat={() => handleChat(floq)}
-              onBoost={() => handleBoost(floq.id)}
             />
           ))}
-        </div>
-      )}
-
-      {/* Suggested Floqs Section */}
-      {floqs.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-primary mb-4">Suggested Floqs</h2>
-          <div className="space-y-4">
-            {floqs.slice(0, 2).map((floq) => (
-              <FloqCard
-                key={`suggested-${floq.id}`}
-                row={floq}
-                onJoin={() => handleJoinFloq(floq.id)}
-                onChat={() => handleChat(floq)}
-                onBoost={() => handleBoost(floq.id)}
-              />
-            ))}
-          </div>
         </div>
       )}
 
