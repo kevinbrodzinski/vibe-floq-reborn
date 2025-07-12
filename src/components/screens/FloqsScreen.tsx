@@ -1,44 +1,143 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Armchair, MessageCircle } from "lucide-react";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { useNearbyFloqs } from "@/hooks/useNearbyFloqs";
+import { Search, Plus, Coffee, MessageCircle, Heart, Zap, Users } from "lucide-react";
+import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
+import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { useDebug } from "@/lib/useDebug";
 
-interface FloqCard {
-  id: string;
-  title: string;
-  type: string;
-  description: string;
-  startTime: string;
-  location: string;
-  participants: number;
-  vibeMatch: number;
-  status: "open" | "sunset" | "closed";
-  color: string;
-  iconType: "armchair" | "message-circle";
-}
+// Vibe color mapping
+const vibeColor: Record<string, string> = {
+  chill: 'hsl(180, 70%, 60%)',
+  hype: 'hsl(260, 70%, 65%)',
+  romantic: 'hsl(330, 70%, 65%)',
+  social: 'hsl(25, 70%, 60%)',
+  solo: 'hsl(210, 70%, 65%)',
+  weird: 'hsl(280, 70%, 65%)',
+  flowing: 'hsl(100, 70%, 60%)',
+  down: 'hsl(220, 15%, 55%)',
+};
+
+// Component for individual floq cards
+const FloqCard = ({ row, onJoin, onChat, onBoost }: { 
+  row: FloqRow; 
+  onJoin: () => void;
+  onChat: () => void;
+  onBoost: () => void;
+}) => {
+  const primary = vibeColor[row.vibe_tag] || vibeColor.social;
+  const isStartingSoon = row.starts_in_min <= 30;
+
+  return (
+    <div className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:bg-card/60">
+      <div className="flex items-center space-x-4 mb-6">
+        <div 
+          className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse"
+          style={{
+            backgroundColor: primary + '1A',
+            boxShadow: `0 0 30px ${primary}40`
+          }}
+        >
+          <Coffee size={28} style={{ color: primary }} />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-foreground mb-1 line-clamp-2">
+            {row.title || row.name}
+          </h3>
+          <div className="flex items-center space-x-2 text-muted-foreground text-sm mb-2">
+            <span className="capitalize font-medium">{row.vibe_tag}</span>
+            <span>•</span>
+            <span>Starts in {row.starts_in_min} min</span>
+          </div>
+          
+          {/* Participant avatars */}
+          <div className="flex items-center space-x-2">
+            <div className="flex -space-x-2">
+              {row.members.slice(0, 4).map((member, idx) => (
+                <div 
+                  key={member.id || idx}
+                  className="w-6 h-6 rounded-full bg-gradient-secondary border-2 border-background overflow-hidden"
+                >
+                  {member.avatar_url ? (
+                    <img 
+                      src={member.avatar_url} 
+                      alt={member.display_name || member.username || 'User'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <Users size={12} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {row.participant_count} joined
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Status indicators */}
+      <div className="flex space-x-2 mb-4">
+        <span className="px-3 py-1 rounded-full text-xs border border-primary/50 text-primary bg-primary/10">
+          Open
+        </span>
+        <span className="px-3 py-1 rounded-full text-xs border border-border/40 text-muted-foreground">
+          {row.type}
+        </span>
+        {isStartingSoon && (
+          <span className="px-3 py-1 rounded-full text-xs border border-accent/50 text-accent bg-accent/10">
+            Starting Soon
+          </span>
+        )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="grid grid-cols-3 gap-3">
+        <button 
+          onClick={onJoin}
+          className="bg-gradient-primary text-primary-foreground py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm"
+        >
+          Join
+        </button>
+        <button 
+          onClick={onChat}
+          className="bg-secondary/60 text-secondary-foreground py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-secondary/80 text-sm"
+        >
+          Chat
+        </button>
+        <button 
+          onClick={onBoost}
+          className="bg-accent/20 text-accent py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-accent/30 text-sm"
+        >
+          Boost
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const FloqsScreen = () => {
   const [debug] = useDebug();
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
   
-  // Get stored radius preference or default to 1km with robust parsing
+  // Get stored radius preference or default to 0.5km
   const getStoredRadius = () => {
     try {
       const stored = localStorage.getItem('floq-radius-km');
-      if (!stored) return 1;
+      if (!stored) return 0.5;
       const parsed = parseFloat(stored);
-      return isNaN(parsed) ? 1 : parsed;
+      return isNaN(parsed) ? 0.5 : parsed;
     } catch {
-      return 1;
+      return 0.5;
     }
   };
 
   const [radiusKm, setRadiusKm] = useState(getStoredRadius);
-  const coords = useGeolocation();
-  const { nearby: nearbyFloqs, loading: floqsLoading } = useNearbyFloqs(coords.lat, coords.lng, { km: radiusKm });
+  const { data: floqs = [], isLoading } = useActiveFloqs();
+  const { joinFloq, isJoining } = useFloqJoin();
 
   // Persist radius preference
   useEffect(() => {
@@ -49,41 +148,19 @@ export const FloqsScreen = () => {
     }
   }, [radiusKm]);
 
-  // Show real floqs when available, fallback to mock data for UI demo
-  const mockFloqs: FloqCard[] = [
-    {
-      id: "1",
-      title: "Nico's Rooftop Chill",
-      type: "Chill",
-      description: "Good vibes",
-      startTime: "Starts in 32 min",
-      location: "Rooftop",
-      participants: 3,
-      vibeMatch: 92,
-      status: "open",
-      color: "hsl(180 70% 60%)",
-      iconType: "armchair"
-    },
-    {
-      id: "2", 
-      title: "Midnight Mingling",
-      type: "Social",
-      description: "Looks like your vibe. Join?",
-      startTime: "Pulse Match: 82%",
-      location: "Social Space",
-      participants: 8,
-      vibeMatch: 82,
-      status: "open",
-      color: "hsl(280 70% 60%)",
-      iconType: "message-circle"
-    }
-  ];
+  // Action handlers
+  const handleJoinFloq = (floqId: string) => {
+    joinFloq({ floqId });
+  };
 
-  // Use real floqs when available, otherwise show mock data for demo
-  const displayFloqs = nearbyFloqs.length > 0 ? nearbyFloqs : mockFloqs;
+  const handleChat = (floqId: string) => {
+    // TODO: Implement navigation to DM thread
+    console.log('Opening chat for floq:', floqId);
+  };
 
-  const getIcon = (iconType: "armchair" | "message-circle") => {
-    return iconType === "armchair" ? <Armchair size={24} /> : <MessageCircle size={24} />;
+  const handleBoost = (floqId: string) => {
+    // TODO: Implement boost floq vibe edge function
+    console.log('Boosting vibe for floq:', floqId);
   };
 
   return (
@@ -91,21 +168,21 @@ export const FloqsScreen = () => {
       {/* Debug counter */}
       {debug && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
-          {nearbyFloqs.length} floqs ≤ {radiusKm} km
+          {floqs.length} active floqs
         </div>
       )}
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
-          <Search size={20} className="text-muted-foreground" />
+        <button className="h-10 w-10 rounded-xl bg-surface/30 backdrop-blur-sm border border-border/20 hover:bg-surface/50 transition-all duration-300 flex items-center justify-center">
+          <Search size={18} className="text-muted-foreground" />
         </button>
-        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+        <h1 className="text-2xl font-extrabold bg-gradient-primary bg-clip-text text-transparent">
           floqs
         </h1>
         <button 
           onClick={() => setCreateFloqOpen(true)}
-          className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
+          className="h-10 w-10 rounded-xl bg-surface/30 backdrop-blur-sm border border-border/20 hover:bg-surface/50 transition-all duration-300 flex items-center justify-center"
         >
           <Plus size={20} className="text-muted-foreground" />
         </button>
@@ -113,122 +190,58 @@ export const FloqsScreen = () => {
 
       {/* Radius Slider */}
       <div className="mb-6">
-        <div className="bg-card/90 backdrop-blur-xl rounded-3xl border border-border/30">
+        <div className="bg-card/40 backdrop-blur-lg rounded-3xl border border-border/20">
           <RadiusSlider km={radiusKm} onChange={setRadiusKm} />
         </div>
       </div>
 
-      {/* Floqs Status - improved UX copy */}
-      {nearbyFloqs.length === 0 && !floqsLoading && coords.lat && coords.lng && (
-        <div className="mb-6 text-center py-8">
-          <p className="text-muted-foreground">No floqs nearby</p>
-          <p className="text-sm text-muted-foreground/60 mt-1">Try increasing the radius or check back later</p>
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-8">
+          <div className="animate-pulse text-muted-foreground">Loading floqs...</div>
         </div>
       )}
 
-      {/* Featured Floq */}
-      <div className="mb-8">
-        <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02]">
-          <div className="flex items-start space-x-4 mb-6">
-            <div 
-              className="w-20 h-20 rounded-full flex items-center justify-center animate-pulse-glow"
-              style={{
-                backgroundColor: mockFloqs[0].color,
-                boxShadow: `0 0 30px ${mockFloqs[0].color}`
-              }}
-            >
-              <div className="text-background">
-                {getIcon(mockFloqs[0].iconType)}
-              </div>
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold mb-2">{mockFloqs[0].title}</h2>
-              <div className="flex items-center space-x-2 text-muted-foreground mb-3">
-                <span className="text-sm font-medium">{mockFloqs[0].type}</span>
-                <span>•</span>
-                <span className="text-sm">{mockFloqs[0].startTime}</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-secondary border-2 border-background"></div>
-                  ))}
-                </div>
-                <span className="text-sm text-primary font-medium capitalize">{mockFloqs[0].status}</span>
-                <span className="text-sm text-accent font-medium">Sunset</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            <button className="bg-gradient-primary text-primary-foreground py-3 px-6 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
-              Join
-            </button>
-            <button className="bg-secondary/60 text-secondary-foreground py-3 px-6 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-secondary/80">
-              Chat
-            </button>
-            <button className="bg-accent/20 text-accent py-3 px-6 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-accent/30">
-              Boost Vibe
-            </button>
-            <button className="bg-muted/20 text-muted-foreground py-3 px-6 rounded-2xl font-medium transition-all duration-300 hover:scale-105 hover:bg-muted/30">
-              Suggest Change
-            </button>
-          </div>
+      {/* No Floqs State */}
+      {!isLoading && floqs.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No active floqs right now</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">Check back later or create one!</p>
         </div>
-      </div>
+      )}
 
-      {/* Suggested Floqs */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-6 text-accent">Suggested Floqs</h2>
-        
-        <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02]">
-          <div className="flex items-center space-x-4 mb-6">
-            <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse-glow"
-              style={{
-                backgroundColor: mockFloqs[1].color,
-                boxShadow: `0 0 20px ${mockFloqs[1].color}`
-              }}
-            >
-              <div className="text-background">
-                {getIcon(mockFloqs[1].iconType)}
-              </div>
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-1">{mockFloqs[1].title}</h3>
-              <div className="text-muted-foreground mb-2">
-                <span className="text-sm font-medium">{mockFloqs[1].type}</span>
-                <span> • </span>
-                <span className="text-sm">{mockFloqs[1].startTime}</span>
-              </div>
-              <p className="text-sm text-foreground">{mockFloqs[1].description}</p>
-            </div>
-          </div>
-          
-          <div className="flex space-x-3">
-            <button className="flex-1 bg-gradient-primary text-primary-foreground py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105">
-              Join
-            </button>
-            <button className="flex-1 bg-secondary/60 text-secondary-foreground py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-secondary/80">
-              Chat
-            </button>
-            <button className="px-6 bg-accent/20 text-accent py-3 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-accent/30">
-              Boost
-            </button>
-          </div>
+      {/* Featured Floqs Grid */}
+      {floqs.length > 0 && (
+        <div className="space-y-6 mb-8">
+          {floqs.map((floq) => (
+            <FloqCard
+              key={floq.id}
+              row={floq}
+              onJoin={() => handleJoinFloq(floq.id)}
+              onChat={() => handleChat(floq.id)}
+              onBoost={() => handleBoost(floq.id)}
+            />
+          ))}
         </div>
-      </div>
+      )}
 
-      {/* Expanded Detail */}
-      <div className="bg-card/60 backdrop-blur-xl rounded-3xl p-6 border border-border/30">
-        <h3 className="text-xl font-bold mb-2">{mockFloqs[1].title}</h3>
-        <div className="text-muted-foreground mb-4">
-          <span className="font-medium">{mockFloqs[1].type}</span>
-          <span> • </span>
-          <span>{mockFloqs[1].startTime}</span>
+      {/* Suggested Floqs Section */}
+      {floqs.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-primary mb-4">Suggested Floqs</h2>
+          <div className="space-y-4">
+            {floqs.slice(0, 2).map((floq) => (
+              <FloqCard
+                key={`suggested-${floq.id}`}
+                row={floq}
+                onJoin={() => handleJoinFloq(floq.id)}
+                onChat={() => handleChat(floq.id)}
+                onBoost={() => handleBoost(floq.id)}
+              />
+            ))}
+          </div>
         </div>
-        <p className="text-foreground">{mockFloqs[1].description}</p>
-      </div>
+      )}
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
