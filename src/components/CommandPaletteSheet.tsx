@@ -27,7 +27,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
   const navigate = useNavigate();
   const { addFriend, isFriend } = useFriends();
   const { primeProfiles } = useProfileCache();
-  const { set: setMapMode } = useFullscreenMap();
+  const { setMode: setMapMode } = useFullscreenMap();
   const { setSelectedVenueId } = useSelectedVenue();
   const prefetchVenue = usePrefetchVenue();
   const prefetchFloq = usePrefetchFloq();

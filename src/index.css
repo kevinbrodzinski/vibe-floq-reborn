@@ -478,3 +478,24 @@ All colors MUST be HSL.
     background: hsl(var(--muted-foreground) / 0.3);
     margin: 0 auto;
   }
+
+  /* Grabber handle component */
+  .grabber-handle {
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    margin: 0 auto;
+  }
+
+  /* Fullscreen map styles */
+  .fullscreen-map {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .framer-motion-* {
+      transition-duration: 0.15s !important;
+    }
+  }

@@ -35,7 +35,7 @@ export const FloqApp = () => {
   // Deep-link support for full-screen mode
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('full') === '1') {
-      useFullscreenMap.getState().set('full')
+      useFullscreenMap.getState().setMode('full')
     }
   }, [])
 

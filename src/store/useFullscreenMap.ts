@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-type Mode = 'map' | 'full' | 'list'
+export type FullMode = 'map' | 'full' | 'list'
 
 interface FullscreenMapStore {
-  mode: Mode
-  set: (m: Mode) => void
+  mode: FullMode
+  setMode: (m: FullMode) => void
   /** map ↔ full */
   toggleFull: () => void
   /** map ↔ list */
@@ -16,7 +16,7 @@ export const useFullscreenMap = create<FullscreenMapStore>()(
   persist(
     (set, get) => ({
       mode: 'map',
-      set: (m) => set({ mode: m }),
+      setMode: (mode) => set({ mode }),
       toggleFull: () =>
         set({ mode: get().mode === 'full' ? 'map' : 'full' }),
       toggleList: () =>

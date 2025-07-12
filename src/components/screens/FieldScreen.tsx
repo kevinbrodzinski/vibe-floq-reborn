@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { useTimeSyncContext } from "@/components/TimeSyncProvider";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
@@ -64,7 +65,7 @@ export const FieldScreen = () => {
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
-  const { mode, set } = useFullscreenMap();
+  const { mode, setMode } = useFullscreenMap();
   
   // Use enhanced geolocation hook
   const location = useOptimizedGeolocation();
@@ -247,11 +248,18 @@ export const FieldScreen = () => {
   // ESC key to exit full-screen mode
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mode === 'full') set('map')
+      if (e.key === 'Escape' && mode === 'full') setMode('map')
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, set])
+  }, [mode, setMode])
+
+  // Haptic feedback on mode change
+  useEffect(() => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(mode === 'full' ? 20 : 10)
+    }
+  }, [mode])
 
   // URL sync
   useEffect(() => {
@@ -266,9 +274,9 @@ export const FieldScreen = () => {
   // Auto-exit full-screen when any sheet opens
   useEffect(() => {
     if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
-      set('map')
+      setMode('map')
     }
-  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, set])
+  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode])
 
   // Temporarily disable advanced gestures for baseline
   // const { handlers } = useAdvancedGestures({
@@ -316,6 +324,9 @@ export const FieldScreen = () => {
     );
   }
 
+  const isFull = mode === 'full'
+  const isList = mode === 'list'
+
   return (
     <ErrorBoundary>
       <div className="relative h-svh w-full bg-background" {...handlers}>
@@ -333,58 +344,107 @@ export const FieldScreen = () => {
           />
         )}
         
-        {/* Header */}
-        <FieldHeader 
-          locationReady={isLocationReady} 
-          currentLocation={location.error ? "Location unavailable" : "Current location"}
-          lastHeartbeat={lastHeartbeat}
-          style={{ zIndex: 50 }}
-        />
-
-        {/* Map canvas */}
-        {(mode === 'map' || mode === 'full') && (
-          <FieldVisualization
-            className={clsx('absolute inset-0 top-12 transition-all duration-300',
-              mode === 'full' && 'fullscreen-map'
-            )}
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkable_floqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
-        )}
-
-        {/* Overlay system */}
-        <FieldOverlay
-          isLocationReady={isLocationReady}
-          currentVibe={currentVibe}
-          nearbyUsersCount={people.length}
-          walkableFloqsCount={walkable_floqs.length}
-          updating={false} // TODO: Add real updating state when presence is fully restored
-          error={location.error}
-          debug={debug}
-          onVibeChange={(vibe) => changeVibe(vibe)}
+        {/* Map canvas with layout controller */}
+        <motion.div
+          key="map-container"
+          className={clsx(
+            "absolute inset-0",
+            isFull ? "z-50 inset-0" : "top-12",
+            isList ? "z-30" : ""
+          )}
+          initial={false}
+          animate={{
+            y: isFull ? 0 : isList ? 0 : 0,
+            height: isFull ? '100vh' : isList ? '35vh' : '100%'
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          style={{
+            paddingBottom: isFull ? 'env(safe-area-inset-bottom)' : 0
+          }}
         >
-          {/* Constellation Controls */}
-          <ConstellationControls
-            timeState={timeState}
-            constellationMode={constellationMode}
-            onConstellationToggle={() => setConstellationMode(!constellationMode)}
-            onConstellationAction={handleConstellationAction}
-            onOrbitalAdjustment={handleOrbitalAdjustment}
-            onEnergyShare={handleEnergyShare}
-          />
-        </FieldOverlay>
+          {(mode === 'map' || mode === 'full') && (
+            <FieldVisualization
+              className={clsx('absolute inset-0', isFull && 'fullscreen-map')}
+              constellationMode={constellationMode}
+              people={people}
+              friends={friends}
+              floqEvents={floqEvents}
+              walkableFloqs={walkable_floqs}
+              onFriendInteraction={handleFriendInteraction}
+              onConstellationGesture={handleConstellationGesture}
+              onAvatarInteraction={handleAvatarInteraction}
+            />
+          )}
+        </motion.div>
 
         {/* List mode container */}
-        {mode === 'list' && <ListModeContainer />}
+        <AnimatePresence>
+          {isList && (
+            <motion.div
+              key="list-container"
+              className="fixed inset-x-0 bottom-[var(--mobile-nav-height)] z-40 bg-background/90 backdrop-blur"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{ height: '65vh' }}
+            >
+              <ListModeContainer />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Header - hidden in full mode */}
+        <motion.div
+          className="absolute top-0 left-0 right-0 z-50"
+          animate={{
+            y: isFull ? '-100%' : 0,
+            opacity: isFull ? 0 : 1
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+        >
+          <FieldHeader 
+            locationReady={isLocationReady} 
+            currentLocation={location.error ? "Location unavailable" : "Current location"}
+            lastHeartbeat={lastHeartbeat}
+          />
+        </motion.div>
+
+        {/* Overlay system - hidden in full mode */}
+        <motion.div
+          className="absolute inset-0 top-12 pointer-events-none"
+          animate={{
+            opacity: isFull ? 0 : 1
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          style={{
+            pointerEvents: isFull ? 'none' : 'auto'
+          }}
+        >
+          <FieldOverlay
+            isLocationReady={isLocationReady}
+            currentVibe={currentVibe}
+            nearbyUsersCount={people.length}
+            walkableFloqsCount={walkable_floqs.length}
+            updating={false}
+            error={location.error}
+            debug={debug}
+            onVibeChange={(vibe) => changeVibe(vibe)}
+          >
+            {/* Constellation Controls */}
+            <ConstellationControls
+              timeState={timeState}
+              constellationMode={constellationMode}
+              onConstellationToggle={() => setConstellationMode(!constellationMode)}
+              onConstellationAction={handleConstellationAction}
+              onOrbitalAdjustment={handleOrbitalAdjustment}
+              onEnergyShare={handleEnergyShare}
+            />
+          </FieldOverlay>
+        </motion.div>
 
         {/* Mini-map overlay (list mode only) */}
-        {mode === 'list' && (
+        {isList && (
           <MiniMap
             constellationMode={constellationMode}
             people={people}
@@ -397,57 +457,73 @@ export const FieldScreen = () => {
           />
         )}
 
-        {/* Social Gesture Manager */}
-        <SocialGestureManager onSocialAction={handleSocialAction} />
-
-        {/* Time Warp Slider */}
-        <TimeWarpSlider 
-          isVisible={showTimeWarp}
-          onClose={() => setShowTimeWarp(false)}
-          onTimeChange={handleTimeWarpChange}
-        />
-
-        {/* Time-Based Bottom Action Card */}
-        <div 
-          className="absolute bottom-24 left-4 right-4"
-          style={{ zIndex: 40 }}
-        >
-          <TimeBasedActionCard
-            timeState={timeState}
-            onTimeWarpToggle={() => setShowTimeWarp(true)}
-          />
-        </div>
-
-        {/* Swipeable Venues Chip */}
-        {nearbyVenues.length > 0 && !currentEvent && (
-          <VenuesChip
-            onOpen={() => setVenuesSheetOpen(true)}
-            venueCount={nearbyVenues.length}
-          />
-        )}
-
-        {/* Resizable Venues Sheet */}
-        <ResizableVenuesSheet
-          isOpen={venuesSheetOpen}
-          onClose={() => setVenuesSheetOpen(false)}
-          onVenueTap={(venueId) => {
-            setSelectedVenueId(venueId);
-            setVenuesSheetOpen(false);
-            if ('vibrate' in navigator) {
-              navigator.vibrate(4);
-            }
+        {/* Main UI chrome - hidden in full mode */}
+        <motion.div
+          className="absolute inset-0"
+          animate={{
+            y: isFull ? '100%' : 0,
+            opacity: isFull ? 0 : 1
           }}
-        />
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          style={{
+            pointerEvents: isFull ? 'none' : 'auto'
+          }}
+        >
+          {/* Social Gesture Manager */}
+          <SocialGestureManager onSocialAction={handleSocialAction} />
 
-        {/* Venue Details Sheet */}
-        <VenueDetailsSheet
-          open={!!selectedVenueId}
-          onOpenChange={(open) => !open && setSelectedVenueId(null)}
-          venueId={selectedVenueId}
-        />
+          {/* Time Warp Slider */}
+          <TimeWarpSlider 
+            isVisible={showTimeWarp}
+            onClose={() => setShowTimeWarp(false)}
+            onTimeChange={handleTimeWarpChange}
+          />
 
-        {/* Full-screen toggle FAB */}
-        <FullscreenFab />
+          {/* Time-Based Bottom Action Card */}
+          <div 
+            className="absolute bottom-24 left-4 right-4 z-10"
+          >
+            <TimeBasedActionCard
+              timeState={timeState}
+              onTimeWarpToggle={() => setShowTimeWarp(true)}
+            />
+          </div>
+
+          {/* Swipeable Venues Chip */}
+          {nearbyVenues.length > 0 && !currentEvent && (
+            <VenuesChip
+              onOpen={() => setVenuesSheetOpen(true)}
+              venueCount={nearbyVenues.length}
+            />
+          )}
+
+          {/* Resizable Venues Sheet */}
+          <ResizableVenuesSheet
+            isOpen={venuesSheetOpen}
+            onClose={() => setVenuesSheetOpen(false)}
+            onVenueTap={(venueId) => {
+              setSelectedVenueId(venueId);
+              setVenuesSheetOpen(false);
+              if ('vibrate' in navigator) {
+                navigator.vibrate(4);
+              }
+            }}
+          />
+
+          {/* Venue Details Sheet */}
+          <VenueDetailsSheet
+            open={!!selectedVenueId}
+            onOpenChange={(open) => !open && setSelectedVenueId(null)}
+            venueId={selectedVenueId}
+          />
+        </motion.div>
+
+        {/* Full-screen toggle FAB - always on top */}
+        <div className="absolute inset-0 z-[60] pointer-events-none">
+          <div className="pointer-events-auto">
+            <FullscreenFab />
+          </div>
+        </div>
       </div>
     </ErrorBoundary>
   );
