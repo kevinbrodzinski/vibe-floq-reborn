@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send } from 'lucide-react';
+import { Send, User } from 'lucide-react';
 
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfile';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { MessageBubble } from '@/components/MessageBubble';
 import { UserTag } from '@/components/ui/user-tag';
+import { useToast } from '@/hooks/use-toast';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,6 +30,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const [input, setInput] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
   
   // Swipe gesture for closing sheet
@@ -36,7 +39,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   });
   
   // Get friend profile
-  const { data: friend, isLoading: friendLoading } = useProfile(friendId || undefined);
+  const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
 
   // Get current user ID and mark as read when sheet opens
   useEffect(() => {
@@ -49,6 +52,17 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       markAsRead();
     }
   }, [open, friendId, markAsRead]);
+
+  // Show error toast if friend profile fails to load
+  useEffect(() => {
+    if (friendError && open) {
+      toast({
+        title: "Error loading profile",
+        description: "Unable to load friend's profile information.",
+        variant: "destructive",
+      });
+    }
+  }, [friendError, open, toast]);
 
 
   // Auto-scroll to bottom with requestAnimationFrame
@@ -75,6 +89,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       setInput('');
     } catch (error) {
       console.error('Failed to send message:', error);
+      toast({
+        title: "Message failed to send",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -94,18 +113,33 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       >
         <SheetHeader className="pb-4 border-b border-border/50">
           <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={friend?.avatar_url ? getAvatarUrl(friend.avatar_url) : undefined} />
-              <AvatarFallback className="text-xs">
-                {friend?.display_name?.[0]?.toUpperCase() ?? '?'}
-              </AvatarFallback>
-            </Avatar>
-            {friend ? (
-              <UserTag profile={friend} showUsername={true} className="flex-1" />
+            {friendLoading ? (
+              <>
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex flex-col gap-1 flex-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </>
+            ) : friend ? (
+              <>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={friend.avatar_url ? getAvatarUrl(friend.avatar_url) : undefined} />
+                  <AvatarFallback className="text-xs">
+                    {friend.display_name?.[0]?.toUpperCase() ?? '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <UserTag profile={friend} showUsername={true} className="flex-1" />
+              </>
             ) : (
-              <SheetTitle className="text-left">
-                {friendLoading ? 'Loading...' : 'Direct Message'}
-              </SheetTitle>
+              <>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="text-xs">
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <SheetTitle className="text-left">Direct Message</SheetTitle>
+              </>
             )}
           </div>
         </SheetHeader>

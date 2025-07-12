@@ -1,4 +1,4 @@
-import { useProfile } from '@/hooks/useProfileCache';
+import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl } from '@/lib/avatar';
 
@@ -17,8 +17,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, isOwn }: MessageBubbleProps) {
-  // const { data: sender } = useProfile(message.sender_id);
-  const sender = { display_name: 'User', avatar_url: null }; // Mock for now
+  const { data: sender } = useProfile(message.sender_id);
 
   return (
     <div className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
