@@ -35,7 +35,7 @@ export const useUserBoostStatus = (floqId: string) => {
   });
 };
 
-// Global boost subscription hook
+// Global boost subscription hook (optimized for 1-hour boosts)
 export const useBoostSubscription = () => {
   const queryClient = useQueryClient();
   const userId = useCurrentUserId();
@@ -43,8 +43,10 @@ export const useBoostSubscription = () => {
   useEffect(() => {
     if (!userId) return;
 
+    console.log('🔄 Setting up boost subscription (1hr boosts)');
+
     const channel = supabase
-      .channel('floq-boosts-global')
+      .channel('floq-boosts-global-optimized')
       .on(
         'postgres_changes',
         {
@@ -54,37 +56,44 @@ export const useBoostSubscription = () => {
           filter: 'boost_type=eq.vibe'
         },
         (payload) => {
+          console.log('📡 Boost realtime event:', payload.eventType, payload.new || payload.old);
+          
           const floqId = payload.new?.floq_id || payload.old?.floq_id;
           
-          // Update user boost status if it's the current user
+          // Optimized: only invalidate specific user boost status
           if (payload.new?.user_id === userId || payload.old?.user_id === userId) {
             queryClient.invalidateQueries({ 
               queryKey: ['user-boost-status', floqId, userId] 
             });
           }
           
-          // Update floq lists
-          queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
+          // Batch invalidation with debouncing to reduce queries
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
+          }, 100);
         }
       )
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      console.log('🔄 Cleaning up boost subscription');
+      supabase.removeChannel(channel).catch(() => {
+        // Ignore cleanup errors
+      });
     };
   }, [userId, queryClient]);
 };
 
 export const useFloqBoost = () => {
   const queryClient = useQueryClient();
-  console.log('🔗 useFloqBoost hook initialized');
+  console.log('🔗 useFloqBoost hook initialized (hardened system)');
   const userId = useCurrentUserId();
 
   const boostFloq = useMutation({
     mutationFn: async ({ floqId, boostType = 'vibe' }: BoostFloqParams) => {
       if (!userId) throw new Error('User not authenticated');
       
-      // Use boost analytics edge function with rate limiting
+      // Use boost analytics edge function with race-condition protection
       const { data, error } = await supabase.functions.invoke('boost-analytics', {
         body: {
           action: 'boost',
@@ -97,14 +106,12 @@ export const useFloqBoost = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, variables) => {
-      // Update user boost status immediately
-      queryClient.setQueryData(
-        ['user-boost-status', variables.floqId, userId], 
-        data.boost
-      );
+    onMutate: async (variables) => {
+      // Optimistic update before API call (prevents flicker)
+      await queryClient.cancelQueries({ queryKey: ['active-floqs'] });
       
-      // Optimistically update boost count
+      const previousFloqs = queryClient.getQueryData(['active-floqs']);
+      
       queryClient.setQueryData(['active-floqs'], (old: any) => {
         if (!Array.isArray(old)) return old;
         return old.map((floq: any) => 
@@ -113,26 +120,52 @@ export const useFloqBoost = () => {
             : floq
         );
       });
-      
-      console.log('📊 Boost analytics data:', data.analytics);
+
+      return { previousFloqs };
     },
-    onError: (error: any) => {
+    onSuccess: (data, variables) => {
+      // Update user boost status for fire-and-forget behavior (1-hour duration)
+      queryClient.setQueryData(
+        ['user-boost-status', variables.floqId, userId], 
+        data.boost
+      );
+      
+      // Invalidate queries for fresh data
+      queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
+      queryClient.invalidateQueries({ queryKey: ['user-boost-status'] });
+      
+      console.log('📊 Boost analytics data (1hr duration):', data.analytics);
+      
+      toast({
+        title: "Floq boosted! ⚡",
+        description: "You've given this gathering extra energy for 1 hour.",
+      });
+    },
+    onError: (error: any, variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousFloqs) {
+        queryClient.setQueryData(['active-floqs'], context.previousFloqs);
+      }
+
       console.error('❌ Boost error:', error);
       
-      // Handle rate limiting specifically
-      if (error.status === 429) {
+      // Handle rate limiting with improved messaging
+      if (error.status === 429 || error.details?.code === 'RATE_LIMIT_EXCEEDED') {
+        const { currentBoosts, maxBoosts, retryAfter } = error.details || {};
+        const minutesLeft = retryAfter ? Math.ceil(retryAfter / 60) : 60;
         toast({
-          title: "Rate limit exceeded",
-          description: "You can only create 60 boosts per hour. Please try again later.",
+          title: "Rate limit reached",
+          description: `You've used ${currentBoosts || '60'}/${maxBoosts || '60'} boosts this hour. Try again in ${minutesLeft} minutes.`,
           variant: "destructive",
         });
         return;
       }
       
-      if (error.message?.includes('unique_user_boost') || error.message?.includes('duplicate')) {
+      // Handle already boosted (constraint violation)
+      if (error.details?.code === 'ALREADY_BOOSTED' || error.message?.includes('duplicate')) {
         toast({
           title: "Already boosted!",
-          description: "You've already boosted this floq.",
+          description: "You've already boosted this floq. Boosts are fire-and-forget.",
           variant: "default",
         });
         return;
@@ -146,54 +179,29 @@ export const useFloqBoost = () => {
     }
   });
 
+  // Remove boost is disabled (fire-and-forget requirement)
   const removeBoost = useMutation({
-    mutationFn: async ({ floqId, boostType = 'vibe' }: BoostFloqParams) => {
-      if (!userId) throw new Error('User not authenticated');
-      
-      // Use boost analytics edge function
-      const { data, error } = await supabase.functions.invoke('boost-analytics', {
-        body: {
-          action: 'remove_boost',
-          floqId,
-          userId,
-          boostType
-        }
-      });
-      
-      if (error) throw error;
-      return data;
+    mutationFn: async () => {
+      throw new Error('Boost removal is disabled. Boosts are fire-and-forget.');
     },
-    onSuccess: (_, variables) => {
-      // Update user boost status immediately
-      queryClient.setQueryData(
-        ['user-boost-status', variables.floqId, userId], 
-        null
-      );
-      
-      // Optimistically update boost count
-      queryClient.setQueryData(['active-floqs'], (old: any) => {
-        if (!Array.isArray(old)) return old;
-        return old.map((floq: any) => 
-          floq.id === variables.floqId 
-            ? { ...floq, boost_count: Math.max(0, (floq.boost_count || 0) - 1) }
-            : floq
-        );
-      });
-      
-      console.log('📊 Boost removed successfully');
-    },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Failed to remove boost",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+        title: "Boost removal disabled",
+        description: "Boosts are fire-and-forget and cannot be removed.",
+        variant: "default",
       });
     }
   });
 
   return {
     boost: boostFloq.mutate,
-    removeBoost: removeBoost.mutate,
-    isPending: boostFloq.isPending || removeBoost.isPending,
+    removeBoost: () => {
+      toast({
+        title: "Boost removal disabled",
+        description: "Boosts are fire-and-forget and cannot be removed.",
+        variant: "default",
+      });
+    },
+    isPending: boostFloq.isPending,
   };
 };

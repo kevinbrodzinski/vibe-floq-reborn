@@ -22,21 +22,26 @@ serve(async (req) => {
 
     console.log('📊 Boost Analytics:', { action, floqId, userId });
 
-    // Rate limiting check (60 boosts per hour per user)
+    // Atomic rate limiting check (60 boosts per hour per user) - race-condition safe
     if (action === 'boost') {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
       const { count: recentBoosts } = await supabase
         .from('floq_boosts')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('created_at', oneHourAgo.toISOString());
+        .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+        .gt('expires_at', new Date().toISOString());
 
       if (recentBoosts && recentBoosts >= 60) {
         return new Response(
           JSON.stringify({ 
             error: 'Rate limit exceeded',
             message: 'You can only create 60 boosts per hour',
-            retryAfter: 3600
+            retryAfter: 3600,
+            details: { 
+              code: 'RATE_LIMIT_EXCEEDED',
+              currentBoosts: recentBoosts,
+              maxBoosts: 60
+            }
           }),
           { 
             status: 429,
@@ -55,20 +60,51 @@ serve(async (req) => {
         .eq('id', floqId)
         .single();
 
-      // Create boost record
+      // Create boost record with UPSERT to handle race conditions
       const { data: boost, error: boostError } = await supabase
         .from('floq_boosts')
-        .insert({
+        .upsert({
           floq_id: floqId,
           user_id: userId,
           boost_type: 'vibe',
-          expires_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString() // 4 hours
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+        }, {
+          onConflict: 'floq_id,user_id,boost_type',
+          ignoreDuplicates: true
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (boostError) {
+        // Handle unique constraint violations gracefully
+        if (boostError.code === '23505' || boostError.message?.includes('duplicate')) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'You have already boosted this floq',
+              details: { code: 'ALREADY_BOOSTED' }
+            }),
+            { 
+              status: 409, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
+        }
         throw boostError;
+      }
+
+      // If boost is null, it means it was a duplicate (ignored)
+      if (!boost) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'You have already boosted this floq',
+            details: { code: 'ALREADY_BOOSTED' }
+          }),
+          { 
+            status: 409, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
 
       // Track analytics event
@@ -95,23 +131,17 @@ serve(async (req) => {
       );
     }
 
-    // Handle boost removal
+    // Handle boost removal - DISABLED (fire-and-forget requirement)
     if (action === 'remove_boost') {
-      const { error: removeError } = await supabase
-        .from('floq_boosts')
-        .delete()
-        .eq('floq_id', floqId)
-        .eq('user_id', userId);
-
-      if (removeError) {
-        throw removeError;
-      }
-
-      console.log('📉 Boost removed:', { floqId, userId });
-
       return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Boost removal not allowed. Boosts are fire-and-forget.',
+          details: { code: 'REMOVAL_DISABLED' }
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 

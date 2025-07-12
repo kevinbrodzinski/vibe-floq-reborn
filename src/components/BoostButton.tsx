@@ -45,29 +45,29 @@ export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }:
   };
 
   const handleClick = async () => {
-    console.log('🚀 BoostButton clicked:', { floqId, userHasBoosted, boostCount });
+    console.log('🚀 BoostButton clicked (fire-and-forget):', { floqId, userHasBoosted, boostCount });
+    
+    // Fire-and-forget: if already boosted, show message instead of removing
+    if (userHasBoosted) {
+      console.log('👍 Already boosted - showing info message');
+      toast({
+        title: "Already boosted!",
+        description: "You've already boosted this floq. Boosts are fire-and-forget.",
+        variant: "default",
+      });
+      return;
+    }
     
     setIsAnimating(true);
     
     try {
-      if (userHasBoosted) {
-        console.log('📉 Removing boost for floq:', floqId);
-        await removeBoost({ floqId });
-        toast({
-          title: "Boost removed",
-          description: "Your boost has been removed from this floq",
-        });
-      } else {
-        console.log('📈 Adding boost for floq:', floqId);
-        await boost({ floqId });
-        createParticleBurst();
-        toast({
-          title: "Boost added! ⚡",
-          description: "You've boosted this floq's energy",
-        });
-      }
+      console.log('📈 Adding boost for floq:', floqId);
+      await boost({ floqId });
+      createParticleBurst();
+      // Toast is handled by the hook now
     } catch (error) {
       console.error('Boost action failed:', error);
+      // Error toast is handled by the hook
     } finally {
       setTimeout(() => setIsAnimating(false), 300);
     }

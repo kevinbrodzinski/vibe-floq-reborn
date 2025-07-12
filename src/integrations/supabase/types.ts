@@ -196,10 +196,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "floq_boosts_floq_id_fkey"
+            foreignKeyName: "fk_floq_boosts_floq"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_floq_boosts_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
