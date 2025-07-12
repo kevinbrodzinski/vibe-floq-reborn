@@ -34,8 +34,12 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
   const { limit = 20, offset = 0, includeDistance = true } = options;
   const { lat, lng } = useGeolocation();
 
+  // Round coordinates for better cache key stability
+  const roundedLat = lat ? Math.round(lat * 1000) / 1000 : null;
+  const roundedLng = lng ? Math.round(lng * 1000) / 1000 : null;
+
   return useQuery<FloqRow[]>({
-    queryKey: ['active-floqs', limit, offset, lat, lng, includeDistance],
+    queryKey: ['active-floqs', limit, offset, roundedLat, roundedLng, includeDistance],
     staleTime: 10_000,
     queryFn: async () => {
       // Use the updated RPC with boost count and distance sorting
