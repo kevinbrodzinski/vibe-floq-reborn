@@ -169,6 +169,41 @@ export type Database = {
         }
         Relationships: []
       }
+      floq_boosts: {
+        Row: {
+          boost_type: string
+          created_at: string
+          expires_at: string
+          floq_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          boost_type?: string
+          created_at?: string
+          expires_at?: string
+          floq_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          boost_type?: string
+          created_at?: string
+          expires_at?: string
+          floq_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_boosts_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_participants: {
         Row: {
           floq_id: string
@@ -1090,6 +1125,10 @@ export type Database = {
         Args: { "": unknown } | { "": unknown }
         Returns: string
       }
+      cleanup_expired_floq_boosts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_rows: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1423,7 +1462,12 @@ export type Database = {
         Returns: Json
       }
       get_active_floqs_with_members: {
-        Args: Record<PropertyKey, never>
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_user_lat?: number
+          p_user_lng?: number
+        }
         Returns: {
           id: string
           title: string
@@ -1434,7 +1478,9 @@ export type Database = {
           starts_at: string
           ends_at: string
           participant_count: number
+          boost_count: number
           starts_in_min: number
+          distance_meters: number
           members: Json
         }[]
       }
