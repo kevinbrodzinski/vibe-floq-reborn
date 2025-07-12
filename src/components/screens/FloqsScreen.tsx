@@ -10,6 +10,8 @@ import { SuggestChangeModal } from "@/components/SuggestChangeModal";
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { DMQuickSheet } from "@/components/DMQuickSheet";
+import { GeolocationButton } from "@/components/ui/geolocation-button";
+import { FloqsDebugPanel } from "@/components/debug/FloqsDebugPanel";
 import { useDebug } from "@/lib/useDebug";
 
 // Vibe color mapping
@@ -174,11 +176,21 @@ export const FloqsScreen = () => {
   };
 
   const [radiusKm, setRadiusKm] = useState(getStoredRadius);
-  const { data: floqs = [], isLoading } = useActiveFloqs({
+  const { data: floqs = [], isLoading, error } = useActiveFloqs({
     limit: 50,
     includeDistance: true
   });
   const { join, isPending } = useFloqJoin();
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('FloqsScreen: Query state', {
+      isLoading,
+      error: error?.message,
+      floqsCount: floqs.length,
+      floqs: floqs.length > 0 ? floqs.slice(0, 2) : 'No floqs'
+    });
+  }, [isLoading, error, floqs]);
   
   // Enable real-time avatar cluster updates
   useAvatarClusterUpdates();
@@ -236,9 +248,13 @@ export const FloqsScreen = () => {
         </button>
       </div>
 
-      {/* Radius Slider */}
-      <div className="mb-6">
-        <div className="bg-card/40 backdrop-blur-lg rounded-3xl border border-border/20">
+      {/* Location & Radius Controls */}
+      <div className="mb-6 space-y-4">
+        <div className="bg-card/40 backdrop-blur-lg rounded-3xl border border-border/20 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-foreground">Location Settings</h3>
+            <GeolocationButton size="sm" />
+          </div>
           <RadiusSlider km={radiusKm} onChange={setRadiusKm} />
         </div>
       </div>
@@ -250,8 +266,16 @@ export const FloqsScreen = () => {
         </div>
       )}
 
+      {/* Error State */}
+      {!isLoading && error && (
+        <div className="text-center py-8">
+          <p className="text-destructive">Error loading floqs</p>
+          <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+        </div>
+      )}
+
       {/* No Floqs State */}
-      {!isLoading && floqs.length === 0 && (
+      {!isLoading && !error && floqs.length === 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No active floqs right now</p>
           <p className="text-sm text-muted-foreground/60 mt-1">Check back later or create one!</p>
@@ -275,6 +299,9 @@ export const FloqsScreen = () => {
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
+
+      {/* Debug Panel */}
+      {debug && <FloqsDebugPanel />}
 
       {/* Create Floq Sheet */}
       <CreateFloqSheet 

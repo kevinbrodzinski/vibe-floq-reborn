@@ -42,6 +42,13 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
     queryKey: ['active-floqs', limit, offset, roundedLat, roundedLng, includeDistance],
     staleTime: 10_000,
     queryFn: async () => {
+      console.log('🚀 Fetching active floqs with params:', {
+        p_limit: limit,
+        p_offset: offset,
+        p_user_lat: includeDistance && lat ? lat : null,
+        p_user_lng: includeDistance && lng ? lng : null
+      });
+
       // Use the updated RPC with boost count and distance sorting
       const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
         p_limit: limit,
@@ -50,16 +57,21 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
         p_user_lng: includeDistance && lng ? lng : null
       });
       
+      console.log('🎯 Query result:', { data, error });
+      
       if (error) throw error;
       
       // Transform the data to match our interface
-      return (data || []).map((floq: any) => ({
+      const transformedData = (data || []).map((floq: any) => ({
         ...floq,
         vibe_tag: floq.primary_vibe, // Map primary_vibe to vibe_tag for consistency
         members: Array.isArray(floq.members) ? floq.members : [],
         boost_count: floq.boost_count || 0,
         distance_meters: floq.distance_meters
       }));
+
+      console.log(`✅ Returning ${transformedData.length} transformed floqs`);
+      return transformedData;
     },
     // Always enable the query - don't wait for geolocation
     enabled: true,
