@@ -8,7 +8,7 @@ import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
 import { BoostButton } from "@/components/BoostButton";
-import { SuggestChangeModal } from "@/components/SuggestChangeModal";
+import { SuggestChangeSheet } from "@/components/SuggestChangeSheet";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -369,13 +369,11 @@ export const FloqsScreen = () => {
         friendId={selectedFriendId}
       />
 
-      {/* Suggest Change Modal */}
-      <SuggestChangeModal
+      {/* Suggest Change Sheet */}
+      <SuggestChangeSheet
+        floqId={selectedFloqForSuggestion?.id || ''}
         open={suggestChangeOpen}
         onOpenChange={setSuggestChangeOpen}
-        floqId={selectedFloqForSuggestion?.id || ''}
-        currentVibe={selectedFloqForSuggestion?.vibe_tag || ''}
-        currentTime={selectedFloqForSuggestion?.starts_at || ''}
       />
     </div>
   );
