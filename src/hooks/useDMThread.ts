@@ -163,15 +163,22 @@ export function useDMThread(friendId: string | null) {
     
     markAsReadRef.current = throttle(async () => {
       try {
-        await supabase.rpc('update_last_read_at', {
+        const { error } = await supabase.rpc('update_last_read_at', {
           thread_id_param: threadId,
           user_id_param: selfId
         });
         
+        if (error) {
+          console.error('RPC error marking as read:', error);
+          // Continue gracefully - don't block messaging
+          return;
+        }
+        
         // Invalidate unread counts query
         qc.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       } catch (error) {
-        console.error('Failed to mark as read:', error);
+        console.error('Exception marking as read:', error);
+        // Continue gracefully - don't block messaging
       }
     }, 1000, { leading: true, trailing: false }); // Only fire once per second max
   }, [threadId, selfId, qc]);
