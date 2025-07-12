@@ -25,12 +25,10 @@ export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }:
   const [particles, setParticles] = useState<Array<{ id: number; delay: number }>>([]);
   const [countAnimation, setCountAnimation] = useState(boostCount);
 
-  // Animate count changes
+  // Reset count animation when floqId changes (prevents flicker)
   useEffect(() => {
-    if (countAnimation !== boostCount) {
-      setCountAnimation(boostCount);
-    }
-  }, [boostCount]);
+    setCountAnimation(boostCount);
+  }, [floqId, boostCount]);
 
   // Create particle burst effect
   const createParticleBurst = () => {
@@ -100,7 +98,7 @@ export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }:
         onClick={handleClick}
         disabled={isPending || isLoading}
         aria-pressed={userHasBoosted}
-        aria-label={userHasBoosted ? `Remove boost (${boostCount} boosts)` : `Boost floq (${boostCount} boosts)`}
+        aria-label={userHasBoosted ? `Already boosted this floq (${boostCount} total boosts)` : `Boost this floq (${boostCount} current boosts)`}
         className={`
           relative overflow-hidden inline-flex items-center gap-1 rounded-xl font-medium
           focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2

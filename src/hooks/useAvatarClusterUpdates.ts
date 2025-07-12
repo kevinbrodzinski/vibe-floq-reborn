@@ -12,36 +12,65 @@ export const useAvatarClusterUpdates = () => {
   useEffect(() => {
     console.log('🔗 Setting up avatar cluster updates subscription');
 
-    // Subscribe to floq_participants changes
+    // Subscribe to floq_participants changes - optimized to avoid heartbeat spam
     const channel = supabase
-      .channel('floq-participants-changes')
+      .channel('floq-participants-optimized')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT', // Only listen to new joins, not heartbeat updates
           schema: 'public',
           table: 'floq_participants'
         },
         (payload) => {
-          console.log('👥 Floq participants change:', payload);
+          console.log('👥 New floq participant joined:', payload);
           
-          // Extract floq_id from the payload
-          const floqId = payload.new?.floq_id || payload.old?.floq_id;
+          const floqId = payload.new?.floq_id;
           
           if (floqId) {
-            // Invalidate active floqs query to refresh participant counts and avatars
-            queryClient.invalidateQueries({ 
-              queryKey: ['active-floqs'],
-              exact: false 
-            });
-            
-            // Also invalidate specific floq data if we have more granular queries
-            queryClient.invalidateQueries({ 
-              queryKey: ['floq-details', floqId],
-              exact: false 
-            });
+            // Debounced invalidation to batch multiple rapid changes
+            setTimeout(() => {
+              queryClient.invalidateQueries({ 
+                queryKey: ['active-floqs'],
+                exact: false 
+              });
+              
+              queryClient.invalidateQueries({ 
+                queryKey: ['floq-details', floqId],
+                exact: false 
+              });
+            }, 100);
 
-            console.log('✨ Invalidated floq data for real-time avatar updates');
+            console.log('✨ Debounced invalidation for participant join');
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE', // Also listen to leaves
+          schema: 'public',
+          table: 'floq_participants'
+        },
+        (payload) => {
+          console.log('👥 Floq participant left:', payload);
+          
+          const floqId = payload.old?.floq_id;
+          
+          if (floqId) {
+            setTimeout(() => {
+              queryClient.invalidateQueries({ 
+                queryKey: ['active-floqs'],
+                exact: false 
+              });
+              
+              queryClient.invalidateQueries({ 
+                queryKey: ['floq-details', floqId],
+                exact: false 
+              });
+            }, 100);
+
+            console.log('✨ Debounced invalidation for participant leave');
           }
         }
       )

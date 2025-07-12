@@ -91,14 +91,15 @@ export const useFloqBoost = () => {
 
   const boostFloq = useMutation({
     mutationFn: async ({ floqId, boostType = 'vibe' }: BoostFloqParams) => {
-      if (!userId) throw new Error('User not authenticated');
+      const currentUserId = userId; // Capture userId at mutation time for safety
+      if (!currentUserId) throw new Error('User not authenticated');
       
       // Use boost analytics edge function with race-condition protection
       const { data, error } = await supabase.functions.invoke('boost-analytics', {
         body: {
           action: 'boost',
           floqId,
-          userId,
+          userId: currentUserId,
           boostType
         }
       });
@@ -149,8 +150,8 @@ export const useFloqBoost = () => {
 
       console.error('❌ Boost error:', error);
       
-      // Handle rate limiting with improved messaging
-      if (error.status === 429 || error.details?.code === 'RATE_LIMIT_EXCEEDED') {
+      // Handle rate limiting with improved messaging - check multiple error status indicators
+      if (error.statusCode === 429 || error.status === 429 || error.details?.code === 'RATE_LIMIT_EXCEEDED') {
         const { currentBoosts, maxBoosts, retryAfter } = error.details || {};
         const minutesLeft = retryAfter ? Math.ceil(retryAfter / 60) : 60;
         toast({

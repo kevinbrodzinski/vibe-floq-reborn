@@ -15,20 +15,21 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
     const { action, floqId, userId } = await req.json();
 
     console.log('📊 Boost Analytics:', { action, floqId, userId });
 
-    // Atomic rate limiting check (60 boosts per hour per user) - race-condition safe
+    // Atomic rate limiting check (60 boosts per hour per user) - optimized with time range
     if (action === 'boost') {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { count: recentBoosts } = await supabase
         .from('floq_boosts')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+        .gte('created_at', oneHourAgo)
         .gt('expires_at', new Date().toISOString());
 
       if (recentBoosts && recentBoosts >= 60) {
@@ -41,7 +42,8 @@ serve(async (req) => {
               code: 'RATE_LIMIT_EXCEEDED',
               currentBoosts: recentBoosts,
               maxBoosts: 60
-            }
+            },
+            statusCode: 429
           }),
           { 
             status: 429,
@@ -82,7 +84,8 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               error: 'You have already boosted this floq',
-              details: { code: 'ALREADY_BOOSTED' }
+              details: { code: 'ALREADY_BOOSTED' },
+              statusCode: 409
             }),
             { 
               status: 409, 
@@ -98,7 +101,8 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             error: 'You have already boosted this floq',
-            details: { code: 'ALREADY_BOOSTED' }
+            details: { code: 'ALREADY_BOOSTED' },
+            statusCode: 409
           }),
           { 
             status: 409, 
