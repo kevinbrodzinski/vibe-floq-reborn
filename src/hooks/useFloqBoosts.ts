@@ -84,15 +84,15 @@ export const useFloqBoost = () => {
     mutationFn: async ({ floqId, boostType = 'vibe' }: BoostFloqParams) => {
       if (!userId) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
-        .from('floq_boosts')
-        .insert({
-          floq_id: floqId,
-          boost_type: boostType,
-          user_id: userId
-        })
-        .select()
-        .single();
+      // Use boost analytics edge function with rate limiting
+      const { data, error } = await supabase.functions.invoke('boost-analytics', {
+        body: {
+          action: 'boost',
+          floqId,
+          userId,
+          boostType
+        }
+      });
       
       if (error) throw error;
       return data;
@@ -101,7 +101,7 @@ export const useFloqBoost = () => {
       // Update user boost status immediately
       queryClient.setQueryData(
         ['user-boost-status', variables.floqId, userId], 
-        data
+        data.boost
       );
       
       // Optimistically update boost count
@@ -114,12 +114,21 @@ export const useFloqBoost = () => {
         );
       });
       
-      toast({
-        title: "Boosted floq! ⚡",
-        description: "You've given this gathering some extra energy.",
-      });
+      console.log('📊 Boost analytics data:', data.analytics);
     },
     onError: (error: any) => {
+      console.error('❌ Boost error:', error);
+      
+      // Handle rate limiting specifically
+      if (error.status === 429) {
+        toast({
+          title: "Rate limit exceeded",
+          description: "You can only create 60 boosts per hour. Please try again later.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       if (error.message?.includes('unique_user_boost') || error.message?.includes('duplicate')) {
         toast({
           title: "Already boosted!",
@@ -141,14 +150,18 @@ export const useFloqBoost = () => {
     mutationFn: async ({ floqId, boostType = 'vibe' }: BoostFloqParams) => {
       if (!userId) throw new Error('User not authenticated');
       
-      const { error } = await supabase
-        .from('floq_boosts')
-        .delete()
-        .eq('floq_id', floqId)
-        .eq('boost_type', boostType)
-        .eq('user_id', userId);
+      // Use boost analytics edge function
+      const { data, error } = await supabase.functions.invoke('boost-analytics', {
+        body: {
+          action: 'remove_boost',
+          floqId,
+          userId,
+          boostType
+        }
+      });
       
       if (error) throw error;
+      return data;
     },
     onSuccess: (_, variables) => {
       // Update user boost status immediately
@@ -167,10 +180,7 @@ export const useFloqBoost = () => {
         );
       });
       
-      toast({
-        title: "Boost removed",
-        description: "You've removed your boost from this floq.",
-      });
+      console.log('📊 Boost removed successfully');
     },
     onError: (error: any) => {
       toast({

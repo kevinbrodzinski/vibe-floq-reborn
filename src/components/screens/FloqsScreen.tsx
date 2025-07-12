@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import { Search, Plus, Coffee, MessageCircle, Users, MapPin } from "lucide-react";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
+import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
 import { BoostButton } from "@/components/BoostButton";
+import { SuggestChangeModal } from "@/components/SuggestChangeModal";
 
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
@@ -23,10 +25,11 @@ const vibeColor: Record<string, string> = {
 };
 
 // Component for individual floq cards
-const FloqCard = ({ row, onJoin, onChat }: { 
+const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: { 
   row: FloqRow; 
   onJoin: () => void;
   onChat: () => void;
+  onSuggestChange: () => void;
 }) => {
   const primary = vibeColor[row.vibe_tag] || vibeColor.social;
   const isStartingSoon = row.starts_in_min <= 30;
@@ -114,7 +117,7 @@ const FloqCard = ({ row, onJoin, onChat }: {
       </div>
 
       {/* Action buttons with boost button */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 mb-3">
         <button 
           onClick={onJoin}
           className="bg-gradient-primary text-primary-foreground py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm"
@@ -127,14 +130,24 @@ const FloqCard = ({ row, onJoin, onChat }: {
         >
           Chat
         </button>
+      </div>
+      
+      {/* Secondary actions */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="flex justify-center">
           <BoostButton 
             floqId={row.id} 
             boostCount={row.boost_count}
-            size="md"
+            size="sm"
             className="w-full justify-center"
           />
         </div>
+        <button 
+          onClick={onSuggestChange}
+          className="bg-accent/20 text-accent border border-accent/30 py-2 px-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:bg-accent/30 text-sm"
+        >
+          Suggest Change
+        </button>
       </div>
     </div>
   );
@@ -145,6 +158,8 @@ export const FloqsScreen = () => {
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [suggestChangeOpen, setSuggestChangeOpen] = useState(false);
+  const [selectedFloqForSuggestion, setSelectedFloqForSuggestion] = useState<FloqRow | null>(null);
   
   // Get stored radius preference or default to 0.5km
   const getStoredRadius = () => {
@@ -164,6 +179,9 @@ export const FloqsScreen = () => {
     includeDistance: true
   });
   const { join, isPending } = useFloqJoin();
+  
+  // Enable real-time avatar cluster updates
+  useAvatarClusterUpdates();
 
   // Persist radius preference
   useEffect(() => {
@@ -186,6 +204,11 @@ export const FloqsScreen = () => {
     
     setSelectedFriendId(creator.id);
     setDmSheetOpen(true);
+  };
+
+  const handleSuggestChange = (floq: FloqRow) => {
+    setSelectedFloqForSuggestion(floq);
+    setSuggestChangeOpen(true);
   };
 
   return (
@@ -244,6 +267,7 @@ export const FloqsScreen = () => {
               row={floq}
               onJoin={() => handleJoinFloq(floq.id)}
               onChat={() => handleChat(floq)}
+              onSuggestChange={() => handleSuggestChange(floq)}
             />
           ))}
         </div>
@@ -263,6 +287,15 @@ export const FloqsScreen = () => {
         open={dmSheetOpen}
         onOpenChange={setDmSheetOpen}
         friendId={selectedFriendId}
+      />
+
+      {/* Suggest Change Modal */}
+      <SuggestChangeModal
+        open={suggestChangeOpen}
+        onOpenChange={setSuggestChangeOpen}
+        floqId={selectedFloqForSuggestion?.id || ''}
+        currentVibe={selectedFloqForSuggestion?.vibe_tag || ''}
+        currentTime={selectedFloqForSuggestion?.starts_at || ''}
       />
     </div>
   );
