@@ -13,7 +13,7 @@ import { useMapViewport } from "@/hooks/useMapViewport";
 import { useVenueClusters } from "@/hooks/useVenueClusters";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
 import { useAvatarPreloader } from "@/hooks/useAvatarPreloader";
-import { latLngToField, latLngToCanvas, mToPercent, CANVAS_SIZE } from "@/utils/geoConversion";
+import { latLngToField, latLngToCanvas, mToPercent, getCanvasSize, percentToCanvas } from "@/utils/geoConversion";
 import type { WalkableFloq } from "@/types";
 import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -126,6 +126,9 @@ export const FieldVisualization = ({
   const viewportControls = useMapViewport();
   const { viewport } = viewportControls;
   
+  // Dynamic canvas size based on zoom level
+  const canvasSize = getCanvasSize(viewport.zoom);
+  
   // Get venue clusters for current viewport
   const { clusters: venueClusters, supercluster } = useVenueClusters(viewport);
   
@@ -192,8 +195,8 @@ export const FieldVisualization = ({
           id="field-canvas" 
           className="relative" 
           style={{ 
-            width: CANVAS_SIZE.width, 
-            height: CANVAS_SIZE.height 
+            width: canvasSize.width, 
+            height: canvasSize.height 
           }}
         >
           {/* Friend Constellation System */}
@@ -217,20 +220,14 @@ export const FieldVisualization = ({
 
               // Calculate canvas pixel coords from percentage coordinates
               const base = cluster[0];
-              const canvasCoords = {
-                x: (base.x / 100) * CANVAS_SIZE.width,
-                y: (base.y / 100) * CANVAS_SIZE.height,
-              };
+              const canvasCoords = percentToCanvas({ pctX: base.x, pctY: base.y }, canvasSize);
               const sorted = sortFriendsFirst([...cluster].sort((a, b) => a.id.localeCompare(b.id)));
 
               // 1️⃣ Render dots with jitter when cluster size ≤ 4
               if (sorted.length <= 4) {
                 return sorted.map((person, idx) => {
                   const { dx, dy } = jitterPoint(idx);
-                  const personCanvasCoords = {
-                    x: (person.x / 100) * CANVAS_SIZE.width,
-                    y: (person.y / 100) * CANVAS_SIZE.height,
-                  };
+                  const personCanvasCoords = percentToCanvas({ pctX: person.x, pctY: person.y }, canvasSize);
                   return (
                     <HoverCard key={person.id}>
                       <HoverCardTrigger asChild>
@@ -310,10 +307,7 @@ export const FieldVisualization = ({
                 <div key={`cluster-${base.x}-${base.y}`}>
                   {sortFriendsFirst(sorted.slice(0, 4)).map((person, idx) => {
                     const { dx, dy } = jitterPoint(idx);
-                    const personCanvasCoords = {
-                      x: (person.x / 100) * CANVAS_SIZE.width,
-                      y: (person.y / 100) * CANVAS_SIZE.height,
-                    };
+                    const personCanvasCoords = percentToCanvas({ pctX: person.x, pctY: person.y }, canvasSize);
                     return (
                       <HoverCard key={person.id}>
                         <HoverCardTrigger asChild>
@@ -418,10 +412,7 @@ export const FieldVisualization = ({
             const isWalkable = walkableFloq && walkableFloq.distance_meters <= 300;
             
             // Convert to canvas coordinates
-            const canvasCoords = {
-              x: (event.x / 100) * CANVAS_SIZE.width,
-              y: (event.y / 100) * CANVAS_SIZE.height,
-            };
+            const canvasCoords = percentToCanvas({ pctX: event.x, pctY: event.y }, canvasSize);
             
             return (
               <div
@@ -493,7 +484,8 @@ export const FieldVisualization = ({
             const canvasCoords = latLngToCanvas(
               venue.geometry.coordinates[1], 
               venue.geometry.coordinates[0], 
-              viewport
+              viewport,
+              canvasSize
             );
             
             return (

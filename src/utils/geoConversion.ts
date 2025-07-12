@@ -17,11 +17,28 @@ export interface CanvasCoordinate {
   y: number; // absolute pixel position
 }
 
-// Canvas dimensions for the scrollable world
-export const CANVAS_SIZE = {
+// Base canvas dimensions for the scrollable world
+const BASE_CANVAS_SIZE = {
   width: 4000,
   height: 4000,
 };
+
+// Initial zoom level for canvas scaling
+const INITIAL_ZOOM = 5;
+
+/**
+ * Get dynamic canvas size based on zoom level
+ */
+export function getCanvasSize(zoom: number) {
+  const scale = zoom / INITIAL_ZOOM;
+  return {
+    width: BASE_CANVAS_SIZE.width * scale,
+    height: BASE_CANVAS_SIZE.height * scale,
+  };
+}
+
+// Export base canvas size for backward compatibility
+export const CANVAS_SIZE = BASE_CANVAS_SIZE;
 
 // Base field dimensions in decimal degrees at zoom level 5
 const BASE_FIELD_SIZE = {
@@ -84,14 +101,28 @@ export function latLngToField(
 export function latLngToCanvas(
   lat: number,
   lng: number,
-  viewport: Viewport
+  viewport: Viewport,
+  canvasSize = CANVAS_SIZE
 ): CanvasCoordinate {
   const fieldCoord = latLngToField(lat, lng, viewport);
   
   // Convert percentage to absolute pixels within the canvas
   return {
-    x: (fieldCoord.x / 100) * CANVAS_SIZE.width,
-    y: (fieldCoord.y / 100) * CANVAS_SIZE.height,
+    x: (fieldCoord.x / 100) * canvasSize.width,
+    y: (fieldCoord.y / 100) * canvasSize.height,
+  };
+}
+
+/**
+ * Convert field percentage coordinates to canvas pixel coordinates
+ */
+export function percentToCanvas(
+  { pctX, pctY }: { pctX: number; pctY: number },
+  canvasSize = CANVAS_SIZE
+): CanvasCoordinate {
+  return {
+    x: (pctX / 100) * canvasSize.width,
+    y: (pctY / 100) * canvasSize.height,
   };
 }
 
@@ -126,9 +157,9 @@ export function mToPercent(meters: number, viewport: Viewport): number {
 /**
  * Convert meters to canvas pixels for radius rendering
  */
-export function mToPixels(meters: number, viewport: Viewport): number {
+export function mToPixels(meters: number, viewport: Viewport, canvasSize = CANVAS_SIZE): number {
   const percent = mToPercent(meters, viewport);
-  return (percent / 100) * CANVAS_SIZE.width;
+  return (percent / 100) * canvasSize.width;
 }
 
 /**

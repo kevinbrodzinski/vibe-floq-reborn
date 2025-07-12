@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    // Get user from JWT first (using anon key)
+    const authSupabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -28,14 +29,20 @@ Deno.serve(async (req) => {
       }
     )
 
-    // Get user from JWT
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Use service role key for database operations (bypasses RLS)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      // No auth headers - service role bypasses RLS
+    )
 
     const { floq_id, action, boost_type = 'vibe' }: BoostRequest = await req.json()
 
@@ -49,6 +56,20 @@ Deno.serve(async (req) => {
     console.log(`${action} boost for floq ${floq_id} by user ${user.id}`)
 
     if (action === 'boost') {
+      // Rate limiting: Check boost count in last hour
+      const { count } = await supabase
+        .from('floq_boosts')
+        .select('*', { head: true, count: 'exact' })
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
+
+      if (count! >= 60) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded: maximum 60 boosts per hour' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       // Add boost
       const { data, error } = await supabase
         .from('floq_boosts')
