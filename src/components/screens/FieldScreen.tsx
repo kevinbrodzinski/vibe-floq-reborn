@@ -102,21 +102,54 @@ export const FieldScreen = () => {
     }
   };
 
-  // 6.6 - Convert presence data to people format with friend information
+  // 6.6 - Convert presence data to people format with proper field coordinates
   const people: Person[] = useStableMemo(() => {
+    if (!location.lat || !location.lng) return [];
+    
+    console.log(`🗺️ [FIELD_COORDS] Converting presence to field coordinates:`, {
+      user_location: { lat: location.lat, lng: location.lng },
+      presence_count: presenceData.length,
+      sample_presence: presenceData.slice(0, 2).map(p => ({ 
+        user_id: p.user_id, 
+        lat: p.lat, 
+        lng: p.lng 
+      }))
+    });
+    
     return presenceData.map((presence) => {
       const profile = profilesMap.get(presence.user_id);
+      
+      // Convert lat/lng to field coordinates based on geographic distance from user
+      const latDiff = presence.lat - location.lat; // Degrees north/south
+      const lngDiff = presence.lng - location.lng; // Degrees east/west
+      
+      // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
+      const xMeters = lngDiff * 111320 * Math.cos((location.lat * Math.PI) / 180);
+      const yMeters = latDiff * 111320;
+      
+      // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
+      const scale = 50; // 50% field width per km
+      const x = Math.min(Math.max((xMeters / 1000) * scale + 50, 5), 95); // Center at 50%, clamp to 5-95%
+      const y = Math.min(Math.max(-(yMeters / 1000) * scale + 50, 5), 95); // Center at 50%, negative Y (screen coords)
+      
+      console.log(`📍 [COORD_TRANSFORM] ${presence.user_id}:`, {
+        original: { lat: presence.lat, lng: presence.lng },
+        deltas: { latDiff, lngDiff },
+        meters: { x: xMeters, y: yMeters },
+        field_percent: { x, y }
+      });
+      
       return {
         id: presence.user_id,
         name: (profile as any)?.display_name || `User ${presence.user_id.slice(-4)}`,
-        x: Math.random() * 80 + 10, // TODO: Convert lat/lng to field coordinates
-        y: Math.random() * 80 + 10,
+        x,
+        y,
         color: getVibeColor(presence.vibe || 'social'),
         vibe: presence.vibe || 'social',
         isFriend: presence.isFriend || false, // 6.4 - Pass friend flag for UI enhancement
       };
     });
-  }, [presenceData.length, profilesMap.size]);
+  }, [presenceData, profilesMap, location.lat, location.lng]);
 
   // 6.6 - Convert friends to extended format for constellation mode
   const friends = useStableMemo(() => {

@@ -45,15 +45,19 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
   const frozenLng = lastLngRef.current;
   const hasValidCoords = Number.isFinite(frozenLat) && Number.isFinite(frozenLng);
 
-  // Query for initial presence data (live mode only)
+  // Enhanced query for initial presence data with detailed logging
   const { data: people = [] } = useQuery({
     queryKey: ['presence-nearby', frozenLat, frozenLng],
     queryFn: async () => {
       if (!hasValidCoords) return [];
       
-      if (env.debugPresence) {
-        console.log('🔄 Fetching nearby presence data:', { lat: frozenLat, lng: frozenLng });
-      }
+      console.log(`🔍 [PRESENCE_QUERY] Querying nearby people:`, {
+        lat: frozenLat, lng: frozenLng,
+        radius_km: 5,
+        include_self: false,
+        mode: env.presenceMode,
+        query_location: `${frozenLat}, ${frozenLng}`
+      });
       
       const { data, error } = await supabase.rpc('presence_nearby', {
         lat: frozenLat!,
@@ -63,11 +67,18 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
       });
 
       if (error) {
+        console.error('❌ [PRESENCE_QUERY] RPC error:', error);
         if (env.debugNetwork) {
           console.error('🔴 Error fetching nearby presence:', error);
         }
         return [];
       }
+
+      console.log(`✅ [PRESENCE_QUERY] Raw RPC response:`, {
+        results_count: data?.length || 0,
+        raw_data: data?.slice(0, 2),
+        all_user_ids: data?.map((p: any) => p.user_id) || []
+      });
 
       const mappedData = (data || []).map((item: any): LivePresence => ({
         user_id: item.user_id,
@@ -82,6 +93,17 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
         expires_at: item.expires_at || new Date(Date.now() + 2 * 60 * 1000).toISOString(),
         isFriend: friendsSet.has(item.user_id) // 6.3 - Mark friends for UI enhancement
       }));
+
+      console.log(`🔄 [PRESENCE_TRANSFORM] Mapped coordinates:`, {
+        mapped_count: mappedData.length,
+        sample_coords: mappedData.slice(0, 2).map((p, index) => ({ 
+          user_id: p.user_id, 
+          lat: p.lat, 
+          lng: p.lng,
+          vibe: p.vibe,
+          original_data: data?.[index] || 'missing'
+        }))
+      });
       
       if (env.debugPresence) {
         console.log('✅ Fetched presence data:', { count: mappedData.length, users: mappedData });
@@ -239,6 +261,17 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
 
   // Live mode returns actual data from the query
   if (env.presenceMode === 'live') {
+    // Final debug summary
+    useEffect(() => {
+      console.log(`📊 [PRESENCE_FINAL] Hook results:`, {
+        mode: env.presenceMode,
+        people_count: people.length,
+        hasValidCoords,
+        location: { lat: frozenLat, lng: frozenLng },
+        sample_people: people.slice(0, 2)
+      });
+    }, [people.length, env.presenceMode, hasValidCoords, frozenLat, frozenLng]);
+    
     return { people, lastHeartbeat };
   }
 
