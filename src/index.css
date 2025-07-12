@@ -459,4 +459,18 @@ All colors MUST be HSL.
     --z-header: 25;
     --z-sheet: 60;
     --z-toast: 70;
+    
+    /* Mobile navigation height */
+    --mobile-nav-height: 68px;
+  }
+
+  /* Grabber handle indicator */
+  .grabber::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: hsl(var(--muted-foreground) / 0.3);
+    margin: 0 auto;
   }

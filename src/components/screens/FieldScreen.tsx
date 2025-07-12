@@ -10,7 +10,7 @@ import { ConstellationControls } from "./field/ConstellationControls";
 import { TimeBasedActionCard } from "./field/TimeBasedActionCard";
 import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
-import { NearbyVenuesSheet } from "@/components/NearbyVenuesSheet";
+import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { VenuesChip } from "@/components/VenuesChip";
 import { useDebug } from "@/lib/useDebug";
@@ -426,8 +426,8 @@ export const FieldScreen = () => {
           />
         )}
 
-        {/* Nearby Venues Sheet */}
-        <NearbyVenuesSheet
+        {/* Resizable Venues Sheet */}
+        <ResizableVenuesSheet
           isOpen={venuesSheetOpen}
           onClose={() => setVenuesSheetOpen(false)}
           onVenueTap={(venueId) => {
