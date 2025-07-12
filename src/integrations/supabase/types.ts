@@ -1082,7 +1082,7 @@ export type Database = {
         Returns: string
       }
       attempt_claim_username: {
-        Args: { desired: string }
+        Args: { desired: string } | { desired: string }
         Returns: boolean
       }
       award_achievement_optimized: {
@@ -1590,7 +1590,7 @@ export type Database = {
         }[]
       }
       get_user_by_username: {
-        Args: { lookup_username: string }
+        Args: { lookup_username: string } | { lookup_username: string }
         Returns: {
           id: string
           username: string
@@ -3087,7 +3087,7 @@ export type Database = {
         Returns: boolean
       }
       username_available: {
-        Args: { u: string }
+        Args: { u: string } | { u: string }
         Returns: boolean
       }
       venue_details: {
