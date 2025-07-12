@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { Search, Plus, Coffee, MessageCircle, Users, MapPin } from "lucide-react";
+import { Search, Plus, Coffee, MessageCircle, Users, MapPin, Clock, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { getEnvironmentConfig } from "@/lib/environment";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
@@ -122,38 +124,46 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
         )}
       </div>
 
-      {/* Action buttons with boost button */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <button 
-          onClick={onJoin}
-          className="bg-gradient-primary text-primary-foreground py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg text-sm"
-        >
-          Join
-        </button>
-        <button 
-          onClick={onChat}
-          className="bg-secondary/60 text-secondary-foreground py-2 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:bg-secondary/80 text-sm"
-        >
-          Chat
-        </button>
-      </div>
-      
-      {/* Secondary actions */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex justify-center">
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex gap-3 flex-1">
+          <Button
+            onClick={onJoin}
+            size="sm"
+            disabled={getEnvironmentConfig().presenceMode === 'offline'}
+            className="bg-gradient-to-r from-primary to-primary-variant text-primary-foreground border-0 disabled:opacity-50"
+          >
+            <UserPlus className="w-4 h-4" />
+            Join
+          </Button>
+          <Button
+            onClick={onChat}
+            size="sm"
+            variant="outline"
+            disabled={getEnvironmentConfig().presenceMode === 'offline'}
+            className="border-primary/30 text-primary hover:bg-primary/10 disabled:opacity-50"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Chat
+          </Button>
+          <Button
+            onClick={onSuggestChange}
+            size="sm"
+            variant="ghost"
+            disabled={getEnvironmentConfig().presenceMode === 'offline'}
+            className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
+            <Clock className="w-4 h-4" />
+            Suggest
+          </Button>
+        </div>
+        <div className="flex justify-end">
           <BoostButton 
             floqId={row.id} 
             boostCount={row.boost_count}
             size="sm"
-            className="w-full justify-center"
           />
         </div>
-        <button 
-          onClick={onSuggestChange}
-          className="bg-accent/20 text-accent border border-accent/30 py-2 px-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 hover:bg-accent/30 text-sm"
-        >
-          Suggest Change
-        </button>
       </div>
     </div>
   );
@@ -213,6 +223,11 @@ export const FloqsScreen = () => {
 
   // Action handlers
   const handleJoinFloq = (floqId: string) => {
+    const env = getEnvironmentConfig();
+    if (env.presenceMode === 'offline') {
+      // Already handled in the hook with toast
+      return;
+    }
     join({ floqId });
   };
 

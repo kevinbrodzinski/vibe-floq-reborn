@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import throttle from 'lodash.throttle';
 import { supabase } from '@/integrations/supabase/client';
+import { getEnvironmentConfig, isDemo } from '@/lib/environment';
 
 interface DirectMessage {
   id: string;
@@ -30,9 +31,17 @@ export function useDMThread(friendId: string | null) {
     queryKey: ['dm-thread', friendId, selfId],
     enabled: !!friendId && !!selfId,
     queryFn: async () => {
+      const env = getEnvironmentConfig();
+      
+      if (env.presenceMode === 'offline') {
+        // Return a mock thread ID for offline mode
+        return `offline-thread-${selfId}-${friendId}`;
+      }
+
       const { data, error } = await supabase.rpc('find_or_create_dm', {
         a: selfId,
         b: friendId,
+        p_use_demo: isDemo()
       });
       if (error) throw error;
       return data as string;

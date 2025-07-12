@@ -208,6 +208,13 @@ export function logEnvironmentInfo() {
   console.groupEnd();
 }
 
+/**
+ * Helper to check if we're in demo mode
+ */
+export function isDemo(): boolean {
+  return getEnvironmentConfig().presenceMode === 'mock';
+}
+
 // Auto-log environment info in development only
 if (import.meta.env.DEV) {
   logEnvironmentInfo();

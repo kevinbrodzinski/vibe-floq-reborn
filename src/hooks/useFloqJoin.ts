@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getEnvironmentConfig, isDemo } from '@/lib/environment';
 
 interface JoinFloqParams {
   floqId: string;
@@ -17,9 +18,20 @@ export const useFloqJoin = () => {
 
   const joinFloq = useMutation({
     mutationFn: async ({ floqId, userId }: JoinFloqParams) => {
+      const env = getEnvironmentConfig();
+      
+      if (env.presenceMode === 'offline') {
+        toast({ 
+          title: 'Offline mode', 
+          description: 'Join is disabled in offline mode.' 
+        });
+        return;
+      }
+
       const { data, error } = await supabase.rpc('join_floq', {
         p_floq_id: floqId,
-        p_user_id: userId || undefined
+        p_user_id: userId || undefined,
+        p_use_demo: isDemo()
       });
       
       if (error) throw error;
@@ -60,9 +72,20 @@ export const useFloqJoin = () => {
 
   const leaveFloq = useMutation({
     mutationFn: async ({ floqId, userId }: LeaveFloqParams) => {
+      const env = getEnvironmentConfig();
+      
+      if (env.presenceMode === 'offline') {
+        toast({ 
+          title: 'Offline mode', 
+          description: 'Leave is disabled in offline mode.' 
+        });
+        return;
+      }
+
       const { data, error } = await supabase.rpc('leave_floq', {
         p_floq_id: floqId,
-        p_user_id: userId || undefined
+        p_user_id: userId || undefined,
+        p_use_demo: isDemo()
       });
       
       if (error) throw error;
