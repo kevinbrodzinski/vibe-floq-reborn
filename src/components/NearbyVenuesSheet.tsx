@@ -5,7 +5,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VenueListItem } from './VenueListItem';
 import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
 
 interface NearbyVenuesSheetProps {
@@ -15,7 +15,9 @@ interface NearbyVenuesSheetProps {
 }
 
 export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesSheetProps) {
-  const { lat, lng, loading: locationLoading, hasPermission, requestLocation } = useGeolocation();
+  const { lat, lng, loading: locationLoading, error } = useOptimizedGeolocation();
+  const hasPermission = !!(lat && lng);
+  const requestLocation = () => window.location.reload();
   const { 
     data, 
     isLoading, 
@@ -75,7 +77,7 @@ export function NearbyVenuesSheet({ isOpen, onClose, onVenueTap }: NearbyVenuesS
           <div className="p-4">
             {!hasPermission && !lat && !lng ? (
               <div className="flex items-center justify-center py-12">
-                <GeolocationPrompt onRequestLocation={requestLocation} isLoading={locationLoading} />
+                <GeolocationPrompt onRequestLocation={requestLocation} loading={locationLoading} />
               </div>
             ) : locationLoading ? (
               <div className="flex items-center justify-center py-12">

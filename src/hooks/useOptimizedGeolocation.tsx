@@ -24,6 +24,19 @@ export const useOptimizedGeolocation = () => {
   const watchId = useRef<number | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
+  // Debug location override from localStorage
+  const getDebugLocation = useCallback(() => {
+    const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+    if (debugLoc) {
+      const [lat, lng] = debugLoc.split(',').map(Number);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        console.log('[DEBUG] Using forced location:', { lat, lng });
+        return { lat, lng };
+      }
+    }
+    return null;
+  }, []);
+
   const calculateDistance = useCallback((lat1: number, lng1: number, lat2: number, lng2: number) => {
     const R = 6371e3; // Earth's radius in meters
     const φ1 = lat1 * Math.PI/180;
@@ -76,6 +89,20 @@ export const useOptimizedGeolocation = () => {
   }, [calculateDistance]);
 
   useEffect(() => {
+    // Check for debug location override first
+    const debugLoc = getDebugLocation();
+    if (debugLoc) {
+      setLocation({
+        lat: debugLoc.lat,
+        lng: debugLoc.lng,
+        accuracy: 10, // Fake high accuracy for debug
+        loading: false,
+        error: null,
+      });
+      lastPosition.current = debugLoc;
+      return;
+    }
+
     if (!navigator.geolocation) {
       setLocation(prev => ({
         ...prev,
@@ -86,6 +113,7 @@ export const useOptimizedGeolocation = () => {
     }
 
     const errorHandler = (error: GeolocationPositionError) => {
+      console.log('[GEOLOCATION] Error:', error.message, 'Code:', error.code);
       setLocation(prev => ({
         ...prev,
         loading: false,
@@ -93,9 +121,17 @@ export const useOptimizedGeolocation = () => {
       }));
     };
 
+    console.log('[GEOLOCATION] Requesting initial position...');
+    
     // Get initial position with higher timeout for first fix
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('[GEOLOCATION] Got initial position:', {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+        
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -135,7 +171,7 @@ export const useOptimizedGeolocation = () => {
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [updateLocation]);
+  }, [updateLocation, getDebugLocation]);
 
   return location;
 };

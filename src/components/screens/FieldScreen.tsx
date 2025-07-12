@@ -27,7 +27,8 @@ import { useFriends } from "@/hooks/useFriends";
 import { useBucketedPresence } from "@/hooks/useBucketedPresence";
 
 // Use enhanced geolocation hook with user gesture requirement
-import { useGeolocation } from "@/hooks/useGeolocation";
+import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
+import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 
@@ -65,7 +66,7 @@ export const FieldScreen = () => {
   const { mode, set } = useFullscreenMap();
   
   // Use enhanced geolocation hook
-  const location = useGeolocation();
+  const location = useOptimizedGeolocation();
   const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
   
   // 6.6 - Integration: Wire up friends and presence data
@@ -233,6 +234,30 @@ export const FieldScreen = () => {
   // });
   const handlers = {};
 
+  // Show geolocation prompt if no location and not loading, or if there's an error
+  if ((!location.lat && !location.loading) || location.error) {
+    const requestLocation = () => {
+      // For optimized geolocation, we trigger a reload to restart the process
+      window.location.reload();
+    };
+
+    return (
+      <ErrorBoundary>
+        <div className="relative h-svh w-full bg-background">
+          <FieldHeader locationReady={false} />
+          <div className="flex items-center justify-center h-full p-4">
+            <GeolocationPrompt 
+              onRequestLocation={requestLocation} 
+              error={location.error}
+              loading={location.loading}
+            />
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  // Show loading state
   if (location.loading && !location.lat) {
     return (
       <ErrorBoundary>
