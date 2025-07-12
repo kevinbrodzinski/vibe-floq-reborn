@@ -292,8 +292,13 @@ export const FieldScreen = () => {
     if (mode === 'full')      params.set('full', '1');
     else if (mode === 'list') params.set('view', 'list');
 
-    // preserve all other query params the page might be using
-    navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+    // URL cleanliness: avoid empty question-mark
+    if (!params.toString()) {
+      navigate(window.location.pathname + window.location.hash, { replace: true });
+    } else {
+      // preserve all other query params the page might be using
+      navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+    }
   }, [mode, _hasHydrated, navigate]);
 
   // FieldScreen unmount → scrub mode params
@@ -303,6 +308,19 @@ export const FieldScreen = () => {
     params.delete('view');
     navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
   }, [navigate]);
+
+  // Back-forward navigation: re-apply prevMode logic on popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('full')) setMode('full');
+      else if (params.get('view') === 'list') setMode('list');
+      else setMode('map');
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setMode]);
 
   // Auto-exit full-screen when any sheet opens
   useEffect(() => {
