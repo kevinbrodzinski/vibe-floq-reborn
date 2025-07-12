@@ -16,8 +16,7 @@ interface OnlineFriendRowProps {
 }
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
-  // const { data: p } = useProfile(userId);
-  const p = { display_name: 'Friend', avatar_url: null }; // Mock for now
+  const { data: p, isLoading } = useProfile(userId);
   const statusMap = useFriendsPresence();
   const online = statusMap[userId] === 'online';
   const [dmOpen, setDmOpen] = useState(false);
@@ -41,7 +40,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
     onLongPress: () => setDmOpen(true)
   });
 
-  if (!p) {
+  if (isLoading || !p) {
     return <div className="h-12 animate-pulse bg-muted/30 rounded" />;
   }
 
@@ -79,7 +78,8 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
         </div>
 
       <div className="flex-1 min-w-0">
-        <span className="text-sm truncate">@{p.display_name}</span>
+        <div className="text-sm truncate">{p.display_name}</div>
+        <div className="text-xs text-muted-foreground truncate">@{p.username}</div>
       </div>
 
       {isNearby && (

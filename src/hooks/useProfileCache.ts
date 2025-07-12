@@ -3,10 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { SearchedUser } from '@/hooks/useUserSearch';
 import { getEnvironmentConfig } from '@/lib/environment';
 
+// Updated Profile interface to match our hardened database schema
 export interface Profile {
   id: string;
-  display_name: string | null;
+  username: string;        // now required (NOT NULL in DB)
+  display_name: string;    // now required (NOT NULL in DB)
+  first_name?: string | null;
+  last_name?: string | null;
   avatar_url: string | null;
+  bio?: string | null;
+  interests?: string[] | null;
+  custom_status?: string | null;
   created_at: string;
 }
 
@@ -17,7 +24,8 @@ export function useProfileCache() {
     users.forEach(user => {
       queryClient.setQueryData(['profile', user.id], {
         id: user.id,
-        display_name: user.display_name,
+        username: user.username,     // Now guaranteed to be present
+        display_name: user.display_name,  // Now guaranteed to be present
         avatar_url: user.avatar_url,
         created_at: user.created_at,
       });
@@ -35,11 +43,13 @@ export function useProfile(userId: string) {
   if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
     // Return mock profile with deterministic but varied data
     const names = ['Mock User', 'Test User', 'Demo User', 'Sample User'];
-    const name = names[Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length];
+    const usernames = ['mock_user', 'test_user', 'demo_user', 'sample_user'];
+    const index = Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length;
     
     const mockProfile: Profile = {
       id: userId,
-      display_name: name,
+      username: usernames[index],
+      display_name: names[index],
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
       created_at: '2024-01-01T00:00:00Z'
     };
@@ -53,26 +63,23 @@ export function useProfile(userId: string) {
     };
   }
 
-  // Live mode - actual profile data
+  // Live mode - implement real profile fetching using React Query
+  return useQuery({
+    queryKey: ['profile', userId],
+    queryFn: async (): Promise<Profile> => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-  // TODO: Implement real profile cache queries using Supabase
-  // For now, return stub data even in live mode until implementation is ready
-  const stubProfile: Profile = {
-    id: userId,
-    display_name: 'Live User',
-    avatar_url: null,
-    created_at: new Date().toISOString(),
-  };
-  
-  if (env.debugPresence) {
-    console.log('🔴 useProfile - Live mode not yet implemented, using stub data for:', userId);
-  }
-
-  return {
-    data: stubProfile,
-    isLoading: false,
-    error: null,
-    isError: false,
-    isSuccess: true,
-  };
+      if (error) throw error;
+      if (!data) throw new Error('Profile not found');
+      
+      return data as Profile;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
 }

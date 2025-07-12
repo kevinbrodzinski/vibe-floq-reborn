@@ -1,16 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/hooks/useProfileCache';
 
-export type Profile = {
-  id: string;
-  username?: string | null;
-  display_name?: string | null;
-  avatar_url?: string | null;
-  bio?: string | null;
-  interests?: string[] | null;
-  custom_status?: string | null;
-  created_at: string;
-};
+// Re-export the consolidated Profile type for backward compatibility
+export type { Profile };
 
 export const useProfile = (userId: string | undefined) => {
   const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
@@ -50,6 +43,8 @@ export const useProfile = (userId: string | undefined) => {
       return data as Profile;
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 };
 
@@ -91,5 +86,7 @@ export const useProfileByUsername = (username: string | undefined) => {
       return data as Profile;
     },
     enabled: !!username,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 };
