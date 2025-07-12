@@ -77,6 +77,7 @@ export const useBoostSubscription = () => {
 
 export const useFloqBoost = () => {
   const queryClient = useQueryClient();
+  console.log('🔗 useFloqBoost hook initialized');
   const userId = useCurrentUserId();
 
   const boostFloq = useMutation({

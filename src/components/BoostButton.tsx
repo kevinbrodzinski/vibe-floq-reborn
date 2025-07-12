@@ -19,9 +19,12 @@ export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }:
   const userHasBoosted = !!userBoost;
 
   const handleClick = () => {
+    console.log('🚀 BoostButton clicked:', { floqId, userHasBoosted, boostCount });
     if (userHasBoosted) {
+      console.log('📉 Removing boost for floq:', floqId);
       removeBoost({ floqId });
     } else {
+      console.log('📈 Adding boost for floq:', floqId);
       boost({ floqId });
     }
   };
