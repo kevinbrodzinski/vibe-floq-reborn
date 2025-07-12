@@ -13,7 +13,8 @@ export function VenuesChip({ onOpen, venueCount = 1 }: VenuesChipProps) {
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20"
+      className="fixed left-1/2 -translate-x-1/2 z-20"
+      style={{ bottom: `calc(var(--mobile-nav-height, 75px) + 16px)` }}
       {...handlers}
     >
       <button
