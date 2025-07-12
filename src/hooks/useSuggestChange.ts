@@ -16,6 +16,12 @@ export function useSuggestChange() {
 
   const mutation = useMutation({
     mutationFn: async (payload: SuggestChangePayload) => {
+      // Clamp note length before sending
+      const clampedPayload = {
+        ...payload,
+        note: payload.note ? payload.note.slice(0, 240) : payload.note
+      };
+
       // Demo/offline mode - just simulate success
       if (isDemo() || getEnvironmentConfig().presenceMode === "offline") {
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
@@ -24,7 +30,7 @@ export function useSuggestChange() {
 
       // Real endpoint call
       const { data, error } = await supabase.functions.invoke("floq-suggest-change", {
-        body: payload,
+        body: clampedPayload,
       });
 
       if (error) throw error;
@@ -51,7 +57,6 @@ export function useSuggestChange() {
           description: "Your suggestion has been shared with the group.",
         });
       }
-      setOptimisticSuggestion(null);
     },
     onError: (error: any) => {
       toast({
@@ -59,6 +64,9 @@ export function useSuggestChange() {
         title: "Could not send suggestion",
         description: error.message || "Something went wrong",
       });
+    },
+    onSettled: () => {
+      // Clear optimistic state in all cases
       setOptimisticSuggestion(null);
     },
   });

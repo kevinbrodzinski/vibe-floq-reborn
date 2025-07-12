@@ -85,7 +85,7 @@ export function VenueSelect({ value, onChange, className }: VenueSelectProps) {
                   key={venue.id}
                   value={venue.label}
                   onSelect={() => {
-                    onChange(venue.id === value?.id ? null : venue);
+                    onChange(venue.id === value?.id ? null : (venue.id === "current" ? undefined : venue));
                     setOpen(false);
                   }}
                   className="flex items-center gap-3 p-3"

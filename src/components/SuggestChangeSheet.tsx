@@ -36,9 +36,16 @@ export const SuggestChangeSheet = ({ floqId, open, onOpenChange }: Props) => {
   };
 
   const handleQuickTime = (minutes: number) => {
-    const newTime = new Date();
-    newTime.setTime(newTime.getTime() + minutes * 60 * 1000);
-    setWhen(newTime);
+    if (minutes === 120) {
+      // "Tonight 7 PM" - set to 7 PM today
+      const newTime = new Date();
+      newTime.setHours(19, 0, 0, 0);
+      setWhen(newTime);
+    } else {
+      const newTime = new Date();
+      newTime.setTime(newTime.getTime() + minutes * 60 * 1000);
+      setWhen(newTime);
+    }
   };
 
   const handleSend = () => {
@@ -160,9 +167,9 @@ export const SuggestChangeSheet = ({ floqId, open, onOpenChange }: Props) => {
             </Button>
             <Button
               className="flex-1 min-h-[44px]"
-              disabled={!ready || isLoading || isOffline}
+              disabled={!ready || isLoading}
               onClick={handleSend}
-              title={isOffline ? "Suggestions disabled in offline mode" : undefined}
+              title={!ready ? "Add a venue, time, or note to send" : isLoading ? "Sending suggestion..." : undefined}
             >
               {isLoading ? "Sending…" : (
                 <>
