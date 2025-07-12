@@ -45,6 +45,11 @@ export const useFloqJoin = () => {
       });
     },
     onError: (error: any) => {
+      // Don't show destructive toast for duplicate joins - user just tapped twice
+      if (error.message?.includes('duplicate') || error.message?.includes('already')) {
+        return; // Silent fail for duplicate attempts
+      }
+      
       toast({
         title: "Failed to join floq",
         description: error.message || "Something went wrong",
@@ -92,9 +97,8 @@ export const useFloqJoin = () => {
   });
 
   return {
-    joinFloq: joinFloq.mutate,
-    leaveFloq: leaveFloq.mutate,
-    isJoining: joinFloq.isPending,
-    isLeaving: leaveFloq.isPending,
+    join: joinFloq.mutate,
+    leave: leaveFloq.mutate,
+    isPending: joinFloq.isPending || leaveFloq.isPending,
   };
 };

@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Search, Plus, Coffee, MessageCircle, Heart, Zap, Users } from "lucide-react";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
+
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
+import { DMQuickSheet } from "@/components/DMQuickSheet";
 import { useDebug } from "@/lib/useDebug";
 
 // Vibe color mapping
@@ -29,7 +31,7 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
   const isStartingSoon = row.starts_in_min <= 30;
 
   return (
-    <div className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:bg-card/60">
+    <div className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-2px] hover:bg-card/60">
       <div className="flex items-center space-x-4 mb-6">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse"
@@ -58,17 +60,17 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
                   key={member.id || idx}
                   className="w-6 h-6 rounded-full bg-gradient-secondary border-2 border-background overflow-hidden"
                 >
-                  {member.avatar_url ? (
-                    <img 
-                      src={member.avatar_url} 
-                      alt={member.display_name || member.username || 'User'} 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <Users size={12} />
-                    </div>
-                  )}
+                   {member.avatar_url ? (
+                     <img 
+                       src={member.avatar_url} 
+                       alt={member.display_name || member.username || 'User'} 
+                       className="w-full h-full object-cover"
+                     />
+                   ) : (
+                     <div className="w-full h-full bg-surface/30 animate-pulse flex items-center justify-center">
+                       <Users size={12} className="text-muted-foreground" />
+                     </div>
+                   )}
                 </div>
               ))}
             </div>
@@ -80,7 +82,7 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
       </div>
 
       {/* Status indicators */}
-      <div className="flex space-x-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <span className="px-3 py-1 rounded-full text-xs border border-primary/50 text-primary bg-primary/10">
           Open
         </span>
@@ -122,6 +124,8 @@ const FloqCard = ({ row, onJoin, onChat, onBoost }: {
 export const FloqsScreen = () => {
   const [debug] = useDebug();
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  const [dmSheetOpen, setDmSheetOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   
   // Get stored radius preference or default to 0.5km
   const getStoredRadius = () => {
@@ -137,7 +141,7 @@ export const FloqsScreen = () => {
 
   const [radiusKm, setRadiusKm] = useState(getStoredRadius);
   const { data: floqs = [], isLoading } = useActiveFloqs();
-  const { joinFloq, isJoining } = useFloqJoin();
+  const { join, isPending } = useFloqJoin();
 
   // Persist radius preference
   useEffect(() => {
@@ -150,12 +154,16 @@ export const FloqsScreen = () => {
 
   // Action handlers
   const handleJoinFloq = (floqId: string) => {
-    joinFloq({ floqId });
+    join({ floqId });
   };
 
-  const handleChat = (floqId: string) => {
-    // TODO: Implement navigation to DM thread
-    console.log('Opening chat for floq:', floqId);
+  const handleChat = (floq: FloqRow) => {
+    // Get the first participant (creator) to start a DM
+    const creator = floq.members[0];
+    if (!creator) return;
+    
+    setSelectedFriendId(creator.id);
+    setDmSheetOpen(true);
   };
 
   const handleBoost = (floqId: string) => {
@@ -218,7 +226,7 @@ export const FloqsScreen = () => {
               key={floq.id}
               row={floq}
               onJoin={() => handleJoinFloq(floq.id)}
-              onChat={() => handleChat(floq.id)}
+              onChat={() => handleChat(floq)}
               onBoost={() => handleBoost(floq.id)}
             />
           ))}
@@ -235,7 +243,7 @@ export const FloqsScreen = () => {
                 key={`suggested-${floq.id}`}
                 row={floq}
                 onJoin={() => handleJoinFloq(floq.id)}
-                onChat={() => handleChat(floq.id)}
+                onChat={() => handleChat(floq)}
                 onBoost={() => handleBoost(floq.id)}
               />
             ))}
@@ -250,6 +258,13 @@ export const FloqsScreen = () => {
       <CreateFloqSheet 
         open={createFloqOpen} 
         onOpenChange={setCreateFloqOpen} 
+      />
+
+      {/* DM Quick Sheet */}
+      <DMQuickSheet
+        open={dmSheetOpen}
+        onOpenChange={setDmSheetOpen}
+        friendId={selectedFriendId}
       />
     </div>
   );
