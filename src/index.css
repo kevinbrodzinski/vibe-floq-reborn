@@ -231,9 +231,9 @@ All colors MUST be HSL.
     }
     
     .venues-chip {
-      @apply fixed left-1/2 -translate-x-1/2 z-[60]
+      @apply fixed left-1/2 -translate-x-1/2 z-30
              px-4 py-2 rounded-full bg-primary text-primary-foreground shadow-md;
-      bottom: calc(var(--mobile-nav-height) + 12px);
+      bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 12px);
     }
     
     .fullscreen-map-wrapper {
