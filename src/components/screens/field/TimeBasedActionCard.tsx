@@ -7,6 +7,7 @@ import { motion, AnimatePresence, PanInfo } from "framer-motion";
 interface TimeBasedActionCardProps {
   timeState: string;
   onTimeWarpToggle: () => void;
+  className?: string;
 }
 
 type SnapPosition = 'collapsed' | 'expanded';
@@ -41,7 +42,7 @@ interface ActionButton {
   iconOnly?: boolean;
 }
 
-export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedActionCardProps) => {
+export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: TimeBasedActionCardProps) => {
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
   const [snapPosition, setSnapPosition] = useState<SnapPosition>('collapsed');
   const [isDragging, setIsDragging] = useState(false);
@@ -211,7 +212,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle }: TimeBasedAc
     <>
       <motion.div
         ref={containerRef}
-        className="fixed left-4 right-4 z-40 pointer-events-auto will-change-transform"
+        className={`fixed left-4 right-4 z-10 pointer-events-auto will-change-transform ${className || ''}`}
         style={{
           bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
           touchAction: 'pan-y',

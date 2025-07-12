@@ -490,6 +490,7 @@ All colors MUST be HSL.
 
   /* Fullscreen map styles */
   .fullscreen-map {
+    padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
 

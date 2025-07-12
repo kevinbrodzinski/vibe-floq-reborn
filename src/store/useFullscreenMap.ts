@@ -5,8 +5,9 @@ export type FullMode = 'map' | 'full' | 'list'
 
 interface FullscreenMapStore {
   mode: FullMode
+  prevMode?: FullMode
   setMode: (m: FullMode) => void
-  /** map ↔ full */
+  /** map ↔ full with mode memory */
   toggleFull: () => void
   /** map ↔ list */
   toggleList: () => void
@@ -16,9 +17,16 @@ export const useFullscreenMap = create<FullscreenMapStore>()(
   persist(
     (set, get) => ({
       mode: 'map',
+      prevMode: undefined,
       setMode: (mode) => set({ mode }),
       toggleFull: () =>
-        set({ mode: get().mode === 'full' ? 'map' : 'full' }),
+        set((state) => {
+          const next = state.mode === 'full' ? (state.prevMode ?? 'map') : 'full'
+          return { 
+            prevMode: state.mode === 'full' ? undefined : state.mode, 
+            mode: next 
+          }
+        }),
       toggleList: () =>
         set({ mode: get().mode === 'list' ? 'map' : 'list' }),
     }),

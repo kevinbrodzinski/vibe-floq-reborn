@@ -348,8 +348,8 @@ export const FieldScreen = () => {
         <motion.div
           key="map-container"
           className={clsx(
-            "absolute inset-0",
-            isFull ? "z-50 inset-0" : "top-12",
+            "fixed inset-x-0",
+            isFull ? "z-50 inset-0" : "top-12 bottom-0",
             isList ? "z-30" : ""
           )}
           initial={false}
@@ -359,7 +359,9 @@ export const FieldScreen = () => {
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
           style={{
-            paddingBottom: isFull ? 'env(safe-area-inset-bottom)' : 0
+            paddingTop: isFull ? 'env(safe-area-inset-top)' : 0,
+            paddingBottom: isFull ? 'env(safe-area-inset-bottom)' : 0,
+            touchAction: isFull ? 'none' : 'auto'
           }}
         >
           {(mode === 'map' || mode === 'full') && (
@@ -480,14 +482,11 @@ export const FieldScreen = () => {
           />
 
           {/* Time-Based Bottom Action Card */}
-          <div 
-            className="absolute bottom-24 left-4 right-4 z-10"
-          >
-            <TimeBasedActionCard
-              timeState={timeState}
-              onTimeWarpToggle={() => setShowTimeWarp(true)}
-            />
-          </div>
+          <TimeBasedActionCard
+            className={isFull ? 'pointer-events-none opacity-0' : ''}
+            timeState={timeState}
+            onTimeWarpToggle={() => setShowTimeWarp(true)}
+          />
 
           {/* Swipeable Venues Chip */}
           {nearbyVenues.length > 0 && !currentEvent && (
