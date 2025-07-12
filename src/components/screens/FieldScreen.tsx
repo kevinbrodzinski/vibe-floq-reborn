@@ -66,7 +66,7 @@ export const FieldScreen = () => {
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
-  const { mode, setMode } = useFullscreenMap();
+  const { mode, _hasHydrated, setMode } = useFullscreenMap();
   const liveRef = useRef<HTMLParagraphElement>(null);
   const navigate = useNavigate();
   
@@ -264,35 +264,45 @@ export const FieldScreen = () => {
     }
   }, [mode])
 
-  // URL initialization - read URL params on mount
+  // URL → store (run ONCE after both hydration & first mount)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hasFullParam = params.has('full');
-    const hasListParam = params.get('view') === 'list';
-    
-    if (hasFullParam) setMode('full');
-    else if (hasListParam) setMode('list');
-    // else mode stays as persisted value from store
-  }, []); // Empty deps = run once
+    if (!_hasHydrated) return;               // wait until zustand → React sync
+    let init = false;
 
-  // Enhanced URL sync with React Router
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    
-    // Clean conflicting params
+    if (params.has('full'))    { setMode('full'); init = true; }
+    else if (params.get('view') === 'list') { setMode('list'); init = true; }
+
+    // if query said nothing but localStorage had 'full', keep it.
+    // if you want to force map-mode when URL is clean, uncomment:
+    // if (!init) setMode('map');
+  }, [_hasHydrated, setMode]);
+
+  // store → URL (runs every time `mode` changes *after* hydration)
+  useEffect(() => {
+    if (!_hasHydrated) return;              // same guard
+
+    const params = new URLSearchParams(window.location.search);
+
+    // wipe old flags
     params.delete('full');
     params.delete('view');
-    
-    // Set current mode param
-    if (mode === 'full') params.set('full', '1');
+
+    // add the one that represents our new state
+    if (mode === 'full')      params.set('full', '1');
     else if (mode === 'list') params.set('view', 'list');
-    
-    // Navigate with React Router
-    navigate(`?${params.toString()}`, { 
-      replace: true, 
-      preventScrollReset: true 
-    });
-  }, [mode, navigate])
+
+    // preserve all other query params the page might be using
+    navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+  }, [mode, _hasHydrated, navigate]);
+
+  // FieldScreen unmount → scrub mode params
+  useEffect(() => () => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('full');
+    params.delete('view');
+    navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+  }, [navigate]);
 
   // Auto-exit full-screen when any sheet opens
   useEffect(() => {
