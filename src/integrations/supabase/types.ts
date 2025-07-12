@@ -264,6 +264,7 @@ export type Database = {
           starts_at: string | null
           title: string
           type: string | null
+          updated_at: string | null
           vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
           visibility: string | null
           walkable_zone: unknown | null
@@ -284,6 +285,7 @@ export type Database = {
           starts_at?: string | null
           title: string
           type?: string | null
+          updated_at?: string | null
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
           visibility?: string | null
           walkable_zone?: unknown | null
@@ -304,6 +306,7 @@ export type Database = {
           starts_at?: string | null
           title?: string
           type?: string | null
+          updated_at?: string | null
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
           visibility?: string | null
           walkable_zone?: unknown | null

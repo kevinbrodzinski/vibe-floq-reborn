@@ -1,11 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Search, Plus, Coffee, MessageCircle, Users, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
 import { BoostButton } from "@/components/BoostButton";
 import { SuggestChangeModal } from "@/components/SuggestChangeModal";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
@@ -156,6 +160,9 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
 };
 
 export const FloqsScreen = () => {
+  const navigate = useNavigate();
+  const session = useSession();
+  const user = session?.user;
   const [debug] = useDebug();
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
@@ -209,13 +216,44 @@ export const FloqsScreen = () => {
     join({ floqId });
   };
 
-  const handleChat = (floq: FloqRow) => {
+  const handleChat = async (floq: FloqRow) => {
     // Get the first participant (creator) to start a DM
-    const creator = floq.members[0];
-    if (!creator) return;
-    
-    setSelectedFriendId(creator.id);
-    setDmSheetOpen(true);
+    const creator = floq.members?.[0];
+    if (!creator?.id) {
+      toast({
+        title: "No organizer found",
+        description: "Unable to find the floq organizer to chat with.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('find_or_create_dm', { 
+        a: user?.id, 
+        b: creator.id 
+      });
+      
+      if (error) {
+        console.error('DM creation error:', error);
+        toast({
+          title: "Chat unavailable",
+          description: "Unable to start chat. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Navigate to DM
+      navigate(`/dm/${data}`);
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: "Chat error",
+        description: "Something went wrong starting the chat.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSuggestChange = (floq: FloqRow) => {

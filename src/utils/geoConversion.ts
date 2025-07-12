@@ -1,5 +1,5 @@
 // Geographic coordinate conversion utilities for the field visualization system
-// Converts between GPS lat/lng coordinates and field percentage positioning
+// Converts between GPS lat/lng coordinates and absolute pixel positioning within a scrollable canvas
 
 export interface Viewport {
   center: [number, number]; // [lat, lng]
@@ -11,6 +11,17 @@ export interface FieldCoordinate {
   x: number; // 0-100 percentage
   y: number; // 0-100 percentage
 }
+
+export interface CanvasCoordinate {
+  x: number; // absolute pixel position
+  y: number; // absolute pixel position
+}
+
+// Canvas dimensions for the scrollable world
+export const CANVAS_SIZE = {
+  width: 4000,
+  height: 4000,
+};
 
 // Base field dimensions in decimal degrees at zoom level 5
 const BASE_FIELD_SIZE = {
@@ -68,6 +79,23 @@ export function latLngToField(
 }
 
 /**
+ * Convert GPS coordinates to absolute canvas pixel coordinates
+ */
+export function latLngToCanvas(
+  lat: number,
+  lng: number,
+  viewport: Viewport
+): CanvasCoordinate {
+  const fieldCoord = latLngToField(lat, lng, viewport);
+  
+  // Convert percentage to absolute pixels within the canvas
+  return {
+    x: (fieldCoord.x / 100) * CANVAS_SIZE.width,
+    y: (fieldCoord.y / 100) * CANVAS_SIZE.height,
+  };
+}
+
+/**
  * Convert field percentage coordinates to GPS coordinates
  */
 export function fieldToLatLng(
@@ -93,6 +121,14 @@ export function mToPercent(meters: number, viewport: Viewport): number {
   
   // Convert meters to percentage of field width
   return (meters / fieldWidthMeters) * 100;
+}
+
+/**
+ * Convert meters to canvas pixels for radius rendering
+ */
+export function mToPixels(meters: number, viewport: Viewport): number {
+  const percent = mToPercent(meters, viewport);
+  return (percent / 100) * CANVAS_SIZE.width;
 }
 
 /**
