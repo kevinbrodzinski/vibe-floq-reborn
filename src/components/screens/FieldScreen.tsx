@@ -31,6 +31,7 @@ import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
+import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 
 interface Person {
   id: string;
@@ -86,8 +87,16 @@ export const FieldScreen = () => {
     setCurrentVibe(newVibe);
   };
   
-  // Mock floqs data for now
-  const walkable_floqs: any[] = [];
+  // Get walkable floqs using the hook
+  const { data: activeFloqs = [] } = useActiveFloqs({ limit: 50 });
+  const walkable_floqs = activeFloqs.map(floq => ({
+    id: floq.id,
+    title: floq.title,
+    primary_vibe: floq.primary_vibe as Vibe,
+    participant_count: floq.participant_count,
+    distance_meters: floq.distance_meters || 0,
+    starts_at: floq.starts_at
+  }));
   const isLocationReady = !!(location.lat && location.lng);
 
   // Convert nearby users to people format for visualization
