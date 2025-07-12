@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { useTimeSyncContext } from "@/components/TimeSyncProvider";
@@ -67,6 +68,7 @@ export const FieldScreen = () => {
   
   const { mode, setMode } = useFullscreenMap();
   const liveRef = useRef<HTMLParagraphElement>(null);
+  const navigate = useNavigate();
   
   // Use enhanced geolocation hook
   const location = useOptimizedGeolocation();
@@ -262,15 +264,35 @@ export const FieldScreen = () => {
     }
   }, [mode])
 
-  // URL sync
+  // URL initialization - read URL params on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (mode === 'full') params.set('full', '1')
-    else params.delete('full')
-    if (mode === 'list') params.set('view', 'list')
-    else params.delete('view')
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
-  }, [mode])
+    const params = new URLSearchParams(window.location.search);
+    const hasFullParam = params.has('full');
+    const hasListParam = params.get('view') === 'list';
+    
+    if (hasFullParam) setMode('full');
+    else if (hasListParam) setMode('list');
+    // else mode stays as persisted value from store
+  }, []); // Empty deps = run once
+
+  // Enhanced URL sync with React Router
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Clean conflicting params
+    params.delete('full');
+    params.delete('view');
+    
+    // Set current mode param
+    if (mode === 'full') params.set('full', '1');
+    else if (mode === 'list') params.set('view', 'list');
+    
+    // Navigate with React Router
+    navigate(`?${params.toString()}`, { 
+      replace: true, 
+      preventScrollReset: true 
+    });
+  }, [mode, navigate])
 
   // Auto-exit full-screen when any sheet opens
   useEffect(() => {
