@@ -494,6 +494,14 @@ All colors MUST be HSL.
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /* Safe-area guard with @supports */
+  @supports(padding: max(0px)) {
+    .fullscreen-map-wrapper {
+      padding-top: max(env(safe-area-inset-top), 0px);
+      padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    }
+  }
+
   /* Reduced motion support */
   @media (prefers-reduced-motion: reduce) {
     .framer-motion-* {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { useTimeSyncContext } from "@/components/TimeSyncProvider";
@@ -66,6 +66,7 @@ export const FieldScreen = () => {
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
   const { mode, setMode } = useFullscreenMap();
+  const liveRef = useRef<HTMLParagraphElement>(null);
   
   // Use enhanced geolocation hook
   const location = useOptimizedGeolocation();
@@ -278,6 +279,15 @@ export const FieldScreen = () => {
     }
   }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode])
 
+  // Live-region accessibility announcements
+  useEffect(() => {
+    if (liveRef.current) {
+      liveRef.current.textContent =
+        mode === 'full' ? 'Entered full-screen map' :
+        mode === 'list' ? 'List view' : 'Map view';
+    }
+  }, [mode])
+
   // Temporarily disable advanced gestures for baseline
   // const { handlers } = useAdvancedGestures({
   //   onSwipeDown: () => mode === 'full' && set('map'),
@@ -348,7 +358,7 @@ export const FieldScreen = () => {
         <motion.div
           key="map-container"
           className={clsx(
-            "fixed inset-x-0",
+            "fixed inset-x-0 fullscreen-map-wrapper",
             isFull ? "z-50 inset-0" : "top-12 bottom-0",
             isList ? "z-30" : ""
           )}
@@ -520,7 +530,10 @@ export const FieldScreen = () => {
         {/* Full-screen toggle FAB - always on top */}
         <div className="absolute inset-0 z-[60] pointer-events-none">
           <div className="pointer-events-auto">
-            <FullscreenFab />
+        <FullscreenFab />
+
+        {/* Live region for accessibility */}
+        <p ref={liveRef} className="sr-only" aria-live="polite" />
           </div>
         </div>
       </div>
