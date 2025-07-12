@@ -1213,7 +1213,7 @@ export type Database = {
         }[]
       }
       find_or_create_dm: {
-        Args: { a: string; b: string }
+        Args: { a: string; b: string; p_use_demo?: boolean }
         Returns: string
       }
       friend_count: {
@@ -1628,7 +1628,7 @@ export type Database = {
         Returns: unknown
       }
       join_floq: {
-        Args: { p_floq_id: string; p_user_id?: string }
+        Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
       }
       json: {
@@ -1640,7 +1640,7 @@ export type Database = {
         Returns: Json
       }
       leave_floq: {
-        Args: { p_floq_id: string; p_user_id?: string }
+        Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
       }
       list_friends: {
