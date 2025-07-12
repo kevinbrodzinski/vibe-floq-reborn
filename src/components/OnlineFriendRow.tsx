@@ -6,7 +6,7 @@ import { MapPin } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Badge } from '@/components/ui/badge';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
-import { FriendRowSkeleton } from '@/components/ui/friend-row-skeleton';
+import { FriendRowSkeleton } from '@/components/skeletons';
 import { UserTag } from '@/components/ui/user-tag';
 import { useLongPress } from '@/hooks/useLongPress';
 import { supabase } from '@/integrations/supabase/client';

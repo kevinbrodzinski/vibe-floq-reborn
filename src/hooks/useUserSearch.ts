@@ -30,12 +30,23 @@ export function useUserSearch(query: string, enabled = true) {
         return [];
       }
 
+      if (import.meta.env.DEV) {
+        console.time(`search_users_${debouncedQuery.trim()}`);
+      }
+
       const { data, error } = await supabase.rpc('search_users', {
         search_query: debouncedQuery.trim()
       });
 
+      if (import.meta.env.DEV) {
+        console.timeEnd(`search_users_${debouncedQuery.trim()}`);
+        console.log(`Found ${data?.length || 0} results for "${debouncedQuery.trim()}"`);
+      }
+
       if (error) {
-        console.error('User search error:', error);
+        if (import.meta.env.DEV) {
+          console.error('User search error:', error);
+        }
         throw error;
       }
 

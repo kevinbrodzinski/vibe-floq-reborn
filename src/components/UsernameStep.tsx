@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from 'react';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUsername } from '@/hooks/useUsername';
+import { useUsernameAvailability } from '@/hooks/useUsernameAvailability';
 
 interface UsernameStepProps {
   onComplete?: () => void;
@@ -13,57 +14,39 @@ interface UsernameStepProps {
 }
 
 export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps) => {
-  const {
-    draft,
-    updateDraft,
-    isAvailable,
-    isCheckingAvailability,
-    claimUsername,
-    isClaimingUsername,
-  } = useUsername();
-
+  const { claimUsername, isClaimingUsername } = useUsername();
   const [localValue, setLocalValue] = useState('');
-
-  // Sync local input with draft
-  useEffect(() => {
-    updateDraft(localValue);
-  }, [localValue, updateDraft]);
+  
+  const {
+    isChecking: isCheckingAvailability,
+    isAvailable,
+    validationMessage,
+    validationState
+  } = useUsernameAvailability(localValue);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isAvailable && draft.trim()) {
-      // Always submit lowercase username
-      claimUsername(draft.toLowerCase().trim());
+    if (isAvailable && localValue.trim() && validationState === 'available') {
+      claimUsername(localValue.toLowerCase().trim());
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && isAvailable && draft.trim()) {
+    if (e.key === 'Enter' && isAvailable && localValue.trim() && validationState === 'available') {
       handleSubmit(e);
     }
   };
 
-  const isValidFormat = /^[a-zA-Z0-9_]{3,32}$/.test(localValue);
-  const showValidation = localValue.length >= 3;
-  const canSubmit = isAvailable && draft.trim() && !isClaimingUsername;
   const previewUsername = localValue.toLowerCase();
+  const canSubmit = validationState === 'available' && !isClaimingUsername;
+  const characterCount = localValue.length;
+  const maxCharacters = 32;
 
   const ValidationIcon = () => {
-    if (isCheckingAvailability) return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
-    if (!showValidation) return null;
-    if (!isValidFormat) return <X className="w-4 h-4 text-destructive" />;
-    if (isAvailable === true) return <Check className="w-4 h-4 text-green-600" />;
-    if (isAvailable === false) return <X className="w-4 h-4 text-destructive" />;
-    return null;
-  };
-
-  const getHelperText = () => {
-    if (!showValidation) return "3-32 characters: letters, numbers, underscore";
-    if (!isValidFormat) return "Invalid format. Use letters, numbers, underscore only";
-    if (isCheckingAvailability) return "Checking availability...";
-    if (isAvailable === true) return `Username @${previewUsername} is available!`;
-    if (isAvailable === false) return "Username is taken";
-    return "";
+    if (validationState === 'checking') return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
+    if (validationState === 'available') return <Check className="w-4 h-4 text-green-600" />;
+    if (validationState === 'taken' || validationState === 'invalid') return <X className="w-4 h-4 text-destructive" />;
+    return <User className="w-4 h-4 text-muted-foreground" />;
   };
 
   const containerClassName = isModal 
@@ -88,36 +71,50 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
     <div className={containerClassName}>
       <ContentWrapper>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
-                @
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="username">Username</Label>
+                <span className={`text-xs ${characterCount > maxCharacters ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {characterCount}/{maxCharacters}
+                </span>
               </div>
-              <Input
-                id="username"
-                type="text"
-                placeholder="your_username"
-                value={localValue}
-                onChange={(e) => setLocalValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="pl-8 pr-10"
-                autoFocus
-                disabled={isClaimingUsername}
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <ValidationIcon />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                  @
+                </div>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="your_username"
+                  value={localValue}
+                  onChange={(e) => setLocalValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="pl-8 pr-10"
+                  autoFocus
+                  disabled={isClaimingUsername}
+                  maxLength={maxCharacters}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <ValidationIcon />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {getHelperText()}
-            </p>
-            {localValue && localValue !== previewUsername && (
-              <p className="text-xs text-muted-foreground">
-                Will be stored as: @{previewUsername}
+              
+              {/* Validation message */}
+              <p className={`text-sm ${
+                validationState === 'available' ? 'text-green-600' : 
+                validationState === 'taken' || validationState === 'invalid' ? 'text-destructive' : 
+                'text-muted-foreground'
+              }`}>
+                {validationMessage}
               </p>
-            )}
-          </div>
+              
+              {/* Preview lowercase username */}
+              {localValue && localValue !== previewUsername && (
+                <p className="text-xs text-muted-foreground">
+                  Will be stored as: <span className="font-mono">@{previewUsername}</span>
+                </p>
+              )}
+            </div>
 
           <Button 
             type="submit"

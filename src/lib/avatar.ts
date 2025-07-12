@@ -221,13 +221,24 @@ export const deleteAvatar = async (path: string) => {
  */
 export const getInitials = (displayName?: string | null, username?: string | null) => {
   const name = displayName || username;
-  if (!name) return '??';
+  if (!name) return '🤔';
   
-  return name
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
-    .slice(0, 2)
-    .join('');
+  // Handle emoji-only names using Array.from for proper Unicode support
+  const chars = Array.from(name.trim());
+  if (chars.length === 0) return '🤔';
+  
+  // Try to get meaningful initials from words
+  const words = name.split(' ').filter(word => word.trim().length > 0);
+  if (words.length > 0) {
+    return words
+      .map(word => Array.from(word.trim())[0]?.toUpperCase() || '')
+      .filter(char => char.length > 0)
+      .slice(0, 2)
+      .join('');
+  }
+  
+  // Fallback to first character if no spaces
+  return chars[0].toUpperCase();
 };
 
 /**

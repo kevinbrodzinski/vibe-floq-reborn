@@ -67,7 +67,9 @@ export function useProfile(userId: string) {
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: async (): Promise<Profile> => {
-      console.log(`🔍 [PROFILE] Fetching profile for user: ${userId}`);
+      if (import.meta.env.DEV) {
+        console.log(`🔍 [PROFILE] Fetching profile for user: ${userId}`);
+      }
       
       const { data, error } = await supabase
         .from('profiles')
@@ -76,16 +78,22 @@ export function useProfile(userId: string) {
         .maybeSingle();
 
       if (error) {
-        console.error(`❌ [PROFILE] Error fetching profile for ${userId}:`, error);
+        if (import.meta.env.DEV) {
+          console.error(`❌ [PROFILE] Error fetching profile for ${userId}:`, error);
+        }
         throw error;
       }
       
       if (!data) {
-        console.warn(`⚠️ [PROFILE] No profile found for user: ${userId}`);
+        if (import.meta.env.DEV) {
+          console.warn(`⚠️ [PROFILE] No profile found for user: ${userId}`);
+        }
         throw new Error(`Profile not found for user ${userId}`);
       }
       
-      console.log(`✅ [PROFILE] Successfully fetched profile for ${userId}:`, data.username);
+      if (import.meta.env.DEV) {
+        console.log(`✅ [PROFILE] Successfully fetched profile for ${userId}:`, data.username);
+      }
       return data as Profile;
     },
     enabled: !!userId,

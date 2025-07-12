@@ -10,12 +10,14 @@ interface UserSearchResultsProps {
   users: SearchedUser[];
   onAddFriend: (userId: string) => void;
   isLoading?: boolean;
+  selectedIndex?: number;
 }
 
 export const UserSearchResults = ({ 
   users, 
   onAddFriend, 
-  isLoading = false 
+  isLoading = false,
+  selectedIndex = -1 
 }: UserSearchResultsProps) => {
   if (isLoading) {
     return (
@@ -54,7 +56,9 @@ export const UserSearchResults = ({
         return (
           <div 
             key={user.id} 
-            className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors"
+            className={`flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors ${
+              selectedIndex === users.indexOf(user) ? 'bg-accent' : ''
+            }`}
           >
             <Avatar className="w-8 h-8">
               <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
