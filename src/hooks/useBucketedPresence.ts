@@ -228,36 +228,12 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
     };
   }, []);
   
-  if (env.presenceMode === 'mock') {
+  if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
     const people: LivePresence[] = [];
     return { people, lastHeartbeat };
   }
   
-  if (env.presenceMode === 'stub') {
-    // Return stub presence data for testing
-    const stubPeople: LivePresence[] = lat && lng ? [
-      {
-        user_id: 'stub-user-1',
-        vibe: 'social',
-        lat: lat + 0.0005,
-        lng: lng - 0.0005,
-        venue_id: null,
-        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-        isFriend: friendsSet.has('stub-user-1')
-      },
-      {
-        user_id: 'stub-user-2',
-        vibe: 'focused',
-        lat: lat - 0.0008,
-        lng: lng + 0.0003,
-        venue_id: null,
-        expires_at: new Date(Date.now() + 2 * 60 * 1000).toISOString(),
-        isFriend: friendsSet.has('stub-user-2')
-      }
-    ] : [];
-    
-    return { people: stubPeople, lastHeartbeat };
-  }
+  // Live mode - actual presence data
 
   // Live mode returns actual data from the query
   if (env.presenceMode === 'live') {

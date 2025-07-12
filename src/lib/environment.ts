@@ -9,7 +9,7 @@ import { getPercentageBucket } from '@/lib/hash';
 
 export interface EnvironmentConfig {
   // Presence system mode
-  presenceMode: 'mock' | 'stub' | 'live';
+  presenceMode: 'offline' | 'mock' | 'live';
   
   // Feature flags
   enableRealtime: boolean;
@@ -57,20 +57,18 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   }
   
   // Determine presence mode with priority: URL > localStorage > env var > default
-  let presenceMode: 'mock' | 'stub' | 'live' = 'mock'; // default
+  let presenceMode: 'offline' | 'mock' | 'live' = 'mock'; // default
   
   if (urlParams.get('presence') === 'live') {
     presenceMode = 'live';
-  } else if (urlParams.get('presence') === 'stub') {
-    presenceMode = 'stub';
+  } else if (urlParams.get('presence') === 'offline') {
+    presenceMode = 'offline';
   } else if (urlParams.get('presence') === 'mock') {
     presenceMode = 'mock';
   } else if (localStorageMode) {
-    presenceMode = localStorageMode as 'mock' | 'stub' | 'live';
-  } else if (import.meta.env.NEXT_PUBLIC_PRESENCE_STUB === 'true') {
-    presenceMode = 'stub';
+    presenceMode = localStorageMode as 'offline' | 'mock' | 'live';
   } else if (import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true') {
-    presenceMode = 'mock';
+    presenceMode = 'offline';
   }
   
   // Rollout percentage logic
@@ -112,8 +110,8 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   
   return {
     presenceMode,
-    enableRealtime: presenceMode !== 'mock',
-    enableGeolocation: presenceMode !== 'mock',
+    enableRealtime: presenceMode === 'live',
+    enableGeolocation: presenceMode !== 'offline',
     enablePresenceUpdates: presenceMode === 'live',
     debugPresence,
     debugGeohash,
@@ -148,7 +146,7 @@ export function isUserInRollout(userId?: string, config?: EnvironmentConfig): bo
 /**
  * Set presence mode in localStorage (for testing)
  */
-export function setPresenceMode(mode: 'mock' | 'stub' | 'live') {
+export function setPresenceMode(mode: 'offline' | 'mock' | 'live') {
   localStorage.setItem('floq_presence_mode', mode);
   // Reload to apply changes
   window.location.reload();

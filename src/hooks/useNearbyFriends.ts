@@ -46,9 +46,10 @@ export function useNearbyFriends(
   //   }
   // });
   
-  if (env.presenceMode === 'mock') {
+  if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
+    // Return empty array for non-live modes
     const result = {
-      data: [] as NearbyFriend[],
+      data: [],
       isLoading: false,
       error: null,
       isError: false,
@@ -57,36 +58,7 @@ export function useNearbyFriends(
     return { ...result, debouncedPrimeProfiles };
   }
 
-  if (env.presenceMode === 'stub') {
-    // Return stub data for testing UI
-    const stubFriends: NearbyFriend[] = lat && lng ? [
-      {
-        id: 'stub-friend-1',
-        display_name: 'Alex Johnson',
-        avatar_url: null,
-        lat: lat + 0.001,
-        lng: lng + 0.001,
-        distance_m: 150
-      },
-      {
-        id: 'stub-friend-2', 
-        display_name: 'Sarah Chen',
-        avatar_url: null,
-        lat: lat - 0.0005,
-        lng: lng + 0.0005,
-        distance_m: 80
-      }
-    ] : [];
-    
-    const result = {
-      data: stubFriends,
-      isLoading: false,
-      error: null,
-      isError: false,
-      isSuccess: true,
-    };
-    return { ...result, debouncedPrimeProfiles };
-  }
+  // Live mode - actual nearby friends data
 
   // TODO: Implement live nearby friends queries
   // For now, return empty data even in live mode until implementation is ready

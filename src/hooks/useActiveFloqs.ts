@@ -229,9 +229,9 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
     queryKey: ['active-floqs', limit, offset, roundedLat, roundedLng, includeDistance, env.presenceMode],
     staleTime: 10_000,
     queryFn: async () => {
-      // Return mock data in mock mode
-      if (env.presenceMode === 'mock') {
-        console.log('🎭 Returning mock floq data');
+      // Offline mode - pure client-side generation (no network required)
+      if (env.presenceMode === 'offline') {
+        console.log('✈️ Returning offline mock floq data');
         const mockData = generateMockFloqs(
           includeDistance && lat ? lat : undefined,
           includeDistance && lng ? lng : undefined
@@ -239,45 +239,51 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
         return mockData.slice(offset, offset + limit);
       }
 
-      // Return stub data in stub mode
-      if (env.presenceMode === 'stub') {
-        console.log('🎪 Returning stub floq data');
-        const stubData = generateStubFloqs(
-          includeDistance && lat ? lat : undefined,
-          includeDistance && lng ? lng : undefined
-        );
-        return stubData.slice(offset, offset + limit);
+      // Mock mode - demo schema data via RPC
+      if (env.presenceMode === 'mock') {
+        console.log('🎭 Fetching demo floq data from database');
+        const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
+          p_use_demo: true,
+          p_limit: limit,
+          p_offset: offset,
+          p_user_lat: includeDistance && lat ? lat : null,
+          p_user_lng: includeDistance && lng ? lng : null
+        });
+        
+        if (error) throw error;
+        
+        // Transform the data to match our interface
+        return (data || []).map((floq: any) => ({
+          ...floq,
+          vibe_tag: floq.primary_vibe,
+          members: Array.isArray(floq.members) ? floq.members : [],
+          boost_count: floq.boost_count || 0,
+          distance_meters: floq.distance_meters
+        }));
       }
 
-      // Live mode - query Supabase
-      console.log('🚀 Fetching active floqs with params:', {
-        p_limit: limit,
-        p_offset: offset,
-        p_user_lat: includeDistance && lat ? lat : null,
-        p_user_lng: includeDistance && lng ? lng : null
-      });
-
+      // Live mode - production data via RPC
+      console.log('🚀 Fetching live floq data from database');
       const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
+        p_use_demo: false,
         p_limit: limit,
         p_offset: offset,
         p_user_lat: includeDistance && lat ? lat : null,
         p_user_lng: includeDistance && lng ? lng : null
       });
-      
-      console.log('🎯 Query result:', { data, error });
       
       if (error) throw error;
       
       // Transform the data to match our interface
       const transformedData = (data || []).map((floq: any) => ({
         ...floq,
-        vibe_tag: floq.primary_vibe, // Map primary_vibe to vibe_tag for consistency
+        vibe_tag: floq.primary_vibe,
         members: Array.isArray(floq.members) ? floq.members : [],
         boost_count: floq.boost_count || 0,
         distance_meters: floq.distance_meters
       }));
 
-      console.log(`✅ Returning ${transformedData.length} transformed floqs`);
+      console.log(`✅ Returning ${transformedData.length} live floqs`);
       return transformedData;
     },
     // Always enable the query - don't wait for geolocation

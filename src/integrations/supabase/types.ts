@@ -1472,12 +1472,20 @@ export type Database = {
         Returns: Json
       }
       get_active_floqs_with_members: {
-        Args: {
-          p_limit?: number
-          p_offset?: number
-          p_user_lat?: number
-          p_user_lng?: number
-        }
+        Args:
+          | {
+              p_limit?: number
+              p_offset?: number
+              p_user_lat?: number
+              p_user_lng?: number
+            }
+          | {
+              p_use_demo?: boolean
+              p_limit?: number
+              p_offset?: number
+              p_user_lat?: number
+              p_user_lng?: number
+            }
         Returns: {
           id: string
           title: string

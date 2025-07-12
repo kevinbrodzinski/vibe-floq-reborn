@@ -29,7 +29,7 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
 
   if (!isOpen) return null;
 
-  const handleModeChange = (mode: 'mock' | 'stub' | 'live') => {
+  const handleModeChange = (mode: 'offline' | 'mock' | 'live') => {
     setPresenceMode(mode);
   };
 
@@ -53,8 +53,8 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
 
   const getModeColor = (mode: string) => {
     switch (mode) {
-      case 'mock': return 'bg-gray-500';
-      case 'stub': return 'bg-yellow-500';
+      case 'offline': return 'bg-gray-500';
+      case 'mock': return 'bg-yellow-500';
       case 'live': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
@@ -80,9 +80,9 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
               {config.presenceMode.toUpperCase()}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              {config.presenceMode === 'mock' && 'All APIs mocked'}
-              {config.presenceMode === 'stub' && 'Fake data for UI testing'}
-              {config.presenceMode === 'live' && 'Real API calls'}
+              {config.presenceMode === 'offline' && 'Client-side mocks only'}
+              {config.presenceMode === 'mock' && 'Demo database data'}
+              {config.presenceMode === 'live' && 'Live production data'}
             </span>
           </div>
         </div>
@@ -93,17 +93,17 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
           <div className="flex gap-2 mt-1">
             <Button 
               size="sm" 
+              variant={config.presenceMode === 'offline' ? 'default' : 'outline'}
+              onClick={() => handleModeChange('offline')}
+            >
+              Offline
+            </Button>
+            <Button 
+              size="sm" 
               variant={config.presenceMode === 'mock' ? 'default' : 'outline'}
               onClick={() => handleModeChange('mock')}
             >
               Mock
-            </Button>
-            <Button 
-              size="sm" 
-              variant={config.presenceMode === 'stub' ? 'default' : 'outline'}
-              onClick={() => handleModeChange('stub')}
-            >
-              Stub
             </Button>
             <Button 
               size="sm" 

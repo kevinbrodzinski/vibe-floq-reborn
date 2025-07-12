@@ -32,12 +32,16 @@ export function useProfileCache() {
 export function useProfile(userId: string) {
   const env = getEnvironmentConfig();
   
-  if (env.presenceMode === 'mock') {
+  if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
+    // Return mock profile with deterministic but varied data
+    const names = ['Mock User', 'Test User', 'Demo User', 'Sample User'];
+    const name = names[Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length];
+    
     const mockProfile: Profile = {
       id: userId,
-      display_name: 'Mock User',
-      avatar_url: null,
-      created_at: new Date().toISOString(),
+      display_name: name,
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+      created_at: '2024-01-01T00:00:00Z'
     };
 
     return {
@@ -49,26 +53,7 @@ export function useProfile(userId: string) {
     };
   }
 
-  if (env.presenceMode === 'stub') {
-    // Return more realistic stub data
-    const stubNames = ['Alex Johnson', 'Sarah Chen', 'Mike Rodriguez', 'Emma Wilson', 'David Kim'];
-    const name = stubNames[Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % stubNames.length];
-    
-    const stubProfile: Profile = {
-      id: userId,
-      display_name: name,
-      avatar_url: null,
-      created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-
-    return {
-      data: stubProfile,
-      isLoading: false,
-      error: null,
-      isError: false,
-      isSuccess: true,
-    };
-  }
+  // Live mode - actual profile data
 
   // TODO: Implement real profile cache queries using Supabase
   // For now, return stub data even in live mode until implementation is ready
