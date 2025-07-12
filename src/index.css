@@ -99,6 +99,15 @@ All colors MUST be HSL.
     /* Mobile navigation height - exported dynamically by FloqNavigation */
     --mobile-nav-height: 75px;
     
+    /* FAB positioning system */
+    --fab-gap: 16px;
+    --fab-size: 48px;
+    --fab-bottom-gap: calc(
+      var(--mobile-nav-height) +
+      env(safe-area-inset-bottom) +
+      12px
+    );
+    
     /* Grabber styling for resizable sheets */
     --grabber-color: hsl(var(--border));
     --grabber-hover: hsl(var(--muted-foreground));
@@ -207,6 +216,22 @@ All colors MUST be HSL.
   
   .transition-bounce {
     transition: var(--transition-bounce);
+  }
+
+  /* FAB System Utilities */
+  .fixed-fab {
+    @apply fixed right-4 z-[70] h-12 w-12 flex items-center
+           justify-center rounded-full shadow-lg transition;
+    bottom: var(--fab-bottom-gap);
+  }
+  
+  .fixed-fab--secondary {
+    transform: translateY(calc(-1 * (var(--fab-size) + var(--fab-gap))));
+  }
+  
+  .venues-chip {
+    @apply fixed left-1/2 -translate-x-1/2 z-[60];
+    bottom: calc(var(--mobile-nav-height) + 12px);
   }
 
   .pulse-glow {
