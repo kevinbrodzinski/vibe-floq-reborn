@@ -44,8 +44,8 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     isSending,
   } = useFloqChat(floqId);
 
-  // Derive canSend from props and state
-  const hasContent = !!message.trim();
+  // Derive canSend from props and state with fallback for edge cases
+  const hasContent = !!message.trim() && message.trim().length > 0;
   const canSend = !!floqId && !!user && hasContent && isJoined;
 
   // Smart auto-scroll to bottom on new messages (throttled for performance)
@@ -56,11 +56,16 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
     
     // Only auto-scroll if user is near the bottom, throttled with RAF
+    let rafId: number;
     if (isNearBottom) {
-      requestAnimationFrame(() => {
+      rafId = requestAnimationFrame(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       });
     }
+    
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [messages.length]);
 
   // Auto-resize textarea

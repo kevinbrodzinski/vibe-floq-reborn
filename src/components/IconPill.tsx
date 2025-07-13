@@ -26,6 +26,7 @@ export const IconPill: React.FC<IconPillProps> = ({
       size="sm"
       onClick={onClick}
       disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
       aria-label={label}
       className={cn(
         "h-8 px-3 text-xs font-medium flex items-center gap-1.5",

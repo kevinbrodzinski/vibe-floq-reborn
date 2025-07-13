@@ -133,15 +133,7 @@ export function CreateFloqSheet() {
       // Track floq creation
       trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, flockType, endsAt);
 
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setSelectedVibe('social');
-      setMaxParticipants(20);
-      setIsPrivate(false);
-      setDurationMode('quick');
-      setCustomDuration(4);
-      setCustomEndTime('');
+      // Close sheet - form will reset via useEffect
       setShowCreateSheet(false);
     } catch (error) {
       console.error('Failed to create floq:', error);
@@ -179,7 +171,11 @@ export function CreateFloqSheet() {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  onBlur={() => setHasTouchedTitle(true)}
+                  onBlur={(e) => {
+                    setHasTouchedTitle(true);
+                    // Ensure mobile keyboards trigger validation properly
+                    if (e.target) setHasTouchedTitle(true);
+                  }}
                   placeholder="Coffee & Coding Session"
                   maxLength={50}
                   required
