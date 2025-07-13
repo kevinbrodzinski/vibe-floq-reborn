@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { VibeRing } from '@/components/VibeRing';
 import { FloqChat } from '@/components/floq/FloqChat';
+import { FloqActivityFeed } from '@/components/floq/FloqActivityFeed';
 import { IconPill } from '@/components/IconPill';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteFloq } from '@/hooks/useDeleteFloq';
@@ -218,17 +219,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </TabsContent>
 
           <TabsContent value="activity" className="mt-0">
-            <Card className="p-4">
-              <div className="text-center py-8">
-                <h3 className="font-semibold mb-2">Activity Feed</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  See who joined and what's happening in your floq
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  Coming soon: Join events, boosts, and more
-                </div>
-              </div>
-            </Card>
+            <FloqActivityFeed floqId={floqDetails.id} />
           </TabsContent>
 
           <TabsContent value="plans" className="mt-0">
