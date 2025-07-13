@@ -30,19 +30,17 @@ export const ConstellationControls = ({
       />
 
       {/* Constellation Mode Toggle */}
-      {(timeState === 'evening' || timeState === 'night') && (
-        <div className="absolute top-32 right-4 z-20">
-          <Button
-            variant={constellationMode ? "default" : "outline"}
-            size="sm"
-            className="bg-card/80 backdrop-blur-xl border border-border/30"
-            onClick={onConstellationToggle}
-          >
-            <Star className="w-4 h-4 mr-2" />
-            {constellationMode ? 'Field View' : 'Constellation'}
-          </Button>
-        </div>
-      )}
+      <div className="absolute top-32 right-4 pointer-events-auto">
+        <Button
+          variant={constellationMode ? "default" : "outline"}
+          size="sm"
+          className="bg-card/80 backdrop-blur-xl border border-border/30 min-h-[44px] min-w-[44px]"
+          onClick={onConstellationToggle}
+        >
+          <Star className="w-4 h-4 mr-2" />
+          {constellationMode ? 'Field View' : 'Constellation'}
+        </Button>
+      </div>
     </>
   );
 };

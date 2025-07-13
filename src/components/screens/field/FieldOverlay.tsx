@@ -34,7 +34,7 @@ export const FieldOverlay = ({
   };
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0">
       {/* Debug counter */}
       {debug && (
         <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded pointer-events-auto">

@@ -79,47 +79,52 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   return (
     <>
       {/* Header - hidden in full mode */}
-      <motion.div
-        className="absolute top-0 left-0 right-0"
-        style={{ zIndex: Z.ui }}
-        animate={{
-          y: isFull ? '-100%' : 0,
-          opacity: isFull ? 0 : 1
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-      >
-        <FieldHeader 
-          locationReady={isLocationReady} 
-          currentLocation={location.error ? "Location unavailable" : "Current location"}
-          lastHeartbeat={lastHeartbeat}
-          venueCount={nearbyVenues?.length || 0}
-          onOpenVenues={() => setVenuesSheetOpen(true)}
-        />
-      </motion.div>
+      {!isFull && (
+        <motion.div
+          className="absolute top-0 left-0 right-0 pointer-events-auto"
+          style={{ zIndex: Z.header }}
+          initial={{ y: 0, opacity: 1 }}
+          exit={{ y: '-100%', opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+        >
+          <FieldHeader 
+            locationReady={isLocationReady} 
+            currentLocation={location.error ? "Location unavailable" : "Current location"}
+            lastHeartbeat={lastHeartbeat}
+            venueCount={nearbyVenues?.length || 0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
+        </motion.div>
+      )}
 
       {/* Field Overlay - hidden in full mode */}
-      <motion.div
-        className="absolute inset-0 top-12 pointer-events-none"
-        style={{ 
-          zIndex: Z.ui,
-          pointerEvents: isFull ? 'none' : 'auto'
-        }}
-        animate={{
-          opacity: isFull ? 0 : 1
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-      >
-        <FieldOverlay
-          isLocationReady={isLocationReady}
-          currentVibe={currentVibe}
-          nearbyUsersCount={people.length}
-          walkableFloqsCount={walkableFloqs.length}
-          updating={false}
-          error={location.error}
-          debug={debug}
-          onVibeChange={(vibe) => setCurrentVibe(vibe)}
+      {!isFull && (
+        <motion.div
+          className="absolute inset-0 top-12"
+          style={{ zIndex: Z.overlay }}
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         >
-          {/* Constellation Controls */}
+          <FieldOverlay
+            isLocationReady={isLocationReady}
+            currentVibe={currentVibe}
+            nearbyUsersCount={people.length}
+            walkableFloqsCount={walkableFloqs.length}
+            updating={false}
+            error={location.error}
+            debug={debug}
+            onVibeChange={(vibe) => setCurrentVibe(vibe)}
+          />
+        </motion.div>
+      )}
+
+      {/* Constellation Controls - always visible when needed */}
+      {(timeState === 'evening' || timeState === 'night') && !isFull && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: Z.controls }}
+        >
           <ConstellationControls
             timeState={timeState}
             constellationMode={constellationMode}
@@ -128,39 +133,36 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             onOrbitalAdjustment={handleOrbitalAdjustment}
             onEnergyShare={handleEnergyShare}
           />
-        </FieldOverlay>
-      </motion.div>
+        </div>
+      )}
 
       {/* Interactive Elements - hidden in full mode */}
-      <motion.div
-        className="absolute inset-0"
-        style={{ 
-          zIndex: Z.ui,
-          pointerEvents: isFull ? 'none' : 'auto'
-        }}
-        animate={{
-          y: isFull ? '100%' : 0,
-          opacity: isFull ? 0 : 1
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-      >
-        {/* Social Gesture Manager */}
-        <SocialGestureManager onSocialAction={handleSocialAction} />
+      {!isFull && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: Z.interactive }}
+          initial={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+        >
+          {/* Social Gesture Manager */}
+          <SocialGestureManager onSocialAction={handleSocialAction} />
 
-        {/* Time Warp Slider */}
-        <TimeWarpSlider 
-          isVisible={showTimeWarp}
-          onClose={() => setShowTimeWarp(false)}
-          onTimeChange={handleTimeWarpChange}
-        />
+          {/* Time Warp Slider */}
+          <TimeWarpSlider 
+            isVisible={showTimeWarp}
+            onClose={() => setShowTimeWarp(false)}
+            onTimeChange={handleTimeWarpChange}
+          />
 
-        {/* Time-Based Bottom Action Card */}
-        <TimeBasedActionCard
-          className={isFull ? 'pointer-events-none opacity-0' : ''}
-          timeState={timeState}
-          onTimeWarpToggle={() => setShowTimeWarp(true)}
-        />
-      </motion.div>
+          {/* Time-Based Bottom Action Card */}
+          <TimeBasedActionCard
+            className="pointer-events-auto"
+            timeState={timeState}
+            onTimeWarpToggle={() => setShowTimeWarp(true)}
+          />
+        </motion.div>
+      )}
     </>
   );
 };

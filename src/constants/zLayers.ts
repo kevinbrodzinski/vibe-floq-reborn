@@ -11,6 +11,10 @@ export const Z = {
   
   // UI overlays
   ui: 10,
+  header: 15,
+  overlay: 20,
+  controls: 25,
+  interactive: 30,
   
   // Modal layers  
   modal: 40,
