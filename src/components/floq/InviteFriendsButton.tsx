@@ -175,6 +175,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
+            autoFocus
           />
           
           {/* Selected count */}

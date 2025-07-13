@@ -65,7 +65,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   }, [message]);
 
   const handleSend = async () => {
-    if (!message.trim() || isSending) return;
+    if (!floqId || !user || !message.trim() || isSending) return;
 
     try {
       await sendMessage({ body: message.trim() });
@@ -76,7 +76,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   };
 
   const handleEmojiSend = async (emoji: string) => {
-    if (isSending) return;
+    if (!floqId || !user || isSending) return;
 
     try {
       await sendMessage({ emoji });
@@ -89,7 +89,9 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      if (floqId && user && message.trim() && !isSending) {
+        handleSend();
+      }
     }
   };
 
@@ -151,6 +153,8 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-1"
+        aria-live="polite"
+        aria-label="Chat messages"
       >
         {isLoading ? (
           <div className="space-y-4">
@@ -255,9 +259,10 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             />
             <Button
               onClick={handleSend}
-              disabled={!message.trim() || isSending}
+              disabled={!floqId || !user || !message.trim() || isSending}
               size="sm"
               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+              aria-label="Send message"
             >
               {isSending ? (
                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />

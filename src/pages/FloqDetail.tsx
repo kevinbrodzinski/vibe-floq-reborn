@@ -161,7 +161,7 @@ const FloqDetail = () => {
                     {floqDetails.primary_vibe}
                   </Badge>
                   {floqDetails.is_creator && (
-                    <Badge variant="default" className="text-xs">Creator</Badge>
+                    <Badge variant="secondary" className="text-xs">Host</Badge>
                   )}
                 </div>
                 
