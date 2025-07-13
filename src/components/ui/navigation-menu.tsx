@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { Z } from "@/constants/zLayers"
 
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,
@@ -12,9 +13,10 @@ const NavigationMenu = React.forwardRef<
   <NavigationMenuPrimitive.Root
     ref={ref}
     className={cn(
-      "relative z-10 flex max-w-max flex-1 items-center justify-center",
+      "relative flex max-w-max flex-1 items-center justify-center",
       className
     )}
+    style={{ zIndex: Z.navigation }}
     {...props}
   >
     {children}

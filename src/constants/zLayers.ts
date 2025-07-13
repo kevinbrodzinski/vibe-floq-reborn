@@ -11,16 +11,20 @@ export const Z = {
   
   // UI overlays
   ui: 10,
-  header: 15,
-  overlay: 20,
-  controls: 25,
-  interactive: 30,
+  header: 11,        // Z.ui + 1
+  overlay: 12,       // Z.ui + 2
+  controls: 13,      // Z.ui + 3
+  interactive: 14,   // Z.ui + 4
+  timewarp: 31,      // Z.ui + 21 - TimeWarp glass pane
   
   // Modal layers  
   modal: 40,
   
-  // System overlays (highest)
+  // System overlays
   system: 50,
+  
+  // Navigation (highest - always accessible)
+  navigation: 60,
 } as const;
 
 export type ZLayer = typeof Z[keyof typeof Z];
