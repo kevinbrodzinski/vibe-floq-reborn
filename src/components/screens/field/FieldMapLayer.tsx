@@ -45,7 +45,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
           isFull ? "inset-0" : "top-12 bottom-0",
           isList ? "" : ""
         )}
-        style={{ zIndex: Z_LAYERS.MAP_CANVAS }}
+        style={{ zIndex: Z_LAYERS.MAP }}
         initial={false}
         animate={{
           y: isFull ? 0 : isList ? 0 : 0,
@@ -75,7 +75,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
             key="list-container"
             className="fixed inset-x-0 bottom-[var(--mobile-nav-height)] bg-background/90 backdrop-blur"
             style={{ 
-              zIndex: Z_LAYERS.FIELD_OVERLAY,
+              zIndex: Z_LAYERS.MODAL,
               height: '65vh'
             }}
             initial={{ y: '100%' }}
@@ -90,7 +90,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
 
       {/* Mini-map overlay (list mode only) */}
       {isList && (
-        <div style={{ zIndex: Z_LAYERS.MINI_MAP }}>
+        <div style={{ zIndex: Z_LAYERS.UI }}>
           <MiniMap
             constellationMode={constellationMode}
             people={people}

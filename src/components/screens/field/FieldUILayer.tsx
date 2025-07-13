@@ -81,7 +81,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {/* Header - hidden in full mode */}
       <motion.div
         className="absolute top-0 left-0 right-0"
-        style={{ zIndex: Z_LAYERS.FIELD_HEADER }}
+        style={{ zIndex: Z_LAYERS.UI }}
         animate={{
           y: isFull ? '-100%' : 0,
           opacity: isFull ? 0 : 1
@@ -101,7 +101,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <motion.div
         className="absolute inset-0 top-12 pointer-events-none"
         style={{ 
-          zIndex: Z_LAYERS.FIELD_OVERLAY,
+          zIndex: Z_LAYERS.UI,
           pointerEvents: isFull ? 'none' : 'auto'
         }}
         animate={{
@@ -135,7 +135,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <motion.div
         className="absolute inset-0"
         style={{ 
-          zIndex: Z_LAYERS.FLOATING_BUTTONS,
+          zIndex: Z_LAYERS.UI,
           pointerEvents: isFull ? 'none' : 'auto'
         }}
         animate={{

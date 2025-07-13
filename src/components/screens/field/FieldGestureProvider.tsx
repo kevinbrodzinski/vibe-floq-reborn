@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldGestureProviderProps {
@@ -7,7 +8,7 @@ interface FieldGestureProviderProps {
 }
 
 export const FieldGestureProvider = ({ data, children }: FieldGestureProviderProps) => {
-  const { mode, setMode, navigate, liveRef } = data;
+  const { mode, setMode, navigate, liveRef, detailsOpen, venuesSheetOpen, selectedVenueId } = useFieldUI();
 
   // ESC key to exit full-screen mode
   useEffect(() => {
@@ -50,11 +51,10 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
 
   // Auto-exit full-screen when sheets open
   useEffect(() => {
-    const { detailsOpen, venuesSheetOpen, selectedVenueId } = data;
     if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
       setMode('map');
     }
-  }, [mode, data.detailsOpen, data.venuesSheetOpen, data.selectedVenueId, setMode]);
+  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode]);
 
   // Live-region accessibility announcements
   useEffect(() => {

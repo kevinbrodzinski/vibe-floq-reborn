@@ -24,13 +24,13 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
   return (
     <>
       {/* Banner System */}
-      <div style={{ zIndex: Z_LAYERS.BANNERS }}>
+      <div style={{ zIndex: Z_LAYERS.UI }}>
         <BannerManager />
       </div>
 
       {/* Event Details Sheet */}
       {currentEvent && (
-        <div style={{ zIndex: Z_LAYERS.SHEETS }}>
+        <div style={{ zIndex: Z_LAYERS.MODAL }}>
           <EventDetailsSheet
             open={detailsOpen}
             onOpenChange={setDetailsOpen}
@@ -43,7 +43,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
       )}
 
       {/* Venues Sheet */}
-      <div style={{ zIndex: Z_LAYERS.SHEETS }}>
+      <div style={{ zIndex: Z_LAYERS.MODAL }}>
         <ResizableVenuesSheet
           isOpen={venuesSheetOpen}
           onClose={() => setVenuesSheetOpen(false)}
@@ -58,7 +58,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
       </div>
 
       {/* Venue Details Sheet */}
-      <div style={{ zIndex: Z_LAYERS.SHEETS }}>
+      <div style={{ zIndex: Z_LAYERS.MODAL }}>
         <VenueDetailsSheet
           open={!!selectedVenueId}
           onOpenChange={(open) => !open && setSelectedVenueId(null)}

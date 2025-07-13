@@ -61,7 +61,7 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
   };
 
   return (
-    <Card className="fixed top-4 right-4 w-96 max-h-[80vh] overflow-y-auto z-[9999] bg-background/95 backdrop-blur">
+    <Card className="fixed top-4 right-4 w-96 max-h-[80vh] overflow-y-auto bg-background/95 backdrop-blur" style={{ zIndex: 9999 }}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Environment Debug Panel</CardTitle>

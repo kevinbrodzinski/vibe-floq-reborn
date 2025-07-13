@@ -7,6 +7,21 @@
 
 export const Z_LAYERS = {
   // Base map layers
+  MAP: 0,
+  
+  // UI overlays
+  UI: 10,
+  
+  // Modal layers  
+  MODAL: 40,
+  
+  // System overlays (highest)
+  SYSTEM: 50,
+} as const;
+
+// Detailed constants for specific use cases
+export const Z_LAYERS_DETAILED = {
+  // Base map layers
   MAP_CANVAS: 0,
   MAP_OVERLAYS: 5,
   
@@ -51,9 +66,8 @@ export const zIndex = (layer: ZLayer) => ({ zIndex: layer });
  * CSS custom properties for consistent z-index usage
  */
 export const Z_CSS_VARS = {
-  '--z-map': Z_LAYERS.MAP_CANVAS,
-  '--z-people': Z_LAYERS.PEOPLE_DOTS,
-  '--z-header': Z_LAYERS.FIELD_HEADER,
-  '--z-sheet': Z_LAYERS.SHEETS,
-  '--z-toast': Z_LAYERS.TOASTS,
+  '--z-map': Z_LAYERS.MAP,
+  '--z-ui': Z_LAYERS.UI,
+  '--z-modal': Z_LAYERS.MODAL,
+  '--z-system': Z_LAYERS.SYSTEM,
 } as const;

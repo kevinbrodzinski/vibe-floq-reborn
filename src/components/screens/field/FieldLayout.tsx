@@ -24,11 +24,6 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader 
-            locationReady={false} 
-            venueCount={0}
-            onOpenVenues={() => setVenuesSheetOpen(true)}
-          />
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt 
               onRequestLocation={requestLocation} 
@@ -46,11 +41,6 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader 
-            locationReady={false} 
-            venueCount={0}
-            onOpenVenues={() => setVenuesSheetOpen(true)}
-          />
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>

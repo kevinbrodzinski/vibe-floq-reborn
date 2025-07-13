@@ -1,0 +1,119 @@
+import { createContext, useContext } from 'react';
+import { useFriends } from '@/hooks/useFriends';
+import { useStableMemo } from '@/hooks/useStableMemo';
+import { useFieldLocation } from './FieldLocationContext';
+
+export interface Person {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  color: string;
+  vibe: string;
+  isFriend?: boolean;
+}
+
+interface FieldSocialContextValue {
+  friends: any[];
+  people: Person[];
+  profilesMap: Map<string, any>;
+  friendIds: string[];
+  profiles: any[];
+}
+
+const FieldSocialContext = createContext<FieldSocialContextValue | null>(null);
+
+interface FieldSocialProviderProps {
+  children: React.ReactNode;
+}
+
+export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
+  const { friends: friendIds, profiles } = useFriends();
+  const { location, presenceData } = useFieldLocation();
+
+  // Create profiles map for quick lookup
+  const profilesMap = useStableMemo(() => {
+    return new Map(profiles.map(p => [p.id, p])) as Map<string, any>;
+  }, [profiles.length, profiles.map(p => p.id).join(',')]);
+
+  // Convert nearby users to people format for visualization
+  const getVibeColor = (vibe: string) => {
+    switch (vibe) {
+      case 'hype': return 'hsl(280 70% 60%)';
+      case 'social': return 'hsl(30 70% 60%)';
+      case 'chill': return 'hsl(240 70% 60%)';
+      case 'flowing': return 'hsl(200 70% 60%)';
+      case 'open': return 'hsl(120 70% 60%)';
+      default: return 'hsl(240 70% 60%)';
+    }
+  };
+
+  // Convert presence data to people format with proper field coordinates
+  const people: Person[] = useStableMemo(() => {
+    if (!location.lat || !location.lng) return [];
+    
+    return presenceData.map((presence) => {
+      const profile = profilesMap.get(presence.user_id);
+      
+      // Convert lat/lng to field coordinates based on geographic distance from user
+      const latDiff = presence.lat - location.lat;
+      const lngDiff = presence.lng - location.lng;
+      
+      // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
+      const xMeters = lngDiff * 111320 * Math.cos((location.lat * Math.PI) / 180);
+      const yMeters = latDiff * 111320;
+      
+      // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
+      const scale = 50; // 50% field width per km
+      const x = Math.min(Math.max((xMeters / 1000) * scale + 50, 5), 95);
+      const y = Math.min(Math.max(-(yMeters / 1000) * scale + 50, 5), 95);
+      
+      return {
+        id: presence.user_id,
+        name: (profile as any)?.display_name || `User ${presence.user_id.slice(-4)}`,
+        x,
+        y,
+        color: getVibeColor(presence.vibe || 'social'),
+        vibe: presence.vibe || 'social',
+        isFriend: presence.isFriend || false,
+      };
+    });
+  }, [presenceData, profilesMap, location.lat, location.lng]);
+
+  // Convert friends to extended format for constellation mode
+  const friends = useStableMemo(() => {
+    return people
+      .filter(person => (person as any).isFriend)
+      .map((person, index) => ({
+        ...person,
+        relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
+        activity: 'active' as const,
+        warmth: 60 + Math.random() * 40,
+        compatibility: 70 + Math.random() * 30,
+        lastSeen: Date.now() - Math.random() * 900000,
+        avatar_url: (profilesMap.get(person.id) as any)?.avatar_url,
+      }));
+  }, [people.length, people.filter(p => (p as any).isFriend).length]);
+
+  const value = {
+    friends,
+    people,
+    profilesMap,
+    friendIds,
+    profiles,
+  };
+
+  return (
+    <FieldSocialContext.Provider value={value}>
+      {children}
+    </FieldSocialContext.Provider>
+  );
+};
+
+export const useFieldSocial = () => {
+  const context = useContext(FieldSocialContext);
+  if (!context) {
+    throw new Error('useFieldSocial must be used within a FieldSocialProvider');
+  }
+  return context;
+};

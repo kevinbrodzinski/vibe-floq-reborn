@@ -237,7 +237,7 @@ export const FieldVisualization = ({
                             left: personCanvasCoords.x,
                             top: personCanvasCoords.y,
                             transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-                            zIndex: Z_LAYERS.PEOPLE_DOTS,
+                            zIndex: 10, // Z_LAYERS_DETAILED.PEOPLE_DOTS
                           }}
                         >
                           {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
@@ -317,7 +317,7 @@ export const FieldVisualization = ({
                               left: personCanvasCoords.x,
                               top: personCanvasCoords.y,
                               transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-                              zIndex: Z_LAYERS.PEOPLE_DOTS,
+                              zIndex: 10, // Z_LAYERS_DETAILED.PEOPLE_DOTS
                             }}
                             onClick={() => onAvatarInteraction?.(person.id)}
                           >
