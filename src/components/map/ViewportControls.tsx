@@ -1,5 +1,6 @@
 import { MapPin, Plus, Minus, Target } from "lucide-react";
 import type { MapViewportControls } from "@/hooks/useMapViewport";
+import { Z } from "@/constants/zLayers";
 
 interface ViewportControlsProps {
   controls: MapViewportControls;
@@ -9,7 +10,10 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   const { viewport, zoomIn, zoomOut, centerOnUser } = controls;
 
   return (
-    <div className="absolute top-44 right-4 flex flex-col gap-2 z-10">
+    <div 
+      className="absolute top-44 right-4 flex flex-col gap-2 pointer-events-auto"
+      style={{ zIndex: Z.controls + 1 }}
+    >
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
         <button
