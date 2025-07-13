@@ -26,9 +26,7 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   }, [open, banner]);
   
   const handleClose = () => {
-    if (banner) {
-      dismissBanner(banner.id);
-    }
+    // Just close the modal - let BannerManager handle banner dismissal
     onOpenChange(false);
   };
 
@@ -41,7 +39,7 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
       // TODO: Implement venue join logic
       
       // Close modal after successful join
-      handleClose();
+      onOpenChange(false);
       
       // TODO: Push achievement event
       // pushAchievementEvent('venue_checkin', { venue_id: venue.id });
@@ -56,7 +54,7 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
     // Analytics: Route CTA clicked (production ready)
     
     // TODO: Open Pulse AI map route
-    handleClose();
+    onOpenChange(false);
   };
 
   if (!banner) return null;
