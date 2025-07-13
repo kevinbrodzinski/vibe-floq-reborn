@@ -17,8 +17,14 @@ interface ResizableVenuesSheetProps {
   onVenueTap: (venueId: string) => void;
 }
 
-// Single state: either open (expanded) or closed (unmounted)
-const EXPANDED_TRANSFORM = 'translateY(0px)';
+type SnapPosition = 'collapsed' | 'half' | 'expanded';
+
+// Transform-based positioning for 60fps performance
+const SNAP_TRANSFORMS = {
+  collapsed: 'translateY(calc(100% - 60px))',
+  half: 'translateY(50%)',
+  expanded: 'translateY(0px)',
+} as const;
 
 // Spring physics configuration
 const SPRING_CONFIG = {
@@ -75,17 +81,24 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
     return { allVenues: venues, totalLiveCount: liveCount };
   }, [data]);
 
+  const [snapPosition, setSnapPosition] = useState<SnapPosition>('collapsed');
   const [isDragging, setIsDragging] = useState(false);
+  const [currentVelocity, setCurrentVelocity] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const liveRegionRef = useRef<HTMLDivElement>(null);
   const y = useMotionValue(0);
 
-  // Announce open/close for screen readers
+  // Announce snap changes for screen readers
   useEffect(() => {
     if (liveRegionRef.current) {
-      liveRegionRef.current.textContent = isOpen ? 'Venues sheet opened' : 'Venues sheet closed';
+      const announcements = {
+        collapsed: 'Venues sheet collapsed',
+        half: 'Venues sheet half expanded', 
+        expanded: 'Venues sheet fully expanded'
+      };
+      liveRegionRef.current.textContent = announcements[snapPosition];
     }
-  }, [isOpen]);
+  }, [snapPosition]);
 
   // Haptic feedback helper
   const triggerHaptic = useCallback((pattern: keyof typeof HAPTIC_PATTERNS) => {
@@ -101,28 +114,52 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
   }, [triggerHaptic]);
 
   const handleDrag = useCallback((_: any, info: PanInfo) => {
-    // Track drag for visual feedback during dragging
+    setCurrentVelocity(Math.abs(info.velocity.y));
   }, []);
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
     const { velocity, offset } = info;
-    const velocityThreshold = 300;
-    const dragThreshold = 150;
+    const velocityThreshold = 500;
+    const dragThreshold = 100;
     
-    // Simple logic: if dragging down with enough force, close the sheet
-    if (velocity.y > velocityThreshold || offset.y > dragThreshold) {
+    let newPosition: SnapPosition = snapPosition;
+    
+    // Velocity-based snapping
+    if (Math.abs(velocity.y) > velocityThreshold) {
+      if (velocity.y > 0) {
+        // Dragging down
+        newPosition = snapPosition === 'expanded' ? 'half' : 'collapsed';
+      } else {
+        // Dragging up  
+        newPosition = snapPosition === 'collapsed' ? 'half' : 'expanded';
+      }
+    } else {
+      // Position-based snapping
+      if (Math.abs(offset.y) > dragThreshold) {
+        if (offset.y > 0) {
+          newPosition = snapPosition === 'expanded' ? 'half' : 'collapsed';
+        } else {
+          newPosition = snapPosition === 'collapsed' ? 'half' : 'expanded';
+        }
+      }
+    }
+    
+    if (newPosition !== snapPosition) {
+      setSnapPosition(newPosition);
       triggerHaptic('medium');
-      onClose();
     }
     
     setIsDragging(false);
-  }, [onClose, triggerHaptic]);
+    setCurrentVelocity(0);
+  }, [snapPosition, triggerHaptic]);
 
-  // Grabber tap closes the sheet
+  // Memoized grabber tap handler
   const handleGrabberTap = useCallback(() => {
+    const nextPosition = snapPosition === 'collapsed' ? 'half' : 
+                        snapPosition === 'half' ? 'expanded' : 'collapsed';
+    setSnapPosition(nextPosition);
     triggerHaptic('medium');
-    onClose();
-  }, [onClose, triggerHaptic]);
+  }, [snapPosition, triggerHaptic]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -133,8 +170,30 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         e.preventDefault();
         onClose();
         break;
+      case 'ArrowUp':
+        e.preventDefault();
+        if (snapPosition === 'collapsed') setSnapPosition('half');
+        else if (snapPosition === 'half') setSnapPosition('expanded');
+        triggerHaptic('light');
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        if (snapPosition === 'expanded') setSnapPosition('half');
+        else if (snapPosition === 'half') setSnapPosition('collapsed');
+        triggerHaptic('light');
+        break;
+      case 'Home':
+        e.preventDefault();
+        setSnapPosition('expanded');
+        triggerHaptic('medium');
+        break;
+      case 'End':
+        e.preventDefault();
+        setSnapPosition('collapsed');
+        triggerHaptic('medium');
+        break;
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, snapPosition, onClose, triggerHaptic]);
 
   // Memoized load more handler
   const handleLoadMore = useCallback(() => {
@@ -145,8 +204,9 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
 
   // Memoized close handler with haptic
   const handleClose = useCallback(() => {
+    setSnapPosition('collapsed');
     triggerHaptic('light');
-    onClose();
+    setTimeout(onClose, 150);
   }, [onClose, triggerHaptic]);
 
   // Safe area and reduced motion support
@@ -160,52 +220,34 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
     onVenueTap
   }), [allVenues, onVenueTap]);
 
-  // Return null immediately when closing starts to prevent navigation blocking
-  if (!isOpen && !isDragging) return null;
+  if (!isOpen) return null;
 
   const shouldUseVirtualization = allVenues.length > 50;
+  const currentTransform = SNAP_TRANSFORMS[snapPosition];
+  const isCollapsed = snapPosition === 'collapsed';
+  const isExpanded = snapPosition === 'expanded';
 
   return (
     <>
-      {/* Backdrop overlay - doesn't cover navigation */}
-      <motion.div
-        className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50"
-        style={{ 
-          zIndex: Z_LAYERS.SHEET_BACKDROP,
-          pointerEvents: isOpen ? 'auto' : 'none' 
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-      />
-      
       <motion.div
         ref={containerRef}
         className={cn(
-          "fixed inset-x-4 pointer-events-auto",
+          "fixed inset-x-4 z-50 pointer-events-auto",
           "bg-background/95 backdrop-blur-md border border-border/40",
           "shadow-2xl rounded-t-3xl overflow-hidden",
           "will-change-transform"
         )}
         style={{
-          zIndex: Z_LAYERS.SHEETS,
           bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
           height: '80vh',
           touchAction: 'pan-y',
-        }}
-        onAnimationComplete={(definition) => {
-          if (definition === 'exit') {
-            setIsDragging(false);
-          }
         }}
         initial={{ 
           transform: 'translateY(100%)', 
           opacity: 0 
         }}
         animate={{ 
-          transform: EXPANDED_TRANSFORM,
+          transform: currentTransform,
           opacity: 1,
         }}
         exit={{ 
@@ -216,7 +258,6 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         drag="y"
         dragElastic={0.1}
         dragMomentum={false}
-        dragConstraints={{ top: 0 }}
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
@@ -224,7 +265,7 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         role="dialog"
         aria-modal="true"
         aria-label="Nearby venues"
-        aria-expanded={true}
+        aria-expanded={!isCollapsed}
         tabIndex={-1}
       >
         {/* Grabber Handle */}
@@ -236,7 +277,7 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
             "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-inset"
           )}
           whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
-          aria-label="Close venues sheet"
+          aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} venues sheet`}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
@@ -246,6 +287,7 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         >
           <motion.div
             animate={{ 
+              rotate: isCollapsed ? 0 : 180,
               scale: isDragging ? 1.1 : 1 
             }}
             transition={prefersReducedMotion ? { duration: 0 } : { 
@@ -258,12 +300,15 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         </motion.button>
 
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-          className="flex items-center justify-between px-6 py-4 border-b border-border/40"
-        >
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+              className="flex items-center justify-between px-6 py-4 border-b border-border/40"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                   <MapPin className="h-4 w-4 text-primary" />
@@ -288,6 +333,8 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
                 <X className="h-4 w-4" />
               </Button>
             </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Content */}
         <div 
@@ -387,13 +434,16 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         </div>
 
         {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-          className="p-4 border-t border-border/40 bg-background/50"
-          style={{ paddingBottom: `calc(1rem + env(safe-area-inset-bottom))` }}
-        >
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
+              className="p-4 border-t border-border/40 bg-background/50"
+              style={{ paddingBottom: `calc(1rem + env(safe-area-inset-bottom))` }}
+            >
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={handleClose}>
                   Close
@@ -406,6 +456,8 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
                 </Button>
               </div>
             </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Screen reader live region */}

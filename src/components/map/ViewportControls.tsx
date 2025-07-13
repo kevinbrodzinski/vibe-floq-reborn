@@ -1,7 +1,5 @@
-import { MapPin, Plus, Minus, Target, Maximize2, Minimize2, List } from "lucide-react";
+import { MapPin, Plus, Minus, Target } from "lucide-react";
 import type { MapViewportControls } from "@/hooks/useMapViewport";
-import { useFullscreenMap } from "@/store/useFullscreenMap";
-import { Z_LAYERS } from "@/lib/z-layers";
 
 interface ViewportControlsProps {
   controls: MapViewportControls;
@@ -9,14 +7,9 @@ interface ViewportControlsProps {
 
 export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   const { viewport, zoomIn, zoomOut, centerOnUser } = controls;
-  const { mode, toggleFull, toggleList } = useFullscreenMap();
-
-  const isFull = mode === 'full';
-  const isList = mode === 'list';
-  const NextIcon = isFull ? Minimize2 : Maximize2;
 
   return (
-    <div className="fixed right-4 top-1/3 flex flex-col space-y-2" style={{ zIndex: Z_LAYERS.VIEWPORT_CONTROLS }}>
+    <div className="absolute top-44 right-4 flex flex-col gap-2 z-10">
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
         <button
@@ -50,28 +43,6 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
         type="button"
       >
         <Target className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {/* Fullscreen Toggle */}
-      <button
-        onClick={toggleFull}
-        className="w-8 h-8 flex items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border hover:bg-accent/20 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-        title={isFull ? 'Exit full-screen map' : 'Enter full-screen map'}
-        aria-label={isFull ? 'Exit full-screen map' : 'Enter full-screen map'}
-        type="button"
-      >
-        <NextIcon className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {/* List Toggle */}
-      <button
-        onClick={toggleList}
-        className="w-8 h-8 flex items-center justify-center rounded bg-card/90 backdrop-blur-sm border border-border hover:bg-accent/20 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-        title={isList ? 'Show map view' : 'Show list view'}
-        aria-label={isList ? 'Show map view' : 'Show list view'}
-        type="button"
-      >
-        <List className="h-4 w-4" aria-hidden="true" />
       </button>
 
       {/* Zoom Level Indicator */}

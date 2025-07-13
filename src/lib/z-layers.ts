@@ -21,16 +21,16 @@ export const Z_LAYERS = {
   
   // Action elements
   FLOATING_BUTTONS: 35,
-  NAVIGATION: 40,
+  VENUES_CHIP: 40,
   TIME_WARP: 45,
   
   // Interactive elements
-  VIEWPORT_CONTROLS: 50,
+  BANNERS: 50,
   HOVER_CARDS: 55,
   
   // Modal layers
   SHEETS: 60,
-  SHEET_BACKDROP: 65,
+  DIALOGS: 65,
   
   // System overlays
   TOASTS: 70,

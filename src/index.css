@@ -99,15 +99,6 @@ All colors MUST be HSL.
     /* Mobile navigation height - exported dynamically by FloqNavigation */
     --mobile-nav-height: 75px;
     
-    /* FAB positioning system */
-    --fab-gap: 16px;
-    --fab-size: 48px;
-    --fab-bottom-gap: calc(
-      var(--mobile-nav-height) +
-      env(safe-area-inset-bottom) +
-      12px
-    );
-    
     /* Grabber styling for resizable sheets */
     --grabber-color: hsl(var(--border));
     --grabber-hover: hsl(var(--muted-foreground));
@@ -216,12 +207,6 @@ All colors MUST be HSL.
   
   .transition-bounce {
     transition: var(--transition-bounce);
-  }
-
-  @layer utilities {
-    .fullscreen-map-wrapper {
-      padding-top: env(safe-area-inset-top);
-    }
   }
 
   .pulse-glow {
@@ -507,14 +492,6 @@ All colors MUST be HSL.
   .fullscreen-map {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  /* Safe-area guard with @supports */
-  @supports(padding: max(0px)) {
-    .fullscreen-map-wrapper {
-      padding-top: max(env(safe-area-inset-top), 0px);
-      padding-bottom: max(env(safe-area-inset-bottom), 0px);
-    }
   }
 
   /* Reduced motion support */

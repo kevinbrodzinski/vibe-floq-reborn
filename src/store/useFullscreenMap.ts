@@ -6,7 +6,6 @@ export type FullMode = 'map' | 'full' | 'list'
 interface FullscreenMapStore {
   mode: FullMode
   prevMode?: FullMode
-  _hasHydrated?: boolean
   setMode: (m: FullMode) => void
   /** map ↔ full with mode memory */
   toggleFull: () => void
@@ -19,7 +18,6 @@ export const useFullscreenMap = create<FullscreenMapStore>()(
     (set, get) => ({
       mode: 'map',
       prevMode: undefined,
-      _hasHydrated: false,
       setMode: (mode) => set({ mode }),
       toggleFull: () =>
         set((state) => {
@@ -30,19 +28,11 @@ export const useFullscreenMap = create<FullscreenMapStore>()(
           }
         }),
       toggleList: () =>
-        set((state) => ({
-          prevMode: undefined,
-          mode: state.mode === 'list' ? 'map' : 'list'
-        })),
+        set({ mode: get().mode === 'list' ? 'map' : 'list' }),
     }),
     { 
       name: 'vfo-fullscreen-map',
-      storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state._hasHydrated = true
-        }
-      }
+      storage: createJSONStorage(() => localStorage)
     }
   )
 )
