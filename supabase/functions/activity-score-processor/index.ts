@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logInvocation, EdgeLogStatus } from "../_shared/edge-logger.ts";
+import { logInvocation, EdgeLogStatus, withTimeout } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +31,21 @@ serve(async (req) => {
   let metadata: Record<string, unknown> = {};
 
   try {
+    const result = await withTimeout(doWork(), 45_000);
+    return result;
+  } catch (err) {
+    if ((err as Error).message === 'function timed out') {
+      status = 'timeout';
+      errorMessage = 'Function execution timed out';
+      return new Response(JSON.stringify({ error: "Request timeout" }), {
+        status: 504,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    throw err;
+  }
+
+  async function doWork() {
 
     const body = await req.json();
     const { events } = body;
@@ -104,12 +119,15 @@ serve(async (req) => {
 
     console.log(`Processed ${results.length} events, cleaned up ${cleanupData || 0} inactive floqs`);
 
-    // Set metadata for logging
+    // Set metadata for logging with size guards
     metadata = {
       events_processed: events.length,
       successful_events: results.filter(r => r.processed).length,
       failed_events: results.filter(r => !r.processed).length,
-      cleanup_count: cleanupData || 0
+      cleanup_count: cleanupData || 0,
+      // Sample of results for debugging (first 5 only)
+      results_sample: results.slice(0, 5),
+      results_total_count: results.length
     };
 
     return new Response(JSON.stringify({ 
@@ -119,6 +137,7 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } // End of doWork function
 
   } catch (error) {
     console.error("Activity score processor error:", error);

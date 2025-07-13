@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.205.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logInvocation, EdgeLogStatus } from "../_shared/edge-logger.ts";
+import { logInvocation, EdgeLogStatus, withTimeout } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +24,21 @@ serve(async (req) => {
   let metadata: Record<string, unknown> = {};
 
   try {
+    const result = await withTimeout(doWork(), 45_000);
+    return result;
+  } catch (err) {
+    if ((err as Error).message === 'function timed out') {
+      status = 'timeout';
+      errorMessage = 'Function execution timed out';
+      return new Response(JSON.stringify({ error: "Request timeout" }), {
+        status: 504,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    throw err;
+  }
+
+  async function doWork() {
     console.log('[cleanup-worker] Starting cleanup process...');
     
     const { data, error } = await supabase.rpc("cleanup_inactive_floqs");
@@ -58,6 +73,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+  } // End of doWork function
   } catch (err) {
     console.error("[cleanup-worker] Unexpected error:", err);
     status = 'error';

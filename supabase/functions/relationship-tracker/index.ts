@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { logInvocation, EdgeLogStatus } from "../_shared/edge-logger.ts";
+import { logInvocation, EdgeLogStatus, withTimeout } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +31,21 @@ serve(async (req) => {
   let metadata: Record<string, unknown> = {};
 
   try {
+    const result = await withTimeout(doWork(), 45_000);
+    return result;
+  } catch (err) {
+    if ((err as Error).message === 'function timed out') {
+      status = 'timeout';
+      errorMessage = 'Function execution timed out';
+      return new Response(JSON.stringify({ error: "Request timeout" }), {
+        status: 504,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    throw err;
+  }
+
+  async function doWork() {
 
     const body = await req.json();
     const { user_id, nearby_users, current_vibe, venue_id } = body;
@@ -84,14 +99,17 @@ serve(async (req) => {
 
     console.log(`Successfully processed ${relationshipPairs.length} relationship pairs`);
 
-    // Set metadata for logging
+    // Set metadata for logging with size guards
     metadata = {
       nearby_users_count: nearby_users.length,
       relationship_pairs_generated: relationshipPairs.length,
       relationships_updated: data || 0,
       user_id,
       current_vibe,
-      venue_id
+      venue_id,
+      // Sample of pairs for debugging (first 5 only)
+      pairs_sample: relationshipPairs.slice(0, 5),
+      pairs_total_count: relationshipPairs.length
     };
 
     return new Response(JSON.stringify({ 
@@ -100,6 +118,7 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } // End of doWork function
 
   } catch (error) {
     console.error("Relationship tracker error:", error);
