@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
+import { useMemo } from "react";
 import { FieldVisualization } from "./FieldVisualization";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
@@ -16,6 +17,17 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
   const { people } = useFieldSocial();
   const { floqEvents, walkableFloqs } = data;
+
+  // Memoize friends array to avoid recreating on every render
+  const friends = useMemo(() => 
+    people.filter(p => p.isFriend).map(p => ({
+      ...p,
+      relationship: 'friend' as const,
+      activity: 'active' as const,
+      warmth: 75,
+      compatibility: 80,
+      lastSeen: Date.now()
+    })), [people]);
 
   // Event handlers - these will be moved to gesture provider later
   const handleFriendInteraction = (friend: any, action: string) => {
@@ -53,14 +65,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
             className={clsx('absolute inset-0', isFull && 'fullscreen-map')}
             constellationMode={constellationMode}
             people={people}
-            friends={people.filter(p => p.isFriend).map(p => ({
-              ...p,
-              relationship: 'friend' as const,
-              activity: 'active' as const,
-              warmth: 75,
-              compatibility: 80,
-              lastSeen: Date.now()
-            }))}
+            friends={friends}
             floqEvents={floqEvents}
             walkableFloqs={walkableFloqs}
             onFriendInteraction={handleFriendInteraction}
@@ -96,14 +101,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
           <MiniMap
             constellationMode={constellationMode}
             people={people}
-            friends={people.filter(p => p.isFriend).map(p => ({
-              ...p,
-              relationship: 'friend' as const,
-              activity: 'active' as const,
-              warmth: 75,
-              compatibility: 80,
-              lastSeen: Date.now()
-            }))}
+            friends={friends}
             floqEvents={floqEvents}
             walkableFloqs={walkableFloqs}
             onFriendInteraction={handleFriendInteraction}
