@@ -12,18 +12,14 @@ export function VenuesChip({ onOpen, venueCount = 1 }: VenuesChipProps) {
   });
 
   return (
-    <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20"
+    <button
+      className="venues-chip hover:bg-primary/90 text-sm font-medium 
+                 transition-all duration-200 active:scale-95 touch-none"
+      aria-label={`${venueCount} nearby venues`}
+      onClick={onOpen}
       {...handlers}
     >
-      <button
-        className="bg-accent text-accent-foreground px-4 py-2 
-                   rounded-full text-sm font-medium shadow-lg 
-                   hover:bg-accent/90 transition-all duration-200
-                   active:scale-95 touch-none"
-      >
-        {venueCount} venue{venueCount > 1 ? 's' : ''} nearby ↑
-      </button>
-    </div>
+      {venueCount} venue{venueCount > 1 ? 's' : ''} nearby ↑
+    </button>
   );
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { useTimeSyncContext } from "@/components/TimeSyncProvider";
@@ -13,7 +14,7 @@ import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { VenuesChip } from "@/components/VenuesChip";
+
 import { useDebug } from "@/lib/useDebug";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
@@ -65,7 +66,9 @@ export const FieldScreen = () => {
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
-  const { mode, setMode } = useFullscreenMap();
+  const { mode, _hasHydrated, setMode } = useFullscreenMap();
+  const liveRef = useRef<HTMLParagraphElement>(null);
+  const navigate = useNavigate();
   
   // Use enhanced geolocation hook
   const location = useOptimizedGeolocation();
@@ -261,15 +264,63 @@ export const FieldScreen = () => {
     }
   }, [mode])
 
-  // URL sync
+  // URL → store (run ONCE after both hydration & first mount)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (mode === 'full') params.set('full', '1')
-    else params.delete('full')
-    if (mode === 'list') params.set('view', 'list')
-    else params.delete('view')
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`)
-  }, [mode])
+    if (!_hasHydrated) return;               // wait until zustand → React sync
+    let init = false;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('full'))    { setMode('full'); init = true; }
+    else if (params.get('view') === 'list') { setMode('list'); init = true; }
+
+    // if query said nothing but localStorage had 'full', keep it.
+    // if you want to force map-mode when URL is clean, uncomment:
+    // if (!init) setMode('map');
+  }, [_hasHydrated, setMode]);
+
+  // store → URL (runs every time `mode` changes *after* hydration)
+  useEffect(() => {
+    if (!_hasHydrated) return;              // same guard
+
+    const params = new URLSearchParams(window.location.search);
+
+    // wipe old flags
+    params.delete('full');
+    params.delete('view');
+
+    // add the one that represents our new state
+    if (mode === 'full')      params.set('full', '1');
+    else if (mode === 'list') params.set('view', 'list');
+
+    // URL cleanliness: avoid empty question-mark
+    if (!params.toString()) {
+      navigate(window.location.pathname + window.location.hash, { replace: true });
+    } else {
+      // preserve all other query params the page might be using
+      navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+    }
+  }, [mode, _hasHydrated, navigate]);
+
+  // FieldScreen unmount → scrub mode params
+  useEffect(() => () => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('full');
+    params.delete('view');
+    navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+  }, [navigate]);
+
+  // Back-forward navigation: re-apply prevMode logic on popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('full')) setMode('full');
+      else if (params.get('view') === 'list') setMode('list');
+      else setMode('map');
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setMode]);
 
   // Auto-exit full-screen when any sheet opens
   useEffect(() => {
@@ -277,6 +328,15 @@ export const FieldScreen = () => {
       setMode('map')
     }
   }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode])
+
+  // Live-region accessibility announcements
+  useEffect(() => {
+    if (liveRef.current) {
+      liveRef.current.textContent =
+        mode === 'full' ? 'Entered full-screen map' :
+        mode === 'list' ? 'List view' : 'Map view';
+    }
+  }, [mode])
 
   // Temporarily disable advanced gestures for baseline
   // const { handlers } = useAdvancedGestures({
@@ -294,7 +354,11 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locationReady={false} />
+          <FieldHeader 
+            locationReady={false} 
+            venueCount={0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt 
               onRequestLocation={requestLocation} 
@@ -312,7 +376,11 @@ export const FieldScreen = () => {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <FieldHeader locationReady={false} />
+          <FieldHeader 
+            locationReady={false} 
+            venueCount={0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -348,7 +416,7 @@ export const FieldScreen = () => {
         <motion.div
           key="map-container"
           className={clsx(
-            "fixed inset-x-0",
+            "fixed inset-x-0 fullscreen-map-wrapper",
             isFull ? "z-50 inset-0" : "top-12 bottom-0",
             isList ? "z-30" : ""
           )}
@@ -409,6 +477,8 @@ export const FieldScreen = () => {
             locationReady={isLocationReady} 
             currentLocation={location.error ? "Location unavailable" : "Current location"}
             lastHeartbeat={lastHeartbeat}
+            venueCount={nearbyVenues?.length || 0}
+            onOpenVenues={() => setVenuesSheetOpen(true)}
           />
         </motion.div>
 
@@ -488,13 +558,6 @@ export const FieldScreen = () => {
             onTimeWarpToggle={() => setShowTimeWarp(true)}
           />
 
-          {/* Swipeable Venues Chip */}
-          {nearbyVenues.length > 0 && !currentEvent && (
-            <VenuesChip
-              onOpen={() => setVenuesSheetOpen(true)}
-              venueCount={nearbyVenues.length}
-            />
-          )}
 
           {/* Resizable Venues Sheet */}
           <ResizableVenuesSheet
@@ -520,7 +583,10 @@ export const FieldScreen = () => {
         {/* Full-screen toggle FAB - always on top */}
         <div className="absolute inset-0 z-[60] pointer-events-none">
           <div className="pointer-events-auto">
-            <FullscreenFab />
+        <FullscreenFab />
+
+        {/* Live region for accessibility */}
+        <p ref={liveRef} className="sr-only" aria-live="polite" />
           </div>
         </div>
       </div>

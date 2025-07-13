@@ -14,6 +14,8 @@ interface FieldHeaderProps {
   showMiniMap?: boolean;
   onToggleMiniMap?: () => void;
   lastHeartbeat?: number;
+  venueCount?: number;
+  onOpenVenues?: () => void;
 }
 
 export const FieldHeader = ({ 
@@ -24,7 +26,9 @@ export const FieldHeader = ({
   onNavigate,
   showMiniMap,
   onToggleMiniMap,
-  lastHeartbeat
+  lastHeartbeat,
+  venueCount = 0,
+  onOpenVenues
 }: FieldHeaderProps) => {
   return (
     <header 
@@ -87,6 +91,21 @@ export const FieldHeader = ({
           >
             <Compass className="w-4 h-4" />
           </Button>
+        )}
+        {/* Nearby venues icon with badge */}
+        {onOpenVenues && (
+          <button
+            aria-label={`${venueCount} venues nearby`}
+            onClick={onOpenVenues}
+            className="relative text-primary hover:text-primary/80 transition-colors p-2"
+          >
+            <MapPin className="w-5 h-5" />
+            {venueCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive text-[10px] font-semibold leading-none text-destructive-foreground shadow">
+                {venueCount > 9 ? '9+' : venueCount}
+              </span>
+            )}
+          </button>
         )}
         <AvatarDropdown />
       </div>

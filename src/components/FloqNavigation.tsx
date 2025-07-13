@@ -45,7 +45,7 @@ export const FloqNavigation = () => {
   }, []);
 
   return (
-    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 z-30">
+    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 z-40">
       <div className="flex justify-around items-center py-2 px-2">
         {TABS.map(({ id, label, Icon }) => (
           <NavLink

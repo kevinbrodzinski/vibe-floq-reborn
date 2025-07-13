@@ -212,7 +212,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: 
     <>
       <motion.div
         ref={containerRef}
-        className={`fixed left-4 right-4 z-10 pointer-events-auto will-change-transform ${className || ''}`}
+        className={`fixed left-4 right-4 z-[45] pointer-events-auto will-change-transform ${className || ''}`}
         style={{
           bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
           touchAction: 'pan-y',
