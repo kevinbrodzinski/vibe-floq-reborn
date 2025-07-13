@@ -526,7 +526,7 @@ export type Database = {
       }
       floqs: {
         Row: {
-          activity_score: number | null
+          activity_score: number
           auto_created: boolean | null
           catchment_area: unknown | null
           created_at: string | null
@@ -554,7 +554,7 @@ export type Database = {
           walkable_zone: unknown | null
         }
         Insert: {
-          activity_score?: number | null
+          activity_score?: number
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
@@ -582,7 +582,7 @@ export type Database = {
           walkable_zone?: unknown | null
         }
         Update: {
-          activity_score?: number | null
+          activity_score?: number
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
