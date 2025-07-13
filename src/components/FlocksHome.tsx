@@ -11,6 +11,7 @@ import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { FilterModal } from '@/components/FilterModal';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
+import { FloqCard } from '@/components/floq/FloqCard';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
@@ -213,50 +214,30 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             </div>
             
             {nearbyLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
-                  <Card key={i} className="p-4">
-                    <Skeleton className="h-6 w-3/4 mb-2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : nearbyFlocks.length > 0 ? (
-              <div className="space-y-3">
-                {nearbyFlocks.slice(0, 5).map((floq) => (
-                  <div
-                    key={floq.id}
-                    onClick={() => handleFloqPress(floq.id)}
-                    className="p-4 bg-card rounded-lg border border-border/40 hover:border-border cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground mb-1">
-                          {floq.title}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {floq.primary_vibe}
-                          </Badge>
-                          <span>•</span>
-                          <span>{floq.participant_count} members</span>
-                          <span>•</span>
-                          <span>{formatDistance(floq.distance_meters)} away</span>
-                        </div>
+                  <div key={i} className="flex items-center gap-4 p-5 bg-card/30 border border-border/20 backdrop-blur-md rounded-xl">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <div className="flex gap-3">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-24" />
                       </div>
-                      <FloqStatusBadge
-                        creatorId={floq.creator_id}
-                        isJoined={floq.is_joined}
-                        className="text-xs whitespace-nowrap"
-                      />
                     </div>
+                    <Skeleton className="h-6 w-16 rounded-full" />
                   </div>
                 ))}
               </div>
+            ) : nearbyFlocks.length > 0 ? (
+              <ul role="list" aria-label="Nearby floqs" className="space-y-4">
+                {nearbyFlocks.slice(0, 5).map((floq) => (
+                  <li key={floq.id}>
+                    <FloqCard floq={floq} />
+                  </li>
+                ))}
+              </ul>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No nearby flocks found</p>

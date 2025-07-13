@@ -17,6 +17,7 @@ export interface NearbyFloq {
   starts_at?: string;
   ends_at?: string;
   starts_in_min: number;
+  max_participants?: number;
   members: Array<{
     id: string;
     username: string;
@@ -110,6 +111,7 @@ export function useNearbyFlocks({
         starts_at: floq.starts_at || undefined,
         ends_at: floq.ends_at || undefined,
         starts_in_min: floq.starts_in_min,
+        max_participants: floq.max_participants || undefined,
         members: floq.members || [],
         is_joined: joinedFloqIds.includes(floq.id),
         creator_id: floq.creator_id || undefined,
