@@ -140,7 +140,7 @@ export function CreateFloqSheet() {
 
   return (
     <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
-      <SheetContent side="bottom" className="w-full max-w-lg mx-auto p-0 overflow-hidden sm:rounded-2xl h-[95vh] flex flex-col">
+      <SheetContent side="bottom" className="w-full max-w-lg mx-auto p-0 overflow-hidden sm:rounded-2xl h-[85vh] flex flex-col" style={{ marginBottom: 'var(--mobile-nav-height, 64px)' }}>
         {/* Header */}
         <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center justify-between">
