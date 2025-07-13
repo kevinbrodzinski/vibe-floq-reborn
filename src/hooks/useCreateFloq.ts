@@ -50,7 +50,7 @@ export function useCreateFloq() {
       });
 
       // Navigate to the new floq
-      navigate(`/floq/${floqId}`);
+      navigate(`/floqs/${floqId}`);
 
       // Invalidate all relevant queries with consistent cache keys
       queryClient.invalidateQueries({ queryKey: ["my-floqs"] });

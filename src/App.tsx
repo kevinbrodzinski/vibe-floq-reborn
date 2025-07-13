@@ -32,7 +32,6 @@ const App = () => {
             <Routes>
               {/* Main app routes (field, floqs, etc.) are handled inside Index */}
               <Route path="/*" element={<Index />} />
-              <Route path="/floq/:floqId" element={<FloqDetails />} />
               <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
             </Routes>
