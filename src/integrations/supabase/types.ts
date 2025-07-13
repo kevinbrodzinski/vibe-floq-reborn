@@ -1941,6 +1941,12 @@ export type Database = {
               p_user_lng?: number
             }
           | {
+              p_limit?: number
+              p_offset?: number
+              p_user_lat?: number
+              p_user_lng?: number
+            }
+          | {
               p_use_demo?: boolean
               p_limit?: number
               p_offset?: number
