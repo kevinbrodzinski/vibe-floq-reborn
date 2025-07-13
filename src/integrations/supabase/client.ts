@@ -28,11 +28,6 @@ const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
     persistSession: true,
     autoRefreshToken: true,
   },
-  realtime: {
-    params: {
-      eventsPerSecond: 2,
-    },
-  },
   global: {
     headers: { 'X-Client-Info': 'floq-web v1.0' },
   }

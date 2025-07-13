@@ -68,8 +68,9 @@ export function useNearbyFlocks({
         return [];
       }
       
-      // Get active flocks with member data
+      // Get active flocks with member data - use 5-parameter version to avoid overloading
       const { data, error } = await supabase.rpc("get_active_floqs_with_members", {
+        p_use_demo: false,
         p_limit: limit,
         p_offset: 0,
         p_user_lat: Number(geo.lat),
