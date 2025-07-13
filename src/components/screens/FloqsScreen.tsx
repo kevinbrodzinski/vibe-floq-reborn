@@ -390,10 +390,7 @@ export const FloqsScreen = () => {
       {debug && <FloqsDebugPanel />}
 
       {/* Create Floq Sheet */}
-      <CreateFloqSheet 
-        open={createFloqOpen} 
-        onOpenChange={setCreateFloqOpen} 
-      />
+      <CreateFloqSheet />
 
       {/* DM Quick Sheet */}
       <DMQuickSheet

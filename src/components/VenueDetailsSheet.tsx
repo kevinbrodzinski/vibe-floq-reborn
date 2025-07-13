@@ -233,11 +233,7 @@ export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsS
         )}
 
         {/* Create Floq Sheet */}
-        <CreateFloqSheet 
-          open={createFloqOpen} 
-          onOpenChange={setCreateFloqOpen}
-          preselectedVenueId={venue?.id}
-        />
+        <CreateFloqSheet />
       </SheetContent>
     </Sheet>
   );

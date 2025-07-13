@@ -324,10 +324,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: 
         className="sr-only" 
       />
 
-      <CreateFloqSheet 
-        open={createFloqOpen} 
-        onOpenChange={setCreateFloqOpen} 
-      />
+      <CreateFloqSheet />
     </>
   );
 };
