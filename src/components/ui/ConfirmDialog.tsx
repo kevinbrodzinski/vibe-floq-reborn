@@ -53,7 +53,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <Button
             type="button"
             variant="destructive"
-            onClick={() => onConfirm()}
+            onClick={async () => {
+              try {
+                await onConfirm();
+              } catch (error) {
+                // Error handling done by parent
+              }
+            }}
             disabled={isLoading}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -114,7 +114,8 @@ export function useOfflineQueue() {
             return {
               ...old,
               is_joined: true,
-              participant_count: (old.participant_count || 0) + 1,
+              // Use server count if available, otherwise increment
+              participant_count: data.participant_count || (old.participant_count || 0) + 1,
               // Preserve creator status
               is_creator: old.is_creator
             };
@@ -170,7 +171,9 @@ export function useOfflineQueue() {
             return {
               ...old,
               is_joined: false,
-              participant_count: Math.max((old.participant_count || 1) - 1, 0),
+              // Use server count if available, otherwise decrement
+              participant_count: data.participant_count !== undefined ? 
+                data.participant_count : Math.max((old.participant_count || 1) - 1, 0),
               // Preserve creator status
               is_creator: old.is_creator
             };

@@ -17,11 +17,11 @@ export const useDeleteFloq = () => {
     },
     onSuccess: (data, floqId) => {
       if (data.success) {
-        // Remove from all relevant caches
+        // Remove detail cache first, then clean lists
+        queryClient.removeQueries({ queryKey: ['floq-details', floqId] });
         queryClient.invalidateQueries({ queryKey: ['my-floqs'] });
         queryClient.invalidateQueries({ queryKey: ['nearby-floqs'] });
         queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
-        queryClient.removeQueries({ queryKey: ['floq-details', floqId] });
 
         toast({
           title: 'Floq deleted',

@@ -39,7 +39,6 @@ export function CreateFloqSheet() {
   const [maxParticipants, setMaxParticipants] = useState(20);
   const [isPrivate, setIsPrivate] = useState(false);
   const [durationMode, setDurationMode] = useState<'quick' | 'custom' | 'persistent'>('quick');
-  const [customDuration, setCustomDuration] = useState(4); // hours
   const [customEndTime, setCustomEndTime] = useState('');
   const [hasTouchedTitle, setHasTouchedTitle] = useState(false);
 
@@ -52,7 +51,6 @@ export function CreateFloqSheet() {
       setMaxParticipants(20);
       setIsPrivate(false);
       setDurationMode('quick');
-      setCustomDuration(4);
       setCustomEndTime('');
       setHasTouchedTitle(false);
     }
@@ -60,8 +58,7 @@ export function CreateFloqSheet() {
 
   const handleDurationModeChange = (mode: 'quick' | 'custom' | 'persistent') => {
     setDurationMode(mode);
-    // Reset both custom duration and end time for clean state transitions
-    setCustomDuration(4);
+    // Reset custom end time for clean state transitions
     setCustomEndTime('');
   };
 
@@ -125,6 +122,7 @@ export function CreateFloqSheet() {
         location,
         starts_at: now.toISOString(),
         ends_at: endsAt,
+        // Backend expects flock_type not floq_type
         flock_type: floqType,
         max_participants: maxParticipants,
         visibility: isPrivate ? 'private' : 'public'
