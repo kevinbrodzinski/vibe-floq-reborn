@@ -1,23 +1,75 @@
--- Create the missing update_last_read_at function
-CREATE OR REPLACE FUNCTION public.update_last_read_at(
-  thread_id_param uuid,
-  user_id_param uuid
-) RETURNS void AS $$
-BEGIN
-  UPDATE public.direct_threads
-  SET 
-    last_read_at_a = CASE WHEN member_a = user_id_param THEN now() ELSE last_read_at_a END,
-    last_read_at_b = CASE WHEN member_b = user_id_param THEN now() ELSE last_read_at_b END
-  WHERE id = thread_id_param
-    AND (member_a = user_id_param OR member_b = user_id_param);
-  
-  -- Notify UI to invalidate unread counts cache
-  PERFORM pg_notify('dm_read_status', json_build_object(
-    'thread_id', thread_id_param,
-    'user_id', user_id_param
-  )::text);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Persistent floqs implementation migration
 
--- Grant execute permissions to authenticated users
-GRANT EXECUTE ON FUNCTION update_last_read_at(uuid, uuid) TO authenticated;
+-- 1. Add enum value if not exists
+ALTER TYPE flock_type_enum ADD VALUE IF NOT EXISTS 'persistent';
+
+-- 2. Allow NULL ends_at
+ALTER TABLE public.floqs ALTER COLUMN ends_at DROP NOT NULL;
+
+-- 3. Back-fill existing floqs with NULL ends_at BEFORE adding constraint
+UPDATE public.floqs
+SET flock_type = 'persistent'
+WHERE ends_at IS NULL
+  AND flock_type <> 'persistent';
+
+-- 4. Add integrity constraint (validates immediately)
+ALTER TABLE public.floqs
+  ADD CONSTRAINT ck_flock_type_ends_at
+  CHECK (
+    (flock_type = 'persistent' AND ends_at IS NULL) OR
+    (flock_type = 'momentary'  AND ends_at IS NOT NULL)
+  );
+
+-- 5. Partial index for performance (no volatile expressions)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_active_momentary
+  ON public.floqs (activity_score DESC)
+  WHERE flock_type = 'momentary'
+    AND ends_at IS NOT NULL;
+
+-- 6. Function to end persistent floqs
+CREATE OR REPLACE FUNCTION public.end_floq(
+  p_floq_id uuid,
+  p_reason text DEFAULT 'manual'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  result_floq public.floqs;
+BEGIN
+  UPDATE public.floqs
+  SET 
+    ends_at = now(),
+    flock_type = 'momentary'
+  WHERE id = p_floq_id
+    AND creator_id = auth.uid()
+    AND ends_at IS NULL  -- persistent only
+  RETURNING * INTO result_floq;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Floq not found or you are not the host'
+    );
+  END IF;
+
+  -- Log the end event
+  INSERT INTO public.flock_history (floq_id, user_id, event_type, metadata)
+  VALUES (
+    p_floq_id, 
+    auth.uid(), 
+    'ended',
+    jsonb_build_object('reason', p_reason, 'ended_at', now())
+  );
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'floq_id', result_floq.id,
+    'ended_at', result_floq.ends_at
+  );
+END;
+$$;
+
+-- 7. Grant execute permissions
+GRANT EXECUTE ON FUNCTION public.end_floq(uuid, text) TO authenticated;
