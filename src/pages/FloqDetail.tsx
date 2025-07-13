@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, MapPin, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
+import { ArrowLeft, Users, Clock, MapPin, MessageCircle, UserPlus, UserMinus, Zap, UserPlus2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import { useEndFloq } from '@/hooks/useEndFloq';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
+import { IconPill } from '@/components/IconPill';
 
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
@@ -28,6 +29,7 @@ const FloqDetail = () => {
   const { showChat, setShowChat } = useFloqUI();
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
   const [showEndConfirm, setShowEndConfirm] = React.useState(false);
+  const [showInvite, setShowInvite] = React.useState(false);
   
   const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
@@ -302,36 +304,39 @@ const FloqDetail = () => {
               </Button>
             </div>
             
-            {/* End Floq Button for hosts of persistent floqs */}
-            {floqDetails.is_creator && !floqDetails.ends_at && (
-              <div className="flex gap-3">
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowEndConfirm(true)}
-                  disabled={isEndingFloq}
-                  className="flex-1"
-                >
-                  End Floq
-                </Button>
-              </div>
-            )}
-
-            {/* Secondary actions */}
+            {/* Secondary action row */}
             {(floqDetails.is_joined || floqDetails.is_creator) && (
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowChat(true)}
-                  className="flex-1"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat
-                </Button>
+              <div className="flex gap-2 flex-wrap">
+                {/* End Floq for persistent hosts */}
+                {floqDetails.is_creator && !floqDetails.ends_at && (
+                  <IconPill
+                    icon={<X className="w-3 h-3" />}
+                    label="End Floq"
+                    onClick={() => setShowEndConfirm(true)}
+                    disabled={isEndingFloq}
+                    variant="destructive"
+                  />
+                )}
                 
-                <InviteFriendsButton 
-                  floqId={floqDetails.id}
-                  variant="outline"
-                  className="flex-1"
+                <IconPill
+                  icon={<Zap className="w-3 h-3" />}
+                  label="Boost"
+                  onClick={() => {
+                    // TODO: Implement boost functionality
+                    console.log('Boost floq');
+                  }}
+                />
+                
+                <IconPill
+                  icon={<UserPlus2 className="w-3 h-3" />}
+                  label="Invite"
+                  onClick={() => setShowInvite(true)}
+                />
+                
+                <IconPill
+                  icon={<MessageCircle className="w-3 h-3" />}
+                  label="Chat"
+                  onClick={() => setShowChat(true)}
                 />
               </div>
             )}

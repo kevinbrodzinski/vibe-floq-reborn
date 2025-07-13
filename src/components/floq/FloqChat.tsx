@@ -42,6 +42,10 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     isSending,
   } = useFloqChat(floqId);
 
+  // For debugging - check if user is joined (would come from parent component in real implementation)
+  const isJoined = true; // TODO: Get actual join status from parent
+  const canSend = !!floqId && !!user && (message.trim().length > 0) && isJoined;
+
   // Smart auto-scroll to bottom on new messages
   useEffect(() => {
     if (!messagesEndRef.current || !messagesContainerRef.current) return;
@@ -71,7 +75,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   }, [floqId]);
 
   const handleSend = async () => {
-    if (!floqId || !user || !message.trim() || isSending) return;
+    if (!canSend || isSending) return;
 
     try {
       await sendMessage({ body: message.trim() });
@@ -82,7 +86,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   };
 
   const handleEmojiSend = async (emoji: string) => {
-    if (!floqId || !user || isSending) return;
+    if (!canSend || isSending) return;
 
     try {
       await sendMessage({ emoji });
@@ -95,7 +99,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (floqId && user && message.trim() && !isSending) {
+      if (canSend && !isSending) {
         handleSend();
       }
     }
@@ -181,7 +185,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
                   size="sm"
                   className="text-lg hover:bg-muted"
                   onClick={() => handleEmojiSend(emoji)}
-                  disabled={!floqId || !user || isSending}
+                  disabled={!canSend || isSending}
                   aria-label={`Send ${emoji} reaction`}
                 >
                   {emoji}
@@ -196,7 +200,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            disabled={!floqId || !user}
+            disabled={!canSend}
             className="flex-shrink-0"
             aria-label="Open emoji picker"
           >
@@ -216,7 +220,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             />
             <Button
               onClick={handleSend}
-              disabled={!floqId || !user || !message.trim() || isSending}
+              disabled={!canSend || isSending}
               size="sm"
               className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
               aria-label="Send message"
@@ -227,6 +231,13 @@ export const FloqChat: React.FC<FloqChatProps> = ({
                 <Send className="w-3 h-3" />
               )}
             </Button>
+            
+            {/* Debug info for send button */}
+            {!canSend && (
+              <div className="absolute -bottom-6 right-0 text-xs text-destructive">
+                {!floqId ? 'No floq ID' : !user ? 'Not authenticated' : !isJoined ? 'Join first' : 'Type something'}
+              </div>
+            )}
           </div>
         </div>
       </div>
