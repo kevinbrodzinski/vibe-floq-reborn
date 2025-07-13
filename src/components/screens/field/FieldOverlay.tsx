@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
+import { Z } from "@/constants/zLayers";
 import type { Vibe } from "@/types";
 
 interface FieldOverlayProps {
@@ -37,18 +38,27 @@ export const FieldOverlay = ({
     <div className="absolute inset-0 pointer-events-auto">
       {/* Debug counter */}
       {debug && (
-        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded pointer-events-none">
+        <div 
+          className="pointer-events-none select-none text-xs text-muted-foreground absolute top-2 right-2 bg-black/20 px-2 py-1 rounded"
+          style={{ zIndex: Z.ui + 1 }}
+        >
           {nearbyUsersCount} people • {walkableFloqsCount} floqs ≤ 1 km
         </div>
       )}
 
       {/* Time Status - Centered above status region */}
-      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      <div 
+        className="absolute top-14 left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{ zIndex: Z.ui + 2 }}
+      >
         <TimeStatusIndicator />
       </div>
 
       {/* Status Region - Top left under header */}
-      <div className="absolute top-28 left-4 z-20 pointer-events-auto min-h-[44px]">
+      <div 
+        className="absolute top-28 left-4 pointer-events-auto min-h-[44px]"
+        style={{ zIndex: Z.ui + 3 }}
+      >
         <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
             <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
