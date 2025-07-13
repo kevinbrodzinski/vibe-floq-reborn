@@ -52,9 +52,9 @@ export function CreateFloqSheet() {
 
   const handleDurationModeChange = (mode: 'quick' | 'custom' | 'persistent') => {
     setDurationMode(mode);
-    if (mode !== 'custom') {
-      setCustomEndTime('');
-    }
+    // Reset both custom duration and end time for clean state transitions
+    setCustomDuration(4);
+    setCustomEndTime('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -264,7 +264,7 @@ export function CreateFloqSheet() {
                   </div>
                 )}
 
-                {/* Persistent Info */}
+                 {/* Persistent Info */}
                 {durationMode === 'persistent' && (
                   <div className="bg-muted/30 rounded-lg p-3">
                     <p className="text-sm text-muted-foreground">
@@ -273,9 +273,9 @@ export function CreateFloqSheet() {
                   </div>
                 )}
 
-                {/* Disabled Custom Picker Notice */}
+                {/* Disabled Custom Picker Notice with proper visual state */}
                 {durationMode === 'persistent' && (
-                  <div className="opacity-50 pointer-events-none">
+                  <div className="pointer-events-none opacity-50">
                     <Label htmlFor="custom-end-time-disabled" className="text-muted-foreground">End Time</Label>
                     <Input
                       id="custom-end-time-disabled"

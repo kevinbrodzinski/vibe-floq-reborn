@@ -304,20 +304,22 @@ const FloqDetail = () => {
               </Button>
             </div>
             
-            {/* Secondary action row */}
-            {(floqDetails.is_joined || floqDetails.is_creator) && (
-              <div className="flex gap-2 flex-wrap">
-                {/* End Floq for persistent hosts */}
-                {floqDetails.is_creator && !floqDetails.ends_at && (
-                  <IconPill
-                    icon={<X className="w-3 h-3" />}
-                    label="End Floq"
-                    onClick={() => setShowEndConfirm(true)}
-                    disabled={isEndingFloq}
-                    variant="destructive"
-                  />
-                )}
-                
+            {/* Secondary action row - independent pill gating */}
+            <div className="flex gap-2 flex-wrap">
+              {/* End Floq for persistent hosts only */}
+              {floqDetails.is_creator && !floqDetails.ends_at && (
+                <IconPill
+                  icon={<X className="w-3 h-3" />}
+                  label="End Floq"
+                  onClick={() => setShowEndConfirm(true)}
+                  disabled={isEndingFloq}
+                  variant="destructive"
+                  className="border-destructive"
+                />
+              )}
+              
+              {/* Boost available to all joined members */}
+              {floqDetails.is_joined && (
                 <IconPill
                   icon={<Zap className="w-3 h-3" />}
                   label="Boost"
@@ -326,20 +328,24 @@ const FloqDetail = () => {
                     console.log('Boost floq');
                   }}
                 />
-                
+              )}
+              
+              {/* Invite available to all joined members */}
+              {floqDetails.is_joined && (
                 <IconPill
                   icon={<UserPlus2 className="w-3 h-3" />}
                   label="Invite"
                   onClick={() => setShowInvite(true)}
                 />
-                
-                <IconPill
-                  icon={<MessageCircle className="w-3 h-3" />}
-                  label="Chat"
-                  onClick={() => setShowChat(true)}
-                />
-              </div>
-            )}
+              )}
+              
+              {/* Chat available to all (send requires join) */}
+              <IconPill
+                icon={<MessageCircle className="w-3 h-3" />}
+                label="Chat"
+                onClick={() => setShowChat(true)}
+              />
+            </div>
           </div>
 
           {/* Bottom padding for scroll clearance */}
