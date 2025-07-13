@@ -15,6 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 
+import { useFloqUI } from "@/contexts/FloqUIContext";
 import { RadiusSlider } from "@/components/RadiusSlider";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { DMQuickSheet } from "@/components/DMQuickSheet";
@@ -35,12 +36,15 @@ const vibeColor: Record<string, string> = {
 };
 
 // Component for individual floq cards
-const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: { 
+const FloqCard = ({ row, onJoin, onChat, onSuggestChange, onCardClick }: { 
   row: FloqRow; 
   onJoin: () => void;
   onChat: () => void;
   onSuggestChange: () => void;
+  onCardClick: () => void;
 }) => {
+  // Get creator info (first member is typically the creator)
+  const creator = row.members?.[0];
   const primary = vibeColor[row.vibe_tag] || vibeColor.social;
   const isStartingSoon = row.starts_in_min <= 30;
 
@@ -52,7 +56,10 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
   };
 
   return (
-    <div className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-2px] hover:bg-card/60">
+    <div 
+      onClick={onCardClick}
+      className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-2px] hover:bg-card/60 cursor-pointer"
+    >
       <div className="flex items-center space-x-4 mb-6">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse"
@@ -70,6 +77,12 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
           <div className="flex items-center space-x-2 text-muted-foreground text-sm mb-2">
             <span className="capitalize font-medium">{row.vibe_tag}</span>
             <span>•</span>
+            {creator && (
+              <>
+                <span>by {creator.display_name || creator.username}</span>
+                <span>•</span>
+              </>
+            )}
             {!row.ends_at ? (
               <span className="text-persistent-600 font-medium">Ongoing</span>
             ) : row.starts_in_min > 0 ? (
@@ -144,7 +157,10 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
       <div className="flex flex-wrap gap-3">
         <div className="flex gap-3 flex-1">
           <Button
-            onClick={onJoin}
+            onClick={(e) => {
+              e.stopPropagation();
+              onJoin();
+            }}
             size="sm"
             disabled={getEnvironmentConfig().presenceMode === 'offline'}
             className="bg-gradient-to-r from-primary to-primary-variant text-primary-foreground border-0 disabled:opacity-50"
@@ -153,7 +169,10 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
             Join
           </Button>
           <Button
-            onClick={onChat}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChat();
+            }}
             size="sm"
             variant="outline"
             disabled={getEnvironmentConfig().presenceMode === 'offline'}
@@ -163,7 +182,10 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
             Chat
           </Button>
           <Button
-            onClick={onSuggestChange}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSuggestChange();
+            }}
             size="sm"
             variant="ghost"
             disabled={getEnvironmentConfig().presenceMode === 'offline'}
@@ -174,11 +196,13 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
           </Button>
         </div>
         <div className="flex justify-end">
-          <BoostButton 
-            floqId={row.id} 
-            boostCount={row.boost_count}
-            size="sm"
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <BoostButton 
+              floqId={row.id} 
+              boostCount={row.boost_count}
+              size="sm"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -190,7 +214,7 @@ export const FloqsScreen = () => {
   const session = useSession();
   const user = session?.user;
   const [debug] = useDebug();
-  const [createFloqOpen, setCreateFloqOpen] = useState(false);
+  const { setShowCreateSheet } = useFloqUI();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [suggestChangeOpen, setSuggestChangeOpen] = useState(false);
@@ -327,7 +351,7 @@ export const FloqsScreen = () => {
           floqs
         </h1>
         <button 
-          onClick={() => setCreateFloqOpen(true)}
+          onClick={() => setShowCreateSheet(true)}
           className="h-10 w-10 rounded-xl bg-surface/30 backdrop-blur-sm border border-border/20 hover:bg-surface/50 transition-all duration-300 flex items-center justify-center"
         >
           <Plus size={20} className="text-muted-foreground" />
@@ -384,6 +408,7 @@ export const FloqsScreen = () => {
               onJoin={() => handleJoinFloq(floq.id)}
               onChat={() => handleChat(floq)}
               onSuggestChange={() => handleSuggestChange(floq)}
+              onCardClick={() => navigate(`/floqs/${floq.id}`)}
             />
           ))}
         </div>
@@ -403,7 +428,7 @@ export const FloqsScreen = () => {
       {/* Debug Panel */}
       {debug && <FloqsDebugPanel />}
 
-      {/* Create Floq Sheet */}
+      {/* Create Floq Sheet - Now controlled by FloqUI context */}
       <CreateFloqSheet />
 
       {/* DM Quick Sheet */}

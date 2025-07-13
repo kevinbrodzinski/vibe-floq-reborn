@@ -26,7 +26,8 @@ const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
-  const { showChat, setShowChat } = useFloqUI();
+  // Use local state for chat modal to prevent auto-opening
+  const [showChat, setShowChat] = React.useState(false);
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
   const [showEndConfirm, setShowEndConfirm] = React.useState(false);
   const [showInvite, setShowInvite] = React.useState(false);
