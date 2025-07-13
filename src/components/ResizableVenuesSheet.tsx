@@ -9,7 +9,7 @@ import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
 import { Z } from '@/constants/zLayers';
 import { cn } from '@/lib/utils';
-import { FixedSizeList as List } from 'react-window';
+const List = React.lazy(() => import('react-window').then(m => ({ default: m.FixedSizeList })));
 
 interface ResizableVenuesSheetProps {
   isOpen: boolean;
@@ -319,16 +319,18 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
               </div>
             </div>
           ) : shouldUseVirtualization ? (
-            <List
-              height={400}
-              width="100%"
-              itemCount={allVenues.length}
-              itemSize={80}
-              itemData={listData}
-              className="overflow-auto"
-            >
-              {VenueItem}
-            </List>
+            <React.Suspense fallback={<div className="flex justify-center p-4">Loading...</div>}>
+              <List
+                height={400}
+                width="100%"
+                itemCount={allVenues.length}
+                itemSize={80}
+                itemData={listData}
+                className="overflow-auto"
+              >
+                {VenueItem}
+              </List>
+            </React.Suspense>
           ) : (
             <ScrollArea className="h-full">
               <div className="p-4 space-y-0">

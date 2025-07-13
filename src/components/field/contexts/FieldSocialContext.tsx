@@ -71,7 +71,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         isFriend: presence.isFriend || false,
       };
     });
-  }, [presenceData, profilesMap, location?.lat, location?.lng, getVibeColor]);
+  }, [presenceData, profilesMap, location?.lat, location?.lng]);
 
   const value = {
     people,
