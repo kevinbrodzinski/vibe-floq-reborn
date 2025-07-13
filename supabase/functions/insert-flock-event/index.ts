@@ -4,6 +4,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 interface EventRequest {
@@ -98,8 +99,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate actor_id security: only allow if it matches authenticated user
-    if (actor_id && actor_id !== user.id) {
+    // Validate actor_id security: require it and ensure it matches authenticated user
+    if (!actor_id) {
+      return new Response(
+        JSON.stringify({ error: 'actor_id is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'content-type': 'application/json' } 
+        }
+      );
+    }
+
+    if (actor_id !== user.id) {
       return new Response(
         JSON.stringify({ error: 'actor_id must match authenticated user' }),
         { 
