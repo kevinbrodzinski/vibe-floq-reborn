@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { FloqStatusBadge } from '@/components/ui/FloqStatusBadge';
+import { FloqStatusBadge } from '@/components/FloqStatusBadge';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { FilterModal } from '@/components/FilterModal';

@@ -8,7 +8,7 @@ import { useFloqChat } from '@/hooks/useFloqChat';
 import { useSession } from '@supabase/auth-helpers-react';
 import { MessageBubble } from './MessageBubble';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface FloqChatProps {
   floqId: string;
@@ -29,6 +29,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
 }) => {
   const session = useSession();
   const user = session?.user;
+  const location = useLocation();
 
   // Check auth state with proper loading distinction
   if (!session) {
@@ -38,6 +39,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
           <p className="text-sm text-muted-foreground mb-2">Please sign in to access chat</p>
           <Link 
             to="/login" 
+            state={{ redirect: location.pathname }}
             className="text-sm text-primary hover:underline"
           >
             Sign in

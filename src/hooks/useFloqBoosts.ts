@@ -4,6 +4,12 @@ import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { toast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
+// Dynamic vibe emoji mapping - module const to avoid rebuilding
+const VIBE_EMOJI_MAP = {
+  hype: '🔥',
+  default: '⚡'
+} as const;
+
 interface BoostFloqParams {
   floqId: string;
   boostType?: string;
@@ -135,10 +141,10 @@ export const useFloqBoost = () => {
       queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
       queryClient.invalidateQueries({ queryKey: ['user-boost-status'] });
       
-      if (process.env.NODE_ENV === 'development') console.debug('📊 Boost analytics data (1hr duration):', data.analytics);
+      if (import.meta.env.DEV) console.debug('📊 Boost analytics data (1hr duration):', data.analytics);
       
       // Dynamic vibe emoji based on boost type
-      const vibeEmoji = data.vibe === 'hype' ? '🔥' : '⚡';
+      const vibeEmoji = VIBE_EMOJI_MAP[data.vibe as keyof typeof VIBE_EMOJI_MAP] || VIBE_EMOJI_MAP.default;
       
       toast({
         title: `${data.vibe === 'hype' ? 'Hype boost applied!' : 'Boosted!'} ${vibeEmoji}`,

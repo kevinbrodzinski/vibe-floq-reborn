@@ -16,7 +16,7 @@ export const hasManagePermission = (
   if (creatorId === userId) return true;
   
   // Future: Add support for moderator/admin roles
-  // if (userRole === 'moderator' || userRole === 'admin') return true;
+  if (userRole === 'moderator' || userRole === 'admin') return true;
   
   return false;
 };

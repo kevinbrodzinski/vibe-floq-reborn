@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@supabase/auth-helpers-react';
 
+export type FloqStatus = 'host' | 'joined';
+
 interface FloqStatusBadgeProps {
   creatorId: string;
   isJoined: boolean;
@@ -21,7 +23,7 @@ export const FloqStatusBadge: React.FC<FloqStatusBadgeProps> = ({
   return (
     <Badge 
       variant={isHost ? 'default' : 'outline'} 
-      className={className}
+      className={`${className} ${!isHost ? 'text-primary-foreground/80' : ''}`}
       title={isHost ? "You're the host" : "You've joined this floq"}
     >
       {isHost ? 'Host' : 'Joined'}

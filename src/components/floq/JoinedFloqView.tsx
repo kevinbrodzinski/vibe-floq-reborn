@@ -57,6 +57,12 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
     [floqDetails?.creator_id, session?.user.id]
   );
 
+  // Plans CTA callback
+  const goToNewPlan = useCallback(
+    () => navigate(`/floqs/${floqDetails.id}/plans/new`),
+    [floqDetails.id, navigate]
+  );
+
   // Calculate if user is a member - use stable dependency tracking
   const isMember = useMemo(() => 
     floqDetails.participants?.some(p => p.user_id === session?.user.id) || false,
@@ -199,7 +205,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                     
                     if (error) throw error;
                     
-                    if (process.env.NODE_ENV === 'development') console.debug('Boost applied successfully');
+                    if (import.meta.env.DEV) console.debug('Boost applied successfully');
                   } catch (error) {
                     console.error('Failed to boost floq:', error);
                   }
@@ -239,7 +245,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 </p>
                 {isHost ? (
                   <Button
-                    onClick={useCallback(() => navigate(`/floqs/${floqDetails.id}/plans/new`), [floqDetails.id, navigate])}
+                    onClick={goToNewPlan}
                     className="mt-6 self-center"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
@@ -315,7 +321,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             setShowDeleteConfirm(false);
             
             // Analytics event after successful deletion
-            if (process.env.NODE_ENV === 'development') console.debug('floq_deleted', { 
+            if (import.meta.env.DEV) console.debug('floq_deleted', { 
               floq_id: floqDetails.id, 
               participant_count: floqDetails.participant_count 
             });
