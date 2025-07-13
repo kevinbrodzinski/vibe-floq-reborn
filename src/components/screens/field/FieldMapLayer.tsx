@@ -14,7 +14,7 @@ interface FieldMapLayerProps {
 
 export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
-  const { people, friends } = useFieldSocial();
+  const { people } = useFieldSocial();
   const { floqEvents, walkableFloqs } = data;
 
   // Event handlers - these will be moved to gesture provider later
@@ -53,7 +53,14 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
             className={clsx('absolute inset-0', isFull && 'fullscreen-map')}
             constellationMode={constellationMode}
             people={people}
-            friends={friends}
+            friends={people.filter(p => p.isFriend).map(p => ({
+              ...p,
+              relationship: 'friend' as const,
+              activity: 'active' as const,
+              warmth: 75,
+              compatibility: 80,
+              lastSeen: Date.now()
+            }))}
             floqEvents={floqEvents}
             walkableFloqs={walkableFloqs}
             onFriendInteraction={handleFriendInteraction}
@@ -89,7 +96,14 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
           <MiniMap
             constellationMode={constellationMode}
             people={people}
-            friends={friends}
+            friends={people.filter(p => p.isFriend).map(p => ({
+              ...p,
+              relationship: 'friend' as const,
+              activity: 'active' as const,
+              warmth: 75,
+              compatibility: 80,
+              lastSeen: Date.now()
+            }))}
             floqEvents={floqEvents}
             walkableFloqs={walkableFloqs}
             onFriendInteraction={handleFriendInteraction}

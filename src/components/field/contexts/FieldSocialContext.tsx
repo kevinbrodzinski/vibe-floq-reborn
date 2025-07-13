@@ -21,7 +21,6 @@ export interface Person {
 }
 
 interface FieldSocialContextValue {
-  friends: any[];
   people: Person[];
   profilesMap: Map<string, ProfileRow>;
   profiles: ProfileRow[];
@@ -86,23 +85,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     });
   }, [presenceData, profilesMap, location?.lat, location?.lng]);
 
-  // Convert friends to extended format for constellation mode
-  const friends = useStableMemo(() => {
-    return people
-      .filter(person => (person as any).isFriend)
-      .map((person, index) => ({
-        ...person,
-        relationship: (index % 3 === 0 ? 'close' : index % 2 === 0 ? 'friend' : 'acquaintance') as 'close' | 'friend' | 'acquaintance',
-        activity: 'active' as const,
-        warmth: 60 + Math.random() * 40,
-        compatibility: 70 + Math.random() * 30,
-        lastSeen: Date.now() - Math.random() * 900000,
-        avatar_url: profilesMap.get(person.id)?.avatar_url,
-      }));
-  }, [people.length, people.filter(p => (p as any).isFriend).length]);
-
   const value = {
-    friends,
     people,
     profilesMap,
     profiles,
