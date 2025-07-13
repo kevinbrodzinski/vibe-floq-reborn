@@ -1558,6 +1558,8 @@ export type Database = {
           p_visibility?: string
           p_title?: string
           p_invitees?: string[]
+          p_ends_at?: string
+          p_flock_type?: Database["public"]["Enums"]["flock_type_enum"]
         }
         Returns: string
       }
