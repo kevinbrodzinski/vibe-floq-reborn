@@ -28,7 +28,7 @@ export function useMemoryOptimization() {
   useEffect(() => {
     const handleMemoryWarning = () => {
       // Force garbage collection if available (Chrome DevTools)
-      if ('gc' in window && typeof window.gc === 'function') {
+      if (process.env.NODE_ENV === 'development' && 'gc' in window && typeof window.gc === 'function') {
         window.gc();
       }
       
@@ -50,15 +50,17 @@ export function useMemoryOptimization() {
         }
       };
 
-      const memoryInterval = setInterval(checkMemory, 30000); // Check every 30s
+      const memoryInterval = setInterval(checkMemory, 30000);
+      // Register cleanup immediately when interval is created
       addCleanup(() => clearInterval(memoryInterval));
     }
 
     // iOS memory warning simulation
     const memoryWarningListener = () => handleMemoryWarning();
     window.addEventListener('pagehide', memoryWarningListener);
+    // Register cleanup immediately when listener is added
     addCleanup(() => window.removeEventListener('pagehide', memoryWarningListener));
-  }, []);
+  }, [addCleanup]);
 
   return {
     isMounted: () => mountedRef.current,
