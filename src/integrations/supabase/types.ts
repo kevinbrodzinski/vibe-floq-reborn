@@ -1327,12 +1327,19 @@ export type Database = {
         Returns: string
       }
       calculate_floq_activity_score: {
-        Args: {
-          p_floq_id: string
-          p_event_type: string
-          p_proximity_boost?: number
-          p_decay_hours?: number
-        }
+        Args:
+          | {
+              p_floq_id: string
+              p_event_type: Database["public"]["Enums"]["flock_event_type_enum"]
+              p_proximity_boost?: number
+              p_decay_hours?: number
+            }
+          | {
+              p_floq_id: string
+              p_event_type: string
+              p_proximity_boost?: number
+              p_decay_hours?: number
+            }
         Returns: Json
       }
       calculate_relationship_strength: {
