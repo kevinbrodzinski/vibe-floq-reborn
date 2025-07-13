@@ -18,7 +18,7 @@ import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { useDebug } from "@/lib/useDebug";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { useSelectedVenue } from "@/store/useSelectedVenue";
-import { FullscreenFab } from "@/components/map/FullscreenFab";
+
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -580,15 +580,8 @@ export const FieldScreen = () => {
           />
         </motion.div>
 
-        {/* Full-screen toggle FAB - always on top */}
-        <div className="absolute inset-0 z-[60] pointer-events-none">
-          <div className="pointer-events-auto">
-        <FullscreenFab />
-
         {/* Live region for accessibility */}
         <p ref={liveRef} className="sr-only" aria-live="polite" />
-          </div>
-        </div>
       </div>
     </ErrorBoundary>
   );
