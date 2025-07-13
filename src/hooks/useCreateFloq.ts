@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
 
@@ -15,8 +15,7 @@ interface CreateFloqData {
 }
 
 export function useCreateFloq() {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({

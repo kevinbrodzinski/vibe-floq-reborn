@@ -68,6 +68,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleRetry = () => {
+    // Clear any pending retry timeout to prevent double-retry
+    if (this.retryTimeoutId) {
+      clearTimeout(this.retryTimeoutId);
+      this.retryTimeoutId = undefined;
+    }
+    
     this.setState({
       hasError: false,
       error: undefined,
