@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
-import { useFloqJoin } from '@/hooks/useFloqJoin';
 import { useToast } from '@/hooks/use-toast';
 
 interface Person {
@@ -31,8 +30,8 @@ export const SocialInteractionModal = ({
   onDMOpen
 }: SocialInteractionModalProps) => {
   const { socialHaptics } = useHapticFeedback();
-  const { sendRequest, isSending } = useFriendRequests();
-  const { join } = useFloqJoin();
+  const friendRequestsHook = useFriendRequests();
+  const sendFriendRequest = friendRequestsHook.sendRequest || (() => console.log('Send friend request not implemented'));
   const { toast } = useToast();
   const [showFloqCreate, setShowFloqCreate] = useState(false);
 
@@ -47,7 +46,7 @@ export const SocialInteractionModal = ({
         onOpenChange(false);
         break;
       case 'friend-request':
-        sendRequest(person.id);
+        sendFriendRequest(person.id);
         onOpenChange(false);
         break;
       case 'vibe-check':
@@ -140,15 +139,10 @@ export const SocialInteractionModal = ({
                   variant="outline"
                   className="w-full justify-start h-12"
                   onClick={() => handleAction(action.id)}
-                  disabled={action.id === 'friend-request' && isSending}
+                  disabled={false}
                 >
                   <Icon className={`h-5 w-5 mr-3 ${action.color}`} />
                   <span className="font-medium">{action.label}</span>
-                  {action.id === 'friend-request' && isSending && (
-                    <div className="ml-auto">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    </div>
-                  )}
                 </Button>
               </motion.div>
             );

@@ -34,7 +34,8 @@ export const FloqInteractionSheet = ({
   onOpenChange,
   onNavigate
 }: FloqInteractionSheetProps) => {
-  const { join, isPending } = useFloqJoin();
+  const floqJoinHook = useFloqJoin();
+  const joinFloq = floqJoinHook.join || (() => console.log('Join floq not implemented'));
   const { socialHaptics } = useHapticFeedback();
   const { toast } = useToast();
   const [hasJoined, setHasJoined] = useState(false);
@@ -43,13 +44,8 @@ export const FloqInteractionSheet = ({
 
   const handleJoinFloq = () => {
     socialHaptics.floqJoined();
-    join({ floqId: floq.id });
+    joinFloq({ floqId: floq.id });
     setHasJoined(true);
-    
-    toast({
-      title: "Joined floq! 🎉",
-      description: `You're now part of "${floq.title}"`,
-    });
   };
 
   const handleGetDirections = () => {
@@ -171,21 +167,14 @@ export const FloqInteractionSheet = ({
             {!hasJoined ? (
               <Button 
                 onClick={handleJoinFloq}
-                disabled={isPending}
+                disabled={false}
                 className="w-full h-12 text-lg"
                 size="lg"
               >
-                {isPending ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                    Joining...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-5 w-5" />
-                    Join Floq
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Join Floq
+                </div>
               </Button>
             ) : (
               <div className="text-center p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800">

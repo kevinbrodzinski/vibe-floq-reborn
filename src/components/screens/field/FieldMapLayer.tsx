@@ -9,7 +9,7 @@ import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { SocialInteractionModal } from "@/components/social/SocialInteractionModal";
 import { ConstellationGestureHandler } from "@/components/social/ConstellationGestureHandler";
-import { DMQuickSheet } from "@/components/DMQuickSheet";
+import { DMQuickSheet } from "@/components/social/DMQuickSheet";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -276,7 +276,8 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
       <DMQuickSheet
         open={dmSheetOpen}
         onOpenChange={setDmSheetOpen}
-        friendId={selectedFriendId}
+        
+        recipientId={selectedFriendId}
       />
     </>
   );
