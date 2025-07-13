@@ -7,7 +7,7 @@ import { VenueListItem } from './VenueListItem';
 import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
 import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
-import { Z_LAYERS } from '@/lib/z-layers';
+import { Z } from '@/constants/zLayers';
 import { cn } from '@/lib/utils';
 import { FixedSizeList as List } from 'react-window';
 

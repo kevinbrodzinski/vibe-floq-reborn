@@ -1,7 +1,14 @@
 import { createContext, useContext } from 'react';
-import { useFriends } from '@/hooks/useFriends';
 import { useStableMemo } from '@/hooks/useStableMemo';
 import { useFieldLocation } from './FieldLocationContext';
+
+export interface ProfileRow {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+}
 
 export interface Person {
   id: string;
@@ -16,23 +23,23 @@ export interface Person {
 interface FieldSocialContextValue {
   friends: any[];
   people: Person[];
-  profilesMap: Map<string, any>;
-  profiles: any[];
+  profilesMap: Map<string, ProfileRow>;
+  profiles: ProfileRow[];
 }
 
 const FieldSocialContext = createContext<FieldSocialContextValue | null>(null);
 
 interface FieldSocialProviderProps {
   children: React.ReactNode;
+  profiles: ProfileRow[];
 }
 
-export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
-  const { profiles } = useFriends();
+export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
   const { location, presenceData } = useFieldLocation();
 
   // Create profiles map for quick lookup
   const profilesMap = useStableMemo(() => {
-    return new Map(profiles.map(p => [p.id, p])) as Map<string, any>;
+    return new Map(profiles.map(p => [p.id, p])) as Map<string, ProfileRow>;
   }, [profiles.length, profiles.map(p => p.id).join(',')]);
 
   // Convert nearby users to people format for visualization
@@ -69,7 +76,7 @@ export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
       
       return {
         id: presence.user_id,
-        name: (profile as any)?.display_name || `User ${presence.user_id.slice(-4)}`,
+        name: profile?.display_name || `User ${presence.user_id.slice(-4)}`,
         x,
         y,
         color: getVibeColor(presence.vibe || 'social'),
@@ -90,7 +97,7 @@ export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
         warmth: 60 + Math.random() * 40,
         compatibility: 70 + Math.random() * 30,
         lastSeen: Date.now() - Math.random() * 900000,
-        avatar_url: (profilesMap.get(person.id) as any)?.avatar_url,
+        avatar_url: profilesMap.get(person.id)?.avatar_url,
       }));
   }, [people.length, people.filter(p => (p as any).isFriend).length]);
 
