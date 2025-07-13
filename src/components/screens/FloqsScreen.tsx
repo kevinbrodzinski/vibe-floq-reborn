@@ -362,17 +362,6 @@ export const FloqsScreen = () => {
         </button>
       </div>
 
-      {/* Fixed Position Create FAB */}
-      <button 
-        onClick={() => setShowCreateSheet(true)}
-        className="fixed right-4 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-variant text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 z-50 flex items-center justify-center"
-        style={{ 
-          pointerEvents: 'auto',
-          bottom: `calc(var(--fab-bottom-gap, 108px) + max(env(safe-area-inset-bottom), 20px))`
-        }}
-      >
-        <Plus size={24} />
-      </button>
 
       {/* Location & Radius Controls */}
       <div className="mb-6 space-y-4">
@@ -383,6 +372,17 @@ export const FloqsScreen = () => {
           </div>
           <RadiusSlider km={radiusKm} onChange={setRadiusKm} />
         </div>
+      </div>
+
+      {/* Create Floq Button */}
+      <div className="flex justify-center mb-6">
+        <Button
+          onClick={() => setShowCreateSheet(true)}
+          className="w-auto px-8 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary-variant text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+          <Plus size={20} className="mr-2" />
+          Create Floq
+        </Button>
       </div>
 
       {/* Loading State */}
