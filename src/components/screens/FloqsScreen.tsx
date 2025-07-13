@@ -368,8 +368,7 @@ export const FloqsScreen = () => {
         className="fixed right-4 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-variant text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 z-50 flex items-center justify-center"
         style={{ 
           pointerEvents: 'auto',
-          // Improved safe area handling with fallback
-          bottom: `calc(88px + max(env(safe-area-inset-bottom), 20px))`
+          bottom: `calc(var(--fab-bottom-gap, 108px) + max(env(safe-area-inset-bottom), 20px))`
         }}
       >
         <Plus size={24} />

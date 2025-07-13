@@ -15,7 +15,8 @@ import {
   Calendar,
   Mail,
   Activity,
-  MapPin
+  MapPin,
+  Rocket
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +109,6 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
 
     return () => {
       console.log('Cleaning up real-time subscription');
-      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [floqId, refetch]);
@@ -135,7 +135,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'deleted':
         return <Trash2 className="w-4 h-4" />;
       case 'boosted':
-        return <Crown className="w-4 h-4" />;
+        return <Rocket className="w-4 h-4" />;
       case 'plan_created':
         return <Calendar className="w-4 h-4" />;
       case 'invited':
@@ -167,7 +167,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'deleted':
         return 'text-destructive';
       case 'boosted':
-        return 'text-primary';
+        return 'text-warning';
       case 'plan_created':
         return 'text-secondary';
       case 'invited':
@@ -190,8 +190,9 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'created':
         return `${userName} created this floq`;
       case 'vibe_changed':
-        const newVibe = activity.metadata?.new_vibe;
-        const previousVibe = activity.metadata?.previous_vibe;
+        const metadata = activity.metadata || {};
+        const newVibe = metadata.new_vibe;
+        const previousVibe = metadata.previous_vibe;
         if (newVibe && previousVibe) {
           return `${userName} changed vibe from ${previousVibe} to ${newVibe}`;
         }
@@ -324,12 +325,12 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
               )}
 
               {/* Show vibe badge for vibe changes */}
-              {activity.event_type === 'vibe_changed' && activity.metadata?.new_vibe && (
+              {activity.event_type === 'vibe_changed' && (activity.metadata || {}).new_vibe && (
                 <Badge 
                   variant="outline" 
                   className="text-xs capitalize flex-shrink-0"
                 >
-                  {activity.metadata.new_vibe}
+                  {(activity.metadata || {}).new_vibe}
                 </Badge>
               )}
             </div>

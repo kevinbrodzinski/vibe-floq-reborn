@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface EventRequest {
@@ -97,8 +98,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use authenticated user's ID if no actor_id provided
-    const userId = actor_id || user.id;
+    // Validate actor_id security: only allow if it matches authenticated user
+    if (actor_id && actor_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: 'actor_id must match authenticated user' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'content-type': 'application/json' } 
+        }
+      );
+    }
+
+    // Use authenticated user's ID
+    const userId = user.id;
 
     // Insert the event into flock_history
     const { data, error } = await supabase
