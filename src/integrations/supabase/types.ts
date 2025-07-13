@@ -3580,6 +3580,11 @@ export type Database = {
         | "activity_detected"
         | "merged"
         | "split"
+        | "ended"
+        | "deleted"
+        | "boosted"
+        | "plan_created"
+        | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       invitation_status: "pending" | "accepted" | "declined"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
@@ -3762,6 +3767,11 @@ export const Constants = {
         "activity_detected",
         "merged",
         "split",
+        "ended",
+        "deleted",
+        "boosted",
+        "plan_created",
+        "invited",
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       invitation_status: ["pending", "accepted", "declined"],
