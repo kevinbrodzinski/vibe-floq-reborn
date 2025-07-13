@@ -21,7 +21,7 @@ class QuietStorageClient extends StorageClient {
   }
 }
 
-// Create the main client with type assertion to bypass strict type checking
+// Create the main client with proper realtime configuration
 const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
@@ -30,6 +30,10 @@ const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
   },
   global: {
     headers: { 'X-Client-Info': 'floq-web v1.0' },
+  },
+  realtime: {
+    // Use default Supabase realtime endpoint, don't override to localhost
+    host: new URL(SUPABASE_URL).host
   }
 } as any);
 

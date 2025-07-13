@@ -33,6 +33,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const messageIdsRef = useRef(new Set<string>());
 
   const {
     messages,
@@ -63,6 +64,13 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [message]);
+
+  // Cleanup message IDs when switching floqs
+  useEffect(() => {
+    return () => {
+      messageIdsRef.current.clear();
+    };
+  }, [floqId]);
 
   const handleSend = async () => {
     if (!floqId || !user || !message.trim() || isSending) return;
@@ -153,6 +161,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       <div 
         ref={messagesContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-1"
+        role="log"
         aria-live="polite"
         aria-label="Chat messages"
       >
@@ -225,7 +234,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
                   size="sm"
                   className="text-lg hover:bg-muted"
                   onClick={() => handleEmojiSend(emoji)}
-                  disabled={isSending}
+                  disabled={!floqId || !user || isSending}
                   aria-label={`Send ${emoji} reaction`}
                 >
                   {emoji}
@@ -240,6 +249,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            disabled={!floqId || !user}
             className="flex-shrink-0"
             aria-label="Open emoji picker"
           >
@@ -285,6 +295,16 @@ export const FloqChat: React.FC<FloqChatProps> = ({
         <SheetContent side="bottom" className="h-[80vh] sm:h-[70vh]">
           <SheetHeader>
             <SheetTitle>Floq Chat</SheetTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose}
+              className="absolute top-4 right-4"
+              autoFocus
+              aria-label="Close chat"
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </SheetHeader>
           {content}
         </SheetContent>

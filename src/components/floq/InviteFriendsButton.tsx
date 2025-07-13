@@ -195,7 +195,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
           )}
           
           {/* Friends list */}
-          <div className="max-h-60 overflow-y-auto space-y-2">
+          <div className="max-h-60 overflow-y-auto space-y-2" tabIndex={0}>
             {isLoading ? (
               <div className="space-y-2">
                 {[...Array(3)].map((_, i) => (
