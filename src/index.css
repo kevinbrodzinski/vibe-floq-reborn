@@ -25,6 +25,8 @@ All colors MUST be HSL.
     --accent-foreground: 230 35% 7%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 26 83% 14%;
     --border: 230 25% 18%;
     --input: 230 25% 15%;
     --ring: 252 100% 75%;
@@ -99,14 +101,9 @@ All colors MUST be HSL.
     /* Mobile navigation height - exported dynamically by FloqNavigation */
     --mobile-nav-height: 75px;
     
-    /* FAB positioning system */
-    --fab-gap: 16px;
-    --fab-size: 48px;
-    --fab-bottom-gap: calc(
-      var(--mobile-nav-height) +
-      env(safe-area-inset-bottom) +
-      12px
-    );
+    /* FAB positioning with Android fallback */
+    --fab-bottom-gap: 108px; /* Fallback for older Android browsers */
+    --fab-bottom-gap: calc(var(--mobile-nav-height) + max(env(safe-area-inset-bottom), 20px));
     
     /* Grabber styling for resizable sheets */
     --grabber-color: hsl(var(--border));
