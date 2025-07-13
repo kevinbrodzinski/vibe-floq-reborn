@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 serve(async (req) => {
   // Handle CORS
@@ -17,22 +17,20 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
     });
 
     // Get the user from the auth token
-    const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !userData?.user) {
+    if (userError || !user) {
       throw new Error('Invalid auth token');
     }
 
-    const user = userData.user;
+    
     const { floq_id, invitee_ids } = await req.json();
 
     // Validate input
@@ -77,22 +75,27 @@ serve(async (req) => {
       status: 'pending' as const,
     }));
 
-    // Insert invitations with conflict handling
-    const { data: insertedInvitations, error: insertError } = await supabase
-      .from('floq_invitations')
-      .upsert(invitations, {
-        onConflict: 'floq_id,invitee_id',
-        ignoreDuplicates: true,
-      })
-      .select('id, invitee_id');
-
-    if (insertError) {
-      console.error('Invitation insert error:', insertError);
-      throw new Error('Failed to send invitations');
+    // Try to insert invitations individually to handle conflicts properly
+    let insertedCount = 0;
+    let skippedCount = 0;
+    
+    for (const invitation of invitations) {
+      const { error: insertError } = await supabase
+        .from('floq_invitations')
+        .insert(invitation);
+      
+      if (insertError) {
+        if (insertError.code === '23505') { // Unique constraint violation
+          skippedCount++;
+        } else {
+          console.error('Invitation insert error:', insertError);
+          throw new Error('Failed to send invitations');
+        }
+      } else {
+        insertedCount++;
+      }
     }
 
-    const insertedCount = insertedInvitations?.length || 0;
-    const skippedCount = validInviteeIds.length - insertedCount;
 
     return new Response(
       JSON.stringify({ 

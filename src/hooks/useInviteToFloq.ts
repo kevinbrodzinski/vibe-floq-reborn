@@ -37,22 +37,21 @@ export function useInviteToFloq(): InviteToFloqReturn {
       return data;
     },
     onSuccess: (data, variables) => {
-      const { floqId, inviteeIds } = variables;
+      const { floqId } = variables;
       
-      // Optimistically update pending invites count
-      queryClient.setQueryData(
-        ["pending-invites", user?.id],
-        (old: number = 0) => old + inviteeIds.length
-      );
-
-      // Invalidate floq details to refresh participant count
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ["pending-invites", user?.id],
+      });
+      
       queryClient.invalidateQueries({
         queryKey: ["floq-details", floqId],
       });
 
+      // Show success message from server response
       toast({
         title: "Invitations sent",
-        description: `Sent ${inviteeIds.length} invitation${inviteeIds.length > 1 ? 's' : ''}`,
+        description: data?.message || "Invitations sent successfully",
       });
     },
     onError: (error) => {

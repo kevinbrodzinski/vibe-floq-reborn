@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -33,6 +33,8 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
   const user = session?.user;
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const messageIdsRef = useRef<Set<string>>(new Set());
+  const channelRef = useRef<any>(null);
 
   // Infinite query for messages
   const {
@@ -64,25 +66,30 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
           )
         `)
         .eq('floq_id', floqId)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
         .range(pageParam * 20, (pageParam + 1) * 20 - 1);
 
       if (error) throw error;
 
+      const messages = data?.map(msg => ({
+        id: msg.id,
+        floq_id: msg.floq_id,
+        sender_id: msg.sender_id,
+        body: msg.body || undefined,
+        emoji: msg.emoji || undefined,
+        created_at: msg.created_at,
+        sender: {
+          display_name: msg.profiles.display_name,
+          avatar_url: msg.profiles.avatar_url || undefined,
+          username: msg.profiles.username || undefined,
+        },
+      })) || [];
+
+      // Track message IDs for deduplication
+      messages.forEach(msg => messageIdsRef.current.add(msg.id));
+
       return {
-        messages: data?.map(msg => ({
-          id: msg.id,
-          floq_id: msg.floq_id,
-          sender_id: msg.sender_id,
-          body: msg.body || undefined,
-          emoji: msg.emoji || undefined,
-          created_at: msg.created_at,
-          sender: {
-            display_name: msg.profiles.display_name,
-            avatar_url: msg.profiles.avatar_url || undefined,
-            username: msg.profiles.username || undefined,
-          },
-        })) || [],
+        messages,
         nextPage: pageParam + 1,
       };
     },
@@ -108,21 +115,28 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
       return data;
     },
     onSuccess: (newMessage) => {
+      // Add to deduplication tracking
+      if (newMessage?.message?.id) {
+        messageIdsRef.current.add(newMessage.message.id);
+      }
+
       // Optimistically add the message to the cache
       queryClient.setQueryData(
         ["floq-chat", floqId],
         (old: any) => {
-          if (!old) return old;
+          if (!old || !old.pages?.length) return old;
           
-          const firstPage = old.pages[0];
+          const lastPageIndex = old.pages.length - 1;
+          const lastPage = old.pages[lastPageIndex];
+          
           return {
             ...old,
             pages: [
+              ...old.pages.slice(0, lastPageIndex),
               {
-                ...firstPage,
-                messages: [newMessage, ...firstPage.messages],
+                ...lastPage,
+                messages: [...(lastPage.messages || []), newMessage.message],
               },
-              ...old.pages.slice(1),
             ],
           };
         }
@@ -140,7 +154,19 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
 
   // Realtime subscription for new messages
   useEffect(() => {
-    if (!floqId || !user) return;
+    if (!floqId || !user) {
+      // Cleanup channel if conditions not met
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    // Remove existing channel before creating new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
 
     const channel = supabase
       .channel(`floq-chat-${floqId}`)
@@ -153,6 +179,13 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
           filter: `floq_id=eq.${floqId}`,
         },
         async (payload) => {
+          const messageId = payload.new.id;
+          
+          // Skip if we've already seen this message
+          if (messageIdsRef.current.has(messageId)) {
+            return;
+          }
+
           // Fetch the full message with profile data
           const { data: fullMessage, error } = await supabase
             .from('floq_messages')
@@ -169,7 +202,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
                 username
               )
             `)
-            .eq('id', payload.new.id)
+            .eq('id', messageId)
             .single();
 
           if (error || !fullMessage) return;
@@ -188,37 +221,45 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
             },
           };
 
-          // Only add if it's not from the current user (to avoid duplicates)
-          if (fullMessage.sender_id !== user.id) {
-            queryClient.setQueryData(
-              ["floq-chat", floqId],
-              (old: any) => {
-                if (!old || !old.pages?.[0]) return old;
-                
-                const firstPage = old.pages[0];
-                return {
-                  ...old,
-                  pages: [
-                    {
-                      ...firstPage,
-                      messages: [formattedMessage, ...(firstPage.messages || [])],
-                    },
-                    ...old.pages.slice(1),
-                  ],
-                };
-              }
-            );
-          }
+          // Add to deduplication tracking
+          messageIdsRef.current.add(messageId);
+
+          // Add to cache (append to last page since we're using ascending order)
+          queryClient.setQueryData(
+            ["floq-chat", floqId],
+            (old: any) => {
+              if (!old || !old.pages?.length) return old;
+              
+              const lastPageIndex = old.pages.length - 1;
+              const lastPage = old.pages[lastPageIndex];
+              
+              return {
+                ...old,
+                pages: [
+                  ...old.pages.slice(0, lastPageIndex),
+                  {
+                    ...lastPage,
+                    messages: [...(lastPage.messages || []), formattedMessage],
+                  },
+                ],
+              };
+            }
+          );
         }
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [floqId, user?.id, queryClient]);
 
-  // Flatten messages from all pages
+  // Flatten messages from all pages (already in correct order due to ascending sort)
   const messages = data?.pages.flatMap(page => page.messages) || [];
 
   return {

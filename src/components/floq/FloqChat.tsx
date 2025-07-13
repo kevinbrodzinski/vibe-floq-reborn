@@ -32,6 +32,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -42,9 +43,15 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     isSending,
   } = useFloqChat(floqId);
 
-  // Auto-scroll to bottom on new messages
+  // Smart auto-scroll to bottom on new messages
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (!messagesEndRef.current || !messagesContainerRef.current) return;
+    
+    const container = messagesContainerRef.current;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+    
+    // Only auto-scroll if user is near the bottom
+    if (isNearBottom) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages.length]);
@@ -141,7 +148,10 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const content = (
     <div className="flex flex-col h-full">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-1">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-1"
+      >
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
@@ -212,6 +222,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
                   className="text-lg hover:bg-muted"
                   onClick={() => handleEmojiSend(emoji)}
                   disabled={isSending}
+                  aria-label={`Send ${emoji} reaction`}
                 >
                   {emoji}
                 </Button>
@@ -226,6 +237,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             size="icon"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             className="flex-shrink-0"
+            aria-label="Open emoji picker"
           >
             <Smile className="w-4 h-4" />
           </Button>
@@ -239,6 +251,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
               placeholder="Type a message..."
               className="min-h-[40px] max-h-[120px] resize-none pr-12"
               disabled={isSending}
+              aria-label="Type your message"
             />
             <Button
               onClick={handleSend}
