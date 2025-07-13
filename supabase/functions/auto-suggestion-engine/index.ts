@@ -40,11 +40,29 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    throw err;
+    
+    status = 'error';
+    errorMessage = (err as Error).message;
+    console.error("Auto-suggestion engine error:", err);
+    
+    return new Response(JSON.stringify({ 
+      error: (err as Error).message,
+      success: false 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } finally {
+    await logInvocation({
+      functionName: 'auto-suggestion-engine',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 
   async function doWork() {
-
     const body = await req.json().catch(() => ({}));
     const { 
       user_id = null, 
@@ -140,26 +158,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } // End of doWork function
-
-  } catch (error) {
-    console.error("Auto-suggestion engine error:", error);
-    status = 'error';
-    errorMessage = (error as Error).message;
-    
-    return new Response(JSON.stringify({ 
-      error: (error as Error).message,
-      success: false 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  } finally {
-    await logInvocation({
-      functionName: 'auto-suggestion-engine',
-      status,
-      durationMs: Date.now() - startTime,
-      errorMessage,
-      metadata
-    });
-  }
 });
