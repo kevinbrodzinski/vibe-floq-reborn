@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, MapPin, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,10 +41,39 @@ export function CreateFloqSheet() {
   const [customDuration, setCustomDuration] = useState(4); // hours
   const [customEndTime, setCustomEndTime] = useState('');
 
+  // Reset form states when sheet opens
+  useEffect(() => {
+    if (showCreateSheet) {
+      setDurationMode('quick');
+      setCustomEndTime('');
+    }
+  }, [showCreateSheet]);
+
+  const handleDurationModeChange = (mode: 'quick' | 'custom' | 'persistent') => {
+    setDurationMode(mode);
+    if (mode !== 'custom') {
+      setCustomEndTime('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) return;
+
+    // Validate custom end time
+    if (durationMode === 'custom') {
+      if (!customEndTime) {
+        console.error('Custom end time is required');
+        return;
+      }
+      const endTime = new Date(customEndTime);
+      const now = new Date();
+      if (endTime <= now) {
+        console.error('End time must be in the future');
+        return;
+      }
+    }
 
     try {
       // Get user's current location
@@ -91,7 +120,7 @@ export function CreateFloqSheet() {
       });
 
       // Track floq creation
-      trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate);
+      trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, flockType, endsAt);
 
       // Reset form
       setTitle('');
@@ -190,7 +219,7 @@ export function CreateFloqSheet() {
                   type="button"
                   variant={durationMode === 'quick' ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setDurationMode('quick')}
+                  onClick={() => handleDurationModeChange('quick')}
                   className="flex-1"
                 >
                   Quick (2h)
@@ -199,7 +228,7 @@ export function CreateFloqSheet() {
                   type="button"
                   variant={durationMode === 'custom' ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setDurationMode('custom')}
+                  onClick={() => handleDurationModeChange('custom')}
                   className="flex-1"
                 >
                   Custom
@@ -208,7 +237,7 @@ export function CreateFloqSheet() {
                   type="button"
                   variant={durationMode === 'persistent' ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setDurationMode('persistent')}
+                  onClick={() => handleDurationModeChange('persistent')}
                   className="flex-1"
                 >
                   Ongoing

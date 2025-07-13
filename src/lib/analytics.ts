@@ -41,12 +41,14 @@ export const trackFloqJoin = (floqId: string, floqTitle: string, vibe: string) =
   });
 };
 
-export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string, isPrivate: boolean) => {
+export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string, isPrivate: boolean, flockType: 'momentary' | 'persistent' = 'momentary', endsAt?: string | null) => {
   track('floq_created', {
     floq_id: floqId,
     floq_title: floqTitle,
     vibe,
     is_private: isPrivate,
+    flock_type: flockType,
+    ends_at_null: !endsAt,
     timestamp: new Date().toISOString(),
   });
 };

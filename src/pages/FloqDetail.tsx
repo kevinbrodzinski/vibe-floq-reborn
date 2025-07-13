@@ -16,6 +16,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useRateLimiter } from '@/hooks/useRateLimiter';
 import { useFloqUI } from '@/contexts/FloqUIContext';
+import { useEndFloq } from '@/hooks/useEndFloq';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const FloqDetail = () => {
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { showChat, setShowChat } = useFloqUI();
+  const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
   
   const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
@@ -294,6 +296,32 @@ const FloqDetail = () => {
               </Button>
             </div>
             
+            {/* End Floq Button for hosts of persistent floqs */}
+            {floqDetails.is_creator && !floqDetails.ends_at && (
+              <div className="flex gap-3">
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    try {
+                      await endFloq(floqDetails.id);
+                      successFeedback();
+                      goBack();
+                    } catch (error) {
+                      console.error('Failed to end floq:', error);
+                      errorFeedback();
+                    }
+                  }}
+                  disabled={isEndingFloq}
+                  className="flex-1"
+                >
+                  {isEndingFloq ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : null}
+                  End Floq
+                </Button>
+              </div>
+            )}
+
             {/* Secondary actions */}
             {(floqDetails.is_joined || floqDetails.is_creator) && (
               <div className="flex gap-3">
