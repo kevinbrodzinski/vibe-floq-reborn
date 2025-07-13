@@ -32,7 +32,9 @@ export function useCreateFloq() {
         p_vibe: data.primary_vibe,
         p_visibility: data.visibility,
         p_title: data.title,
-        p_invitees: [] // Empty array for now
+        p_invitees: [],
+        p_ends_at: data.ends_at,
+        p_flock_type: data.flock_type
       });
 
       if (error) {
