@@ -19,6 +19,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let status = 'success';
+  let errorMessage = null;
+  let metadata = {};
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -77,6 +82,16 @@ serve(async (req) => {
 
     console.log(`Successfully processed ${relationshipPairs.length} relationship pairs`);
 
+    // Set metadata for logging
+    metadata = {
+      nearby_users_count: nearby_users.length,
+      relationship_pairs_generated: relationshipPairs.length,
+      relationships_updated: data || 0,
+      user_id,
+      current_vibe,
+      venue_id
+    };
+
     return new Response(JSON.stringify({ 
       processed: relationshipPairs.length,
       relationships_updated: data || 0
@@ -86,9 +101,25 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Relationship tracker error:", error);
+    status = 'error';
+    errorMessage = (error as Error).message;
+    
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } finally {
+    // Always log execution details
+    try {
+      await supabase.from('edge_invocation_logs').insert({
+        function_name: 'relationship-tracker',
+        status,
+        duration_ms: Date.now() - startTime,
+        error_message: errorMessage,
+        metadata
+      });
+    } catch (logError) {
+      console.error('Failed to log execution:', logError);
+    }
   }
 });

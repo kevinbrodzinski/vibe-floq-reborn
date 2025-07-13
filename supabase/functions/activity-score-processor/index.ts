@@ -19,6 +19,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let status = 'success';
+  let errorMessage = null;
+  let metadata = {};
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -97,6 +102,14 @@ serve(async (req) => {
 
     console.log(`Processed ${results.length} events, cleaned up ${cleanupData || 0} inactive floqs`);
 
+    // Set metadata for logging
+    metadata = {
+      events_processed: events.length,
+      successful_events: results.filter(r => r.processed).length,
+      failed_events: results.filter(r => !r.processed).length,
+      cleanup_count: cleanupData || 0
+    };
+
     return new Response(JSON.stringify({ 
       results,
       cleanup_count: cleanupData || 0,
@@ -107,9 +120,25 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Activity score processor error:", error);
+    status = 'error';
+    errorMessage = (error as Error).message;
+    
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } finally {
+    // Always log execution details
+    try {
+      await supabase.from('edge_invocation_logs').insert({
+        function_name: 'activity-score-processor',
+        status,
+        duration_ms: Date.now() - startTime,
+        error_message: errorMessage,
+        metadata
+      });
+    } catch (logError) {
+      console.error('Failed to log execution:', logError);
+    }
   }
 });

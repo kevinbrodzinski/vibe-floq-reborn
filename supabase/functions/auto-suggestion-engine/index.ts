@@ -17,6 +17,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let status = 'success';
+  let errorMessage = null;
+  let metadata = {};
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -102,6 +107,14 @@ serve(async (req) => {
 
     console.log(`Suggestion generation complete:`, results);
 
+    // Set metadata for logging
+    metadata = {
+      processed_users: (activeUsers?.length || 0),
+      floq_suggestions_generated: results.floq_suggestions,
+      friend_suggestions_generated: results.friend_suggestions,
+      expired_suggestions_cleaned: results.expired_suggestions_cleaned
+    };
+
     return new Response(JSON.stringify({
       success: true,
       ...results,
@@ -112,6 +125,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Auto-suggestion engine error:", error);
+    status = 'error';
+    errorMessage = (error as Error).message;
+    
     return new Response(JSON.stringify({ 
       error: (error as Error).message,
       success: false 
@@ -119,5 +135,18 @@ serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } finally {
+    // Always log execution details
+    try {
+      await supabase.from('edge_invocation_logs').insert({
+        function_name: 'auto-suggestion-engine',
+        status,
+        duration_ms: Date.now() - startTime,
+        error_message: errorMessage,
+        metadata
+      });
+    } catch (logError) {
+      console.error('Failed to log execution:', logError);
+    }
   }
 });

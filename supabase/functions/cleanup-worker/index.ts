@@ -17,6 +17,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  let status = 'success';
+  let errorMessage = null;
+  let metadata = {};
+
   try {
     console.log('[cleanup-worker] Starting cleanup process...');
     
@@ -35,6 +40,13 @@ serve(async (req) => {
 
     console.log('[cleanup-worker] Cleanup completed:', data);
     
+    // Set metadata for logging
+    metadata = {
+      cleaned_floqs: data?.cleaned_floqs || 0,
+      cleaned_suggestions: data?.cleaned_suggestions || 0,
+      cleanup_timestamp: data?.timestamp || new Date().toISOString()
+    };
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -47,6 +59,9 @@ serve(async (req) => {
     );
   } catch (err) {
     console.error("[cleanup-worker] Unexpected error:", err);
+    status = 'error';
+    errorMessage = (err as Error).message;
+    
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { 
@@ -54,5 +69,18 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+  } finally {
+    // Always log execution details
+    try {
+      await supabase.from('edge_invocation_logs').insert({
+        function_name: 'cleanup-worker',
+        status,
+        duration_ms: Date.now() - startTime,
+        error_message: errorMessage,
+        metadata
+      });
+    } catch (logError) {
+      console.error('Failed to log execution:', logError);
+    }
   }
 });
