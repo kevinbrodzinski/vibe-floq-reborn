@@ -175,13 +175,18 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: stri
             console.log('🔄 Presence update received:', payload);
           }
           
-          // Invalidate and refetch the query to get fresh data
-          queryClient.invalidateQueries({ 
-            queryKey: ['presence-nearby', frozenLat, frozenLng] 
-          });
-          
-          // Update heartbeat on realtime update
-          setLastHeartbeat(Date.now());
+          // Batch multiple updates using requestAnimationFrame
+          let isUpdateScheduled = false;
+          if (!isUpdateScheduled) {
+            isUpdateScheduled = true;
+            requestAnimationFrame(() => {
+              queryClient.invalidateQueries({ 
+                queryKey: ['presence-nearby', frozenLat, frozenLng] 
+              });
+              setLastHeartbeat(Date.now());
+              isUpdateScheduled = false;
+            });
+          }
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {

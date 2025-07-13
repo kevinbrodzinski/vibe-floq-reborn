@@ -7,6 +7,7 @@ interface ShakeDetectionOptions {
   onLongPress?: () => void;
   onMultiTouch?: (touches: number) => void;
   enabled?: boolean;
+  maxHz?: number; // For 30Hz throttling
 }
 
 interface MotionData {
@@ -21,20 +22,28 @@ export const useShakeDetection = ({
   onShake,
   onLongPress,
   onMultiTouch,
-  enabled = true
+  enabled = true,
+  maxHz = 30
 }: ShakeDetectionOptions = {}) => {
   const { socialHaptics } = useHapticFeedback();
   const motionBuffer = useRef<MotionData[]>([]);
   const lastShakeTime = useRef(0);
   const longPressTimer = useRef<NodeJS.Timeout>();
   const touchStartTime = useRef(0);
+  const lastMotionTime = useRef(0);
 
-  // Shake detection using device motion
+  // Shake detection using device motion with 30Hz throttling
   const handleDeviceMotion = useCallback((event: DeviceMotionEvent) => {
     if (!enabled || !event.accelerationIncludingGravity) return;
 
-    const { x, y, z } = event.accelerationIncludingGravity;
     const timestamp = Date.now();
+    const throttleMs = 1000 / maxHz; // Calculate throttle from maxHz
+    
+    // Throttle motion processing to maxHz
+    if (timestamp - lastMotionTime.current < throttleMs) return;
+    lastMotionTime.current = timestamp;
+
+    const { x, y, z } = event.accelerationIncludingGravity;
     
     if (x !== null && y !== null && z !== null) {
       const motionData: MotionData = { x, y, z, timestamp };
@@ -62,7 +71,7 @@ export const useShakeDetection = ({
         }
       }
     }
-  }, [enabled, sensitivity, onShake, socialHaptics]);
+  }, [enabled, sensitivity, onShake, socialHaptics, maxHz]);
 
   // Touch gesture detection
   const handleTouchStart = useCallback((event: TouchEvent) => {

@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo, useMemo } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Clock, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import isEqual from 'react-fast-compare';
 
 interface TimeWarpData {
   hour: number;
@@ -24,7 +25,7 @@ interface TimeWarpSliderProps {
   onClose?: () => void;
 }
 
-export const TimeWarpSlider = ({ 
+export const TimeWarpSlider = memo(({ 
   onTimeChange, 
   currentHour = new Date().getHours(),
   isVisible = false,
@@ -103,7 +104,8 @@ export const TimeWarpSlider = ({
     return 'Now';
   };
 
-  const currentData = getTimeWarpData(selectedHour);
+  // Memoize expensive calculations
+  const currentData = useMemo(() => getTimeWarpData(selectedHour), [selectedHour, getTimeWarpData]);
 
   if (!isVisible) return null;
 
@@ -230,4 +232,6 @@ export const TimeWarpSlider = ({
       </div>
     </div>
   );
-};
+}, isEqual);
+
+TimeWarpSlider.displayName = 'TimeWarpSlider';

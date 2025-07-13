@@ -1,6 +1,8 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { ConstellationGestureSystem } from "@/components/ConstellationGestureSystem";
+import isEqual from 'react-fast-compare';
 
 interface ConstellationControlsProps {
   timeState: string;
@@ -11,7 +13,7 @@ interface ConstellationControlsProps {
   onEnergyShare: (fromId: string, toId: string, energy: number) => void;
 }
 
-export const ConstellationControls = ({
+export const ConstellationControls = memo(({
   timeState,
   constellationMode,
   onConstellationToggle,
@@ -43,4 +45,6 @@ export const ConstellationControls = ({
       </div>
     </>
   );
-};
+}, isEqual);
+
+ConstellationControls.displayName = 'ConstellationControls';

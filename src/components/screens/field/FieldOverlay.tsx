@@ -1,7 +1,9 @@
+import { memo, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import type { Vibe } from "@/types";
+import isEqual from 'react-fast-compare';
 
 interface FieldOverlayProps {
   isLocationReady: boolean;
@@ -15,7 +17,7 @@ interface FieldOverlayProps {
   children?: React.ReactNode;
 }
 
-export const FieldOverlay = ({
+export const FieldOverlay = memo(({
   isLocationReady,
   currentVibe,
   nearbyUsersCount,
@@ -26,12 +28,13 @@ export const FieldOverlay = ({
   onVibeChange,
   children
 }: FieldOverlayProps) => {
-  const changeVibe = () => {
+  // Memoize vibe cycling to prevent recreation on every render
+  const changeVibe = useMemo(() => () => {
     const vibes: Vibe[] = ['social', 'chill', 'hype', 'flowing', 'open'];
     const currentIndex = vibes.indexOf(currentVibe);
     const nextVibe = vibes[(currentIndex + 1) % vibes.length];
     onVibeChange(nextVibe);
-  };
+  }, [currentVibe, onVibeChange]);
 
   return (
     <div className="absolute inset-0 pointer-events-auto">
@@ -82,4 +85,6 @@ export const FieldOverlay = ({
       </div>
     </div>
   );
-};
+}, isEqual);
+
+FieldOverlay.displayName = 'FieldOverlay';

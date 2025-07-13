@@ -36,13 +36,13 @@ interface FieldSocialProviderProps {
 export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
   const { location, presenceData } = useFieldLocation();
 
-  // Create profiles map for quick lookup
+  // Create profiles map for quick lookup with hash-based memoization
   const profilesMap = useStableMemo(() => {
     return new Map(profiles.map(p => [p.id, p])) as Map<string, ProfileRow>;
   }, [profiles.length, profiles.map(p => p.id).join(',')]);
 
-  // Convert nearby users to people format for visualization
-  const getVibeColor = (vibe: string) => {
+  // Memoized vibe color function for better performance
+  const getVibeColor = useStableMemo(() => (vibe: string) => {
     switch (vibe) {
       case 'hype': return 'hsl(280 70% 60%)';
       case 'social': return 'hsl(30 70% 60%)';
@@ -51,7 +51,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       case 'open': return 'hsl(120 70% 60%)';
       default: return 'hsl(240 70% 60%)';
     }
-  };
+  }, []);
 
   // Convert presence data to people format with proper field coordinates
   const people: Person[] = useStableMemo(() => {
