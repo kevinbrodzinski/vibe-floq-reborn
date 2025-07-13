@@ -81,6 +81,7 @@ const FloqDetail = () => {
     }
   }, [error, scoreError, refetch]);
 
+  // Guard against "too early" render
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -121,33 +122,28 @@ const FloqDetail = () => {
     );
   }
 
-  // Fallback logic for creator joined status - if server says not joined but you're the creator, you're joined
-  const computedIsJoined = floqDetails.is_joined || floqDetails.creator_id === session?.user?.id;
-  const isCreator = floqDetails.creator_id === session?.user?.id;
+  const isHost = floqDetails.creator_id === session?.user?.id;
+  const isMember = floqDetails.participants?.some(p => p.user_id === session?.user?.id);
 
-  // Bifurcate the view based on membership status
+  // Don't early-return until we know definitively whether we're in or out
   const renderFloqView = () => {
-    if (computedIsJoined) {
-      return (
-        <JoinedFloqView
-          floqDetails={floqDetails}
-          onLeave={handleLeave}
-          isLeaving={leaveFloq.isPending}
-          liveScore={liveScore}
-          onEndFloq={isCreator && !floqDetails.ends_at ? () => setShowEndConfirm(true) : undefined}
-          isEndingFloq={isEndingFloq}
-        />
-      );
-    } else {
-      return (
-        <PublicFloqPreview
-          floqDetails={floqDetails}
-          onJoin={handleJoin}
-          isJoining={joinFloq.isPending}
-          liveScore={liveScore}
-        />
-      );
-    }
+    return (isHost || isMember) ? (
+      <JoinedFloqView
+        floqDetails={floqDetails}
+        onLeave={handleLeave}
+        isLeaving={leaveFloq.isPending}
+        liveScore={liveScore}
+        onEndFloq={isHost && !floqDetails.ends_at ? () => setShowEndConfirm(true) : undefined}
+        isEndingFloq={isEndingFloq}
+      />
+    ) : (
+      <PublicFloqPreview
+        floqDetails={floqDetails}
+        onJoin={handleJoin}
+        isJoining={joinFloq.isPending}
+        liveScore={liveScore}
+      />
+    );
   };
 
   return (

@@ -72,32 +72,24 @@ export function useCreateFloq() {
       return result;
     },
     onSuccess: (newFloqId, vars) => {
-      // 1. Seed the cache so the first paint shows joined state
+      // Seed the cache so the first paint is correct
       queryClient.setQueryData(
         ['floq-details', newFloqId, user?.id],
         () => ({
           id: newFloqId,
-          title: vars.title || 'Untitled',
-          description: vars.description,
-          primary_vibe: vars.primary_vibe,
           creator_id: user?.id,
           is_creator: true,
           is_joined: true,
-          can_manage: true,
           participant_count: 1,
           participants: [
             {
               user_id: user?.id,
               role: 'creator',
               joined_at: new Date().toISOString(),
-              user: {
-                id: user?.id,
-                username: user?.user_metadata?.username,
-                display_name: user?.user_metadata?.display_name,
-                avatar_url: user?.user_metadata?.avatar_url,
-              },
             },
           ],
+          title: vars.title || 'Untitled',
+          primary_vibe: vars.primary_vibe,
           location: vars.location,
           starts_at: vars.starts_at,
           ends_at: vars.ends_at,
@@ -107,13 +99,13 @@ export function useCreateFloq() {
         })
       );
 
-      // 2. Force a refetch to get fresh data from DB
+      // Force a refetch so you get the fresh row from DB
       queryClient.invalidateQueries({
         queryKey: ['floq-details', newFloqId, user?.id],
         exact: true,
       });
 
-      // 3. Invalidate list caches
+      // Invalidate list caches
       queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
@@ -125,7 +117,7 @@ export function useCreateFloq() {
         description: "Your floq has been created successfully.",
       });
 
-      // 4. Slight delay before navigation to ensure cache is seeded
+      // Slight delay before navigation
       setTimeout(() => navigate(`/floqs/${newFloqId}`), 50);
     },
     onError: (error) => {
