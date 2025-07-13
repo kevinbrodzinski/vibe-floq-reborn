@@ -49,10 +49,10 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
     [floqDetails?.creator_id, session?.user.id]
   );
 
-  // Calculate if user is a member
+  // Calculate if user is a member - use JSON.stringify to prevent object churn
   const isMember = useMemo(() => 
     floqDetails.participants?.some(p => p.user_id === session?.user.id) || false,
-    [floqDetails.participants, session?.user.id]
+    [JSON.stringify(floqDetails.participants), session?.user.id]
   );
 
   // Check if floq can be deleted
@@ -293,8 +293,15 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
         isLoading={isDeleting}
         onConfirm={async () => {
           try {
-            await deleteFloq(floqDetails.id);
+            const result = await deleteFloq(floqDetails.id);
             setShowDeleteConfirm(false);
+            
+            // Analytics event after successful deletion
+            console.log('floq_deleted', { 
+              floq_id: floqDetails.id, 
+              participant_count: floqDetails.participant_count 
+            });
+            
             navigate("/floqs");
           } catch (error) {
             // Error already handled in hook

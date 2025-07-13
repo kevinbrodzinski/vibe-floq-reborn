@@ -9,7 +9,8 @@ import {
   Clock, 
   Heart,
   MessageSquare,
-  Crown
+  Crown,
+  X
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,8 +56,6 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
           created_at,
           user_id,
           metadata,
-          new_vibe,
-          previous_vibe,
           profiles:user_id(display_name, username, avatar_url)
         `)
         .eq('floq_id', floqId)
@@ -67,33 +66,41 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
 
       return (data || []).map(item => ({
         ...item,
-        user_profile: item.profiles as any
+        user_profile: item.profiles ? {
+          display_name: (item.profiles as any).display_name,
+          username: (item.profiles as any).username,
+          avatar_url: (item.profiles as any).avatar_url
+        } : null,
+        // Extract vibe data from metadata for vibe_changed events
+        new_vibe: item.event_type === 'vibe_changed' ? item.metadata?.new_vibe : undefined,
+        previous_vibe: item.event_type === 'vibe_changed' ? item.metadata?.previous_vibe : undefined,
       }));
     },
     enabled: !!floqId,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // 1 minute
+    refetchIntervalInBackground: false, // Mobile battery optimization
   });
 
   const getEventIcon = (eventType: FlockEventType) => {
     switch (eventType) {
       case 'joined':
-        return UserPlus;
+        return <UserPlus className="w-4 h-4" />;
       case 'left':
-        return UserMinus;
+        return <UserMinus className="w-4 h-4" />;
       case 'created':
-        return Crown;
+        return <Crown className="w-4 h-4" />;
       case 'vibe_changed':
-        return Zap;
+        return <Zap className="w-4 h-4" />;
       case 'activity_detected':
-        return Heart;
+        return <Heart className="w-4 h-4" />;
       case 'location_changed':
-        return Clock;
+        return <Clock className="w-4 h-4" />;
       case 'merged':
       case 'split':
-        return Users;
+        return <Users className="w-4 h-4" />;
       default:
-        return Users;
+        return <Users className="w-4 h-4" />;
     }
   };
 
@@ -204,7 +211,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
           <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
           <h3 className="font-semibold mb-2">No Activity Yet</h3>
           <p className="text-sm text-muted-foreground mb-2">
-            Be the first to start the conversation!
+            Be the first to join or send a message!
           </p>
           <div className="text-xs text-muted-foreground">
             Activity like joins, messages, and vibes will appear here
@@ -225,13 +232,13 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       
       <div className="space-y-3 max-h-[300px] overflow-y-auto">
         {activities.map((activity) => {
-          const IconComponent = getEventIcon(activity.event_type);
+          const iconElement = getEventIcon(activity.event_type);
           const iconColor = getEventColor(activity.event_type);
 
           return (
             <div key={activity.id} className="flex items-start space-x-3">
               <div className={cn("mt-0.5 flex-shrink-0", iconColor)}>
-                <IconComponent className="w-4 h-4" />
+                {iconElement}
               </div>
               
               <div className="flex-1 min-w-0">

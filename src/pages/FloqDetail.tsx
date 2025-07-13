@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,11 @@ import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
 
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
-  const [showEndConfirm, setShowEndConfirm] = React.useState(false);
   
   const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
