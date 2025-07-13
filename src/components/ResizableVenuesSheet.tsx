@@ -172,7 +172,7 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
         className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50"
         style={{ 
           zIndex: Z_LAYERS.SHEET_BACKDROP,
-          pointerEvents: isOpen && !isDragging ? 'auto' : 'none' 
+          pointerEvents: isOpen ? 'auto' : 'none' 
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -194,6 +194,11 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
           bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
           height: '80vh',
           touchAction: 'pan-y',
+        }}
+        onAnimationComplete={(definition) => {
+          if (definition === 'exit') {
+            setIsDragging(false);
+          }
         }}
         initial={{ 
           transform: 'translateY(100%)', 
