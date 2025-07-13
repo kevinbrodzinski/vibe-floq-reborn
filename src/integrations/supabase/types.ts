@@ -169,6 +169,159 @@ export type Database = {
         }
         Relationships: []
       }
+      flock_auto_suggestions: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          reasoning_data: Json | null
+          status: Database["public"]["Enums"]["suggestion_status_enum"] | null
+          suggested_users: string[] | null
+          suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
+          target_floq_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reasoning_data?: Json | null
+          status?: Database["public"]["Enums"]["suggestion_status_enum"] | null
+          suggested_users?: string[] | null
+          suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
+          target_floq_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          reasoning_data?: Json | null
+          status?: Database["public"]["Enums"]["suggestion_status_enum"] | null
+          suggested_users?: string[] | null
+          suggestion_type?: Database["public"]["Enums"]["suggestion_type_enum"]
+          target_floq_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
+            columns: ["target_floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flock_auto_suggestions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flock_history: {
+        Row: {
+          created_at: string | null
+          event_type: Database["public"]["Enums"]["flock_event_type_enum"]
+          floq_id: string
+          id: string
+          metadata: Json | null
+          new_vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          previous_vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: Database["public"]["Enums"]["flock_event_type_enum"]
+          floq_id: string
+          id?: string
+          metadata?: Json | null
+          new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: Database["public"]["Enums"]["flock_event_type_enum"]
+          floq_id?: string
+          id?: string
+          metadata?: Json | null
+          new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flock_history_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flock_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flock_relationships: {
+        Row: {
+          created_at: string | null
+          id: string
+          interaction_count: number | null
+          last_interaction_at: string | null
+          relationship_strength: number | null
+          updated_at: string | null
+          user_a_id: string
+          user_b_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interaction_count?: number | null
+          last_interaction_at?: string | null
+          relationship_strength?: number | null
+          updated_at?: string | null
+          user_a_id: string
+          user_b_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interaction_count?: number | null
+          last_interaction_at?: string | null
+          relationship_strength?: number | null
+          updated_at?: string | null
+          user_a_id?: string
+          user_b_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_a"
+            columns: ["user_a_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_b"
+            columns: ["user_b_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_boosts: {
         Row: {
           boost_type: string
@@ -249,18 +402,25 @@ export type Database = {
       }
       floqs: {
         Row: {
+          activity_score: number | null
+          auto_created: boolean | null
           catchment_area: unknown | null
           created_at: string | null
           creator_id: string | null
           ends_at: string | null
           expires_at: string | null
+          flock_tags: string[] | null
+          flock_type: Database["public"]["Enums"]["flock_type_enum"] | null
           geo: unknown | null
           id: string
+          last_activity_at: string | null
           location: unknown
           max_participants: number | null
           name: string | null
+          parent_flock_id: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m: number | null
+          recurrence_pattern: Json | null
           starts_at: string | null
           title: string
           type: string | null
@@ -270,18 +430,25 @@ export type Database = {
           walkable_zone: unknown | null
         }
         Insert: {
+          activity_score?: number | null
+          auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
           expires_at?: string | null
+          flock_tags?: string[] | null
+          flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
           geo?: unknown | null
           id?: string
+          last_activity_at?: string | null
           location: unknown
           max_participants?: number | null
           name?: string | null
+          parent_flock_id?: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
+          recurrence_pattern?: Json | null
           starts_at?: string | null
           title: string
           type?: string | null
@@ -291,18 +458,25 @@ export type Database = {
           walkable_zone?: unknown | null
         }
         Update: {
+          activity_score?: number | null
+          auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
           creator_id?: string | null
           ends_at?: string | null
           expires_at?: string | null
+          flock_tags?: string[] | null
+          flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
           geo?: unknown | null
           id?: string
+          last_activity_at?: string | null
           location?: unknown
           max_participants?: number | null
           name?: string | null
+          parent_flock_id?: string | null
           primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
+          recurrence_pattern?: Json | null
           starts_at?: string | null
           title?: string
           type?: string | null
@@ -317,6 +491,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floqs_parent_flock_id_fkey"
+            columns: ["parent_flock_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
         ]
@@ -1141,6 +1322,10 @@ export type Database = {
         Args: { "": unknown } | { "": unknown }
         Returns: string
       }
+      calculate_relationship_strength: {
+        Args: { interaction_count: number; days_since_last_interaction: number }
+        Returns: number
+      }
       citext: {
         Args: { "": boolean } | { "": string } | { "": unknown }
         Returns: string
@@ -1172,6 +1357,10 @@ export type Database = {
       cleanup_expired_rows: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cleanup_expired_suggestions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_expired_venue_data: {
         Args: Record<PropertyKey, never>
@@ -3143,6 +3332,23 @@ export type Database = {
         | "creative"
         | "wellness"
       event_shape: "circle"
+      flock_event_type_enum:
+        | "created"
+        | "joined"
+        | "left"
+        | "vibe_changed"
+        | "location_changed"
+        | "activity_detected"
+        | "merged"
+        | "split"
+      flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
+      suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
+      suggestion_type_enum:
+        | "merge_flocks"
+        | "invite_user"
+        | "recommend_venue"
+        | "schedule_activity"
+        | "change_vibe"
       vibe_enum:
         | "chill"
         | "hype"
@@ -3307,6 +3513,25 @@ export const Constants = {
         "wellness",
       ],
       event_shape: ["circle"],
+      flock_event_type_enum: [
+        "created",
+        "joined",
+        "left",
+        "vibe_changed",
+        "location_changed",
+        "activity_detected",
+        "merged",
+        "split",
+      ],
+      flock_type_enum: ["momentary", "persistent", "recurring", "template"],
+      suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
+      suggestion_type_enum: [
+        "merge_flocks",
+        "invite_user",
+        "recommend_venue",
+        "schedule_activity",
+        "change_vibe",
+      ],
       vibe_enum: [
         "chill",
         "hype",
