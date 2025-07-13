@@ -191,7 +191,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                     
                     if (error) throw error;
                     
-                    console.log('Floq boosted successfully');
+                    console.log('Boost applied successfully');
                   } catch (error) {
                     console.error('Failed to boost floq:', error);
                   }

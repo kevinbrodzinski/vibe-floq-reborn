@@ -138,7 +138,7 @@ export const useFloqBoost = () => {
       console.log('📊 Boost analytics data (1hr duration):', data.analytics);
       
       toast({
-        title: "Floq boosted! ⚡",
+        title: "Boosted! ⚡",
         description: "You've given this gathering extra energy for 1 hour.",
       });
     },

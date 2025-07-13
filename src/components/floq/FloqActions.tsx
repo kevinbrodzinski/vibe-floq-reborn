@@ -27,8 +27,8 @@ export const FloqActions: React.FC<FloqActionsProps> = ({
       if (error) throw error;
       
       toast({
-        title: "Floq boosted!",
-        description: "Your boost will help more people find this floq",
+        title: "Boosted!",
+        description: "Your boost will help more people find this gathering",
         variant: "default",
       });
     } catch (error) {
