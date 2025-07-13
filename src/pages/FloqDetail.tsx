@@ -137,7 +137,7 @@ const FloqDetail = () => {
       <ScrollArea className="flex-1 overscroll-contain max-h-[calc(100dvh-8rem)]">
         <div className="max-w-md mx-auto px-4 py-6 pb-[env(safe-area-inset-bottom)] space-y-6">
           {/* Hero Section */}
-          <Card className="mx-4 p-6 bg-gradient-to-br from-card to-card/80">
+          <Card className="mx-4 pt-3 pb-4 px-6 bg-gradient-to-br from-card to-card/80">
             <div className="flex items-start gap-4">
               <VibeRing vibe={floqDetails.primary_vibe} className="w-16 h-16">
                 <Avatar className="w-full h-full">
@@ -354,6 +354,7 @@ const FloqDetail = () => {
           floqId={floqId}
           isOpen={showChat}
           onClose={() => setShowChat(false)}
+          isJoined={floqDetails?.is_joined || false}
         />
       )}
       

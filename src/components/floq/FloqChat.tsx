@@ -14,6 +14,7 @@ interface FloqChatProps {
   isOpen: boolean;
   onClose: () => void;
   trigger?: React.ReactNode;
+  isJoined?: boolean;
 }
 
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '😡', '🎉', '🔥'];
@@ -22,7 +23,8 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   floqId, 
   isOpen, 
   onClose, 
-  trigger 
+  trigger,
+  isJoined = false
 }) => {
   const session = useSession();
   const user = session?.user;
@@ -42,8 +44,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     isSending,
   } = useFloqChat(floqId);
 
-  // For debugging - check if user is joined (would come from parent component in real implementation)
-  const isJoined = true; // TODO: Get actual join status from parent
+  // Derive canSend from props and state
   const canSend = !!floqId && !!user && (message.trim().length > 0) && isJoined;
 
   // Smart auto-scroll to bottom on new messages
@@ -235,7 +236,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             {/* Debug info for send button */}
             {!canSend && (
               <div className="absolute -bottom-6 right-0 text-xs text-destructive">
-                {!floqId ? 'No floq ID' : !user ? 'Not authenticated' : !isJoined ? 'Join first' : 'Type something'}
+                {!floqId ? 'No floq ID' : !user ? 'Not authenticated' : !isJoined ? 'Join floq first' : 'Type something'}
               </div>
             )}
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -171,6 +172,8 @@ export function CreateFloqSheet() {
                   placeholder="Coffee & Coding Session"
                   maxLength={50}
                   required
+                  aria-invalid={!title.trim()}
+                  className={cn(!title.trim() && title.length > 0 ? "border-destructive" : "")}
                 />
               </div>
 
@@ -251,7 +254,11 @@ export function CreateFloqSheet() {
                       type="datetime-local"
                       value={customEndTime}
                       onChange={(e) => setCustomEndTime(e.target.value)}
-                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)} // At least 1 hour from now
+                      min={(() => {
+                        const minDate = new Date(Date.now() + 60 * 60 * 1000);
+                        minDate.setMinutes(0, 0, 0);
+                        return minDate.toISOString().slice(0, 16);
+                      })()} // At least 1 hour from now, on clean minute
                       className="mt-1"
                     />
                   </div>

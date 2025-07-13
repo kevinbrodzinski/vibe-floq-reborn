@@ -42,6 +42,10 @@ export const trackFloqJoin = (floqId: string, floqTitle: string, vibe: string) =
 };
 
 export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string, isPrivate: boolean, flockType: 'momentary' | 'persistent' = 'momentary', endsAt?: string | null) => {
+  // Calculate duration hours for momentary floqs
+  const durationHours = endsAt && flockType === 'momentary' ? 
+    Math.round((new Date(endsAt).getTime() - Date.now()) / (1000 * 60 * 60) * 10) / 10 : null;
+    
   track('floq_created', {
     floq_id: floqId,
     floq_title: floqTitle,
@@ -49,6 +53,7 @@ export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string
     is_private: isPrivate,
     flock_type: flockType,
     ends_at_null: !endsAt,
+    duration_hours: durationHours,
     timestamp: new Date().toISOString(),
   });
 };
