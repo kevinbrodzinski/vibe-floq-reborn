@@ -531,6 +531,7 @@ export type Database = {
           catchment_area: unknown | null
           created_at: string | null
           creator_id: string | null
+          deleted_at: string | null
           ends_at: string | null
           expires_at: string | null
           flock_tags: string[] | null
@@ -559,6 +560,7 @@ export type Database = {
           catchment_area?: unknown | null
           created_at?: string | null
           creator_id?: string | null
+          deleted_at?: string | null
           ends_at?: string | null
           expires_at?: string | null
           flock_tags?: string[] | null
@@ -587,6 +589,7 @@ export type Database = {
           catchment_area?: unknown | null
           created_at?: string | null
           creator_id?: string | null
+          deleted_at?: string | null
           ends_at?: string | null
           expires_at?: string | null
           flock_tags?: string[] | null
@@ -1576,6 +1579,10 @@ export type Database = {
           _metadata?: Json
         }
         Returns: string
+      }
+      delete_floq: {
+        Args: { p_floq_id: string }
+        Returns: Json
       }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>
