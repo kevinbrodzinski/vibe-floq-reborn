@@ -6,12 +6,15 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VibeRing } from '@/components/VibeRing';
+import { FloqChat } from '@/components/floq/FloqChat';
+import { InviteFriendsButton } from '@/components/floq/InviteFriendsButton';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useLiveFloqScore } from '@/hooks/useLiveFloqScore';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useRateLimiter } from '@/hooks/useRateLimiter';
+import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +22,7 @@ const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
+  const { showChat, setShowChat } = useFloqUI();
   
   const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
@@ -258,36 +262,69 @@ const FloqDetail = () => {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              onClick={handleJoinToggle}
-              disabled={joinFloq.isPending || leaveFloq.isPending}
-              className={cn(
-                "flex-1",
-                floqDetails.is_joined ? "bg-destructive hover:bg-destructive/90" : ""
-              )}
-            >
-              {joinFloq.isPending || leaveFloq.isPending ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : floqDetails.is_joined ? (
-                <>
-                  <UserMinus className="w-4 h-4 mr-2" />
-                  Leave Floq
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Join Floq
-                </>
-              )}
-            </Button>
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <Button
+                onClick={handleJoinToggle}
+                disabled={joinFloq.isPending || leaveFloq.isPending}
+                className={cn(
+                  "flex-1",
+                  floqDetails.is_creator 
+                    ? "bg-muted hover:bg-muted text-muted-foreground cursor-default" 
+                    : floqDetails.is_joined 
+                      ? "bg-destructive hover:bg-destructive/90" 
+                      : ""
+                )}
+              >
+                {joinFloq.isPending || leaveFloq.isPending ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : floqDetails.is_creator ? (
+                  "You're the host"
+                ) : floqDetails.is_joined ? (
+                  <>
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    Leave Floq
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Join Floq
+                  </>
+                )}
+              </Button>
+            </div>
             
-            <Button variant="outline" size="icon">
-              <MessageCircle className="w-4 h-4" />
-            </Button>
+            {/* Secondary actions */}
+            {(floqDetails.is_joined || floqDetails.is_creator) && (
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowChat(true)}
+                  className="flex-1"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Chat
+                </Button>
+                
+                <InviteFriendsButton 
+                  floqId={floqDetails.id}
+                  variant="outline"
+                  className="flex-1"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
+      
+      {/* Chat Component */}
+      {floqId && (
+        <FloqChat 
+          floqId={floqId}
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+        />
+      )}
     </div>
   );
 };

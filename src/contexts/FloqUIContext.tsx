@@ -29,6 +29,8 @@ interface FloqUIContextValue {
   setShowFiltersModal: (show: boolean) => void;
   selectedFloqId: string | null;
   setSelectedFloqId: (id: string | null) => void;
+  showChat: boolean;
+  setShowChat: (show: boolean) => void;
   
   // View preferences
   viewMode: 'cards' | 'list';
@@ -54,6 +56,7 @@ export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [selectedFloqId, setSelectedFloqId] = useState<string | null>(null);
+  const [showChat, setShowChat] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [sortBy, setSortBy] = useState<'distance' | 'activity' | 'recent'>('distance');
 
@@ -88,6 +91,8 @@ export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
     setShowFiltersModal,
     selectedFloqId,
     setSelectedFloqId,
+    showChat,
+    setShowChat,
     
     // View preferences
     viewMode,
