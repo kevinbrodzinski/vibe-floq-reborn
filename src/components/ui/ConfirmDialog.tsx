@@ -30,7 +30,11 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <DialogHeader className="space-y-1.5">
           <h2 className="text-lg font-semibold">{title}</h2>
           {description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p 
+              id="confirm-desc"
+              className="text-sm text-muted-foreground leading-relaxed"
+              aria-describedby={description ? 'confirm-desc' : undefined}
+            >
               {description}
             </p>
           )}

@@ -134,10 +134,13 @@ export function useOfflineQueue() {
         });
       }
     },
-    onError: (error) => {
+    onError: (error, floqId) => {
+      // Add fallback invalidation for error cases
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqId] });
+      
       toast({
         title: "Failed to join",
-        description: "Please try again",
+        description: error?.message || "Please try again",
         variant: "destructive",
       });
     },
@@ -187,10 +190,13 @@ export function useOfflineQueue() {
         });
       }
     },
-    onError: (error) => {
+    onError: (error, floqId) => {
+      // Add fallback invalidation for error cases
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqId] });
+      
       toast({
         title: "Failed to leave",
-        description: "Please try again",
+        description: error?.message || "Please try again",
         variant: "destructive",
       });
     },

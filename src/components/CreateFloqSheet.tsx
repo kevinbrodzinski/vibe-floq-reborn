@@ -101,21 +101,21 @@ export function CreateFloqSheet() {
 
       const now = new Date();
       let endsAt: string | null = null;
-      let flockType: 'momentary' | 'persistent' = 'momentary';
+      let floqType: 'momentary' | 'persistent' = 'momentary';
 
       // Calculate end time based on duration mode
       if (durationMode === 'persistent') {
         endsAt = null;
-        flockType = 'persistent';
+        floqType = 'persistent';
       } else if (durationMode === 'custom' && customEndTime) {
         // Fix timezone issue: convert local datetime to proper ISO string
         const localDate = new Date(customEndTime);
         endsAt = localDate.toISOString();
-        flockType = 'momentary';
+        floqType = 'momentary';
       } else {
         // Quick mode - default 2 hours
         endsAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
-        flockType = 'momentary';
+        floqType = 'momentary';
       }
 
       const floqId = await createFloq({
@@ -125,13 +125,13 @@ export function CreateFloqSheet() {
         location,
         starts_at: now.toISOString(),
         ends_at: endsAt,
-        flock_type: flockType,
+        flock_type: floqType,
         max_participants: maxParticipants,
         visibility: isPrivate ? 'private' : 'public'
       });
 
       // Track floq creation
-      trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, flockType, endsAt);
+      trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, floqType, endsAt);
 
       // Close sheet - form will reset via useEffect
       setShowCreateSheet(false);

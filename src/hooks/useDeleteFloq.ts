@@ -32,9 +32,15 @@ export const useDeleteFloq = () => {
       }
     },
     onError: (error: any) => {
+      // Extract proper error message
+      const errorMessage = error?.message || 
+        error?.details || 
+        error?.hint || 
+        'Unable to delete floq. Please try again.';
+      
       toast({
         title: 'Delete failed',
-        description: error.message || 'Unable to delete floq. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
