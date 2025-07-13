@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
@@ -9,6 +10,7 @@ interface FieldGestureProviderProps {
 
 export const FieldGestureProvider = ({ data, children }: FieldGestureProviderProps) => {
   const { mode, setMode, navigate, liveRef, detailsOpen, venuesSheetOpen, selectedVenueId } = useFieldUI();
+  const { pathname } = useLocation();
 
   // ESC key to exit full-screen mode
   useEffect(() => {
@@ -35,6 +37,9 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
   }, [setMode]);
 
   useEffect(() => {
+    // Only manipulate URL when on Field route
+    if (pathname !== '/field') return;
+    
     const params = new URLSearchParams(window.location.search);
     params.delete('full');
     params.delete('view');
@@ -47,7 +52,7 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
     } else {
       navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
     }
-  }, [mode, navigate]);
+  }, [pathname, mode, navigate]);
 
   // Auto-exit full-screen when sheets open
   useEffect(() => {
@@ -78,13 +83,15 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setMode]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - only if still on Field route
   useEffect(() => () => {
-    const params = new URLSearchParams(window.location.search);
-    params.delete('full');
-    params.delete('view');
-    navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
-  }, [navigate]);
+    if (pathname === '/field') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('full');
+      params.delete('view');
+      navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
+    }
+  }, [pathname, navigate]);
 
   return <>{children}</>;
 };
