@@ -102,7 +102,8 @@ function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
   );
 }
 
-export { VenuePeopleTab } from './VenuePeopleTabOptimized';
+// Export optimized version as the main component
+export { default as VenuePeopleTab } from './VenuePeopleTabOptimized';
 
 // Legacy export for backwards compatibility
 export function VenuePeopleTabOld({ venueId }: VenuePeopleTabProps) {

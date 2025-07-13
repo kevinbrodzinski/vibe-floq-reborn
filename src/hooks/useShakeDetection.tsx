@@ -119,6 +119,13 @@ export const useShakeDetection = ({
     return true; // Permission not needed or already granted
   }, []);
 
+  // Reset motion time when enabled changes to prevent dead zones
+  useEffect(() => {
+    if (enabled) {
+      lastMotionTime.current = 0;
+    }
+  }, [enabled]);
+
   // Setup event listeners
   useEffect(() => {
     if (!enabled) return;

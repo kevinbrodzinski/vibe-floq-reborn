@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ngeohash from 'ngeohash';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { differenceInMilliseconds } from 'date-fns';
-import { useStableMemo } from '@/hooks/useStableMemo';
+import { useMemo } from 'react';
 import { getEnvironmentConfig } from '@/lib/environment';
 import { track } from '@/lib/analytics';
 
@@ -22,12 +22,12 @@ export interface LivePresence {
 }
 
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds?: string[]) => {
-  const env = useStableMemo(() => getEnvironmentConfig(), []);
+  const env = useMemo(() => getEnvironmentConfig(), []);
   const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
   const [batteryLevel, setBatteryLevel] = useState<number>(1);
   
   // 6.3 - Optimized friend set for O(1) lookups
-  const friendsSet = useStableMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
+  const friendsSet = useMemo(() => new Set(friendIds || []), [friendIds?.length, friendIds?.join(',')]);
   
   const queryClient = useQueryClient();
   const channelsRef = useRef<RealtimeChannel[]>([]);

@@ -1,4 +1,4 @@
-import { useStableMemo } from "@/hooks/useStableMemo";
+import { useMemo } from "react";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { useActiveFloqs } from "@/hooks/useActiveFloqs";

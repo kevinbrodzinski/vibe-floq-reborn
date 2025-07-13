@@ -1,5 +1,5 @@
-import { createContext, useContext } from 'react';
-import { useStableMemo } from '@/hooks/useStableMemo';
+import { createContext, useContext, useMemo } from 'react';
+import { getVibeColor } from '@/utils/getVibeColor';
 import { useFieldLocation } from './FieldLocationContext';
 
 export interface ProfileRow {
@@ -37,24 +37,12 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
   const { location, presenceData } = useFieldLocation();
 
   // Create profiles map for quick lookup with hash-based memoization
-  const profilesMap = useStableMemo(() => {
+  const profilesMap = useMemo(() => {
     return new Map(profiles.map(p => [p.id, p])) as Map<string, ProfileRow>;
   }, [profiles.length, profiles.map(p => p.id).join(',')]);
 
-  // Memoized vibe color function for better performance
-  const getVibeColor = useStableMemo(() => (vibe: string) => {
-    switch (vibe) {
-      case 'hype': return 'hsl(280 70% 60%)';
-      case 'social': return 'hsl(30 70% 60%)';
-      case 'chill': return 'hsl(240 70% 60%)';
-      case 'flowing': return 'hsl(200 70% 60%)';
-      case 'open': return 'hsl(120 70% 60%)';
-      default: return 'hsl(240 70% 60%)';
-    }
-  }, []);
-
   // Convert presence data to people format with proper field coordinates
-  const people: Person[] = useStableMemo(() => {
+  const people: Person[] = useMemo(() => {
     if (!location?.lat || !location?.lng) return [];
     
     return presenceData.map((presence) => {
@@ -83,7 +71,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         isFriend: presence.isFriend || false,
       };
     });
-  }, [presenceData, profilesMap, location?.lat, location?.lng]);
+  }, [presenceData, profilesMap, location?.lat, location?.lng, getVibeColor]);
 
   const value = {
     people,

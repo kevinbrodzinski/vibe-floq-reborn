@@ -17,7 +17,7 @@ import { latLngToField, latLngToCanvas, mToPercent, getCanvasSize, percentToCanv
 import type { WalkableFloq } from "@/types";
 import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { useStableMemo } from "@/hooks/useStableMemo";
+// Removed useStableMemo import - using useMemo instead
 import { Z } from "@/constants/zLayers";
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
@@ -86,7 +86,7 @@ export const FieldVisualization = ({
   onAvatarInteraction
 }: FieldVisualizationProps) => {
   // Phase 1C Fix: Optimized avatar preloader dependencies
-  const friendAvatars = useStableMemo(
+  const friendAvatars = useMemo(
     () => friends.map(f => f.avatar_url), 
     [friends]
   );

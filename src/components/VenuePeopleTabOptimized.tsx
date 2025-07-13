@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useVenuePeople } from "@/hooks/useVenuePeople";
 import { vibeEmoji } from "@/utils/vibe";
-import { FixedSizeList as List } from 'react-window';
+import { lazy } from 'react';
+
+// Dynamic import for bundle splitting
+const List = lazy(() => 
+  import('react-window').then(module => ({ default: module.FixedSizeList }))
+);
 import isEqual from 'react-fast-compare';
 
 interface VenuePeopleTabProps {
@@ -88,13 +93,15 @@ const VenuePeopleContentMemoized = memo(({ venueId }: VenuePeopleTabProps) => {
   ), [refetch]);
 
   // Memoize people data processing with shallow comparison
-  const { displayPeople, overflowCount, peopleCount } = useMemo(() => {
-    if (!people) return { displayPeople: [], overflowCount: 0, peopleCount: 0 };
+  const { displayPeople, overflowCount, peopleCount, hasDisplayPeople } = useMemo(() => {
+    if (!people) return { displayPeople: [], overflowCount: 0, peopleCount: 0, hasDisplayPeople: false };
     
+    const sliced = people.slice(0, 20);
     return {
-      displayPeople: people.slice(0, 20),
+      displayPeople: sliced,
       overflowCount: Math.max(0, people.length - 20),
-      peopleCount: people.length
+      peopleCount: people.length,
+      hasDisplayPeople: sliced.length > 0
     };
   }, [people]);
 
@@ -115,7 +122,7 @@ const VenuePeopleContentMemoized = memo(({ venueId }: VenuePeopleTabProps) => {
       {/* Virtualized list for better performance */}
       <div className="max-h-[400px] overflow-hidden">
         <Suspense fallback={<div className="animate-pulse">Loading...</div>}>
-          {displayPeople.length > 0 ? (
+          {hasDisplayPeople ? (
             <List
               height={Math.min(400, displayPeople.length * 82)} // 82px per item (padding + content)
               width="100%"
@@ -150,7 +157,7 @@ const VenuePeopleContentMemoized = memo(({ venueId }: VenuePeopleTabProps) => {
 
 VenuePeopleContentMemoized.displayName = 'VenuePeopleContentMemoized';
 
-export function VenuePeopleTab({ venueId }: VenuePeopleTabProps) {
+export default function VenuePeopleTab({ venueId }: VenuePeopleTabProps) {
   const fallback = useMemo(() => (
     <div className="p-6 space-y-4">
       {[...Array(5)].map((_, i) => (
