@@ -1,5 +1,6 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { GeolocationPrompt } from "@/components/ui/geolocation-prompt";
+import { MotionPermissionBanner } from "@/components/ui/MotionPermissionBanner";
 import { FieldHeader } from "./FieldHeader";
 import { FieldMapLayer } from "./FieldMapLayer";
 import { FieldUILayer } from "./FieldUILayer";
@@ -7,6 +8,7 @@ import { FieldModalLayer } from "./FieldModalLayer";
 import { FieldSystemLayer } from "./FieldSystemLayer";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useShakeDetection } from "@/hooks/useShakeDetection";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldLayoutProps {
@@ -16,6 +18,14 @@ interface FieldLayoutProps {
 export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
+  
+  // Get shake detection functions for motion permission banner
+  const { requestMotionPermission, isMotionAvailable } = useShakeDetection({
+    enabled: false, // Just for permission access, not actual detection
+    onShake: () => {},
+    onLongPress: () => {},
+    onMultiTouch: () => {}
+  });
 
   // Show geolocation prompt if no location and not loading, or if there's an error
   if ((!location?.lat && !location?.loading) || location?.error) {
@@ -58,6 +68,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   return (
     <ErrorBoundary>
       <div className="relative h-svh w-full bg-background">
+        {/* Motion Permission Banner - Global Level */}
+        <MotionPermissionBanner 
+          requestMotionPermission={requestMotionPermission}
+          isMotionAvailable={isMotionAvailable}
+        />
+        
         {/* Base Map Layer - z-0 */}
         <FieldMapLayer data={data} />
         

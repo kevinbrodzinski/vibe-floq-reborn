@@ -125,50 +125,8 @@ export const ConstellationGestureHandler = ({
     setDiscoveryMode(false);
   };
 
-  // Add a button to request motion permission for iOS users
-  const handleRequestPermission = async () => {
-    const granted = await requestMotionPermission();
-    setHasMotionPermission(granted);
-    if (granted) {
-      toast({
-        title: "Motion sensors enabled!",
-        description: "You can now use shake gestures for social discovery"
-      });
-    }
-  };
-
   return (
     <>
-      {/* Motion Permission Banner for iOS */}
-      {!hasMotionPermission && !isMotionAvailable && (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50"
-        >
-          <div className="bg-accent/95 backdrop-blur-xl rounded-lg border border-accent/30 p-3 shadow-lg">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-accent-foreground" />
-              <div className="flex-1">
-                <div className="text-accent-foreground font-medium text-sm">
-                  Enable shake discovery
-                </div>
-                <div className="text-accent-foreground/80 text-xs">
-                  Allow motion sensors for gesture detection
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRequestPermission}
-                className="text-xs px-3 py-1"
-              >
-                Enable
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
       {/* Shake Detection Feedback */}
       <AnimatePresence>
         {shakeDetected && (

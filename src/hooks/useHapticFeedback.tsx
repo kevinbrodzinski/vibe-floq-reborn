@@ -73,8 +73,8 @@ export const useHapticFeedback = () => {
 
     const vibrationPattern = getHapticPattern(pattern);
 
-    // Use Web Vibration API
-    if ('vibrate' in navigator) {
+    // Use Web Vibration API (only if available and on mobile)
+    if ('vibrate' in navigator && navigator.vibrate) {
       navigator.vibrate(vibrationPattern);
     }
 
