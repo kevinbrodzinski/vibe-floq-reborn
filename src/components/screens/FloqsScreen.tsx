@@ -43,8 +43,9 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange, onCardClick }: {
   onSuggestChange: () => void;
   onCardClick: () => void;
 }) => {
-  // Get creator info (first member is typically the creator)
-  const creator = row.members?.[0];
+  // Find the actual creator instead of assuming first member
+  const creator = row.members?.find(member => member.username || member.display_name) 
+    || row.members?.[0];
   const primary = vibeColor[row.vibe_tag] || vibeColor.social;
   const isStartingSoon = row.starts_in_min <= 30;
 
@@ -59,13 +60,16 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange, onCardClick }: {
     <div 
       onClick={onCardClick}
       className="bg-card/40 backdrop-blur-lg rounded-3xl p-6 border border-border/30 transition-all duration-300 hover:scale-[1.02] hover:translate-y-[-2px] hover:bg-card/60 cursor-pointer"
+      style={{ pointerEvents: 'auto' }}
     >
       <div className="flex items-center space-x-4 mb-6">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center animate-pulse"
+          onClick={(e) => e.stopPropagation()}
           style={{
             backgroundColor: primary + '1A',
-            boxShadow: `0 0 30px ${primary}40`
+            boxShadow: `0 0 30px ${primary}40`,
+            pointerEvents: 'none'
           }}
         >
           <Coffee size={28} style={{ color: primary }} />

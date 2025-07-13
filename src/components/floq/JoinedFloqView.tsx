@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { VibeRing } from '@/components/VibeRing';
 import { FloqChat } from '@/components/floq/FloqChat';
 import { IconPill } from '@/components/IconPill';
+import { supabase } from '@/integrations/supabase/client';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
@@ -146,9 +147,18 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             <IconPill
               icon={<Zap className="w-3 h-3" />}
               label="Boost"
-              onClick={() => {
-                // TODO: Implement boost functionality
-                console.log('Boost floq');
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.rpc('boost_floq', { 
+                    p_floq_id: floqDetails.id 
+                  });
+                  
+                  if (error) throw error;
+                  
+                  console.log('Floq boosted successfully');
+                } catch (error) {
+                  console.error('Failed to boost floq:', error);
+                }
               }}
             />
             

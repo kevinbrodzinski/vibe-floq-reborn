@@ -230,7 +230,7 @@ export function CreateFloqSheet() {
                     onClick={() => handleDurationModeChange('quick')}
                     className="flex-1"
                   >
-                    2-hour quick
+                    Quick (2 h)
                   </Button>
                   <Button
                     type="button"
@@ -305,7 +305,7 @@ export function CreateFloqSheet() {
                     type="number"
                     value={maxParticipants}
                     onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                    min={2}
+                    min={1}
                     max={100}
                     className="mt-1"
                   />

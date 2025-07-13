@@ -56,16 +56,15 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
     
     // Only auto-scroll if user is near the bottom, throttled with RAF
-    let rafId: number;
     if (isNearBottom) {
-      rafId = requestAnimationFrame(() => {
+      const rafId = requestAnimationFrame(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       });
+      
+      return () => {
+        cancelAnimationFrame(rafId);
+      };
     }
-    
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    };
   }, [messages.length]);
 
   // Auto-resize textarea

@@ -108,6 +108,7 @@ export function useOfflineQueue() {
     },
     onSuccess: (data) => {
       if (!data.queued) {
+        // Invalidate queries to refresh is_joined status
         queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
         queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
         queryClient.invalidateQueries({ queryKey: ["floq-details"] });
@@ -146,6 +147,7 @@ export function useOfflineQueue() {
     },
     onSuccess: (data) => {
       if (!data.queued) {
+        // Invalidate queries to refresh is_joined status
         queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
         queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
         queryClient.invalidateQueries({ queryKey: ["floq-details"] });
