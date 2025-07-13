@@ -1331,6 +1331,7 @@ export type Database = {
           p_floq_id: string
           p_event_type: string
           p_proximity_boost?: number
+          p_decay_hours?: number
         }
         Returns: Json
       }
