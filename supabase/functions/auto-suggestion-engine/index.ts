@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logInvocation, EdgeLogStatus } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,21 +13,22 @@ interface SuggestionRequest {
   max_suggestions?: number;
 }
 
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   const startTime = Date.now();
-  let status = 'success';
-  let errorMessage = null;
-  let metadata = {};
+  let status: EdgeLogStatus = 'success';
+  let errorMessage: string | null = null;
+  let metadata: Record<string, unknown> = {};
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     const body = await req.json().catch(() => ({}));
     const { 
@@ -136,17 +138,12 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } finally {
-    // Always log execution details
-    try {
-      await supabase.from('edge_invocation_logs').insert({
-        function_name: 'auto-suggestion-engine',
-        status,
-        duration_ms: Date.now() - startTime,
-        error_message: errorMessage,
-        metadata
-      });
-    } catch (logError) {
-      console.error('Failed to log execution:', logError);
-    }
+    await logInvocation({
+      functionName: 'auto-suggestion-engine',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 });

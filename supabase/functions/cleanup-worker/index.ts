@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.205.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logInvocation, EdgeLogStatus } from "../_shared/edge-logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,9 +19,9 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  let status = 'success';
-  let errorMessage = null;
-  let metadata = {};
+  let status: EdgeLogStatus = 'success';
+  let errorMessage: string | null = null;
+  let metadata: Record<string, unknown> = {};
 
   try {
     console.log('[cleanup-worker] Starting cleanup process...');
@@ -70,17 +71,12 @@ serve(async (req) => {
       }
     );
   } finally {
-    // Always log execution details
-    try {
-      await supabase.from('edge_invocation_logs').insert({
-        function_name: 'cleanup-worker',
-        status,
-        duration_ms: Date.now() - startTime,
-        error_message: errorMessage,
-        metadata
-      });
-    } catch (logError) {
-      console.error('Failed to log execution:', logError);
-    }
+    await logInvocation({
+      functionName: 'cleanup-worker',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 });
