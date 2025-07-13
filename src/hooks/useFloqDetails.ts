@@ -124,12 +124,16 @@ export function useFloqDetails(
       const isJoined = !!userParticipant;
       const isCreator = floqData.creator_id === user?.id;
 
-      // Extract location coordinates
+      // Extract location coordinates with null guard
       const locationCoords = floqData.location as any;
-      const location = {
-        lat: locationCoords?.coordinates?.[1] || 0,
-        lng: locationCoords?.coordinates?.[0] || 0,
-      };
+      let location = { lat: 0, lng: 0 };
+      
+      if (locationCoords && locationCoords.coordinates) {
+        location = {
+          lat: locationCoords.coordinates[1] || 0,
+          lng: locationCoords.coordinates[0] || 0,
+        };
+      }
 
       return {
         id: floqData.id,

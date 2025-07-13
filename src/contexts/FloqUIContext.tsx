@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useMemo } from 'react';
 import type { Vibe } from '@/types';
 
 export type FloqTab = 'home' | 'nearby' | 'my' | 'dms';
@@ -8,6 +8,7 @@ export interface FloqFilters {
   distanceKm?: number;
   tagIds?: string[];
   isActive?: boolean;
+  searchQuery?: string;
 }
 
 interface FloqUIContextValue {
@@ -48,7 +49,7 @@ interface FloqUIProviderProps {
 
 export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
   const [activeTab, setActiveTab] = useState<FloqTab>('home');
-  const [filters, setFilters] = useState<FloqFilters>({});
+  const [filters, setFilters] = useState<FloqFilters>({} as FloqFilters);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -57,17 +58,17 @@ export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
   const [sortBy, setSortBy] = useState<'distance' | 'activity' | 'recent'>('distance');
 
   const clearFilters = () => {
-    setFilters({});
+    setFilters({} as FloqFilters);
     setSearchQuery('');
   };
 
-  const hasActiveFilters = Boolean(
+  const hasActiveFilters = useMemo(() => Boolean(
     filters.vibe || 
     filters.distanceKm !== undefined || 
     filters.tagIds?.length || 
     filters.isActive !== undefined ||
     searchQuery.trim()
-  );
+  ), [filters, searchQuery]);
 
   const value: FloqUIContextValue = {
     // Tab navigation

@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
 import type { FloqFilters } from "@/contexts/FloqUIContext";
+import { useEffect } from "react";
 
 export interface NearbyFloq {
   id: string;
@@ -41,6 +42,24 @@ export function useNearbyFlocks({
 }: UseNearbyFlocksOptions = {}) {
   const session = useSession();
   const user = session?.user;
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for nearby flocks
+  useEffect(() => {
+    const channel = supabase
+      .channel('flocks')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'floqs' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'floqs' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   return useQuery({
     queryKey: ["nearby-flocks", user?.id, geo?.lat, geo?.lng, filters, limit],
@@ -84,6 +103,7 @@ export function useNearbyFlocks({
         participant_count: Number(floq.participant_count),
         boost_count: Number(floq.boost_count),
         distance_meters: Number(floq.distance_meters || 0),
+        activity_score: Number(floq.activity_score || 0),
         starts_at: floq.starts_at || undefined,
         ends_at: floq.ends_at || undefined,
         starts_in_min: floq.starts_in_min,
@@ -107,7 +127,7 @@ export function useNearbyFlocks({
 
       if (filters.isActive) {
         filteredData = filteredData.filter(floq => 
-          floq.participant_count > 0 || floq.boost_count > 0
+          floq.participant_count > 0
         );
       }
 

@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
+import { useEffect } from "react";
 
 export interface MyFloq {
   id: string;
@@ -30,6 +31,33 @@ export function useMyFlocks({
 }: UseMyFlocksOptions = {}) {
   const session = useSession();
   const user = session?.user;
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('flocks')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'floqs' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'floq_participants' }, (payload) => {
+        if (payload.new.user_id === user.id) {
+          queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
+        }
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'floq_participants' }, (payload) => {
+        if (payload.old.user_id === user.id) {
+          queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ["my-flocks", user?.id, limit],
@@ -71,14 +99,15 @@ export function useMyFlocks({
       
       if (floqIds.length === 0) return [];
 
-      // Get participant counts for all flocks
+      // Get participant counts for all flocks using aggregation
       const { data: participantData } = await supabase
         .from('floq_participants')
-        .select('floq_id')
-        .in('floq_id', floqIds);
+        .select('floq_id, count(*)')
+        .in('floq_id', floqIds)
+        .group('floq_id');
 
       const participantCounts = participantData?.reduce((acc, item) => {
-        acc[item.floq_id] = (acc[item.floq_id] || 0) + 1;
+        acc[item.floq_id] = Number(item.count) || 0;
         return acc;
       }, {} as Record<string, number>) || {};
 

@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Users } from 'lucide-react';
-import { getVibeColor } from '@/utils/getVibeColor';
+import { VibeRing } from '@/components/VibeRing';
 import { cn } from '@/lib/utils';
 import type { MyFloq } from '@/hooks/useMyFlocks';
 
@@ -21,10 +21,6 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
   onFlockPress,
   isLoading = false,
 }) => {
-  const vibeRingClasses = (vibe: string) => {
-    const color = getVibeColor(vibe);
-    return `border-2 ${color.replace('text-', 'border-')}`;
-  };
 
   const getActivityIndicator = (floq: MyFloq) => {
     const minutesSinceActivity = floq.last_activity_at 
@@ -78,20 +74,21 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
               aria-label={`Open ${floq.title} floq`}
             >
               <div className="relative">
-                <Avatar 
-                  className={cn(
-                    "w-16 h-16 transition-transform hover:scale-105",
-                    vibeRingClasses(floq.primary_vibe)
-                  )}
+                <VibeRing 
+                  vibe={floq.primary_vibe}
+                  pulse={getActivityIndicator(floq) === 'animate-pulse'}
+                  className="w-16 h-16"
                 >
-                  <AvatarImage 
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${floq.title}`} 
-                    alt={floq.title}
-                  />
-                  <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/10 to-secondary/10">
-                    {floq.title.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                  <Avatar className="w-full h-full transition-transform hover:scale-105">
+                    <AvatarImage 
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${floq.title}`} 
+                      alt={floq.title}
+                    />
+                    <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/10 to-secondary/10">
+                      {floq.title.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </VibeRing>
                 
                 {/* Participant count indicator */}
                 {floq.participant_count > 1 && (
@@ -116,11 +113,10 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
                 <span className="max-w-[80px] truncate text-[11px] leading-tight font-medium text-foreground">
                   {floq.title}
                 </span>
-                <span className={cn(
-                  "text-[9px] capitalize px-1.5 py-0.5 rounded-full",
-                  getVibeColor(floq.primary_vibe).replace('text-', 'bg-'),
-                  "text-white text-opacity-90"
-                )}>
+                <span 
+                  className="text-[9px] capitalize px-1.5 py-0.5 rounded-full text-white text-opacity-90"
+                  style={{ backgroundColor: `hsl(var(--${floq.primary_vibe}))` }}
+                >
                   {floq.primary_vibe}
                 </span>
               </div>

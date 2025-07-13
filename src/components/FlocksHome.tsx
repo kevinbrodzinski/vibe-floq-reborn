@@ -3,13 +3,17 @@ import { RefreshCcw, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
 import { useFloqUI } from '@/contexts/FloqUIContext';
+import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface FlocksHomeProps {
   geo?: { lat: number; lng: number };
@@ -35,11 +39,13 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     setSelectedFloqId,
   } = useFloqUI();
 
-  // Data hooks
+  const queryClient = useQueryClient();
+
+  // Data hooks with search query filter
   const { data: myFlocks = [], isLoading: myFlocksLoading } = useMyFlocks();
   const { data: nearbyFlocks = [], isLoading: nearbyLoading } = useNearbyFlocks({ 
     geo, 
-    filters 
+    filters: { ...filters, searchQuery } // Include search query in filters
   });
   const { data: suggestions = [], isLoading: suggestionsLoading } = useFloqSuggestions({ 
     geo 
@@ -57,7 +63,13 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search functionality would be implemented here
+    // Trigger search by invalidating queries
+    queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries();
+    onRefresh?.();
   };
 
   return (
@@ -97,7 +109,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onRefresh}
+            onClick={handleRefresh}
             disabled={isRefreshing}
             className={cn(isRefreshing && "animate-spin")}
           >
@@ -157,7 +169,14 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             {nearbyLoading ? (
               <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                  <Card key={i} className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </Card>
                 ))}
               </div>
             ) : nearbyFlocks.length > 0 ? (
@@ -180,7 +199,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                           <span>•</span>
                           <span>{floq.participant_count} members</span>
                           <span>•</span>
-                          <span>{Math.round(floq.distance_meters)}m away</span>
+                          <span>{formatDistance(floq.distance_meters)} away</span>
                         </div>
                       </div>
                       {floq.is_joined && (

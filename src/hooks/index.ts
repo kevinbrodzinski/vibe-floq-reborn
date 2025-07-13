@@ -8,6 +8,7 @@ export { useLiveFloqScore } from './useLiveFloqScore';
 export { useMyFlocks } from './useMyFlocks';
 export { useNearbyFlocks } from './useNearbyFlocks';
 export { useFloqDetails } from './useFloqDetails';
+export { useOfflineQueue } from './useOfflineQueue';
 export type { HapticPattern, HapticOptions } from './useHapticFeedback';
 export type { FloqSuggestion } from './useFloqSuggestions';
 export type { MyFloq } from './useMyFlocks';
