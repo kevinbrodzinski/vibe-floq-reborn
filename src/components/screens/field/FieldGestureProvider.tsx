@@ -28,17 +28,21 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
     }
   }, [mode]);
 
-  // URL sync effects
+  // URL sync effects - only when on Field route
   useEffect(() => {
+    if (pathname !== '/') return;
+    
     const params = new URLSearchParams(window.location.search);
     if (params.has('full')) setMode('full');
     else if (params.get('view') === 'list') setMode('list');
     else setMode('map');
-  }, [setMode]);
+  }, [pathname, setMode]);
 
   useEffect(() => {
     // Only manipulate URL when on Field route
     if (pathname !== '/') return;
+    
+    console.log('[FieldGestureProvider] URL sync effect triggered', { mode, pathname });
     
     const params = new URLSearchParams(window.location.search);
     params.delete('full');
@@ -47,57 +51,31 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
     if (mode === 'full') params.set('full', '1');
     else if (mode === 'list') params.set('view', 'list');
 
-    if (!params.toString()) {
-      navigate(window.location.pathname + window.location.hash, { replace: true });
-    } else {
-      navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
-    }
+    const newUrl = !params.toString() 
+      ? window.location.pathname + window.location.hash 
+      : `?${params.toString()}`;
+    
+    console.log('[FieldGestureProvider] Navigating to:', newUrl);
+    navigate(newUrl, { replace: true, preventScrollReset: true });
   }, [pathname, mode, navigate]);
 
-  // Auto-exit full-screen when sheets open
+  // Auto-exit full-screen when sheets open - only on Field route
   useEffect(() => {
+    if (pathname !== '/') return;
+    
     if (mode === 'full' && (detailsOpen || venuesSheetOpen || selectedVenueId)) {
       setMode('map');
     }
-  }, [mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode]);
+  }, [pathname, mode, detailsOpen, venuesSheetOpen, selectedVenueId, setMode]);
 
-  // Live-region accessibility announcements
+  // Live-region accessibility announcements - only on Field route
   useEffect(() => {
-    if (liveRef.current) {
-      liveRef.current.textContent =
-        mode === 'full' ? 'Entered full-screen map' :
-        mode === 'list' ? 'List view' : 'Map view';
-    }
-  }, [mode, liveRef]);
-
-  // Back-forward navigation
-  useEffect(() => {
-    const handlePopState = () => {
-      // Only handle popstate when on Field route
-      if (window.location.pathname !== '/') return;
-      
-      const params = new URLSearchParams(window.location.search);
-      if (params.has('full')) setMode('full');
-      else if (params.get('view') === 'list') setMode('list');
-      else setMode('map');
-    };
+    if (pathname !== '/' || !liveRef.current) return;
     
-    // Only add listener when on Field route
-    if (pathname === '/') {
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-    }
-  }, [setMode, pathname]);
-
-  // Cleanup on unmount - only if still on Field route
-  useEffect(() => () => {
-    if (pathname === '/') {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('full');
-      params.delete('view');
-      navigate(`?${params.toString()}`, { replace: true, preventScrollReset: true });
-    }
-  }, [pathname, navigate]);
+    liveRef.current.textContent =
+      mode === 'full' ? 'Entered full-screen map' :
+      mode === 'list' ? 'List view' : 'Map view';
+  }, [pathname, mode, liveRef]);
 
   return <>{children}</>;
 };
