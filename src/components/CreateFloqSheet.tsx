@@ -140,9 +140,9 @@ export function CreateFloqSheet() {
 
   return (
     <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
-      <SheetContent side="bottom" className="w-full max-w-lg p-0 overflow-hidden sm:rounded-2xl sm:max-h-[90vh] h-[90vh]">
+      <SheetContent side="bottom" className="w-full max-w-lg mx-auto p-0 overflow-hidden sm:rounded-2xl h-[95vh] flex flex-col">
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b">
+        <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -158,10 +158,10 @@ export function CreateFloqSheet() {
           </div>
         </SheetHeader>
 
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <ScrollArea className="flex-1 px-4">
-            <div className="space-y-6 py-4">
+        {/* Form Content - Now properly scrollable */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 pb-24">
               {/* Title */}
               <div>
                 <Label htmlFor="title">Floq Name *</Label>
@@ -277,21 +277,6 @@ export function CreateFloqSheet() {
                     </p>
                   </div>
                 )}
-
-                {/* Disabled Custom Picker Notice with proper visual state */}
-                {durationMode === 'persistent' && (
-                  <div className="pointer-events-none opacity-50">
-                    <Label htmlFor="custom-end-time-disabled" className="text-muted-foreground">End Time</Label>
-                    <Input
-                      id="custom-end-time-disabled"
-                      type="datetime-local"
-                      value=""
-                      disabled
-                      className="mt-1"
-                      placeholder="Not applicable for ongoing floqs"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Settings */}
@@ -330,25 +315,26 @@ export function CreateFloqSheet() {
                   <span>Location will be set to your current position</span>
                 </div>
               </div>
-            </div>
+            </form>
           </ScrollArea>
+        </div>
 
-          {/* Submit Button */}
-          <div className="p-4 border-t bg-background">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={!title.trim() || isPending}
-            >
-              {isPending ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              {isPending ? 'Creating...' : 'Create Floq'}
-            </Button>
-          </div>
-        </form>
+        {/* Submit Button - Fixed at bottom */}
+        <div className="p-6 border-t bg-background/95 backdrop-blur-sm">
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!title.trim() || isPending}
+            onClick={handleSubmit}
+          >
+            {isPending ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
+            {isPending ? 'Creating...' : 'Create Floq'}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );
