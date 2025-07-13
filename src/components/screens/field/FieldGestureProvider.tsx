@@ -73,15 +73,21 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
   // Back-forward navigation
   useEffect(() => {
     const handlePopState = () => {
+      // Only handle popstate when on Field route
+      if (window.location.pathname !== '/') return;
+      
       const params = new URLSearchParams(window.location.search);
       if (params.has('full')) setMode('full');
       else if (params.get('view') === 'list') setMode('list');
       else setMode('map');
     };
     
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [setMode]);
+    // Only add listener when on Field route
+    if (pathname === '/') {
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [setMode, pathname]);
 
   // Cleanup on unmount - only if still on Field route
   useEffect(() => () => {
