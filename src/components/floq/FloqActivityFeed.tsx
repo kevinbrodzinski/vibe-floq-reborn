@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -10,7 +10,12 @@ import {
   Heart,
   MessageSquare,
   Crown,
-  X
+  X,
+  Trash2,
+  Calendar,
+  Mail,
+  Activity,
+  MapPin
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +50,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
   floqId, 
   className 
 }) => {
-  const { data: activities = [], isLoading, error } = useQuery({
+  const { data: activities = [], isLoading, error, refetch } = useQuery({
     queryKey: ['floq-activity-feed', floqId],
     queryFn: async (): Promise<FloqActivityItem[]> => {
       const { data, error } = await supabase
@@ -82,6 +87,36 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
     refetchIntervalInBackground: false, // Mobile battery optimization
   });
 
+  // Set up real-time subscription for new activity events
+  useEffect(() => {
+    if (!floqId) return;
+
+    console.log('Setting up real-time subscription for floq activity:', floqId);
+    
+    const channel = supabase
+      .channel(`flock-history-${floqId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'flock_history',
+          filter: `floq_id=eq.${floqId}`
+        },
+        (payload) => {
+          console.log('Real-time activity event received:', payload);
+          // Refetch the activity data to get the latest events with profile data
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [floqId, refetch]);
+
   const getEventIcon = (eventType: FlockEventType) => {
     switch (eventType) {
       case 'joined':
@@ -93,15 +128,24 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'vibe_changed':
         return <Zap className="w-4 h-4" />;
       case 'activity_detected':
-        return <Heart className="w-4 h-4" />;
+        return <Activity className="w-4 h-4" />;
       case 'location_changed':
-        return <Clock className="w-4 h-4" />;
+        return <MapPin className="w-4 h-4" />;
       case 'merged':
       case 'split':
         return <Users className="w-4 h-4" />;
-      default:
-        // Handle ended or any unknown event types
+      case 'ended':
         return <X className="w-4 h-4" />;
+      case 'deleted':
+        return <Trash2 className="w-4 h-4" />;
+      case 'boosted':
+        return <Crown className="w-4 h-4" />;
+      case 'plan_created':
+        return <Calendar className="w-4 h-4" />;
+      case 'invited':
+        return <Mail className="w-4 h-4" />;
+      default:
+        return <Activity className="w-4 h-4" />;
     }
   };
 
@@ -122,9 +166,18 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'merged':
       case 'split':
         return 'text-orange-500';
-      default:
-        // Handle ended or unknown event types
+      case 'ended':
         return 'text-destructive';
+      case 'deleted':
+        return 'text-destructive';
+      case 'boosted':
+        return 'text-amber-500';
+      case 'plan_created':
+        return 'text-indigo-500';
+      case 'invited':
+        return 'text-emerald-500';
+      default:
+        return 'text-muted-foreground';
     }
   };
 
@@ -153,11 +206,17 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
         return `This floq was merged`;
       case 'split':
         return `This floq was split`;
+      case 'ended':
+        return `${userName} ended the floq`;
+      case 'deleted':
+        return `${userName} deleted the floq`;
+      case 'boosted':
+        return `${userName} boosted this floq`;
+      case 'plan_created':
+        return `${userName} created a plan`;
+      case 'invited':
+        return `${userName} invited someone to join`;
       default:
-        // Handle ended or any unknown event types
-        if (activity.event_type === 'ended') {
-          return `${userName} ended the floq`;
-        }
         return `${userName} ${activity.event_type}`;
     }
   };
