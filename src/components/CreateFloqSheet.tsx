@@ -157,174 +157,171 @@ export function CreateFloqSheet() {
           </div>
         </SheetHeader>
 
-        {/* Scrollable Form */}
-        <ScrollArea 
-          className="flex-1 overflow-y-auto overscroll-y-contain px-4 max-h-[calc(100dvh-12rem)] pb-[env(safe-area-inset-bottom)]"
-          onWheelCapture={(e) => e.stopPropagation()}
-        >
-          <form onSubmit={handleSubmit} className="space-y-6 py-4 pb-12">
-            {/* Title */}
-            <div>
-              <Label htmlFor="title">Floq Name *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Coffee & Coding Session"
-                maxLength={50}
-                required
-              />
-            </div>
+        {/* Form Content */}
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          <ScrollArea className="flex-1 px-4">
+            <div className="space-y-6 py-4">
+              {/* Title */}
+              <div>
+                <Label htmlFor="title">Floq Name *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Coffee & Coding Session"
+                  maxLength={50}
+                  required
+                />
+              </div>
 
-            {/* Description */}
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="What's this floq about? (optional)"
-                rows={3}
-                maxLength={200}
-              />
-            </div>
+              {/* Description */}
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="What's this floq about? (optional)"
+                  rows={3}
+                  maxLength={200}
+                />
+              </div>
 
-            {/* Vibe Selection */}
-            <div>
-              <Label className="mb-3 block">Vibe</Label>
-              <div className="flex flex-wrap gap-2">
-                {VIBE_OPTIONS.map((vibe) => (
-                  <Badge
-                    key={vibe}
-                    variant={selectedVibe === vibe ? "default" : "outline"}
-                    className="cursor-pointer px-3 py-1 capitalize hover:scale-105 transition-transform"
-                    style={{
-                      backgroundColor: selectedVibe === vibe ? (VIBE_COLORS[vibe] || 'hsl(var(--primary))') : 'transparent',
-                      borderColor: VIBE_COLORS[vibe] || 'hsl(var(--primary))',
-                      color: selectedVibe === vibe ? 'white' : (VIBE_COLORS[vibe] || 'hsl(var(--primary))'),
-                    }}
-                    onClick={() => setSelectedVibe(vibe)}
+              {/* Vibe Selection */}
+              <div>
+                <Label className="mb-3 block">Vibe</Label>
+                <div className="flex flex-wrap gap-2">
+                  {VIBE_OPTIONS.map((vibe) => (
+                    <Badge
+                      key={vibe}
+                      variant={selectedVibe === vibe ? "default" : "outline"}
+                      className="cursor-pointer px-3 py-1 capitalize hover:scale-105 transition-transform"
+                      style={{
+                        backgroundColor: selectedVibe === vibe ? (VIBE_COLORS[vibe] || 'hsl(var(--primary))') : 'transparent',
+                        borderColor: VIBE_COLORS[vibe] || 'hsl(var(--primary))',
+                        color: selectedVibe === vibe ? 'white' : (VIBE_COLORS[vibe] || 'hsl(var(--primary))'),
+                      }}
+                      onClick={() => setSelectedVibe(vibe)}
+                    >
+                      {vibe}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Duration Mode */}
+              <div>
+                <Label className="mb-3 block">Duration</Label>
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant={durationMode === 'quick' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleDurationModeChange('quick')}
+                    className="flex-1"
                   >
-                    {vibe}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+                    Quick (2h)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={durationMode === 'custom' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleDurationModeChange('custom')}
+                    className="flex-1"
+                  >
+                    Custom
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={durationMode === 'persistent' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleDurationModeChange('persistent')}
+                    className="flex-1"
+                  >
+                    Ongoing
+                  </Button>
+                </div>
 
-            {/* Duration Mode */}
-            <div>
-              <Label className="mb-3 block">Duration</Label>
-              <div className="flex gap-2 mb-4">
-                <Button
-                  type="button"
-                  variant={durationMode === 'quick' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDurationModeChange('quick')}
-                  className="flex-1"
-                >
-                  Quick (2h)
-                </Button>
-                <Button
-                  type="button"
-                  variant={durationMode === 'custom' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDurationModeChange('custom')}
-                  className="flex-1"
-                >
-                  Custom
-                </Button>
-                <Button
-                  type="button"
-                  variant={durationMode === 'persistent' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDurationModeChange('persistent')}
-                  className="flex-1"
-                >
-                  Ongoing
-                </Button>
+                {/* Custom End Time Picker */}
+                {durationMode === 'custom' && (
+                  <div>
+                    <Label htmlFor="custom-end-time">End Time</Label>
+                    <Input
+                      id="custom-end-time"
+                      type="datetime-local"
+                      value={customEndTime}
+                      onChange={(e) => setCustomEndTime(e.target.value)}
+                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)} // At least 1 hour from now
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                {/* Persistent Info */}
+                {durationMode === 'persistent' && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">
+                      This floq will stay active until you end it manually.
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Custom End Time Picker */}
-              {durationMode === 'custom' && (
+              {/* Settings */}
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="custom-end-time">End Time</Label>
+                  <Label htmlFor="max-participants">Max Participants</Label>
                   <Input
-                    id="custom-end-time"
-                    type="datetime-local"
-                    value={customEndTime}
-                    onChange={(e) => setCustomEndTime(e.target.value)}
-                    min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)} // At least 1 hour from now
+                    id="max-participants"
+                    type="number"
+                    value={maxParticipants}
+                    onChange={(e) => setMaxParticipants(Number(e.target.value))}
+                    min={2}
+                    max={100}
                     className="mt-1"
                   />
                 </div>
-              )}
 
-              {/* Persistent Info */}
-              {durationMode === 'persistent' && (
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground">
-                    This floq will stay active until you end it manually.
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Private Floq</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Only invited users can join
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isPrivate}
+                    onCheckedChange={setIsPrivate}
+                  />
                 </div>
-              )}
-            </div>
-
-            {/* Settings */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="max-participants">Max Participants</Label>
-                <Input
-                  id="max-participants"
-                  type="number"
-                  value={maxParticipants}
-                  onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                  min={2}
-                  max={100}
-                  className="mt-1"
-                />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Private Floq</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Only invited users can join
-                  </p>
+              {/* Location Info */}
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4" />
+                  <span>Location will be set to your current position</span>
                 </div>
-                <Switch
-                  checked={isPrivate}
-                  onCheckedChange={setIsPrivate}
-                />
               </div>
             </div>
+          </ScrollArea>
 
-            {/* Location Info */}
-            <div className="bg-muted/30 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>Location will be set to your current position</span>
-              </div>
-            </div>
-          </form>
-          <ScrollBar orientation="vertical" />
-        </ScrollArea>
-
-        {/* Sticky Footer */}
-        <div className="sticky bottom-0 md:static bg-background/90 backdrop-blur p-4 pt-3 pb-[calc(theme(spacing.4)+env(safe-area-inset-bottom))] border-t">
-          <Button 
-            type="submit" 
-            onClick={handleSubmit}
-            className="w-full" 
-            disabled={!title.trim() || isPending}
-          >
-            {isPending ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-            ) : (
-              <Sparkles className="w-4 h-4 mr-2" />
-            )}
-            {isPending ? 'Creating...' : 'Create Floq'}
-          </Button>
-        </div>
+          {/* Submit Button */}
+          <div className="p-4 border-t bg-background">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={!title.trim() || isPending}
+            >
+              {isPending ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {isPending ? 'Creating...' : 'Create Floq'}
+            </Button>
+          </div>
+        </form>
       </SheetContent>
     </Sheet>
   );
