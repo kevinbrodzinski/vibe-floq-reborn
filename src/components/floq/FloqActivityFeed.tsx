@@ -67,9 +67,9 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       return (data || []).map(item => ({
         ...item,
         user_profile: item.profiles ? {
-          display_name: (item.profiles as any).display_name,
-          username: (item.profiles as any).username,
-          avatar_url: (item.profiles as any).avatar_url
+          display_name: (item.profiles as any).display_name || 'Unknown',
+          username: (item.profiles as any).username || 'unknown',
+          avatar_url: (item.profiles as any).avatar_url || null
         } : null,
         // Extract vibe data from metadata for vibe_changed events
         new_vibe: item.event_type === 'vibe_changed' ? item.metadata?.new_vibe : undefined,
@@ -100,7 +100,8 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'split':
         return <Users className="w-4 h-4" />;
       default:
-        return <Users className="w-4 h-4" />;
+        // Handle ended or any unknown event types
+        return <X className="w-4 h-4" />;
     }
   };
 
@@ -122,7 +123,8 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'split':
         return 'text-orange-500';
       default:
-        return 'text-muted-foreground';
+        // Handle ended or unknown event types
+        return 'text-destructive';
     }
   };
 
@@ -152,6 +154,10 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'split':
         return `This floq was split`;
       default:
+        // Handle ended or any unknown event types
+        if (activity.event_type === 'ended') {
+          return `${userName} ended the floq`;
+        }
         return `${userName} ${activity.event_type}`;
     }
   };

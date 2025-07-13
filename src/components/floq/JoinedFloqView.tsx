@@ -49,10 +49,10 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
     [floqDetails?.creator_id, session?.user.id]
   );
 
-  // Calculate if user is a member - use JSON.stringify to prevent object churn
+  // Calculate if user is a member - use stable dependency tracking
   const isMember = useMemo(() => 
     floqDetails.participants?.some(p => p.user_id === session?.user.id) || false,
-    [JSON.stringify(floqDetails.participants), session?.user.id]
+    [JSON.stringify(floqDetails.participants?.map(p => p.user_id)), session?.user.id]
   );
 
   // Check if floq can be deleted

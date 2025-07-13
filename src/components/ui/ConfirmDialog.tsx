@@ -56,8 +56,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             onClick={async () => {
               try {
                 await onConfirm();
+                onOpenChange(false);
               } catch (error) {
                 // Error handling done by parent
+                console.error('Confirm action failed:', error);
               }
             }}
             disabled={isLoading}
