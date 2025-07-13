@@ -31,7 +31,7 @@ export const ConstellationControls = ({
 
       {/* Constellation Mode Toggle */}
       {(timeState === 'evening' || timeState === 'night') && (
-        <div className="absolute top-32 right-4 z-20">
+        <div className="absolute top-40 right-4 z-20">
           <Button
             variant={constellationMode ? "default" : "outline"}
             size="sm"
