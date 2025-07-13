@@ -12,7 +12,7 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   return (
     <div 
       className="absolute top-44 right-4 flex flex-col gap-2 pointer-events-auto"
-      style={{ zIndex: Z.controls + 1 }}
+      style={{ zIndex: Z.system }}
     >
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
