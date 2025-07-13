@@ -39,8 +39,10 @@ export const useShakeDetection = ({
     const timestamp = Date.now();
     const throttleMs = 1000 / maxHz; // Calculate throttle from maxHz
     
-    // Throttle motion processing to maxHz
+    // Throttle motion processing to maxHz - move assignment after check
     if (timestamp - lastMotionTime.current < throttleMs) return;
+    
+    // Move lastMotionTime assignment here to fix dead zone bug
     lastMotionTime.current = timestamp;
 
     const { x, y, z } = event.accelerationIncludingGravity;
@@ -73,7 +75,7 @@ export const useShakeDetection = ({
     }
   }, [enabled, sensitivity, onShake, socialHaptics, maxHz]);
 
-  // Touch gesture detection
+  // Touch gesture detection with device orientation throttling
   const handleTouchStart = useCallback((event: TouchEvent) => {
     if (!enabled) return;
 

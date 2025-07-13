@@ -114,23 +114,25 @@ const VenuePeopleContentMemoized = memo(({ venueId }: VenuePeopleTabProps) => {
 
       {/* Virtualized list for better performance */}
       <div className="max-h-[400px] overflow-hidden">
-        {displayPeople.length > 0 ? (
-          <List
-            height={Math.min(400, displayPeople.length * 82)} // 82px per item (padding + content)
-            width="100%"
-            itemCount={displayPeople.length}
-            itemSize={82}
-            itemData={displayPeople}
-            className="touch-action-pan-y"
-          >
-            {PersonItem}
-          </List>
-        ) : (
-          <div className="text-center p-8 text-muted-foreground">
-            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No one here right now</p>
-          </div>
-        )}
+        <Suspense fallback={<div className="animate-pulse">Loading...</div>}>
+          {displayPeople.length > 0 ? (
+            <List
+              height={Math.min(400, displayPeople.length * 82)} // 82px per item (padding + content)
+              width="100%"
+              itemCount={displayPeople.length}
+              itemSize={82}
+              itemData={displayPeople}
+              className="touch-action-pan-y"
+            >
+              {PersonItem}
+            </List>
+          ) : (
+            <div className="text-center p-8 text-muted-foreground">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>No one here right now</p>
+            </div>
+          )}
+        </Suspense>
         
         {overflowCount > 0 && (
           <motion.div

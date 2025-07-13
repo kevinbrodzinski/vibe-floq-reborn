@@ -102,7 +102,10 @@ function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
   );
 }
 
-export function VenuePeopleTab({ venueId }: VenuePeopleTabProps) {
+export { VenuePeopleTab } from './VenuePeopleTabOptimized';
+
+// Legacy export for backwards compatibility
+export function VenuePeopleTabOld({ venueId }: VenuePeopleTabProps) {
   return (
     <Suspense fallback={
       <div className="p-6 space-y-4">
