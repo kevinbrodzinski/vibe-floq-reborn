@@ -11,6 +11,7 @@ import { UserProfileByUsername } from '@/components/UserProfileByUsername';
 import ProfileSettings from '@/pages/ProfileSettings';
 import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
+import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
 
 export const AppRoutes = () => (
   <Routes>
@@ -18,6 +19,7 @@ export const AppRoutes = () => (
     <Route path="/field" element={<LegacyRedirect />} />
     <Route path="/floqs" element={<FlocksHome />} />
     <Route path="/floqs/:floqId" element={<FloqDetail />} />
+    <Route path="/floqs/:floqId/plans/new" element={<NewPlan />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
     <Route path="/afterglow" element={<AfterglowScreen />} />

@@ -47,14 +47,15 @@ interface UseFloqDetailsOptions {
 
 export function useFloqDetails(
   floqId: string | null, 
+  userId?: string,
   { enabled = true }: UseFloqDetailsOptions = {}
 ) {
   const { session } = useAuth();
   const user = session?.user;
 
   const query = useQuery({
-    queryKey: ["floq-details", floqId, user?.id],
-    enabled: enabled && !!floqId && !!user?.id, // Wait for session to load
+    queryKey: ["floq-details", floqId, userId || user?.id],
+    enabled: enabled && !!floqId && !!(userId || user?.id), // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
       
@@ -121,13 +122,14 @@ export function useFloqDetails(
       })) || [];
 
       // Check if current user is joined and their role
-      const userParticipant = participants.find(p => p.user_id === user?.id);
+      const currentUserId = userId || user?.id;
+      const userParticipant = participants.find(p => p.user_id === currentUserId);
       const isJoined = !!userParticipant;
-      const isCreator = floqData.creator_id === user?.id;
+      const isCreator = floqData.creator_id === currentUserId;
       
       console.log('🔍 Floq details debug:', {
         floqId,
-        userId: user?.id,
+        userId: currentUserId,
         creatorId: floqData.creator_id,
         isCreator,
         participantsCount: participants.length,

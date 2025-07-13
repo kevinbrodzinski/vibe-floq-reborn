@@ -24,7 +24,7 @@ const FloqDetail = () => {
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
   
-  const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
+  const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId, session?.user?.id);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
   const { joinFloq, leaveFloq } = useOfflineQueue();
   

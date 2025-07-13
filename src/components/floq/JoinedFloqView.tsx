@@ -229,7 +229,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 <p className="text-sm text-muted-foreground mb-4">
                   Coordinate activities and future meetups
                 </p>
-                {isHost && (
+                {isHost ? (
                   <Button
                     onClick={() => navigate(`/floqs/${floqDetails.id}/plans/new`)}
                     className="mt-6 self-center"
@@ -237,10 +237,11 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                     <Calendar className="mr-2 h-4 w-4" />
                     Create first plan
                   </Button>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Waiting for the host to add the first plan
+                  </p>
                 )}
-                <div className="text-xs text-muted-foreground mt-4">
-                  Coming soon: Plan coordination tools
-                </div>
               </div>
             </Card>
           </TabsContent>
