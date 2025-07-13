@@ -160,8 +160,8 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
     onVenueTap
   }), [allVenues, onVenueTap]);
 
-  // If not open, unmount completely to prevent navigation blocking
-  if (!isOpen) return null;
+  // Return null immediately when closing starts to prevent navigation blocking
+  if (!isOpen && !isDragging) return null;
 
   const shouldUseVirtualization = allVenues.length > 50;
 
@@ -169,7 +169,11 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
     <>
       {/* Backdrop overlay - doesn't cover navigation */}
       <motion.div
-        className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50 z-[65]"
+        className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50"
+        style={{ 
+          zIndex: Z_LAYERS.SHEET_BACKDROP,
+          pointerEvents: isOpen && !isDragging ? 'auto' : 'none' 
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -180,12 +184,13 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
       <motion.div
         ref={containerRef}
         className={cn(
-          "fixed inset-x-4 z-[60] pointer-events-auto",
+          "fixed inset-x-4 pointer-events-auto",
           "bg-background/95 backdrop-blur-md border border-border/40",
           "shadow-2xl rounded-t-3xl overflow-hidden",
           "will-change-transform"
         )}
         style={{
+          zIndex: Z_LAYERS.SHEETS,
           bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
           height: '80vh',
           touchAction: 'pan-y',

@@ -27,6 +27,7 @@ import type { Vibe } from "@/types";
 import { useStableMemo } from "@/hooks/useStableMemo";
 import { useFriends } from "@/hooks/useFriends";
 import { useBucketedPresence } from "@/hooks/useBucketedPresence";
+import { Z_LAYERS } from "@/lib/z-layers";
 
 // Use enhanced geolocation hook with user gesture requirement
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
@@ -417,20 +418,17 @@ export const FieldScreen = () => {
           key="map-container"
           className={clsx(
             "fixed inset-x-0 fullscreen-map-wrapper",
-            isFull ? "z-50 inset-0" : "top-12 bottom-0",
-            isList ? "z-30" : ""
+            isFull ? "inset-0" : "top-12 bottom-0"
           )}
+          style={{ 
+            zIndex: isFull ? Z_LAYERS.VIEWPORT_CONTROLS : isList ? 30 : 'auto' 
+          }}
           initial={false}
           animate={{
             y: isFull ? 0 : isList ? 0 : 0,
             height: isFull ? '100vh' : isList ? '35vh' : '100%'
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-          style={{
-            paddingTop: isFull ? 'env(safe-area-inset-top)' : 0,
-            paddingBottom: isFull ? 'env(safe-area-inset-bottom)' : 0,
-            touchAction: isFull ? 'none' : 'auto'
-          }}
         >
           {(mode === 'map' || mode === 'full') && (
             <FieldVisualization
@@ -466,7 +464,8 @@ export const FieldScreen = () => {
 
         {/* Header - hidden in full mode */}
         <motion.div
-          className="absolute top-0 left-0 right-0 z-50"
+          className="absolute top-0 left-0 right-0"
+          style={{ zIndex: Z_LAYERS.FIELD_HEADER }}
           animate={{
             y: isFull ? '-100%' : 0,
             opacity: isFull ? 0 : 1
