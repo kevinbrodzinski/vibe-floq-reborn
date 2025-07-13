@@ -4,15 +4,21 @@ import { FieldLayout } from "./field/FieldLayout";
 import { FieldGestureProvider } from "./field/FieldGestureProvider";
 
 export const FieldScreen = () => {
+  // Clean up query params only when leaving Field route
   useEffect(() => {
-    const handler = () => {
-      const params = new URLSearchParams(window.location.search);
-      params.delete('full');
-      params.delete('view');
-      history.replaceState(null, '', `?${params.toString()}`);
+    return () => {
+      // Only clean up if we're still on a Field-related route
+      if (!window.location.pathname.startsWith('/field')) {
+        const params = new URLSearchParams(window.location.search);
+        params.delete('full');
+        params.delete('view');
+        if (params.toString()) {
+          history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+        } else {
+          history.replaceState(null, '', window.location.pathname);
+        }
+      }
     };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
   }, []);
 
   return (
