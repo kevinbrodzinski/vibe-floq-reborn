@@ -142,7 +142,7 @@ export function CreateFloqSheet() {
     <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
       <SheetContent side="bottom" className="w-full max-w-lg mx-auto p-0 overflow-hidden sm:rounded-2xl h-[95vh] flex flex-col">
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm">
+        <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -158,7 +158,7 @@ export function CreateFloqSheet() {
           </div>
         </SheetHeader>
 
-        {/* Form Content - Now properly scrollable */}
+        {/* Form Content - Scrollable */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <form id="create-floq-form" onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -319,8 +319,8 @@ export function CreateFloqSheet() {
           </ScrollArea>
         </div>
 
-        {/* Submit Button - Always visible inside modal */}
-        <div className="bg-background border-t p-4">
+        {/* Submit Button - Fixed to bottom of modal */}
+        <div className="flex-shrink-0 bg-background border-t p-4">
           <Button 
             type="submit" 
             form="create-floq-form"
