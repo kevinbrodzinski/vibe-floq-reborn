@@ -452,7 +452,7 @@ export const FieldScreen = () => {
           {isList && (
             <motion.div
               key="list-container"
-              className="fixed inset-x-0 bottom-[var(--mobile-nav-height)] z-40 bg-background/90 backdrop-blur"
+              className="fixed inset-x-0 bottom-[var(--mobile-nav-height)] z-[35] bg-background/90 backdrop-blur"
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
