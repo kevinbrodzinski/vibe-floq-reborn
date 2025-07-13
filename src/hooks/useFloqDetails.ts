@@ -124,6 +124,16 @@ export function useFloqDetails(
       const userParticipant = participants.find(p => p.user_id === user?.id);
       const isJoined = !!userParticipant;
       const isCreator = floqData.creator_id === user?.id;
+      
+      console.log('🔍 Floq details debug:', {
+        floqId,
+        userId: user?.id,
+        creatorId: floqData.creator_id,
+        isCreator,
+        participantsCount: participants.length,
+        userParticipant: userParticipant ? { role: userParticipant.role, user_id: userParticipant.user_id } : null,
+        isJoined
+      });
 
       // Extract location coordinates with null guard
       const locationCoords = floqData.location as any;

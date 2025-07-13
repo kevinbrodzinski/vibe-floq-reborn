@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useSession } from '@supabase/auth-helpers-react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -17,6 +18,7 @@ import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const session = useSession();
   
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
@@ -119,16 +121,20 @@ const FloqDetail = () => {
     );
   }
 
+  // Fallback logic for creator joined status - if server says not joined but you're the creator, you're joined
+  const computedIsJoined = floqDetails.is_joined || floqDetails.creator_id === session?.user?.id;
+  const isCreator = floqDetails.creator_id === session?.user?.id;
+
   // Bifurcate the view based on membership status
   const renderFloqView = () => {
-    if (floqDetails.is_joined || floqDetails.is_creator) {
+    if (computedIsJoined) {
       return (
         <JoinedFloqView
           floqDetails={floqDetails}
           onLeave={handleLeave}
           isLeaving={leaveFloq.isPending}
           liveScore={liveScore}
-          onEndFloq={floqDetails.is_creator && !floqDetails.ends_at ? () => setShowEndConfirm(true) : undefined}
+          onEndFloq={isCreator && !floqDetails.ends_at ? () => setShowEndConfirm(true) : undefined}
           isEndingFloq={isEndingFloq}
         />
       );
