@@ -15,7 +15,7 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   const NextIcon = isFull ? Minimize2 : Maximize2;
 
   return (
-    <div className="fixed right-4 top-1/3 z-[50] flex flex-col gap-2">
+    <div className="fixed right-4 top-1/3 z-[50] flex flex-col space-y-2">
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
         <button
