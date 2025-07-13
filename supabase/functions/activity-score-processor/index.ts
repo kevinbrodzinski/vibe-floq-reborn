@@ -51,6 +51,14 @@ serve(async (req) => {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
+  } finally {
+    await logInvocation({
+      functionName: 'activity-score-processor',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 
   async function doWork() {
@@ -145,13 +153,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } // End of doWork function
-  } finally {
-    await logInvocation({
-      functionName: 'activity-score-processor',
-      status,
-      durationMs: Date.now() - startTime,
-      errorMessage,
-      metadata
-    });
-  }
 });
