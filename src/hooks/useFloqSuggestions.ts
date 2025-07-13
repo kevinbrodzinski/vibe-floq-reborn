@@ -9,7 +9,7 @@ export interface FloqSuggestion {
   distance_meters: number;
   participant_count: number;
   confidence_score: number;
-  reasoning: any;
+  reasoning: Record<string, any>;
 }
 
 interface UseFloqSuggestionsOptions {
@@ -44,7 +44,7 @@ export function useFloqSuggestions({
         throw error;
       }
 
-      return (data || []) as FloqSuggestion[];
+      return (data || []) satisfies FloqSuggestion[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes

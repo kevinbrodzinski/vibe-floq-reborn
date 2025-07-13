@@ -3,6 +3,7 @@ import { MapPin, X, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFloqSuggestions, type FloqSuggestion } from "@/hooks/useFloqSuggestions";
 import { toast } from "@/hooks/use-toast";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SuggestionsToastProps {
   geo?: { lat: number; lng: number };
@@ -19,6 +20,40 @@ export function SuggestionsToast({
 }: SuggestionsToastProps) {
   const [dismissedFloqs, setDismissedFloqs] = useState<Set<string>>(new Set());
   const [lastShownTime, setLastShownTime] = useState<number>(0);
+
+  // Load persisted state on mount
+  useEffect(() => {
+    const loadPersistedState = async () => {
+      try {
+        const [dismissedData, lastShownData] = await Promise.all([
+          AsyncStorage.getItem('suggestions_dismissed_floqs'),
+          AsyncStorage.getItem('suggestions_last_shown_time')
+        ]);
+        
+        if (dismissedData) {
+          setDismissedFloqs(new Set(JSON.parse(dismissedData)));
+        }
+        if (lastShownData) {
+          setLastShownTime(parseInt(lastShownData, 10));
+        }
+      } catch (error) {
+        console.warn('Failed to load suggestions persistence data:', error);
+      }
+    };
+    
+    loadPersistedState();
+  }, []);
+
+  // Persist state changes
+  useEffect(() => {
+    AsyncStorage.setItem('suggestions_dismissed_floqs', JSON.stringify(Array.from(dismissedFloqs)));
+  }, [dismissedFloqs]);
+
+  useEffect(() => {
+    if (lastShownTime > 0) {
+      AsyncStorage.setItem('suggestions_last_shown_time', lastShownTime.toString());
+    }
+  }, [lastShownTime]);
   
   const { data: suggestions = [] } = useFloqSuggestions({ 
     geo, 
@@ -72,10 +107,21 @@ export function SuggestionsToast({
           <Button
             size="sm"
             onClick={() => {
+              // Analytics tracking
+              if (typeof window !== 'undefined' && (window as any).posthog) {
+                (window as any).posthog.capture('floq_join_from_suggestion', {
+                  floq_id: highConfidenceSuggestion.floq_id,
+                  confidence_score: highConfidenceSuggestion.confidence_score,
+                  distance_meters: highConfidenceSuggestion.distance_meters,
+                  source: 'smart_notification'
+                });
+              }
+              
               onJoinFloq?.(highConfidenceSuggestion.floq_id);
               dismiss();
             }}
             className="text-xs"
+            aria-label={`Join ${highConfidenceSuggestion.title} floq`}
           >
             Join
           </Button>
@@ -83,10 +129,20 @@ export function SuggestionsToast({
             size="sm"
             variant="ghost"
             onClick={() => {
+              // Analytics tracking
+              if (typeof window !== 'undefined' && (window as any).posthog) {
+                (window as any).posthog.capture('floq_suggestion_dismissed', {
+                  floq_id: highConfidenceSuggestion.floq_id,
+                  confidence_score: highConfidenceSuggestion.confidence_score,
+                  source: 'smart_notification'
+                });
+              }
+              
               setDismissedFloqs(prev => new Set([...prev, highConfidenceSuggestion.floq_id]));
               dismiss();
             }}
             className="text-xs"
+            aria-label="Dismiss suggestion"
           >
             <X size={12} />
           </Button>

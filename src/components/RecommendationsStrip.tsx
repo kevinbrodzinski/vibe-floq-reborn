@@ -38,6 +38,15 @@ const SuggestionCard = ({
     <div 
       className="flex-shrink-0 w-72 bg-card/40 backdrop-blur-lg rounded-2xl border border-border/30 p-4 cursor-pointer transition-all duration-300 hover:scale-105 hover:bg-card/60"
       onClick={() => onSelect?.(floq)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Join ${floq.title} floq, ${floq.primary_vibe} vibe, ${formatDistance(floq.distance_meters)} away`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect?.(floq);
+        }
+      }}
     >
       <div className="flex items-center gap-3 mb-3">
         <div 
@@ -74,7 +83,25 @@ const SuggestionCard = ({
             <span>{floq.participant_count}</span>
           </div>
         </div>
-        <Button size="sm" variant="ghost" className="text-xs h-7">
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="text-xs h-7"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Analytics tracking
+            if (typeof window !== 'undefined' && (window as any).posthog) {
+              (window as any).posthog.capture('floq_join_from_recommendations', {
+                floq_id: floq.floq_id,
+                confidence_score: floq.confidence_score,
+                distance_meters: floq.distance_meters,
+                source: 'recommendations_strip'
+              });
+            }
+            onSelect?.(floq);
+          }}
+          aria-label={`Join ${floq.title}`}
+        >
           Join
         </Button>
       </div>
