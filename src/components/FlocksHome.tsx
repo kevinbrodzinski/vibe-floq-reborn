@@ -248,7 +248,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                         </div>
                       </div>
                       {floq.is_joined && (
-                        <Badge variant="default" className="text-xs">
+                        <Badge 
+                          variant={floq.creator_id === session?.user?.id ? 'default' : 'secondary'} 
+                          className="text-xs whitespace-nowrap"
+                        >
                           {floq.creator_id === session?.user?.id ? 'Host' : 'Joined'}
                         </Badge>
                       )}

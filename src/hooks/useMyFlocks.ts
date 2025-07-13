@@ -85,7 +85,6 @@ export function useMyFlocks({
           )
         `)
         .eq('user_id', user.id)
-        .in('role', ['creator', 'member'])
         .gt('floqs.ends_at', new Date().toISOString())
         .order('joined_at', { ascending: false })
         .limit(limit);
