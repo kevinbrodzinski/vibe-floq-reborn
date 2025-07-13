@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { useCreateFloq } from '@/hooks/useCreateFloq';
+import { trackFloqCreated } from '@/lib/analytics';
 import type { Vibe } from '@/types';
 
 const VIBE_OPTIONS: Vibe[] = [
@@ -60,7 +61,7 @@ export function CreateFloqSheet() {
       const now = new Date();
       const endsAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
 
-      await createFloq({
+      const floqId = await createFloq({
         title: title.trim(),
         description: description.trim() || undefined,
         primary_vibe: selectedVibe,
@@ -70,6 +71,9 @@ export function CreateFloqSheet() {
         max_participants: maxParticipants,
         visibility: isPrivate ? 'private' : 'public'
       });
+
+      // Track floq creation
+      trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate);
 
       // Reset form
       setTitle('');

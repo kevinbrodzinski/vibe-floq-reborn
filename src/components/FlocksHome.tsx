@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { RefreshCcw, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +12,13 @@ import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useDrag } from '@use-gesture/react';
 
 interface FlocksHomeProps {
   geo?: { lat: number; lng: number };
@@ -45,10 +46,26 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const refreshRef = useRef<HTMLDivElement>(null);
   
-  // Use geolocation hook as fallback
-  const { coords } = useGeolocation({ enableHighAccuracy: true });
+  // Use enhanced geolocation hook with better permission handling
+  const { coords, permissionDenied, error: geoError, requestLocation } = useEnhancedGeolocation({ enableHighAccuracy: true });
   const geo = propGeo || coords;
+
+  // Pull-to-refresh gesture handling
+  const bind = useDrag(
+    ({ last, movement: [, my], cancel, canceled }) => {
+      if (my < -70 && !canceled) {
+        cancel();
+        handleRefresh();
+      }
+    },
+    {
+      axis: 'y',
+      filterTaps: true,
+      pointer: { touch: true }
+    }
+  );
 
   // Data hooks with search query filter
   const { data: myFlocks = [], isLoading: myFlocksLoading } = useMyFlocks();
@@ -81,7 +98,25 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background" ref={refreshRef} {...bind()}>
+      {/* Geolocation Permission Banner */}
+      {permissionDenied && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-yellow-600 dark:text-yellow-400">
+              📍 Location access needed to see nearby flocks
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={requestLocation}
+              className="text-xs h-6"
+            >
+              Enable
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Header with search and filters */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
         <div className="flex items-center gap-3">
