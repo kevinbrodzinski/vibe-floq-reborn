@@ -161,7 +161,7 @@ export function CreateFloqSheet() {
         {/* Form Content - Now properly scrollable */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
-            <form id="create-floq-form" onSubmit={handleSubmit} className="p-6 space-y-6 pb-24">
+            <form id="create-floq-form" onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Title */}
               <div>
                 <Label htmlFor="title">Floq Name *</Label>
@@ -319,24 +319,21 @@ export function CreateFloqSheet() {
           </ScrollArea>
         </div>
 
-        {/* Submit Button - Fixed positioning above mobile nav */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-md p-4 border-t z-40" 
-             style={{ paddingBottom: 'calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 16px)' }}>
-          <div className="max-w-lg mx-auto">
-            <Button 
-              type="submit" 
-              form="create-floq-form"
-              className="w-full" 
-              disabled={!title.trim() || isPending || (durationMode === 'custom' && !customEndTime)}
-            >
-              {isPending ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              {isPending ? 'Creating...' : 'Create Floq'}
-            </Button>
-          </div>
+        {/* Submit Button - Always visible inside modal */}
+        <div className="bg-background border-t p-4">
+          <Button 
+            type="submit" 
+            form="create-floq-form"
+            className="w-full" 
+            disabled={!title.trim() || isPending || (durationMode === 'custom' && !customEndTime)}
+          >
+            {isPending ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
+            {isPending ? 'Creating...' : 'Create Floq'}
+          </Button>
         </div>
       </SheetContent>
     </Sheet>
