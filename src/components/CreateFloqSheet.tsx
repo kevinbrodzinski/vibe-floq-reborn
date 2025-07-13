@@ -110,8 +110,11 @@ export function CreateFloqSheet() {
         </SheetHeader>
 
         {/* Scrollable Form */}
-        <ScrollArea className="h-[70vh] sm:h-auto overscroll-contain">
-          <form onSubmit={handleSubmit} className="space-y-6 px-6 py-4 pb-12">
+        <ScrollArea 
+          className="flex-1 overflow-y-auto overscroll-y-contain px-4 max-h-[calc(100dvh-12rem)] pb-[env(safe-area-inset-bottom)]"
+          onWheelCapture={(e) => e.stopPropagation()}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6 py-4 pb-12">
             {/* Title */}
             <div>
               <Label htmlFor="title">Floq Name *</Label>
@@ -215,7 +218,7 @@ export function CreateFloqSheet() {
         </ScrollArea>
 
         {/* Sticky Footer */}
-        <div className="sticky bottom-0 bg-background/90 backdrop-blur p-4 border-t">
+        <div className="sticky bottom-0 md:static bg-background/90 backdrop-blur p-4 pt-3 pb-[calc(theme(spacing.4)+env(safe-area-inset-bottom))] border-t">
           <Button 
             type="submit" 
             onClick={handleSubmit}

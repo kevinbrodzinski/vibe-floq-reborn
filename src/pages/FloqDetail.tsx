@@ -121,7 +121,7 @@ const FloqDetail = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-30 bg-background/90 backdrop-blur flex items-center gap-2 px-4 py-3 border-b">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur flex items-center gap-2 px-4 py-3 border-b">
         <Button variant="ghost" size="sm" onClick={goBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -134,8 +134,8 @@ const FloqDetail = () => {
       </header>
 
       {/* Scrollable Body */}
-      <ScrollArea className="flex-1 overscroll-contain">
-        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+      <ScrollArea className="flex-1 overscroll-contain max-h-[calc(100dvh-8rem)]">
+        <div className="max-w-md mx-auto px-4 py-6 pb-[env(safe-area-inset-bottom)] space-y-6">
           {/* Hero Section */}
           <Card className="p-6 bg-gradient-to-br from-card to-card/80">
             <div className="flex items-start gap-4">
