@@ -8,6 +8,7 @@ import { useFloqChat } from '@/hooks/useFloqChat';
 import { useSession } from '@supabase/auth-helpers-react';
 import { MessageBubble } from './MessageBubble';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface FloqChatProps {
   floqId: string;
@@ -34,7 +35,13 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     return (
       <div className="flex items-center justify-center h-[400px]">
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">Please sign in to access chat</p>
+          <p className="text-sm text-muted-foreground mb-2">Please sign in to access chat</p>
+          <Link 
+            to="/login" 
+            className="text-sm text-primary hover:underline"
+          >
+            Sign in
+          </Link>
         </div>
       </div>
     );

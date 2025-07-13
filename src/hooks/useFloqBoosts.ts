@@ -135,10 +135,13 @@ export const useFloqBoost = () => {
       queryClient.invalidateQueries({ queryKey: ['active-floqs'] });
       queryClient.invalidateQueries({ queryKey: ['user-boost-status'] });
       
-      console.log('📊 Boost analytics data (1hr duration):', data.analytics);
+      if (process.env.NODE_ENV === 'development') console.debug('📊 Boost analytics data (1hr duration):', data.analytics);
+      
+      // Dynamic vibe emoji based on boost type
+      const vibeEmoji = data.vibe === 'hype' ? '🔥' : '⚡';
       
       toast({
-        title: "Boosted! ⚡",
+        title: `${data.vibe === 'hype' ? 'Hype boost applied!' : 'Boosted!'} ${vibeEmoji}`,
         description: "You've given this gathering extra energy for 1 hour.",
       });
     },

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
+import { FloqStatusBadge } from '@/components/ui/FloqStatusBadge';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { FilterModal } from '@/components/FilterModal';
@@ -247,14 +248,11 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                           <span>{formatDistance(floq.distance_meters)} away</span>
                         </div>
                       </div>
-                      {floq.is_joined && (
-                        <Badge 
-                          variant={floq.creator_id === session?.user?.id ? 'default' : 'outline'} 
-                          className="text-xs whitespace-nowrap"
-                        >
-                          {floq.creator_id === session?.user?.id ? 'Host' : 'Joined'}
-                        </Badge>
-                      )}
+                      <FloqStatusBadge
+                        creatorId={floq.creator_id}
+                        isJoined={floq.is_joined}
+                        className="text-xs whitespace-nowrap"
+                      />
                     </div>
                   </div>
                 ))}

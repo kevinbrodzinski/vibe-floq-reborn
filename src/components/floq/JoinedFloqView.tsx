@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { hasManagePermission } from '@/utils/permissions';
+import { useCallback } from 'react';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
@@ -46,6 +48,12 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   // Bulletproof host detection
   const isHost = useMemo(() => 
     floqDetails?.creator_id === session?.user.id, 
+    [floqDetails?.creator_id, session?.user.id]
+  );
+
+  // Check manage permissions (future-proofed for roles)
+  const canManage = useMemo(() => 
+    hasManagePermission(floqDetails?.creator_id, session?.user.id),
     [floqDetails?.creator_id, session?.user.id]
   );
 
@@ -161,7 +169,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="plans">Plans</TabsTrigger>
-            {isHost && <TabsTrigger value="manage">Manage</TabsTrigger>}
+            {canManage && <TabsTrigger value="manage">Manage</TabsTrigger>}
           </TabsList>
 
           {/* Action Pills Row - Only show if member */}
@@ -191,7 +199,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                     
                     if (error) throw error;
                     
-                    console.log('Boost applied successfully');
+                    if (process.env.NODE_ENV === 'development') console.debug('Boost applied successfully');
                   } catch (error) {
                     console.error('Failed to boost floq:', error);
                   }
@@ -231,7 +239,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 </p>
                 {isHost ? (
                   <Button
-                    onClick={() => navigate(`/floqs/${floqDetails.id}/plans/new`)}
+                    onClick={useCallback(() => navigate(`/floqs/${floqDetails.id}/plans/new`), [floqDetails.id, navigate])}
                     className="mt-6 self-center"
                   >
                     <Calendar className="mr-2 h-4 w-4" />
@@ -239,7 +247,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                   </Button>
                 ) : (
                   <p className="text-muted-foreground">
-                    Waiting for the host to add the first plan
+                    No plans yet — ask the host!
                   </p>
                 )}
               </div>
@@ -247,7 +255,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </TabsContent>
 
           {/* Manage Tab - Host Only */}
-          {isHost && (
+          {canManage && (
             <TabsContent value="manage" className="mt-0">
               <Card className="p-4">
                 <div className="space-y-4">
@@ -307,7 +315,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             setShowDeleteConfirm(false);
             
             // Analytics event after successful deletion
-            console.log('floq_deleted', { 
+            if (process.env.NODE_ENV === 'development') console.debug('floq_deleted', { 
               floq_id: floqDetails.id, 
               participant_count: floqDetails.participant_count 
             });
