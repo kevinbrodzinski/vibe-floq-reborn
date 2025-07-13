@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { VibeRing } from '@/components/VibeRing';
 import { FloqChat } from '@/components/floq/FloqChat';
 import { InviteFriendsButton } from '@/components/floq/InviteFriendsButton';
@@ -118,24 +119,23 @@ const FloqDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={goBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-lg font-semibold truncate">{floqDetails.title}</h1>
-              {floqDetails.name && (
-                <p className="text-sm text-muted-foreground truncate">{floqDetails.name}</p>
-              )}
-            </div>
-          </div>
+    <div className="flex flex-col h-screen">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-background/90 backdrop-blur flex items-center gap-2 px-4 py-3 border-b">
+        <Button variant="ghost" size="sm" onClick={goBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold truncate">{floqDetails.title}</h1>
+          {floqDetails.name && (
+            <p className="text-sm text-muted-foreground truncate">{floqDetails.name}</p>
+          )}
         </div>
+      </header>
 
-        <div className="p-4 space-y-6">
+      {/* Scrollable Body */}
+      <ScrollArea className="flex-1 overscroll-contain">
+        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
           {/* Hero Section */}
           <Card className="p-6 bg-gradient-to-br from-card to-card/80">
             <div className="flex items-start gap-4">
@@ -314,8 +314,12 @@ const FloqDetail = () => {
               </div>
             )}
           </div>
+
+          {/* Bottom padding for scroll clearance */}
+          <div className="pb-8" />
         </div>
-      </div>
+        <ScrollBar orientation="vertical" />
+      </ScrollArea>
       
       {/* Chat Component */}
       {floqId && (
