@@ -25,6 +25,7 @@ export interface NearbyFloq {
   }>;
   activity_score?: number;
   is_joined: boolean;
+  creator_id?: string;
 }
 
 interface UseNearbyFlocksOptions {
@@ -111,6 +112,7 @@ export function useNearbyFlocks({
         starts_in_min: floq.starts_in_min,
         members: floq.members || [],
         is_joined: joinedFloqIds.includes(floq.id),
+        creator_id: floq.creator_id || undefined,
       }));
 
       // Apply filters

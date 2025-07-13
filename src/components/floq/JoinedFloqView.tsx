@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X, Trash2 } from 'lucide-react';
+import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -108,7 +108,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 {floqDetails.primary_vibe}
               </Badge>
               {(isHost || floqDetails.is_creator) && (
-                <Badge variant="secondary" className="text-xs">You're the host</Badge>
+                <Badge variant="secondary" className="text-xs whitespace-nowrap">You're the host</Badge>
               )}
               {!floqDetails.ends_at && (
                 <Badge className="bg-persistent text-persistent-foreground text-xs">
@@ -229,7 +229,16 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 <p className="text-sm text-muted-foreground mb-4">
                   Coordinate activities and future meetups
                 </p>
-                <div className="text-xs text-muted-foreground">
+                {isHost && (
+                  <Button
+                    onClick={() => navigate(`/floqs/${floqDetails.id}/plans/new`)}
+                    className="mt-6 self-center"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Create first plan
+                  </Button>
+                )}
+                <div className="text-xs text-muted-foreground mt-4">
                   Coming soon: Plan coordination tools
                 </div>
               </div>

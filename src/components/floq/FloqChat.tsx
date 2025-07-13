@@ -28,6 +28,18 @@ export const FloqChat: React.FC<FloqChatProps> = ({
 }) => {
   const session = useSession();
   const user = session?.user;
+
+  // Show loading spinner if not authenticated
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-center">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading chat...</p>
+        </div>
+      </div>
+    );
+  }
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

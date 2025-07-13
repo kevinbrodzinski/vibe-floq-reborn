@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { RefreshCcw, Filter, Search } from 'lucide-react';
+import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const refreshRef = useRef<HTMLDivElement>(null);
+  const session = useSession();
   
   // Use enhanced geolocation hook with better permission handling
   const { coords, permissionDenied, error: geoError, requestLocation } = useEnhancedGeolocation({ enableHighAccuracy: true });
@@ -247,7 +249,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                       </div>
                       {floq.is_joined && (
                         <Badge variant="default" className="text-xs">
-                          Joined
+                          {floq.creator_id === session?.user?.id ? 'Host' : 'Joined'}
                         </Badge>
                       )}
                     </div>
