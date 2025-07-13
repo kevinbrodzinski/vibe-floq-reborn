@@ -538,7 +538,7 @@ export const FieldScreen = () => {
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
           style={{
-            pointerEvents: isFull ? 'none' : 'auto'
+            pointerEvents: (isFull || venuesSheetOpen || selectedVenueId) ? 'none' : 'auto'
           }}
         >
           {/* Social Gesture Manager */}

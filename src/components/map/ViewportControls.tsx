@@ -1,6 +1,7 @@
 import { MapPin, Plus, Minus, Target, Maximize2, Minimize2, List } from "lucide-react";
 import type { MapViewportControls } from "@/hooks/useMapViewport";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
+import { Z_LAYERS } from "@/lib/z-layers";
 
 interface ViewportControlsProps {
   controls: MapViewportControls;
@@ -15,7 +16,7 @@ export const ViewportControls = ({ controls }: ViewportControlsProps) => {
   const NextIcon = isFull ? Minimize2 : Maximize2;
 
   return (
-    <div className="fixed right-4 top-1/3 z-[50] flex flex-col space-y-2">
+    <div className={`fixed right-4 top-1/3 z-[${Z_LAYERS.VIEWPORT_CONTROLS}] flex flex-col space-y-2`}>
       {/* Zoom Controls */}
       <div className="bg-card/90 backdrop-blur-sm border border-border rounded-lg p-1 flex flex-col gap-1">
         <button
