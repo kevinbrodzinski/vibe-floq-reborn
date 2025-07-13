@@ -4,6 +4,7 @@ import { Sparkles, Users, Zap } from 'lucide-react';
 import { useShakeDetection } from '@/hooks/useShakeDetection';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useFieldUI } from '@/components/field/contexts/FieldUIContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
 interface Friend {
@@ -26,13 +27,39 @@ export const ConstellationGestureHandler = ({
 }: ConstellationGestureHandlerProps) => {
   const { socialHaptics } = useHapticFeedback();
   const { constellationMode, setConstellationMode } = useFieldUI();
+  const { toast } = useToast();
   const [shakeDetected, setShakeDetected] = useState(false);
   const [discoveryMode, setDiscoveryMode] = useState(false);
   const [multiTouchActive, setMultiTouchActive] = useState(false);
+  const [hasMotionPermission, setHasMotionPermission] = useState(false);
+
+  // Initialize shake detection first to get the permission functions
+  const { requestMotionPermission, isMotionAvailable } = useShakeDetection({
+    onShake: () => {}, // Will be set up properly below
+    onLongPress: () => {}, // Will be set up properly below  
+    onMultiTouch: () => {}, // Will be set up properly below
+    enabled,
+    sensitivity: 12
+  });
+
+  // Check motion permission on mount  
+  useEffect(() => {
+    setHasMotionPermission(isMotionAvailable);
+  }, [isMotionAvailable]);
 
   const handleShake = useCallback(() => {
     if (!enabled) return;
     
+    // Check if motion permission is needed (iOS requirement)
+    if (!hasMotionPermission && !isMotionAvailable) {
+      toast({
+        title: "Enable shake detection",
+        description: "Allow motion sensors to use shake gestures for social discovery"
+      });
+      return;
+    }
+    
+    socialHaptics.shakeActivated();
     setShakeDetected(true);
     setDiscoveryMode(true);
     
@@ -49,7 +76,7 @@ export const ConstellationGestureHandler = ({
       setShakeDetected(false);
       setDiscoveryMode(false);
     }, 3000);
-  }, [enabled, constellationMode, setConstellationMode, onConstellationGesture, friends]);
+  }, [enabled, constellationMode, setConstellationMode, onConstellationGesture, friends, hasMotionPermission, isMotionAvailable, toast, socialHaptics]);
 
   const handleLongPress = useCallback(() => {
     if (!enabled || !constellationMode) return;
@@ -71,6 +98,7 @@ export const ConstellationGestureHandler = ({
     setTimeout(() => setMultiTouchActive(false), 1000);
   }, [enabled, onConstellationGesture, friends]);
 
+  // Re-setup shake detection with proper handlers
   useShakeDetection({
     onShake: handleShake,
     onLongPress: handleLongPress,
@@ -97,8 +125,50 @@ export const ConstellationGestureHandler = ({
     setDiscoveryMode(false);
   };
 
+  // Add a button to request motion permission for iOS users
+  const handleRequestPermission = async () => {
+    const granted = await requestMotionPermission();
+    setHasMotionPermission(granted);
+    if (granted) {
+      toast({
+        title: "Motion sensors enabled!",
+        description: "You can now use shake gestures for social discovery"
+      });
+    }
+  };
+
   return (
     <>
+      {/* Motion Permission Banner for iOS */}
+      {!hasMotionPermission && !isMotionAvailable && (
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50"
+        >
+          <div className="bg-accent/95 backdrop-blur-xl rounded-lg border border-accent/30 p-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 text-accent-foreground" />
+              <div className="flex-1">
+                <div className="text-accent-foreground font-medium text-sm">
+                  Enable shake discovery
+                </div>
+                <div className="text-accent-foreground/80 text-xs">
+                  Allow motion sensors for gesture detection
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRequestPermission}
+                className="text-xs px-3 py-1"
+              >
+                Enable
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
       {/* Shake Detection Feedback */}
       <AnimatePresence>
         {shakeDetected && (

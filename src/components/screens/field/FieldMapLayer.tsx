@@ -9,6 +9,7 @@ import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { SocialInteractionModal } from "@/components/social/SocialInteractionModal";
 import { ConstellationGestureHandler } from "@/components/social/ConstellationGestureHandler";
+import { FloqInteractionSheet } from "@/components/floq/FloqInteractionSheet";
 import { DMQuickSheet } from "@/components/social/DMQuickSheet";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
@@ -28,6 +29,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   
   // Phase 2: Social interaction state
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
+  const [selectedFloq, setSelectedFloq] = useState<any>(null);
   const [socialModalOpen, setSocialModalOpen] = useState(false);
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
@@ -176,8 +178,11 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   // Phase 2: Handle floq joining
   const handleFloqJoin = useCallback((floqId: string) => {
     socialHaptics.floqJoined();
-    joinFloq({ floqId });
-  }, [joinFloq, socialHaptics]);
+    const floq = floqEvents.find(f => f.id === floqId);
+    if (floq) {
+      setSelectedFloq(floq);
+    }
+  }, [floqEvents, socialHaptics]);
 
   // Phase 2: DM sheet handlers
   const handleDMOpen = useCallback((personId: string) => {
@@ -272,11 +277,21 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
         onDMOpen={handleDMOpen}
       />
 
+      {/* Floq Interaction Sheet */}
+      <FloqInteractionSheet
+        floq={selectedFloq}
+        open={!!selectedFloq}
+        onOpenChange={(open) => !open && setSelectedFloq(null)}
+        onNavigate={(floqId) => {
+          console.log('Navigate to floq:', floqId);
+          toast({ title: 'Navigation started', description: 'Getting directions...' });
+        }}
+      />
+
       {/* DM Quick Sheet */}
       <DMQuickSheet
         open={dmSheetOpen}
         onOpenChange={setDmSheetOpen}
-        
         recipientId={selectedFriendId}
       />
     </>
