@@ -1555,7 +1555,8 @@ export type Database = {
       }
       create_floq: {
         Args: {
-          p_location: unknown
+          p_lat: number
+          p_lng: number
           p_starts_at: string
           p_vibe: Database["public"]["Enums"]["vibe_enum"]
           p_visibility?: string
