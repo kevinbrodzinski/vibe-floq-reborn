@@ -394,6 +394,100 @@ export type Database = {
           },
         ]
       }
+      floq_invitations: {
+        Row: {
+          created_at: string
+          floq_id: string
+          id: string
+          invitee_id: string
+          inviter_id: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["invitation_status"]
+        }
+        Insert: {
+          created_at?: string
+          floq_id: string
+          id?: string
+          invitee_id: string
+          inviter_id: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+        }
+        Update: {
+          created_at?: string
+          floq_id?: string
+          id?: string
+          invitee_id?: string
+          inviter_id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["invitation_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_invitations_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_invitations_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_invitations_inviter_id_fkey"
+            columns: ["inviter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floq_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          emoji: string | null
+          floq_id: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          emoji?: string | null
+          floq_id: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          emoji?: string | null
+          floq_id?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_messages_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_participants: {
         Row: {
           floq_id: string
@@ -3474,6 +3568,7 @@ export type Database = {
         | "merged"
         | "split"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
+      invitation_status: "pending" | "accepted" | "declined"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -3656,6 +3751,7 @@ export const Constants = {
         "split",
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
+      invitation_status: ["pending", "accepted", "declined"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
