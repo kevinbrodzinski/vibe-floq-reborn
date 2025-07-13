@@ -27,6 +27,7 @@ export interface NearbyFloq {
   activity_score?: number;
   is_joined: boolean;
   creator_id?: string;
+  hasUserBoosted?: boolean;
 }
 
 interface UseNearbyFlocksOptions {

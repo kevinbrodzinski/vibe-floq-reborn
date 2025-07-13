@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { RefreshCcw, Filter, Search } from 'lucide-react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
@@ -80,6 +80,17 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   const { data: suggestions = [], isLoading: suggestionsLoading } = useFloqSuggestions({ 
     geo 
   });
+
+  // Memoized handlers for FloqCard actions
+  const handleBoost = useCallback((floqId: string) => {
+    // TODO: Implement boost logic
+    console.log('Boosting floq:', floqId);
+  }, []);
+
+  const handleLeave = useCallback((floqId: string) => {
+    // TODO: Implement leave logic  
+    console.log('Leaving floq:', floqId);
+  }, []);
 
   const handleFloqPress = (floqId: string) => {
     setSelectedFloqId(floqId);
@@ -234,7 +245,12 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
               <ul role="list" aria-label="Nearby floqs" className="space-y-4">
                 {nearbyFlocks.slice(0, 5).map((floq) => (
                   <li key={floq.id}>
-                    <FloqCard floq={floq} />
+                    <FloqCard 
+                      floq={floq}
+                      onBoost={floq.is_joined ? handleBoost : undefined}
+                      onLeave={floq.is_joined ? handleLeave : undefined}
+                      hasUserBoosted={floq.hasUserBoosted}
+                    />
                   </li>
                 ))}
               </ul>

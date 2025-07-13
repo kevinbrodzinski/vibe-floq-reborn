@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Users, MapPin, Clock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
@@ -6,22 +6,39 @@ import { cn } from '@/lib/utils';
 import { formatDistance } from '@/utils/formatDistance';
 import { formatStartedAgo } from '@/utils/formatTime';
 import { vibeToBorder, getInitials } from '@/utils/vibeColors';
+import { toast } from 'sonner';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
 
 interface FloqCardProps {
   floq: NearbyFloq;
   onBoost?: (floqId: string) => void;
   onLeave?: (floqId: string) => void;
+  hasUserBoosted?: boolean;
 }
 
-export const FloqCard: React.FC<FloqCardProps> = ({ 
+export const FloqCard = React.memo<FloqCardProps>(({ 
   floq, 
   onBoost, 
-  onLeave 
+  onLeave,
+  hasUserBoosted = false
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const vibeColor = vibeToBorder(floq.primary_vibe);
+  const isFull = floq.max_participants ? floq.participant_count >= floq.max_participants : false;
+
+  // Memoized handlers to prevent re-renders
+  const handleBoost = useCallback(() => {
+    if (hasUserBoosted) {
+      toast.info("Already boosted this floq!");
+      return;
+    }
+    onBoost?.(floq.id);
+  }, [hasUserBoosted, onBoost, floq.id]);
+
+  const handleLeave = useCallback(() => {
+    onLeave?.(floq.id);
+  }, [onLeave, floq.id]);
 
   // Swipe gesture handling
   const bind = useDrag(
@@ -31,19 +48,20 @@ export const FloqCard: React.FC<FloqCardProps> = ({
       // Left swipe (leave) - only if joined
       if (mx < -80 && floq.is_joined && onLeave) {
         cancel();
-        onLeave(floq.id);
+        handleLeave();
       }
       
-      // Right swipe (boost)
+      // Right swipe (boost) - guard against already boosted
       if (mx > 80 && onBoost) {
         cancel();
-        onBoost(floq.id);
+        handleBoost();
       }
     },
     {
       axis: 'x',
       filterTaps: true,
-      pointer: { touch: true }
+      pointer: { touch: true },
+      passive: false // For smooth iOS swipe experience
     }
   );
 
@@ -55,15 +73,16 @@ export const FloqCard: React.FC<FloqCardProps> = ({
 
   const statusText = floq.is_joined 
     ? 'Joined' 
-    : floq.participant_count >= (floq.max_participants || 50)
+    : isFull
     ? 'Full' 
     : 'Join';
 
-  const statusClassName = floq.is_joined
-    ? 'bg-primary/20 text-primary'
-    : floq.participant_count >= (floq.max_participants || 50)
-    ? 'bg-muted text-muted-foreground'
-    : 'bg-primary text-primary-foreground hover:brightness-110';
+  const pillBase = 'rounded-full px-3 py-1 text-xs font-medium';
+  const statusClass = floq.is_joined
+    ? `${pillBase} bg-primary/20 text-primary`
+    : isFull
+    ? `${pillBase} bg-muted text-muted-foreground`
+    : `${pillBase} bg-primary text-primary-foreground hover:brightness-110`;
 
   return (
     <button
@@ -77,15 +96,16 @@ export const FloqCard: React.FC<FloqCardProps> = ({
         'bg-card/30 border border-border/20 backdrop-blur-md',
         'hover:bg-card/50 transition-all duration-200',
         'active:scale-[.98] active:brightness-95',
-        'text-left'
+        'text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none'
       )}
     >
       {/* Avatar with vibe ring */}
       <div
+        aria-hidden="true"
         className={cn(
           'shrink-0 h-12 w-12 rounded-full flex items-center justify-center',
           'text-base font-semibold text-primary-foreground bg-muted',
-          'border-2',
+          'border-2 shadow-sm',
           vibeColor
         )}
         title={`${floq.primary_vibe} vibe`}
@@ -95,12 +115,12 @@ export const FloqCard: React.FC<FloqCardProps> = ({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold truncate text-foreground">
+        <h3 className="text-sm font-semibold truncate text-foreground mix-blend-darken dark:mix-blend-normal">
           {floq.title}
         </h3>
         
         {/* Meta row */}
-        <div className="mt-1 flex flex-wrap text-xs text-muted-foreground gap-x-3">
+        <div className="mt-1 flex flex-wrap text-xs text-muted-foreground gap-x-3 mix-blend-darken dark:mix-blend-normal">
           <span className="inline-flex items-center gap-1" title="Member count">
             <Users className="h-3 w-3" />
             {floq.participant_count}/{floq.max_participants || '∞'}
@@ -121,8 +141,8 @@ export const FloqCard: React.FC<FloqCardProps> = ({
       {/* Status pill */}
       <span
         className={cn(
-          'px-3 py-1 rounded-full text-xs font-medium transition-all',
-          statusClassName
+          'transition-all',
+          statusClass
         )}
         title={`Floq status: ${statusText}`}
       >
@@ -130,4 +150,4 @@ export const FloqCard: React.FC<FloqCardProps> = ({
       </span>
     </button>
   );
-};
+});
