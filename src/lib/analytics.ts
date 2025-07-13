@@ -30,3 +30,48 @@ export const track = (event: string, properties?: Record<string, any>) => {
     console.debug('Analytics tracking failed:', error);
   }
 };
+
+// QA Checklist Analytics Events
+export const trackFloqJoin = (floqId: string, floqTitle: string, vibe: string) => {
+  track('floq_join', {
+    floq_id: floqId,
+    floq_title: floqTitle,
+    vibe,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string, isPrivate: boolean) => {
+  track('floq_created', {
+    floq_id: floqId,
+    floq_title: floqTitle,
+    vibe,
+    is_private: isPrivate,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+export const trackFloqSuggestionDismissed = (floqId: string, reason?: string) => {
+  track('floq_suggestion_dismissed', {
+    floq_id: floqId,
+    dismissal_reason: reason || 'user_action',
+    timestamp: new Date().toISOString(),
+  });
+};
+
+export const trackFloqLeave = (floqId: string, floqTitle: string, sessionDuration?: number) => {
+  track('floq_leave', {
+    floq_id: floqId,
+    floq_title: floqTitle,
+    session_duration_ms: sessionDuration,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+export const trackLocationPermission = (granted: boolean, method: 'automatic' | 'manual') => {
+  track('location_permission', {
+    granted,
+    request_method: method,
+    timestamp: new Date().toISOString(),
+  });
+};
