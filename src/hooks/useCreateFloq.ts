@@ -26,8 +26,8 @@ export function useCreateFloq() {
     mutationFn: async (data: CreateFloqData) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Updated to use lat/lng parameters instead of location object
-      const { data: result, error } = await supabase.rpc('create_floq', {
+      // Debug: Log the exact parameters being sent
+      const rpcParams = {
         p_lat: data.location.lat,
         p_lng: data.location.lng,
         p_starts_at: data.starts_at,
@@ -37,10 +37,16 @@ export function useCreateFloq() {
         p_invitees: [],
         p_ends_at: data.ends_at,
         p_flock_type: data.flock_type
-      });
+      };
+      
+      console.log('🔍 create_floq RPC params:', rpcParams);
+
+      // Updated to use lat/lng parameters instead of location object
+      const { data: result, error } = await supabase.rpc('create_floq', rpcParams);
 
       if (error) {
         console.error('Create floq error:', error);
+        console.error('Attempted parameters:', rpcParams);
         throw error;
       }
 
