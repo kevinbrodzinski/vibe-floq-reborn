@@ -9,21 +9,9 @@ export const LegacyRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Only handle root path with tab query parameter
-    if (location.pathname === '/') {
-      const searchParams = new URLSearchParams(location.search);
-      const tabParam = searchParams.get('tab') as FloqTab;
-      
-      if (tabParam && VALID_TABS.includes(tabParam)) {
-        // 301 redirect to new path structure
-        navigate(`/${tabParam}`, { replace: true });
-      } else if (tabParam) {
-        // Invalid tab, redirect to field
-        navigate('/field', { replace: true });
-      } else {
-        // No tab param, default to field
-        navigate('/field', { replace: true });
-      }
+    // Redirect /field to root path
+    if (location.pathname === '/field') {
+      navigate('/', { replace: true });
     }
   }, [location, navigate]);
 

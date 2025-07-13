@@ -49,7 +49,7 @@ export const FloqNavigation = () => {
         {TABS.map(({ id, label, Icon }) => (
           <NavLink
             key={id}
-            to={`/${id}`}
+            to={id === 'field' ? '/' : `/${id}`}
             
             onMouseEnter={() => prefetchTab(id as any)}
             onTouchStart={() => prefetchTab(id as any)}

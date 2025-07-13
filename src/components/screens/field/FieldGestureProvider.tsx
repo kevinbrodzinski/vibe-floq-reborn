@@ -38,7 +38,7 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
 
   useEffect(() => {
     // Only manipulate URL when on Field route
-    if (pathname !== '/field') return;
+    if (pathname !== '/') return;
     
     const params = new URLSearchParams(window.location.search);
     params.delete('full');
@@ -85,7 +85,7 @@ export const FieldGestureProvider = ({ data, children }: FieldGestureProviderPro
 
   // Cleanup on unmount - only if still on Field route
   useEffect(() => () => {
-    if (pathname === '/field') {
+    if (pathname === '/') {
       const params = new URLSearchParams(window.location.search);
       params.delete('full');
       params.delete('view');

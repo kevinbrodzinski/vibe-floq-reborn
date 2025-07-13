@@ -13,8 +13,8 @@ import NotFound from '@/pages/NotFound';
 
 export const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<LegacyRedirect />} />
-    <Route path="/field" element={<FieldScreen />} />
+    <Route path="/" element={<FieldScreen />} />
+    <Route path="/field" element={<LegacyRedirect />} />
     <Route path="/floqs" element={<FloqsScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
