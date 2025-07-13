@@ -71,7 +71,7 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
             <span className="capitalize font-medium">{row.vibe_tag}</span>
             <span>•</span>
             {!row.ends_at ? (
-              <span className="text-persistent font-medium">Ongoing</span>
+              <span className="text-persistent-600 font-medium">Ongoing</span>
             ) : row.starts_in_min > 0 ? (
               <span>Starts in {row.starts_in_min} min</span>
             ) : (

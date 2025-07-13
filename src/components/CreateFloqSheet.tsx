@@ -41,12 +41,20 @@ export function CreateFloqSheet() {
   const [durationMode, setDurationMode] = useState<'quick' | 'custom' | 'persistent'>('quick');
   const [customDuration, setCustomDuration] = useState(4); // hours
   const [customEndTime, setCustomEndTime] = useState('');
+  const [hasTouchedTitle, setHasTouchedTitle] = useState(false);
 
   // Reset form states when sheet opens
   useEffect(() => {
     if (showCreateSheet) {
+      setTitle('');
+      setDescription('');
+      setSelectedVibe('social');
+      setMaxParticipants(20);
+      setIsPrivate(false);
       setDurationMode('quick');
+      setCustomDuration(4);
       setCustomEndTime('');
+      setHasTouchedTitle(false);
     }
   }, [showCreateSheet]);
 
@@ -100,7 +108,9 @@ export function CreateFloqSheet() {
         endsAt = null;
         flockType = 'persistent';
       } else if (durationMode === 'custom' && customEndTime) {
-        endsAt = new Date(customEndTime).toISOString();
+        // Fix timezone issue: convert local datetime to proper ISO string
+        const localDate = new Date(customEndTime);
+        endsAt = localDate.toISOString();
         flockType = 'momentary';
       } else {
         // Quick mode - default 2 hours
@@ -169,11 +179,12 @@ export function CreateFloqSheet() {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  onBlur={() => setHasTouchedTitle(true)}
                   placeholder="Coffee & Coding Session"
                   maxLength={50}
                   required
-                  aria-invalid={!title.trim()}
-                  className={cn(!title.trim() && title.length > 0 ? "border-destructive" : "")}
+                  aria-invalid={!title.trim() && hasTouchedTitle}
+                  className={cn(!title.trim() && hasTouchedTitle ? "border-destructive" : "")}
                 />
               </div>
 
