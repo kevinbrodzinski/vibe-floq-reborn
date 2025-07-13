@@ -42,11 +42,26 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    throw err;
+    
+    status = 'error';
+    errorMessage = (err as Error).message;
+    console.error("Relationship tracker error:", err);
+    
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } finally {
+    await logInvocation({
+      functionName: 'relationship-tracker',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 
   async function doWork() {
-
     const body = await req.json();
     const { user_id, nearby_users, current_vibe, venue_id } = body;
 
@@ -119,23 +134,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } // End of doWork function
-
-  } catch (error) {
-    console.error("Relationship tracker error:", error);
-    status = 'error';
-    errorMessage = (error as Error).message;
-    
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  } finally {
-    await logInvocation({
-      functionName: 'relationship-tracker',
-      status,
-      durationMs: Date.now() - startTime,
-      errorMessage,
-      metadata
-    });
-  }
 });
