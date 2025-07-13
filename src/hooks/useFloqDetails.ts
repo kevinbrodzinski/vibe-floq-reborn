@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
 
@@ -51,7 +52,7 @@ export function useFloqDetails(
   const session = useSession();
   const user = session?.user;
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ["floq-details", floqId, user?.id],
     enabled: enabled && !!floqId,
     queryFn: async (): Promise<FloqDetails | null> => {
@@ -159,8 +160,49 @@ export function useFloqDetails(
         visibility: floqData.visibility,
       };
     },
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 30, // 30 seconds
     gcTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
   });
+
+  // Set up real-time subscription for floq participant changes
+  useEffect(() => {
+    if (!floqId || !enabled) return;
+
+    const channel = supabase
+      .channel(`floq_${floqId}_changes`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'floq_participants',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => {
+          // Refetch floq details when participants change
+          query.refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'floqs',
+          filter: `id=eq.${floqId}`
+        },
+        () => {
+          // Refetch when floq details change
+          query.refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [floqId, enabled, query]);
+
+  return query;
 }

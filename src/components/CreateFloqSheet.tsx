@@ -131,7 +131,7 @@ export function CreateFloqSheet() {
       // Track floq creation
       trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, floqType, endsAt);
 
-      // Close sheet - form will reset via useEffect
+      // Close sheet - success navigation handled by useCreateFloq
       setShowCreateSheet(false);
     } catch (error) {
       console.error('Failed to create floq:', error);

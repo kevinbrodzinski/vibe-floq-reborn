@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import type { Vibe } from "@/types";
 
 interface CreateFloqData {
@@ -18,6 +20,7 @@ interface CreateFloqData {
 export function useCreateFloq() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async (data: CreateFloqData) => {
@@ -39,11 +42,29 @@ export function useCreateFloq() {
 
       return result;
     },
-    onSuccess: () => {
-      // Invalidate relevant queries to refresh the UI
+    onSuccess: (floqId) => {
+      // Show success toast
+      toast({
+        title: "Floq created!",
+        description: "Your floq has been created successfully.",
+      });
+
+      // Navigate to the new floq
+      navigate(`/floq/${floqId}`);
+
+      // Invalidate all relevant queries with consistent cache keys
       queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
+      queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });
+    },
+    onError: (error) => {
+      console.error('Create floq failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to create floq",
+        description: error.message || "Something went wrong. Please try again.",
+      });
     },
   });
 }
