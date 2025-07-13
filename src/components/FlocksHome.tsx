@@ -7,13 +7,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
+import { FilterModal } from '@/components/FilterModal';
+import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 interface FlocksHomeProps {
   geo?: { lat: number; lng: number };
@@ -22,7 +26,7 @@ interface FlocksHomeProps {
 }
 
 export const FlocksHome: React.FC<FlocksHomeProps> = ({
-  geo,
+  geo: propGeo,
   onRefresh,
   isRefreshing = false,
 }) => {
@@ -40,6 +44,11 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   } = useFloqUI();
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  
+  // Use geolocation hook as fallback
+  const { coords } = useGeolocation({ enableHighAccuracy: true });
+  const geo = propGeo || coords;
 
   // Data hooks with search query filter
   const { data: myFlocks = [], isLoading: myFlocksLoading } = useMyFlocks();
@@ -53,8 +62,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
   const handleFloqPress = (floqId: string) => {
     setSelectedFloqId(floqId);
-    // Navigate to floq detail - this would be handled by router
-    console.log('Navigate to floq:', floqId);
+    navigate(`/floqs/${floqId}`);
   };
 
   const handleCreatePress = () => {
@@ -220,6 +228,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           </section>
         </div>
       </div>
+
+      {/* Modals */}
+      <FilterModal />
+      <CreateFloqSheet />
     </div>
   );
 };

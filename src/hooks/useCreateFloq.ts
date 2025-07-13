@@ -1,79 +1,49 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { track } from '@/lib/analytics';
-import type { Database } from '@/integrations/supabase/types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Vibe } from "@/types";
 
-type VibeEnum = Database['public']['Enums']['vibe_enum'];
-
-interface CreateFloqParams {
-  location: [number, number]; // [lng, lat] tuple format
-  startsAt: Date;
-  vibe: VibeEnum;
-  visibility?: 'public' | 'friends' | 'invite';
-  title?: string;
-  invitees?: string[];
+interface CreateFloqData {
+  title: string;
+  description?: string;
+  primary_vibe: Vibe;
+  location: { lat: number; lng: number };
+  starts_at: string;
+  ends_at: string;
+  max_participants: number;
+  visibility: 'public' | 'private';
 }
 
 export function useCreateFloq() {
+  const session = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  const createFloqMutation = useMutation({
-    mutationFn: async (params: CreateFloqParams) => {
-      const { location, startsAt, vibe, visibility = 'public', title, invitees = [] } = params;
-      
-      // Create PostGIS geography point using EWKT format (longitude first)
-      const geography = `SRID=4326;POINT(${location[0]} ${location[1]})`;
-      
-      const { data, error } = await supabase.rpc('create_floq', {
-        p_location: geography,
-        p_starts_at: startsAt.toISOString(),
-        p_vibe: vibe,
-        p_visibility: visibility,
-        p_title: title || null,
-        p_invitees: invitees,
+  return useMutation({
+    mutationFn: async (data: CreateFloqData) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: result, error } = await supabase.rpc('create_floq', {
+        p_location: `POINT(${data.location.lng} ${data.location.lat})`,
+        p_starts_at: data.starts_at,
+        p_vibe: data.primary_vibe,
+        p_visibility: data.visibility,
+        p_title: data.title,
+        p_invitees: [] // Empty array for now
       });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Create floq error:', error);
+        throw error;
+      }
+
+      return result;
     },
-    onSuccess: (floqId, vars) => {
-      // Invalidate nearby floqs queries to show the new floq
-      queryClient.invalidateQueries({ queryKey: ['nearby-floqs'] });
-      queryClient.invalidateQueries({ queryKey: ['walkable-floqs'] });
-      
-      toast({
-        title: "Floq created successfully!",
-        description: "Your floq is now live and visible to others.",
-      });
-      
-      // Navigate to the created floq
-      navigate(`/floqs/${floqId}`);
-      
-      // 🔥 analytics
-      track("floq_created", {
-        vibe: vars.vibe,          // e.g. "chill"
-        visibility: vars.visibility, // "public" | "friends" | "invite"
-      });
-      
-      return floqId;
-    },
-    onError: (error) => {
-      console.error('Failed to create floq:', error);
-      toast({
-        title: "Failed to create floq",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
+    onSuccess: () => {
+      // Invalidate relevant queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
+      queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+      queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });
     },
   });
-
-  return {
-    createFloq: createFloqMutation.mutateAsync,
-    isCreating: createFloqMutation.isPending,
-    error: createFloqMutation.error,
-  };
 }

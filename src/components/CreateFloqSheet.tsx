@@ -1,317 +1,222 @@
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { Clock, MapPin, Users, Globe, Heart, Eye } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { DateTimePicker } from "@/components/inputs/DateTimePicker";
-import { cn } from "@/lib/utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useCreateFloq } from "@/hooks/useCreateFloq";
-import { useNearbyVenues } from "@/hooks/useNearbyVenues";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { useFriends } from "@/hooks/useFriends";
-import { vibeEmoji } from "@/utils/vibe";
-import type { Database } from '@/integrations/supabase/types';
+import React, { useState } from 'react';
+import { X, MapPin, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useFloqUI } from '@/contexts/FloqUIContext';
+import { useCreateFloq } from '@/hooks/useCreateFloq';
+import type { Vibe } from '@/types';
 
-type VibeEnum = Database['public']['Enums']['vibe_enum'];
-
-interface CreateFloqSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  preselectedVenueId?: string | null;
-}
-
-const VIBE_OPTIONS: { value: VibeEnum; label: string; emoji: string }[] = [
-  { value: 'chill', label: 'Chill', emoji: '😌' },
-  { value: 'hype', label: 'Hype', emoji: '🔥' },
-  { value: 'curious', label: 'Curious', emoji: '🤔' },
-  { value: 'social', label: 'Social', emoji: '🤝' },
-  { value: 'solo', label: 'Solo', emoji: '🧘' },
-  { value: 'romantic', label: 'Romantic', emoji: '💕' },
-  { value: 'weird', label: 'Weird', emoji: '🤪' },
-  { value: 'down', label: 'Down', emoji: '😔' },
-  { value: 'flowing', label: 'Flowing', emoji: '🌊' },
-  { value: 'open', label: 'Open', emoji: '🌈' },
+const VIBE_OPTIONS: Vibe[] = [
+  'chill', 'hype', 'romantic', 'social', 'solo', 'weird', 'flowing', 'down'
 ];
 
-export function CreateFloqSheet({ open, onOpenChange, preselectedVenueId }: CreateFloqSheetProps) {
-  const [title, setTitle] = useState("");
-  const [vibe, setVibe] = useState<VibeEnum | "">("chill"); // Default to chill for better UX
-  const [visibility, setVisibility] = useState<"public" | "friends" | "invite">("public");
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(preselectedVenueId || null);
-  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
-  const [startsAt, setStartsAt] = useState(() => {
-    const now = new Date();
-    now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round to next 15min
-    return now;
-  });
+const VIBE_COLORS: Partial<Record<Vibe, string>> = {
+  chill: 'hsl(180, 70%, 60%)',
+  hype: 'hsl(260, 70%, 65%)',
+  romantic: 'hsl(330, 70%, 65%)',
+  social: 'hsl(25, 70%, 60%)',
+  solo: 'hsl(210, 70%, 65%)',
+  weird: 'hsl(280, 70%, 65%)',
+  flowing: 'hsl(100, 70%, 60%)',
+  down: 'hsl(220, 15%, 55%)',
+};
 
-  const { createFloq, isCreating } = useCreateFloq();
-  const { lat, lng } = useGeolocation();
-  const { data: nearbyVenues = [] } = useNearbyVenues(lat, lng, 0.5);
-  const { friends } = useFriends();
+export function CreateFloqSheet() {
+  const { showCreateSheet, setShowCreateSheet } = useFloqUI();
+  const { mutateAsync: createFloq, isPending } = useCreateFloq();
+  
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedVibe, setSelectedVibe] = useState<Vibe>('social');
+  const [maxParticipants, setMaxParticipants] = useState(20);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [duration, setDuration] = useState(4); // hours
 
-  // Reset form when sheet opens/closes
-  useEffect(() => {
-    if (open) {
-      setSelectedVenueId(preselectedVenueId || null);
-    } else {
-      setTitle("");
-      setVibe("chill"); // Reset to default chill vibe
-      setVisibility("public");
-      setSelectedVenueId(null);
-      setSelectedFriends([]);
-      const now = new Date();
-      now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
-      setStartsAt(now);
-    }
-  }, [open, preselectedVenueId]);
-
-  const selectedVenue = nearbyVenues.find(v => v.id === selectedVenueId);
-
-  const handleCreate = async () => {
-    if (!selectedVenue || !vibe || !lat || !lng) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim()) return;
 
     try {
-      await createFloq({
-        location: [selectedVenue.lng, selectedVenue.lat], // [lng, lat] tuple format
-        startsAt: startsAt,
-        vibe: vibe as VibeEnum,
-        visibility,
-        title: title.trim() || selectedVenue.name,
-        invitees: visibility === 'invite' ? selectedFriends : [],
+      // Get user's current location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
       });
-      
-      onOpenChange(false);
+
+      const location = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      const now = new Date();
+      const endsAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
+
+      await createFloq({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        primary_vibe: selectedVibe,
+        location,
+        starts_at: now.toISOString(),
+        ends_at: endsAt.toISOString(),
+        max_participants: maxParticipants,
+        visibility: isPrivate ? 'private' : 'public'
+      });
+
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setSelectedVibe('social');
+      setMaxParticipants(20);
+      setIsPrivate(false);
+      setDuration(4);
+      setShowCreateSheet(false);
     } catch (error) {
-      // Error handling is done in the hook
+      console.error('Failed to create floq:', error);
     }
   };
 
-  const canCreate = selectedVenue && vibe && (visibility !== 'invite' || selectedFriends.length > 0);
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
-        <SheetHeader className="space-y-4">
-          <SheetTitle className="flex items-center gap-2">
-            <span className="text-2xl">✨</span>
-            Create a New Floq
-          </SheetTitle>
-          <SheetDescription>
-            Start a vibe and invite people to join you at a venue
-          </SheetDescription>
+    <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
+      <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl">
+        <SheetHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Create New Floq
+            </SheetTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCreateSheet(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
         </SheetHeader>
 
-        <div className="mt-8 space-y-6">
-          {/* Venue Selection */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Choose a venue
-            </Label>
-            <Select value={selectedVenueId || ""} onValueChange={setSelectedVenueId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a nearby venue..." />
-              </SelectTrigger>
-              <SelectContent>
-                {nearbyVenues.map((venue) => (
-                  <SelectItem key={venue.id} value={venue.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{vibeEmoji(venue.vibe)}</span>
-                      <span>{venue.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {nearbyVenues.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No venues found nearby. Try expanding your search radius.
-              </p>
-            )}
-          </div>
-
-          {/* Vibe Selection */}
-          <div className="space-y-3">
-            <Label>Set the vibe</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {VIBE_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={vibe === option.value ? "default" : "outline"}
-                  className="justify-start h-auto p-3"
-                  onClick={() => setVibe(option.value)}
-                >
-                  <span className="text-lg mr-2">{option.emoji}</span>
-                  <span>{option.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-6 pb-6">
           {/* Title */}
-          <div className="space-y-3">
-            <Label htmlFor="title">Floq title (optional)</Label>
+          <div>
+            <Label htmlFor="title">Floq Name *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={selectedVenue ? `${selectedVenue.name} Hangout` : "Enter a title..."}
+              placeholder="Coffee & Coding Session"
               maxLength={50}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to use venue name as title
-            </p>
-          </div>
-
-          {/* Start Time */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Start time
-            </Label>
-            <DateTimePicker
-              value={startsAt}
-              onChange={setStartsAt}
-              min={new Date(Date.now() - 60 * 60 * 1000)} // ≤ 1 h ago disabled
+              required
             />
           </div>
 
-          <Separator />
+          {/* Description */}
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What's this floq about? (optional)"
+              rows={3}
+              maxLength={200}
+            />
+          </div>
 
-          {/* Visibility */}
-          <div className="space-y-3">
-            <Label>Who can see this floq?</Label>
-            <div className="grid grid-cols-1 gap-2">
-              <Button
-                variant={visibility === "public" ? "default" : "outline"}
-                className="justify-start h-auto p-3"
-                onClick={() => setVisibility("public")}
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Public</div>
-                  <div className="text-xs text-muted-foreground">Anyone nearby can see and join</div>
-                </div>
-              </Button>
-              <Button
-                variant={visibility === "friends" ? "default" : "outline"}
-                className="justify-start h-auto p-3"
-                onClick={() => setVisibility("friends")}
-              >
-                <Heart className="h-4 w-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Friends only</div>
-                  <div className="text-xs text-muted-foreground">Only your friends can see and join</div>
-                </div>
-              </Button>
-              <Button
-                variant={visibility === "invite" ? "default" : "outline"}
-                className="justify-start h-auto p-3"
-                onClick={() => setVisibility("invite")}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                <div className="text-left">
-                  <div className="font-medium">Invite only</div>
-                  <div className="text-xs text-muted-foreground">Only invited people can see and join</div>
-                </div>
-              </Button>
+          {/* Vibe Selection */}
+          <div>
+            <Label className="mb-3 block">Vibe</Label>
+            <div className="flex flex-wrap gap-2">
+              {VIBE_OPTIONS.map((vibe) => (
+                <Badge
+                  key={vibe}
+                  variant={selectedVibe === vibe ? "default" : "outline"}
+                  className="cursor-pointer px-3 py-1 capitalize hover:scale-105 transition-transform"
+                  style={{
+                    backgroundColor: selectedVibe === vibe ? (VIBE_COLORS[vibe] || 'hsl(var(--primary))') : 'transparent',
+                    borderColor: VIBE_COLORS[vibe] || 'hsl(var(--primary))',
+                    color: selectedVibe === vibe ? 'white' : (VIBE_COLORS[vibe] || 'hsl(var(--primary))'),
+                  }}
+                  onClick={() => setSelectedVibe(vibe)}
+                >
+                  {vibe}
+                </Badge>
+              ))}
             </div>
           </div>
 
-          {/* Friend Selection (for invite only) */}
-          {visibility === "invite" && (
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Invite friends
-              </Label>
-              {friends.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    {friends.map((friendId) => (
-                      <Button
-                        key={friendId}
-                        variant={selectedFriends.includes(friendId) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          if (selectedFriends.includes(friendId)) {
-                            setSelectedFriends(selectedFriends.filter(id => id !== friendId));
-                          } else {
-                            setSelectedFriends([...selectedFriends, friendId]);
-                          }
-                        }}
-                        className="justify-start h-auto p-2"
-                      >
-                        <span className="truncate">{friendId.slice(0, 8)}...</span>
-                      </Button>
-                    ))}
-                  </div>
-                  {selectedFriends.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      <span className="text-sm text-muted-foreground">Selected:</span>
-                      {selectedFriends.map((friendId) => (
-                        <Badge key={friendId} variant="secondary" className="text-xs">
-                          {friendId.slice(0, 6)}...
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  You need friends to use invite-only floqs. Add some friends first!
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Create Button */}
-          <div className="pt-4">
-            <Button
-              onClick={handleCreate}
-              disabled={!canCreate || isCreating}
-              className="w-full h-12 text-lg"
-              size="lg"
-            >
-              {isCreating ? "Creating..." : "Create Floq"}
-            </Button>
-          </div>
-
-          {/* Preview */}
-          {selectedVenue && vibe && (
-            <div className="bg-card/50 rounded-lg p-4 border border-border/30">
-              <h4 className="font-medium mb-2">Preview</h4>
-              <div className="text-sm space-y-1">
-                <p><strong>Title:</strong> {title || selectedVenue.name}</p>
-                <p><strong>Venue:</strong> {selectedVenue.name}</p>
-                <p><strong>Vibe:</strong> {vibeEmoji(vibe as VibeEnum)} {vibe}</p>
-                <p><strong>Visibility:</strong> {visibility}</p>
-                <p><strong>Starts:</strong> {format(startsAt, "PPP 'at' p")}</p>
-                {visibility === 'invite' && selectedFriends.length > 0 && (
-                  <p><strong>Invitees:</strong> {selectedFriends.length} friends</p>
-                )}
+          {/* Settings */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Label htmlFor="max-participants">Max Participants</Label>
+                <Input
+                  id="max-participants"
+                  type="number"
+                  value={maxParticipants}
+                  onChange={(e) => setMaxParticipants(Number(e.target.value))}
+                  min={2}
+                  max={100}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex-1">
+                <Label htmlFor="duration">Duration (hours)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  min={1}
+                  max={24}
+                  className="mt-1"
+                />
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Private Floq</Label>
+                <p className="text-sm text-muted-foreground">
+                  Only invited users can join
+                </p>
+              </div>
+              <Switch
+                checked={isPrivate}
+                onCheckedChange={setIsPrivate}
+              />
+            </div>
+          </div>
+
+          {/* Location Info */}
+          <div className="bg-muted/30 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4" />
+              <span>Location will be set to your current position</span>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={!title.trim() || isPending}
+          >
+            {isPending ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
+            {isPending ? 'Creating...' : 'Create Floq'}
+          </Button>
+        </form>
       </SheetContent>
     </Sheet>
   );
