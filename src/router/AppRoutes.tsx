@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { FieldScreen } from '@/components/screens/FieldScreen';
-import { FloqsScreen } from '@/components/screens/FloqsScreen';
+import { FlocksHome } from '@/components/FlocksHome';
+import FloqDetail from '@/pages/FloqDetail';
 import { PulseScreen } from '@/components/screens/PulseScreen';
 import { VibeScreen } from '@/components/screens/VibeScreen';
 import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
@@ -15,7 +16,8 @@ export const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<FieldScreen />} />
     <Route path="/field" element={<LegacyRedirect />} />
-    <Route path="/floqs" element={<FloqsScreen />} />
+    <Route path="/floqs" element={<FlocksHome />} />
+    <Route path="/floqs/:floqId" element={<FloqDetail />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
     <Route path="/afterglow" element={<AfterglowScreen />} />

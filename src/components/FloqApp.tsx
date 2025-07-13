@@ -5,6 +5,7 @@ import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
 import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
+import { FloqUIProvider } from "@/contexts/FloqUIContext";
 
 import { Button } from "./ui/button";
 
@@ -34,34 +35,36 @@ export const FloqApp = () => {
 
   return (
     <TimeSyncProvider>
-      <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
-        {/* Header with search button for mobile */}
-        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold">Floq</h1>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="p-2 h-8 w-8"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+      <FloqUIProvider>
+        <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
+          {/* Header with search button for mobile */}
+          <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2">
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold">Floq</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCommandPaletteOpen(true)}
+                className="p-2 h-8 w-8"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
 
-        <div className="pb-20">
-          <AppRoutes />
+          <div className="pb-20">
+            <AppRoutes />
+          </div>
+          
+          <FloqNavigation />
+          
+          {/* Command Palette */}
+          <CommandPaletteSheet 
+            open={commandPaletteOpen} 
+            onOpenChange={setCommandPaletteOpen}
+          />
         </div>
-        
-        <FloqNavigation />
-        
-        {/* Command Palette */}
-        <CommandPaletteSheet 
-          open={commandPaletteOpen} 
-          onOpenChange={setCommandPaletteOpen}
-        />
-      </div>
+      </FloqUIProvider>
     </TimeSyncProvider>
   );
 };
