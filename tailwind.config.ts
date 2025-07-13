@@ -54,7 +54,8 @@ export default {
 				},
 				persistent: {
 					DEFAULT: 'hsl(43 96% 56%)',
-					foreground: 'hsl(26 83% 14%)'
+					foreground: 'hsl(26 83% 14%)',
+					600: 'hsl(43 96% 46%)'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',

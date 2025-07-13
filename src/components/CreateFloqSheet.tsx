@@ -220,7 +220,7 @@ export function CreateFloqSheet() {
                     onClick={() => handleDurationModeChange('quick')}
                     className="flex-1"
                   >
-                    Quick (2h)
+                    2-hour quick
                   </Button>
                   <Button
                     type="button"
@@ -261,8 +261,23 @@ export function CreateFloqSheet() {
                 {durationMode === 'persistent' && (
                   <div className="bg-muted/30 rounded-lg p-3">
                     <p className="text-sm text-muted-foreground">
-                      This floq will stay active until you end it manually.
+                      You can end this floq any time from the detail screen.
                     </p>
+                  </div>
+                )}
+
+                {/* Disabled Custom Picker Notice */}
+                {durationMode === 'persistent' && (
+                  <div className="opacity-50 pointer-events-none">
+                    <Label htmlFor="custom-end-time-disabled" className="text-muted-foreground">End Time</Label>
+                    <Input
+                      id="custom-end-time-disabled"
+                      type="datetime-local"
+                      value=""
+                      disabled
+                      className="mt-1"
+                      placeholder="Not applicable for ongoing floqs"
+                    />
                   </div>
                 )}
               </div>

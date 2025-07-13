@@ -19,6 +19,7 @@ import { useFloqUI } from '@/contexts/FloqUIContext';
 import { useEndFloq } from '@/hooks/useEndFloq';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
+import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
 
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
@@ -26,6 +27,7 @@ const FloqDetail = () => {
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { showChat, setShowChat } = useFloqUI();
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
+  const [showEndConfirm, setShowEndConfirm] = React.useState(false);
   
   const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
   const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
@@ -127,19 +129,13 @@ const FloqDetail = () => {
         <Button variant="ghost" size="sm" onClick={goBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold truncate">{floqDetails.title}</h1>
-          {floqDetails.name && (
-            <p className="text-sm text-muted-foreground truncate">{floqDetails.name}</p>
-          )}
-        </div>
       </header>
 
       {/* Scrollable Body */}
       <ScrollArea className="flex-1 overscroll-contain max-h-[calc(100dvh-8rem)]">
         <div className="max-w-md mx-auto px-4 py-6 pb-[env(safe-area-inset-bottom)] space-y-6">
           {/* Hero Section */}
-          <Card className="p-6 bg-gradient-to-br from-card to-card/80">
+          <Card className="mx-4 p-6 bg-gradient-to-br from-card to-card/80">
             <div className="flex items-start gap-4">
               <VibeRing vibe={floqDetails.primary_vibe} className="w-16 h-16">
                 <Avatar className="w-full h-full">
@@ -154,6 +150,11 @@ const FloqDetail = () => {
               </VibeRing>
               
               <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold mb-2">{floqDetails.title}</h2>
+                {floqDetails.name && (
+                  <p className="text-sm text-muted-foreground mb-2">{floqDetails.name}</p>
+                )}
+                
                 <div className="flex items-center gap-2 mb-2">
                   <Badge 
                     variant="outline" 
@@ -164,6 +165,11 @@ const FloqDetail = () => {
                   </Badge>
                   {floqDetails.is_creator && (
                     <Badge variant="secondary" className="text-xs">Host</Badge>
+                  )}
+                  {!floqDetails.ends_at && (
+                    <Badge className="bg-persistent text-persistent-foreground text-xs">
+                      Ongoing
+                    </Badge>
                   )}
                 </div>
                 
@@ -301,22 +307,10 @@ const FloqDetail = () => {
               <div className="flex gap-3">
                 <Button
                   variant="destructive"
-                  onClick={async () => {
-                    try {
-                      await endFloq(floqDetails.id);
-                      successFeedback();
-                      goBack();
-                    } catch (error) {
-                      console.error('Failed to end floq:', error);
-                      errorFeedback();
-                    }
-                  }}
+                  onClick={() => setShowEndConfirm(true)}
                   disabled={isEndingFloq}
                   className="flex-1"
                 >
-                  {isEndingFloq ? (
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                  ) : null}
                   End Floq
                 </Button>
               </div>
@@ -357,6 +351,24 @@ const FloqDetail = () => {
           onClose={() => setShowChat(false)}
         />
       )}
+      
+      {/* End Floq Confirmation Dialog */}
+      <EndFloqConfirmDialog
+        isOpen={showEndConfirm}
+        onOpenChange={setShowEndConfirm}
+        onConfirm={async () => {
+          try {
+            await endFloq(floqDetails.id);
+            successFeedback();
+            setShowEndConfirm(false);
+            goBack();
+          } catch (error) {
+            console.error('Failed to end floq:', error);
+            errorFeedback();
+          }
+        }}
+        isLoading={isEndingFloq}
+      />
     </div>
   );
 };
