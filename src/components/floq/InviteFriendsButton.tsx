@@ -97,7 +97,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
         inviteeIds: Array.from(selectedFriends),
       });
       
-      socialHaptics.connectionMade();
+      socialHaptics.invitesSent();
       setSelectedFriends(new Set());
       setIsOpen(false);
     } catch (error) {
