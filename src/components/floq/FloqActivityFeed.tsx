@@ -31,8 +31,6 @@ interface FloqActivityItem {
   created_at: string;
   user_id: string | null;
   metadata: any;
-  new_vibe?: string;
-  previous_vibe?: string;
   // Joined user profile data
   user_profile?: {
     display_name: string;
@@ -76,9 +74,6 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
           username: (item.profiles as any).username || 'unknown',
           avatar_url: (item.profiles as any).avatar_url || null
         } : null,
-        // Extract vibe data from metadata for vibe_changed events
-        new_vibe: item.event_type === 'vibe_changed' ? item.metadata?.new_vibe : undefined,
-        previous_vibe: item.event_type === 'vibe_changed' ? item.metadata?.previous_vibe : undefined,
       }));
     },
     enabled: !!floqId,
@@ -113,6 +108,7 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
 
     return () => {
       console.log('Cleaning up real-time subscription');
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [floqId, refetch]);
@@ -160,22 +156,22 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'vibe_changed':
         return 'text-accent';
       case 'activity_detected':
-        return 'text-pink-500';
+        return 'text-accent';
       case 'location_changed':
-        return 'text-blue-500';
+        return 'text-accent';
       case 'merged':
       case 'split':
-        return 'text-orange-500';
+        return 'text-accent';
       case 'ended':
         return 'text-destructive';
       case 'deleted':
         return 'text-destructive';
       case 'boosted':
-        return 'text-amber-500';
+        return 'text-primary';
       case 'plan_created':
-        return 'text-indigo-500';
+        return 'text-secondary';
       case 'invited':
-        return 'text-emerald-500';
+        return 'text-secondary';
       default:
         return 'text-muted-foreground';
     }
@@ -194,8 +190,10 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'created':
         return `${userName} created this floq`;
       case 'vibe_changed':
-        if (activity.new_vibe && activity.previous_vibe) {
-          return `${userName} changed vibe from ${activity.previous_vibe} to ${activity.new_vibe}`;
+        const newVibe = activity.metadata?.new_vibe;
+        const previousVibe = activity.metadata?.previous_vibe;
+        if (newVibe && previousVibe) {
+          return `${userName} changed vibe from ${previousVibe} to ${newVibe}`;
         }
         return `${userName} changed the vibe`;
       case 'activity_detected':
@@ -326,13 +324,12 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
               )}
 
               {/* Show vibe badge for vibe changes */}
-              {activity.event_type === 'vibe_changed' && activity.new_vibe && (
+              {activity.event_type === 'vibe_changed' && activity.metadata?.new_vibe && (
                 <Badge 
                   variant="outline" 
                   className="text-xs capitalize flex-shrink-0"
-                  style={{ borderColor: `hsl(var(--${activity.new_vibe}))` }}
                 >
-                  {activity.new_vibe}
+                  {activity.metadata.new_vibe}
                 </Badge>
               )}
             </div>

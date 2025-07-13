@@ -19,13 +19,56 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client with service role
+    // Get auth token from request headers
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header required' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'content-type': 'application/json' } 
+        }
+      );
+    }
+
+    // Initialize Supabase client with user auth
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
     );
 
-    const { floq_id, event_type, actor_id, metadata = {} }: EventRequest = await req.json();
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'content-type': 'application/json' } 
+        }
+      );
+    }
+
+    // Parse JSON with error handling
+    let requestData: EventRequest;
+    try {
+      requestData = await req.json();
+    } catch (jsonError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'content-type': 'application/json' } 
+        }
+      );
+    }
+
+    const { floq_id, event_type, actor_id, metadata = {} } = requestData;
 
     // Validate required fields
     if (!floq_id || !event_type) {
@@ -54,13 +97,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Use authenticated user's ID if no actor_id provided
+    const userId = actor_id || user.id;
+
     // Insert the event into flock_history
     const { data, error } = await supabase
       .from('flock_history')
       .insert({
         floq_id,
         event_type,
-        user_id: actor_id,
+        user_id: userId,
         metadata
       })
       .select()
