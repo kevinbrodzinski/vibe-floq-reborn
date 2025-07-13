@@ -1554,17 +1554,28 @@ export type Database = {
         Returns: undefined
       }
       create_floq: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_starts_at: string
-          p_vibe: Database["public"]["Enums"]["vibe_enum"]
-          p_visibility?: string
-          p_title?: string
-          p_invitees?: string[]
-          p_ends_at?: string
-          p_flock_type?: Database["public"]["Enums"]["flock_type_enum"]
-        }
+        Args:
+          | {
+              p_lat: number
+              p_lng: number
+              p_starts_at: string
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_visibility?: string
+              p_title?: string
+              p_invitees?: string[]
+              p_ends_at?: string
+              p_flock_type?: Database["public"]["Enums"]["flock_type_enum"]
+            }
+          | {
+              p_location: unknown
+              p_starts_at: string
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_visibility?: string
+              p_title?: string
+              p_invitees?: string[]
+              p_ends_at?: string
+              p_flock_type?: Database["public"]["Enums"]["flock_type_enum"]
+            }
         Returns: string
       }
       create_or_replace_cron_job: {
