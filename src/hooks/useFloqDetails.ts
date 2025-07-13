@@ -160,9 +160,11 @@ export function useFloqDetails(
         visibility: floqData.visibility,
       };
     },
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 15000, // Hot for 15 seconds
     gcTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
+    refetchOnMount: 'always', // Ensures fresh data after navigation
+    retry: 1,
   });
 
   // Set up real-time subscription for floq participant changes

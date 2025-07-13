@@ -71,21 +71,62 @@ export function useCreateFloq() {
 
       return result;
     },
-    onSuccess: (floqId) => {
+    onSuccess: (newFloqId, vars) => {
+      // 1. Seed the cache so the first paint shows joined state
+      queryClient.setQueryData(
+        ['floq-details', newFloqId, user?.id],
+        () => ({
+          id: newFloqId,
+          title: vars.title || 'Untitled',
+          description: vars.description,
+          primary_vibe: vars.primary_vibe,
+          creator_id: user?.id,
+          is_creator: true,
+          is_joined: true,
+          can_manage: true,
+          participant_count: 1,
+          participants: [
+            {
+              user_id: user?.id,
+              role: 'creator',
+              joined_at: new Date().toISOString(),
+              user: {
+                id: user?.id,
+                username: user?.user_metadata?.username,
+                display_name: user?.user_metadata?.display_name,
+                avatar_url: user?.user_metadata?.avatar_url,
+              },
+            },
+          ],
+          location: vars.location,
+          starts_at: vars.starts_at,
+          ends_at: vars.ends_at,
+          visibility: vars.visibility,
+          flock_type: vars.flock_type,
+          max_participants: vars.max_participants,
+        })
+      );
+
+      // 2. Force a refetch to get fresh data from DB
+      queryClient.invalidateQueries({
+        queryKey: ['floq-details', newFloqId, user?.id],
+        exact: true,
+      });
+
+      // 3. Invalidate list caches
+      queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
+      queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
+      queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
+      queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });
+
       // Show success toast
       toast({
         title: "Floq created!",
         description: "Your floq has been created successfully.",
       });
 
-      // Navigate to the new floq
-      navigate(`/floqs/${floqId}`);
-
-      // Invalidate all relevant queries with consistent cache keys
-      queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
-      queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
-      queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
-      queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });
+      // 4. Slight delay before navigation to ensure cache is seeded
+      setTimeout(() => navigate(`/floqs/${newFloqId}`), 50);
     },
     onError: (error) => {
       console.error('Create floq failed:', error);
