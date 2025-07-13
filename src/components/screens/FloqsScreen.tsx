@@ -7,6 +7,8 @@ import { getEnvironmentConfig } from "@/lib/environment";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
+import { RecommendationsStrip } from "@/components/RecommendationsStrip";
+import { SuggestionsToast } from "@/components/SuggestionsToast";
 import { BoostButton } from "@/components/BoostButton";
 import { SuggestChangeSheet } from "@/components/SuggestChangeSheet";
 import { toast } from "@/hooks/use-toast";
@@ -179,6 +181,7 @@ export const FloqsScreen = () => {
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
   const [suggestChangeOpen, setSuggestChangeOpen] = useState(false);
   const [selectedFloqForSuggestion, setSelectedFloqForSuggestion] = useState<FloqRow | null>(null);
+  const [userGeo, setUserGeo] = useState<{ lat: number; lng: number } | null>(null);
   
   // Get stored radius preference or default to 0.5km
   const getStoredRadius = () => {
@@ -211,6 +214,22 @@ export const FloqsScreen = () => {
   
   // Enable real-time avatar cluster updates
   useAvatarClusterUpdates();
+
+  // Get user's location for suggestions
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      (position) => {
+        setUserGeo({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      () => {
+        // Silently handle location errors
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }, []);
 
   // Persist radius preference
   useEffect(() => {
@@ -335,6 +354,12 @@ export const FloqsScreen = () => {
         </div>
       )}
 
+      {/* AI-Powered Recommendations */}
+      <RecommendationsStrip 
+        geo={userGeo}
+        onSelectFloq={(floq) => handleJoinFloq(floq.floq_id)}
+      />
+
       {/* Featured Floqs Grid */}
       {floqs.length > 0 && (
         <div className="space-y-6 mb-8">
@@ -349,6 +374,14 @@ export const FloqsScreen = () => {
           ))}
         </div>
       )}
+
+      {/* Smart Suggestions Toast */}
+      <SuggestionsToast 
+        geo={userGeo}
+        onJoinFloq={handleJoinFloq}
+        minimumConfidence={0.75}
+        cooldownMinutes={20}
+      />
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
