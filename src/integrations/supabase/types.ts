@@ -1602,6 +1602,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      end_floq: {
+        Args: { p_floq_id: string; p_reason?: string }
+        Returns: Json
+      }
       equals: {
         Args: { geom1: unknown; geom2: unknown }
         Returns: boolean
