@@ -16,7 +16,7 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  private retryTimeoutId?: NodeJS.Timeout;
+  private retryTimeoutId?: ReturnType<typeof setTimeout>;
 
   constructor(props: Props) {
     super(props);
@@ -42,13 +42,14 @@ export class ErrorBoundary extends Component<Props, State> {
     
     // Auto-retry logic for network-related errors
     if (this.isRetryableError(error) && this.state.retryCount < 3) {
+      const currentRetryCount = this.state.retryCount;
       this.retryTimeoutId = setTimeout(() => {
         this.setState(prevState => ({
           hasError: false,
           error: undefined,
           retryCount: prevState.retryCount + 1,
         }));
-      }, 2000 * (this.state.retryCount + 1)); // Exponential backoff
+      }, 2000 * Math.pow(2, currentRetryCount)); // Proper exponential backoff
     }
   }
 

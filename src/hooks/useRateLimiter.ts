@@ -11,11 +11,11 @@ export function useRateLimiter(config: RateLimitConfig) {
   const { toast } = useToast();
   const attempts = useRef<number[]>([]);
 
-  const isRateLimited = useCallback(() => {
+  const attempt = useCallback(() => {
     const now = Date.now();
     const windowStart = now - config.windowMs;
     
-    // Remove old attempts outside the time window
+    // Remove old attempts outside the time window and check limit in one operation
     attempts.current = attempts.current.filter(time => time > windowStart);
     
     // Check if we've exceeded the limit
@@ -29,24 +29,17 @@ export function useRateLimiter(config: RateLimitConfig) {
         variant: "destructive",
       });
       
-      return true;
-    }
-    
-    return false;
-  }, [config, toast]);
-
-  const attempt = useCallback(() => {
-    if (isRateLimited()) {
       return false;
     }
     
-    attempts.current.push(Date.now());
+    // Add current attempt and return success
+    attempts.current.push(now);
     return true;
-  }, [isRateLimited]);
+  }, [config, toast]);
 
   const reset = useCallback(() => {
     attempts.current = [];
   }, []);
 
-  return { attempt, reset, isRateLimited };
+  return { attempt, reset };
 }
