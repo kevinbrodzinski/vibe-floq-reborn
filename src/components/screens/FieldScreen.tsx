@@ -580,13 +580,15 @@ export const FieldScreen = () => {
           />
         </motion.div>
 
-        {/* Full-screen toggle FAB - positioned to avoid navigation */}
-        <div className="absolute bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom)+1rem)] right-4 z-[60] pointer-events-none">
-          <FullscreenFab />
-        </div>
+        {/* Full-screen toggle FAB - always on top */}
+        <div className="absolute inset-0 z-[60] pointer-events-none">
+          <div className="pointer-events-auto">
+        <FullscreenFab />
 
         {/* Live region for accessibility */}
         <p ref={liveRef} className="sr-only" aria-live="polite" />
+          </div>
+        </div>
       </div>
     </ErrorBoundary>
   );
