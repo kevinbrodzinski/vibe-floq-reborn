@@ -72,7 +72,7 @@ export const AvatarDropdown = () => {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="pointer-events-auto w-56">
-          <DropdownMenuItem onSelect={() => navigate('/settings')}>
+          <DropdownMenuItem onSelect={() => navigate('/profile-settings')}>
             <Settings className="w-4 h-4 mr-2" />
             Profile / Settings
           </DropdownMenuItem>
