@@ -60,7 +60,7 @@ export function useLiveFloqScore(floqId: string | undefined) {
         },
         (payload) => {
           console.log('Floq activity update:', payload);
-          // Invalidate and refetch the query
+                  // Optimistically update the query data
           query.refetch();
         }
       )
@@ -74,8 +74,8 @@ export function useLiveFloqScore(floqId: string | undefined) {
         },
         (payload) => {
           console.log('Floq participants update:', payload);
-          // Invalidate and refetch the query
-          query.refetch();
+          // Trigger smooth refetch with notification
+          setTimeout(() => query.refetch(), 500);
         }
       )
       .subscribe();

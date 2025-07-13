@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMemoryOptimization } from '@/hooks/useMemoryOptimization';
 
 interface QueuedAction {
   id: string;
@@ -14,6 +15,7 @@ interface QueuedAction {
 export function useOfflineQueue() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { addCleanup } = useMemoryOptimization();
 
   // Store queued actions in localStorage
   const getQueuedActions = (): QueuedAction[] => {
@@ -177,9 +179,12 @@ export function useOfflineQueue() {
       processQueue();
     }
 
-    return () => {
+    const cleanup = () => {
       window.removeEventListener('online', handleOnline);
     };
+    
+    addCleanup(cleanup);
+    return cleanup;
   }, []);
 
   return {

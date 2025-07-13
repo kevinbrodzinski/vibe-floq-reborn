@@ -3,6 +3,7 @@ import { LayoutGrid, Circle, MessageCircle, Star, Calendar, Activity } from "luc
 import { prefetchTab } from '@/utils/tabPrefetch';
 import { useEffect, useRef } from 'react';
 import { Z } from '@/constants/zLayers';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'field', label: 'Field', Icon: LayoutGrid },
@@ -15,6 +16,7 @@ const TABS: { id: string; label: string; Icon: any }[] = [
 
 export const FloqNavigation = () => {
   const navRef = useRef<HTMLElement>(null);
+  const { navigationFeedback } = useHapticFeedback();
 
   // Export navigation height to CSS variable
   useEffect(() => {
@@ -53,6 +55,7 @@ export const FloqNavigation = () => {
             
             onMouseEnter={() => prefetchTab(id as any)}
             onTouchStart={() => prefetchTab(id as any)}
+            onClick={navigationFeedback}
             aria-label={`Navigate to ${label} section`}
             className={({ isActive }) =>
               `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${

@@ -1,5 +1,5 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Users, Clock, MapPin, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -9,30 +9,54 @@ import { VibeRing } from '@/components/VibeRing';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useLiveFloqScore } from '@/hooks/useLiveFloqScore';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useRateLimiter } from '@/hooks/useRateLimiter';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
-  const navigate = useNavigate();
+  const { goBack } = useNavigation();
+  const { successFeedback, errorFeedback } = useHapticFeedback();
   
-  const { data: floqDetails, isLoading, error } = useFloqDetails(floqId);
-  const { data: liveScore } = useLiveFloqScore(floqId);
+  const { data: floqDetails, isLoading, error, refetch } = useFloqDetails(floqId);
+  const { data: liveScore, error: scoreError } = useLiveFloqScore(floqId);
   const { joinFloq, leaveFloq } = useOfflineQueue();
+  
+  // Rate limiting for join/leave actions
+  const { attempt: attemptJoinLeave } = useRateLimiter({
+    maxAttempts: 3,
+    windowMs: 30000, // 30 seconds
+    message: "Please wait before trying to join/leave again",
+  });
 
   const handleJoinToggle = async () => {
-    if (!floqDetails) return;
+    if (!floqDetails || !attemptJoinLeave()) return;
     
     try {
       if (floqDetails.is_joined) {
         await leaveFloq.mutateAsync(floqDetails.id);
+        successFeedback();
       } else {
         await joinFloq.mutateAsync(floqDetails.id);
+        successFeedback();
       }
     } catch (error) {
       console.error('Failed to toggle floq membership:', error);
+      errorFeedback();
     }
   };
+
+  // Auto-refresh on errors to recover from transient issues
+  useEffect(() => {
+    if (error || scoreError) {
+      const timer = setTimeout(() => {
+        refetch();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, scoreError, refetch]);
 
   const formatTimeFromNow = (timestamp: string) => {
     const now = new Date();
@@ -54,7 +78,7 @@ const FloqDetail = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="sm" onClick={goBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="h-6 w-32 bg-muted animate-pulse rounded" />
@@ -74,7 +98,7 @@ const FloqDetail = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="sm" onClick={goBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="text-lg font-semibold">Floq Not Found</h1>
@@ -95,7 +119,7 @@ const FloqDetail = () => {
         {/* Header */}
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="sm" onClick={goBack}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex-1">
@@ -163,7 +187,7 @@ const FloqDetail = () => {
               </div>
             </div>
 
-            {/* Activity Score */}
+            {/* Activity Score with smooth animations */}
             {(liveScore?.activity_score !== undefined || floqDetails.activity_score !== undefined) && (
               <div className="mt-4 pt-4 border-t border-border/40">
                 <div className="flex items-center justify-between">
@@ -171,13 +195,17 @@ const FloqDetail = () => {
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-primary transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-primary to-primary-foreground transition-all duration-1000 ease-out"
                         style={{ 
-                          width: `${Math.min(100, (liveScore?.activity_score || floqDetails.activity_score || 0))}%` 
+                          width: `${Math.min(100, (liveScore?.activity_score || floqDetails.activity_score || 0))}%`,
+                          transform: liveScore?.activity_score !== floqDetails.activity_score ? 'scaleX(1.1)' : 'scaleX(1)',
                         }}
                       />
                     </div>
-                    <span className="text-sm font-medium">
+                    <span className={cn(
+                      "text-sm font-medium transition-colors duration-300",
+                      liveScore?.activity_score !== floqDetails.activity_score && "text-primary"
+                    )}>
                       {Math.round(liveScore?.activity_score || floqDetails.activity_score || 0)}
                     </span>
                   </div>
