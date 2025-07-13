@@ -101,10 +101,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && (
         <motion.div
           className="absolute inset-0 top-12"
-          style={{ 
-            zIndex: Z.overlay,
-            pointerEvents: isFull ? 'none' : 'auto'
-          }}
+          style={{ zIndex: Z.overlay }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
@@ -142,11 +139,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {/* Interactive Elements - hidden in full mode */}
       {!isFull && (
         <motion.div
-          className="absolute inset-0"
-          style={{ 
-            zIndex: Z.interactive,
-            pointerEvents: isFull ? 'none' : 'auto'
-          }}
+          className="absolute inset-0 pointer-events-none"
+          style={{ zIndex: Z.interactive }}
           initial={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
