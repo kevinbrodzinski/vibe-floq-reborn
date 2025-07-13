@@ -362,6 +362,15 @@ export const FloqsScreen = () => {
         </button>
       </div>
 
+      {/* Fixed Position Create FAB */}
+      <button 
+        onClick={() => setShowCreateSheet(true)}
+        className="fixed right-4 bottom-20 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-variant text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 z-50 flex items-center justify-center"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <Plus size={24} />
+      </button>
+
       {/* Location & Radius Controls */}
       <div className="mb-6 space-y-4">
         <div className="bg-card/40 backdrop-blur-lg rounded-3xl border border-border/20 p-4">

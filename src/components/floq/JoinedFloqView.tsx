@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { VibeRing } from '@/components/VibeRing';
 import { FloqChat } from '@/components/floq/FloqChat';
 import { IconPill } from '@/components/IconPill';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useDeleteFloq } from '@/hooks/useDeleteFloq';
 import { supabase } from '@/integrations/supabase/client';
+import { useSession } from '@supabase/auth-helpers-react';
+import { useNavigate } from 'react-router-dom';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
@@ -32,6 +36,32 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('chat');
   const [showInvite, setShowInvite] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const session = useSession();
+  const navigate = useNavigate();
+  const { mutateAsync: deleteFloq, isPending: isDeleting } = useDeleteFloq();
+
+  // Bulletproof host detection
+  const isHost = useMemo(() => 
+    floqDetails?.creator_id === session?.user.id, 
+    [floqDetails?.creator_id, session?.user.id]
+  );
+
+  // Calculate if user is a member
+  const isMember = useMemo(() => 
+    floqDetails.participants?.some(p => p.user_id === session?.user.id) || false,
+    [floqDetails.participants, session?.user.id]
+  );
+
+  // Check if floq can be deleted
+  const canDelete = useMemo(() => 
+    isHost && (
+      floqDetails.participant_count === 1 || 
+      (floqDetails.ends_at && new Date(floqDetails.ends_at) < new Date())
+    ),
+    [isHost, floqDetails.participant_count, floqDetails.ends_at]
+  );
 
   const formatTimeFromNow = (timestamp: string) => {
     const now = new Date();
@@ -76,8 +106,8 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
               >
                 {floqDetails.primary_vibe}
               </Badge>
-              {floqDetails.is_creator && (
-                <Badge variant="secondary" className="text-xs">Host</Badge>
+              {(isHost || floqDetails.is_creator) && (
+                <Badge variant="secondary" className="text-xs">You're the host</Badge>
               )}
               {!floqDetails.ends_at && (
                 <Badge className="bg-persistent text-persistent-foreground text-xs">
@@ -102,7 +132,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </div>
 
           {/* Leave Button (compact) */}
-          {!floqDetails.is_creator && (
+          {!(isHost || floqDetails.is_creator) && (
             <Button
               onClick={onLeave}
               disabled={isLeaving}
@@ -123,52 +153,58 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
       {/* Tabbed Interface */}
       <div className="px-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={cn(
+            "grid w-full",
+            isHost ? "grid-cols-4" : "grid-cols-3"
+          )}>
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
             <TabsTrigger value="plans">Plans</TabsTrigger>
+            {isHost && <TabsTrigger value="manage">Manage</TabsTrigger>}
           </TabsList>
 
-          {/* Action Pills Row */}
-          <div className="flex gap-2 mt-4 mb-4">
-            {/* End Floq for persistent hosts only */}
-            {floqDetails.is_creator && !floqDetails.ends_at && onEndFloq && (
+          {/* Action Pills Row - Only show if member */}
+          {(isMember || isHost || floqDetails.is_creator) && (
+            <div className="flex gap-2 mt-4 mb-4">
+              {/* End Floq for persistent hosts only */}
+              {(isHost || floqDetails.is_creator) && !floqDetails.ends_at && onEndFloq && (
+                <IconPill
+                  icon={<X className="w-3 h-3" />}
+                  label="End Floq"
+                  onClick={onEndFloq}
+                  disabled={isEndingFloq}
+                  variant="destructive"
+                  className="border-destructive"
+                />
+              )}
+              
+              {/* Boost available to all joined members */}
               <IconPill
-                icon={<X className="w-3 h-3" />}
-                label="End Floq"
-                onClick={onEndFloq}
-                disabled={isEndingFloq}
-                variant="destructive"
-                className="border-destructive"
+                icon={<Zap className="w-3 h-3" />}
+                label="Boost"
+                onClick={async () => {
+                  try {
+                    const { data, error } = await supabase.rpc('boost_floq', { 
+                      p_floq_id: floqDetails.id 
+                    });
+                    
+                    if (error) throw error;
+                    
+                    console.log('Floq boosted successfully');
+                  } catch (error) {
+                    console.error('Failed to boost floq:', error);
+                  }
+                }}
               />
-            )}
-            
-            {/* Boost available to all joined members */}
-            <IconPill
-              icon={<Zap className="w-3 h-3" />}
-              label="Boost"
-              onClick={async () => {
-                try {
-                  const { data, error } = await supabase.rpc('boost_floq', { 
-                    p_floq_id: floqDetails.id 
-                  });
-                  
-                  if (error) throw error;
-                  
-                  console.log('Floq boosted successfully');
-                } catch (error) {
-                  console.error('Failed to boost floq:', error);
-                }
-              }}
-            />
-            
-            {/* Invite available to all joined members */}
-            <IconPill
-              icon={<UserPlus2 className="w-3 h-3" />}
-              label="Invite"
-              onClick={() => setShowInvite(true)}
-            />
-          </div>
+              
+              {/* Invite available to all joined members */}
+              <IconPill
+                icon={<UserPlus2 className="w-3 h-3" />}
+                label="Invite"
+                onClick={() => setShowInvite(true)}
+              />
+            </div>
+          )}
 
           <TabsContent value="chat" className="mt-0">
             <Card className="h-[400px] flex flex-col">
@@ -176,7 +212,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 floqId={floqDetails.id}
                 isOpen={true}
                 onClose={() => {}}
-                isJoined={true}
+                isJoined={isMember || isHost || floqDetails.is_creator}
               />
             </Card>
           </TabsContent>
@@ -208,8 +244,72 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
               </div>
             </Card>
           </TabsContent>
+
+          {/* Manage Tab - Host Only */}
+          {isHost && (
+            <TabsContent value="manage" className="mt-0">
+              <Card className="p-4">
+                <div className="space-y-4">
+                  <h3 className="font-semibold">Manage Floq</h3>
+                  
+                  <div className="space-y-3">
+                    {/* End Floq for persistent floqs */}
+                    {!floqDetails.ends_at && onEndFloq && (
+                      <IconPill
+                        icon={<X className="w-3 h-3" />}
+                        label="End Floq"
+                        onClick={onEndFloq}
+                        disabled={isEndingFloq}
+                        variant="destructive"
+                        className="border-destructive w-full justify-start"
+                      />
+                    )}
+                    
+                    {/* Delete Floq */}
+                    {canDelete && (
+                      <IconPill
+                        icon={<Trash2 className="w-3 h-3" />}
+                        label="Delete Floq"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isDeleting}
+                        variant="destructive"
+                        className="border-destructive w-full justify-start"
+                      />
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
+                    <p className="font-medium mb-1">Host Controls</p>
+                    <p>• End persistent floqs manually</p>
+                    <p>• Delete solo or ended floqs</p>
+                    <p>• More controls coming soon</p>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete this floq?"
+        description="This action is permanent. Other members will no longer see this floq."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          try {
+            await deleteFloq(floqDetails.id);
+            setShowDeleteConfirm(false);
+            navigate("/floqs");
+          } catch (error) {
+            // Error already handled in hook
+          }
+        }}
+      />
 
       {/* Bottom padding for scroll clearance */}
       <div className="pb-8" />

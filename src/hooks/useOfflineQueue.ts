@@ -106,12 +106,26 @@ export function useOfflineQueue() {
         throw error;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: (data, floqId) => {
       if (!data.queued) {
-        // Invalidate queries to refresh is_joined status
-        queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
-        queryClient.invalidateQueries({ queryKey: ["floq-details"] });
+        // Merge update instead of invalidating to preserve creator status
+        queryClient.setQueryData(['floq-details', floqId], (old: any) => {
+          if (old) {
+            return {
+              ...old,
+              is_joined: true,
+              participant_count: (old.participant_count || 0) + 1,
+              // Preserve creator status
+              is_creator: old.is_creator
+            };
+          }
+          return old;
+        });
+        
+        // Still invalidate lists for fresh data
+        queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
+        queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
+        queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
         
         toast({
           title: "Joined floq",
@@ -145,12 +159,26 @@ export function useOfflineQueue() {
         throw error;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: (data, floqId) => {
       if (!data.queued) {
-        // Invalidate queries to refresh is_joined status
-        queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
-        queryClient.invalidateQueries({ queryKey: ["floq-details"] });
+        // Merge update instead of invalidating to preserve creator status
+        queryClient.setQueryData(['floq-details', floqId], (old: any) => {
+          if (old) {
+            return {
+              ...old,
+              is_joined: false,
+              participant_count: Math.max((old.participant_count || 1) - 1, 0),
+              // Preserve creator status
+              is_creator: old.is_creator
+            };
+          }
+          return old;
+        });
+        
+        // Still invalidate lists for fresh data
+        queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
+        queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
+        queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
         
         toast({
           title: "Left floq",

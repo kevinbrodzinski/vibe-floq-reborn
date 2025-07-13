@@ -41,8 +41,8 @@ export function useCreateFloq() {
     },
     onSuccess: () => {
       // Invalidate relevant queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-      queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+      queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
+      queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });
     },
   });
