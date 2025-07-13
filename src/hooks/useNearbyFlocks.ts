@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
 import type { FloqFilters } from "@/contexts/FloqUIContext";
@@ -40,8 +40,7 @@ export function useNearbyFlocks({
   limit = 20, 
   enabled = true 
 }: UseNearbyFlocksOptions = {}) {
-  const session = useSession();
-  const user = session?.user;
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Set up real-time subscription for nearby flocks
@@ -63,16 +62,18 @@ export function useNearbyFlocks({
 
   return useQuery({
     queryKey: ["nearby-flocks", user?.id, geo?.lat, geo?.lng, filters, limit],
-    enabled: enabled && !!geo,
+    enabled: enabled && !!geo && typeof geo.lat === 'number' && typeof geo.lng === 'number',
     queryFn: async (): Promise<NearbyFloq[]> => {
-      if (!geo) return [];
+      if (!geo || typeof geo.lat !== 'number' || typeof geo.lng !== 'number') {
+        return [];
+      }
       
       // Get active flocks with member data
       const { data, error } = await supabase.rpc("get_active_floqs_with_members", {
         p_limit: limit,
         p_offset: 0,
-        p_user_lat: geo.lat,
-        p_user_lng: geo.lng,
+        p_user_lat: Number(geo.lat),
+        p_user_lng: Number(geo.lng),
       });
 
       if (error) {
