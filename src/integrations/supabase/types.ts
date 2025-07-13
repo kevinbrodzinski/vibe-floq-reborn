@@ -133,6 +133,36 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_invocation_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          function_name: string
+          id: string
+          metadata: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       event_areas: {
         Row: {
           ends_at: string | null
@@ -1436,6 +1466,10 @@ export type Database = {
           p_invitees?: string[]
         }
         Returns: string
+      }
+      create_or_replace_cron_job: {
+        Args: { job_name: string; schedule: string; command: string }
+        Returns: undefined
       }
       create_place_banner: {
         Args: {
