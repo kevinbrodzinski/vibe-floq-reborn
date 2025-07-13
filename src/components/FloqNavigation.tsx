@@ -1,11 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import { useActiveTab, type FloqTab } from "@/store/useActiveTab";
 import { LayoutGrid, Circle, MessageCircle, Star, Calendar, Activity } from "lucide-react";
 import { prefetchTab } from '@/utils/tabPrefetch';
 import { useEffect, useRef } from 'react';
 import { Z } from '@/constants/zLayers';
 
-const TABS: { id: FloqTab; label: string; Icon: any }[] = [
+const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'field', label: 'Field', Icon: LayoutGrid },
   { id: 'floqs', label: 'Floqs', Icon: Circle },
   { id: 'pulse', label: 'Pulse', Icon: Activity },
@@ -15,7 +14,6 @@ const TABS: { id: FloqTab; label: string; Icon: any }[] = [
 ];
 
 export const FloqNavigation = () => {
-  const { setTab } = useActiveTab();
   const navRef = useRef<HTMLElement>(null);
 
   // Export navigation height to CSS variable
@@ -52,9 +50,9 @@ export const FloqNavigation = () => {
           <NavLink
             key={id}
             to={`/${id}`}
-            onClick={() => setTab(id, false /* already pushed by NavLink */)}
-            onMouseEnter={() => prefetchTab(id)}
-            onTouchStart={() => prefetchTab(id)}
+            
+            onMouseEnter={() => prefetchTab(id as any)}
+            onTouchStart={() => prefetchTab(id as any)}
             aria-label={`Navigate to ${label} section`}
             className={({ isActive }) =>
               `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${

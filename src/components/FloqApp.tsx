@@ -5,11 +5,10 @@ import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
 import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
-import { useActiveTab } from "@/store/useActiveTab";
+
 import { Button } from "./ui/button";
 
 export const FloqApp = () => {
-  const { syncWithLocation } = useActiveTab();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
@@ -25,12 +24,6 @@ export const FloqApp = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Keep store in-sync with browser back/forward
-  useEffect(() => {
-    const onPop = () => syncWithLocation();
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, [syncWithLocation]);
 
   // Deep-link support for full-screen mode
   useEffect(() => {
