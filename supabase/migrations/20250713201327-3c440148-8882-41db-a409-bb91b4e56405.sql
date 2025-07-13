@@ -12,16 +12,20 @@ SET flock_type = 'persistent'
 WHERE ends_at IS NULL
   AND flock_type <> 'persistent';
 
--- 4. Add integrity constraint (validates immediately)
+-- 4. Add integrity constraint (deferred validation for large tables)
 ALTER TABLE public.floqs
-  ADD CONSTRAINT ck_flock_type_ends_at
+  ADD CONSTRAINT IF NOT EXISTS ck_flock_type_ends_at
   CHECK (
     (flock_type = 'persistent' AND ends_at IS NULL) OR
     (flock_type = 'momentary'  AND ends_at IS NOT NULL)
-  );
+  ) NOT VALID;
 
--- 5. Partial index for performance (no volatile expressions)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_active_momentary
+-- 4b. Validate constraint after backfill
+ALTER TABLE public.floqs
+  VALIDATE CONSTRAINT ck_flock_type_ends_at;
+
+-- 5. Partial index for performance (using regular CREATE INDEX due to transaction block)
+CREATE INDEX IF NOT EXISTS idx_floqs_active_momentary
   ON public.floqs (activity_score DESC)
   WHERE flock_type = 'momentary'
     AND ends_at IS NOT NULL;
