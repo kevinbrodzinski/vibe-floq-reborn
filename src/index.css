@@ -221,13 +221,13 @@ All colors MUST be HSL.
   /* FAB System Utilities */
   @layer utilities {
     .fixed-fab {
-      @apply fixed right-4 z-[70] h-12 w-12 flex items-center
+      @apply fixed top-4 right-4 z-[70] h-12 w-12 flex items-center
              justify-center rounded-full shadow-lg transition;
-      bottom: var(--fab-bottom-gap);
     }
     
     .fixed-fab--secondary {
-      transform: translateY(calc(var(--fab-size) + var(--fab-gap)));
+      @apply fixed top-20 right-4 z-[70] h-12 w-12 flex items-center
+             justify-center rounded-full shadow-lg transition;
     }
     
     

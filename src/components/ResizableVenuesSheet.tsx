@@ -167,9 +167,9 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
 
   return (
     <>
-      {/* Backdrop overlay */}
+      {/* Backdrop overlay - doesn't cover navigation */}
       <motion.div
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50 z-[55]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -180,7 +180,7 @@ export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableV
       <motion.div
         ref={containerRef}
         className={cn(
-          "fixed inset-x-4 z-50 pointer-events-auto",
+          "fixed inset-x-4 z-[60] pointer-events-auto",
           "bg-background/95 backdrop-blur-md border border-border/40",
           "shadow-2xl rounded-t-3xl overflow-hidden",
           "will-change-transform"
