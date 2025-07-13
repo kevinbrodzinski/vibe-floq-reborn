@@ -42,11 +42,18 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    throw err;
+    
+    status = 'error';
+    errorMessage = (err as Error).message;
+    console.error("Activity score processor error:", err);
+    
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   async function doWork() {
-
     const body = await req.json();
     const { events } = body;
 
@@ -138,16 +145,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } // End of doWork function
-
-  } catch (error) {
-    console.error("Activity score processor error:", error);
-    status = 'error';
-    errorMessage = (error as Error).message;
-    
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
   } finally {
     await logInvocation({
       functionName: 'activity-score-processor',
