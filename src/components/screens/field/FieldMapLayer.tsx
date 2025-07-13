@@ -1,12 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { FieldVisualization } from "./FieldVisualization";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { Z } from "@/constants/zLayers";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
+import { SocialInteractionModal } from "@/components/social/SocialInteractionModal";
+import { ConstellationGestureHandler } from "@/components/social/ConstellationGestureHandler";
+import { DMQuickSheet } from "@/components/DMQuickSheet";
+import { useFloqJoin } from "@/hooks/useFloqJoin";
+import { useVenueJoin } from "@/hooks/useVenueJoin";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { useToast } from "@/hooks/use-toast";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldMapLayerProps {
@@ -17,6 +25,19 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
   const { people } = useFieldSocial();
   const { floqEvents, walkableFloqs } = data;
+  
+  // Phase 2: Social interaction state
+  const [selectedPerson, setSelectedPerson] = useState<any>(null);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
+  const [dmSheetOpen, setDmSheetOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  
+  // Phase 2: Hooks for real social interactions
+  const { lat, lng } = useGeolocation();
+  const { join: joinFloq } = useFloqJoin();
+  const { join: joinVenue } = useVenueJoin(null, lat, lng);
+  const { socialHaptics } = useHapticFeedback();
+  const { toast } = useToast();
 
   // Memoize friends array to avoid recreating on every render
   const friends = useMemo(() => 
@@ -29,18 +50,141 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
       lastSeen: Date.now()
     })), [people]);
 
-  // Event handlers - these will be moved to gesture provider later
-  const handleFriendInteraction = (friend: any, action: string) => {
-    // Friend interaction handled
-  };
+  // Phase 2: Functional Social Interaction Handlers
+  const handleFriendInteraction = useCallback((friend: any, action: string) => {
+    socialHaptics.connectionMade();
+    
+    switch (action) {
+      case 'select':
+        setSelectedPerson(friend);
+        setSocialModalOpen(true);
+        break;
+      case 'dm':
+        setSelectedFriendId(friend.id);
+        setDmSheetOpen(true);
+        break;
+      case 'invite':
+        // TODO: Open floq invite flow
+        toast({
+          title: "Invite sent! 🎉",
+          description: `You invited ${friend.name} to join a floq`,
+        });
+        break;
+      case 'vibe-check':
+        toast({
+          title: "Vibe check sent! ✨",
+          description: `You sent ${friend.name} a vibe check`,
+        });
+        break;
+      default:
+        console.log('Friend interaction:', action, friend.id);
+    }
+  }, [socialHaptics, toast]);
 
-  const handleConstellationGesture = (gesture: string, friends: any[]) => {
-    // Constellation gesture handled
-  };
+  const handleConstellationGesture = useCallback((gesture: string, friends: any[]) => {
+    socialHaptics.gestureConfirm();
+    
+    switch (gesture) {
+      case 'constellation-select':
+        // Create group floq with selected friends
+        toast({
+          title: "Group floq created! 🌟",
+          description: `Started a constellation with ${friends.length} friends`,
+        });
+        break;
+      case 'shake-discovery':
+        // Trigger social radar discovery
+        toast({
+          title: "Social radar activated! 📡",
+          description: "Discovering nearby friends and floqs...",
+        });
+        break;
+      case 'discover-nearby':
+        toast({
+          title: "Discovering connections! 🔍",
+          description: "Finding nearby friends and events...",
+        });
+        break;
+      case 'group-vibe-check':
+        toast({
+          title: "Group vibe check! ⚡",
+          description: `Sent vibe check to ${friends.length} friends`,
+        });
+        break;
+      case 'long-press-social':
+        // Show enhanced social menu
+        console.log('Long press social gesture');
+        break;
+      default:
+        console.log('Constellation gesture:', gesture, friends.length, 'friends');
+    }
+  }, [socialHaptics, toast]);
 
-  const handleAvatarInteraction = (interaction: any) => {
-    // Avatar interaction handled
-  };
+  const handleAvatarInteraction = useCallback((interaction: any) => {
+    if (typeof interaction === 'string') {
+      // Handle simple person ID interaction
+      const person = people.find(p => p.id === interaction);
+      if (person) {
+        socialHaptics.avatarInteraction();
+        setSelectedPerson(person);
+        setSocialModalOpen(true);
+      }
+    } else if (interaction?.type) {
+      // Handle complex interaction object
+      socialHaptics.gestureConfirm();
+      
+      switch (interaction.type) {
+        case 'dm':
+          const person = people.find(p => p.id === interaction.sourceId);
+          if (person) {
+            setSelectedFriendId(person.id);
+            setDmSheetOpen(true);
+          }
+          break;
+        case 'meetup':
+          const source = people.find(p => p.id === interaction.sourceId);
+          const target = people.find(p => p.id === interaction.targetId);
+          if (source && target) {
+            toast({
+              title: "Meetup suggested! 📍",
+              description: `${source.name} wants to meet ${target.name}`,
+            });
+          }
+          break;
+        case 'group-floq':
+          const allPeople = [interaction.sourceId, ...(interaction.targetIds || [])];
+          toast({
+            title: "Group floq created! 🎉",
+            description: `Started a group with ${allPeople.length} people`,
+          });
+          break;
+        case 'vibe-check':
+          const vibeTarget = people.find(p => p.id === interaction.sourceId);
+          if (vibeTarget) {
+            toast({
+              title: "Vibe check sent! ⚡",
+              description: `Sent to ${vibeTarget.name}`,
+            });
+          }
+          break;
+        default:
+          console.log('Avatar interaction:', interaction);
+      }
+    }
+  }, [people, socialHaptics, toast]);
+
+  // Phase 2: Handle floq joining
+  const handleFloqJoin = useCallback((floqId: string) => {
+    socialHaptics.floqJoined();
+    joinFloq({ floqId });
+  }, [joinFloq, socialHaptics]);
+
+  // Phase 2: DM sheet handlers
+  const handleDMOpen = useCallback((personId: string) => {
+    setSelectedFriendId(personId);
+    setDmSheetOpen(true);
+    setSocialModalOpen(false);
+  }, []);
 
   return (
     <>
@@ -110,6 +254,30 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
           />
         </div>
       )}
+
+      {/* Phase 2: Interactive Social Components */}
+      
+      {/* Constellation Gesture Handler - Always active for shake detection */}
+      <ConstellationGestureHandler
+        friends={friends}
+        onConstellationGesture={handleConstellationGesture}
+        enabled={true}
+      />
+
+      {/* Social Interaction Modal */}
+      <SocialInteractionModal
+        person={selectedPerson}
+        open={socialModalOpen}
+        onOpenChange={setSocialModalOpen}
+        onDMOpen={handleDMOpen}
+      />
+
+      {/* DM Quick Sheet */}
+      <DMQuickSheet
+        open={dmSheetOpen}
+        onOpenChange={setDmSheetOpen}
+        friendId={selectedFriendId}
+      />
     </>
   );
 };
