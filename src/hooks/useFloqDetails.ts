@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/providers/AuthProvider";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
@@ -49,12 +49,12 @@ export function useFloqDetails(
   floqId: string | null, 
   { enabled = true }: UseFloqDetailsOptions = {}
 ) {
-  const session = useSession();
+  const { session } = useAuth();
   const user = session?.user;
 
   const query = useQuery({
     queryKey: ["floq-details", floqId, user?.id],
-    enabled: enabled && !!floqId,
+    enabled: enabled && !!floqId && !!user?.id, // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
       

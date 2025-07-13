@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useAuth } from '@/providers/AuthProvider';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -18,7 +18,7 @@ import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
 const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const [showEndConfirm, setShowEndConfirm] = useState(false);
-  const session = useSession();
+  const { session, loading } = useAuth();
   
   const { goBack } = useNavigation();
   const { successFeedback, errorFeedback } = useHapticFeedback();
@@ -81,8 +81,8 @@ const FloqDetail = () => {
     }
   }, [error, scoreError, refetch]);
 
-  // Guard against "too early" render
-  if (isLoading) {
+  // Wait for BOTH session and floq details to be ready
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-md mx-auto p-4">
