@@ -1083,6 +1083,38 @@ export type Database = {
           },
         ]
       }
+      v_active_users: {
+        Row: {
+          lat: number | null
+          lng: number | null
+          updated_at: string | null
+          user_id: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Insert: {
+          lat?: never
+          lng?: never
+          updated_at?: string | null
+          user_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Update: {
+          lat?: never
+          lng?: never
+          updated_at?: string | null
+          user_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vibes_now_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_friends_with_profile: {
         Row: {
           avatar_url: string | null

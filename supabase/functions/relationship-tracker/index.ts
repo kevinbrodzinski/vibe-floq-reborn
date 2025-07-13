@@ -64,7 +64,7 @@ serve(async (req) => {
 
     // Bulk upsert relationships using the new SQL function
     const { data, error } = await supabase.rpc('bulk_upsert_relationships', {
-      pairs: relationshipPairs
+      relationship_pairs: relationshipPairs
     });
 
     if (error) {

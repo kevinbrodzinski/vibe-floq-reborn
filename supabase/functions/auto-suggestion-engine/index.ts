@@ -44,31 +44,53 @@ serve(async (req) => {
       results.expired_suggestions_cleaned = cleanupData || 0;
     }
 
-    // Generate floq matching suggestions
-    if (suggestion_types.includes('floq_match')) {
-      const { data: floqSuggestions, error: floqError } = await supabase.rpc('generate_floq_suggestions', {
-        p_user_id: user_id,
-        p_max_suggestions: Math.floor(max_suggestions / 2)
-      });
+    // Get active users with presence data for batch processing
+    const { data: activeUsers, error: usersError } = await supabase
+      .from("v_active_users")
+      .select("user_id, lat, lng")
+      .limit(max_suggestions);
 
-      if (floqError) {
-        console.error("Floq suggestion error:", floqError);
-      } else {
-        results.floq_suggestions = floqSuggestions || 0;
-      }
+    if (usersError) {
+      console.error("Active users query error:", usersError);
+      throw usersError;
     }
 
-    // Generate friend suggestions based on relationships
-    if (suggestion_types.includes('friend_suggestion')) {
-      const { data: friendSuggestions, error: friendError } = await supabase.rpc('generate_friend_suggestions', {
-        p_user_id: user_id,
-        p_max_suggestions: Math.floor(max_suggestions / 2)
-      });
+    // Process each active user for suggestions
+    for (const user of activeUsers || []) {
+      try {
+        // Generate floq matching suggestions
+        if (suggestion_types.includes('floq_match')) {
+          const { data: floqSuggestions, error: floqError } = await supabase.rpc('generate_floq_suggestions', {
+            p_user_id: user.user_id,
+            p_user_lat: user.lat,
+            p_user_lng: user.lng,
+            p_limit: 3
+          });
 
-      if (friendError) {
-        console.error("Friend suggestion error:", friendError);
-      } else {
-        results.friend_suggestions = friendSuggestions || 0;
+          if (floqError) {
+            console.error(`Floq suggestion error for user ${user.user_id}:`, floqError);
+          } else {
+            results.floq_suggestions += (floqSuggestions?.length || 0);
+          }
+        }
+
+        // Generate friend suggestions based on relationships
+        if (suggestion_types.includes('friend_suggestion')) {
+          const { data: friendSuggestions, error: friendError } = await supabase.rpc('generate_friend_suggestions', {
+            p_user_id: user.user_id,
+            p_user_lat: user.lat,
+            p_user_lng: user.lng,
+            p_limit: 3
+          });
+
+          if (friendError) {
+            console.error(`Friend suggestion error for user ${user.user_id}:`, friendError);
+          } else {
+            results.friend_suggestions += (friendSuggestions?.length || 0);
+          }
+        }
+      } catch (userError) {
+        console.error(`Error processing user ${user.user_id}:`, userError);
       }
     }
 
