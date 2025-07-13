@@ -101,14 +101,60 @@ serve(async (req) => {
     }
 
     // Get walkable floqs
-    const { data: floqs, error: floqsError } = await supabase.rpc('walkable_floqs', {
-      lat: lat,
-      lng: lng,
+    const { data: floqs, error: floqsError } = await supabase.rpc('get_walkable_floqs', {
+      user_lat: lat,
+      user_lng: lng,
       max_walk_meters: 1200
     });
 
     if (floqsError) {
       console.error("Walkable floqs error:", floqsError);
+    }
+
+    // Background tasks for progressive vibe auto-update
+    const backgroundTasks = [];
+
+    // Track relationships when users are nearby (distance gated for performance)
+    if (nearby && nearby.length > 1) { // Only if there are other users
+      backgroundTasks.push(
+        supabase.functions.invoke('relationship-tracker', {
+          body: {
+            user_id: user.id,
+            nearby_users: nearby.filter(u => u.user_id !== user.id),
+            current_vibe: vibe || updateData.vibe,
+            venue_id: venue_id
+          }
+        }).catch(err => console.error('Relationship tracking failed:', err))
+      );
+    }
+
+    // Process activity scores for nearby floqs
+    if (floqs && floqs.length > 0) {
+      const activityEvents = floqs.map(floq => ({
+        floq_id: floq.id,
+        event_type: 'proximity_update' as const,
+        user_id: user.id,
+        proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
+        vibe: vibe || updateData.vibe
+      }));
+
+      backgroundTasks.push(
+        supabase.functions.invoke('activity-score-processor', {
+          body: { events: activityEvents }
+        }).catch(err => console.error('Activity scoring failed:', err))
+      );
+    }
+
+    // Execute background tasks without blocking response
+    if (backgroundTasks.length > 0) {
+      Promise.allSettled(backgroundTasks).then(results => {
+        const failed = results.filter(r => r.status === 'rejected').length;
+        if (failed > 0) {
+          console.warn(`${failed}/${results.length} background tasks failed`);
+        } else {
+          console.log(`All ${results.length} background tasks completed successfully`);
+        }
+      });
     }
 
     return new Response(null, { status: 204, headers: corsHeaders });
