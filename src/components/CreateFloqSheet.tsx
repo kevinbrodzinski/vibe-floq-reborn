@@ -319,8 +319,8 @@ export function CreateFloqSheet() {
           </ScrollArea>
         </div>
 
-        {/* Submit Button - Sticky at bottom */}
-        <div className="sticky inset-x-0 bottom-0 bg-background/90 backdrop-blur-md p-4 border-t">
+        {/* Submit Button - Absolute positioning at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-md p-4 border-t">
           <Button 
             type="submit" 
             form="create-floq-form"
