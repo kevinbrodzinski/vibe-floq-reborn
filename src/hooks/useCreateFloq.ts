@@ -9,7 +9,8 @@ interface CreateFloqData {
   primary_vibe: Vibe;
   location: { lat: number; lng: number };
   starts_at: string;
-  ends_at: string;
+  ends_at?: string | null; // Optional - null for persistent floqs
+  flock_type?: 'momentary' | 'persistent'; // Optional - defaults to momentary
   max_participants: number;
   visibility: 'public' | 'private';
 }
