@@ -35,7 +35,26 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    throw err;
+    
+    status = 'error';
+    errorMessage = (err as Error).message;
+    console.error("[cleanup-worker] Unexpected error:", err);
+    
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  } finally {
+    await logInvocation({
+      functionName: 'cleanup-worker',
+      status,
+      durationMs: Date.now() - startTime,
+      errorMessage,
+      metadata
+    });
   }
 
   async function doWork() {
@@ -74,25 +93,4 @@ serve(async (req) => {
       }
     );
   } // End of doWork function
-  } catch (err) {
-    console.error("[cleanup-worker] Unexpected error:", err);
-    status = 'error';
-    errorMessage = (err as Error).message;
-    
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
-  } finally {
-    await logInvocation({
-      functionName: 'cleanup-worker',
-      status,
-      durationMs: Date.now() - startTime,
-      errorMessage,
-      metadata
-    });
-  }
 });
