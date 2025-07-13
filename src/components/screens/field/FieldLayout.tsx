@@ -18,7 +18,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { setVenuesSheetOpen } = useFieldUI();
 
   // Show geolocation prompt if no location and not loading, or if there's an error
-  if ((!location.lat && !location.loading) || location.error) {
+  if ((!location?.lat && !location?.loading) || location?.error) {
     const requestLocation = () => {
       // For optimized geolocation, we trigger a reload to restart the process
       window.location.reload();
@@ -30,8 +30,8 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt 
               onRequestLocation={requestLocation} 
-              error={location.error}
-              loading={location.loading}
+              error={location?.error}
+              loading={location?.loading}
             />
           </div>
         </div>
@@ -40,7 +40,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   }
 
   // Show loading state
-  if (location.loading && !location.lat) {
+  if (location?.loading && !location?.lat) {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
