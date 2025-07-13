@@ -1318,9 +1318,21 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      bulk_upsert_relationships: {
+        Args: { relationship_pairs: Json }
+        Returns: Json
+      }
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      calculate_floq_activity_score: {
+        Args: {
+          p_floq_id: string
+          p_event_type: string
+          p_proximity_boost?: number
+        }
+        Returns: Json
       }
       calculate_relationship_strength: {
         Args: { interaction_count: number; days_since_last_interaction: number }
@@ -1365,6 +1377,10 @@ export type Database = {
       cleanup_expired_venue_data: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      cleanup_inactive_floqs: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       cleanup_old_vibes_logs: {
         Args: Record<PropertyKey, never>
@@ -1453,6 +1469,39 @@ export type Database = {
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      generate_floq_suggestions: {
+        Args: {
+          p_user_id: string
+          p_user_lat: number
+          p_user_lng: number
+          p_limit?: number
+        }
+        Returns: {
+          floq_id: string
+          title: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          distance_meters: number
+          participant_count: number
+          confidence_score: number
+          reasoning: Json
+        }[]
+      }
+      generate_friend_suggestions: {
+        Args: {
+          p_user_id: string
+          p_user_lat: number
+          p_user_lng: number
+          p_limit?: number
+        }
+        Returns: {
+          user_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          confidence_score: number
+          reasoning: Json
+        }[]
       }
       geography: {
         Args: { "": string } | { "": unknown }
@@ -3245,6 +3294,15 @@ export type Database = {
       update_last_read_at: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: undefined
+      }
+      update_suggestion_metrics: {
+        Args: {
+          p_user_id: string
+          p_suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
+          p_action: string
+          p_suggestion_id?: string
+        }
+        Returns: Json
       }
       updategeometrysrid: {
         Args: {
