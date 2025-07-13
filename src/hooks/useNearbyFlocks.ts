@@ -1,0 +1,120 @@
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Vibe } from "@/types";
+import type { FloqFilters } from "@/contexts/FloqUIContext";
+
+export interface NearbyFloq {
+  id: string;
+  title: string;
+  name?: string;
+  primary_vibe: Vibe;
+  vibe_tag?: Vibe;
+  participant_count: number;
+  boost_count: number;
+  distance_meters: number;
+  starts_at?: string;
+  ends_at?: string;
+  starts_in_min: number;
+  members: Array<{
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url?: string;
+  }>;
+  activity_score?: number;
+  is_joined: boolean;
+}
+
+interface UseNearbyFlocksOptions {
+  geo?: { lat: number; lng: number };
+  filters?: FloqFilters;
+  limit?: number;
+  enabled?: boolean;
+}
+
+export function useNearbyFlocks({ 
+  geo, 
+  filters = {},
+  limit = 20, 
+  enabled = true 
+}: UseNearbyFlocksOptions = {}) {
+  const session = useSession();
+  const user = session?.user;
+
+  return useQuery({
+    queryKey: ["nearby-flocks", user?.id, geo?.lat, geo?.lng, filters, limit],
+    enabled: enabled && !!geo,
+    queryFn: async (): Promise<NearbyFloq[]> => {
+      if (!geo) return [];
+      
+      // Get active flocks with member data
+      const { data, error } = await supabase.rpc("get_active_floqs_with_members", {
+        p_limit: limit,
+        p_offset: 0,
+        p_user_lat: geo.lat,
+        p_user_lng: geo.lng,
+      });
+
+      if (error) {
+        console.error("Nearby flocks error:", error);
+        throw error;
+      }
+
+      if (!data) return [];
+
+      // Get user's joined floqs to mark as joined
+      let joinedFloqIds: string[] = [];
+      if (user) {
+        const { data: joinedData } = await supabase
+          .from('floq_participants')
+          .select('floq_id')
+          .eq('user_id', user.id);
+        
+        joinedFloqIds = joinedData?.map(item => item.floq_id) || [];
+      }
+
+      // Transform and filter the data
+      let filteredData = data.map(floq => ({
+        id: floq.id,
+        title: floq.title,
+        name: floq.name || undefined,
+        primary_vibe: floq.primary_vibe,
+        vibe_tag: floq.vibe_tag || undefined,
+        participant_count: Number(floq.participant_count),
+        boost_count: Number(floq.boost_count),
+        distance_meters: Number(floq.distance_meters || 0),
+        starts_at: floq.starts_at || undefined,
+        ends_at: floq.ends_at || undefined,
+        starts_in_min: floq.starts_in_min,
+        members: floq.members || [],
+        is_joined: joinedFloqIds.includes(floq.id),
+      }));
+
+      // Apply filters
+      if (filters.vibe) {
+        filteredData = filteredData.filter(floq => 
+          floq.primary_vibe === filters.vibe || floq.vibe_tag === filters.vibe
+        );
+      }
+
+      if (filters.distanceKm !== undefined) {
+        const maxDistance = filters.distanceKm * 1000; // Convert to meters
+        filteredData = filteredData.filter(floq => 
+          floq.distance_meters <= maxDistance
+        );
+      }
+
+      if (filters.isActive) {
+        filteredData = filteredData.filter(floq => 
+          floq.participant_count > 0 || floq.boost_count > 0
+        );
+      }
+
+      return filteredData;
+    },
+    staleTime: 1000 * 30, // 30 seconds
+    gcTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true,
+  });
+}

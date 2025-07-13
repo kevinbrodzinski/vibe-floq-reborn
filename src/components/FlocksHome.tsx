@@ -1,0 +1,206 @@
+import React from 'react';
+import { RefreshCcw, Filter, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { StoriesBar } from '@/components/StoriesBar';
+import { RecommendationsStrip } from '@/components/RecommendationsStrip';
+import { useMyFlocks } from '@/hooks/useMyFlocks';
+import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
+import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
+import { useFloqUI } from '@/contexts/FloqUIContext';
+import { cn } from '@/lib/utils';
+
+interface FlocksHomeProps {
+  geo?: { lat: number; lng: number };
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}
+
+export const FlocksHome: React.FC<FlocksHomeProps> = ({
+  geo,
+  onRefresh,
+  isRefreshing = false,
+}) => {
+  const {
+    searchQuery,
+    setSearchQuery,
+    filters,
+    showFiltersModal,
+    setShowFiltersModal,
+    showCreateSheet,
+    setShowCreateSheet,
+    hasActiveFilters,
+    selectedFloqId,
+    setSelectedFloqId,
+  } = useFloqUI();
+
+  // Data hooks
+  const { data: myFlocks = [], isLoading: myFlocksLoading } = useMyFlocks();
+  const { data: nearbyFlocks = [], isLoading: nearbyLoading } = useNearbyFlocks({ 
+    geo, 
+    filters 
+  });
+  const { data: suggestions = [], isLoading: suggestionsLoading } = useFloqSuggestions({ 
+    geo 
+  });
+
+  const handleFloqPress = (floqId: string) => {
+    setSelectedFloqId(floqId);
+    // Navigate to floq detail - this would be handled by router
+    console.log('Navigate to floq:', floqId);
+  };
+
+  const handleCreatePress = () => {
+    setShowCreateSheet(true);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search functionality would be implemented here
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-background">
+      {/* Header with search and filters */}
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <form onSubmit={handleSearchSubmit} className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search flocks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background/50"
+              />
+            </div>
+          </form>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFiltersModal(true)}
+            className={cn(
+              "relative",
+              hasActiveFilters && "border-primary bg-primary/10"
+            )}
+          >
+            <Filter className="w-4 h-4" />
+            {hasActiveFilters && (
+              <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px]">
+                !
+              </Badge>
+            )}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className={cn(isRefreshing && "animate-spin")}
+          >
+            <RefreshCcw className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-6 p-4">
+          {/* My Flocks Stories */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-foreground">My Flocks</h2>
+              <Badge variant="secondary" className="text-xs">
+                {myFlocks.length}
+              </Badge>
+            </div>
+            <StoriesBar
+              flocks={myFlocks}
+              onCreatePress={handleCreatePress}
+              onFlockPress={handleFloqPress}
+              isLoading={myFlocksLoading}
+            />
+          </section>
+
+          {/* AI Recommendations */}
+          {suggestions.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Recommended for You
+                </h2>
+                <Badge variant="outline" className="text-xs">
+                  AI ✨
+                </Badge>
+              </div>
+              <RecommendationsStrip
+                geo={geo}
+                onSelectFloq={(floq) => handleFloqPress(floq.floq_id)}
+              />
+            </section>
+          )}
+
+          {/* Nearby Flocks */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-foreground">
+                Nearby Flocks
+              </h2>
+              <Badge variant="secondary" className="text-xs">
+                {nearbyFlocks.length}
+              </Badge>
+            </div>
+            
+            {nearbyLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : nearbyFlocks.length > 0 ? (
+              <div className="space-y-3">
+                {nearbyFlocks.slice(0, 5).map((floq) => (
+                  <div
+                    key={floq.id}
+                    onClick={() => handleFloqPress(floq.id)}
+                    className="p-4 bg-card rounded-lg border border-border/40 hover:border-border cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-foreground mb-1">
+                          {floq.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {floq.primary_vibe}
+                          </Badge>
+                          <span>•</span>
+                          <span>{floq.participant_count} members</span>
+                          <span>•</span>
+                          <span>{Math.round(floq.distance_meters)}m away</span>
+                        </div>
+                      </div>
+                      {floq.is_joined && (
+                        <Badge variant="default" className="text-xs">
+                          Joined
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No nearby flocks found</p>
+                <p className="text-sm mt-1">Try adjusting your filters or create one!</p>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
