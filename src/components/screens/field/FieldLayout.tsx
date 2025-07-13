@@ -5,6 +5,8 @@ import { FieldMapLayer } from "./FieldMapLayer";
 import { FieldUILayer } from "./FieldUILayer";
 import { FieldModalLayer } from "./FieldModalLayer";
 import { FieldSystemLayer } from "./FieldSystemLayer";
+import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
+import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldLayoutProps {
@@ -12,7 +14,8 @@ interface FieldLayoutProps {
 }
 
 export const FieldLayout = ({ data }: FieldLayoutProps) => {
-  const { location, isLocationReady, nearbyVenues, setVenuesSheetOpen } = data;
+  const { location, isLocationReady } = useFieldLocation();
+  const { setVenuesSheetOpen } = useFieldUI();
 
   // Show geolocation prompt if no location and not loading, or if there's an error
   if ((!location.lat && !location.loading) || location.error) {

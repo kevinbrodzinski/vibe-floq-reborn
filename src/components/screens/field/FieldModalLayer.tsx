@@ -3,6 +3,8 @@ import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { Z_LAYERS } from "@/lib/z-layers";
+import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
+import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldModalLayerProps {
@@ -10,16 +12,16 @@ interface FieldModalLayerProps {
 }
 
 export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
+  const { people } = useFieldSocial();
   const {
-    currentEvent,
-    people,
     detailsOpen,
     venuesSheetOpen,
     selectedVenueId,
     setDetailsOpen,
     setVenuesSheetOpen,
     setSelectedVenueId,
-  } = data;
+  } = useFieldUI();
+  const { currentEvent } = data;
 
   return (
     <>

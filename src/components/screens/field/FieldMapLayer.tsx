@@ -4,6 +4,8 @@ import { FieldVisualization } from "./FieldVisualization";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
 import { Z_LAYERS } from "@/lib/z-layers";
+import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldMapLayerProps {
@@ -11,16 +13,9 @@ interface FieldMapLayerProps {
 }
 
 export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
-  const { 
-    mode, 
-    isFull, 
-    isList, 
-    constellationMode, 
-    people, 
-    friends, 
-    floqEvents, 
-    walkableFloqs 
-  } = data;
+  const { mode, isFull, isList, constellationMode } = useFieldUI();
+  const { people, friends } = useFieldSocial();
+  const { floqEvents, walkableFloqs } = data;
 
   // Event handlers - these will be moved to gesture provider later
   const handleFriendInteraction = (friend: any, action: string) => {

@@ -6,6 +6,9 @@ import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { Z_LAYERS } from "@/lib/z-layers";
+import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
+import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
+import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldUILayerProps {
@@ -13,15 +16,11 @@ interface FieldUILayerProps {
 }
 
 export const FieldUILayer = ({ data }: FieldUILayerProps) => {
-  const {
+  const { isLocationReady, location, lastHeartbeat } = useFieldLocation();
+  const { people } = useFieldSocial();
+  const { 
     isFull,
-    isLocationReady,
-    location,
-    lastHeartbeat,
-    nearbyVenues,
     currentVibe,
-    people,
-    walkableFloqs,
     debug,
     timeState,
     constellationMode,
@@ -30,7 +29,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
     setCurrentVibe,
     setConstellationMode,
     setShowTimeWarp,
-  } = data;
+  } = useFieldUI();
+  const { nearbyVenues, walkableFloqs } = data;
 
   // Event handlers
   const handleSocialAction = (action: any) => {
