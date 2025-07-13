@@ -26,6 +26,7 @@ export function useCreateFloq() {
     mutationFn: async (data: CreateFloqData) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Updated to use lat/lng parameters instead of location object
       const { data: result, error } = await supabase.rpc('create_floq', {
         p_lat: data.location.lat,
         p_lng: data.location.lng,
