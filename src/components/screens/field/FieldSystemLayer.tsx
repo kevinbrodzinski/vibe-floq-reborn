@@ -1,5 +1,5 @@
 import { FullscreenFab } from "@/components/map/FullscreenFab";
-import { Z_LAYERS } from "@/lib/z-layers";
+import { Z } from "@/constants/zLayers";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
@@ -16,7 +16,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
       <div 
         className="fixed pointer-events-none"
         style={{ 
-          zIndex: Z_LAYERS.SYSTEM,
+          zIndex: Z.system,
           inset: 0
         }}
       >
@@ -30,7 +30,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
         ref={liveRef} 
         className="sr-only" 
         aria-live="polite"
-        style={{ zIndex: Z_LAYERS.SYSTEM }}
+        style={{ zIndex: Z.system }}
       />
     </>
   );

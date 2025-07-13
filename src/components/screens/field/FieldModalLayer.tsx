@@ -2,7 +2,7 @@ import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { Z_LAYERS } from "@/lib/z-layers";
+import { Z } from "@/constants/zLayers";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
@@ -26,13 +26,13 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
   return (
     <>
       {/* Banner System */}
-      <div style={{ zIndex: Z_LAYERS.UI }}>
+      <div style={{ zIndex: Z.ui }}>
         <BannerManager />
       </div>
 
       {/* Event Details Sheet */}
       {currentEvent && (
-        <div style={{ zIndex: Z_LAYERS.MODAL }}>
+        <div style={{ zIndex: Z.modal }}>
           <EventDetailsSheet
             open={detailsOpen}
             onOpenChange={setDetailsOpen}
@@ -45,7 +45,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
       )}
 
       {/* Venues Sheet */}
-      <div style={{ zIndex: Z_LAYERS.MODAL }}>
+      <div style={{ zIndex: Z.modal }}>
         <ResizableVenuesSheet
           isOpen={venuesSheetOpen}
           onClose={() => setVenuesSheetOpen(false)}
@@ -60,7 +60,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
       </div>
 
       {/* Venue Details Sheet */}
-      <div style={{ zIndex: Z_LAYERS.MODAL }}>
+      <div style={{ zIndex: Z.modal }}>
         <VenueDetailsSheet
           open={!!selectedVenueId}
           onOpenChange={(open) => !open && setSelectedVenueId(null)}

@@ -18,7 +18,7 @@ import type { WalkableFloq } from "@/types";
 import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { useStableMemo } from "@/hooks/useStableMemo";
-import { Z_LAYERS } from "@/lib/z-layers";
+import { Z } from "@/constants/zLayers";
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
 import { useMemo, Fragment } from "react";

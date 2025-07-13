@@ -3,7 +3,7 @@ import { clsx } from "clsx";
 import { FieldVisualization } from "./FieldVisualization";
 import { MiniMap } from "@/components/map/MiniMap";
 import { ListModeContainer } from "@/components/lists/ListModeContainer";
-import { Z_LAYERS } from "@/lib/z-layers";
+import { Z } from "@/constants/zLayers";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import type { FieldData } from "./FieldDataProvider";
@@ -40,7 +40,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
           isFull ? "inset-0" : "top-12 bottom-0",
           isList ? "" : ""
         )}
-        style={{ zIndex: Z_LAYERS.MAP }}
+        style={{ zIndex: Z.map }}
         initial={false}
         animate={{
           y: isFull ? 0 : isList ? 0 : 0,
@@ -70,7 +70,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
             key="list-container"
             className="fixed inset-x-0 bottom-[var(--mobile-nav-height)] bg-background/90 backdrop-blur"
             style={{ 
-              zIndex: Z_LAYERS.MODAL,
+              zIndex: Z.modal,
               height: '65vh'
             }}
             initial={{ y: '100%' }}
@@ -85,7 +85,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
 
       {/* Mini-map overlay (list mode only) */}
       {isList && (
-        <div style={{ zIndex: Z_LAYERS.UI }}>
+        <div style={{ zIndex: Z.ui }}>
           <MiniMap
             constellationMode={constellationMode}
             people={people}

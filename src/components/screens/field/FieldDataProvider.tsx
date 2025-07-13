@@ -56,8 +56,8 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { setShowBanner } = useFieldUI();
   
   // Get nearby venues for chip and current event
-  const { data: nearbyVenues = [] } = useNearbyVenues(location.lat, location.lng, 0.3);
-  const { data: currentEvent } = useCurrentEvent(location.lat, location.lng, () => setShowBanner(false));
+  const { data: nearbyVenues = [] } = useNearbyVenues(location?.lat, location?.lng, 0.3);
+  const { data: currentEvent } = useCurrentEvent(location?.lat, location?.lng, () => setShowBanner(false));
   
   // Get walkable floqs using the hook
   const { data: activeFloqs = [] } = useActiveFloqs({ limit: 50 });

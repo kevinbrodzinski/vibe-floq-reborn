@@ -5,7 +5,7 @@ import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
-import { Z_LAYERS } from "@/lib/z-layers";
+import { Z } from "@/constants/zLayers";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
@@ -81,7 +81,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {/* Header - hidden in full mode */}
       <motion.div
         className="absolute top-0 left-0 right-0"
-        style={{ zIndex: Z_LAYERS.UI }}
+        style={{ zIndex: Z.ui }}
         animate={{
           y: isFull ? '-100%' : 0,
           opacity: isFull ? 0 : 1
@@ -101,7 +101,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <motion.div
         className="absolute inset-0 top-12 pointer-events-none"
         style={{ 
-          zIndex: Z_LAYERS.UI,
+          zIndex: Z.ui,
           pointerEvents: isFull ? 'none' : 'auto'
         }}
         animate={{
@@ -135,7 +135,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <motion.div
         className="absolute inset-0"
         style={{ 
-          zIndex: Z_LAYERS.UI,
+          zIndex: Z.ui,
           pointerEvents: isFull ? 'none' : 'auto'
         }}
         animate={{

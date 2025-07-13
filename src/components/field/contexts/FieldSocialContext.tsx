@@ -17,7 +17,6 @@ interface FieldSocialContextValue {
   friends: any[];
   people: Person[];
   profilesMap: Map<string, any>;
-  friendIds: string[];
   profiles: any[];
 }
 
@@ -28,7 +27,7 @@ interface FieldSocialProviderProps {
 }
 
 export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
-  const { friends: friendIds, profiles } = useFriends();
+  const { profiles } = useFriends();
   const { location, presenceData } = useFieldLocation();
 
   // Create profiles map for quick lookup
@@ -50,17 +49,17 @@ export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
 
   // Convert presence data to people format with proper field coordinates
   const people: Person[] = useStableMemo(() => {
-    if (!location.lat || !location.lng) return [];
+    if (!location?.lat || !location?.lng) return [];
     
     return presenceData.map((presence) => {
       const profile = profilesMap.get(presence.user_id);
       
       // Convert lat/lng to field coordinates based on geographic distance from user
-      const latDiff = presence.lat - location.lat;
-      const lngDiff = presence.lng - location.lng;
+      const latDiff = presence.lat - location.lat!;
+      const lngDiff = presence.lng - location.lng!;
       
       // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
-      const xMeters = lngDiff * 111320 * Math.cos((location.lat * Math.PI) / 180);
+      const xMeters = lngDiff * 111320 * Math.cos((location.lat! * Math.PI) / 180);
       const yMeters = latDiff * 111320;
       
       // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
@@ -78,7 +77,7 @@ export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
         isFriend: presence.isFriend || false,
       };
     });
-  }, [presenceData, profilesMap, location.lat, location.lng]);
+  }, [presenceData, profilesMap, location?.lat, location?.lng]);
 
   // Convert friends to extended format for constellation mode
   const friends = useStableMemo(() => {
@@ -99,7 +98,6 @@ export const FieldSocialProvider = ({ children }: FieldSocialProviderProps) => {
     friends,
     people,
     profilesMap,
-    friendIds,
     profiles,
   };
 
