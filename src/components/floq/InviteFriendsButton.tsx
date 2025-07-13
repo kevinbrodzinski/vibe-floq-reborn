@@ -115,6 +115,15 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
           isSelected ? "border-primary bg-primary/5" : "hover:bg-muted/50"
         )}
         onClick={() => handleFriendToggle(friend.friend_id)}
+        role="button"
+        aria-label={`${isSelected ? 'Remove' : 'Add'} ${friend.display_name} to invite list`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleFriendToggle(friend.friend_id);
+          }
+        }}
       >
         <div className="flex items-center gap-3">
           <Checkbox 
@@ -123,7 +132,10 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
           />
           
           <Avatar className="w-10 h-10">
-            <AvatarImage src={friend.avatar_url} alt={friend.display_name} />
+            <AvatarImage 
+              src={friend.avatar_url} 
+              alt={`${friend.display_name} avatar`}
+            />
             <AvatarFallback>
               {friend.display_name.slice(0, 2).toUpperCase()}
             </AvatarFallback>

@@ -66,7 +66,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
           )
         `)
         .eq('floq_id', floqId)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: true })
         .range(pageParam * 20, (pageParam + 1) * 20 - 1);
 
       if (error) throw error;
@@ -94,7 +94,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
       };
     },
     getNextPageParam: (lastPage: { messages: FloqMessage[]; nextPage: number }, pages) => {
-      return lastPage.messages.length === 20 ? lastPage.nextPage : undefined;
+      return lastPage.messages.length === 20 ? pages.length : undefined;
     },
     staleTime: 1000 * 30, // 30 seconds
   });
@@ -120,11 +120,14 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
         messageIdsRef.current.add(newMessage.message.id);
       }
 
-      // Optimistically add the message to the cache (prepend to first page since we use desc order)
+      // Optimistically add the message to the cache (append to first page since we use asc order)
       queryClient.setQueryData(
         ["floq-chat", floqId],
         (old: any) => {
           if (!old || !old.pages?.length) return old;
+          
+          // Guard clause for optimistic insert
+          if (!('message' in newMessage)) return old;
           
           const firstPage = old.pages[0];
           
@@ -133,7 +136,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
             pages: [
               {
                 ...firstPage,
-                messages: [newMessage.message, ...(firstPage.messages || [])],
+                messages: [...(firstPage.messages || []), newMessage.message],
               },
               ...old.pages.slice(1),
             ],
@@ -223,7 +226,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
           // Add to deduplication tracking
           messageIdsRef.current.add(messageId);
 
-          // Add to cache (prepend to first page since we use desc order)
+          // Add to cache (append to first page since we use asc order)
           queryClient.setQueryData(
             ["floq-chat", floqId],
             (old: any) => {
@@ -236,7 +239,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
                 pages: [
                   {
                     ...firstPage,
-                    messages: [formattedMessage, ...(firstPage.messages || [])],
+                    messages: [...(firstPage.messages || []), formattedMessage],
                   },
                   ...old.pages.slice(1),
                 ],
@@ -257,8 +260,8 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
     };
   }, [floqId, user?.id, queryClient]);
 
-  // Flatten messages from all pages and reverse to show oldest first (desc query needs reversing for display)
-  const messages = data?.pages.flatMap(page => page.messages).reverse() || [];
+  // Flatten messages from all pages (already in correct order with asc query)
+  const messages = data?.pages.flatMap(page => page.messages) || [];
 
   return {
     messages,

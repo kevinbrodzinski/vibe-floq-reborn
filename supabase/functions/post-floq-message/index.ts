@@ -4,6 +4,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 serve(async (req) => {
   // Handle CORS
@@ -17,21 +18,29 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
+    // 🔧 Service-role client for the DB write
+    const supabaseAdmin = createClient(
+      supabaseUrl,
+      supabaseServiceRoleKey,  // never expose
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
-    // Get the user from the auth token
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      throw new Error('Invalid auth token');
-    }
+    // 🔐 User client to verify membership
+    const token = req.headers.get('Authorization')?.replace('Bearer ', '');
+    const userSb = createClient(supabaseUrl, token!, { global: { headers: { Authorization: `Bearer ${token}` } }});
 
-    
+    const { data: { user } } = await userSb.auth.getUser();
+    if (!user) return new Response('Invalid JWT', { status: 401 });
+
     const { floq_id, body, emoji } = await req.json();
+
+    // confirm they're in the floq
+    const { error: partErr } = await userSb
+      .from('floq_participants')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('floq_id', floq_id)
+      .eq('user_id', user.id);
+    if (partErr) throw new Error('User not in floq');
 
     // Validate input
     if (!floq_id) {
@@ -42,20 +51,8 @@ serve(async (req) => {
       throw new Error('Either body or emoji is required');
     }
 
-    // Verify user is a participant of the floq
-    const { data: participant, error: participantError } = await supabase
-      .from('floq_participants')
-      .select('user_id')
-      .eq('floq_id', floq_id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (participantError || !participant) {
-      throw new Error('User is not a participant of this floq');
-    }
-
-    // Insert the message
-    const { data: message, error: messageError } = await supabase
+    // do the INSERT with the service-role key
+    const { data: message, error: messageError } = await supabaseAdmin
       .from('floq_messages')
       .insert({
         floq_id,
