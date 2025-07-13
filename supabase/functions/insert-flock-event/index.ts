@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Credentials': 'true',
 };
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { floq_id, event_type, actor_id, metadata = {} } = requestData;
+    const { floq_id, event_type, metadata = {} } = requestData;
 
     // Validate required fields
     if (!floq_id || !event_type) {
@@ -99,29 +99,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate actor_id security: require it and ensure it matches authenticated user
-    if (!actor_id) {
-      return new Response(
-        JSON.stringify({ error: 'actor_id is required' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'content-type': 'application/json' } 
-        }
-      );
-    }
-
-    if (actor_id !== user.id) {
-      return new Response(
-        JSON.stringify({ error: 'actor_id must match authenticated user' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'content-type': 'application/json' } 
-        }
-      );
-    }
-
-    // Use authenticated user's ID
-    const userId = user.id;
+    // Use authenticated user's ID as actor
+    const actor_id = user.id;
 
     // Insert the event into flock_history
     const { data, error } = await supabase
@@ -129,7 +108,7 @@ Deno.serve(async (req) => {
       .insert({
         floq_id,
         event_type,
-        user_id: userId,
+        user_id: actor_id,
         metadata
       })
       .select()

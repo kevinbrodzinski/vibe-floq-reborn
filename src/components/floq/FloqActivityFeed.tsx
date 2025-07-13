@@ -192,9 +192,8 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       case 'vibe_changed':
         const metadata = activity.metadata || {};
         const newVibe = metadata.new_vibe;
-        const previousVibe = metadata.previous_vibe;
-        if (newVibe && previousVibe) {
-          return `${userName} changed vibe from ${previousVibe} to ${newVibe}`;
+        if (newVibe) {
+          return `${userName} changed vibe to ${newVibe}`;
         }
         return `${userName} changed the vibe`;
       case 'activity_detected':
@@ -325,12 +324,12 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
               )}
 
               {/* Show vibe badge for vibe changes */}
-              {activity.event_type === 'vibe_changed' && (activity.metadata || {}).new_vibe && (
+              {activity.event_type === 'vibe_changed' && activity.metadata?.new_vibe && (
                 <Badge 
                   variant="outline" 
                   className="text-xs capitalize flex-shrink-0"
                 >
-                  {(activity.metadata || {}).new_vibe}
+                  {activity.metadata.new_vibe}
                 </Badge>
               )}
             </div>
