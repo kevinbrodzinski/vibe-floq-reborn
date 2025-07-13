@@ -37,7 +37,9 @@ export function CreateFloqSheet() {
   const [selectedVibe, setSelectedVibe] = useState<Vibe>('social');
   const [maxParticipants, setMaxParticipants] = useState(20);
   const [isPrivate, setIsPrivate] = useState(false);
-  const [duration, setDuration] = useState(4); // hours
+  const [durationMode, setDurationMode] = useState<'quick' | 'custom' | 'persistent'>('quick');
+  const [customDuration, setCustomDuration] = useState(4); // hours
+  const [customEndTime, setCustomEndTime] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +62,21 @@ export function CreateFloqSheet() {
       };
 
       const now = new Date();
-      const endsAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
+      let endsAt: string | null = null;
+      let flockType: 'momentary' | 'persistent' = 'momentary';
+
+      // Calculate end time based on duration mode
+      if (durationMode === 'persistent') {
+        endsAt = null;
+        flockType = 'persistent';
+      } else if (durationMode === 'custom' && customEndTime) {
+        endsAt = new Date(customEndTime).toISOString();
+        flockType = 'momentary';
+      } else {
+        // Quick mode - default 2 hours
+        endsAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+        flockType = 'momentary';
+      }
 
       const floqId = await createFloq({
         title: title.trim(),
@@ -68,7 +84,8 @@ export function CreateFloqSheet() {
         primary_vibe: selectedVibe,
         location,
         starts_at: now.toISOString(),
-        ends_at: endsAt.toISOString(),
+        ends_at: endsAt,
+        flock_type: flockType,
         max_participants: maxParticipants,
         visibility: isPrivate ? 'private' : 'public'
       });
@@ -82,7 +99,9 @@ export function CreateFloqSheet() {
       setSelectedVibe('social');
       setMaxParticipants(20);
       setIsPrivate(false);
-      setDuration(4);
+      setDurationMode('quick');
+      setCustomDuration(4);
+      setCustomEndTime('');
       setShowCreateSheet(false);
     } catch (error) {
       console.error('Failed to create floq:', error);
@@ -163,33 +182,77 @@ export function CreateFloqSheet() {
               </div>
             </div>
 
+            {/* Duration Mode */}
+            <div>
+              <Label className="mb-3 block">Duration</Label>
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={durationMode === 'quick' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDurationMode('quick')}
+                  className="flex-1"
+                >
+                  Quick (2h)
+                </Button>
+                <Button
+                  type="button"
+                  variant={durationMode === 'custom' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDurationMode('custom')}
+                  className="flex-1"
+                >
+                  Custom
+                </Button>
+                <Button
+                  type="button"
+                  variant={durationMode === 'persistent' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDurationMode('persistent')}
+                  className="flex-1"
+                >
+                  Ongoing
+                </Button>
+              </div>
+
+              {/* Custom End Time Picker */}
+              {durationMode === 'custom' && (
+                <div>
+                  <Label htmlFor="custom-end-time">End Time</Label>
+                  <Input
+                    id="custom-end-time"
+                    type="datetime-local"
+                    value={customEndTime}
+                    onChange={(e) => setCustomEndTime(e.target.value)}
+                    min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)} // At least 1 hour from now
+                    className="mt-1"
+                  />
+                </div>
+              )}
+
+              {/* Persistent Info */}
+              {durationMode === 'persistent' && (
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">
+                    This floq will stay active until you end it manually.
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Settings */}
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <Label htmlFor="max-participants">Max Participants</Label>
-                  <Input
-                    id="max-participants"
-                    type="number"
-                    value={maxParticipants}
-                    onChange={(e) => setMaxParticipants(Number(e.target.value))}
-                    min={2}
-                    max={100}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Label htmlFor="duration">Duration (hours)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    min={1}
-                    max={24}
-                    className="mt-1"
-                  />
-                </div>
+              <div>
+                <Label htmlFor="max-participants">Max Participants</Label>
+                <Input
+                  id="max-participants"
+                  type="number"
+                  value={maxParticipants}
+                  onChange={(e) => setMaxParticipants(Number(e.target.value))}
+                  min={2}
+                  max={100}
+                  className="mt-1"
+                />
               </div>
 
               <div className="flex items-center justify-between">

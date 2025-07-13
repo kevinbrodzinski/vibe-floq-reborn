@@ -70,7 +70,13 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
           <div className="flex items-center space-x-2 text-muted-foreground text-sm mb-2">
             <span className="capitalize font-medium">{row.vibe_tag}</span>
             <span>•</span>
-            <span>Starts in {row.starts_in_min} min</span>
+            {!row.ends_at ? (
+              <span className="text-primary font-medium">Ongoing</span>
+            ) : row.starts_in_min > 0 ? (
+              <span>Starts in {row.starts_in_min} min</span>
+            ) : (
+              <span>Ends in {Math.ceil((new Date(row.ends_at).getTime() - Date.now()) / (1000 * 60))} min</span>
+            )}
             {row.distance_meters && (
               <>
                 <span>•</span>
@@ -81,6 +87,14 @@ const FloqCard = ({ row, onJoin, onChat, onSuggestChange }: {
               </>
             )}
           </div>
+          
+          {/* Persistent badge */}
+          {!row.ends_at && (
+            <div className="inline-flex items-center px-2 py-1 bg-primary/10 text-primary text-xs rounded-full mb-2">
+              <div className="w-1.5 h-1.5 bg-primary rounded-full mr-1.5 animate-pulse"></div>
+              Ongoing
+            </div>
+          )}
           
           {/* Participant avatars */}
           <div className="flex items-center space-x-2">
