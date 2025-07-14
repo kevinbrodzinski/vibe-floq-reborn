@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 // Debug logger that works in dev but stays quiet in tests and production
 const debug = (...args: any[]) => {
-  if (process.env.NODE_ENV !== 'production' && !process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
+  if (process.env.NODE_ENV !== 'production' && !process.env.VITEST) {
     console.log(...args);
   }
 };
@@ -17,12 +17,12 @@ const debug = (...args: any[]) => {
 export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase['channel']> | null>(null);
 
   // Memoize sorted IDs to prevent unnecessary re-subscriptions
   const sortedKey = useMemo(
     () => (joinedFloqIds.length ? [...joinedFloqIds].sort().join(',') : ''),
-    [joinedFloqIds.length, joinedFloqIds.join('|')]
+    [joinedFloqIds.join('|')]
   );
 
   useEffect(() => {

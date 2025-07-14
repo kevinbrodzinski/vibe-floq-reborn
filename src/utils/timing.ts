@@ -30,17 +30,17 @@ export function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300)
  * @param fn - The function to throttle
  * @param delay - The delay in milliseconds (default: 300)
  * @param options - Configuration options
- * @returns A throttled version of the function
+ * @returns A throttled version of the function with a clear() method
  */
 export function throttle<F extends (...args: any[]) => void>(
   fn: F, 
   delay = 300, 
   options: { leading?: boolean; trailing?: boolean } = { leading: true, trailing: false }
-): F {
+): F & { clear(): void } {
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   
-  return ((...args: Parameters<F>) => {
+  const throttled = ((...args: Parameters<F>) => {
     const now = Date.now();
     
     if (options.leading && now - lastCall >= delay) {
@@ -54,5 +54,13 @@ export function throttle<F extends (...args: any[]) => void>(
         fn(...args);
       }, delay);
     }
-  }) as F;
+  }) as F & { clear(): void };
+  
+  throttled.clear = () => {
+    if (timer) clearTimeout(timer);
+    timer = undefined;
+    lastCall = 0;
+  };
+  
+  return throttled;
 }
