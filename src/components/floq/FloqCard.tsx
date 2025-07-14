@@ -1,14 +1,14 @@
-import React, { useCallback } from 'react';
-import { Users, MapPin, Clock, MoreHorizontal } from 'lucide-react';
+import React, { useCallback, CSSProperties } from 'react';
+import { Users, MapPin, Clock } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
 import { formatDistance } from '@/utils/formatDistance';
-import { formatStartedAgo } from '@/utils/formatTime';
 import { formatTimeLeft } from '@/utils/formatTimeLeft';
-import { vibeToBorder, getInitials } from '@/utils/vibeColors';
+import { getVibeColor } from '@/utils/getVibeColor';
+import { vibeEmoji } from '@/utils/vibe';
 import { toast } from 'sonner';
-import { VibePill } from './VibePill';
+import { ActionPill } from '@/components/ui/ActionPill';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
 
@@ -27,7 +27,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const vibeColor = vibeToBorder(floq.primary_vibe);
+  const vibeColor = getVibeColor(floq.primary_vibe);
+  const vibeIcon = vibeEmoji(floq.primary_vibe);
   const isFull = floq.max_participants ? floq.participant_count >= floq.max_participants : false;
   const { mutate: ignoreFloq } = useIgnoreFloq();
 
@@ -93,24 +94,34 @@ export const FloqCard = React.memo<FloqCardProps>(({
     });
   };
 
-  const statusText = floq.is_joined 
-    ? 'Joined' 
-    : isFull
-    ? 'Full' 
-    : 'Join';
+  const handleJoin = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isFull) {
+      toast.info("This floq is full");
+      return;
+    }
+    // Join logic would go here
+    toast.success("Joined floq!");
+  }, [isFull]);
 
-  const pillBase = 'rounded-full px-3 py-1 text-xs font-medium';
-  const statusClass = floq.is_joined
-    ? `${pillBase} bg-primary/20 text-primary`
-    : isFull
-    ? `${pillBase} bg-muted text-muted-foreground`
-    : `${pillBase} bg-primary text-primary-foreground hover:brightness-110`;
+  const handleHide = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    ignoreFloq({ floqId: floq.id });
+    toast.success("Floq hidden from your feed");
+  }, [ignoreFloq, floq.id]);
 
   return (
-    <div
+    <article
       {...bind()}
-      role="button"
-      tabIndex={0}
+      style={{ '--vibe': vibeColor } as CSSProperties}
+      className={cn(
+        'group rounded-3xl bg-white/5 backdrop-blur-md p-6',
+        'ring-1 ring-white/10 hover:ring-white/25',
+        'transition-all duration-300 hover:-translate-y-0.5',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vibe)]',
+        'cursor-pointer active:scale-[.98] active:brightness-90',
+        '[-webkit-tap-highlight-color:rgba(0,0,0,0)]'
+      )}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -118,91 +129,86 @@ export const FloqCard = React.memo<FloqCardProps>(({
           handleCardClick();
         }
       }}
-      aria-pressed={floq.is_joined}
+      tabIndex={0}
+      role="button"
       aria-label={`${floq.title} floq, ${floq.participant_count} members, ${formatDistance(floq.distance_meters)} away`}
-      className={cn(
-        'w-full px-5 py-4 flex items-center gap-4 rounded-xl',
-        'bg-card/30 border border-border/20 backdrop-blur-md',
-        'hover:bg-card/50 transition-all duration-200',
-        'active:scale-[.98] active:brightness-95',
-        'text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-        'cursor-pointer',
-        '[-webkit-tap-highlight-color:rgba(0,0,0,0)]'
-      )}
     >
-      {/* Avatar with vibe ring */}
-      <div
-        aria-hidden="true"
-        className={cn(
-          'shrink-0 h-12 w-12 rounded-full flex items-center justify-center',
-          'text-base font-semibold text-primary-foreground bg-muted',
-          'border-2 shadow-sm',
-          vibeColor
-        )}
-      >
-        {getInitials(floq.title)}
-      </div>
+      {/* Header with avatar and glow */}
+      <div className="flex items-start gap-4 mb-4">
+        {/* Avatar with neon ring */}
+        <div className="relative shrink-0">
+          <span
+            aria-hidden="true"
+            className="size-16 rounded-full flex items-center justify-center text-2xl text-white bg-black/40 relative z-10"
+          >
+            {vibeIcon}
+          </span>
+          <span
+            className="absolute inset-0 rounded-full before:absolute before:inset-0 before:rounded-full before:bg-[var(--vibe)] before:blur-xl before:opacity-50"
+            aria-hidden="true"
+          />
+        </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Header with title and vibe */}
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-sm font-semibold truncate text-foreground mix-blend-darken dark:mix-blend-normal">
+        {/* Text content */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-semibold text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.35)] mb-1">
             {floq.title}
           </h3>
-          <VibePill vibe={floq.primary_vibe} className="shrink-0" />
-        </div>
-        
-        {/* Description */}
-        {floq.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mb-1 mix-blend-darken dark:mix-blend-normal">
-            {floq.description}
-          </p>
-        )}
-        
-        {/* Meta row */}
-        <div className="flex flex-wrap text-xs text-muted-foreground gap-x-3 mix-blend-darken dark:mix-blend-normal">
-          <span className="inline-flex items-center gap-1" title="Member count">
-            <Users className="h-3 w-3" />
-            {floq.participant_count}/{floq.max_participants || '∞'}
-          </span>
-          
-          <span className="inline-flex items-center gap-1" title="Distance">
-            <MapPin className="h-3 w-3" />
-            {formatDistance(floq.distance_meters)}
-          </span>
-          
-          <span className="inline-flex items-center gap-1" title="Ends/ongoing">
-            <Clock className="h-3 w-3" />
-            {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
-          </span>
+          {floq.description && (
+            <p className="text-sm text-white/70 line-clamp-2 mb-3">
+              {floq.description}
+            </p>
+          )}
+
+          {/* Meta row with vibe-tinted icons */}
+          <div className="flex gap-4 text-sm text-white/80">
+            <div className="flex items-center gap-1.5" title="Member count">
+              <Users 
+                className="h-4 w-4" 
+                style={{ color: `color-mix(in srgb, ${vibeColor} 60%, white)` }}
+              />
+              <span>{floq.participant_count} / {floq.max_participants ?? '∞'}</span>
+            </div>
+            <div className="flex items-center gap-1.5" title="Distance">
+              <MapPin 
+                className="h-4 w-4" 
+                style={{ color: `color-mix(in srgb, ${vibeColor} 60%, white)` }}
+              />
+              <span>{formatDistance(floq.distance_meters)}</span>
+            </div>
+            <div className="flex items-center gap-1.5" title="Time">
+              <Clock 
+                className="h-4 w-4" 
+                style={{ color: `color-mix(in srgb, ${vibeColor} 60%, white)` }}
+              />
+              <span>{floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {/* Status pill */}
-        <span
-          className={cn(
-            'transition-all',
-            statusClass
-          )}
-          title={`Floq status: ${statusText}`}
-        >
-          {statusText}
-        </span>
-        
-        {/* Desktop menu for hide action */}
-        <button
-          onClick={handleIgnore}
-          className="shrink-0 p-1 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          title="Hide this floq"
-          aria-label="Hide this floq"
-          aria-haspopup="menu"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <ActionPill 
+          variant="primary" 
+          label="View" 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCardClick();
+          }}
+        />
+        <ActionPill 
+          variant="ghost" 
+          label={floq.is_joined ? "Joined" : isFull ? "Full" : "Join"}
+          onClick={handleJoin}
+          disabled={floq.is_joined || isFull}
+        />
+        <ActionPill 
+          variant="ghost" 
+          label="Hide" 
+          onClick={handleHide}
+        />
       </div>
-    </div>
+    </article>
   );
 });
