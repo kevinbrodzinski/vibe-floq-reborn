@@ -110,6 +110,19 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
+				'pop': {
+					'0%': {
+						transform: 'scale(0.4)',
+						opacity: '0'
+					},
+					'80%': {
+						transform: 'scale(1.15)'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -154,6 +167,7 @@ export default {
 				}
 			},
 			animation: {
+				'pop': 'pop 180ms cubic-bezier(0.4, 0, 0.2, 1)',
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',

@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
+import { AnimatedBadge } from '@/components/ui/animated-badge';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { FriendsSheet } from './FriendsSheet';
@@ -59,14 +60,10 @@ export const AvatarDropdown = () => {
               className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
             />
             {totalNotifications > 0 && (
-              <Badge 
-                variant="destructive" 
+              <AnimatedBadge 
+                count={totalNotifications}
                 className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center px-1 pointer-events-none font-medium"
-                role="status"
-                aria-label={`${totalNotifications} notification${totalNotifications === 1 ? '' : 's'}`}
-              >
-                {totalNotifications > 99 ? '99+' : totalNotifications}
-              </Badge>
+              />
             )}
           </div>
         </DropdownMenuTrigger>
@@ -88,9 +85,10 @@ export const AvatarDropdown = () => {
             <MessageSquare className="w-4 h-4 mr-2" />
             Messages
             {totalUnreadMessages > 0 && (
-              <Badge variant="destructive" className="ml-auto">
-                {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
-              </Badge>
+              <AnimatedBadge 
+                count={totalUnreadMessages}
+                className="ml-auto"
+              />
             )}
           </DropdownMenuItem>
           
@@ -98,9 +96,10 @@ export const AvatarDropdown = () => {
             <Users className="w-4 h-4 mr-2" />
             Friends ({friendCount})
             {pendingRequests.length > 0 && (
-              <Badge variant="destructive" className="ml-auto">
-                {pendingRequests.length}
-              </Badge>
+              <AnimatedBadge 
+                count={pendingRequests.length}
+                className="ml-auto"
+              />
             )}
           </DropdownMenuItem>
           

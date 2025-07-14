@@ -4,7 +4,8 @@ import { prefetchTab } from '@/utils/tabPrefetch';
 import { Z } from '@/constants/zLayers';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useGlobalUnreadCount } from '@/hooks/useUnreadCounts';
-import { Badge } from '@/components/ui/badge';
+import { useFaviconBadge } from '@/hooks/useFaviconBadge';
+import { AnimatedBadge } from '@/components/ui/animated-badge';
 
 const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'field', label: 'Field', Icon: LayoutGrid },
@@ -18,6 +19,9 @@ const TABS: { id: string; label: string; Icon: any }[] = [
 export const FloqNavigation = () => {
   const { navigationFeedback } = useHapticFeedback();
   const { totalUnread } = useGlobalUnreadCount();
+  
+  // Update favicon when unread count changes
+  useFaviconBadge(totalUnread);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30" style={{ zIndex: Z.navigation }}>
@@ -44,9 +48,10 @@ export const FloqNavigation = () => {
             
             {/* Global unread badge for Floqs tab */}
             {id === 'floqs' && totalUnread > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center bg-destructive text-destructive-foreground">
-                {totalUnread > 99 ? '99+' : totalUnread}
-              </Badge>
+              <AnimatedBadge 
+                count={totalUnread}
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
+              />
             )}
           </NavLink>
         ))}
