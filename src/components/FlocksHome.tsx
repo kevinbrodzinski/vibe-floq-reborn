@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { RefreshCcw, Filter, Search } from 'lucide-react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
@@ -72,7 +72,12 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   );
 
   // Data hooks with search query filter
-  const { data: myFlocks = [], isLoading: myFlocksLoading } = useMyFlocks();
+  const { data: myFlocks = [], isLoading: myFlocksLoading, error: myFlocksError } = useMyFlocks();
+
+  // Error logging for My Flocks
+  useEffect(() => {
+    if (myFlocksError) console.error('[MyFlocks] query failed', myFlocksError);
+  }, [myFlocksError]);
   const { data: nearbyFlocks = [], isLoading: nearbyLoading } = useNearbyFlocks({ 
     geo, 
     filters: { ...filters, searchQuery } // Include search query in filters
@@ -184,11 +189,11 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground">My Flocks</h2>
               <Badge variant="secondary" className="text-xs">
-                {myFlocks.length}
+                {myFlocks?.length || 0}
               </Badge>
             </div>
             <StoriesBar
-              flocks={myFlocks}
+              flocks={myFlocks || []}
               onCreatePress={handleCreatePress}
               onFlockPress={handleFloqPress}
               isLoading={myFlocksLoading}

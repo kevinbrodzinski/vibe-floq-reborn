@@ -1,8 +1,7 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
 import type { Vibe } from "@/types";
-import { useEffect } from "react";
 
 export interface MyFloq {
   id: string;
@@ -25,162 +24,69 @@ interface UseMyFlocksOptions {
   enabled?: boolean;
 }
 
-export function useMyFlocks({ 
-  limit = 20, 
-  enabled = true 
-}: UseMyFlocksOptions = {}) {
-  const session = useSession();
-  const user = session?.user;
-  const queryClient = useQueryClient();
-
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('flocks')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'floqs' }, () => {
-        queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'floq_participants' }, (payload) => {
-        if (payload.new.user_id === user.id) {
-          queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-        }
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'floq_participants' }, (payload) => {
-        if (payload.old.user_id === user.id) {
-          queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, queryClient]);
+export const useMyFlocks = () => {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
 
   return useQuery({
-    queryKey: ["my-flocks", user?.id, limit],
-    enabled: enabled && !!user,
-    queryFn: async (): Promise<MyFloq[]> => {
-      if (!user) return [];
-      
-      // Use JavaScript date with 5-minute buffer to ensure recently created/joined floqs appear
-      const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    queryKey: ['my-floqs-unread', userId],                // ✅ single source-of-truth key
+    queryFn: async () => {
+      if (!userId) return [];                   // hooks will re-run when session appears
 
-      // Get both created floqs and participated floqs using UNION
-      const participatedQuery = supabase
+      const { data, error } = await supabase
         .from('floq_participants')
         .select(`
-          floq_id,
-          role,
-          joined_at,
-          floqs!inner (
-            id,
-            title,
-            name,
-            primary_vibe,
-            creator_id,
-            starts_at,
-            ends_at,
-            last_activity_at
-          )
+            floqs: floqs (
+              id, title, name, primary_vibe, creator_id, starts_at, ends_at, last_activity_at
+            ),
+            role,
+            joined_at
         `)
-        .eq('user_id', user.id)
-        .gt('floqs.ends_at', fiveMinutesFromNow)
-        .is('floqs.deleted_at', null);
+        .eq('user_id', userId)
+        .is('floqs.deleted_at', null)
+        .filter('floqs.ends_at', 'gt', 'now()');    // ⚡ server-side clock
 
-      const createdQuery = supabase
-        .from('floqs')
-        .select(`
-          id,
-          title,
-          name,
-          primary_vibe,
-          creator_id,
-          starts_at,
-          ends_at,
-          last_activity_at
-        `)
-        .eq('creator_id', user.id)
-        .gt('ends_at', fiveMinutesFromNow)
-        .is('deleted_at', null);
+      if (error) throw error;
 
-      const [participatedResult, createdResult] = await Promise.all([
-        participatedQuery,
-        createdQuery
-      ]);
-
-      if (participatedResult.error) {
-        console.error("Participated flocks error:", participatedResult.error);
-        throw participatedResult.error;
-      }
-
-      if (createdResult.error) {
-        console.error("Created flocks error:", createdResult.error);
-        throw createdResult.error;
-      }
-
-      // Combine and deduplicate floqs
-      const allFloqs = new Map<string, any>();
-
-      // Add participated floqs
-      participatedResult.data?.forEach(item => {
-        allFloqs.set(item.floq_id, {
-          floq: item.floqs,
-          role: item.role,
-          joined_at: item.joined_at
-        });
-      });
-
-      // Add created floqs (overwrite if already exists to ensure creator role)
-      createdResult.data?.forEach(floq => {
-        allFloqs.set(floq.id, {
-          floq: floq,
-          role: 'creator',
-          joined_at: floq.starts_at // Use starts_at as joined_at for creators
-        });
-      });
-
-      const floqIds = Array.from(allFloqs.keys());
+      const floqData = data ?? [];
       
-      if (floqIds.length === 0) return [];
+      if (floqData.length === 0) return [];
 
       // Get participant counts for all flocks
+      const floqIds = floqData.map(item => item.floqs.id);
       const { data: participantData } = await supabase
         .from('floq_participants')
-        .select('floq_id, count(*)')
-        .in('floq_id', floqIds)
-        .group('floq_id');
+        .select('floq_id')
+        .in('floq_id', floqIds);
 
       const participantCounts = participantData?.reduce((acc, item) => {
-        acc[item.floq_id] = Number(item.count) || 0;
+        acc[item.floq_id] = (acc[item.floq_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};
 
       // Transform to MyFloq format
-      const result = Array.from(allFloqs.entries())
-        .map(([floqId, { floq, role, joined_at }]) => ({
-          id: floq.id,
-          title: floq.title,
-          name: floq.name || undefined,
-          primary_vibe: floq.primary_vibe,
-          participant_count: participantCounts[floqId] || 0,
-          role: role,
-          joined_at: joined_at,
-          last_activity_at: floq.last_activity_at || floq.starts_at,
-          starts_at: floq.starts_at || undefined,
-          ends_at: floq.ends_at || undefined,
-          creator_id: floq.creator_id || undefined,
-          is_creator: floq.creator_id === user.id,
-        }))
-        .sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime())
-        .slice(0, limit);
+      const result: MyFloq[] = floqData.map(item => ({
+        id: item.floqs.id,
+        title: item.floqs.title,
+        name: item.floqs.name || undefined,
+        primary_vibe: item.floqs.primary_vibe,
+        participant_count: participantCounts[item.floqs.id] || 0,
+        role: item.role,
+        joined_at: item.joined_at,
+        last_activity_at: item.floqs.last_activity_at || item.floqs.starts_at,
+        starts_at: item.floqs.starts_at || undefined,
+        ends_at: item.floqs.ends_at || undefined,
+        creator_id: item.floqs.creator_id || undefined,
+        is_creator: item.floqs.creator_id === userId,
+      }))
+      .sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
 
       return result;
     },
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    refetchOnWindowFocus: true,
+    // ensures stale [] is quickly replaced once userId arrives
+    enabled: !!userId,
+    staleTime: 30_000,
+    refetchInterval: 60_000,                  // live list every min
+    retry: 1,                                 // surface silent errors in console
   });
-}
+};
