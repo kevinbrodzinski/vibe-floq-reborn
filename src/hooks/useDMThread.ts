@@ -172,21 +172,32 @@ export function useDMThread(friendId: string | null) {
     
     markAsReadRef.current = throttle(async () => {
       try {
+        console.log('📖 Marking thread as read:', { threadId, selfId });
+        
         const { error } = await supabase.rpc('update_last_read_at', {
           thread_id_param: threadId,
           user_id_param: selfId
         });
         
         if (error) {
-          console.error('RPC error marking as read:', error);
+          console.error('❌ RPC error marking as read:', error);
           // Continue gracefully - don't block messaging
           return;
         }
         
-        // Invalidate unread counts query
-        qc.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+        console.log('✅ Successfully marked as read, invalidating unread counts');
+        
+        // Force invalidate unread counts query with refetch
+        await qc.invalidateQueries({ 
+          queryKey: ['dm-unread', selfId],
+          refetchType: 'active'
+        });
+        
+        // Also refetch immediately to update badge faster
+        qc.refetchQueries({ queryKey: ['dm-unread', selfId] });
+        
       } catch (error) {
-        console.error('Exception marking as read:', error);
+        console.error('❌ Exception marking as read:', error);
         // Continue gracefully - don't block messaging
       }
     }, 1000, { leading: true, trailing: false }); // Only fire once per second max

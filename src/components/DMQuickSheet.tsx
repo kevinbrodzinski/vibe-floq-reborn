@@ -7,6 +7,7 @@ import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { MessageBubble } from '@/components/MessageBubble';
 import { UserTag } from '@/components/ui/user-tag';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Sheet,
   SheetContent,
@@ -31,6 +32,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
   
   // Swipe gesture for closing sheet
@@ -47,9 +49,14 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       setCurrentUserId(data.user?.id ?? null);
     });
     
-    // Mark as read when sheet opens
+    // Mark as read when sheet opens with optimistic badge update
     if (open && friendId) {
+      console.log('📖 DM sheet opened, marking as read for friend:', friendId);
       markAsRead();
+      
+      // Immediate optimistic update for badge responsiveness
+      const queryClient = useQueryClient();
+      queryClient.invalidateQueries({ queryKey: ['dm-unread'] });
     }
   }, [open, friendId, markAsRead]);
 
@@ -108,7 +115,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[80vh] flex flex-col backdrop-blur-xl bg-background/80"
+        className="h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80 z-[70]"
+        style={{ 
+          maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)'
+        }}
         {...swipeGestures.handlers}
       >
         <SheetHeader className="pb-4 border-b border-border/50">

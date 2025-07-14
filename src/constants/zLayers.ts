@@ -25,6 +25,9 @@ export const Z = {
   
   // Navigation (highest - always accessible)
   navigation: 60,
+  
+  // DM Sheet (above navigation)
+  dmSheet: 70,
 } as const;
 
 export type ZLayer = typeof Z[keyof typeof Z];

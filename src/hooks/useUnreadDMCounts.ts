@@ -27,6 +27,8 @@ export const useUnreadDMCounts = (selfId: string | null) => {
   useEffect(() => {
     if (!selfId) return;
 
+    console.log('📱 Setting up DM unread counts realtime for user:', selfId);
+
     const channel = supabase
       .channel(`unread_updates:${selfId}`)
       .on('postgres_changes', {
@@ -34,7 +36,8 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         schema: 'public',
         table: 'direct_messages',
         filter: `thread_id=in.(SELECT id FROM direct_threads WHERE member_a=eq.${selfId} OR member_b=eq.${selfId})`
-      }, () => {
+      }, (payload) => {
+        console.log('💬 New DM received, invalidating unread counts:', payload);
         // Only invalidate when new messages arrive for threads involving this user
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
@@ -42,9 +45,10 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_a=eq.${selfId},member_b=eq.${selfId}`
-      }, () => {
-        // Invalidate when read timestamps are updated
+        filter: `member_a=eq.${selfId} OR member_b=eq.${selfId}`
+      }, (payload) => {
+        console.log('📖 Thread read status updated, invalidating unread counts:', payload);
+        // Invalidate when read timestamps are updated - fixed OR condition
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .subscribe();
