@@ -1,5 +1,5 @@
 import React, { useCallback, CSSProperties } from 'react';
-import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap } from 'lucide-react';
+import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -156,13 +156,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
       />
 
       {/* Top-right vibe pill */}
-      <ActionPill
-        size="xs"
-        variant="ghost"
-        className={cn(
-          "absolute top-3 right-3 uppercase tracking-wide border backdrop-blur-sm",
-          "text-white/90 bg-white/10"
-        )}
+      <div 
+        className="absolute top-3 right-3 px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-full border backdrop-blur-sm font-medium"
         style={{
           backgroundColor: `${getVibeColor(floq.primary_vibe)}20`,
           borderColor: `${getVibeColor(floq.primary_vibe)}40`,
@@ -170,26 +165,28 @@ export const FloqCard = React.memo<FloqCardProps>(({
         }}
       >
         {floq.primary_vibe}
-      </ActionPill>
+      </div>
+
+      {/* Top-left status badges */}
+      <div className="absolute top-3 left-3 flex flex-col gap-1">
+        {isNew && (
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/90 text-white rounded-full uppercase tracking-wide">
+            NEW
+          </div>
+        )}
+        {isHot && !isNew && (
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/90 text-white rounded-full uppercase tracking-wide">
+            HOT
+          </div>
+        )}
+      </div>
 
       {/* Bottom-right corner badges */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
-        {isNew && (
-          <span className="px-2 py-1 text-xs font-bold bg-blue-500/90 text-white rounded-full">
-            NEW
-          </span>
-        )}
-        
         {isCreator && (
-          <span className="px-2 py-1 text-xs font-bold bg-purple-500/90 text-white rounded-full">
-            Host
-          </span>
-        )}
-        
-        {isHot && !isNew && !isCreator && (
-          <span className="px-2 py-1 text-xs font-bold bg-orange-500/90 text-white rounded-full">
-            Hot
-          </span>
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-purple-500/90 text-white rounded-full uppercase tracking-wide">
+            HOST
+          </div>
         )}
       </div>
 
@@ -232,7 +229,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
               if (startsAt && startsAt > now) {
                 return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
               } else if (endsAt && now < endsAt) {
-                return <span className="text-green-400 font-medium">Live now</span>;
+                return (
+                  <span className="inline-flex items-center gap-1 text-green-400 font-medium">
+                    <span className="h-2 w-2 rounded-full bg-green-400 animate-ping" />
+                    Live now
+                  </span>
+                );
               } else if (endsAt && now >= endsAt) {
                 return <span className="text-zinc-400">Ended</span>;
               } else {
@@ -301,6 +303,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <ActionPill
           startIcon={<Eye size={14} />}
           variant="primary"
+          className="min-w-[80px]"
           onClick={(e) => {
             e.stopPropagation();
             handleCardClick();
@@ -349,13 +352,13 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </ActionPill>
         )}
         
-        
-          {/* Swipe hint for non-joined floqs on touch devices */}
-          {!floq.is_joined && (
-            <div className="mt-2 text-xs text-white/60 text-center select-none md:hidden">
-              Swipe left to hide
-            </div>
-          )}
+        {/* Swipe hint for non-joined floqs on touch devices */}
+        {!floq.is_joined && (
+          <div className="mt-2 text-[10px] text-muted-foreground flex items-center gap-1 justify-center select-none md:hidden">
+            <ChevronLeft size={12} aria-hidden />
+            <span>Swipe to hide</span>
+          </div>
+        )}
       </div>
     </article>
   );
