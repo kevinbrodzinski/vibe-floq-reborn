@@ -22,7 +22,8 @@ import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { hasManagePermission } from '@/utils/permissions';
 import { useCallback } from 'react';
-import { useUnreadCounts } from '@/hooks/useUnreadCounts';
+import { useUnreadCounts, useFloqTabBadges } from '@/hooks/useUnreadCounts';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
@@ -75,6 +76,26 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 
   // Get unread counts for badge display
   const { data: unreadCounts } = useUnreadCounts(floqDetails.id);
+  const tabBadges = useFloqTabBadges(floqDetails.id);
+  const { trackActivity } = useActivityTracking();
+
+  // Track activity when tab changes
+  useEffect(() => {
+    if (floqDetails.id && session?.user?.id) {
+      // Map activeTab to section names for tracking
+      const sectionMap: Record<string, 'chat' | 'activity' | 'plans' | 'all'> = {
+        chat: 'chat',
+        activity: 'activity', 
+        plans: 'plans',
+        manage: 'all'
+      };
+      
+      const section = sectionMap[activeTab];
+      if (section) {
+        trackActivity(floqDetails.id, section);
+      }
+    }
+  }, [activeTab, floqDetails.id, session?.user?.id, trackActivity]);
 
   // Plans CTA callback
   const goToNewPlan = useCallback(

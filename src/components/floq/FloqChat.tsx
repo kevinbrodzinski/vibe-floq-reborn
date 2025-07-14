@@ -9,6 +9,7 @@ import { useSession } from '@supabase/auth-helpers-react';
 import { MessageBubble } from './MessageBubble';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
 
 interface FloqChatProps {
   floqId: string;
@@ -74,9 +75,18 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     isSending,
   } = useFloqChat(floqId);
 
+  const { trackActivity } = useActivityTracking();
+
   // Derive canSend from props and state with fallback for edge cases
   const hasContent = !!message.trim() && message.trim().length > 0;
   const canSend = !!floqId && !!user && hasContent && isJoined;
+
+  // Track activity when chat opens/closes
+  useEffect(() => {
+    if (isOpen && floqId && user && isJoined) {
+      trackActivity(floqId, 'chat');
+    }
+  }, [isOpen, floqId, user, isJoined, trackActivity]);
 
   // Smart auto-scroll to bottom on new messages (throttled for performance)
   useEffect(() => {

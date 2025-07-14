@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useAuth } from '@/providers/AuthProvider';
 import { 
   Users, 
   UserPlus, 
@@ -49,6 +51,15 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
   floqId, 
   className 
 }) => {
+  const { user } = useAuth();
+  const { trackActivity } = useActivityTracking();
+
+  // Track activity when component mounts and floqId is available
+  useEffect(() => {
+    if (floqId && user) {
+      trackActivity(floqId, 'activity');
+    }
+  }, [floqId, user, trackActivity]);
   const { data: activities = [], isLoading, error, refetch } = useQuery({
     queryKey: ['floq-activity-feed', floqId],
     queryFn: async (): Promise<FloqActivityItem[]> => {
