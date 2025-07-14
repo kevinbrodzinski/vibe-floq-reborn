@@ -550,6 +550,59 @@ export type Database = {
           },
         ]
       }
+      floq_plans: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          description: string | null
+          end_at: string | null
+          floq_id: string
+          id: string
+          location: unknown | null
+          max_participants: number | null
+          planned_at: string
+          status: Database["public"]["Enums"]["plan_status_enum"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          description?: string | null
+          end_at?: string | null
+          floq_id: string
+          id?: string
+          location?: unknown | null
+          max_participants?: number | null
+          planned_at: string
+          status?: Database["public"]["Enums"]["plan_status_enum"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          description?: string | null
+          end_at?: string | null
+          floq_id?: string
+          id?: string
+          location?: unknown | null
+          max_participants?: number | null
+          planned_at?: string
+          status?: Database["public"]["Enums"]["plan_status_enum"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_plans_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_settings: {
         Row: {
           activity_visibility: Database["public"]["Enums"]["activity_visibility_enum"]
@@ -793,6 +846,32 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_participants: {
+        Row: {
+          joined_at: string | null
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string | null
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string | null
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3720,6 +3799,7 @@ export type Database = {
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       invitation_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
+      plan_status_enum: "draft" | "active" | "closed" | "cancelled"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -3910,6 +3990,7 @@ export const Constants = {
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       invitation_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
+      plan_status_enum: ["draft", "active", "closed", "cancelled"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
