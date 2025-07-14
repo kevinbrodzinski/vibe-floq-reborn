@@ -31,6 +31,17 @@ export const useMyFlocks = () => {
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
 
+  // Early return while auth is still loading to maintain hook order
+  if (!userId) {
+    return {
+      data: [] as MyFloq[],
+      isLoading: true,
+      isPlaceholderData: false,
+      error: null,
+      refetch: () => Promise.resolve(),
+    } as const;
+  }
+
   useEffect(() => {
     if (!userId) return;
 
@@ -86,9 +97,8 @@ export const useMyFlocks = () => {
 
   return useQuery({
     queryKey: ['my-floqs', userId],
-    placeholderData: (previous) => previous ?? [], // Preserve cache hydration
+    initialData: [],
     queryFn: async () => {
-      if (!userId) return [];
 
       console.info('🚀 Fetching my floqs data from database');
 
