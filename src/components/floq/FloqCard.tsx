@@ -125,9 +125,18 @@ export const FloqCard = React.memo<FloqCardProps>(({
         'rounded-3xl p-6 cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,.45)] ring-1 ring-white/10',
         'transition-all duration-300 ease-out',
         'hover:scale-[1.02] hover:-translate-y-1',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--vibe-from)]'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--vibe-from)]',
+        // Hover shimmer effect
+        'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-transparent',
+        'before:translate-x-[-100%] before:transition-transform before:duration-1000',
+        'hover:before:translate-x-[100%]'
       )}
-      style={{ '--vibe-from': accent } as React.CSSProperties}
+      style={{ 
+        '--vibe-from': accent,
+        '--vibe-h': `var(--${floq.primary_vibe}-h)`,
+        '--vibe-s': `var(--${floq.primary_vibe}-s)`, 
+        '--vibe-l': `var(--${floq.primary_vibe}-l)`
+      } as React.CSSProperties}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -172,9 +181,31 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
       )}
 
-      {/* Row 1: avatar + title */}
+      {/* Row 1: avatar stack + title */}
       <div className="relative z-10 flex items-center gap-4">
-        <VibeIcon vibe={floq.primary_vibe} size="md" />
+        {/* Avatar stack */}
+        <div className="relative flex items-center">
+          <VibeIcon vibe={floq.primary_vibe} size="md" />
+          {floq.members && floq.members.length > 0 && (
+            <div className="ml-2 flex -space-x-2">
+              {floq.members.slice(0, 3).map((member, index) => (
+                <img
+                  key={member.id}
+                  src={member.avatar_url || '/placeholder.svg'}
+                  alt={member.display_name}
+                  loading="lazy"
+                  className="h-6 w-6 rounded-full border-2 border-white/20 bg-white/10"
+                  style={{ zIndex: 10 - index }}
+                />
+              ))}
+              {floq.members.length > 3 && (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
+                  +{floq.members.length - 3}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         
         <div>
           <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
@@ -208,9 +239,15 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </p>
       )}
 
-      {/* Meta row */}
+      {/* Meta row with vibe-tinted frosted glass */}
       <div className="relative z-10 mt-4 flex flex-wrap gap-2">
-        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
+        <span 
+          className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10"
+          style={{ 
+            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
+          }}
+        >
           <Users
             size={14}
             strokeWidth={2}
@@ -221,14 +258,26 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </span>
         </span>
 
-        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
+        <span 
+          className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10"
+          style={{ 
+            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
+          }}
+        >
           <MapPin size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
           <span className="text-xs text-white/90 text-shadow-subtle">
             {formatDistance(floq.distance_meters)}
           </span>
         </span>
 
-        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
+        <span 
+          className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10"
+          style={{ 
+            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
+          }}
+        >
           <Clock size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
           <span className="text-xs text-white/90 text-shadow-subtle">
             {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
@@ -236,7 +285,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </span>
       </div>
 
-      {/* Action row */}
+      {/* Action row with conditional CTAs */}
       <div className="relative z-10 mt-6 flex flex-wrap gap-3">
         <ActionPill
           startIcon={<Eye size={14} />}
@@ -256,25 +305,38 @@ export const FloqCard = React.memo<FloqCardProps>(({
           View
         </ActionPill>
         
-        <ActionPill
-          startIcon={<UserPlus size={14} />}
-          variant={floq.is_joined ? 'ghost' : 'success'}
-          disabled={floq.is_joined}
-          onClick={handleJoin}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
+        {isCreator ? (
+          <ActionPill
+            startIcon={<Crown size={14} />}
+            variant="ghost"
+            onClick={(e) => {
               e.stopPropagation();
-              handleJoin(e as any);
-            }
-          }}
-        >
-          {floq.is_joined
-            ? 'Joined'
-            : floq.participant_count >= (floq.max_participants ?? 1e6)
-            ? 'Full'
-            : 'Join'}
-        </ActionPill>
+              navigate(`/floqs/${floq.id}/manage`);
+            }}
+          >
+            Manage
+          </ActionPill>
+        ) : (
+          <ActionPill
+            startIcon={<UserPlus size={14} />}
+            variant={floq.is_joined ? 'ghost' : 'success'}
+            disabled={floq.is_joined}
+            onClick={handleJoin}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                handleJoin(e as any);
+              }
+            }}
+          >
+            {floq.is_joined
+              ? 'Joined'
+              : floq.participant_count >= (floq.max_participants ?? 1e6)
+              ? 'Full'
+              : 'Join'}
+          </ActionPill>
+        )}
         
         <ActionPill
           startIcon={<XCircle size={14} />}
