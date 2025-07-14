@@ -1,41 +1,46 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { cva, type VariantProps } from 'class-variance-authority';
 
-const actionPillVariants = cva(
-  'rounded-full px-4 py-2 font-semibold text-sm transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none',
-  {
-    variants: {
-      variant: {
-        primary: 'text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 backdrop-blur-sm border border-white/20',
-        ghost: 'bg-white/10 text-white/90 hover:bg-white/20 hover:text-white active:scale-95 ring-1 ring-white/20 hover:ring-white/40 backdrop-blur-sm hover:shadow-lg',
-        danger: 'bg-destructive/20 text-destructive hover:bg-destructive/30 active:scale-95 ring-1 ring-destructive/30 hover:shadow-lg backdrop-blur-sm'
-      }
-    },
-    defaultVariants: {
-      variant: 'ghost'
-    }
-  }
-);
+type Variants = 'primary' | 'ghost' | 'destructive' | 'success';
 
-interface ActionPillProps 
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof actionPillVariants> {
-  label: string;
+interface ActionPillProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variants;
+  startIcon?: React.ReactNode;
+  children?: React.ReactNode;
+  label?: string;
 }
 
+const styles: Record<Variants, string> = {
+  primary:
+    'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm hover:brightness-110 active:scale-95',
+  ghost:
+    'bg-white/5 text-muted-foreground ring-1 ring-white/10 hover:bg-white/8 active:scale-95',
+  destructive:
+    'bg-red-500/20 text-red-300 ring-1 ring-red-500/40 hover:bg-red-500/30 active:scale-95',
+  success:
+    'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40 hover:bg-emerald-500/30 active:scale-95',
+};
+
 export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
-  ({ variant, label, className, ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        className={cn(actionPillVariants({ variant }), className)}
-        {...props}
-      >
-        {label}
-      </button>
-    );
-  }
+  ({ className, children, label, startIcon, variant = 'ghost', disabled, ...rest }, ref) => (
+    <button
+      ref={ref}
+      disabled={disabled}
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200',
+        styles[variant],
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+        className,
+      )}
+      aria-disabled={disabled}
+      {...rest}
+    >
+      {startIcon}
+      {children || label}
+    </button>
+  ),
 );
 
 ActionPill.displayName = 'ActionPill';

@@ -64,6 +64,19 @@ export default {
 					10: 'hsl(43 96% 90%)'
 				},
 				warning: 'hsl(var(--warning))',
+				vibe: {
+					chill: '51 100% 65%',
+					social: '24 100% 67%', 
+					hype: '278 74% 71%',
+					flowing: '174 84% 67%',
+					romantic: '328 79% 70%',
+					solo: '197 100% 50%',
+					weird: '54 100% 67%',
+					down: '220 9% 58%',
+					open: '126 84% 75%',
+					curious: '280 61% 68%'
+				},
+				cardBg: 'rgb(var(--card-bg) / <alpha-value>)',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -80,6 +93,9 @@ export default {
 				'gradient-secondary': 'var(--gradient-secondary)',
 				'gradient-field': 'var(--gradient-field)',
 				'gradient-vibe': 'var(--gradient-vibe)'
+			},
+			boxShadow: {
+				glass: '0 0 0 0.5px rgb(255 255 255 / 0.1) inset, 0 0 24px rgb(255 255 255 / 0.06)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
