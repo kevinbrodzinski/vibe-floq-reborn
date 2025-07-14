@@ -1,67 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Bell, AtSign, Eye, Lock, Save, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { Bell, AtSign, Eye, Save, Loader2 } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { useFloqSettings, type FloqSettings } from '@/hooks/useFloqSettings';
 
 interface FloqSettingsPanelProps {
   floqDetails: FloqDetails;
 }
 
-interface FloqSettings {
-  notifications_enabled: boolean;
-  mention_permissions: 'all' | 'co_admins' | 'host_only';
-  join_approval_required: boolean;
-  activity_visibility: 'public' | 'members_only';
-  welcome_message: string;
-}
-
 export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetails }) => {
-  // Mock initial settings - in a real app, these would be fetched from the database
-  const [settings, setSettings] = useState<FloqSettings>({
-    notifications_enabled: true,
-    mention_permissions: 'all',
-    join_approval_required: floqDetails.visibility === 'private',
-    activity_visibility: floqDetails.visibility === 'public' ? 'public' : 'members_only',
-    welcome_message: ''
-  });
-  
-  const [isSaving, setIsSaving] = useState(false);
+  const { settings: loadedSettings, isLoading, updateSettings, isSaving } = useFloqSettings(floqDetails.id);
+  const [localSettings, setLocalSettings] = useState<FloqSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const queryClient = useQueryClient();
+
+  // Initialize local settings when loaded settings change
+  useEffect(() => {
+    if (loadedSettings && !localSettings) {
+      setLocalSettings(loadedSettings);
+    }
+  }, [loadedSettings, localSettings]);
+
+  const currentSettings = localSettings || loadedSettings;
 
   const handleSettingChange = (key: keyof FloqSettings, value: any) => {
-    setSettings(prev => ({
-      ...prev,
+    if (!currentSettings) return;
+    
+    const newSettings = {
+      ...currentSettings,
       [key]: value
-    }));
+    };
+    setLocalSettings(newSettings);
     setHasChanges(true);
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      // In a real implementation, you'd save these settings to a floq_settings table
-      // For now, we'll just show a success message
-      
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      toast.success('Settings saved successfully');
-      setHasChanges(false);
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings');
-    } finally {
-      setIsSaving(false);
-    }
+    if (!localSettings || !hasChanges) return;
+    
+    updateSettings(localSettings);
+    setHasChanges(false);
   };
+
+  if (isLoading || !currentSettings) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,7 +71,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                 </p>
               </div>
               <Switch
-                checked={settings.notifications_enabled}
+                checked={currentSettings.notifications_enabled}
                 onCheckedChange={(checked) => handleSettingChange('notifications_enabled', checked)}
               />
             </div>
@@ -105,8 +95,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                 </p>
               </div>
               <Select 
-                value={settings.mention_permissions} 
-                onValueChange={(value: 'all' | 'co_admins' | 'host_only') => 
+                value={currentSettings.mention_permissions} 
+                onValueChange={(value: 'all' | 'co-admins' | 'host-only') => 
                   handleSettingChange('mention_permissions', value)
                 }
               >
@@ -115,8 +105,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Anyone</SelectItem>
-                  <SelectItem value="co_admins">Co-admins+</SelectItem>
-                  <SelectItem value="host_only">Host only</SelectItem>
+                  <SelectItem value="co-admins">Co-admins+</SelectItem>
+                  <SelectItem value="host-only">Host only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -140,7 +130,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                 </p>
               </div>
               <Switch
-                checked={settings.join_approval_required}
+                checked={currentSettings.join_approval_required}
                 onCheckedChange={(checked) => handleSettingChange('join_approval_required', checked)}
               />
             </div>
@@ -153,7 +143,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                 </p>
               </div>
               <Select 
-                value={settings.activity_visibility} 
+                value={currentSettings.activity_visibility} 
                 onValueChange={(value: 'public' | 'members_only') => 
                   handleSettingChange('activity_visibility', value)
                 }
@@ -181,7 +171,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
             </Label>
             <Textarea
               id="welcome_message"
-              value={settings.welcome_message}
+              value={currentSettings.welcome_message || ''}
               onChange={(e) => handleSettingChange('welcome_message', e.target.value)}
               placeholder="Welcome to our floq! Here's what you need to know..."
               rows={3}
@@ -189,7 +179,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              {settings.welcome_message.length}/300 characters
+              {(currentSettings.welcome_message || '').length}/300 characters
             </p>
           </div>
         </div>
