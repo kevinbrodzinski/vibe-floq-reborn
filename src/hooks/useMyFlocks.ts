@@ -44,13 +44,12 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         creator_id,
         starts_at,
         ends_at,
-        last_activity_at
+        last_activity_at,
+        deleted_at
       )
     `)
     .eq('user_id', userId)
-    .neq('role', 'creator')
-    .is('deleted_at', null, { foreignTable: 'floqs' })
-    .or('ends_at.is.null,ends_at.gt.now()', { foreignTable: 'floqs' });
+    .neq('role', 'creator');
 
   // Query for floqs I created
   const createdQuery = supabase
@@ -64,11 +63,10 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       starts_at,
       ends_at,
       last_activity_at,
-      created_at
+      created_at,
+      deleted_at
     `)
-    .eq('creator_id', userId)
-    .is('deleted_at', null)
-    .or('ends_at.is.null,ends_at.gt.now()');
+    .eq('creator_id', userId);
 
   const [participatedResult, createdResult] = await Promise.all([
     participatedQuery,
@@ -102,6 +100,16 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       return;
     }
 
+    // Filter out deleted floqs
+    if (floq.deleted_at) {
+      return;
+    }
+
+    // Filter out expired floqs
+    if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
+      return;
+    }
+
     allFloqs.push({
       id: floq.id,
       title: floq.title || floq.name || 'Untitled',
@@ -125,6 +133,16 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       if (import.meta.env.DEV) {
         console.warn('⚠️ Created floq missing ID:', floq);
       }
+      return;
+    }
+
+    // Filter out deleted floqs
+    if (floq.deleted_at) {
+      return;
+    }
+
+    // Filter out expired floqs
+    if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
       return;
     }
 
