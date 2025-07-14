@@ -13,11 +13,14 @@ export const useIgnoreFloq = () => {
       if (error) throw error;
     },
     onSuccess: (_, { floqId }) => {
-      // Remove floq from all cached nearby flocks lists
-      queryClient.setQueriesData<NearbyFloq[]>(
-        { queryKey: ['nearby-flocks'] },
-        (old) => old?.filter(f => f.id !== floqId) ?? old
-      );
+      // Remove floq from all cached nearby flocks lists with more specific cache invalidation
+      queryClient.removeQueries({ 
+        queryKey: ['nearby-flocks'], 
+        predicate: (query) => {
+          const data = query.state.data as NearbyFloq[] | undefined;
+          return data?.some(f => f.id === floqId) ?? false;
+        }
+      });
     },
   });
 };

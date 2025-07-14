@@ -13,6 +13,8 @@ export const VibePill = ({ vibe, className = '' }: VibePillProps) => {
 
   return (
     <span 
+      tabIndex={-1}
+      aria-hidden="true"
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${className}`}
       style={{ 
         backgroundColor: `${vibeColor}20`,

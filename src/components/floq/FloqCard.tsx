@@ -44,6 +44,9 @@ export const FloqCard = React.memo<FloqCardProps>(({
     onLeave?.(floq.id);
   }, [onLeave, floq.id]);
 
+  // Constants
+  const SWIPE_THRESHOLD = 80;
+
   // Handle ignore floq
   const handleIgnore = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -57,20 +60,20 @@ export const FloqCard = React.memo<FloqCardProps>(({
       if (!down) return;
       
       // Left swipe (hide) - ignore this floq
-      if (mx < -80 && !floq.is_joined) {
+      if (mx < -SWIPE_THRESHOLD && !floq.is_joined) {
         cancel();
         ignoreFloq({ floqId: floq.id });
         toast.success("Floq hidden from your feed");
       }
       
       // Left swipe (leave) - only if joined
-      if (mx < -80 && floq.is_joined && onLeave) {
+      if (mx < -SWIPE_THRESHOLD && floq.is_joined && onLeave) {
         cancel();
         handleLeave();
       }
       
       // Right swipe (boost) - guard against already boosted
-      if (mx > 80 && onBoost) {
+      if (mx > SWIPE_THRESHOLD && onBoost) {
         cancel();
         handleBoost();
       }
@@ -78,8 +81,9 @@ export const FloqCard = React.memo<FloqCardProps>(({
     {
       axis: 'x',
       filterTaps: true,
-      pointer: { touch: true },
-      passive: false // For smooth iOS swipe experience
+      pointer: { touch: true, capture: true },
+      // Only disable passive on iOS for smooth swipe experience
+      ...(navigator.userAgent.includes('iPhone') && { passive: false })
     }
   );
 
@@ -103,10 +107,17 @@ export const FloqCard = React.memo<FloqCardProps>(({
     : `${pillBase} bg-primary text-primary-foreground hover:brightness-110`;
 
   return (
-    <button
+    <div
       {...bind()}
-      onClick={handleCardClick}
       role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
       aria-pressed={floq.is_joined}
       aria-label={`${floq.title} floq, ${floq.participant_count} members, ${formatDistance(floq.distance_meters)} away`}
       className={cn(
@@ -115,7 +126,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         'hover:bg-card/50 transition-all duration-200',
         'active:scale-[.98] active:brightness-95',
         'text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-        'cursor-grab active:cursor-grabbing',
+        'cursor-pointer',
         '[-webkit-tap-highlight-color:rgba(0,0,0,0)]'
       )}
     >
@@ -191,6 +202,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </div>
-    </button>
+    </div>
   );
 });
