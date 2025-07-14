@@ -7,12 +7,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useInviteToFloq } from '@/hooks/useInviteToFloq';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { cn } from '@/lib/utils';
+import type { VariantProps } from "class-variance-authority";
 
 interface Friend {
   friend_id: string;
@@ -24,8 +26,8 @@ interface Friend {
 interface InviteFriendsButtonProps {
   floqId: string;
   className?: string;
-  variant?: 'default' | 'outline' | 'ghost';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
+  variant?: VariantProps<typeof Button>['variant'];
+  size?: VariantProps<typeof Button>['size'];
   disabled?: boolean;
 }
 
@@ -157,102 +159,113 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant={variant} 
-          size={size} 
-          className={className}
-          disabled={disabled}
-        >
-          <UserPlus className="w-4 h-4 mr-2" />
-          Invite
-        </Button>
-      </DialogTrigger>
-      
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Invite Friends</DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          {/* Search */}
-          <Input
-            placeholder="Search friends..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-            autoFocus
-          />
-          
-          {/* Selected count */}
-          {selectedFriends.size > 0 && (
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary">
-                {selectedFriends.size} friend{selectedFriends.size > 1 ? 's' : ''} selected
-              </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedFriends(new Set())}
+    <TooltipProvider>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button 
+                variant={variant} 
+                size={size} 
+                className={className}
+                disabled={disabled}
               >
-                Clear all
+                <UserPlus className="w-4 h-4 mr-2" />
+                Invite
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          {disabled && (
+            <TooltipContent>
+              <p>Floq is at capacity</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite Friends</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Search */}
+            <Input
+              placeholder="Search friends..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+              autoFocus
+            />
+            
+            {/* Selected count */}
+            {selectedFriends.size > 0 && (
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary">
+                  {selectedFriends.size} friend{selectedFriends.size > 1 ? 's' : ''} selected
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFriends(new Set())}
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
+            
+            {/* Friends list */}
+            <div className="max-h-60 overflow-y-auto space-y-2" tabIndex={0}>
+              {isLoading ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <div className="w-4 h-4 bg-muted animate-pulse rounded" />
+                      <div className="w-10 h-10 bg-muted animate-pulse rounded-full" />
+                      <div className="space-y-1 flex-1">
+                        <div className="h-4 bg-muted animate-pulse rounded" />
+                        <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredFriends.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    {searchQuery ? 'No friends found' : 'No friends to invite'}
+                  </p>
+                </div>
+              ) : (
+                filteredFriends.map((friend) => (
+                  <FriendCard key={friend.friend_id} friend={friend} />
+                ))
+              )}
+            </div>
+            
+            {/* Actions */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleInvite}
+                disabled={selectedFriends.size === 0 || isInviting}
+                className="flex-1"
+              >
+                {isInviting ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                ) : (
+                  <UserPlus className="w-4 h-4 mr-2" />
+                )}
+                Invite {selectedFriends.size > 0 && `(${selectedFriends.size})`}
               </Button>
             </div>
-          )}
-          
-          {/* Friends list */}
-          <div className="max-h-60 overflow-y-auto space-y-2" tabIndex={0}>
-            {isLoading ? (
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3">
-                    <div className="w-4 h-4 bg-muted animate-pulse rounded" />
-                    <div className="w-10 h-10 bg-muted animate-pulse rounded-full" />
-                    <div className="space-y-1 flex-1">
-                      <div className="h-4 bg-muted animate-pulse rounded" />
-                      <div className="h-3 w-24 bg-muted animate-pulse rounded" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredFriends.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {searchQuery ? 'No friends found' : 'No friends to invite'}
-                </p>
-              </div>
-            ) : (
-              filteredFriends.map((friend) => (
-                <FriendCard key={friend.friend_id} friend={friend} />
-              ))
-            )}
           </div>
-          
-          {/* Actions */}
-          <div className="flex gap-2 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleInvite}
-              disabled={selectedFriends.size === 0 || isInviting}
-              className="flex-1"
-            >
-              {isInviting ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-              ) : (
-                <UserPlus className="w-4 h-4 mr-2" />
-              )}
-              Invite {selectedFriends.size > 0 && `(${selectedFriends.size})`}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </TooltipProvider>
   );
 };

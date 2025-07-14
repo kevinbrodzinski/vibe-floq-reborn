@@ -236,8 +236,8 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                   variant="outline"
                   size="sm"
                   disabled={
-                    floqDetails.max_participants && 
-                    (floqDetails.participant_count + (floqDetails.pending_invites?.length || 0)) >= floqDetails.max_participants
+                    (floqDetails.max_participants ?? 999) <= 
+                    (floqDetails.participant_count + (floqDetails.pending_invites?.length || 0))
                   }
                 />
               )}
