@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X, Trash2, Calendar } from 'lucide-react';
+import { Clock, MapPin, Users, UserMinus, Zap, X, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { IconPill } from '@/components/IconPill';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteFloq } from '@/hooks/useDeleteFloq';
 import { ManageFloqView } from './ManageFloqView';
+import { InviteFriendsButton } from '@/components/floq/InviteFriendsButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -39,7 +40,6 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   isEndingFloq = false
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [showInvite, setShowInvite] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const session = useSession();
@@ -230,10 +230,10 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
               />
               
               {/* Invite available to all joined members */}
-              <IconPill
-                icon={<UserPlus2 className="w-3 h-3" />}
-                label="Invite"
-                onClick={() => setShowInvite(true)}
+              <InviteFriendsButton
+                floqId={floqDetails.id}
+                variant="outline"
+                size="sm"
               />
             </div>
           )}
