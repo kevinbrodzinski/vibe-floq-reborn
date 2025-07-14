@@ -15,15 +15,16 @@ export const VibePill = ({ vibe, className = '' }: VibePillProps) => {
     <span 
       tabIndex={-1}
       aria-label={`${vibe} vibe`}
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border transition-all duration-200 hover:scale-105 ${className}`}
       style={{ 
         backgroundColor: `${vibeColor}20`,
         color: vibeColor,
-        border: `1px solid ${vibeColor}40`
+        border: `1px solid ${vibeColor}50`,
+        boxShadow: `0 0 10px ${vibeColor}30`
       }}
     >
-      <span>{icon}</span>
-      <span className="capitalize">{vibe}</span>
+      <span className="text-sm">{icon}</span>
+      <span className="capitalize tracking-wide">{vibe}</span>
     </span>
   );
 };
