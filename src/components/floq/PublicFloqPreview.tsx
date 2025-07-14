@@ -56,8 +56,8 @@ export const PublicFloqPreview: React.FC<PublicFloqPreviewProps> = ({
           
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold mb-2">{floqDetails.title}</h2>
-            {floqDetails.name && (
-              <p className="text-sm text-muted-foreground mb-2">{floqDetails.name}</p>
+            {floqDetails.description && (
+              <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{floqDetails.description}</p>
             )}
             
             <div className="flex items-center gap-2 mb-2">

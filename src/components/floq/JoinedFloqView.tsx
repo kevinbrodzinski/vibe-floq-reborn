@@ -112,6 +112,9 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-semibold mb-1">{floqDetails.title}</h2>
+            {floqDetails.description && (
+              <p className="text-sm text-muted-foreground mb-1 line-clamp-1">{floqDetails.description}</p>
+            )}
             
             <div className="flex items-center gap-2 mb-2">
               <Badge 
