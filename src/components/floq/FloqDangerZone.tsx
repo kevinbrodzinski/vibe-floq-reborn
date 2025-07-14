@@ -248,15 +248,17 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={!canDelete || isDeleting}
-                  className={isMobile ? "w-full h-12" : ""}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Floq
-                </Button>
+                <span className="inline-block w-full">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={!canDelete || isDeleting}
+                    className={`w-full h-12 ${!canDelete ? 'pointer-events-none' : ''}`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Floq
+                  </Button>
+                </span>
               </TooltipTrigger>
               {!canDelete && (
                 <TooltipContent side="bottom">

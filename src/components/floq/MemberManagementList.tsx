@@ -161,7 +161,8 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       await supabase
         .from('floq_invitations')
         .update({ created_at: new Date().toISOString() })
-        .eq('id', invitation.id);
+        .eq('floq_id', floqDetails.id)
+        .eq('invitee_id', invitation.invitee_id);
       toast.success('Invitation resent');
       queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
     } catch (error) {
