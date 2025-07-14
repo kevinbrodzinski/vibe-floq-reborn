@@ -95,13 +95,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "direct_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "direct_messages_thread_id_fkey"
             columns: ["thread_id"]
             isOneToOne: false
@@ -138,22 +131,7 @@ export type Database = {
           member_a?: string
           member_b?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "direct_threads_member_a_fkey"
-            columns: ["member_a"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "direct_threads_member_b_fkey"
-            columns: ["member_b"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       edge_invocation_logs: {
         Row: {
@@ -270,13 +248,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
-            columns: ["target_floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
-          {
             foreignKeyName: "flock_auto_suggestions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -323,13 +294,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "flock_history_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
           },
           {
             foreignKeyName: "flock_history_user_id_fkey"
@@ -422,13 +386,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_floq_boosts_floq"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
-          {
             foreignKeyName: "fk_floq_boosts_user"
             columns: ["user_id"]
             isOneToOne: false
@@ -460,20 +417,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_ignored_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
-          {
-            foreignKeyName: "floq_ignored_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -512,13 +455,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_invitations_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
           },
           {
             foreignKeyName: "floq_invitations_invitee_id_fkey"
@@ -588,13 +524,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_messages_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
-          {
             foreignKeyName: "floq_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
@@ -629,13 +558,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
           },
           {
             foreignKeyName: "floq_participants_user_id_fkey"
@@ -691,25 +613,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "floq_plans_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-          {
             foreignKeyName: "floq_plans_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_plans_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
           },
         ]
       }
@@ -748,13 +656,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "floqs"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_settings_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: true
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
           },
         ]
       }
@@ -867,13 +768,6 @@ export type Database = {
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "floqs_parent_flock_id_fkey"
-            columns: ["parent_flock_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
         ]
       }
       friend_requests: {
@@ -934,22 +828,7 @@ export type Database = {
           friend_id?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "friendships_friend_id_fkey"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "friendships_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       notification_queue: {
         Row: {
@@ -1045,13 +924,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "plan_participants_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1169,6 +1041,44 @@ export type Database = {
           },
         ]
       }
+      user_floq_activity_tracking: {
+        Row: {
+          created_at: string
+          floq_id: string
+          last_activity_viewed_at: string
+          last_chat_viewed_at: string
+          last_plans_viewed_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          floq_id: string
+          last_activity_viewed_at?: string
+          last_chat_viewed_at?: string
+          last_plans_viewed_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          floq_id?: string
+          last_activity_viewed_at?: string
+          last_chat_viewed_at?: string
+          last_plans_viewed_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_tracking_floq"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           created_at: string
@@ -1215,13 +1125,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_notifications_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["floq_id"]
-          },
-          {
             foreignKeyName: "user_notifications_message_id_fkey"
             columns: ["message_id"]
             isOneToOne: false
@@ -1234,13 +1137,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1308,15 +1204,7 @@ export type Database = {
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"]
           visible_to?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_vibe_states_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "user_floq_unread_counts"
-            referencedColumns: ["user_id"]
-          },
-        ]
+        Relationships: []
       }
       venue_clusters: {
         Row: {
@@ -1639,7 +1527,22 @@ export type Database = {
           unread_total: number | null
           user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "floq_participants_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_active_users: {
         Row: {
@@ -3983,6 +3886,10 @@ export type Database = {
           p_suggestion_id?: string
         }
         Returns: Json
+      }
+      update_user_activity_tracking: {
+        Args: { p_floq_id: string; p_section?: string }
+        Returns: undefined
       }
       updategeometrysrid: {
         Args: {
