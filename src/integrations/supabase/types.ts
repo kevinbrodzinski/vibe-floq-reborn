@@ -1066,6 +1066,7 @@ export type Database = {
           id: string
           interests: string[] | null
           last_name: string | null
+          push_token: string | null
           username: string
         }
         Insert: {
@@ -1078,6 +1079,7 @@ export type Database = {
           id?: string
           interests?: string[] | null
           last_name?: string | null
+          push_token?: string | null
           username: string
         }
         Update: {
@@ -1090,6 +1092,7 @@ export type Database = {
           id?: string
           interests?: string[] | null
           last_name?: string | null
+          push_token?: string | null
           username?: string
         }
         Relationships: []
@@ -1163,6 +1166,81 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notifications: {
+        Row: {
+          created_at: string
+          floq_id: string | null
+          id: string
+          kind: string
+          message_id: string | null
+          plan_id: string | null
+          read_at: string | null
+          subtitle: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          floq_id?: string | null
+          id?: string
+          kind: string
+          message_id?: string | null
+          plan_id?: string | null
+          read_at?: string | null
+          subtitle?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          floq_id?: string | null
+          id?: string
+          kind?: string
+          message_id?: string | null
+          plan_id?: string | null
+          read_at?: string | null
+          subtitle?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "user_floq_unread_counts"
+            referencedColumns: ["floq_id"]
+          },
+          {
+            foreignKeyName: "user_notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_floq_unread_counts"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2512,6 +2590,10 @@ export type Database = {
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      mark_notifications_read: {
+        Args: { notification_ids?: string[]; mark_all_for_user?: boolean }
+        Returns: number
       }
       path: {
         Args: { "": unknown }
