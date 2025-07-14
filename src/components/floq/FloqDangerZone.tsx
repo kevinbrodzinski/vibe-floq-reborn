@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDeleteFloq } from '@/hooks/useDeleteFloq';
 import { toast } from 'sonner';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloqDangerZoneProps {
   floqDetails: FloqDetails;
@@ -30,6 +31,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
   const [selectedNewOwner, setSelectedNewOwner] = useState<string>('');
   const [isTransferring, setIsTransferring] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const isMobile = useIsMobile();
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -149,7 +151,9 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
               variant="outline"
               onClick={() => setShowEndConfirm(true)}
               disabled={isEndingFloq}
-              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              className={`border-orange-300 text-orange-700 hover:bg-orange-100 ${
+                isMobile ? "w-full h-12" : ""
+              }`}
             >
               <X className="w-4 h-4 mr-2" />
               End Floq
@@ -173,7 +177,9 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
             variant="outline"
             onClick={() => setShowArchiveConfirm(true)}
             disabled={isArchiving}
-            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+            className={`border-blue-300 text-blue-700 hover:bg-blue-100 ${
+              isMobile ? "w-full h-12" : ""
+            }`}
           >
             <Archive className="w-4 h-4 mr-2" />
             Archive Floq
@@ -197,7 +203,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
             <div className="space-y-2">
               <Label>Select new owner</Label>
               <Select value={selectedNewOwner} onValueChange={setSelectedNewOwner}>
-                <SelectTrigger>
+                <SelectTrigger className={isMobile ? "h-12" : ""}>
                   <SelectValue placeholder="Choose a co-admin" />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,7 +220,9 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
               variant="outline"
               onClick={() => setShowTransferConfirm(true)}
               disabled={!selectedNewOwner || isTransferring}
-              className="border-purple-300 text-purple-700 hover:bg-purple-100"
+              className={`border-purple-300 text-purple-700 hover:bg-purple-100 ${
+                isMobile ? "w-full h-12" : ""
+              }`}
             >
               <Crown className="w-4 h-4 mr-2" />
               Transfer Ownership
@@ -241,6 +249,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
                 variant="destructive"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
+                className={isMobile ? "w-full h-12" : ""}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Floq

@@ -9,6 +9,8 @@ import { Bell, AtSign, Eye, Save, Loader2 } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { useFloqSettings, type FloqSettings } from '@/hooks/useFloqSettings';
 import { FloqSettingsSkeleton } from './FloqSettingsSkeleton';
+import { WELCOME_MESSAGE_TEMPLATES } from '@/constants/welcomeMessageTemplates';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface FloqSettingsPanelProps {
   floqDetails: FloqDetails;
@@ -20,6 +22,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   const [hasChanges, setHasChanges] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const uid = useId(); // For unique IDs
+  const isMobile = useIsMobile();
 
   // Always sync local settings when loaded settings change
   useEffect(() => {
@@ -102,6 +105,31 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
       
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
         <fieldset disabled={saving} className={`space-y-6 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+          
+          {/* Welcome Message Templates */}
+          <Card className="p-4">
+            <div className="space-y-4">
+              <h4 className="font-medium">Quick Templates</h4>
+              <Select onValueChange={(templateId) => {
+                const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === templateId);
+                if (template) {
+                  handleSettingChange('welcome_message', template.content);
+                }
+              }}>
+                <SelectTrigger className={isMobile ? "w-full h-12" : "w-full"}>
+                  <SelectValue placeholder="Choose a welcome message template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {WELCOME_MESSAGE_TEMPLATES.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+
         <Card className="p-4">
         <div className="space-y-4">
           <h4 className="font-medium flex items-center gap-2">
@@ -151,7 +179,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                   handleSettingChange('mention_permissions', value)
                 }
               >
-                <SelectTrigger className="w-32 pr-7" aria-labelledby={`${uid}-mention-label`}>
+                <SelectTrigger className={isMobile ? "w-full h-12" : "w-32 pr-7"} aria-labelledby={`${uid}-mention-label`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,7 +231,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                   handleSettingChange('activity_visibility', value)
                 }
               >
-                <SelectTrigger className="w-36 pr-7" aria-labelledby={`${uid}-visibility-label`}>
+                <SelectTrigger className={isMobile ? "w-full h-12" : "w-36 pr-7"} aria-labelledby={`${uid}-visibility-label`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -231,7 +259,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
               placeholder="Welcome to our floq! Here's what you need to know..."
               rows={3}
               maxLength={300}
-              className={`mt-2 ${validationErrors.welcome_message ? 'border-destructive' : ''}`}
+              className={`mt-2 ${isMobile ? 'text-base' : ''} ${validationErrors.welcome_message ? 'border-destructive' : ''}`}
             />
             {validationErrors.welcome_message && (
               <p className="text-xs text-destructive mt-1">{validationErrors.welcome_message}</p>
@@ -244,12 +272,12 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
       </Card>
 
       {hasChanges && (
-        <div className="flex justify-end">
+        <div className={isMobile ? "w-full" : "flex justify-end"}>
           <Button 
             onClick={handleSave} 
             disabled={saving || !hasChanges}
             variant={hasChanges ? "default" : "secondary"}
-            className={!hasChanges ? "text-muted-foreground cursor-not-allowed" : ""}
+            className={`${!hasChanges ? "text-muted-foreground cursor-not-allowed" : ""} ${isMobile ? "w-full h-12" : ""}`}
           >
             {saving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

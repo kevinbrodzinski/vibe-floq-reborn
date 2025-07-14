@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { FloqDetails, FloqParticipant } from '@/hooks/useFloqDetails';
 import { formatDistance } from '@/utils/formatDistance';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MemberManagementListProps {
   floqDetails: FloqDetails;
@@ -23,6 +24,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<FloqParticipant | null>(null);
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const filteredParticipants = floqDetails.participants.filter(participant =>
     participant.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -144,7 +146,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                   placeholder="Search members..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-48"
+                  className={`pl-9 ${isMobile ? 'w-full h-12 text-base' : 'w-48'}`}
                 />
               </div>
             )}
@@ -164,7 +166,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
               <h5 className="text-sm font-medium text-muted-foreground">Active Members</h5>
             )}
             {activeMembers.map((participant) => (
-              <div key={participant.user_id} className="flex items-center justify-between p-3 rounded-lg border">
+              <div key={participant.user_id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={participant.avatar_url} />
@@ -195,14 +197,17 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className={`flex ${isMobile ? 'flex-col w-full gap-2' : 'items-center gap-2'}`}>
                   {participant.role !== 'creator' && (
                     <>
                       <Select
                         value={participant.role}
                         onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole, participant.role)}
                       >
-                        <SelectTrigger className="w-28 h-8" aria-label="Change role">
+                        <SelectTrigger 
+                          className={isMobile ? "w-full h-12" : "w-28 h-8"} 
+                          aria-label="Change role"
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -216,7 +221,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                         </SelectContent>
                       </Select>
 
-                      {participant.role === 'co-admin' && (
+                      {participant.role === 'co-admin' && !isMobile && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -231,12 +236,15 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
 
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size={isMobile ? "default" : "sm"}
                         onClick={() => confirmRemove(participant)}
                         disabled={removingUserId === participant.user_id}
-                        className="text-destructive hover:text-destructive"
+                        className={`text-destructive hover:text-destructive ${
+                          isMobile ? "w-full h-12" : ""
+                        }`}
                       >
                         <UserMinus className="w-4 h-4" />
+                        {isMobile && <span className="ml-2">Remove Member</span>}
                       </Button>
                     </>
                   )}

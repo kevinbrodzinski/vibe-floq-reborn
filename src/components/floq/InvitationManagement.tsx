@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { formatDistance } from '@/utils/formatDistance';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InvitationManagementProps {
   floqDetails: FloqDetails;
@@ -47,6 +48,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
   const queryClient = useQueryClient();
   const searchRequestId = useRef(0);
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  const isMobile = useIsMobile();
 
   // Load pending invitations on mount
   React.useEffect(() => {
@@ -212,7 +214,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
             placeholder="Search users by name or username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className={`pl-9 ${isMobile ? 'h-12 text-base' : ''}`}
             aria-label="Search for users to invite"
           />
           </div>
@@ -226,7 +228,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
                 </div>
               ) : searchResults.length > 0 ? (
                 searchResults.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div key={user.id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8">
                         <AvatarImage src={user.avatar_url} />
@@ -242,10 +244,12 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
                     </div>
 
                     <Button
-                      size="sm"
+                      size={isMobile ? "default" : "sm"}
                       onClick={() => sendInvitation(user.id)}
                       disabled={invitingUserId === user.id}
-                      className="gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      className={`gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${
+                        isMobile ? "w-full h-12" : ""
+                      }`}
                     >
                       <Send className="w-3 h-3" />
                       {invitingUserId === user.id ? 'Sending...' : 'Invite'}
@@ -279,7 +283,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
           ) : pendingInvitations.length > 0 ? (
             <div className="space-y-3">
               {pendingInvitations.map((invitation) => (
-                <div key={invitation.id} className="flex items-center justify-between p-3 rounded-lg border">
+                <div key={invitation.id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
                   <div className="flex items-center gap-3">
                     <Avatar className="w-8 h-8">
                       <AvatarImage src={invitation.invitee_avatar_url} />
@@ -308,11 +312,14 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
 
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size={isMobile ? "default" : "sm"}
                     onClick={() => confirmCancelInvitation(invitation)}
-                    className="text-destructive hover:text-destructive"
+                    className={`text-destructive hover:text-destructive ${
+                      isMobile ? "w-full h-12" : ""
+                    }`}
                   >
                     <X className="w-4 h-4" />
+                    {isMobile && <span className="ml-2">Cancel Invitation</span>}
                   </Button>
                 </div>
               ))}
