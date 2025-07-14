@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
 
 export interface MyFloq {
@@ -18,6 +18,11 @@ export interface MyFloq {
   creator_id?: string;
   distance_meters?: number;
   is_creator: boolean;
+}
+
+interface CountRow {
+  floq_id: string;
+  count: string;
 }
 
 interface UseMyFlocksOptions {
@@ -51,12 +56,12 @@ export const useMyFlocks = () => {
       channelRef.current = null;
     }
 
-    const invalidateQueries = () => {
+    const invalidate = useCallback(() => {
       // Add a small delay to prevent race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
       }, 100);
-    };
+    }, [queryClient, userId]);
 
     const channel = supabase
       .channel(`my-flocks-${userId}`)
@@ -65,24 +70,24 @@ export const useMyFlocks = () => {
         schema: 'public',
         table: 'floqs',
         filter: `creator_id=eq.${userId}`
-      }, invalidateQueries)
+      }, invalidate)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'floqs'
-      }, invalidateQueries)
+      }, invalidate)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'floq_participants',
         filter: `user_id=eq.${userId}`
-      }, invalidateQueries)
+      }, invalidate)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'floq_participants',
         filter: `user_id=eq.${userId}`
-      }, invalidateQueries)
+      }, invalidate)
       .subscribe();
 
     channelRef.current = channel;
@@ -97,10 +102,9 @@ export const useMyFlocks = () => {
 
   return useQuery({
     queryKey: ['my-floqs', userId],
-    initialData: [],
     queryFn: async () => {
 
-      console.info('🚀 Fetching my floqs data from database');
+      if (import.meta.env.DEV) console.info('🚀 Fetching my floqs from DB');
 
       // Query for floqs I'm participating in (not creator)
       const participatedQuery = supabase
@@ -136,7 +140,8 @@ export const useMyFlocks = () => {
           creator_id,
           starts_at,
           ends_at,
-          last_activity_at
+          last_activity_at,
+          created_at
         `)
         .eq('creator_id', userId)
         .is('deleted_at', null)
@@ -207,7 +212,7 @@ export const useMyFlocks = () => {
           primary_vibe: floq.primary_vibe,
           participant_count: 0, // Will be filled below
           role: 'creator',
-          joined_at: floq.starts_at || floq.created_at,
+          joined_at: floq.created_at || floq.starts_at,
           last_activity_at: floq.last_activity_at || floq.starts_at,
           starts_at: floq.starts_at,
           ends_at: floq.ends_at,
@@ -224,7 +229,7 @@ export const useMyFlocks = () => {
       // Get participant counts for all floqs using Postgres aggregation
       const floqIds = allFloqs.map(f => f.id);
       
-      let participantCounts: any[] = [];
+      let participantCounts: CountRow[] = [];
       try {
         const { data, error } = await supabase
           .from('floq_participants')
