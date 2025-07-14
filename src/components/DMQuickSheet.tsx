@@ -52,7 +52,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     
     // Mark as read when sheet opens with optimistic badge update
     if (open && friendId && currentUserId) {
-      console.log('📖 DM sheet opened, marking as read for friend:', friendId);
+      if (import.meta.env.DEV) console.log('📖 DM sheet opened, marking as read for friend:', friendId);
       markAsRead();
       
       // Immediate optimistic update for badge responsiveness - fixed query key

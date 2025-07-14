@@ -27,7 +27,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
   useEffect(() => {
     if (!selfId) return;
 
-    console.log('📱 Setting up DM unread counts realtime for user:', selfId);
+    if (import.meta.env.DEV) console.log('📱 Setting up DM unread counts realtime for user:', selfId);
 
     const channel = supabase
       .channel(`unread_updates:${selfId}`)
@@ -36,7 +36,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         schema: 'public',
         table: 'direct_messages'
       }, (payload) => {
-        console.log('💬 New DM received, invalidating unread counts:', payload);
+        if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
         // Invalidate for any new message - will be filtered by RPC function
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
@@ -46,7 +46,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         table: 'direct_threads',
         filter: `or=(member_a.eq.${selfId},member_b.eq.${selfId})`
       }, (payload) => {
-        console.log('📖 Thread read status updated, invalidating unread counts:', payload);
+        if (import.meta.env.DEV) console.log('📖 Thread read status updated, invalidating unread counts:', payload);
         // Invalidate when read timestamps are updated - fixed OR syntax
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })

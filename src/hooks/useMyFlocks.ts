@@ -174,7 +174,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
   try {
     const { data, error } = await supabase
       .from('floq_participants')
-      .select('floq_id, count(*)')
+      .select('floq_id, count')
       .in('floq_id', floqIds)
       .group('floq_id');
     
@@ -191,11 +191,12 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
     }
   }
 
-  // Create count lookup map with safe casting
-  const countMap = (participantCounts ?? []).reduce<Record<string, number>>((acc, item) => {
-    acc[item.floq_id] = Number(item.count) || 0;
-    return acc;
-  }, {});
+  // Create count lookup map with safe casting and destructuring
+  const countMap = (participantCounts as CountRow[])
+    .reduce<Record<string, number>>((acc, { floq_id, count }) => {
+      acc[floq_id] = Number(count) || 0;
+      return acc;
+    }, {});
 
   // Update participant counts
   allFloqs.forEach(floq => {
