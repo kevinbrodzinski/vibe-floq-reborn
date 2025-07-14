@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { cn } from '@/lib/utils';
-import type { VariantProps } from "class-variance-authority";
+import { VariantProps } from "class-variance-authority";
 
 interface Friend {
   friend_id: string;
@@ -159,7 +159,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
   };
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={200}>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <Tooltip>
           <TooltipTrigger asChild>
