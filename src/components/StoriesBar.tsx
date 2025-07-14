@@ -101,6 +101,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
               key={floq.id || `floq-${Math.random()}`}
               onClick={() => floq.id && onFlockPress?.(floq.id)}
               disabled={!floq.id}
+              aria-disabled={!floq.id}
               className={cn(
                 "flex flex-col items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1 transition-all",
                 getActivityIndicator(floq),

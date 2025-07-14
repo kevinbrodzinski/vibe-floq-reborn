@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Vibe } from "@/types";
 
 export interface MyFloq {
@@ -29,13 +29,18 @@ export const useMyFlocks = () => {
   const { session } = useAuth();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
 
-  // Set up realtime invalidation with INSERT listener (Fix B)
   useEffect(() => {
     if (!userId) return;
 
+    // Clean up existing channel first
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
     const channel = supabase
-      .channel('my-flocks-updates')
+      .channel(`my-flocks-${userId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -69,14 +74,19 @@ export const useMyFlocks = () => {
       })
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [userId, queryClient]);
 
   return useQuery({
     queryKey: ['my-floqs', userId],
-    placeholderData: [],        // Instant empty array on first load
+    placeholderData: (previous) => previous ?? [], // Preserve cache hydration
     queryFn: async () => {
       if (!userId) return [];
 
@@ -144,7 +154,9 @@ export const useMyFlocks = () => {
         const floq = row.floqs;
         // Debug log to check for undefined IDs
         if (!floq?.id) {
-          console.warn('⚠️ Participated floq missing ID:', { row, floq });
+          if (import.meta.env.DEV) {
+            console.warn('⚠️ Participated floq missing ID:', { row, floq });
+          }
           return;
         }
 
@@ -168,7 +180,9 @@ export const useMyFlocks = () => {
       createdResult.data?.forEach(floq => {
         // Debug log to check for undefined IDs
         if (!floq?.id) {
-          console.warn('⚠️ Created floq missing ID:', floq);
+          if (import.meta.env.DEV) {
+            console.warn('⚠️ Created floq missing ID:', floq);
+          }
           return;
         }
 
@@ -193,21 +207,22 @@ export const useMyFlocks = () => {
         return [];
       }
 
-      // Get participant counts for all floqs
+      // Get participant counts for all floqs using Postgres aggregation
       const floqIds = allFloqs.map(f => f.id);
-      const { data: participantData } = await supabase
+      const { data: participantCounts } = await supabase
         .from('floq_participants')
-        .select('floq_id')
+        .select('floq_id, count:floq_id')
         .in('floq_id', floqIds);
 
-      const participantCounts = participantData?.reduce((acc, item) => {
-        acc[item.floq_id] = (acc[item.floq_id] || 0) + 1;
+      // Create count lookup map
+      const countMap = participantCounts?.reduce((acc, item) => {
+        acc[item.floq_id] = item.count;
         return acc;
       }, {} as Record<string, number>) || {};
 
       // Update participant counts
       allFloqs.forEach(floq => {
-        floq.participant_count = participantCounts[floq.id] || 0;
+        floq.participant_count = countMap[floq.id] || 0;
       });
 
       const result = allFloqs.sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
@@ -216,7 +231,7 @@ export const useMyFlocks = () => {
       return result;
     },
     enabled: !!userId,
-    staleTime: 5_000, // Fix A: Lower staleTime to 5 seconds
+    staleTime: 30_000, // Raised to 30s to work better with realtime
     gcTime: 300_000,
     retry: 1,
   });
