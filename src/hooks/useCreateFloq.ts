@@ -23,6 +23,7 @@ export function useCreateFloq() {
   const navigate = useNavigate();
 
   return useMutation({
+    retry: 1, // Bail quickly on 409 duplicate key errors
     mutationFn: async (data: CreateFloqData) => {
       if (!user) throw new Error('Not authenticated');
 
