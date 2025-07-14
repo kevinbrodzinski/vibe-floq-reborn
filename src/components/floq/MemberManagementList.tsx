@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { UserMinus, Search, Crown, Shield, User } from 'lucide-react';
+import { UserMinus, Search, Crown, Shield, User, Mail, Send, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import type { FloqDetails, FloqParticipant } from '@/hooks/useFloqDetails';
+import type { FloqDetails, FloqParticipant, PendingInvitation } from '@/hooks/useFloqDetails';
 import { formatDistance } from '@/utils/formatDistance';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -25,6 +25,8 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<FloqParticipant | null>(null);
+  const [selectedInvitation, setSelectedInvitation] = useState<PendingInvitation | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const queryClient = useQueryClient();
   const session = useSession();
   const navigate = useNavigate();
@@ -38,7 +40,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
 
   // Separate pending invitations and active members
   const activeMembers = filteredParticipants.filter(p => p.joined_at);
-  const pendingInvites = []; // TODO: Add pending invitations logic
+  const pendingInvites = floqDetails.pending_invites || [];
 
   // Count co-admins to prevent demoting the last one
   const coAdminCount = floqDetails.participants.filter(p => p.role === 'co-admin').length;
@@ -148,6 +150,34 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     setShowRemoveConfirm(true);
   };
 
+  const confirmCancel = (invitation: PendingInvitation) => {
+    setSelectedInvitation(invitation);
+    setShowCancelConfirm(true);
+  };
+
+  const handleCancelInvitation = async () => {
+    if (!selectedInvitation) return;
+    
+    try {
+      const { error } = await supabase
+        .from('floq_invitations')
+        .delete()
+        .eq('floq_id', floqDetails.id)
+        .eq('invitee_id', selectedInvitation.invitee_id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      toast.success('Invitation cancelled');
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
+      setShowCancelConfirm(false);
+      setSelectedInvitation(null);
+    } catch (error) {
+      console.error('Failed to cancel invitation:', error);
+      toast.error('Failed to cancel invitation');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="p-4">
@@ -171,7 +201,72 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
           {pendingInvites.length > 0 && (
             <div className="space-y-3">
               <h5 className="text-sm font-medium text-muted-foreground">Pending Invitations</h5>
-              {/* TODO: Render pending invitations */}
+              {pendingInvites.map((invitation) => (
+                <div 
+                  key={invitation.invitee_id} 
+                  className={`${
+                    isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'
+                  } p-3 rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/20`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarFallback>
+                        <Mail className="w-5 h-5 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {invitation.invitee_display_name || 'Unknown User'}
+                        </span>
+                        {invitation.invitee_username && (
+                          <span className="text-sm text-muted-foreground">
+                            @{invitation.invitee_username}
+                          </span>
+                        )}
+                        <Badge variant="secondary" className="text-xs">
+                          Pending
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Invited {formatDistance(new Date(invitation.sent_at))}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className={`flex gap-2 ${isMobile ? 'w-full mt-2' : ''}`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await supabase
+                            .from('floq_invitations')
+                            .update({ status: 'pending' })
+                            .eq('id', invitation.id);
+                          toast.success('Invitation resent');
+                        } catch (error) {
+                          toast.error('Failed to resend invitation');
+                        }
+                      }}
+                      className={`text-xs ${isMobile ? 'flex-1' : ''}`}
+                    >
+                      <Send className="w-3 h-3 mr-1" />
+                      Resend
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => confirmCancel(invitation)}
+                      className={`text-xs text-destructive hover:text-destructive ${isMobile ? 'flex-1' : ''}`}
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -305,6 +400,16 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
         cancelLabel="Cancel"
         isLoading={removingUserId === selectedUser?.user_id}
         onConfirm={() => selectedUser && handleRemoveMember(selectedUser.user_id)}
+      />
+
+      <ConfirmDialog
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Cancel invitation?"
+        description={`Are you sure you want to cancel the invitation for ${selectedInvitation?.invitee_display_name}? They won't be able to join this floq.`}
+        confirmLabel="Cancel Invitation"
+        cancelLabel="Keep"
+        onConfirm={handleCancelInvitation}
       />
     </div>
   );

@@ -14,6 +14,15 @@ export interface FloqParticipant {
   joined_at: string;
 }
 
+export interface PendingInvitation {
+  invitee_id: string;
+  invitee_username?: string;
+  invitee_display_name: string;
+  status: string;
+  sent_at: string;
+  id?: string;
+}
+
 export interface FloqDetails {
   id: string;
   title: string;
@@ -35,6 +44,7 @@ export interface FloqDetails {
     lng: number;
   };
   participants: FloqParticipant[];
+  pending_invites?: PendingInvitation[];
   is_joined: boolean;
   is_creator: boolean;
   user_role?: string;
@@ -112,6 +122,7 @@ export function useFloqDetails(
         visibility: floqData.visibility,
         location: { lat: 0, lng: 0 }, // Will be enhanced when needed
         participants,
+        pending_invites: floqData.pending_invites || [],
         is_joined: isJoined,
         is_creator: isCreator,
         user_role: userParticipant?.role,

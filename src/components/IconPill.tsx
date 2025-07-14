@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface IconPillProps {
   icon: React.ReactNode;
@@ -19,6 +20,8 @@ export const IconPill: React.FC<IconPillProps> = ({
   variant = 'outline',
   className
 }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <Button
       type="button"
@@ -29,7 +32,8 @@ export const IconPill: React.FC<IconPillProps> = ({
       tabIndex={disabled ? -1 : 0}
       aria-label={label}
       className={cn(
-        "h-8 px-3 text-xs font-medium flex items-center gap-1.5",
+        "text-xs font-medium flex items-center gap-1.5",
+        isMobile ? "h-mobile-action px-4" : "h-8 px-3",
         disabled && "opacity-50 cursor-not-allowed",
         className
       )}

@@ -18,6 +18,13 @@ export default {
 			}
 		},
 		extend: {
+			spacing: {
+				'mobile-action': '3rem', // 48px minimum touch target
+				'mobile-gap': '1rem',
+			},
+			borderRadius: {
+				'mobile': '0.75rem',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
