@@ -119,8 +119,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         'ring-1 ring-white/10 hover:ring-white/25',
         'transition-all duration-300 hover:-translate-y-0.5',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--vibe)]',
-        'cursor-pointer active:scale-[.98] active:brightness-90',
-        '[-webkit-tap-highlight-color:rgba(0,0,0,0)]'
+        'cursor-pointer active:scale-[.98] active:brightness-90'
       )}
       onClick={handleCardClick}
       onKeyDown={(e) => {
@@ -130,8 +129,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         }
       }}
       tabIndex={0}
-      role="button"
-      aria-label={`${floq.title} floq, ${floq.participant_count} members, ${formatDistance(floq.distance_meters)} away`}
+      aria-label={`${floq.title} floq${floq.description ? `. ${floq.description}` : ''}. ${floq.participant_count} members, ${formatDistance(floq.distance_meters)} away`}
     >
       {/* Header with avatar and glow */}
       <div className="flex items-start gap-4 mb-4">
@@ -196,17 +194,38 @@ export const FloqCard = React.memo<FloqCardProps>(({
             e.stopPropagation();
             handleCardClick();
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleCardClick();
+            }
+          }}
         />
         <ActionPill 
           variant="ghost" 
           label={floq.is_joined ? "Joined" : isFull ? "Full" : "Join"}
           onClick={handleJoin}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleJoin(e as any);
+            }
+          }}
           disabled={floq.is_joined || isFull}
         />
         <ActionPill 
           variant="ghost" 
           label="Hide" 
           onClick={handleHide}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+              handleHide(e as any);
+            }
+          }}
         />
       </div>
     </article>

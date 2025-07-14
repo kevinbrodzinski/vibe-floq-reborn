@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
 
 export const useIgnoreFloq = () => {
@@ -21,6 +22,11 @@ export const useIgnoreFloq = () => {
           return data?.some(f => f.id === floqId) ?? false;
         }
       });
+    },
+    onError: (error) => {
+      console.error('Error ignoring floq:', error);
+      toast.error('Failed to hide floq. Please try again.');
+      throw error; // Re-throw so react-query can handle retries/error states
     },
   });
 };

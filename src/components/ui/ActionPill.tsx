@@ -8,7 +8,7 @@ const actionPillVariants = cva(
     variants: {
       variant: {
         primary: 'bg-primary text-primary-foreground hover:brightness-110 active:scale-95 shadow-inner shadow-black/20',
-        ghost: 'bg-white/10 text-foreground/80 hover:bg-white/20 hover:text-foreground active:scale-95 ring-1 ring-white/20',
+        ghost: 'bg-white/15 text-white/90 hover:bg-white/25 hover:text-white active:scale-95 ring-1 ring-white/25',
         danger: 'bg-destructive/20 text-destructive hover:bg-destructive/30 active:scale-95 ring-1 ring-destructive/30'
       }
     },
