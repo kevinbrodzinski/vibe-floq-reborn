@@ -37,14 +37,14 @@ export const useMyFlocks = () => {
         .from('floq_participants')
         .select(`
             floqs: floqs (
-              id, title, name, primary_vibe, creator_id, starts_at, ends_at, last_activity_at, flock_type, deleted_at
+              id, title, name, primary_vibe, creator_id, starts_at, ends_at, last_activity_at
             ),
             role,
             joined_at
         `)
         .eq('user_id', userId)
         .is('floqs.deleted_at', null)
-        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');    // ⚡ persistent OR active momentary
+        .filter('floqs.ends_at', 'gt', 'now()');    // ⚡ server-side clock
 
       if (error) throw error;
 
