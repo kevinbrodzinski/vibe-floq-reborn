@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useStableMemo } from '@/hooks/useStableMemo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,17 +52,22 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
-  // Create a stable reference to original data
-  const originalData = useStableMemo(() => ({
-    title: floqDetails.title,
-    description: floqDetails.description || '',
-    primary_vibe: floqDetails.primary_vibe,
-    flock_type: floqDetails.ends_at ? 'momentary' : 'persistent',
-    max_participants: floqDetails.max_participants || 20,
-    visibility: floqDetails.visibility,
-    starts_at: floqDetails.starts_at ? new Date(floqDetails.starts_at).toISOString().slice(0, 16) : '',
-    ends_at: floqDetails.ends_at ? new Date(floqDetails.ends_at).toISOString().slice(0, 16) : ''
-  }), [
+  // Calculate hasChanges using useMemo with direct comparison
+  const hasChanges = useMemo(() => {
+    const originalData = {
+      title: floqDetails.title,
+      description: floqDetails.description || '',
+      primary_vibe: floqDetails.primary_vibe,
+      flock_type: floqDetails.ends_at ? 'momentary' : 'persistent',
+      max_participants: floqDetails.max_participants || 20,
+      visibility: floqDetails.visibility,
+      starts_at: floqDetails.starts_at ? new Date(floqDetails.starts_at).toISOString().slice(0, 16) : '',
+      ends_at: floqDetails.ends_at ? new Date(floqDetails.ends_at).toISOString().slice(0, 16) : ''
+    };
+    
+    return JSON.stringify(formData) !== JSON.stringify(originalData);
+  }, [
+    formData,
     floqDetails.title,
     floqDetails.description,
     floqDetails.primary_vibe,
@@ -72,11 +76,6 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
     floqDetails.visibility,
     floqDetails.starts_at
   ]);
-
-  // Calculate hasChanges using useMemo to avoid re-render loops
-  const hasChanges = useMemo(() => {
-    return JSON.stringify(formData) !== JSON.stringify(originalData);
-  }, [formData, originalData]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
