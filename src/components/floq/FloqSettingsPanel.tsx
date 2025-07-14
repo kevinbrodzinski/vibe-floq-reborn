@@ -41,12 +41,10 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
     
     try {
       await saveSettings(localSettings);
+      setHasChanges(false); // Set here on successful save
     } catch (error) {
-      // Error handling is done in the mutation - don't set hasChanges(false) here
-      return;
+      // Error handling is done in the mutation
     }
-    // Only set hasChanges(false) on successful save
-    setHasChanges(false);
   };
 
   if (isLoading || !currentSettings) {
@@ -58,8 +56,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   }
 
   return (
-    <div className="space-y-6">
-      <fieldset disabled={saving}>
+    <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+      <fieldset disabled={saving} className={`space-y-6 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
         <Card className="p-4">
         <div className="space-y-4">
           <h4 className="font-medium flex items-center gap-2">
@@ -192,7 +190,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              {(localSettings?.welcome_message || '').length}/300 characters
+              {(localSettings?.welcome_message?.length ?? 0)}/300 characters
             </p>
           </div>
         </div>
@@ -211,6 +209,6 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
         </div>
       )}
       </fieldset>
-    </div>
+    </form>
   );
 };

@@ -81,15 +81,17 @@ serve(async (req) => {
     if (typeof settings.activity_visibility === 'string' && ['public', 'members_only'].includes(settings.activity_visibility)) {
       validSettings.activity_visibility = settings.activity_visibility
     }
-    if (typeof settings.welcome_message === 'string' || settings.welcome_message === null) {
+    if (typeof settings.welcome_message === 'string') {
       // Validate length constraint
-      if (settings.welcome_message && settings.welcome_message.length > 300) {
+      if (settings.welcome_message.length > 300) {
         return new Response(
           JSON.stringify({ error: 'Welcome message must be 300 characters or less' }),
           { status: 422, headers: corsHeaders }
         )
       }
       validSettings.welcome_message = settings.welcome_message
+    } else if (settings.welcome_message === null) {
+      validSettings.welcome_message = null
     }
 
     // Upsert settings and return updated row
@@ -117,7 +119,7 @@ serve(async (req) => {
       mention_permissions: updatedSettings.mention_permissions ?? 'all',
       join_approval_required: updatedSettings.join_approval_required ?? false,
       activity_visibility: updatedSettings.activity_visibility ?? 'public',
-      welcome_message: updatedSettings.welcome_message ?? null,
+      welcome_message: updatedSettings.welcome_message ?? '',
     }
 
     return new Response(JSON.stringify(formattedSettings), { 

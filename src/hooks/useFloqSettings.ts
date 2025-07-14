@@ -27,11 +27,12 @@ export function useFloqSettings(floqId: string) {
         mention_permissions: data.mention_permissions ?? 'all',
         join_approval_required: data.join_approval_required ?? false,
         activity_visibility: data.activity_visibility ?? 'public',
-        welcome_message: data.welcome_message ?? null,
+        welcome_message: data.welcome_message ?? '',
       };
     },
     enabled: !!floqId,
     staleTime: 30000,
+    placeholderData: (previousData) => previousData,
   });
 
   const mutation = useMutation({
@@ -43,7 +44,7 @@ export function useFloqSettings(floqId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: FloqSettings) => {
       queryClient.setQueryData(["floq-settings", floqId], data);
       toast.success('Settings saved successfully');
     },
