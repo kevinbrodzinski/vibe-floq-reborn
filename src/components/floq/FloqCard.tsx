@@ -159,28 +159,28 @@ export const FloqCard = React.memo<FloqCardProps>(({
       )}
 
       {/* Meta row */}
-      <div className="relative z-10 mt-4 flex flex-wrap gap-4 text-sm text-zinc-300">
-        <span className="flex items-center gap-1">
+      <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
           <Users
-            size={16}
-            strokeWidth={1.6}
+            size={14}
+            strokeWidth={2}
             className="text-[color:var(--vibe-from)]"
           />
-          <span className="text-xs text-white/70">
+          <span className="text-xs text-white/90">
             {floq.participant_count}/{floq.max_participants ?? '∞'}
           </span>
         </span>
 
-        <span className="flex items-center gap-1">
-          <MapPin size={16} strokeWidth={1.6} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/70">
+        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
+          <MapPin size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
+          <span className="text-xs text-white/90">
             {formatDistance(floq.distance_meters)}
           </span>
         </span>
 
-        <span className="flex items-center gap-1">
-          <Clock size={16} strokeWidth={1.6} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/70">
+        <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
+          <Clock size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
+          <span className="text-xs text-white/90">
             {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
           </span>
         </span>
