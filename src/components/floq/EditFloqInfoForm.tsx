@@ -151,7 +151,8 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
         description: formData.description.trim() || null,
         primary_vibe: formData.primary_vibe,
         max_participants: formData.max_participants,
-        visibility: formData.visibility
+        visibility: formData.visibility,
+        flock_type: formData.flock_type
       };
 
       // Handle timing based on flock_type

@@ -38,7 +38,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
         <div className="text-center">
           <p className="text-sm text-muted-foreground mb-2">Please sign in to access chat</p>
           <Link 
-            to="/login" 
+            to="/auth" 
             state={{ redirect: location.pathname }}
             className="text-sm text-primary hover:underline"
           >
