@@ -1572,6 +1572,14 @@ export type Database = {
         Args: { interaction_count: number; days_since_last_interaction: number }
         Returns: number
       }
+      check_floq_admin_role: {
+        Args: { p_floq_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      check_floq_visibility: {
+        Args: { p_floq_id: string }
+        Returns: string
+      }
       citext: {
         Args: { "": boolean } | { "": string } | { "": unknown }
         Returns: string
