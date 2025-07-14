@@ -11,6 +11,7 @@ import { FloqActivityFeed } from '@/components/floq/FloqActivityFeed';
 import { IconPill } from '@/components/IconPill';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteFloq } from '@/hooks/useDeleteFloq';
+import { ManageFloqView } from './ManageFloqView';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useNavigate } from 'react-router-dom';
@@ -266,44 +267,11 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           {/* Manage Tab - Host Only */}
           {canManage && (
             <TabsContent value="manage" className="mt-0">
-              <Card className="p-4">
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Manage Floq</h3>
-                  
-                  <div className="space-y-3">
-                    {/* End Floq for persistent floqs */}
-                    {!floqDetails.ends_at && onEndFloq && (
-                      <IconPill
-                        icon={<X className="w-3 h-3" />}
-                        label="End Floq"
-                        onClick={onEndFloq}
-                        disabled={isEndingFloq}
-                        variant="destructive"
-                        className="border-destructive w-full justify-start"
-                      />
-                    )}
-                    
-                    {/* Delete Floq */}
-                    {canDelete && (
-                      <IconPill
-                        icon={<Trash2 className="w-3 h-3" />}
-                        label="Delete Floq"
-                        onClick={() => setShowDeleteConfirm(true)}
-                        disabled={isDeleting}
-                        variant="destructive"
-                        className="border-destructive w-full justify-start"
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
-                    <p className="font-medium mb-1">Host Controls</p>
-                    <p>• End persistent floqs manually</p>
-                    <p>• Delete solo or ended floqs</p>
-                    <p>• More controls coming soon</p>
-                  </div>
-                </div>
-              </Card>
+              <ManageFloqView 
+                floqDetails={floqDetails}
+                onEndFloq={onEndFloq}
+                isEndingFloq={isEndingFloq}
+              />
             </TabsContent>
           )}
         </Tabs>
