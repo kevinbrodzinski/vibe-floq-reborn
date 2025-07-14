@@ -113,7 +113,7 @@ export const useFloqTabBadges = (floqId: string) => {
 };
 
 // Invalidation helper for notifications
-const invalidateNotifications = (queryClient: any, userId?: string) => {
+export const invalidateNotifications = (queryClient: any, userId?: string) => {
   queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
   queryClient.invalidateQueries({ queryKey: ['notification-counts', userId] });
 };
@@ -143,6 +143,3 @@ export const useNotificationCounts = (userId?: string) => {
     refetchInterval: 60_000,
   });
 };
-
-// Export the helper for use in components
-export { invalidateNotifications };
