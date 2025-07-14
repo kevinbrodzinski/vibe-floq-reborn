@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Clock, MapPin, Users, UserMinus, Zap, UserPlus2, X, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { useDeleteFloq } from '@/hooks/useDeleteFloq';
 import { ManageFloqView } from './ManageFloqView';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@supabase/auth-helpers-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
@@ -38,12 +38,25 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   onEndFloq,
   isEndingFloq = false
 }) => {
-  const [activeTab, setActiveTab] = useState('chat');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showInvite, setShowInvite] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const session = useSession();
   const navigate = useNavigate();
+
+  // URL-based tab state for main tabs
+  const activeTab = searchParams.get('tab') || 'chat';
+
+  const setActiveTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (tab === 'chat') {
+      newParams.delete('tab'); // Default tab doesn't need URL param
+    } else {
+      newParams.set('tab', tab);
+    }
+    setSearchParams(newParams);
+  };
   const { mutateAsync: deleteFloq, isPending: isDeleting } = useDeleteFloq();
 
   // Bulletproof host detection

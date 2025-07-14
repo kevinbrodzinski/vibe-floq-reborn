@@ -29,6 +29,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     participant.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Separate pending invitations and active members
+  const activeMembers = filteredParticipants.filter(p => p.joined_at);
+  const pendingInvites = []; // TODO: Add pending invitations logic
+
+  // Count co-admins to prevent demoting the last one
+  const coAdminCount = floqDetails.participants.filter(p => p.role === 'co-admin').length;
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'creator':
@@ -51,7 +58,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string, currentRole: string) => {
+    // Prevent demoting the last co-admin
+    if (currentRole === 'co-admin' && newRole === 'member' && coAdminCount === 1) {
+      toast.error('Cannot demote the last co-admin. Promote another member first.');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('floq_participants')
@@ -62,7 +75,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       if (error) throw error;
 
       await queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
-      toast.success('Role updated successfully');
+      toast.success(
+        newRole === 'co-admin' 
+          ? 'User promoted to co-admin' 
+          : currentRole === 'co-admin' 
+            ? 'Co-admin role revoked' 
+            : 'Role updated successfully'
+      );
     } catch (error) {
       console.error('Failed to update role:', error);
       toast.error('Failed to update role');
@@ -116,8 +135,20 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
             )}
           </div>
 
+          {/* Pending Invitations Section */}
+          {pendingInvites.length > 0 && (
+            <div className="space-y-3">
+              <h5 className="text-sm font-medium text-muted-foreground">Pending Invitations</h5>
+              {/* TODO: Render pending invitations */}
+            </div>
+          )}
+
+          {/* Active Members Section */}
           <div className="space-y-3">
-            {filteredParticipants.map((participant) => (
+            {activeMembers.length > 0 && pendingInvites.length > 0 && (
+              <h5 className="text-sm font-medium text-muted-foreground">Active Members</h5>
+            )}
+            {activeMembers.map((participant) => (
               <div key={participant.user_id} className="flex items-center justify-between p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
@@ -154,16 +185,34 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                     <>
                       <Select
                         value={participant.role}
-                        onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole)}
+                        onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole, participant.role)}
                       >
                         <SelectTrigger className="w-28 h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="co-admin">Co-admin</SelectItem>
+                          <SelectItem 
+                            value="co-admin"
+                            disabled={participant.role === 'co-admin' && coAdminCount === 1}
+                          >
+                            Co-admin
+                          </SelectItem>
                         </SelectContent>
                       </Select>
+
+                      {participant.role === 'co-admin' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRoleChange(participant.user_id, 'member', participant.role)}
+                          disabled={coAdminCount === 1}
+                          className="text-muted-foreground hover:text-foreground"
+                          title={coAdminCount === 1 ? 'Cannot revoke the last co-admin' : 'Revoke co-admin'}
+                        >
+                          Revoke
+                        </Button>
+                      )}
 
                       <Button
                         variant="ghost"
@@ -181,7 +230,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
             ))}
           </div>
 
-          {filteredParticipants.length === 0 && searchQuery && (
+          {activeMembers.length === 0 && searchQuery && (
             <div className="text-center py-4 text-muted-foreground">
               No members found matching "{searchQuery}"
             </div>

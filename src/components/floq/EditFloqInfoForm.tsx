@@ -50,6 +50,7 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
   
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -67,7 +68,51 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
     setHasChanges(JSON.stringify(formData) !== JSON.stringify(originalData));
   }, [formData, floqDetails]);
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Title validation
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.trim().length < 3) {
+      newErrors.title = 'Title must be at least 3 characters';
+    }
+
+    // Time validation for momentary floqs
+    if (formData.flock_type === 'momentary') {
+      if (formData.starts_at && formData.ends_at) {
+        const startTime = new Date(formData.starts_at);
+        const endTime = new Date(formData.ends_at);
+        if (endTime <= startTime) {
+          newErrors.ends_at = 'End time must be after start time';
+        }
+      }
+    }
+
+    // Max participants validation
+    if (formData.max_participants < 2) {
+      newErrors.max_participants = 'Must allow at least 2 participants';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const scrollToFirstError = () => {
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField) {
+      const element = document.getElementById(firstErrorField);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element?.focus();
+    }
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) {
+      scrollToFirstError();
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updateData: any = {
@@ -123,10 +168,20 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, title: e.target.value }));
+                  // Clear error when user starts typing
+                  if (errors.title) {
+                    setErrors(prev => ({ ...prev, title: '' }));
+                  }
+                }}
                 placeholder="Enter floq title"
                 maxLength={50}
+                className={errors.title ? 'border-destructive' : ''}
               />
+              {errors.title && (
+                <p className="text-sm text-destructive mt-1">{errors.title}</p>
+              )}
             </div>
 
             <div>
@@ -224,12 +279,20 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
                 min="2"
                 max="100"
                 value={formData.max_participants}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  max_participants: parseInt(e.target.value) || 20 
-                }))}
-                className="w-24"
+                onChange={(e) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    max_participants: parseInt(e.target.value) || 20 
+                  }));
+                  if (errors.max_participants) {
+                    setErrors(prev => ({ ...prev, max_participants: '' }));
+                  }
+                }}
+                className={`w-24 ${errors.max_participants ? 'border-destructive' : ''}`}
               />
+              {errors.max_participants && (
+                <p className="text-sm text-destructive mt-1">{errors.max_participants}</p>
+              )}
             </div>
           </div>
         </div>
@@ -260,8 +323,17 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
                   id="ends_at"
                   type="datetime-local"
                   value={formData.ends_at}
-                  onChange={(e) => setFormData(prev => ({ ...prev, ends_at: e.target.value }))}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, ends_at: e.target.value }));
+                    if (errors.ends_at) {
+                      setErrors(prev => ({ ...prev, ends_at: '' }));
+                    }
+                  }}
+                  className={errors.ends_at ? 'border-destructive' : ''}
                 />
+                {errors.ends_at && (
+                  <p className="text-sm text-destructive mt-1">{errors.ends_at}</p>
+                )}
               </div>
             )}
           </div>
@@ -270,7 +342,10 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving || Object.keys(errors).length > 0}
+          >
             {isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (

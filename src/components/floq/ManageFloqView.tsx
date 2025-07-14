@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EditFloqInfoForm } from './EditFloqInfoForm';
@@ -6,6 +6,7 @@ import { MemberManagementList } from './MemberManagementList';
 import { FloqSettingsPanel } from './FloqSettingsPanel';
 import { FloqDangerZone } from './FloqDangerZone';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface ManageFloqViewProps {
   floqDetails: FloqDetails;
@@ -18,7 +19,15 @@ export const ManageFloqView: React.FC<ManageFloqViewProps> = ({
   onEndFloq,
   isEndingFloq = false
 }) => {
-  const [activeTab, setActiveTab] = useState('info');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const activeTab = searchParams.get('tab') || 'info';
+
+  const setActiveTab = (tab: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tab);
+    setSearchParams(newParams);
+  };
 
   return (
     <Card className="p-4">
