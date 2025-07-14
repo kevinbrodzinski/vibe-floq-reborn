@@ -472,6 +472,24 @@ export type Database = {
           },
         ]
       }
+      floq_mention_cooldown: {
+        Row: {
+          floq_id: string
+          last_mention_at: string
+          user_id: string
+        }
+        Insert: {
+          floq_id: string
+          last_mention_at?: string
+          user_id: string
+        }
+        Update: {
+          floq_id?: string
+          last_mention_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       floq_messages: {
         Row: {
           body: string | null
@@ -661,6 +679,7 @@ export type Database = {
           max_participants: number | null
           name: string | null
           parent_flock_id: string | null
+          pinned_note: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m: number | null
           recurrence_pattern: Json | null
@@ -691,6 +710,7 @@ export type Database = {
           max_participants?: number | null
           name?: string | null
           parent_flock_id?: string | null
+          pinned_note?: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
           recurrence_pattern?: Json | null
@@ -721,6 +741,7 @@ export type Database = {
           max_participants?: number | null
           name?: string | null
           parent_flock_id?: string | null
+          pinned_note?: string | null
           primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
           radius_m?: number | null
           recurrence_pattern?: Json | null
@@ -805,6 +826,36 @@ export type Database = {
         Update: {
           created_at?: string | null
           friend_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_queue: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -2289,6 +2340,10 @@ export type Database = {
       }
       join_floq: {
         Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
+        Returns: Json
+      }
+      join_or_leave_plan: {
+        Args: { p_plan_id: string; p_join: boolean }
         Returns: Json
       }
       json: {
