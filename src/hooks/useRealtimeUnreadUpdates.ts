@@ -18,15 +18,15 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
 
     // Helper function to invalidate unread queries with correct keys
     function invalidateUnreadQueries(floqId: string) {
+      if (!user?.id) return;
       // Invalidate specific floq counts with userId
       queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, user.id] });
       // Invalidate aggregated counts with userId
       queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', user.id] });
-      queryClient.invalidateQueries({ queryKey: ['global-unread'] });
     }
 
-    // Format UUIDs with quotes for Postgres filter
-    const quotedIds = joinedFloqIds.map(id => `"${id}"`).join(',');
+    // Format UUIDs with quotes for Postgres filter, sorted to prevent unnecessary resubscriptions
+    const quotedIds = [...joinedFloqIds].sort().map(id => `"${id}"`).join(',');
 
     // Create a single channel for all real-time updates
     const channel = supabase
@@ -88,5 +88,5 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
       console.log('Cleaning up real-time unread subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, joinedFloqIds.join(','), queryClient]);
+  }, [user?.id, [...joinedFloqIds].sort().join(','), queryClient]);
 };

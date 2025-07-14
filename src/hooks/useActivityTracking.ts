@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 
 // Utility — local debounce factory to avoid timer scope leaks
-function createDebounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
+function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return ((...args: Parameters<F>) => {
     if (timer) clearTimeout(timer);
@@ -37,13 +37,12 @@ export const useActivityTracking = (floqId: string) => {
       // Refresh badge data for this floq + global aggregates with correct keys
       queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, userId] });
       queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', userId] });
-      queryClient.invalidateQueries({ queryKey: ['global-unread'] });
     },
   });
 
   // Create stable debounced function - only recreate when mutation.mutate or floqId changes
   return useMemo(() => {
-    return createDebounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
+    return debounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
       mutation.mutate(section);
     }, 300);
   }, [mutation.mutate, floqId]);

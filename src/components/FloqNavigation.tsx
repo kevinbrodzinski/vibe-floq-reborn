@@ -17,39 +17,11 @@ const TABS: { id: string; label: string; Icon: any }[] = [
 ];
 
 export const FloqNavigation = () => {
-  const navRef = useRef<HTMLElement>(null);
   const { navigationFeedback } = useHapticFeedback();
   const { totalUnread } = useGlobalUnreadCount();
 
-  // Export navigation height to CSS variable
-  useEffect(() => {
-    const updateNavHeight = () => {
-      if (navRef.current) {
-        const height = navRef.current.offsetHeight;
-        document.documentElement.style.setProperty('--mobile-nav-height', `${height}px`);
-      }
-    };
-
-    // Update on mount and resize
-    updateNavHeight();
-    window.addEventListener('resize', updateNavHeight);
-    
-    // Use ResizeObserver for more precise tracking
-    if ('ResizeObserver' in window && navRef.current) {
-      const resizeObserver = new ResizeObserver(updateNavHeight);
-      resizeObserver.observe(navRef.current);
-      
-      return () => {
-        window.removeEventListener('resize', updateNavHeight);
-        resizeObserver.disconnect();
-      };
-    }
-
-    return () => window.removeEventListener('resize', updateNavHeight);
-  }, []);
-
   return (
-    <nav ref={navRef} className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30" style={{ zIndex: Z.navigation }}>
+    <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30" style={{ zIndex: Z.navigation }}>
       <div className="flex justify-around items-center py-2 px-2">
         {TABS.map(({ id, label, Icon }) => (
           <NavLink
