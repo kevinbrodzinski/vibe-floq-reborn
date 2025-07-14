@@ -19,22 +19,19 @@ export const MobileTabSelector: React.FC<MobileTabSelectorProps> = ({
   activeTab,
   onTabChange,
 }) => {
-  const getCurrentTabLabel = () => {
-    const tab = TAB_OPTIONS.find(option => option.value === activeTab);
-    return tab ? tab.label : 'Select Tab';
+  const getCurrentTabOption = () => {
+    return TAB_OPTIONS.find(option => option.value === activeTab) || TAB_OPTIONS[0];
   };
+
+  const currentTab = getCurrentTabOption();
 
   return (
     <div className="w-full">
       <Select value={activeTab} onValueChange={onTabChange}>
         <SelectTrigger className="w-full h-12 text-left" aria-label="Select management tab">
           <div className="flex items-center gap-2">
-            {TAB_OPTIONS.find(option => option.value === activeTab)?.icon && (
-              React.createElement(TAB_OPTIONS.find(option => option.value === activeTab)!.icon, {
-                className: "h-4 w-4"
-              })
-            )}
-            <SelectValue placeholder={getCurrentTabLabel()} />
+            <currentTab.icon className="h-4 w-4" />
+            <SelectValue placeholder={currentTab.label} />
           </div>
         </SelectTrigger>
         <SelectContent>

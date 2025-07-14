@@ -20,7 +20,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   const { settings: loadedSettings, isLoading, saveSettings, saving } = useFloqSettings(floqDetails.id);
   const [localSettings, setLocalSettings] = useState<FloqSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [templateId, setTemplateId] = useState<string>('');
   const uid = useId(); // For unique IDs
   const isMobile = useIsMobile();
 
@@ -37,7 +37,6 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   useEffect(() => {
     if (!hasChanges && loadedSettings) {
       setLocalSettings(loadedSettings);
-      setValidationErrors({}); // Clear any lingering validation errors
     }
   }, [hasChanges, loadedSettings]);
 
@@ -53,19 +52,6 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
     setLocalSettings(newSettings);
     setHasChanges(true);
     
-    // Clear validation error for this field if value is now valid
-    if (key === 'welcome_message') {
-      const messageLength = (value || '').length;
-      if (messageLength <= 300 && validationErrors[key]) {
-        setValidationErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[key];
-          return newErrors;
-        });
-      } else if (messageLength > 300) {
-        setValidationErrors(prev => ({ ...prev, [key]: 'Welcome message must be 300 characters or less' }));
-      }
-    }
   };
 
   const handleSave = async () => {
@@ -110,8 +96,9 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <Card className="p-4">
             <div className="space-y-4">
               <h4 className="font-medium">Quick Templates</h4>
-              <Select onValueChange={(templateId) => {
-                const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === templateId);
+              <Select value={templateId} onValueChange={(newTemplateId) => {
+                setTemplateId(newTemplateId);
+                const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === newTemplateId);
                 if (template) {
                   handleSettingChange('welcome_message', template.content);
                 }
@@ -259,11 +246,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
               placeholder="Welcome to our floq! Here's what you need to know..."
               rows={3}
               maxLength={300}
-              className={`mt-2 ${isMobile ? 'text-base' : ''} ${validationErrors.welcome_message ? 'border-destructive' : ''}`}
+              className={`mt-2 ${isMobile ? 'text-base' : ''}`}
             />
-            {validationErrors.welcome_message && (
-              <p className="text-xs text-destructive mt-1">{validationErrors.welcome_message}</p>
-            )}
             <p className="text-xs text-muted-foreground mt-1">
               {(localSettings?.welcome_message?.length ?? 0)}/300 characters
             </p>
