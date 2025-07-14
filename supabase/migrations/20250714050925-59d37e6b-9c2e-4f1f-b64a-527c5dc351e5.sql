@@ -17,9 +17,8 @@ DECLARE
   new_id uuid;
   creator_id uuid := auth.uid();
   computed_ends_at timestamptz;
+  v_location geography := ST_SetSRID(p_location::geometry, 4326)::geography;  -- normalize
 BEGIN
-  -- 🔒 Normalize incoming location to geography SRID 4326
-  p_location := ST_SetSRID(p_location::geometry, 4326)::geography;
 
   IF creator_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
@@ -52,7 +51,7 @@ BEGIN
 
   INSERT INTO floqs (creator_id, location, starts_at, ends_at, primary_vibe,
                      visibility, title, flock_type)
-  VALUES (creator_id, p_location, p_starts_at, computed_ends_at, p_vibe,
+  VALUES (creator_id, v_location, p_starts_at, computed_ends_at, p_vibe,
           p_visibility,
           COALESCE(NULLIF(p_title,''), 'Untitled'),
           p_flock_type)
@@ -60,7 +59,8 @@ BEGIN
 
   -- Insert creator as participant with 'creator' role
   INSERT INTO floq_participants (floq_id, user_id, role, joined_at)
-  VALUES (new_id, creator_id, 'creator', now());
+  VALUES (new_id, creator_id, 'creator', now())
+  ON CONFLICT (floq_id, user_id) DO NOTHING;
 
   -- Handle invitations with conflict resolution
   IF array_length(p_invitees, 1) > 0 THEN
