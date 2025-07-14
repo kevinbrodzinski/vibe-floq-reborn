@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatDistance } from '@/utils/formatDistance';
 import { formatTimeLeft } from '@/utils/formatTimeLeft';
 import { vibeColor, vibeGradient } from '@/utils/vibe';
+import { getVibeColor } from '@/utils/getVibeColor';
 import { VibeIcon } from '@/components/VibeIcon';
 import { toast } from 'sonner';
 import { ActionPill } from '@/components/ui/ActionPill';
@@ -154,32 +155,49 @@ export const FloqCard = React.memo<FloqCardProps>(({
         aria-hidden="true"
       />
 
-      {/* Corner badges */}
-      {isLive && !startsAt && (
-        <div className="absolute top-3 left-3 px-2 py-1 bg-primary/90 backdrop-blur-sm border border-white/20 rounded-full">
-          <span className="text-xs font-medium text-white">LIVE</span>
-        </div>
-      )}
-      
-      {isCreator && (
-        <div className="absolute top-3 right-3 px-2 py-1 bg-violet-500/90 backdrop-blur-sm border border-white/20 rounded-full flex items-center gap-1">
-          <Crown size={12} strokeWidth={2} className="text-white" />
-          <span className="text-xs font-medium text-white">Host</span>
-        </div>
-      )}
-      
-      {isNew && (
-        <div className="absolute top-3 left-3 px-2 py-1 bg-emerald-500/90 backdrop-blur-sm border border-white/20 rounded-full">
-          <span className="text-xs font-medium text-white">NEW</span>
-        </div>
-      )}
-      
-      {isHot && (
-        <div className="absolute top-12 right-3 px-2 py-1 bg-orange-500/90 backdrop-blur-sm border border-white/20 rounded-full flex items-center gap-1">
-          <Zap size={12} strokeWidth={2} className="text-white" />
-          <span className="text-xs font-medium text-white">Hot</span>
-        </div>
-      )}
+      {/* Top-right vibe pill */}
+      <ActionPill
+        size="xs"
+        variant="ghost"
+        className={cn(
+          "absolute top-3 right-3 uppercase tracking-wide border backdrop-blur-sm",
+          "text-white/90 bg-white/10"
+        )}
+        style={{
+          backgroundColor: `${getVibeColor(floq.primary_vibe)}20`,
+          borderColor: `${getVibeColor(floq.primary_vibe)}40`,
+          color: getVibeColor(floq.primary_vibe)
+        }}
+      >
+        {floq.primary_vibe}
+      </ActionPill>
+
+      {/* Bottom-right corner badges */}
+      <div className="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
+        {isLive && (
+          <span className="px-2 py-1 text-xs font-bold bg-red-500/90 text-white rounded-full animate-pulse">
+            LIVE
+          </span>
+        )}
+        
+        {isNew && !isLive && (
+          <span className="px-2 py-1 text-xs font-bold bg-blue-500/90 text-white rounded-full">
+            NEW
+          </span>
+        )}
+        
+        {isCreator && (
+          <span className="px-2 py-1 text-xs font-bold bg-purple-500/90 text-white rounded-full">
+            Host
+          </span>
+        )}
+        
+        {isHot && !isLive && !isNew && !isCreator && (
+          <span className="px-2 py-1 text-xs font-bold bg-orange-500/90 text-white rounded-full">
+            Hot
+          </span>
+        )}
+      </div>
 
       {/* Row 1: avatar stack + title */}
       <div className="relative z-10 flex items-center gap-4">
@@ -338,20 +356,13 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </ActionPill>
         )}
         
-        <ActionPill
-          startIcon={<XCircle size={14} />}
-          variant="ghost"
-          onClick={handleHide}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              handleHide(e as any);
-            }
-          }}
-        >
-          Hide
-        </ActionPill>
+        
+          {/* Swipe hint for non-joined floqs on touch devices */}
+          {!floq.is_joined && (
+            <div className="mt-2 text-xs text-white/60 text-center select-none md:hidden">
+              Swipe left to hide
+            </div>
+          )}
       </div>
     </article>
   );

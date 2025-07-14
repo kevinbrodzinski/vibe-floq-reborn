@@ -3,13 +3,6 @@ import { cn } from '@/lib/utils';
 
 type Variants = 'primary' | 'ghost' | 'destructive' | 'success';
 
-interface ActionPillProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variants;
-  startIcon?: React.ReactNode;
-  children?: React.ReactNode;
-  label?: string;
-}
 
 const styles: Record<Variants, string> = {
   primary:
@@ -22,14 +15,23 @@ const styles: Record<Variants, string> = {
     'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40 hover:bg-emerald-500/30 active:scale-95 transition-all duration-200',
 };
 
+interface ActionPillProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variants;
+  size?: 'default' | 'xs';
+  startIcon?: React.ReactNode;
+  children?: React.ReactNode;
+  label?: string;
+}
+
 export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
-  ({ className, children, label, startIcon, variant = 'ghost', disabled, ...rest }, ref) => (
+  ({ className, children, label, startIcon, variant = 'ghost', size = 'default', disabled, ...rest }, ref) => (
     <button
       ref={ref}
       disabled={disabled}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full text-sm font-semibold',
-        variant === 'primary' ? 'px-6 py-2' : 'px-4 py-2',
+        'inline-flex shrink-0 items-center gap-1 rounded-full font-semibold',
+        size === 'xs' ? 'px-2 py-1 text-xs' : variant === 'primary' ? 'px-6 py-2 text-sm' : 'px-4 py-2 text-sm',
         styles[variant],
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
         'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
