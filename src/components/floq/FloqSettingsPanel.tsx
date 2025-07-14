@@ -263,6 +263,32 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
         </div>
       </Card>
 
+      {/* Pinned Note */}
+      <Card className="p-4">
+        <div className="space-y-4">
+          <h4 className="font-medium">Pinned Note</h4>
+          
+          <div>
+            <Label htmlFor={`${uid}-pinned_note`}>
+              Announcement for all members
+            </Label>
+            <Textarea
+              id={`${uid}-pinned_note`}
+              value={currentSettings?.pinned_note || ''}
+              onChange={(e) => handleSettingChange('pinned_note', e.target.value)}
+              placeholder="Important announcement or info for your floq..."
+              rows={3}
+              maxLength={280}
+              aria-describedby={`${uid}-pinned-help`}
+              className={`mt-2 transition-all duration-400 ${isMobile ? 'text-base' : ''}`}
+            />
+            <p id={`${uid}-pinned-help`} className="text-xs text-muted-foreground mt-1">
+              {(currentSettings?.pinned_note?.length ?? 0)}/280 characters • Visible to all members
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {hasChanges && (
         <div className={isMobile ? "w-full" : "flex justify-end"}>
           <Button 

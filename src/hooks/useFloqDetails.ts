@@ -39,6 +39,7 @@ export interface FloqDetails {
   last_activity_at?: string;
   activity_score?: number;
   radius_m?: number;
+  pinned_note?: string | null;
   location: {
     lat: number;
     lng: number;
@@ -120,6 +121,7 @@ export function useFloqDetails(
         ends_at: floqData.ends_at,
         created_at: floqData.starts_at, // Using starts_at as created_at fallback
         visibility: floqData.visibility,
+        pinned_note: floqData.pinned_note,
         location: { lat: 0, lng: 0 }, // Will be enhanced when needed
         participants,
         pending_invites: floqData.pending_invites || [],

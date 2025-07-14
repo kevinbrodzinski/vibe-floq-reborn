@@ -6,135 +6,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface RequestBody {
+  floq_id: string
+  title?: string | null
+  description?: string | null
+  pinned_note?: string | null
+  visibility?: 'public' | 'private'
+  max_participants?: number | null
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Create Supabase client with service role
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    const body: RequestBody = await req.json()
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Get user from auth header
+    // Get user from Authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: corsHeaders }
-      )
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
     }
 
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
     )
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authorization' }),
-        { status: 401, headers: corsHeaders }
-      )
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
     }
 
-    // Parse request body
-    const { floq_id, ...settings } = await req.json()
-    
-    if (!floq_id) {
-      return new Response(
-        JSON.stringify({ error: 'Missing floq_id' }),
-        { status: 400, headers: corsHeaders }
-      )
+    // Build update payload
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString()
     }
 
-    // Check if user is creator or co-admin using RLS client
-    const { data: participant, error: participantError } = await supabaseAuth
-      .from('floq_participants')
-      .select('role')
-      .eq('floq_id', floq_id)
-      .eq('user_id', user.id)
-      .single()
-
-    if (participantError || !participant || !['creator', 'co-admin'].includes(participant.role)) {
-      return new Response(
-        JSON.stringify({ error: 'Access denied: Only creators and co-admins can update settings' }),
-        { status: 403, headers: corsHeaders }
-      )
+    if (body.pinned_note !== undefined) {
+      updateData.pinned_note = body.pinned_note?.trim() || null
+    }
+    if (body.title !== undefined) {
+      updateData.title = body.title
+    }
+    if (body.description !== undefined) {
+      updateData.description = body.description
+    }
+    if (body.visibility !== undefined) {
+      updateData.visibility = body.visibility
+    }
+    if (body.max_participants !== undefined) {
+      updateData.max_participants = body.max_participants
     }
 
-    // Validate settings structure with proper enum checks
-    const validSettings: any = {}
-    if (typeof settings.notifications_enabled === 'boolean') {
-      validSettings.notifications_enabled = settings.notifications_enabled
-    }
-    if (typeof settings.mention_permissions === 'string' && ['all', 'co-admins', 'host'].includes(settings.mention_permissions)) {
-      validSettings.mention_permissions = settings.mention_permissions
-    }
-    if (typeof settings.join_approval_required === 'boolean') {
-      validSettings.join_approval_required = settings.join_approval_required
-    }
-    if (typeof settings.activity_visibility === 'string' && ['public', 'members_only'].includes(settings.activity_visibility)) {
-      validSettings.activity_visibility = settings.activity_visibility
-    }
-    if (typeof settings.welcome_message === 'string') {
-      // Validate length constraint
-      if (settings.welcome_message.length > 300) {
-        return new Response(
-          JSON.stringify({ error: 'Welcome message must be 300 characters or less' }),
-          { status: 422, headers: corsHeaders }
-        )
-      }
-      validSettings.welcome_message = settings.welcome_message
-    } else if (settings.welcome_message === null) {
-      validSettings.welcome_message = null
-    }
-
-    // Upsert settings and return updated row
-    const { data: updatedSettings, error } = await supabaseAdmin
-      .from('floq_settings')
-      .upsert({
-        floq_id,
-        ...validSettings,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single()
+    // Update the floq (RLS will ensure only creator can update)
+    const { error } = await supabase
+      .from('floqs')
+      .update(updateData)
+      .eq('id', body.floq_id)
+      .eq('creator_id', user.id) // Additional safety check
 
     if (error) {
-      console.error('Database error:', error)
-      return new Response(
-        JSON.stringify({ error: 'Failed to update settings', details: error.message }),
-        { status: 422, headers: corsHeaders }
-      )
+      console.error('Error updating floq:', error)
+      return new Response(error.message, { status: 400, headers: corsHeaders })
     }
 
-    // Transform the response to match FloqSettings interface
-    const formattedSettings = {
-      notifications_enabled: updatedSettings.notifications_enabled ?? true,
-      mention_permissions: updatedSettings.mention_permissions ?? 'all',
-      join_approval_required: updatedSettings.join_approval_required ?? false,
-      activity_visibility: updatedSettings.activity_visibility ?? 'public',
-      welcome_message: updatedSettings.welcome_message ?? '',
-    }
-
-    return new Response(JSON.stringify(formattedSettings), { 
-      status: 200, 
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
-    console.error('Unexpected error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    console.error('Error in update-floq-settings:', error)
+    return new Response('Internal Server Error', { status: 500, headers: corsHeaders })
   }
 })

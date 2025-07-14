@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, MapPin, Users, UserMinus, Zap, X, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { hasManagePermission } from '@/utils/permissions';
 import { useCallback } from 'react';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
@@ -70,6 +72,9 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
     hasManagePermission(floqDetails?.creator_id, session?.user.id),
     [floqDetails?.creator_id, session?.user.id]
   );
+
+  // Get unread counts for badge display
+  const { data: unreadCounts } = useUnreadCounts(floqDetails.id);
 
   // Plans CTA callback
   const goToNewPlan = useCallback(
@@ -182,6 +187,22 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
         </div>
       </Card>
 
+      {/* Pinned Note Banner */}
+      <AnimatePresence mode="popLayout">
+        {floqDetails.pinned_note && (
+          <motion.div
+            key="pinned-note"
+            initial={{ y: -6, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -6, opacity: 0 }}
+            className="mx-4 my-3 rounded-xl bg-muted/50 p-3 text-sm border-l-4 border-primary/50"
+          >
+            <div className="font-medium text-xs text-muted-foreground mb-1">📌 Pinned by host</div>
+            {floqDetails.pinned_note}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Tabbed Interface */}
       <div className="px-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -189,9 +210,24 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             "grid w-full",
             isHost ? "grid-cols-4" : "grid-cols-3"
           )}>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="plans">Plans</TabsTrigger>
+            <TabsTrigger value="chat" className="relative">
+              Chat
+              {unreadCounts?.unread_chat && unreadCounts.unread_chat > 0 && (
+                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_chat}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="relative">
+              Activity
+              {unreadCounts?.unread_activity && unreadCounts.unread_activity > 0 && (
+                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_activity}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="relative">
+              Plans
+              {unreadCounts?.unread_plans && unreadCounts.unread_plans > 0 && (
+                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_plans}</Badge>
+              )}
+            </TabsTrigger>
             {canManage && <TabsTrigger value="manage">Manage</TabsTrigger>}
           </TabsList>
 
