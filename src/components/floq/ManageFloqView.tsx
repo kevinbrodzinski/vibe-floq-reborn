@@ -24,7 +24,11 @@ export const ManageFloqView: React.FC<ManageFloqViewProps> = ({
 
   const setActiveTab = (tab: string) => {
     const newParams = new URLSearchParams(searchParams);
-    newParams.set('tab', tab);
+    if (tab === 'info') {
+      newParams.delete('tab'); // Keep URLs clean for default tab
+    } else {
+      newParams.set('tab', tab);
+    }
     setSearchParams(newParams);
   };
 

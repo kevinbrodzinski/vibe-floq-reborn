@@ -344,7 +344,7 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
         <div className="flex justify-end">
           <Button 
             onClick={handleSave} 
-            disabled={isSaving || !validateForm()}
+            disabled={!validateForm() || isSaving}
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
