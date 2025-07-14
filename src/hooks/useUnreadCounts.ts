@@ -111,32 +111,37 @@ export const useFloqTabBadges = (floqId: string) => {
   };
 };
 
+// Invalidation helper for notifications
+const invalidateNotifications = (queryClient: any, userId?: string) => {
+  queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+  queryClient.invalidateQueries({ queryKey: ['notification-counts', userId] });
+};
+
 // Hook for notification counts (from user_notifications table)
 export const useNotificationCounts = (userId?: string) => {
   return useQuery({
     queryKey: ['notification-counts', userId],
-    queryFn: async (): Promise<{ notifications: any[], total: number }> => {
-      if (!userId) return { notifications: [], total: 0 };
+    queryFn: async (): Promise<{ total: number }> => {
+      if (!userId) return { total: 0 };
 
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from('user_notifications')
-        .select('*')
+        .select('id', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .is('read_at', null)
-        .order('created_at', { ascending: false });
+        .is('read_at', null);
 
       if (error) {
         console.error('Error fetching notification counts:', error);
-        return { notifications: [], total: 0 };
+        return { total: 0 };
       }
 
-      return { 
-        notifications: data || [], 
-        total: data?.length || 0 
-      };
+      return { total: count ?? 0 };
     },
     enabled: !!userId,
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
 };
+
+// Export the helper for use in components
+export { invalidateNotifications };

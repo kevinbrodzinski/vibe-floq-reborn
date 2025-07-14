@@ -91,8 +91,8 @@ export const NotificationsList = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
     },
     onError: (error) => {
       console.error('Error marking notifications as read:', error);
@@ -113,11 +113,10 @@ export const NotificationsList = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-counts'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
       toast({
-        title: "Success",
-        description: "All notifications marked as read"
+        title: "All notifications marked as read"
       });
     },
     onError: (error) => {
@@ -140,7 +139,7 @@ export const NotificationsList = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground">
+      <div className="flex items-center justify-center p-8 text-muted-foreground h-48">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
         Loading notifications...
       </div>
