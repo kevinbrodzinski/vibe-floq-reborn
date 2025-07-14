@@ -32,6 +32,7 @@ export function useFloqSettings(floqId: string) {
     },
     enabled: !!floqId,
     staleTime: 5000, // Reduced for active editing sessions
+    gcTime: 60_000, // Garbage collect after 1 minute of inactivity
     placeholderData: (previousData) => previousData,
   });
 
@@ -48,6 +49,13 @@ export function useFloqSettings(floqId: string) {
       queryClient.setQueryData(["floq-settings", floqId], data);
       toast.dismiss(); // Prevent duplicate toasts
       toast.success('Settings saved successfully');
+      
+      // Announce to screen readers
+      const announcer = document.querySelector('[aria-live="assertive"]');
+      if (announcer) {
+        announcer.textContent = 'Settings saved successfully';
+        setTimeout(() => announcer.textContent = '', 1000);
+      }
     },
     onError: (error: any) => {
       console.error('Failed to save settings:', error);

@@ -31,6 +31,12 @@ All colors MUST be HSL.
     --input: 230 25% 15%;
     --ring: 252 100% 75%;
     --radius: 1.5rem;
+  }
+
+  /* Safari iOS disabled fieldset icon fix */
+  select[disabled] svg {
+    opacity: 0.4;
+  }
 
     /* Time-Synced Theme System */
     --time-transition: all 2s cubic-bezier(0.23, 1, 0.32, 1);
