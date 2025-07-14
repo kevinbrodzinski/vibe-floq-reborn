@@ -198,6 +198,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
           className="shrink-0 p-1 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           title="Hide this floq"
           aria-label="Hide this floq"
+          aria-haspopup="menu"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>

@@ -12,7 +12,9 @@ export const formatTimeLeft = (endsAt: string | undefined): string => {
   
   if (diffHours > 0) {
     return `${diffHours}h ${diffMinutes}m`;
-  } else {
+  } else if (diffMinutes > 0) {
     return `${diffMinutes}m`;
+  } else {
+    return 'Ending now';
   }
 };
