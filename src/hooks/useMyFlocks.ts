@@ -84,7 +84,7 @@ export function useMyFlocks({
           )
         `)
         .eq('user_id', user.id)
-        .gt('floqs.ends_at', new Date().toISOString())
+        .gt('floqs.ends_at', 'now() - interval \'5 minutes\'')
         .is('floqs.deleted_at', null);
 
       const createdQuery = supabase
@@ -100,7 +100,7 @@ export function useMyFlocks({
           last_activity_at
         `)
         .eq('creator_id', user.id)
-        .gt('ends_at', new Date().toISOString())
+        .gt('ends_at', 'now() - interval \'5 minutes\'')
         .is('deleted_at', null);
 
       const [participatedResult, createdResult] = await Promise.all([
