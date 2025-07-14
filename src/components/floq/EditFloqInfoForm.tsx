@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useStableMemo } from '@/hooks/useStableMemo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,24 +50,33 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
   });
   
   const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const originalData = {
-      title: floqDetails.title,
-      description: floqDetails.description || '',
-      primary_vibe: floqDetails.primary_vibe,
-      flock_type: floqDetails.ends_at ? 'momentary' : 'persistent',
-      max_participants: floqDetails.max_participants || 20,
-      visibility: floqDetails.visibility,
-      starts_at: floqDetails.starts_at ? new Date(floqDetails.starts_at).toISOString().slice(0, 16) : '',
-      ends_at: floqDetails.ends_at ? new Date(floqDetails.ends_at).toISOString().slice(0, 16) : ''
-    };
-    
-    setHasChanges(JSON.stringify(formData) !== JSON.stringify(originalData));
-  }, [formData, floqDetails]);
+  // Create a stable reference to original data
+  const originalData = useStableMemo(() => ({
+    title: floqDetails.title,
+    description: floqDetails.description || '',
+    primary_vibe: floqDetails.primary_vibe,
+    flock_type: floqDetails.ends_at ? 'momentary' : 'persistent',
+    max_participants: floqDetails.max_participants || 20,
+    visibility: floqDetails.visibility,
+    starts_at: floqDetails.starts_at ? new Date(floqDetails.starts_at).toISOString().slice(0, 16) : '',
+    ends_at: floqDetails.ends_at ? new Date(floqDetails.ends_at).toISOString().slice(0, 16) : ''
+  }), [
+    floqDetails.title,
+    floqDetails.description,
+    floqDetails.primary_vibe,
+    floqDetails.ends_at,
+    floqDetails.max_participants,
+    floqDetails.visibility,
+    floqDetails.starts_at
+  ]);
+
+  // Calculate hasChanges using useMemo to avoid re-render loops
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(originalData);
+  }, [formData, originalData]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -147,7 +157,6 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
       await queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
       
       toast.success('Floq updated successfully');
-      setHasChanges(false);
     } catch (error) {
       console.error('Failed to update floq:', error);
       toast.error('Failed to update floq');
