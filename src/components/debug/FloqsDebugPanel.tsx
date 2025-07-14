@@ -1,18 +1,46 @@
 import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 
 export const FloqsDebugPanel = () => {
   const { data: floqs = [], isLoading, error } = useActiveFloqs({
     limit: 5,
     includeDistance: true
   });
+  const { setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
 
   return (
     <Card className="fixed bottom-4 right-4 w-80 z-50 bg-card/95 backdrop-blur-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Floqs Debug Panel</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm">Debug Panel</CardTitle>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setIsDebugPanelOpen(true)}
+            className="text-xs"
+          >
+            Env Config
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-2 text-xs">
+        {/* Environment Status */}
+        <div className="border-b pb-2">
+          <div className="flex items-center justify-between">
+            <strong>Environment:</strong>
+            <Badge className={
+              environmentConfig.presenceMode === 'live' ? 'bg-green-500' : 
+              environmentConfig.presenceMode === 'mock' ? 'bg-yellow-500' : 'bg-gray-500'
+            }>
+              {environmentConfig.presenceMode.toUpperCase()}
+            </Badge>
+          </div>
+        </div>
+        
+        {/* Floqs Status */}
         <div>
           <strong>Status:</strong> {isLoading ? "Loading..." : error ? "Error" : "Loaded"}
         </div>
