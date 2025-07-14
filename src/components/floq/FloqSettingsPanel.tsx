@@ -88,11 +88,15 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   };
 
   if (isLoading || !currentSettings) {
-    return <FloqSettingsSkeleton />;
+    return (
+      <div className="relative min-h-[500px]">
+        <FloqSettingsSkeleton />
+      </div>
+    );
   }
 
   return (
-    <>
+    <div className="relative min-h-[500px]">
       {/* Screen reader announcements */}
       <div aria-live="assertive" className="sr-only"></div>
       
@@ -258,6 +262,6 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
         )}
         </fieldset>
       </form>
-    </>
+    </div>
   );
 };

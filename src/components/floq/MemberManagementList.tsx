@@ -202,7 +202,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                         value={participant.role}
                         onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole, participant.role)}
                       >
-                        <SelectTrigger className="w-28 h-8">
+                        <SelectTrigger className="w-28 h-8" aria-label="Change role">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

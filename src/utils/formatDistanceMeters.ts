@@ -2,6 +2,9 @@
  * Format distance in meters to a human-readable string
  */
 export function formatDistanceMeters(meters: number): string {
+  if (meters < 1) {
+    return "<1 m";
+  }
   if (meters < 1000) {
     return `${Math.round(meters)} m`;
   }

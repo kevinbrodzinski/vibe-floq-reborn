@@ -152,8 +152,9 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
 
       toast.success('Invitation sent successfully');
       
-      // Update search results and refresh invitations
-      setSearchResults(results => results.filter(user => user.id !== userId));
+      // Clear search for fresh UX and refresh invitations
+      setSearchQuery('');
+      setSearchResults([]);
       await loadPendingInvitations();
     } catch (error) {
       console.error('Failed to send invitation:', error);

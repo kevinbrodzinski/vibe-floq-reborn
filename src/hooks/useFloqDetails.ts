@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/providers/AuthProvider";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useDebounceCallback } from "./useDebounceCallback";
+
 import type { Vibe } from "@/types";
 
 export interface FloqParticipant {
@@ -125,16 +125,24 @@ export function useFloqDetails(
   });
 
   // Debounced refetch to prevent too many rapid updates
-  const debouncedRefetch = useDebounceCallback(() => {
-    query.refetch();
-  }, 100, true); // Leading edge with 100ms debounce
+  const debouncedRefetchRef = useRef<() => void>();
+  
+  if (!debouncedRefetchRef.current) {
+    let timeoutId: NodeJS.Timeout | null = null;
+    debouncedRefetchRef.current = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => query.refetch(), 100);
+    };
+  }
+  
+  const debouncedRefetch = debouncedRefetchRef.current;
 
   // Set up real-time subscription for floq changes with optimized filters
   useEffect(() => {
     if (!floqId || !enabled) return;
 
     const channel = supabase
-      .channel(`floq_${floqId}_changes`)
+      .channel(`floq_${floqId}_${user?.id}_changes`)
       .on(
         'postgres_changes',
         {
