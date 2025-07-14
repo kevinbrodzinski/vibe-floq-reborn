@@ -8,13 +8,13 @@ ALTER TABLE public.user_floq_activity_tracking
   ADD CONSTRAINT fk_tracking_user FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
   ADD CONSTRAINT fk_tracking_floq FOREIGN KEY (floq_id) REFERENCES public.floqs(id) ON DELETE CASCADE;
 
--- 2. Fix trigger naming and make it SECURITY DEFINER
+-- 2. Fix trigger naming and make it SECURITY INVOKER for safety
 DROP TRIGGER IF EXISTS touch_updated_at ON public.user_floq_activity_tracking;
 
 CREATE OR REPLACE FUNCTION _tracking_touch_updated_at()
 RETURNS trigger 
 LANGUAGE plpgsql 
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public
 AS $$
 BEGIN
@@ -27,10 +27,27 @@ CREATE TRIGGER tracking_touch_updated_at
 BEFORE UPDATE ON public.user_floq_activity_tracking
 FOR EACH ROW EXECUTE FUNCTION _tracking_touch_updated_at();
 
+-- Add trigger for created_at
+CREATE OR REPLACE FUNCTION _tracking_set_created_at()
+RETURNS trigger 
+LANGUAGE plpgsql 
+SECURITY INVOKER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.created_at := COALESCE(NEW.created_at, now());
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER tracking_set_created_at
+BEFORE INSERT ON public.user_floq_activity_tracking
+FOR EACH ROW EXECUTE FUNCTION _tracking_set_created_at();
+
 -- 3. Clean up duplicate triggers
 DROP TRIGGER IF EXISTS initialize_tracking_on_join ON public.floq_participants;
 
--- 4. Fix update_user_activity_tracking function with proper column aliases
+-- 4. Fix update_user_activity_tracking function with proper EXCLUDED aliases
 CREATE OR REPLACE FUNCTION public.update_user_activity_tracking(
   p_floq_id uuid,
   p_section text DEFAULT 'all'
@@ -45,13 +62,13 @@ BEGIN
   ON CONFLICT (user_id, floq_id) DO UPDATE
   SET last_chat_viewed_at = 
         CASE WHEN p_section IN ('all','chat') THEN now()
-             ELSE public.user_floq_activity_tracking.last_chat_viewed_at END,
+             ELSE EXCLUDED.last_chat_viewed_at END,
       last_activity_viewed_at = 
         CASE WHEN p_section IN ('all','activity') THEN now()
-             ELSE public.user_floq_activity_tracking.last_activity_viewed_at END,
+             ELSE EXCLUDED.last_activity_viewed_at END,
       last_plans_viewed_at = 
         CASE WHEN p_section IN ('all','plans') THEN now()
-             ELSE public.user_floq_activity_tracking.last_plans_viewed_at END,
+             ELSE EXCLUDED.last_plans_viewed_at END,
       updated_at = now();
   
   RETURN;
@@ -60,70 +77,56 @@ $$;
 
 -- Phase 1B: View and Index Optimizations
 
--- 5. Fix user_floq_unread_counts view (remove SECURITY INVOKER syntax for compatibility)
+-- 5. Fix user_floq_unread_counts view with RLS filter and optimized counting
 DROP VIEW IF EXISTS public.user_floq_unread_counts;
 
 CREATE OR REPLACE VIEW public.user_floq_unread_counts
 WITH (security_invoker = true)
 AS
+WITH count_data AS (
+  SELECT 
+    fp.user_id,
+    fp.floq_id,
+    COALESCE(
+      (SELECT COUNT(*)::integer 
+       FROM public.floq_messages fm 
+       WHERE fm.floq_id = fp.floq_id 
+         AND fm.sender_id != fp.user_id
+         AND fm.created_at > COALESCE(uat.last_chat_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
+      ), 0
+    ) AS chat_ct,
+    
+    COALESCE(
+      (SELECT COUNT(*)::integer 
+       FROM public.flock_history fh 
+       WHERE fh.floq_id = fp.floq_id 
+         AND fh.user_id != fp.user_id
+         AND fh.created_at > COALESCE(uat.last_activity_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
+      ), 0
+    ) AS act_ct,
+    
+    COALESCE(
+      (SELECT COUNT(*)::integer 
+       FROM public.floq_plans fpl 
+       WHERE fpl.floq_id = fp.floq_id 
+         AND fpl.creator_id != fp.user_id
+         AND GREATEST(fpl.created_at, COALESCE(fpl.updated_at, fpl.created_at)) > COALESCE(uat.last_plans_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
+      ), 0
+    ) AS plan_ct
+  
+  FROM public.floq_participants fp
+  LEFT JOIN public.user_floq_activity_tracking uat 
+    ON uat.user_id = fp.user_id AND uat.floq_id = fp.floq_id
+  WHERE fp.user_id = auth.uid()
+)
 SELECT 
-  fp.user_id,
-  fp.floq_id,
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.floq_messages fm 
-     WHERE fm.floq_id = fp.floq_id 
-       AND fm.sender_id != fp.user_id
-       AND fm.created_at > COALESCE(uat.last_chat_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) AS unread_chat,
-  
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.flock_history fh 
-     WHERE fh.floq_id = fp.floq_id 
-       AND fh.user_id != fp.user_id
-       AND fh.created_at > COALESCE(uat.last_activity_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) AS unread_activity,
-  
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.floq_plans fpl 
-     WHERE fpl.floq_id = fp.floq_id 
-       AND fpl.creator_id != fp.user_id
-       AND fpl.created_at > COALESCE(uat.last_plans_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) AS unread_plans,
-  
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.floq_messages fm 
-     WHERE fm.floq_id = fp.floq_id 
-       AND fm.sender_id != fp.user_id
-       AND fm.created_at > COALESCE(uat.last_chat_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) +
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.flock_history fh 
-     WHERE fh.floq_id = fp.floq_id 
-       AND fh.user_id != fp.user_id
-       AND fh.created_at > COALESCE(uat.last_activity_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) +
-  COALESCE(
-    (SELECT COUNT(*)::integer 
-     FROM public.floq_plans fpl 
-     WHERE fpl.floq_id = fp.floq_id 
-       AND fpl.creator_id != fp.user_id
-       AND fpl.created_at > COALESCE(uat.last_plans_viewed_at, COALESCE(fp.joined_at, '1970-01-01'::timestamptz))
-    ), 0
-  ) AS unread_total
-
-FROM public.floq_participants fp
-LEFT JOIN public.user_floq_activity_tracking uat 
-  ON uat.user_id = fp.user_id AND uat.floq_id = fp.floq_id;
+  user_id,
+  floq_id,
+  chat_ct AS unread_chat,
+  act_ct AS unread_activity,
+  plan_ct AS unread_plans,
+  (chat_ct + act_ct + plan_ct) AS unread_total
+FROM count_data;
 
 -- 6. Optimize indexes with fixed horizons instead of mutable now()
 DROP INDEX IF EXISTS idx_floq_messages_unread_tracking;
@@ -156,17 +159,24 @@ GRANT SELECT ON public.user_floq_unread_counts TO authenticated;
 -- Ensure proper permissions on the tracking table
 GRANT SELECT, INSERT, UPDATE ON public.user_floq_activity_tracking TO authenticated;
 
--- Grant execute on the tracking function
+-- Grant execute on the tracking function and revoke from public
 GRANT EXECUTE ON FUNCTION public.update_user_activity_tracking(uuid, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.update_user_activity_tracking(uuid, text) FROM PUBLIC;
 
 -- Phase 1D: Bootstrap Data with Proper Transaction Handling
 
 -- 8. Initialize tracking records for existing participants (in batches)
-DO $$
+CREATE OR REPLACE FUNCTION _bootstrap_tracking_data()
+RETURNS void 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = public
+AS $bootstrap$
 DECLARE
   batch_size INTEGER := 1000;
   processed INTEGER := 0;
   total_count INTEGER;
+  processed_sum INTEGER := 0;
 BEGIN
   -- Get total count for logging
   SELECT COUNT(*) INTO total_count
@@ -205,17 +215,24 @@ BEGIN
     FROM batch;
     
     GET DIAGNOSTICS processed = ROW_COUNT;
+    processed_sum := processed_sum + processed;
     
     IF processed = 0 THEN
       EXIT;
     END IF;
     
-    RAISE NOTICE 'Processed % rows', processed;
+    RAISE NOTICE 'Processed % rows (% total, % remaining)', processed, processed_sum, total_count - processed_sum;
     
     -- Small delay to prevent overwhelming the system
     PERFORM pg_sleep(0.1);
   END LOOP;
   
-  RAISE NOTICE 'Bootstrap initialization completed';
+  RAISE NOTICE 'Bootstrap initialization completed: % total rows processed', processed_sum;
 END;
-$$;
+$bootstrap$;
+
+-- Execute the bootstrap function
+SELECT _bootstrap_tracking_data();
+
+-- Clean up the bootstrap function after use
+DROP FUNCTION IF EXISTS _bootstrap_tracking_data();
