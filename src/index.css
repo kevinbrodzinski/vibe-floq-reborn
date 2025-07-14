@@ -278,6 +278,31 @@ All colors MUST be HSL.
     animation: ripple 2s infinite;
   }
 
+  /* Card glass effect with vibe-aware gradients */
+  .card-glass {
+    @apply bg-white/3 backdrop-blur-md relative overflow-hidden;
+  }
+
+  .card-glass::before {
+    content: "";
+    position: absolute; 
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, var(--vibe-from) 0%, transparent 75%);
+    opacity: .18;
+    transition: opacity .3s;
+  }
+
+  .card-glass:hover::before { 
+    opacity: .35; 
+  }
+
+  /* Performance optimization */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pulse-slow { 
+      animation: none; 
+    }
+  }
+
   /* Custom slider styles */
   .slider::-webkit-slider-thumb {
     appearance: none;

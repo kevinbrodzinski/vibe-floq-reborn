@@ -110,16 +110,13 @@ export const FloqCard = React.memo<FloqCardProps>(({
     <article
       {...bind()}
       className={cn(
-        'group relative overflow-hidden',
-        'rounded-3xl p-5 cursor-pointer shadow-glass ring-1 ring-white/10',
+        'group relative overflow-hidden card-glass',
+        'rounded-3xl p-6 cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,.45)] ring-1 ring-white/10',
         'transition-all duration-300 ease-out',
         'hover:scale-[1.02] hover:-translate-y-1',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        'focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--vibe-from)]'
       )}
-      style={{
-        background: `linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), rgb(var(--card-bg))`
-      }}
+      style={{ '--vibe-from': accent } as React.CSSProperties}
       onClick={handleCardClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -167,21 +164,25 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <Users
             size={16}
             strokeWidth={1.6}
-            style={{ color: accent }}
+            className="text-[color:var(--vibe-from)]"
           />
-          {floq.participant_count}/{floq.max_participants ?? '∞'}
+          <span className="text-xs text-white/70">
+            {floq.participant_count}/{floq.max_participants ?? '∞'}
+          </span>
         </span>
 
         <span className="flex items-center gap-1">
-          <MapPin size={16} strokeWidth={1.6} style={{ color: accent }} />
-          {formatDistance(floq.distance_meters)}
+          <MapPin size={16} strokeWidth={1.6} className="text-[color:var(--vibe-from)]" />
+          <span className="text-xs text-white/70">
+            {formatDistance(floq.distance_meters)}
+          </span>
         </span>
 
         <span className="flex items-center gap-1">
-          <Clock size={16} strokeWidth={1.6} style={{ color: accent }} />
-          {floq.ends_at
-            ? `Ends in ${formatTimeLeft(floq.ends_at)}`
-            : 'Ongoing'}
+          <Clock size={16} strokeWidth={1.6} className="text-[color:var(--vibe-from)]" />
+          <span className="text-xs text-white/70">
+            {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
+          </span>
         </span>
       </div>
 

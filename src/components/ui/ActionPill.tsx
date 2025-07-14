@@ -13,11 +13,11 @@ interface ActionPillProps
 
 const styles: Record<Variants, string> = {
   primary:
-    'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm hover:brightness-110 active:scale-95',
+    'bg-[color:var(--vibe-from)] text-white shadow-lg hover:brightness-110 active:scale-95',
   ghost:
-    'bg-white/5 text-muted-foreground ring-1 ring-white/10 hover:bg-white/8 active:scale-95',
+    'bg-white/5 text-white/80 ring-1 ring-white/10 hover:bg-white/10 active:scale-95',
   destructive:
-    'bg-red-500/20 text-red-300 ring-1 ring-red-500/40 hover:bg-red-500/30 active:scale-95',
+    'border border-white/15 text-white/60 hover:text-red-400 hover:border-red-400/40 active:scale-95',
   success:
     'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40 hover:bg-emerald-500/30 active:scale-95',
 };
