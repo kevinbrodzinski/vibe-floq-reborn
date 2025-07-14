@@ -52,8 +52,8 @@ serve(async (req) => {
       )
     }
 
-    // Check if user is creator or co-admin
-    const { data: participant, error: participantError } = await supabaseAdmin
+    // Check if user is creator or co-admin using RLS client
+    const { data: participant, error: participantError } = await supabaseAuth
       .from('floq_participants')
       .select('role')
       .eq('floq_id', floq_id)
@@ -72,13 +72,13 @@ serve(async (req) => {
     if (typeof settings.notifications_enabled === 'boolean') {
       validSettings.notifications_enabled = settings.notifications_enabled
     }
-    if (['all', 'co-admins', 'host-only'].includes(settings.mention_permissions)) {
+    if (typeof settings.mention_permissions === 'string' && ['all', 'co-admins', 'host'].includes(settings.mention_permissions)) {
       validSettings.mention_permissions = settings.mention_permissions
     }
     if (typeof settings.join_approval_required === 'boolean') {
       validSettings.join_approval_required = settings.join_approval_required
     }
-    if (['public', 'members_only'].includes(settings.activity_visibility)) {
+    if (typeof settings.activity_visibility === 'string' && ['public', 'members_only'].includes(settings.activity_visibility)) {
       validSettings.activity_visibility = settings.activity_visibility
     }
     if (typeof settings.welcome_message === 'string' || settings.welcome_message === null) {
@@ -106,12 +106,21 @@ serve(async (req) => {
     if (error) {
       console.error('Database error:', error)
       return new Response(
-        JSON.stringify({ error: 'Failed to update settings' }),
-        { status: 500, headers: corsHeaders }
+        JSON.stringify({ error: 'Failed to update settings', details: error.message }),
+        { status: 422, headers: corsHeaders }
       )
     }
 
-    return new Response(JSON.stringify(updatedSettings), { 
+    // Transform the response to match FloqSettings interface
+    const formattedSettings = {
+      notifications_enabled: updatedSettings.notifications_enabled ?? true,
+      mention_permissions: updatedSettings.mention_permissions ?? 'all',
+      join_approval_required: updatedSettings.join_approval_required ?? false,
+      activity_visibility: updatedSettings.activity_visibility ?? 'public',
+      welcome_message: updatedSettings.welcome_message ?? null,
+    }
+
+    return new Response(JSON.stringify(formattedSettings), { 
       status: 200, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

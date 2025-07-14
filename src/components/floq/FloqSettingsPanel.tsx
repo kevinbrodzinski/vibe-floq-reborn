@@ -14,7 +14,7 @@ interface FloqSettingsPanelProps {
 }
 
 export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetails }) => {
-  const { settings: loadedSettings, isLoading, save, saving } = useFloqSettings(floqDetails.id);
+  const { settings: loadedSettings, isLoading, saveSettings, saving } = useFloqSettings(floqDetails.id);
   const [localSettings, setLocalSettings] = useState<FloqSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -40,11 +40,13 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
     if (!localSettings || !hasChanges || saving) return;
     
     try {
-      await save(localSettings);
-      setHasChanges(false);
+      await saveSettings(localSettings);
     } catch (error) {
-      // Error handling is done in the mutation
+      // Error handling is done in the mutation - don't set hasChanges(false) here
+      return;
     }
+    // Only set hasChanges(false) on successful save
+    setHasChanges(false);
   };
 
   if (isLoading || !currentSettings) {
@@ -57,7 +59,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
 
   return (
     <div className="space-y-6">
-      <Card className="p-4">
+      <fieldset disabled={saving}>
+        <Card className="p-4">
         <div className="space-y-4">
           <h4 className="font-medium flex items-center gap-2">
             <Bell className="w-4 h-4" />
@@ -95,24 +98,24 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Who can @mention everyone</Label>
+                <Label id="mention-label">Who can @mention everyone</Label>
                 <p className="text-sm text-muted-foreground">
                   Control who can send @all mentions to the group
                 </p>
               </div>
               <Select 
                 value={currentSettings.mention_permissions} 
-                onValueChange={(value: 'all' | 'co-admins' | 'host-only') => 
+                onValueChange={(value: 'all' | 'co-admins' | 'host') => 
                   handleSettingChange('mention_permissions', value)
                 }
               >
-                <SelectTrigger className="w-32" aria-label="Mention permissions">
+                <SelectTrigger className="w-32" aria-labelledby="mention-label">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Anyone</SelectItem>
                   <SelectItem value="co-admins">Co-admins+</SelectItem>
-                  <SelectItem value="host-only">Host only</SelectItem>
+                  <SelectItem value="host">Host only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -147,7 +150,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
 
             <div className="flex items-center justify-between">
               <div>
-                <Label>Activity Visibility</Label>
+                <Label id="visibility-label">Activity Visibility</Label>
                 <p className="text-sm text-muted-foreground">
                   Who can see floq activities and participant list
                 </p>
@@ -158,7 +161,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                   handleSettingChange('activity_visibility', value)
                 }
               >
-                <SelectTrigger className="w-36" aria-label="Activity visibility">
+                <SelectTrigger className="w-36" aria-labelledby="visibility-label">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -207,6 +210,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           </Button>
         </div>
       )}
+      </fieldset>
     </div>
   );
 };

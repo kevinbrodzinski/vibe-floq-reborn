@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 export interface FloqSettings {
   notifications_enabled: boolean;
-  mention_permissions: 'all' | 'co-admins' | 'host-only';
+  mention_permissions: 'all' | 'co-admins' | 'host';
   join_approval_required: boolean;
   activity_visibility: 'public' | 'members_only';
   welcome_message: string | null;
@@ -27,7 +27,7 @@ export function useFloqSettings(floqId: string) {
         mention_permissions: data.mention_permissions ?? 'all',
         join_approval_required: data.join_approval_required ?? false,
         activity_visibility: data.activity_visibility ?? 'public',
-        welcome_message: data.welcome_message ?? '',
+        welcome_message: data.welcome_message ?? null,
       };
     },
     enabled: !!floqId,
@@ -36,14 +36,15 @@ export function useFloqSettings(floqId: string) {
 
   const mutation = useMutation({
     mutationFn: async (payload: Partial<FloqSettings>) => {
-      const { error } = await supabase.functions.invoke('update-floq-settings', {
+      const { data, error } = await supabase.functions.invoke('update-floq-settings', {
         body: { floq_id: floqId, ...payload },
       });
 
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["floq-settings", floqId] });
+    onSuccess: (data) => {
+      queryClient.setQueryData(["floq-settings", floqId], data);
       toast.success('Settings saved successfully');
     },
     onError: (error: any) => {
@@ -55,7 +56,7 @@ export function useFloqSettings(floqId: string) {
   return {
     ...query,
     settings: query.data,
-    save: mutation.mutateAsync,
+    saveSettings: mutation.mutateAsync,
     saving: mutation.isPending,
   };
 }
