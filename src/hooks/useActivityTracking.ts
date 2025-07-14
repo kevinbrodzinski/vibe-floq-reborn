@@ -3,12 +3,12 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 // Utility — local debounce so we don't pull an external dep just for this
-function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300) {
+function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  return (...args: Parameters<F>) => {
+  return ((...args: Parameters<F>) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
-  };
+  }) as F;
 }
 
 /**

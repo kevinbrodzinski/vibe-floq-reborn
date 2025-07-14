@@ -24,6 +24,7 @@ import { hasManagePermission } from '@/utils/permissions';
 import { useCallback } from 'react';
 import { useUnreadCounts, useFloqTabBadges } from '@/hooks/useUnreadCounts';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useRealtimeUnreadUpdates } from '@/hooks/useRealtimeUnreadUpdates';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
@@ -78,6 +79,9 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   const { data: unreadCounts } = useUnreadCounts(floqDetails.id);
   const tabBadges = useFloqTabBadges(floqDetails.id);
   const track = useActivityTracking(floqDetails.id);
+  
+  // Set up real-time updates for unread counts
+  useRealtimeUnreadUpdates([floqDetails.id]);
 
   // Track activity when tab changes
   useEffect(() => {

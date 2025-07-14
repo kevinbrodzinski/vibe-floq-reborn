@@ -4,6 +4,8 @@ import { prefetchTab } from '@/utils/tabPrefetch';
 import { useEffect, useRef } from 'react';
 import { Z } from '@/constants/zLayers';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useGlobalUnreadCount } from '@/hooks/useUnreadCounts';
+import { Badge } from '@/components/ui/badge';
 
 const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'field', label: 'Field', Icon: LayoutGrid },
@@ -17,6 +19,7 @@ const TABS: { id: string; label: string; Icon: any }[] = [
 export const FloqNavigation = () => {
   const navRef = useRef<HTMLElement>(null);
   const { navigationFeedback } = useHapticFeedback();
+  const { totalUnread } = useGlobalUnreadCount();
 
   // Export navigation height to CSS variable
   useEffect(() => {
@@ -58,7 +61,7 @@ export const FloqNavigation = () => {
             onClick={navigationFeedback}
             aria-label={`Navigate to ${label} section`}
             className={({ isActive }) =>
-              `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 ${
+              `flex flex-col items-center py-2 px-4 rounded-2xl transition-all duration-300 relative ${
                 isActive
                   ? "bg-gradient-primary text-primary-foreground shadow-lg scale-110 animate-pulse-glow"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -67,6 +70,13 @@ export const FloqNavigation = () => {
           >
             <Icon size={20} className="mb-1" aria-hidden="true" />
             <span className="text-xs font-medium">{label}</span>
+            
+            {/* Global unread badge for Floqs tab */}
+            {id === 'floqs' && totalUnread > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center bg-destructive text-destructive-foreground">
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </Badge>
+            )}
           </NavLink>
         ))}
       </div>

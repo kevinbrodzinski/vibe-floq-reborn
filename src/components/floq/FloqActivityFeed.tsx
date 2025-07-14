@@ -51,12 +51,8 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
   floqId, 
   className 
 }) => {
-  const track = useActivityTracking(floqId);
-
-  // Track activity when component mounts and floqId is available
-  useEffect(() => {
-    track('activity');
-  }, [track]);
+  // Note: Activity tracking is now handled by parent component (JoinedFloqView)
+  // to ensure it fires when tab becomes visible, not just on mount
   const { data: activities = [], isLoading, error, refetch } = useQuery({
     queryKey: ['floq-activity-feed', floqId],
     queryFn: async (): Promise<FloqActivityItem[]> => {
