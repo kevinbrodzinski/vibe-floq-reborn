@@ -187,14 +187,11 @@ export function useDMThread(friendId: string | null) {
         
         console.log('✅ Successfully marked as read, invalidating unread counts');
         
-        // Force invalidate unread counts query with refetch
+        // Only invalidate - TanStack Query will auto-refetch when needed
         await qc.invalidateQueries({ 
           queryKey: ['dm-unread', selfId],
           refetchType: 'active'
         });
-        
-        // Also refetch immediately to update badge faster
-        qc.refetchQueries({ queryKey: ['dm-unread', selfId] });
         
       } catch (error) {
         console.error('❌ Exception marking as read:', error);

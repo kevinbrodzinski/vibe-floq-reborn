@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Send, User } from 'lucide-react';
+import { Z } from '@/constants/zLayers';
 
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfile';
@@ -50,15 +51,14 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     });
     
     // Mark as read when sheet opens with optimistic badge update
-    if (open && friendId) {
+    if (open && friendId && currentUserId) {
       console.log('📖 DM sheet opened, marking as read for friend:', friendId);
       markAsRead();
       
-      // Immediate optimistic update for badge responsiveness
-      const queryClient = useQueryClient();
-      queryClient.invalidateQueries({ queryKey: ['dm-unread'] });
+      // Immediate optimistic update for badge responsiveness - fixed query key
+      queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
     }
-  }, [open, friendId, markAsRead]);
+  }, [open, friendId, currentUserId, markAsRead, queryClient]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
@@ -115,7 +115,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80 z-[70]"
+        className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80 z-[${Z.dmSheet}]`}
         style={{ 
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)'
@@ -180,7 +180,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
           <div className="flex gap-2">
             <Input
               value={input}

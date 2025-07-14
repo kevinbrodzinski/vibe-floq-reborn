@@ -34,21 +34,20 @@ export const useUnreadDMCounts = (selfId: string | null) => {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages',
-        filter: `thread_id=in.(SELECT id FROM direct_threads WHERE member_a=eq.${selfId} OR member_b=eq.${selfId})`
+        table: 'direct_messages'
       }, (payload) => {
         console.log('💬 New DM received, invalidating unread counts:', payload);
-        // Only invalidate when new messages arrive for threads involving this user
+        // Invalidate for any new message - will be filtered by RPC function
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `member_a=eq.${selfId} OR member_b=eq.${selfId}`
+        filter: `or=(member_a.eq.${selfId},member_b.eq.${selfId})`
       }, (payload) => {
         console.log('📖 Thread read status updated, invalidating unread counts:', payload);
-        // Invalidate when read timestamps are updated - fixed OR condition
+        // Invalidate when read timestamps are updated - fixed OR syntax
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .subscribe();
