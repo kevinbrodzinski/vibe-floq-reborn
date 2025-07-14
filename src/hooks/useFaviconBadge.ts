@@ -7,20 +7,25 @@ import { useEffect, useRef } from 'react';
 export const useFaviconBadge = (totalUnread: number) => {
   const originalFaviconRef = useRef<string | null>(null);
   const currentFaviconRef = useRef<string | null>(null);
+  const faviconLinkRef = useRef<HTMLLinkElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    // Get or create the favicon link element
-    let faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-    
-    if (!faviconLink) {
-      faviconLink = document.createElement('link');
-      faviconLink.rel = 'icon';
-      document.head.appendChild(faviconLink);
-    }
+    // SSR guard
+    if (typeof window === 'undefined') return;
 
-    // Store original favicon on first run
-    if (originalFaviconRef.current === null) {
-      originalFaviconRef.current = faviconLink.href || generateDefaultFavicon();
+    // Get or create the favicon link element (once)
+    if (!faviconLinkRef.current) {
+      faviconLinkRef.current = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      
+      if (!faviconLinkRef.current) {
+        faviconLinkRef.current = document.createElement('link');
+        faviconLinkRef.current.rel = 'icon';
+        document.head.appendChild(faviconLinkRef.current);
+      }
+
+      // Store original favicon on first run
+      originalFaviconRef.current = faviconLinkRef.current.href || generateDefaultFavicon();
     }
 
     const targetFavicon = totalUnread > 0 
@@ -29,69 +34,86 @@ export const useFaviconBadge = (totalUnread: number) => {
 
     // Only update if different to avoid unnecessary DOM updates
     if (currentFaviconRef.current !== targetFavicon) {
-      faviconLink.href = targetFavicon;
+      faviconLinkRef.current!.href = targetFavicon;
       currentFaviconRef.current = targetFavicon;
     }
   }, [totalUnread]);
+
+  // Cleanup: restore original favicon on unmount
+  useEffect(() => {
+    return () => {
+      if (currentFaviconRef.current && originalFaviconRef.current && faviconLinkRef.current) {
+        faviconLinkRef.current.href = originalFaviconRef.current;
+      }
+    };
+  }, []);
+
+  /**
+   * Generate a simple default favicon (floq icon) - High DPI
+   */
+  function generateDefaultFavicon(): string {
+    // Reuse canvas for performance
+    const canvas = canvasRef.current ?? (canvasRef.current = document.createElement('canvas'));
+    canvas.width = 64;  // High DPI
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, 64, 64);
+    
+    // floq circle icon
+    ctx.fillStyle = '#8B5CF6'; // primary purple
+    ctx.beginPath();
+    ctx.arc(32, 32, 24, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Inner dot
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(32, 32, 8, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    return canvas.toDataURL();
+  }
+
+  /**
+   * Generate favicon with red notification dot - High DPI
+   */
+  function generateBadgedFavicon(): string {
+    // Reuse canvas for performance
+    const canvas = canvasRef.current ?? (canvasRef.current = document.createElement('canvas'));
+    canvas.width = 64;  // High DPI
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, 64, 64);
+    
+    // Main floq circle (slightly smaller to make room for badge)
+    ctx.fillStyle = '#8B5CF6';
+    ctx.beginPath();
+    ctx.arc(28, 28, 20, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Inner dot
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.arc(28, 28, 6, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Red notification badge
+    ctx.fillStyle = '#DC2626'; // destructive red
+    ctx.beginPath();
+    ctx.arc(48, 16, 12, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // White border on badge for contrast
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(48, 16, 12, 0, 2 * Math.PI);
+    ctx.stroke();
+    
+    return canvas.toDataURL();
+  }
 };
-
-/**
- * Generate a simple default favicon (floq icon)
- */
-function generateDefaultFavicon(): string {
-  const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 32;
-  const ctx = canvas.getContext('2d')!;
-  
-  // floq circle icon
-  ctx.fillStyle = '#8B5CF6'; // primary purple
-  ctx.beginPath();
-  ctx.arc(16, 16, 12, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Inner dot
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(16, 16, 4, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  return canvas.toDataURL();
-}
-
-/**
- * Generate favicon with red notification dot
- */
-function generateBadgedFavicon(): string {
-  const canvas = document.createElement('canvas');
-  canvas.width = 32;
-  canvas.height = 32;
-  const ctx = canvas.getContext('2d')!;
-  
-  // Main floq circle (slightly smaller to make room for badge)
-  ctx.fillStyle = '#8B5CF6';
-  ctx.beginPath();
-  ctx.arc(14, 14, 10, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Inner dot
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(14, 14, 3, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Red notification badge
-  ctx.fillStyle = '#DC2626'; // destructive red
-  ctx.beginPath();
-  ctx.arc(24, 8, 6, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // White border on badge for contrast
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.arc(24, 8, 6, 0, 2 * Math.PI);
-  ctx.stroke();
-  
-  return canvas.toDataURL();
-}

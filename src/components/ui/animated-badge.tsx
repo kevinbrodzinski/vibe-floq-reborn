@@ -27,7 +27,7 @@ export const AnimatedBadge: React.FC<AnimatedBadgeProps> = ({
   if (count <= 0) return null;
 
   const displayCount = count > maxCount ? `${maxCount}+` : count;
-  const defaultAriaLabel = `${count} notification${count === 1 ? '' : 's'}`;
+  const displayAriaLabel = count > maxCount ? `${count} notifications` : `${count} notification${count === 1 ? '' : 's'}`;
 
   return (
     <Badge
@@ -35,7 +35,7 @@ export const AnimatedBadge: React.FC<AnimatedBadgeProps> = ({
       variant={variant}
       className={cn('animate-pop', className)}
       role={role}
-      aria-label={ariaLabel || defaultAriaLabel}
+      aria-label={ariaLabel || displayAriaLabel}
       {...props}
     >
       {displayCount}

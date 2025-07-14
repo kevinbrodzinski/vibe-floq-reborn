@@ -113,14 +113,17 @@ export default {
 				'pop': {
 					'0%': {
 						transform: 'scale(0.4)',
-						opacity: '0'
+						opacity: '0',
+						'will-change': 'transform'
 					},
 					'80%': {
-						transform: 'scale(1.15)'
+						transform: 'scale(1.15)',
+						'will-change': 'transform'
 					},
 					'100%': {
 						transform: 'scale(1)',
-						opacity: '1'
+						opacity: '1',
+						'will-change': 'auto'
 					}
 				},
 				'accordion-down': {
