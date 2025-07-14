@@ -233,44 +233,14 @@ export const FloqCard = React.memo<FloqCardProps>(({
       </div>
 
       {/* Vibe match percentage */}
-      <div className="relative z-10 mt-2 ml-[calc(theme(spacing.20)+theme(spacing.3))]">
+      <div className="relative z-10 mt-1 ml-[calc(theme(spacing.20)+theme(spacing.3))]">
         <span className="text-xs text-emerald-400 font-medium">
           87% vibe match
         </span>
       </div>
 
-      {/* Row 2: Member avatar stack - aligned under title */}
-      {floq.members && floq.members.length > 0 && (
-        <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex -space-x-2">
-          {floq.members.slice(0, 3).map((member, index) => (
-            <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
-              <AvatarImage 
-                src={member.avatar_url || '/placeholder.svg'} 
-                alt={member.display_name}
-                loading="lazy"
-              />
-              <AvatarFallback className="bg-white/10 text-white text-xs">
-                {member.display_name?.[0]?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
-          ))}
-          {floq.members.length > 3 && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
-              +{floq.members.length - 3}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Description */}
-      {floq.description && (
-        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2 text-shadow-subtle">
-          {floq.description}
-        </p>
-      )}
-
       {/* Meta row with vibe-tinted frosted glass */}
-      <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+      <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex flex-wrap gap-2">
         <span 
           className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm border border-white/10"
           style={{ 
@@ -314,6 +284,36 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </span>
         </span>
       </div>
+
+      {/* Row 2: Member avatar stack - aligned under title */}
+      {floq.members && floq.members.length > 0 && (
+        <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex -space-x-2">
+          {floq.members.slice(0, 3).map((member, index) => (
+            <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
+              <AvatarImage 
+                src={member.avatar_url || '/placeholder.svg'} 
+                alt={member.display_name}
+                loading="lazy"
+              />
+              <AvatarFallback className="bg-white/10 text-white text-xs">
+                {member.display_name?.[0]?.toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+          {floq.members.length > 3 && (
+            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
+              +{floq.members.length - 3}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Description */}
+      {floq.description && (
+        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2 text-shadow-subtle">
+          {floq.description}
+        </p>
+      )}
 
       {/* Action row with conditional CTAs */}
       <div className="relative z-10 mt-6 flex flex-wrap gap-2">
