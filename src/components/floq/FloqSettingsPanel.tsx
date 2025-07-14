@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useId, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bell, AtSign, Eye, Save, Loader2 } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { useFloqSettings, type FloqSettings } from '@/hooks/useFloqSettings';
+import { FloqSettingsSkeleton } from './FloqSettingsSkeleton';
 
 interface FloqSettingsPanelProps {
   floqDetails: FloqDetails;
@@ -87,11 +88,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   };
 
   if (isLoading || !currentSettings) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </div>
-    );
+    return <FloqSettingsSkeleton />;
   }
 
   return (

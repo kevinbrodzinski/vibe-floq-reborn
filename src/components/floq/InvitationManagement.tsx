@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { InvitationsSkeleton } from './InvitationsSkeleton';
 import { UserPlus, Search, Mail, X, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { formatDistance } from '@/utils/formatDistance';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 interface InvitationManagementProps {
   floqDetails: FloqDetails;
@@ -38,13 +40,15 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
-  const [loadingInvitations, setLoadingInvitations] = useState(false);
+  const [loadingInvitations, setLoadingInvitations] = useState(true);
   const [selectedInvitation, setSelectedInvitation] = useState<PendingInvitation | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const searchRequestId = useRef(0);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
-  // Load pending invitations
+  // Load pending invitations on mount
   React.useEffect(() => {
     loadPendingInvitations();
   }, [floqDetails.id]);
@@ -89,17 +93,28 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
     }
   };
 
+  // Debounced search effect
+  React.useEffect(() => {
+    searchUsers(debouncedSearchQuery);
+  }, [debouncedSearchQuery]);
+
   const searchUsers = async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSearchResults([]);
       return;
     }
 
+    // Increment request ID to handle concurrent requests
+    const currentRequestId = ++searchRequestId.current;
     setIsSearching(true);
+    
     try {
       const { data, error } = await supabase.rpc('search_users', {
         search_query: query.trim()
       });
+
+      // Discard stale responses
+      if (currentRequestId !== searchRequestId.current) return;
 
       if (error) throw error;
 
@@ -112,18 +127,15 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
 
       setSearchResults(filteredResults);
     } catch (error) {
-      console.error('User search failed:', error);
-      toast.error('Failed to search users');
+      if (currentRequestId === searchRequestId.current) {
+        console.error('User search failed:', error);
+        toast.error('Failed to search users');
+      }
     } finally {
-      setIsSearching(false);
+      if (currentRequestId === searchRequestId.current) {
+        setIsSearching(false);
+      }
     }
-  };
-
-  const handleSearchInput = (query: string) => {
-    setSearchQuery(query);
-    // Debounce search
-    const timeoutId = setTimeout(() => searchUsers(query), 300);
-    return () => clearTimeout(timeoutId);
   };
 
   const sendInvitation = async (userId: string) => {
@@ -131,8 +143,8 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
     try {
       const { error } = await supabase.functions.invoke('invite-to-floq', {
         body: {
-          floqId: floqDetails.id,
-          inviteeIds: [userId]
+          floq_id: floqDetails.id,  // Use snake_case as expected by edge function
+          invitee_ids: [userId]     // Use snake_case plural as expected
         }
       });
 
@@ -140,12 +152,13 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
 
       toast.success('Invitation sent successfully');
       
-      // Refresh search results and pending invitations
+      // Update search results and refresh invitations
       setSearchResults(results => results.filter(user => user.id !== userId));
       await loadPendingInvitations();
     } catch (error) {
       console.error('Failed to send invitation:', error);
-      toast.error('Failed to send invitation');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send invitation';
+      toast.error(errorMessage);
     } finally {
       setInvitingUserId(null);
     }
@@ -164,7 +177,8 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
       await loadPendingInvitations();
     } catch (error) {
       console.error('Failed to cancel invitation:', error);
-      toast.error('Failed to cancel invitation');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel invitation';
+      toast.error(errorMessage);
     } finally {
       setShowCancelConfirm(false);
       setSelectedInvitation(null);
@@ -175,6 +189,11 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
     setSelectedInvitation(invitation);
     setShowCancelConfirm(true);
   };
+
+  // Show loading skeleton on initial load
+  if (loadingInvitations) {
+    return <InvitationsSkeleton />;
+  }
 
   return (
     <div className="space-y-4">
@@ -188,12 +207,13 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
           
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search users by name or username..."
-              value={searchQuery}
-              onChange={(e) => handleSearchInput(e.target.value)}
-              className="pl-9"
-            />
+          <Input
+            placeholder="Search users by name or username..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            aria-label="Search for users to invite"
+          />
           </div>
 
           {/* Search Results */}
@@ -224,7 +244,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
                       size="sm"
                       onClick={() => sendInvitation(user.id)}
                       disabled={invitingUserId === user.id}
-                      className="gap-1"
+                      className="gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                     >
                       <Send className="w-3 h-3" />
                       {invitingUserId === user.id ? 'Sending...' : 'Invite'}

@@ -66,7 +66,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
 
     try {
-      const { error } = await supabase.functions.invoke('manage-participant-role', {
+      const { data, error } = await supabase.functions.invoke('manage-participant-role', {
         body: {
           floqId: floqDetails.id,
           userId,
@@ -76,7 +76,17 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
+      // Optimistically update local data first
+      queryClient.setQueryData(['floq-details', floqDetails.id], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          participants: oldData.participants.map((p: any) => 
+            p.user_id === userId ? { ...p, role: newRole } : p
+          )
+        };
+      });
+
       toast.success(
         newRole === 'co-admin' 
           ? 'User promoted to co-admin' 
@@ -86,7 +96,10 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       );
     } catch (error) {
       console.error('Failed to update role:', error);
-      toast.error('Failed to update role');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update role';
+      toast.error(errorMessage);
+      // Invalidate queries on error to restore correct state
+      await queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
     }
   };
 

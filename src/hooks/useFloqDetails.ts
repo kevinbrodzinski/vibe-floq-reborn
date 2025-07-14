@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/providers/AuthProvider";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useDebounceCallback } from "./useDebounceCallback";
 import type { Vibe } from "@/types";
 
 export interface FloqParticipant {
@@ -123,7 +124,12 @@ export function useFloqDetails(
     retry: 1,
   });
 
-  // Set up real-time subscription for floq participant changes
+  // Debounced refetch to prevent too many rapid updates
+  const debouncedRefetch = useDebounceCallback(() => {
+    query.refetch();
+  }, 100, true); // Leading edge with 100ms debounce
+
+  // Set up real-time subscription for floq changes with optimized filters
   useEffect(() => {
     if (!floqId || !enabled) return;
 
@@ -132,28 +138,52 @@ export function useFloqDetails(
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'floq_participants',
           filter: `floq_id=eq.${floqId}`
         },
-        () => {
-          // Refetch floq details when participants change
-          query.refetch();
-        }
+        () => debouncedRefetch()
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'DELETE',
+          schema: 'public',
+          table: 'floq_participants',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => debouncedRefetch()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'floq_participants',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => debouncedRefetch()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
           schema: 'public',
           table: 'floq_invitations',
           filter: `floq_id=eq.${floqId}`
         },
-        () => {
-          // Refetch when invitations change
-          query.refetch();
-        }
+        () => debouncedRefetch()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'floq_invitations',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => debouncedRefetch()
       )
       .on(
         'postgres_changes',
@@ -163,30 +193,24 @@ export function useFloqDetails(
           table: 'floqs',
           filter: `id=eq.${floqId}`
         },
-        () => {
-          // Refetch when floq details change
-          query.refetch();
-        }
+        () => debouncedRefetch()
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'floq_settings',
           filter: `floq_id=eq.${floqId}`
         },
-        () => {
-          // Refetch when settings change
-          query.refetch();
-        }
+        () => debouncedRefetch()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [floqId, enabled, query]);
+  }, [floqId, enabled, debouncedRefetch]); // Use debounced refetch
 
   return query;
 }
