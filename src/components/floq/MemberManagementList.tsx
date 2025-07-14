@@ -13,7 +13,7 @@ import { useSession } from '@supabase/auth-helpers-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { FloqDetails, FloqParticipant, PendingInvitation } from '@/hooks/useFloqDetails';
-import { formatDistance } from '@/utils/formatDistance';
+import { formatDistanceToNow } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MemberManagementListProps {
@@ -155,6 +155,21 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     setShowCancelConfirm(true);
   };
 
+  const handleResendInvitation = async (invitation: PendingInvitation) => {
+    try {
+      // Instead of updating status to 'pending', update created_at to trigger resend
+      await supabase
+        .from('floq_invitations')
+        .update({ created_at: new Date().toISOString() })
+        .eq('id', invitation.id);
+      toast.success('Invitation resent');
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqDetails.id] });
+    } catch (error) {
+      console.error('Failed to resend invitation:', error);
+      toast.error('Failed to resend invitation');
+    }
+  };
+
   const handleCancelInvitation = async () => {
     if (!selectedInvitation) return;
     
@@ -230,7 +245,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Invited {formatDistance(new Date(invitation.sent_at))}
+                        Invited {formatDistanceToNow(new Date(invitation.sent_at), { addSuffix: true })}
                       </p>
                     </div>
                   </div>
@@ -239,17 +254,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={async () => {
-                        try {
-                          await supabase
-                            .from('floq_invitations')
-                            .update({ status: 'pending' })
-                            .eq('id', invitation.id);
-                          toast.success('Invitation resent');
-                        } catch (error) {
-                          toast.error('Failed to resend invitation');
-                        }
-                      }}
+                      onClick={() => handleResendInvitation(invitation)}
                       className={`text-xs ${isMobile ? 'flex-1' : ''}`}
                     >
                       <Send className="w-3 h-3 mr-1" />

@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Trash2, X, Archive, UserX, AlertTriangle, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -239,28 +240,31 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
             <h4 className="font-medium text-destructive">Danger Zone</h4>
           </div>
           
-          {canDelete ? (
-            <>
-              <p className="text-sm text-destructive/80">
-                Permanently delete this floq. This action cannot be undone. 
-                All chat history and data will be lost.
-              </p>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isDeleting}
-                className={isMobile ? "w-full h-12" : ""}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Floq
-              </Button>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Floqs with multiple active members cannot be deleted. 
-              Archive or end the floq instead.
-            </p>
-          )}
+          <p className="text-sm text-destructive/80">
+            Permanently delete this floq. This action cannot be undone. 
+            All chat history and data will be lost.
+          </p>
+          
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={!canDelete || isDeleting}
+                  className={isMobile ? "w-full h-12" : ""}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Floq
+                </Button>
+              </TooltipTrigger>
+              {!canDelete && (
+                <TooltipContent side="bottom">
+                  Transfer ownership or remove members first
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </Card>
 
