@@ -96,9 +96,9 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <Card className="p-4">
             <div className="space-y-4">
               <h4 className="font-medium">Quick Templates</h4>
-              <Select value={templateId} onValueChange={(newTemplateId) => {
-                setTemplateId(newTemplateId);
-                const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === newTemplateId);
+              <Select value={templateId} onValueChange={(value) => {
+                setTemplateId(value);
+                const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === value);
                 if (template) {
                   handleSettingChange('welcome_message', template.content);
                 }
