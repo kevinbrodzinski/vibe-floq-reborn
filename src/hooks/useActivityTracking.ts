@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/providers/AuthProvider";
 
-// Utility — local debounce so we don't pull an external dep just for this
-function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
+// Utility — local debounce factory to avoid timer scope leaks
+function createDebounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return ((...args: Parameters<F>) => {
     if (timer) clearTimeout(timer);
@@ -21,6 +22,7 @@ function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
  */
 export const useActivityTracking = (floqId: string) => {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
 
   const mutation = useMutation({
     mutationFn: async (section: 'chat' | 'activity' | 'plans' | 'all') => {
@@ -31,18 +33,18 @@ export const useActivityTracking = (floqId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      // Refresh badge data for this floq + global aggregates
-      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId] });
-      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread'] });
+      const userId = session?.user?.id;
+      // Refresh badge data for this floq + global aggregates with correct keys
+      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', userId] });
       queryClient.invalidateQueries({ queryKey: ['global-unread'] });
     },
   });
 
-  // Debounced wrapper so callers can freely fire on every route change
-  return useCallback(
-    debounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
+  // Create stable debounced function - only recreate when mutation.mutate or floqId changes
+  return useMemo(() => {
+    return createDebounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
       mutation.mutate(section);
-    }),
-    [mutation]
-  );
+    }, 300);
+  }, [mutation.mutate, floqId]);
 };

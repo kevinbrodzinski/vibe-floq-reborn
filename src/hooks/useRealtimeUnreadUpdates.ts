@@ -16,9 +16,21 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
 
     console.log('Setting up real-time unread updates for floqs:', joinedFloqIds);
 
+    // Helper function to invalidate unread queries with correct keys
+    function invalidateUnreadQueries(floqId: string) {
+      // Invalidate specific floq counts with userId
+      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, user.id] });
+      // Invalidate aggregated counts with userId
+      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['global-unread'] });
+    }
+
+    // Format UUIDs with quotes for Postgres filter
+    const quotedIds = joinedFloqIds.map(id => `"${id}"`).join(',');
+
     // Create a single channel for all real-time updates
     const channel = supabase
-      .channel('unread-updates')
+      .channel(`unread-updates-${user.id}`)
       // Listen for new messages in user's floqs
       .on(
         'postgres_changes',
@@ -26,7 +38,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           event: 'INSERT',
           schema: 'public',
           table: 'floq_messages',
-          filter: `floq_id=in.(${joinedFloqIds.join(',')})`
+          filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
           console.log('New message detected:', payload);
@@ -43,7 +55,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           event: 'INSERT',
           schema: 'public',
           table: 'flock_history',
-          filter: `floq_id=in.(${joinedFloqIds.join(',')})`
+          filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
           console.log('New activity detected:', payload);
@@ -60,7 +72,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           event: 'INSERT',
           schema: 'public',
           table: 'floq_plans',
-          filter: `floq_id=in.(${joinedFloqIds.join(',')})`
+          filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
           console.log('New plan detected:', payload);
@@ -71,14 +83,6 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
         }
       )
       .subscribe();
-
-    const invalidateUnreadQueries = (floqId: string) => {
-      // Invalidate specific floq counts
-      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId] });
-      // Invalidate aggregated counts
-      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread'] });
-      queryClient.invalidateQueries({ queryKey: ['global-unread'] });
-    };
 
     return () => {
       console.log('Cleaning up real-time unread subscriptions');

@@ -83,7 +83,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   // Set up real-time updates for unread counts
   useRealtimeUnreadUpdates([floqDetails.id]);
 
-  // Track activity when tab changes
+  // Track activity when tab changes - remove 'track' from deps to avoid re-runs
   useEffect(() => {
     // Map activeTab to section names for tracking
     const sectionMap: Record<string, 'chat' | 'activity' | 'plans' | 'all'> = {
@@ -97,7 +97,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
     if (section) {
       track(section);
     }
-  }, [activeTab, track]);
+  }, [activeTab, floqDetails.id]); // Only depend on activeTab and floqDetails.id
 
   // Plans CTA callback
   const goToNewPlan = useCallback(
