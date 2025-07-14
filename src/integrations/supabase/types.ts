@@ -550,6 +550,44 @@ export type Database = {
           },
         ]
       }
+      floq_settings: {
+        Row: {
+          activity_visibility: Database["public"]["Enums"]["activity_visibility_enum"]
+          floq_id: string
+          join_approval_required: boolean
+          mention_permissions: Database["public"]["Enums"]["mention_permissions_enum"]
+          notifications_enabled: boolean
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          activity_visibility?: Database["public"]["Enums"]["activity_visibility_enum"]
+          floq_id: string
+          join_approval_required?: boolean
+          mention_permissions?: Database["public"]["Enums"]["mention_permissions_enum"]
+          notifications_enabled?: boolean
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          activity_visibility?: Database["public"]["Enums"]["activity_visibility_enum"]
+          floq_id?: string
+          join_approval_required?: boolean
+          mention_permissions?: Database["public"]["Enums"]["mention_permissions_enum"]
+          notifications_enabled?: boolean
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_settings_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: true
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floqs: {
         Row: {
           activity_score: number
@@ -2024,6 +2062,29 @@ export type Database = {
           check_ins: number
         }[]
       }
+      get_floq_full_details: {
+        Args: { p_floq_id: string }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          flock_type: Database["public"]["Enums"]["flock_type_enum"]
+          starts_at: string
+          ends_at: string
+          visibility: string
+          creator_id: string
+          participant_count: number
+          boost_count: number
+          notifications_enabled: boolean
+          mention_permissions: Database["public"]["Enums"]["mention_permissions_enum"]
+          join_approval_required: boolean
+          activity_visibility: Database["public"]["Enums"]["activity_visibility_enum"]
+          welcome_message: string
+          participants: Json
+          pending_invites: Json
+        }[]
+      }
       get_friends_with_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2423,6 +2484,10 @@ export type Database = {
       set_limit: {
         Args: { "": number }
         Returns: number
+      }
+      set_participant_role: {
+        Args: { p_floq_id: string; p_user_id: string; p_new_role: string }
+        Returns: undefined
       }
       should_log_presence: {
         Args: { p_user: string; p_loc: unknown; p_now?: string }
@@ -3617,6 +3682,7 @@ export type Database = {
         | "activity"
         | "milestone"
         | "special"
+      activity_visibility_enum: "public" | "members_only"
       cluster_type_enum:
         | "nightlife"
         | "cafe"
@@ -3641,6 +3707,7 @@ export type Database = {
         | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       invitation_status: "pending" | "accepted" | "declined"
+      mention_permissions_enum: "all" | "co-admins" | "host"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -3803,6 +3870,7 @@ export const Constants = {
         "milestone",
         "special",
       ],
+      activity_visibility_enum: ["public", "members_only"],
       cluster_type_enum: [
         "nightlife",
         "cafe",
@@ -3829,6 +3897,7 @@ export const Constants = {
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       invitation_status: ["pending", "accepted", "declined"],
+      mention_permissions_enum: ["all", "co-admins", "host"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
