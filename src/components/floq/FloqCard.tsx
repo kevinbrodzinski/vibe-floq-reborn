@@ -179,14 +179,19 @@ export const FloqCard = React.memo<FloqCardProps>(({
         {floq.primary_vibe}
       </div>
 
-      {/* Top-left status badges - removed NEW */}
-      {isHot && (
-        <div className="absolute top-3 left-3 flex flex-col gap-1">
+      {/* Top-left status badges */}
+      <div className="absolute top-3 left-3 flex flex-col gap-1">
+        {isNew && (
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/90 text-white rounded-full ring-1 ring-blue-400/50 uppercase tracking-wide">
+            NEW
+          </div>
+        )}
+        {isHot && !isNew && (
           <div className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/90 text-white rounded-full ring-1 ring-orange-400/50 uppercase tracking-wide">
             HOT
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Bottom-right corner badges */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
@@ -197,10 +202,32 @@ export const FloqCard = React.memo<FloqCardProps>(({
         )}
       </div>
 
-      {/* Row 1: Main avatar + title + status */}
-      <div className="relative z-10 flex items-start gap-3">
-        <div className="mt-[2px]">
-          <VibeIcon vibe={floq.primary_vibe} size="lg" />
+      {/* Row 1: avatar stack + title */}
+      <div className="relative z-10 flex items-start gap-4">
+        {/* Avatar stack */}
+        <div className="relative flex items-center mt-[2px]">
+          <VibeIcon vibe={floq.primary_vibe} size="md" />
+          {floq.members && floq.members.length > 0 && (
+            <div className="ml-2 flex -space-x-2">
+              {floq.members.slice(0, 3).map((member, index) => (
+                <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
+                  <AvatarImage 
+                    src={member.avatar_url || '/placeholder.svg'} 
+                    alt={member.display_name}
+                    loading="lazy"
+                  />
+                  <AvatarFallback className="bg-white/10 text-white text-xs">
+                    {member.display_name?.[0]?.toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {floq.members.length > 3 && (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
+                  +{floq.members.length - 3}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <div>
@@ -232,15 +259,15 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
       </div>
 
-      {/* Vibe match percentage */}
-      <div className="relative z-10 mt-1 ml-[calc(theme(spacing.20)+theme(spacing.3))]">
-        <span className="text-xs text-emerald-400 font-medium">
-          87% vibe match
-        </span>
-      </div>
+      {/* Description */}
+      {floq.description && (
+        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2 text-shadow-subtle">
+          {floq.description}
+        </p>
+      )}
 
       {/* Meta row with vibe-tinted frosted glass */}
-      <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex flex-wrap gap-2">
+      <div className="relative z-10 mt-4 flex flex-wrap gap-2">
         <span 
           className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm border border-white/10"
           style={{ 
@@ -285,43 +312,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </span>
       </div>
 
-      {/* Row 2: Member avatar stack - aligned under title */}
-      {floq.members && floq.members.length > 0 && (
-        <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex -space-x-2">
-          {floq.members.slice(0, 3).map((member, index) => (
-            <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
-              <AvatarImage 
-                src={member.avatar_url || '/placeholder.svg'} 
-                alt={member.display_name}
-                loading="lazy"
-              />
-              <AvatarFallback className="bg-white/10 text-white text-xs">
-                {member.display_name?.[0]?.toUpperCase() || '?'}
-              </AvatarFallback>
-            </Avatar>
-          ))}
-          {floq.members.length > 3 && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
-              +{floq.members.length - 3}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Description */}
-      {floq.description && (
-        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2 text-shadow-subtle">
-          {floq.description}
-        </p>
-      )}
-
       {/* Action row with conditional CTAs */}
-      <div className="relative z-10 mt-6 flex flex-wrap gap-2">
+      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
         <ActionPill
-          startIcon={<Eye size={12} />}
+          startIcon={<Eye size={14} />}
           variant="primary"
-          size="xs"
-          className="transition-transform duration-150 hover:scale-105 active:scale-95"
+          className="min-w-[84px] transition-transform duration-150 hover:scale-105 active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             handleCardClick();
@@ -339,9 +335,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
         
         {isCreator ? (
           <ActionPill
-            startIcon={<Crown size={12} />}
+            startIcon={<Crown size={14} />}
             variant="ghost"
-            size="xs"
             className="transition-transform duration-150 hover:scale-105 active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
@@ -352,9 +347,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </ActionPill>
         ) : (
           <ActionPill
-            startIcon={<UserPlus size={12} />}
+            startIcon={<UserPlus size={14} />}
             variant={floq.is_joined ? 'ghost' : 'success'}
-            size="xs"
             disabled={floq.is_joined}
             className="transition-transform duration-150 hover:scale-105 active:scale-95"
             onClick={handleJoin}
