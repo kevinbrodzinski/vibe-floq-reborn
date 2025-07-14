@@ -44,7 +44,8 @@ serve(async (req) => {
       return new Response(error.message, { status: 400, headers: corsHeaders })
     }
 
-    return new Response(JSON.stringify(data), {
+    // Wrap response to ensure success field
+    return new Response(JSON.stringify({ success: true, data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 

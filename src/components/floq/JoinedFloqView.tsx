@@ -213,19 +213,25 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             <TabsTrigger value="chat" className="relative">
               Chat
               {unreadCounts?.unread_chat && unreadCounts.unread_chat > 0 && (
-                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_chat}</Badge>
+                <Badge className="ml-1 h-4 px-1 text-xs" key="chat-badge">
+                  {unreadCounts.unread_chat}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="activity" className="relative">
               Activity
               {unreadCounts?.unread_activity && unreadCounts.unread_activity > 0 && (
-                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_activity}</Badge>
+                <Badge className="ml-1 h-4 px-1 text-xs" key="activity-badge">
+                  {unreadCounts.unread_activity}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="plans" className="relative">
               Plans
               {unreadCounts?.unread_plans && unreadCounts.unread_plans > 0 && (
-                <Badge className="ml-1 h-4 px-1 text-xs">{unreadCounts.unread_plans}</Badge>
+                <Badge className="ml-1 h-4 px-1 text-xs" key="plans-badge">
+                  {unreadCounts.unread_plans}
+                </Badge>
               )}
             </TabsTrigger>
             {canManage && <TabsTrigger value="manage">Manage</TabsTrigger>}

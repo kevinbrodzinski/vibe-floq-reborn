@@ -43,6 +43,24 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
 
   const currentSettings = localSettings;
 
+  // Check for changes including pinned_note
+  const hasSettingsChanges = useMemo(() => {
+    if (!loadedSettings || !localSettings) return false;
+    
+    return (
+      localSettings.notifications_enabled !== loadedSettings.notifications_enabled ||
+      localSettings.mention_permissions !== loadedSettings.mention_permissions ||
+      localSettings.join_approval_required !== loadedSettings.join_approval_required ||
+      localSettings.activity_visibility !== loadedSettings.activity_visibility ||
+      localSettings.welcome_message !== loadedSettings.welcome_message ||
+      localSettings.pinned_note !== loadedSettings.pinned_note
+    );
+  }, [loadedSettings, localSettings]);
+
+  useEffect(() => {
+    setHasChanges(hasSettingsChanges);
+  }, [hasSettingsChanges]);
+
   const handleSettingChange = (key: keyof FloqSettings, value: any) => {
     if (!currentSettings) return;
     
@@ -51,8 +69,6 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
       [key]: value
     };
     setLocalSettings(newSettings);
-    setHasChanges(true);
-    
   };
 
   const handleSave = async () => {

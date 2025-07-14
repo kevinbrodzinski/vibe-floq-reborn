@@ -6,7 +6,7 @@ interface PlanRsvpArgs {
   join: boolean;
 }
 
-export const usePlanRsvp = () => {
+export const usePlanRsvp = (floqId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -20,13 +20,13 @@ export const usePlanRsvp = () => {
       return data;
     },
     onMutate: async ({ planId, join }) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['floq-plans'] });
+      // Cancel outgoing refetches with floq-specific key
+      await queryClient.cancelQueries({ queryKey: ['floq-plans', floqId] });
       
       // Optimistically update the cache
-      const previousPlans = queryClient.getQueryData(['floq-plans']);
+      const previousPlans = queryClient.getQueryData(['floq-plans', floqId]);
       
-      queryClient.setQueryData(['floq-plans'], (old: any) => {
+      queryClient.setQueryData(['floq-plans', floqId], (old: any[]) => {
         if (!old) return old;
         return old.map((plan: any) =>
           plan.id === planId ? { ...plan, is_joined: join } : plan
@@ -38,13 +38,13 @@ export const usePlanRsvp = () => {
     onError: (error, variables, context) => {
       // Revert optimistic update on error
       if (context?.previousPlans) {
-        queryClient.setQueryData(['floq-plans'], context.previousPlans);
+        queryClient.setQueryData(['floq-plans', floqId], context.previousPlans);
       }
     },
     onSettled: () => {
       // Always refetch after error or success
-      queryClient.invalidateQueries({ queryKey: ['floq-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['floq-details'] });
+      queryClient.invalidateQueries({ queryKey: ['floq-plans', floqId] });
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqId] });
     }
   });
 };

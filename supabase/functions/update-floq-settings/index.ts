@@ -23,20 +23,26 @@ serve(async (req) => {
   try {
     const body: RequestBody = await req.json()
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
-
     // Get user from Authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response('Unauthorized', { status: 401, headers: corsHeaders })
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
+    // Use anon client with bearer header (fix for service role auth issue)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
     )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return new Response('Unauthorized', { status: 401, headers: corsHeaders })
