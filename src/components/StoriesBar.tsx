@@ -104,7 +104,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
                 "flex flex-col items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1 transition-all",
                 getActivityIndicator(floq)
               )}
-              aria-label={`Open ${floq.title} floq`}
+              aria-label={`Open ${floq.title || 'Untitled'} floq`}
             >
               <div className="relative">
                 <VibeRing 
@@ -144,7 +144,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
               
               <div className="flex flex-col items-center gap-0.5">
                 <span className="max-w-[80px] truncate text-[11px] leading-tight font-medium text-foreground">
-                  {floq.title || 'Untitled'}
+                  {floq.title ?? floq.name ?? 'Untitled'}
                 </span>
                 <span 
                   className="text-[9px] capitalize px-1.5 py-0.5 rounded-full text-white text-opacity-90"
