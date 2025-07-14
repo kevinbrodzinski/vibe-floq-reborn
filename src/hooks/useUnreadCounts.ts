@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 
 interface UnreadCounts {
+  user_id: string;
   floq_id: string;
   unread_chat: number;
   unread_activity: number;
@@ -18,9 +19,25 @@ export const useUnreadCounts = (floqId: string) => {
     queryFn: async (): Promise<UnreadCounts | null> => {
       if (!session?.user?.id) return null;
 
-      // For now, return mock data since we haven't implemented the unread view yet
-      // In the future, this would query a user_floq_unread_counts view
-      return {
+      // Query the user_floq_unread_counts view
+      const { data, error } = await supabase
+        .from('user_floq_unread_counts')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('floq_id', floqId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching unread counts:', error);
+        return null;
+      }
+
+      // Return with computed total
+      return data ? {
+        ...data,
+        unread_total: data.unread_chat + data.unread_activity + data.unread_plans
+      } : {
+        user_id: session.user.id,
         floq_id: floqId,
         unread_chat: 0,
         unread_activity: 0,
@@ -30,6 +47,7 @@ export const useUnreadCounts = (floqId: string) => {
     },
     enabled: !!session?.user?.id && !!floqId,
     staleTime: 30_000, // 30 seconds
+    refetchInterval: 60_000, // Refetch every minute
   });
 };
 
@@ -41,10 +59,54 @@ export const useMyFloqsUnreadCounts = () => {
     queryFn: async (): Promise<UnreadCounts[]> => {
       if (!session?.user?.id) return [];
 
-      // Mock data for now - this would query all floqs with unread counts
-      return [];
+      // Query all floq unread counts for the current user
+      const { data, error } = await supabase
+        .from('user_floq_unread_counts')
+        .select('*')
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error fetching my floqs unread counts:', error);
+        return [];
+      }
+
+      // Return with computed totals
+      return data?.map(item => ({
+        ...item,
+        unread_total: item.unread_chat + item.unread_activity + item.unread_plans
+      })) || [];
     },
     enabled: !!session?.user?.id,
-    staleTime: 30_000,
+    staleTime: 30_000, // 30 seconds
+    refetchInterval: 60_000, // Refetch every minute
   });
+};
+
+// Hook to get total unread count across all floqs (for navbar badge)
+export const useGlobalUnreadCount = () => {
+  const unreadCounts = useMyFloqsUnreadCounts();
+  
+  const totalUnread = unreadCounts.data?.reduce(
+    (sum, floq) => sum + floq.unread_total, 
+    0
+  ) || 0;
+
+  return {
+    totalUnread,
+    isLoading: unreadCounts.isLoading,
+    error: unreadCounts.error
+  };
+};
+
+// Hook for individual tab badges within a floq
+export const useFloqTabBadges = (floqId: string) => {
+  const unreadCounts = useUnreadCounts(floqId);
+  
+  return {
+    chatBadge: unreadCounts.data?.unread_chat || 0,
+    activityBadge: unreadCounts.data?.unread_activity || 0,
+    plansBadge: unreadCounts.data?.unread_plans || 0,
+    isLoading: unreadCounts.isLoading,
+    error: unreadCounts.error
+  };
 };
