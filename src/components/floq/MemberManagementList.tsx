@@ -9,6 +9,8 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { UserMinus, Search, Crown, Shield, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSession } from '@supabase/auth-helpers-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { FloqDetails, FloqParticipant } from '@/hooks/useFloqDetails';
 import { formatDistance } from '@/utils/formatDistance';
@@ -24,7 +26,10 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
   const [selectedUser, setSelectedUser] = useState<FloqParticipant | null>(null);
   const queryClient = useQueryClient();
+  const session = useSession();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const currentUserId = session?.user?.id;
 
   const filteredParticipants = floqDetails.participants.filter(participant =>
     participant.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -67,6 +72,9 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
       return;
     }
 
+    // Check if current user is being demoted - redirect immediately
+    const isDemotingSelf = userId === currentUserId && currentRole === 'co-admin' && newRole === 'member';
+    
     try {
       const { data, error } = await supabase.functions.invoke('manage-participant-role', {
         body: {
@@ -88,6 +96,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
           )
         };
       });
+
+      // If demoting self, redirect immediately to prevent jarring delay
+      if (isDemotingSelf) {
+        toast.success('You have been demoted to member');
+        navigate(`/floqs/${floqDetails.id}`);
+        return;
+      }
 
       toast.success(
         newRole === 'co-admin' 

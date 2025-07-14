@@ -39,6 +39,7 @@ interface UserSearchResult {
 export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floqDetails }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [cachedSearchResults, setCachedSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
@@ -100,6 +101,13 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
     searchUsers(debouncedSearchQuery);
   }, [debouncedSearchQuery]);
 
+  // Handle immediate search on Enter key
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim().length >= 2) {
+      searchUsers(searchQuery.trim());
+    }
+  };
+
   const searchUsers = async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSearchResults([]);
@@ -128,6 +136,10 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
       ) || [];
 
       setSearchResults(filteredResults);
+      // Cache non-empty results to prevent flashing during debounce
+      if (filteredResults.length > 0) {
+        setCachedSearchResults(filteredResults);
+      }
     } catch (error) {
       if (currentRequestId === searchRequestId.current) {
         console.error('User search failed:', error);
@@ -214,6 +226,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
             placeholder="Search users by name or username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             className={`pl-9 ${isMobile ? 'h-12 text-base' : ''}`}
             aria-label="Search for users to invite"
           />
@@ -226,8 +239,8 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
                 <div className="text-center py-4 text-muted-foreground">
                   Searching...
                 </div>
-              ) : searchResults.length > 0 ? (
-                searchResults.map((user) => (
+              ) : (searchResults.length > 0 || (cachedSearchResults.length > 0 && isSearching)) ? (
+                (searchResults.length > 0 ? searchResults : cachedSearchResults).map((user) => (
                   <div key={user.id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8">

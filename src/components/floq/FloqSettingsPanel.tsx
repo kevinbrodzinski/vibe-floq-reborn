@@ -21,6 +21,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   const [localSettings, setLocalSettings] = useState<FloqSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [templateId, setTemplateId] = useState<string>('');
+  const [showTemplatePulse, setShowTemplatePulse] = useState(false);
   const uid = useId(); // For unique IDs
   const isMobile = useIsMobile();
 
@@ -97,10 +98,14 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
             <div className="space-y-4">
               <h4 className="font-medium">Quick Templates</h4>
               <Select value={templateId} onValueChange={(value) => {
+                if (!value) return; // Guard against undefined/null values
                 setTemplateId(value);
                 const template = WELCOME_MESSAGE_TEMPLATES.find(t => t.id === value);
                 if (template) {
                   handleSettingChange('welcome_message', template.content);
+                  // Visual feedback that template was applied
+                  setShowTemplatePulse(true);
+                  setTimeout(() => setShowTemplatePulse(false), 400);
                 }
               }}>
                 <SelectTrigger className={isMobile ? "w-full h-12" : "w-full"}>
@@ -246,9 +251,12 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
               placeholder="Welcome to our floq! Here's what you need to know..."
               rows={3}
               maxLength={300}
-              className={`mt-2 ${isMobile ? 'text-base' : ''}`}
+              aria-describedby={`${uid}-welcome-help`}
+              className={`mt-2 transition-all duration-400 ${isMobile ? 'text-base' : ''} ${
+                showTemplatePulse ? 'ring-2 ring-primary/50 animate-pulse' : ''
+              }`}
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p id={`${uid}-welcome-help`} className="text-xs text-muted-foreground mt-1">
               {(localSettings?.welcome_message?.length ?? 0)}/300 characters
             </p>
           </div>

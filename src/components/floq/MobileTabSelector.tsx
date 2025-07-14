@@ -27,8 +27,15 @@ export const MobileTabSelector: React.FC<MobileTabSelectorProps> = ({
 
   return (
     <div className="w-full">
+      <div id="mobile-tab-description" className="sr-only">
+        Choose a tab to manage different aspects of your floq
+      </div>
       <Select value={activeTab} onValueChange={onTabChange}>
-        <SelectTrigger className="w-full h-12 text-left" aria-label="Select management tab">
+        <SelectTrigger 
+          className="w-full h-12 text-left" 
+          aria-label="Select management tab"
+          aria-describedby="mobile-tab-description"
+        >
           <div className="flex items-center gap-2">
             <currentTab.icon className="h-4 w-4" />
             <SelectValue placeholder={currentTab.label} />
