@@ -229,7 +229,8 @@ export const useMyFlocks = () => {
         const { data, error } = await supabase
           .from('floq_participants')
           .select('floq_id, count(*)')
-          .in('floq_id', floqIds);
+          .in('floq_id', floqIds)
+          .group('floq_id');
         
         if (error) {
           if (import.meta.env.DEV) {
@@ -244,11 +245,11 @@ export const useMyFlocks = () => {
         }
       }
 
-      // Create count lookup map
-      const countMap = participantCounts.reduce((acc, item) => {
-        acc[item.floq_id] = item.count || 0;
+      // Create count lookup map with safe casting
+      const countMap = (participantCounts ?? []).reduce<Record<string, number>>((acc, item) => {
+        acc[item.floq_id] = Number(item.count) || 0;
         return acc;
-      }, {} as Record<string, number>);
+      }, {});
 
       // Update participant counts
       allFloqs.forEach(floq => {
