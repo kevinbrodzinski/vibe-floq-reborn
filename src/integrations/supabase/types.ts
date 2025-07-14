@@ -1947,6 +1947,13 @@ export type Database = {
               p_user_lng?: number
             }
           | {
+              p_limit?: number
+              p_offset?: number
+              p_user_lat?: number
+              p_user_lng?: number
+              p_flock_type?: Database["public"]["Enums"]["flock_type_enum"]
+            }
+          | {
               p_use_demo?: boolean
               p_limit?: number
               p_offset?: number
