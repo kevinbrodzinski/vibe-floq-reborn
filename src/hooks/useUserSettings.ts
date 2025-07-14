@@ -220,6 +220,8 @@ export const useUserSettings = () => {
         title: "Welcome template updated",
         description: "Your preferred welcome message template has been saved.",
       });
+      
+      return Promise.resolve();
     } catch (error) {
       console.error('Failed to update welcome template:', error);
       toast({
@@ -227,6 +229,7 @@ export const useUserSettings = () => {
         description: "Failed to update welcome template. Please try again.",
         variant: "destructive",
       });
+      return Promise.reject(error);
     }
   };
 

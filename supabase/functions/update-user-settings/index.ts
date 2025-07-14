@@ -6,6 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const VALID_TEMPLATES = [
+  'casual-hangout',
+  'professional-meetup',
+  'event-based',
+  'study-group',
+  'creative-collab',
+  'support-group',
+] as const
+
 interface UpdateUserSettingsRequest {
   preferred_welcome_template?: string;
   notification_preferences?: Record<string, any>;
@@ -14,7 +23,7 @@ interface UpdateUserSettingsRequest {
   available_until?: string | null;
 }
 
-serve(async (req) => {
+export default serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -53,25 +62,17 @@ serve(async (req) => {
     console.log('Updating user settings for user:', user.id, 'with:', updates)
 
     // Validate welcome template if provided
-    if (updates.preferred_welcome_template) {
-      const validTemplates = [
-        'casual-hangout',
-        'professional-meetup', 
-        'event-based',
-        'study-group',
-        'creative-collab',
-        'support-group'
-      ];
-      
-      if (!validTemplates.includes(updates.preferred_welcome_template)) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid welcome template' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
+    if (
+      updates.preferred_welcome_template !== undefined &&
+      !VALID_TEMPLATES.includes(updates.preferred_welcome_template as any)
+    ) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid welcome template' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Prepare update data

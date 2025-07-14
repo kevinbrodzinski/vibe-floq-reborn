@@ -44,7 +44,7 @@ export function CreateFloqSheet() {
   const [durationMode, setDurationMode] = useState<'quick' | 'custom' | 'persistent'>('quick');
   const [customEndTime, setCustomEndTime] = useState('');
   const [hasTouchedTitle, setHasTouchedTitle] = useState(false);
-  const [selectedWelcomeTemplate, setSelectedWelcomeTemplate] = useState<string>('');
+  const [selectedWelcomeTemplate, setSelectedWelcomeTemplate] = useState<string>('casual-hangout');
 
   // Reset form states when sheet opens
   useEffect(() => {
@@ -324,15 +324,16 @@ export function CreateFloqSheet() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <Label>Welcome Message</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => updateWelcomeTemplate(selectedWelcomeTemplate as any)}
-                      className="text-xs h-6 px-2"
-                    >
-                      Save as default
-                    </Button>
+                     <Button
+                       type="button"
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => updateWelcomeTemplate(selectedWelcomeTemplate as any)}
+                       disabled={selectedWelcomeTemplate === settings?.preferred_welcome_template}
+                       className="text-xs h-6 px-2"
+                     >
+                       Save as default
+                     </Button>
                   </div>
                   <div className="space-y-2">
                     {WELCOME_MESSAGE_TEMPLATES.map((template) => (
