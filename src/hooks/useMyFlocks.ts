@@ -122,8 +122,8 @@ export const useMyFlocks = () => {
         `)
         .eq('user_id', userId)
         .neq('role', 'creator')
-        .is('floqs.deleted_at', null)
-        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');
+        .filter('deleted_at', 'is', null, { foreignTable: 'floqs' })
+        .or('ends_at.is.null,ends_at.gt.now()', { foreignTable: 'floqs' });
 
       // Query for floqs I created
       const createdQuery = supabase
