@@ -1,5 +1,5 @@
 import React, { useCallback, CSSProperties } from 'react';
-import { Users, MapPin, Clock, Eye, XCircle, UserPlus } from 'lucide-react';
+import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { VibeIcon } from '@/components/VibeIcon';
 import { toast } from 'sonner';
 import { ActionPill } from '@/components/ui/ActionPill';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
+import { useAuth } from '@/providers/AuthProvider';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
 
 interface FloqCardProps {
@@ -27,6 +28,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const accent = vibeColor(floq.primary_vibe);
   const isFull = floq.max_participants ? floq.participant_count >= floq.max_participants : false;
   const { mutate: ignoreFloq } = useIgnoreFloq();
@@ -106,6 +108,15 @@ export const FloqCard = React.memo<FloqCardProps>(({
     ignoreFloq({ floqId: floq.id });
   }, [ignoreFloq, floq.id]);
 
+  // Status calculations for corner badges
+  const now = new Date();
+  const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
+  const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
+  const isLive = startsAt ? startsAt <= now : true;
+  const isNew = floq.starts_at && (now.getTime() - new Date(floq.starts_at).getTime()) < 5 * 60 * 1000; // 5 minutes
+  const isHot = (floq.boost_count || 0) >= 5;
+  const isCreator = user?.id === floq.creator_id;
+
   return (
     <article
       {...bind()}
@@ -134,6 +145,33 @@ export const FloqCard = React.memo<FloqCardProps>(({
         aria-hidden="true"
       />
 
+      {/* Corner badges */}
+      {isLive && !startsAt && (
+        <div className="absolute top-3 left-3 px-2 py-1 bg-primary/90 backdrop-blur-sm border border-white/20 rounded-full">
+          <span className="text-xs font-medium text-white">LIVE</span>
+        </div>
+      )}
+      
+      {isCreator && (
+        <div className="absolute top-3 right-3 px-2 py-1 bg-violet-500/90 backdrop-blur-sm border border-white/20 rounded-full flex items-center gap-1">
+          <Crown size={12} strokeWidth={2} className="text-white" />
+          <span className="text-xs font-medium text-white">Host</span>
+        </div>
+      )}
+      
+      {isNew && (
+        <div className="absolute top-3 left-3 px-2 py-1 bg-emerald-500/90 backdrop-blur-sm border border-white/20 rounded-full">
+          <span className="text-xs font-medium text-white">NEW</span>
+        </div>
+      )}
+      
+      {isHot && (
+        <div className="absolute top-12 right-3 px-2 py-1 bg-orange-500/90 backdrop-blur-sm border border-white/20 rounded-full flex items-center gap-1">
+          <Zap size={12} strokeWidth={2} className="text-white" />
+          <span className="text-xs font-medium text-white">Hot</span>
+        </div>
+      )}
+
       {/* Row 1: avatar + title */}
       <div className="relative z-10 flex items-center gap-4">
         <VibeIcon vibe={floq.primary_vibe} size="md" />
@@ -144,9 +182,21 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </h3>
           <p className="mt-0.5 text-sm text-zinc-400 text-shadow-subtle">
             {floq.primary_vibe} &bull;{' '}
-            {floq.starts_at
-              ? `Starts in ${formatDistance(floq.starts_in_min * 60)}`
-              : 'Active'}
+            {(() => {
+              const now = new Date();
+              const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
+              const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
+              
+              if (startsAt && startsAt > now) {
+                return `Starts in ${floq.starts_in_min}m`;
+              } else if (endsAt && now < endsAt) {
+                return 'Live now';
+              } else if (endsAt && now >= endsAt) {
+                return 'Ended';
+              } else {
+                return 'Active';
+              }
+            })()}
           </p>
         </div>
       </div>

@@ -65,8 +65,8 @@ export function useMyFlocks({
     queryFn: async (): Promise<MyFloq[]> => {
       if (!user) return [];
       
-      // Get flocks where user is a participant
-      const { data, error } = await supabase
+      // Get both created floqs and participated floqs using UNION
+      const participatedQuery = supabase
         .from('floq_participants')
         .select(`
           floq_id,
@@ -80,26 +80,70 @@ export function useMyFlocks({
             creator_id,
             starts_at,
             ends_at,
-            last_activity_at,
-            ends_at
+            last_activity_at
           )
         `)
         .eq('user_id', user.id)
         .gt('floqs.ends_at', new Date().toISOString())
-        .order('joined_at', { ascending: false })
-        .limit(limit);
+        .is('floqs.deleted_at', null);
 
-      if (error) {
-        console.error("My flocks error:", error);
-        throw error;
+      const createdQuery = supabase
+        .from('floqs')
+        .select(`
+          id,
+          title,
+          name,
+          primary_vibe,
+          creator_id,
+          starts_at,
+          ends_at,
+          last_activity_at
+        `)
+        .eq('creator_id', user.id)
+        .gt('ends_at', new Date().toISOString())
+        .is('deleted_at', null);
+
+      const [participatedResult, createdResult] = await Promise.all([
+        participatedQuery,
+        createdQuery
+      ]);
+
+      if (participatedResult.error) {
+        console.error("Participated flocks error:", participatedResult.error);
+        throw participatedResult.error;
       }
 
-      // Transform the data and get participant counts
-      const floqIds = data.map(item => item.floq_id);
+      if (createdResult.error) {
+        console.error("Created flocks error:", createdResult.error);
+        throw createdResult.error;
+      }
+
+      // Combine and deduplicate floqs
+      const allFloqs = new Map<string, any>();
+
+      // Add participated floqs
+      participatedResult.data?.forEach(item => {
+        allFloqs.set(item.floq_id, {
+          floq: item.floqs,
+          role: item.role,
+          joined_at: item.joined_at
+        });
+      });
+
+      // Add created floqs (overwrite if already exists to ensure creator role)
+      createdResult.data?.forEach(floq => {
+        allFloqs.set(floq.id, {
+          floq: floq,
+          role: 'creator',
+          joined_at: floq.starts_at // Use starts_at as joined_at for creators
+        });
+      });
+
+      const floqIds = Array.from(allFloqs.keys());
       
       if (floqIds.length === 0) return [];
 
-      // Get participant counts for all flocks using aggregation
+      // Get participant counts for all flocks
       const { data: participantData } = await supabase
         .from('floq_participants')
         .select('floq_id, count(*)')
@@ -111,20 +155,26 @@ export function useMyFlocks({
         return acc;
       }, {} as Record<string, number>) || {};
 
-      return data.map(item => ({
-        id: item.floqs.id,
-        title: item.floqs.title,
-        name: item.floqs.name || undefined,
-        primary_vibe: item.floqs.primary_vibe,
-        participant_count: participantCounts[item.floq_id] || 0,
-        role: item.role,
-        joined_at: item.joined_at,
-        last_activity_at: item.floqs.last_activity_at || item.floqs.starts_at,
-        starts_at: item.floqs.starts_at || undefined,
-        ends_at: item.floqs.ends_at || undefined,
-        creator_id: item.floqs.creator_id || undefined,
-        is_creator: item.floqs.creator_id === user.id,
-      }));
+      // Transform to MyFloq format
+      const result = Array.from(allFloqs.entries())
+        .map(([floqId, { floq, role, joined_at }]) => ({
+          id: floq.id,
+          title: floq.title,
+          name: floq.name || undefined,
+          primary_vibe: floq.primary_vibe,
+          participant_count: participantCounts[floqId] || 0,
+          role: role,
+          joined_at: joined_at,
+          last_activity_at: floq.last_activity_at || floq.starts_at,
+          starts_at: floq.starts_at || undefined,
+          ends_at: floq.ends_at || undefined,
+          creator_id: floq.creator_id || undefined,
+          is_creator: floq.creator_id === user.id,
+        }))
+        .sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime())
+        .slice(0, limit);
+
+      return result;
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
