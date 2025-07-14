@@ -13,40 +13,31 @@ export interface FloqSettings {
 export function useFloqSettings(floqId: string) {
   const queryClient = useQueryClient();
 
-  const {
-    data: settings,
-    isLoading,
-    error
-  } = useQuery({
+  const query = useQuery({
     queryKey: ["floq-settings", floqId],
     queryFn: async (): Promise<FloqSettings> => {
       const { data, error } = await supabase
-        .from('floq_settings')
-        .select('*')
-        .eq('floq_id', floqId)
-        .maybeSingle();
+        .rpc('get_floq_full_details', { p_floq_id: floqId })
+        .single();
 
       if (error) throw error;
 
-      // Return defaults if no settings exist yet
       return {
-        notifications_enabled: data?.notifications_enabled ?? true,
-        mention_permissions: data?.mention_permissions ?? 'all',
-        join_approval_required: data?.join_approval_required ?? false,
-        activity_visibility: data?.activity_visibility ?? 'public',
-        welcome_message: data?.welcome_message ?? '',
+        notifications_enabled: data.notifications_enabled ?? true,
+        mention_permissions: data.mention_permissions ?? 'all',
+        join_approval_required: data.join_approval_required ?? false,
+        activity_visibility: data.activity_visibility ?? 'public',
+        welcome_message: data.welcome_message ?? '',
       };
     },
-    staleTime: 30000, // 30 seconds
+    enabled: !!floqId,
+    staleTime: 30000,
   });
 
-  const updateSettings = useMutation({
-    mutationFn: async (newSettings: Partial<FloqSettings>) => {
+  const mutation = useMutation({
+    mutationFn: async (payload: Partial<FloqSettings>) => {
       const { error } = await supabase.functions.invoke('update-floq-settings', {
-        body: {
-          floqId,
-          settings: newSettings,
-        },
+        body: { floq_id: floqId, ...payload },
       });
 
       if (error) throw error;
@@ -57,15 +48,14 @@ export function useFloqSettings(floqId: string) {
     },
     onError: (error: any) => {
       console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings. Please try again.');
+      toast.error(`Failed to save settings: ${error.message || 'Please try again.'}`);
     },
   });
 
   return {
-    settings,
-    isLoading,
-    error,
-    updateSettings: updateSettings.mutate,
-    isSaving: updateSettings.isPending,
+    ...query,
+    settings: query.data,
+    save: mutation.mutateAsync,
+    saving: mutation.isPending,
   };
 }
