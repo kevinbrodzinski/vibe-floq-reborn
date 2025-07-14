@@ -11,6 +11,13 @@ BEGIN
     WHERE conname = 'floq_participants_pk'
           AND conrelid = 'public.floq_participants'::regclass
   ) THEN
+    -- De-duplicate any existing violations before creating PK
+    DELETE FROM public.floq_participants fp1
+    USING public.floq_participants fp2
+    WHERE fp1.ctid < fp2.ctid
+      AND fp1.floq_id = fp2.floq_id
+      AND fp1.user_id = fp2.user_id;
+    
     -- Create unique index first, then attach as primary key
     CREATE UNIQUE INDEX IF NOT EXISTS
       idx_floq_participants_uniq
@@ -63,11 +70,7 @@ SELECT * FROM missing
 ON CONFLICT (floq_id, user_id) DO NOTHING;
 
 -- 5. Set function owner for RLS bypass
-ALTER FUNCTION public.auto_join_creator() OWNER TO postgres;
+ALTER FUNCTION public.auto_join_creator() OWNER TO service_role;
 GRANT EXECUTE ON FUNCTION public.auto_join_creator() TO service_role;
-
--- 6. Optimized index for performance
-CREATE INDEX IF NOT EXISTS idx_fp_floq_user
-ON public.floq_participants (floq_id, user_id);
 
 COMMIT;
