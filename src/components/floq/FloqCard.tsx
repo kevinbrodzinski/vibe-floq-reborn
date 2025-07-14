@@ -174,13 +174,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
 
       {/* Bottom-right corner badges */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
-        {isLive && (
-          <span className="px-2 py-1 text-xs font-bold bg-red-500/90 text-white rounded-full animate-pulse">
-            LIVE
-          </span>
-        )}
-        
-        {isNew && !isLive && (
+        {isNew && (
           <span className="px-2 py-1 text-xs font-bold bg-blue-500/90 text-white rounded-full">
             NEW
           </span>
@@ -192,7 +186,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </span>
         )}
         
-        {isHot && !isLive && !isNew && !isCreator && (
+        {isHot && !isNew && !isCreator && (
           <span className="px-2 py-1 text-xs font-bold bg-orange-500/90 text-white rounded-full">
             Hot
           </span>
@@ -229,21 +223,20 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
             {floq.title}
           </h3>
-          <p className="mt-0.5 text-sm text-zinc-400 text-shadow-subtle">
-            {floq.primary_vibe} &bull;{' '}
+          <p className="mt-0.5 text-sm text-shadow-subtle">
             {(() => {
               const now = new Date();
               const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
               const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
               
               if (startsAt && startsAt > now) {
-                return `Starts in ${floq.starts_in_min}m`;
+                return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
               } else if (endsAt && now < endsAt) {
-                return 'Live now';
+                return <span className="text-green-400 font-medium">Live now</span>;
               } else if (endsAt && now >= endsAt) {
-                return 'Ended';
+                return <span className="text-zinc-400">Ended</span>;
               } else {
-                return 'Active';
+                return <span className="text-zinc-400">Active</span>;
               }
             })()}
           </p>
