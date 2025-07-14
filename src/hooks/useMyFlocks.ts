@@ -65,6 +65,9 @@ export function useMyFlocks({
     queryFn: async (): Promise<MyFloq[]> => {
       if (!user) return [];
       
+      // Use JavaScript date with 5-minute buffer to ensure recently created/joined floqs appear
+      const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
       // Get both created floqs and participated floqs using UNION
       const participatedQuery = supabase
         .from('floq_participants')
@@ -84,7 +87,7 @@ export function useMyFlocks({
           )
         `)
         .eq('user_id', user.id)
-        .gt('floqs.ends_at', 'now() - interval \'5 minutes\'')
+        .gt('floqs.ends_at', fiveMinutesFromNow)
         .is('floqs.deleted_at', null);
 
       const createdQuery = supabase
@@ -100,7 +103,7 @@ export function useMyFlocks({
           last_activity_at
         `)
         .eq('creator_id', user.id)
-        .gt('ends_at', 'now() - interval \'5 minutes\'')
+        .gt('ends_at', fiveMinutesFromNow)
         .is('deleted_at', null);
 
       const [participatedResult, createdResult] = await Promise.all([
