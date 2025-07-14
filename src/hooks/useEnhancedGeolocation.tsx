@@ -199,13 +199,7 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
     };
   }, [clearWatch]);
 
-  // Auto-request location on mount if permission is already granted
-  useEffect(() => {
-    if (location.hasPermission && !location.coords && !location.loading && !permissionChecked.current) {
-      console.info('[GEOLOCATION] Auto-requesting location (permission granted)');
-      requestLocation();
-    }
-  }, [location.hasPermission, location.coords, location.loading, requestLocation]);
+  // Remove auto-request to prevent timeout loops - users must explicitly request location
 
   return {
     ...location,

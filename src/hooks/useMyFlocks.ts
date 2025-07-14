@@ -123,7 +123,7 @@ export const useMyFlocks = () => {
         .eq('user_id', userId)
         .neq('role', 'creator')
         .is('floqs.deleted_at', null)
-        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()', { foreignTable: 'floqs' });
+        .or('ends_at.is.null,ends_at.gt.now()');
 
       // Query for floqs I created
       const createdQuery = supabase
@@ -148,11 +148,15 @@ export const useMyFlocks = () => {
       ]);
 
       if (participatedResult.error) {
-        console.error('❌ Error fetching participated floqs:', participatedResult.error);
+        if (import.meta.env.DEV) {
+          console.error('❌ Error fetching participated floqs:', participatedResult.error);
+        }
         throw participatedResult.error;
       }
       if (createdResult.error) {
-        console.error('❌ Error fetching created floqs:', createdResult.error);
+        if (import.meta.env.DEV) {
+          console.error('❌ Error fetching created floqs:', createdResult.error);
+        }
         throw createdResult.error;
       }
 
@@ -220,16 +224,31 @@ export const useMyFlocks = () => {
       // Get participant counts for all floqs using Postgres aggregation
       const floqIds = allFloqs.map(f => f.id);
       
-      const { data: participantCounts } = await supabase
-        .from('floq_participants')
-        .select('floq_id, count:floq_id')
-        .in('floq_id', floqIds);
+      let participantCounts: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from('floq_participants')
+          .select('floq_id, count(*)')
+          .in('floq_id', floqIds);
+        
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.warn('⚠️ Error fetching participant counts:', error);
+          }
+        } else {
+          participantCounts = data || [];
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn('⚠️ Failed to fetch participant counts:', error);
+        }
+      }
 
       // Create count lookup map
-      const countMap = participantCounts?.reduce((acc, item) => {
-        acc[item.floq_id] = item.count;
+      const countMap = participantCounts.reduce((acc, item) => {
+        acc[item.floq_id] = item.count || 0;
         return acc;
-      }, {} as Record<string, number>) || {};
+      }, {} as Record<string, number>);
 
       // Update participant counts
       allFloqs.forEach(floq => {
