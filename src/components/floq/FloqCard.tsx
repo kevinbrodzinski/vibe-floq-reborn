@@ -199,64 +199,66 @@ export const FloqCard = React.memo<FloqCardProps>(({
         )}
       </div>
 
-      {/* Row 1: Title + Live status (left-aligned) */}
-      <div className="relative z-10">
-        <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
-          {floq.title}
-        </h3>
-        <p className="mt-0.5 text-sm text-shadow-subtle">
-          {(() => {
-            const now = new Date();
-            const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
-            const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
-            
-            if (startsAt && startsAt > now) {
-              return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
-            } else if (endsAt && now < endsAt) {
-              return (
-                <span className="inline-flex items-center gap-1 text-green-400 font-medium">
-                  <span 
-                    className={cn(
-                      "h-2 w-2 rounded-full bg-green-400",
-                      !prefersReducedMotion && (isWindingDown ? "animate-pulse" : "animate-ping")
-                    )} 
+      {/* Row 1: avatar stack + title */}
+      <div className="relative z-10 flex items-start gap-4">
+        {/* Avatar stack */}
+        <div className="relative flex items-center mt-0.5">
+          <VibeIcon vibe={floq.primary_vibe} size="md" />
+          {floq.members && floq.members.length > 0 && (
+            <div className="ml-2 flex -space-x-2">
+              {floq.members.slice(0, 3).map((member, index) => (
+                <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
+                  <AvatarImage 
+                    src={member.avatar_url || '/placeholder.svg'} 
+                    alt={member.display_name}
+                    loading="lazy"
                   />
-                  {isWindingDown ? "Winding down" : "Live now"}
-                </span>
-              );
-            } else if (endsAt && now >= endsAt) {
-              return <span className="text-zinc-400">Ended</span>;
-            } else {
-              return <span className="text-zinc-400">Active</span>;
-            }
-          })()}
-        </p>
-      </div>
-
-      {/* Row 2: Member avatars section (left-aligned) */}
-      <div className="relative z-10 mt-3 flex items-center">
-        <VibeIcon vibe={floq.primary_vibe} size="md" />
-        {floq.members && floq.members.length > 0 && (
-          <div className="ml-2 flex -space-x-2">
-            {floq.members.slice(0, 3).map((member, index) => (
-              <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
-                <AvatarImage 
-                  src={member.avatar_url || '/placeholder.svg'} 
-                  alt={member.display_name}
-                  loading="lazy"
-                />
-                <AvatarFallback className="bg-white/10 text-white text-xs">
-                  {member.display_name?.[0]?.toUpperCase() || '?'}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {floq.members.length > 3 && (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
-                +{floq.members.length - 3}
-              </div>
-            )}
-          </div>
-        )}
+                  <AvatarFallback className="bg-white/10 text-white text-xs">
+                    {member.display_name?.[0]?.toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+              ))}
+              {floq.members.length > 3 && (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white/20 bg-white/10 text-xs font-medium text-white">
+                  +{floq.members.length - 3}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
+            {floq.title}
+          </h3>
+          <p className="mt-0.5 text-sm text-shadow-subtle">
+            {(() => {
+              const now = new Date();
+              const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
+              const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
+              
+              if (startsAt && startsAt > now) {
+                return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
+              } else if (endsAt && now < endsAt) {
+                return (
+                  <span className="inline-flex items-center gap-1 text-green-400 font-medium">
+                    <span 
+                      className={cn(
+                        "h-2 w-2 rounded-full bg-green-400",
+                        !prefersReducedMotion && (isWindingDown ? "animate-pulse" : "animate-ping")
+                      )} 
+                    />
+                    {isWindingDown ? "Winding down" : "Live now"}
+                  </span>
+                );
+              } else if (endsAt && now >= endsAt) {
+                return <span className="text-zinc-400">Ended</span>;
+              } else {
+                return <span className="text-zinc-400">Active</span>;
+              }
+            })()}
+          </p>
+        </div>
       </div>
 
       {/* Description */}
@@ -312,13 +314,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </span>
       </div>
 
-      {/* Action row with conditional CTAs - same size as meta pills */}
-      <div className="relative z-10 mt-4 flex flex-wrap gap-2">
+      {/* Action row with conditional CTAs */}
+      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
         <ActionPill
           startIcon={<Eye size={14} />}
           variant="primary"
-          size="xs"
-          className="px-2 py-1"
+          className="min-w-[80px]"
           onClick={(e) => {
             e.stopPropagation();
             handleCardClick();
@@ -338,8 +339,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <ActionPill
             startIcon={<Crown size={14} />}
             variant="ghost"
-            size="xs"
-            className="px-2 py-1"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/floqs/${floq.id}/manage`);
@@ -351,8 +350,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <ActionPill
             startIcon={<UserPlus size={14} />}
             variant={floq.is_joined ? 'ghost' : 'success'}
-            size="xs"
-            className="px-2 py-1"
             disabled={floq.is_joined}
             onClick={handleJoin}
             onKeyDown={(e) => {
@@ -370,15 +367,16 @@ export const FloqCard = React.memo<FloqCardProps>(({
               : 'Join'}
           </ActionPill>
         )}
-      </div>
         
-      {/* Swipe hint for non-joined floqs on touch devices */}
-      {!floq.is_joined && (
-        <div className="relative z-10 w-full mt-2 text-[10px] text-muted-foreground flex items-center gap-1 justify-center select-none md:hidden">
-          <ChevronLeft size={12} aria-hidden />
-          <span>Swipe to hide</span>
-        </div>
-      )}
+        
+        {/* Swipe hint for non-joined floqs on touch devices */}
+        {!floq.is_joined && (
+          <div className="w-full mt-2 text-[10px] text-muted-foreground flex items-center gap-1 justify-center select-none md:hidden">
+            <ChevronLeft size={12} aria-hidden />
+            <span>Swipe to hide</span>
+          </div>
+        )}
+      </div>
     </article>
   );
 });
