@@ -229,12 +229,18 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 }}
               />
               
-              {/* Invite available to all joined members */}
-              <InviteFriendsButton
-                floqId={floqDetails.id}
-                variant="outline"
-                size="sm"
-              />
+              {/* Invite friends - with capacity and permission guards */}
+              {(isMember || isHost || floqDetails.is_creator) && (
+                <InviteFriendsButton
+                  floqId={floqDetails.id}
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    floqDetails.max_participants && 
+                    (floqDetails.participant_count + (floqDetails.pending_invites?.length || 0)) >= floqDetails.max_participants
+                  }
+                />
+              )}
             </div>
           )}
 

@@ -26,6 +26,7 @@ interface InviteFriendsButtonProps {
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  disabled?: boolean;
 }
 
 export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
@@ -33,6 +34,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
   className,
   variant = 'outline',
   size = 'default',
+  disabled = false,
 }) => {
   const session = useSession();
   const user = session?.user;
@@ -157,7 +159,12 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
+        <Button 
+          variant={variant} 
+          size={size} 
+          className={className}
+          disabled={disabled}
+        >
           <UserPlus className="w-4 h-4 mr-2" />
           Invite
         </Button>
