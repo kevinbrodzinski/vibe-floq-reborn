@@ -1,5 +1,5 @@
 import React, { useCallback, CSSProperties } from 'react';
-import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft, Waves } from 'lucide-react';
+import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft, Waves, Circle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -133,12 +133,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
         'group relative overflow-hidden card-glass',
         'rounded-3xl p-6 cursor-pointer shadow-[0_4px_24px_rgba(0,0,0,.45)] ring-1 ring-white/10',
         'transition-all duration-300 ease-out',
-        'hover:scale-[1.02] hover:-translate-y-1',
+        !prefersReducedMotion && 'hover:scale-[1.02] hover:-translate-y-1',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--vibe-from)]',
         // Hover shimmer effect
         'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-transparent',
         'before:translate-x-[-100%] before:transition-transform before:duration-1000',
-        'hover:before:translate-x-[100%]'
+        !prefersReducedMotion && 'hover:before:translate-x-[100%]'
       )}
       style={{ 
         '--vibe-from': accent,
@@ -158,14 +158,17 @@ export const FloqCard = React.memo<FloqCardProps>(({
     >
       {/* Radial glow */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-25 transition group-hover:opacity-40"
+        className={cn(
+          "pointer-events-none absolute inset-0 opacity-25 transition",
+          !prefersReducedMotion && "group-hover:opacity-40"
+        )}
         style={{ background: vibeGradient(floq.primary_vibe) }}
         aria-hidden="true"
       />
 
       {/* Top-right vibe pill with icon */}
       <div 
-        className="absolute top-3 right-3 px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-full border backdrop-blur-sm font-medium flex items-center gap-1"
+        className="absolute top-3 right-3 px-2 py-0.5 text-[10px] uppercase tracking-wide rounded-full ring-1 backdrop-blur-sm font-medium flex items-center gap-1"
         style={{
           backgroundColor: `${getVibeColor(floq.primary_vibe)}20`,
           borderColor: `${getVibeColor(floq.primary_vibe)}40`,
@@ -179,12 +182,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
       {/* Top-left status badges */}
       <div className="absolute top-3 left-3 flex flex-col gap-1">
         {isNew && (
-          <div className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/90 text-white rounded-full uppercase tracking-wide">
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/90 text-white rounded-full ring-1 ring-blue-400/50 uppercase tracking-wide">
             NEW
           </div>
         )}
         {isHot && !isNew && (
-          <div className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/90 text-white rounded-full uppercase tracking-wide">
+          <div className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/90 text-white rounded-full ring-1 ring-orange-400/50 uppercase tracking-wide">
             HOT
           </div>
         )}
@@ -202,7 +205,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
       {/* Row 1: avatar stack + title */}
       <div className="relative z-10 flex items-start gap-4">
         {/* Avatar stack */}
-        <div className="relative flex items-center mt-0.5">
+        <div className="relative flex items-center mt-[2px]">
           <VibeIcon vibe={floq.primary_vibe} size="md" />
           {floq.members && floq.members.length > 0 && (
             <div className="ml-2 flex -space-x-2">
@@ -228,10 +231,10 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
         
         <div>
-          <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
+          <h3 className="text-lg font-semibold leading-tight text-white">
             {floq.title}
           </h3>
-          <p className="mt-0.5 text-sm text-shadow-subtle">
+          <p className="mt-0.5 text-sm text-muted-foreground tracking-tight">
             {(() => {
               const now = new Date();
               const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
@@ -241,13 +244,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
                 return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
               } else if (endsAt && now < endsAt) {
                 return (
-                  <span className="inline-flex items-center gap-1 text-green-400 font-medium">
-                    <span 
-                      className={cn(
-                        "h-2 w-2 rounded-full bg-green-400",
-                        !prefersReducedMotion && (isWindingDown ? "animate-pulse" : "animate-ping")
-                      )} 
-                    />
+                  <span className="inline-flex items-center gap-1 text-emerald-400" style={{ textShadow: 'none' }}>
+                    <Circle size={8} aria-hidden className="text-emerald-400" />
                     {isWindingDown ? "Winding down" : "Live now"}
                   </span>
                 );
@@ -273,7 +271,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <span 
           className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm border border-white/10"
           style={{ 
-            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            backgroundColor: isLive ? `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.3)` : `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
             borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
           }}
         >
@@ -282,7 +280,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
             strokeWidth={2}
             className="text-[color:var(--vibe-from)]"
           />
-          <span className="text-xs text-white/90 text-shadow-subtle">
+          <span className="text-xs text-white/90">
             {floq.participant_count}/{floq.max_participants ?? '∞'}
           </span>
         </span>
@@ -290,12 +288,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <span 
           className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm border border-white/10"
           style={{ 
-            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            backgroundColor: isLive ? `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.3)` : `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
             borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
           }}
         >
           <MapPin size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/90 text-shadow-subtle">
+          <span className="text-xs text-white/90">
             {formatDistance(floq.distance_meters)}
           </span>
         </span>
@@ -303,12 +301,12 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <span 
           className="flex items-center gap-1 px-2 py-1 rounded-full backdrop-blur-sm border border-white/10"
           style={{ 
-            backgroundColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
+            backgroundColor: isLive ? `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.3)` : `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.1)`,
             borderColor: `hsl(var(--vibe-h), var(--vibe-s), var(--vibe-l), 0.2)`
           }}
         >
           <Clock size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/90 text-shadow-subtle">
+          <span className="text-xs text-white/90">
             {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
           </span>
         </span>
@@ -319,7 +317,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <ActionPill
           startIcon={<Eye size={14} />}
           variant="primary"
-          className="min-w-[80px]"
+          className="min-w-[84px] transition-transform duration-150 hover:scale-105 active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             handleCardClick();
@@ -339,6 +337,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <ActionPill
             startIcon={<Crown size={14} />}
             variant="ghost"
+            className="transition-transform duration-150 hover:scale-105 active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/floqs/${floq.id}/manage`);
@@ -351,6 +350,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
             startIcon={<UserPlus size={14} />}
             variant={floq.is_joined ? 'ghost' : 'success'}
             disabled={floq.is_joined}
+            className="transition-transform duration-150 hover:scale-105 active:scale-95"
             onClick={handleJoin}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -367,16 +367,15 @@ export const FloqCard = React.memo<FloqCardProps>(({
               : 'Join'}
           </ActionPill>
         )}
-        
-        
-        {/* Swipe hint for non-joined floqs on touch devices */}
-        {!floq.is_joined && (
-          <div className="w-full mt-2 text-[10px] text-muted-foreground flex items-center gap-1 justify-center select-none md:hidden">
-            <ChevronLeft size={12} aria-hidden />
-            <span>Swipe to hide</span>
-          </div>
-        )}
       </div>
+
+      {/* Swipe hint for non-joined floqs on touch devices */}
+      {!floq.is_joined && (
+        <div className="relative z-10 mt-2 flex items-center gap-1 text-xs text-muted-foreground md:hidden">
+          <ChevronLeft size={12} aria-hidden />
+          <span>Swipe left to hide</span>
+        </div>
+      )}
     </article>
   );
 });
