@@ -66,27 +66,19 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messageIdsRef = useRef(new Set<string>());
 
-  const {
-    messages,
-    hasNextPage,
-    fetchNextPage,
-    isLoading,
-    sendMessage,
-    isSending,
-  } = useFloqChat(floqId);
+  const { messages, hasNextPage, fetchNextPage, isLoading, sendMessage, isSending } = useFloqChat(floqId);
 
-  const { trackActivity } = useActivityTracking();
+  const track = useActivityTracking(floqId);
 
   // Derive canSend from props and state with fallback for edge cases
   const hasContent = !!message.trim() && message.trim().length > 0;
   const canSend = !!floqId && !!user && hasContent && isJoined;
 
-  // Track activity when chat opens/closes
+  // Track activity when chat opens
   useEffect(() => {
-    if (isOpen && floqId && user && isJoined) {
-      trackActivity(floqId, 'chat');
-    }
-  }, [isOpen, floqId, user, isJoined, trackActivity]);
+    if (!isOpen) return;
+    track('chat');
+  }, [isOpen, track]);
 
   // Smart auto-scroll to bottom on new messages (throttled for performance)
   useEffect(() => {

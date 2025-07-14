@@ -51,15 +51,12 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
   floqId, 
   className 
 }) => {
-  const { user } = useAuth();
-  const { trackActivity } = useActivityTracking();
+  const track = useActivityTracking(floqId);
 
   // Track activity when component mounts and floqId is available
   useEffect(() => {
-    if (floqId && user) {
-      trackActivity(floqId, 'activity');
-    }
-  }, [floqId, user, trackActivity]);
+    track('activity');
+  }, [track]);
   const { data: activities = [], isLoading, error, refetch } = useQuery({
     queryKey: ['floq-activity-feed', floqId],
     queryFn: async (): Promise<FloqActivityItem[]> => {

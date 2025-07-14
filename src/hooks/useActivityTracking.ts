@@ -1,74 +1,48 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/providers/AuthProvider";
-import { useCallback, useRef } from "react";
 
-type ActivitySection = 'chat' | 'activity' | 'plans' | 'all';
-
-interface ActivityTrackingParams {
-  floqId: string;
-  section: ActivitySection;
+// Utility — local debounce so we don't pull an external dep just for this
+function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return (...args: Parameters<F>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
 }
 
-export const useActivityTracking = () => {
-  const { session } = useAuth();
+/**
+ * Hook that returns a debounced tracker.
+ *
+ * ```ts
+ * const track = useActivityTracking(floqId);
+ * track('chat'); // mark chat viewed
+ * ```
+ */
+export const useActivityTracking = (floqId: string) => {
   const queryClient = useQueryClient();
-  const debounceRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const mutation = useMutation({
-    mutationFn: async ({ floqId, section }: ActivityTrackingParams) => {
-      if (!session?.user?.id) {
-        throw new Error('Not authenticated');
-      }
-
+    mutationFn: async (section: 'chat' | 'activity' | 'plans' | 'all') => {
       const { error } = await supabase.rpc('update_user_activity_tracking', {
         p_floq_id: floqId,
-        p_section: section
+        p_section: section,
       });
-
-      if (error) {
-        console.error('Activity tracking error:', error);
-        throw error;
-      }
-
-      return { floqId, section };
+      if (error) throw error;
     },
-    onSuccess: ({ floqId }) => {
-      // Invalidate unread counts for this floq
-      queryClient.invalidateQueries({ 
-        queryKey: ['unread-counts', floqId, session?.user?.id] 
-      });
-      
-      // Also invalidate global counts
-      queryClient.invalidateQueries({ 
-        queryKey: ['my-floqs-unread', session?.user?.id] 
-      });
+    onSuccess: () => {
+      // Refresh badge data for this floq + global aggregates
+      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId] });
+      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread'] });
+      queryClient.invalidateQueries({ queryKey: ['global-unread'] });
     },
-    onError: (error) => {
-      console.error('Failed to track activity:', error);
-    }
   });
 
-  const trackActivity = useCallback((floqId: string, section: ActivitySection) => {
-    if (!session?.user?.id || !floqId) return;
-
-    const debounceKey = `${floqId}-${section}`;
-    
-    // Clear existing debounce for this key
-    if (debounceRef.current[debounceKey]) {
-      clearTimeout(debounceRef.current[debounceKey]);
-    }
-
-    // Debounce for 300ms to prevent spam
-    debounceRef.current[debounceKey] = setTimeout(() => {
-      mutation.mutate({ floqId, section });
-      delete debounceRef.current[debounceKey];
-    }, 300);
-  }, [session?.user?.id, mutation]);
-
-  return {
-    trackActivity,
-    isTracking: mutation.isPending,
-    error: mutation.error
-  };
+  // Debounced wrapper so callers can freely fire on every route change
+  return useCallback(
+    debounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
+      mutation.mutate(section);
+    }),
+    [mutation]
+  );
 };
