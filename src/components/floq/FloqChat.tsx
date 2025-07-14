@@ -273,7 +273,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             </Button>
             
             {/* Debug info for send button - development only */}
-            {process.env.NODE_ENV === 'development' && !canSend && (
+            {import.meta.env.MODE === 'development' && !canSend && (
               <div className="absolute -bottom-6 right-0 text-xs text-destructive">
                 {!floqId ? 'No floq ID' : !user ? 'Not authenticated' : !isJoined ? 'Join floq first' : 'Type something'}
               </div>

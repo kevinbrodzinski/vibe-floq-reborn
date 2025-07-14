@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 // Debug logger that works in dev but stays quiet in tests and production
 const debug = (...args: any[]) => {
-  if (process.env.NODE_ENV !== 'production' && !process.env.VITEST) {
+  if (import.meta.env.MODE !== 'production' && !import.meta.env.VITEST) {
     console.log(...args);
   }
 };

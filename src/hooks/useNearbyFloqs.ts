@@ -35,7 +35,7 @@ export function useNearbyFloqs(
   }
 
   // Development assertion for invalid coordinates
-  if (process.env.NODE_ENV === 'development' && (!Number.isFinite(lat) || !Number.isFinite(lng))) {
+  if (import.meta.env.MODE === 'development' && (!Number.isFinite(lat) || !Number.isFinite(lng))) {
     console.warn('useNearbyFloqs called with invalid coordinates:', { lat, lng });
   }
 

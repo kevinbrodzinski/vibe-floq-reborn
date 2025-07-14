@@ -28,7 +28,7 @@ export function useMemoryOptimization() {
   useEffect(() => {
     const handleMemoryWarning = () => {
       // Force garbage collection if available (Chrome DevTools)
-      if (process.env.NODE_ENV === 'development' && 'gc' in window && typeof window.gc === 'function') {
+      if (import.meta.env.MODE === 'development' && 'gc' in window && typeof window.gc === 'function') {
         window.gc();
       }
       

@@ -14,7 +14,7 @@ export const useAvatarPreloader = (avatarPaths: (string | null | undefined)[], s
     });
     
     // Verify Transform CDN on first avatar (in development)
-    if (process.env.NODE_ENV === 'development' && validPaths.length > 0) {
+    if (import.meta.env.MODE === 'development' && validPaths.length > 0) {
       const testUrl = getAvatarUrl(validPaths[0], 64);
       if (testUrl) {
         verifyTransformCDN(testUrl).then(isWorking => {

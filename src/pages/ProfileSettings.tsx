@@ -237,7 +237,7 @@ const ProfileSettings = () => {
             </div>
 
             {/* Debug: Transform CDN Tester */}
-            {process.env.NODE_ENV === 'development' && profile?.avatar_url && (
+            {import.meta.env.MODE === 'development' && profile?.avatar_url && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="text-sm font-medium mb-4 text-center">Debug: Transform CDN</h3>
                 <TransformCDNTester avatarPath={profile.avatar_url} />
