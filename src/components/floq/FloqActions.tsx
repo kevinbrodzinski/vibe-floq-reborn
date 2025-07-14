@@ -2,7 +2,7 @@ import React from 'react';
 import { UserPlus2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IconPill } from '@/components/IconPill';
-import { supabase } from '@/integrations/supabase/client';
+import { useFloqBoost } from '@/hooks/useFloqBoosts';
 import { useToast } from '@/hooks/use-toast';
 
 interface FloqActionsProps {
@@ -16,29 +16,10 @@ export const FloqActions: React.FC<FloqActionsProps> = ({
   isJoined, 
   onInvite 
 }) => {
-  const { toast } = useToast();
+  const { boost } = useFloqBoost();
 
-  const handleBoost = async () => {
-    try {
-      const { data, error } = await supabase.rpc('boost_floq', { 
-        p_floq_id: floqId 
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Boosted!",
-        description: "Your boost will help more people find this gathering",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error('Failed to boost floq:', error);
-      toast({
-        title: "Boost failed",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    }
+  const handleBoost = () => {
+    boost({ floqId });
   };
 
   if (!isJoined) return null;

@@ -96,7 +96,9 @@ export const FloqCard = React.memo<FloqCardProps>(({
         'bg-card/30 border border-border/20 backdrop-blur-md',
         'hover:bg-card/50 transition-all duration-200',
         'active:scale-[.98] active:brightness-95',
-        'text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none'
+        'text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+        'cursor-grab active:cursor-grabbing',
+        '[-webkit-tap-highlight-color:rgba(0,0,0,0)]'
       )}
     >
       {/* Avatar with vibe ring */}
@@ -108,7 +110,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
           'border-2 shadow-sm',
           vibeColor
         )}
-        title={`${floq.primary_vibe} vibe`}
       >
         {getInitials(floq.title)}
       </div>
