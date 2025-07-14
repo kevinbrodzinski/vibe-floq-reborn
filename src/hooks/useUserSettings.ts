@@ -24,6 +24,7 @@ export interface UserSettings {
     dark_mode: boolean;
     accent_color: string;
   };
+  preferred_welcome_template?: 'casual-hangout' | 'professional-meetup' | 'event-based' | 'study-group' | 'creative-collab' | 'support-group';
   available_until?: string | null;
   created_at: string;
   updated_at: string;
@@ -202,6 +203,33 @@ export const useUserSettings = () => {
     }
   };
 
+  const updateWelcomeTemplate = async (template: UserSettings['preferred_welcome_template']) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase.functions.invoke('update-user-settings', {
+        body: { preferred_welcome_template: template },
+      });
+
+      if (error) throw error;
+      
+      // Invalidate cache to refetch updated settings
+      queryClient.invalidateQueries({ queryKey: ['user-settings', user.id] });
+      
+      toast({
+        title: "Welcome template updated",
+        description: "Your preferred welcome message template has been saved.",
+      });
+    } catch (error) {
+      console.error('Failed to update welcome template:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update welcome template. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     settings: settings as UserSettings | undefined,
     isLoading,
@@ -209,6 +237,7 @@ export const useUserSettings = () => {
     updateNotificationPreference,
     updatePrivacySetting,
     updateBroadcastRadius,
+    updateWelcomeTemplate,
     isUpdating: updateSettingsMutation.isPending,
   };
 };

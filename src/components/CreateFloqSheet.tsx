@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { useCreateFloq } from '@/hooks/useCreateFloq';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { WELCOME_MESSAGE_TEMPLATES } from '@/constants/welcomeMessageTemplates';
 import { trackFloqCreated } from '@/lib/analytics';
 import type { Vibe } from '@/types';
 
@@ -32,6 +34,7 @@ const VIBE_COLORS: Partial<Record<Vibe, string>> = {
 export function CreateFloqSheet() {
   const { showCreateSheet, setShowCreateSheet } = useFloqUI();
   const { mutateAsync: createFloq, isPending } = useCreateFloq();
+  const { settings, updateWelcomeTemplate } = useUserSettings();
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -41,6 +44,7 @@ export function CreateFloqSheet() {
   const [durationMode, setDurationMode] = useState<'quick' | 'custom' | 'persistent'>('quick');
   const [customEndTime, setCustomEndTime] = useState('');
   const [hasTouchedTitle, setHasTouchedTitle] = useState(false);
+  const [selectedWelcomeTemplate, setSelectedWelcomeTemplate] = useState<string>('');
 
   // Reset form states when sheet opens
   useEffect(() => {
@@ -53,8 +57,10 @@ export function CreateFloqSheet() {
       setDurationMode('quick');
       setCustomEndTime('');
       setHasTouchedTitle(false);
+      // Use user's preferred template or default
+      setSelectedWelcomeTemplate(settings?.preferred_welcome_template || 'casual-hangout');
     }
-  }, [showCreateSheet]);
+  }, [showCreateSheet, settings?.preferred_welcome_template]);
 
   const handleDurationModeChange = (mode: 'quick' | 'custom' | 'persistent') => {
     setDurationMode(mode);
@@ -311,6 +317,48 @@ export function CreateFloqSheet() {
                       checked={isPrivate}
                       onCheckedChange={setIsPrivate}
                     />
+                  </div>
+                </div>
+
+                {/* Welcome Message Template */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>Welcome Message</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => updateWelcomeTemplate(selectedWelcomeTemplate as any)}
+                      className="text-xs h-6 px-2"
+                    >
+                      Save as default
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {WELCOME_MESSAGE_TEMPLATES.map((template) => (
+                      <div key={template.id} className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          id={`template-${template.id}`}
+                          name="welcomeTemplate"
+                          value={template.id}
+                          checked={selectedWelcomeTemplate === template.id}
+                          onChange={(e) => setSelectedWelcomeTemplate(e.target.value)}
+                          className="mt-1 text-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <label 
+                            htmlFor={`template-${template.id}`}
+                            className="block text-sm font-medium cursor-pointer"
+                          >
+                            {template.name}
+                          </label>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {template.content}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
