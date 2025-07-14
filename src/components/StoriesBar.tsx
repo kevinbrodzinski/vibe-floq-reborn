@@ -47,6 +47,39 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
     );
   }
 
+  // Empty state for no flocks
+  if (flocks.length === 0) {
+    return (
+      <Card className="px-4 py-3 bg-background/70 backdrop-blur-md shadow-sm border-border/40">
+        <div className="flex gap-4">
+          {/* Create new floq button */}
+          <button
+            onClick={onCreatePress}
+            className="flex flex-col items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1"
+            aria-label="Create new Floq"
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-muted/70 border-2 border-dashed border-muted-foreground/40 hover:border-primary/60 hover:bg-muted transition-colors">
+              <Plus className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">New</span>
+          </button>
+          
+          {/* Empty state message */}
+          <div className="flex items-center justify-center flex-1 py-6">
+            <div className="text-center max-w-xs">
+              <p className="text-sm text-muted-foreground mb-2">
+                Looks like you haven't created or joined any flocks yet.
+              </p>
+              <p className="text-xs text-muted-foreground/80">
+                Tap + to get started!
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="px-4 py-3 bg-background/70 backdrop-blur-md shadow-sm border-border/40">
       <ScrollArea className="w-full">
