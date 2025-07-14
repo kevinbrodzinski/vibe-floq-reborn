@@ -1,4 +1,4 @@
-import { vibeEmoji } from '@/utils/vibe';
+import { getVibeIcon } from '@/utils/vibeIcons';
 import { getVibeColor } from '@/utils/getVibeColor';
 import type { Vibe } from '@/types';
 
@@ -9,7 +9,7 @@ interface VibePillProps {
 
 export const VibePill = ({ vibe, className = '' }: VibePillProps) => {
   const vibeColor = getVibeColor(vibe);
-  const emoji = vibeEmoji(vibe);
+  const icon = getVibeIcon(vibe);
 
   return (
     <span 
@@ -22,7 +22,7 @@ export const VibePill = ({ vibe, className = '' }: VibePillProps) => {
         border: `1px solid ${vibeColor}40`
       }}
     >
-      <span>{emoji}</span>
+      <span>{icon}</span>
       <span className="capitalize">{vibe}</span>
     </span>
   );

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatDistance } from '@/utils/formatDistance';
 import { formatTimeLeft } from '@/utils/formatTimeLeft';
 import { getVibeColor } from '@/utils/getVibeColor';
-import { vibeEmoji } from '@/utils/vibe';
+import { getVibeIcon } from '@/utils/vibeIcons';
 import { toast } from 'sonner';
 import { ActionPill } from '@/components/ui/ActionPill';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
@@ -28,7 +28,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
   const navigate = useNavigate();
   const location = useLocation();
   const vibeColor = getVibeColor(floq.primary_vibe);
-  const vibeIcon = vibeEmoji(floq.primary_vibe);
+  const vibeIcon = getVibeIcon(floq.primary_vibe);
   const isFull = floq.max_participants ? floq.participant_count >= floq.max_participants : false;
   const { mutate: ignoreFloq } = useIgnoreFloq();
 
@@ -52,7 +52,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
   const handleIgnore = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     ignoreFloq({ floqId: floq.id });
-    toast.success("Floq hidden from your feed");
   }, [ignoreFloq, floq.id]);
 
   // Swipe gesture handling
@@ -64,7 +63,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
       if (mx < -SWIPE_THRESHOLD && !floq.is_joined) {
         cancel();
         ignoreFloq({ floqId: floq.id });
-        toast.success("Floq hidden from your feed");
       }
       
       // Left swipe (leave) - only if joined
@@ -107,7 +105,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
   const handleHide = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     ignoreFloq({ floqId: floq.id });
-    toast.success("Floq hidden from your feed");
   }, [ignoreFloq, floq.id]);
 
   return (
