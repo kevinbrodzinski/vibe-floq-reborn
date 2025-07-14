@@ -79,7 +79,9 @@ export const useMyFlocks = () => {
     queryFn: async () => {
       if (!userId) return [];
 
-      // Fix C: Server-side filtering with proper predicate
+      console.info('🚀 Fetching my floqs data from database');
+
+      // Query for floqs I'm participating in (not creator)
       const participatedQuery = supabase
         .from('floq_participants')
         .select(`
@@ -98,9 +100,10 @@ export const useMyFlocks = () => {
           )
         `)
         .eq('user_id', userId)
-        .filter('floqs.deleted_at', 'is', null)
-        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');
+        .neq('role', 'creator')
+        .is('floqs.deleted_at', null);
 
+      // Query for floqs I created
       const createdQuery = supabase
         .from('floqs')
         .select(`
@@ -114,48 +117,79 @@ export const useMyFlocks = () => {
           last_activity_at
         `)
         .eq('creator_id', userId)
-        .filter('deleted_at', 'is', null)
-        .or('ends_at.is.null,ends_at.gt.now()');
+        .is('deleted_at', null);
 
       const [participatedResult, createdResult] = await Promise.all([
         participatedQuery,
         createdQuery
       ]);
 
-      if (participatedResult.error) throw participatedResult.error;
-      if (createdResult.error) throw createdResult.error;
+      if (participatedResult.error) {
+        console.error('❌ Error fetching participated floqs:', participatedResult.error);
+        throw participatedResult.error;
+      }
+      if (createdResult.error) {
+        console.error('❌ Error fetching created floqs:', createdResult.error);
+        throw createdResult.error;
+      }
 
-      // Normalize row structure before mapping (Fix from notes)
-      const allFloqs = new Map();
-
-      const addRow = (
-        raw: any,
-        role: 'creator' | 'member' | string,
-        joined: string,
-        fromParticipated = false
-      ) => {
-        const record = fromParticipated ? raw.floqs : raw;
-        allFloqs.set(record.id, {
-          floq: record,
-          role,
-          joined_at: joined
-        });
-      };
+      // Combine and normalize results
+      const allFloqs: MyFloq[] = [];
 
       // Add participated floqs
-      participatedResult.data?.forEach(row =>
-        addRow(row, row.role, row.joined_at, true)
-      );
+      participatedResult.data?.forEach(row => {
+        const floq = row.floqs;
+        // Filter out expired floqs
+        if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
+          return;
+        }
 
-      // Add created floqs (creator overwrites same key)
-      createdResult.data?.forEach(row =>
-        addRow(row, 'creator', row.starts_at, false)
-      );
+        allFloqs.push({
+          id: floq.id,
+          title: floq.title || floq.name || 'Untitled',
+          name: floq.name,
+          primary_vibe: floq.primary_vibe,
+          participant_count: 0, // Will be filled below
+          role: row.role,
+          joined_at: row.joined_at,
+          last_activity_at: floq.last_activity_at || floq.starts_at,
+          starts_at: floq.starts_at,
+          ends_at: floq.ends_at,
+          creator_id: floq.creator_id,
+          is_creator: false,
+        });
+      });
 
-      if (allFloqs.size === 0) return [];
+      // Add created floqs
+      createdResult.data?.forEach(floq => {
+        // Filter out expired floqs (unless persistent - no ends_at)
+        if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
+          return;
+        }
 
-      // Get participant counts for all flocks
-      const floqIds = Array.from(allFloqs.keys());
+        allFloqs.push({
+          id: floq.id,
+          title: floq.title || floq.name || 'Untitled',
+          name: floq.name,
+          primary_vibe: floq.primary_vibe,
+          participant_count: 0, // Will be filled below
+          role: 'creator',
+          joined_at: floq.starts_at || floq.created_at,
+          last_activity_at: floq.last_activity_at || floq.starts_at,
+          starts_at: floq.starts_at,
+          ends_at: floq.ends_at,
+          creator_id: floq.creator_id,
+          is_creator: true,
+        });
+      });
+
+      if (allFloqs.length === 0) {
+        console.info('✅ No active floqs found');
+        return [];
+      }
+
+      // Get participant counts for all floqs
+      const floqIds = allFloqs.map(f => f.id);
       const { data: participantData } = await supabase
         .from('floq_participants')
         .select('floq_id')
@@ -166,24 +200,14 @@ export const useMyFlocks = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      // Transform to MyFloq format with robust title fallback
-      const result: MyFloq[] = Array.from(allFloqs.entries())
-        .map(([id, { floq, role, joined_at }]) => ({
-          id,
-          title: floq.title ?? floq.name ?? 'Untitled', // Robust fallback
-          name: floq.name || undefined,
-          primary_vibe: floq.primary_vibe,
-          participant_count: participantCounts[id] || 0,
-          role,
-          joined_at,
-          last_activity_at: floq.last_activity_at || floq.starts_at,
-          starts_at: floq.starts_at || undefined,
-          ends_at: floq.ends_at || undefined,
-          creator_id: floq.creator_id || undefined,
-          is_creator: floq.creator_id === userId,
-        }))
-        .sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
+      // Update participant counts
+      allFloqs.forEach(floq => {
+        floq.participant_count = participantCounts[floq.id] || 0;
+      });
 
+      const result = allFloqs.sort((a, b) => new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime());
+      
+      console.info(`✅ Returning ${result.length} my floqs`);
       return result;
     },
     enabled: !!userId,

@@ -124,19 +124,10 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
 
       // Track successful permission grant
       trackLocationPermission(true, 'manual');
-
-      // Auto-refresh location if tab is visible (every 30 seconds)
-      if (!document.hidden) {
-        setTimeout(() => {
-          if (!document.hidden) {
-            requestLocation();
-          }
-        }, 30000);
-      }
     };
 
     const handleError = (error: GeolocationPositionError) => {
-      console.warn('[GEOLOCATION] Error:', error.message);
+      console.info('[GEOLOCATION] Error:', error.message, 'Code:', error.code);
       
       let errorMessage: string;
       let permissionDenied = false;
