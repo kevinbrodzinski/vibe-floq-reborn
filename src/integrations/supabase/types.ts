@@ -394,6 +394,32 @@ export type Database = {
           },
         ]
       }
+      floq_ignored: {
+        Row: {
+          floq_id: string
+          ignored_at: string | null
+          user_id: string
+        }
+        Insert: {
+          floq_id: string
+          ignored_at?: string | null
+          user_id: string
+        }
+        Update: {
+          floq_id?: string
+          ignored_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_ignored_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_invitations: {
         Row: {
           created_at: string
@@ -532,6 +558,7 @@ export type Database = {
           created_at: string | null
           creator_id: string | null
           deleted_at: string | null
+          description: string | null
           ends_at: string | null
           expires_at: string | null
           flock_tags: string[] | null
@@ -561,6 +588,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           deleted_at?: string | null
+          description?: string | null
           ends_at?: string | null
           expires_at?: string | null
           flock_tags?: string[] | null
@@ -590,6 +618,7 @@ export type Database = {
           created_at?: string | null
           creator_id?: string | null
           deleted_at?: string | null
+          description?: string | null
           ends_at?: string | null
           expires_at?: string | null
           flock_tags?: string[] | null
