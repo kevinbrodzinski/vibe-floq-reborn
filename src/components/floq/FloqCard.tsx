@@ -202,10 +202,38 @@ export const FloqCard = React.memo<FloqCardProps>(({
         )}
       </div>
 
-      {/* Row 1: avatar stack + title */}
-      <div className="relative z-10 flex items-start gap-4">
-        {/* Avatar stack */}
-        <div className="relative flex items-center mt-[2px]">
+      {/* Row 1: Title and status */}
+      <div className="relative z-10">
+        <h3 className="text-lg font-semibold leading-tight text-white">
+          {floq.title}
+        </h3>
+        <p className="mt-0.5 text-sm text-muted-foreground tracking-tight">
+          {(() => {
+            const now = new Date();
+            const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
+            const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
+            
+            if (startsAt && startsAt > now) {
+              return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
+            } else if (endsAt && now < endsAt) {
+              return (
+                <span className="inline-flex items-center gap-1 text-emerald-400" style={{ textShadow: 'none' }}>
+                  <Circle size={8} aria-hidden className="text-emerald-400" />
+                  {isWindingDown ? "Winding down" : "Live now"}
+                </span>
+              );
+            } else if (endsAt && now >= endsAt) {
+              return <span className="text-zinc-400">Ended</span>;
+            } else {
+              return <span className="text-zinc-400">Active</span>;
+            }
+          })()}
+        </p>
+      </div>
+
+      {/* Row 2: Avatar stack */}
+      <div className="relative z-10 mt-3 flex items-center">
+        <div className="relative flex items-center">
           <VibeIcon vibe={floq.primary_vibe} size="md" />
           {floq.members && floq.members.length > 0 && (
             <div className="ml-2 flex -space-x-2">
@@ -228,34 +256,6 @@ export const FloqCard = React.memo<FloqCardProps>(({
               )}
             </div>
           )}
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-semibold leading-tight text-white">
-            {floq.title}
-          </h3>
-          <p className="mt-0.5 text-sm text-muted-foreground tracking-tight">
-            {(() => {
-              const now = new Date();
-              const startsAt = floq.starts_at ? new Date(floq.starts_at) : null;
-              const endsAt = floq.ends_at ? new Date(floq.ends_at) : null;
-              
-              if (startsAt && startsAt > now) {
-                return <span className="text-zinc-400">{`Starts in ${floq.starts_in_min}m`}</span>;
-              } else if (endsAt && now < endsAt) {
-                return (
-                  <span className="inline-flex items-center gap-1 text-emerald-400" style={{ textShadow: 'none' }}>
-                    <Circle size={8} aria-hidden className="text-emerald-400" />
-                    {isWindingDown ? "Winding down" : "Live now"}
-                  </span>
-                );
-              } else if (endsAt && now >= endsAt) {
-                return <span className="text-zinc-400">Ended</span>;
-              } else {
-                return <span className="text-zinc-400">Active</span>;
-              }
-            })()}
-          </p>
         </div>
       </div>
 
