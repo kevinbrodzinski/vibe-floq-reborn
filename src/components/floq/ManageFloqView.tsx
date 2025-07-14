@@ -5,6 +5,7 @@ import { EditFloqInfoForm } from './EditFloqInfoForm';
 import { MemberManagementList } from './MemberManagementList';
 import { FloqSettingsPanel } from './FloqSettingsPanel';
 import { FloqDangerZone } from './FloqDangerZone';
+import { InvitationManagement } from './InvitationManagement';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { useSearchParams } from 'react-router-dom';
 
@@ -38,9 +39,10 @@ export const ManageFloqView: React.FC<ManageFloqViewProps> = ({
         <h3 className="font-semibold text-lg">Manage Floq</h3>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="invitations">Invitations</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="danger">Danger</TabsTrigger>
           </TabsList>
@@ -51,6 +53,10 @@ export const ManageFloqView: React.FC<ManageFloqViewProps> = ({
 
           <TabsContent value="members" className="mt-4">
             <MemberManagementList floqDetails={floqDetails} />
+          </TabsContent>
+
+          <TabsContent value="invitations" className="mt-4">
+            <InvitationManagement floqDetails={floqDetails} />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-4">

@@ -66,11 +66,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
 
     try {
-      const { error } = await supabase
-        .from('floq_participants')
-        .update({ role: newRole })
-        .eq('floq_id', floqDetails.id)
-        .eq('user_id', userId);
+      const { error } = await supabase.functions.invoke('manage-participant-role', {
+        body: {
+          floqId: floqDetails.id,
+          userId,
+          newRole
+        }
+      });
 
       if (error) throw error;
 

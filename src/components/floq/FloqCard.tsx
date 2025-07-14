@@ -3,7 +3,7 @@ import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft, 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
-import { formatDistance } from '@/utils/formatDistance';
+import { formatDistanceMeters } from '@/utils/formatDistanceMeters';
 import { formatTimeLeft } from '@/utils/formatTimeLeft';
 import { vibeColor, vibeGradient } from '@/utils/vibe';
 import { getVibeColor } from '@/utils/getVibeColor';
@@ -154,7 +154,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         }
       }}
       tabIndex={0}
-      aria-label={`${floq.title} floq${floq.description ? `. ${floq.description}` : ''}. ${floq.participant_count} members, ${formatDistance(floq.distance_meters)} away`}
+      aria-label={`${floq.title} floq${floq.description ? `. ${floq.description}` : ''}. ${floq.participant_count} members, ${formatDistanceMeters(floq.distance_meters)} away`}
     >
       {/* Radial glow */}
       <div
@@ -294,7 +294,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
         >
           <MapPin size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
           <span className="text-xs text-white/90">
-            {formatDistance(floq.distance_meters)}
+            {formatDistanceMeters(floq.distance_meters)}
           </span>
         </span>
 

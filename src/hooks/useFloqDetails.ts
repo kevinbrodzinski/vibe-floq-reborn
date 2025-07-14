@@ -58,76 +58,36 @@ export function useFloqDetails(
     enabled: enabled && !!floqId && !!(userId || user?.id), // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
+
+      // Use the database function for complete details
+      const { data: fullDetails, error } = await supabase.rpc('get_floq_full_details', {
+        p_floq_id: floqId
+      });
+
+      if (error) {
+        console.error("Floq details error:", error);
+        throw error;
+      }
+
+      if (!fullDetails || fullDetails.length === 0) return null;
+
+      const floqData = fullDetails[0];
+      const currentUserId = userId || user?.id;
       
-      // Get the floq details
-      const { data: floqData, error: floqError } = await supabase
-        .from('floqs')
-        .select(`
-          id,
-          title,
-          name,
-          description,
-          primary_vibe,
-          vibe_tag,
-          creator_id,
-          max_participants,
-          starts_at,
-          ends_at,
-          created_at,
-          last_activity_at,
-          activity_score,
-          radius_m,
-          location,
-          flock_tags,
-          visibility
-        `)
-        .eq('id', floqId)
-        .single();
-
-      if (floqError) {
-        console.error("Floq details error:", floqError);
-        throw floqError;
-      }
-
-      if (!floqData) return null;
-
-      // Get participants with profile data
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('floq_participants')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles!inner (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('floq_id', floqId)
-        .order('joined_at', { ascending: true });
-
-      if (participantsError) {
-        console.error("Participants error:", participantsError);
-        throw participantsError;
-      }
-
-      const participants: FloqParticipant[] = participantsData?.map(p => ({
+      // Map participants from the full details
+      const participants: FloqParticipant[] = floqData.participants?.map((p: any) => ({
         user_id: p.user_id,
-        username: p.profiles.username || undefined,
-        display_name: p.profiles.display_name,
-        avatar_url: p.profiles.avatar_url || undefined,
+        username: p.username,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url,
         role: p.role,
         joined_at: p.joined_at,
       })) || [];
 
-      // Check if current user is joined and their role
-      const currentUserId = userId || user?.id;
       const userParticipant = participants.find(p => p.user_id === currentUserId);
       const isJoined = !!userParticipant;
       const isCreator = floqData.creator_id === currentUserId;
-      
+
       console.log('🔍 Floq details debug:', {
         floqId,
         userId: currentUserId,
@@ -138,40 +98,22 @@ export function useFloqDetails(
         isJoined
       });
 
-      // Extract location coordinates with null guard
-      const locationCoords = floqData.location as any;
-      let location = { lat: 0, lng: 0 };
-      
-      if (locationCoords && locationCoords.coordinates) {
-        location = {
-          lat: locationCoords.coordinates[1] || 0,
-          lng: locationCoords.coordinates[0] || 0,
-        };
-      }
-
       return {
         id: floqData.id,
         title: floqData.title,
-        name: floqData.name || undefined,
-        description: floqData.description || undefined,
+        description: floqData.description,
         primary_vibe: floqData.primary_vibe,
-        vibe_tag: floqData.vibe_tag || undefined,
-        creator_id: floqData.creator_id || undefined,
-        participant_count: participants.length,
-        max_participants: floqData.max_participants || undefined,
-        starts_at: floqData.starts_at || undefined,
-        ends_at: floqData.ends_at || undefined,
-        created_at: floqData.created_at,
-        last_activity_at: floqData.last_activity_at || undefined,
-        activity_score: floqData.activity_score || undefined,
-        radius_m: floqData.radius_m || undefined,
-        location,
+        creator_id: floqData.creator_id,
+        participant_count: floqData.participant_count,
+        starts_at: floqData.starts_at,
+        ends_at: floqData.ends_at,
+        created_at: floqData.starts_at, // Using starts_at as created_at fallback
+        visibility: floqData.visibility,
+        location: { lat: 0, lng: 0 }, // Will be enhanced when needed
         participants,
         is_joined: isJoined,
         is_creator: isCreator,
         user_role: userParticipant?.role,
-        flock_tags: floqData.flock_tags || undefined,
-        visibility: floqData.visibility,
       };
     },
     staleTime: 15000, // Hot for 15 seconds
@@ -203,6 +145,19 @@ export function useFloqDetails(
       .on(
         'postgres_changes',
         {
+          event: '*',
+          schema: 'public',
+          table: 'floq_invitations',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => {
+          // Refetch when invitations change
+          query.refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'UPDATE',
           schema: 'public',
           table: 'floqs',
@@ -210,6 +165,19 @@ export function useFloqDetails(
         },
         () => {
           // Refetch when floq details change
+          query.refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'floq_settings',
+          filter: `floq_id=eq.${floqId}`
+        },
+        () => {
+          // Refetch when settings change
           query.refetch();
         }
       )
