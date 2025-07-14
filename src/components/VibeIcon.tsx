@@ -63,10 +63,13 @@ export const VibeIcon: React.FC<VibeIconProps> = ({
         background: `radial-gradient(circle at 30% 30%, ${accent} 0%, transparent 70%)`,
         boxShadow: `0 0 18px ${accent}40`
       } as React.CSSProperties}
+      tabIndex={-1}
+      aria-hidden="true"
     >
       <Icon 
         size={iconSizes[size]} 
         className="text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" 
+        strokeWidth={2}
         aria-hidden="true"
       />
       

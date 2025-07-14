@@ -54,9 +54,10 @@ export const useIgnoreFloq = () => {
         duration: 5000 // Give user 5 seconds to undo
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error ignoring floq:', error);
-      toast.error('Failed to hide floq. Please try again.');
+      const errorMessage = error?.message || 'Failed to hide floq. Please try again.';
+      toast.error(errorMessage);
       throw error; // Re-throw so react-query can handle retries/error states
     },
   });

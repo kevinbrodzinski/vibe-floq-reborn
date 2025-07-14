@@ -139,10 +139,10 @@ export const FloqCard = React.memo<FloqCardProps>(({
         <VibeIcon vibe={floq.primary_vibe} size="md" />
         
         <div>
-          <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm">
+          <h3 className="text-lg font-semibold leading-tight text-white drop-shadow-sm text-shadow-subtle">
             {floq.title}
           </h3>
-          <p className="mt-0.5 text-sm text-zinc-400">
+          <p className="mt-0.5 text-sm text-zinc-400 text-shadow-subtle">
             {floq.primary_vibe} &bull;{' '}
             {floq.starts_at
               ? `Starts in ${formatDistance(floq.starts_in_min * 60)}`
@@ -153,7 +153,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
 
       {/* Description */}
       {floq.description && (
-        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2">
+        <p className="relative z-10 mt-3 text-sm text-zinc-300 line-clamp-2 text-shadow-subtle">
           {floq.description}
         </p>
       )}
@@ -166,21 +166,21 @@ export const FloqCard = React.memo<FloqCardProps>(({
             strokeWidth={2}
             className="text-[color:var(--vibe-from)]"
           />
-          <span className="text-xs text-white/90">
+          <span className="text-xs text-white/90 text-shadow-subtle">
             {floq.participant_count}/{floq.max_participants ?? '∞'}
           </span>
         </span>
 
         <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
           <MapPin size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/90">
+          <span className="text-xs text-white/90 text-shadow-subtle">
             {formatDistance(floq.distance_meters)}
           </span>
         </span>
 
         <span className="flex items-center gap-1 px-3 py-1 rounded-full backdrop-blur-sm bg-white/5 border border-white/10">
           <Clock size={14} strokeWidth={2} className="text-[color:var(--vibe-from)]" />
-          <span className="text-xs text-white/90">
+          <span className="text-xs text-white/90 text-shadow-subtle">
             {floq.ends_at ? `Ends in ${formatTimeLeft(floq.ends_at)}` : 'Ongoing'}
           </span>
         </span>

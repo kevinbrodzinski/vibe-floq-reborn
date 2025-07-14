@@ -278,7 +278,42 @@ All colors MUST be HSL.
     animation: ripple 2s infinite;
   }
 
-  /* Card glass effect with vibe-aware gradients */
+  /* Vibe Color System - Unified CSS Variables */
+  :root {
+    /* Vibe HSL Components for dynamic usage */
+    --vibe-chill-h: 51;
+    --vibe-chill-s: 100%;
+    --vibe-chill-l: 65%;
+    --vibe-social-h: 24;
+    --vibe-social-s: 100%;
+    --vibe-social-l: 67%;
+    --vibe-hype-h: 278;
+    --vibe-hype-s: 74%;
+    --vibe-hype-l: 71%;
+    --vibe-flowing-h: 174;
+    --vibe-flowing-s: 84%;
+    --vibe-flowing-l: 67%;
+    --vibe-romantic-h: 328;
+    --vibe-romantic-s: 79%;
+    --vibe-romantic-l: 70%;
+    --vibe-solo-h: 197;
+    --vibe-solo-s: 100%;
+    --vibe-solo-l: 50%;
+    --vibe-weird-h: 54;
+    --vibe-weird-s: 100%;
+    --vibe-weird-l: 67%;
+    --vibe-down-h: 220;
+    --vibe-down-s: 9%;
+    --vibe-down-l: 58%;
+    --vibe-open-h: 126;
+    --vibe-open-s: 84%;
+    --vibe-open-l: 75%;
+    --vibe-curious-h: 280;
+    --vibe-curious-s: 61%;
+    --vibe-curious-l: 68%;
+  }
+
+  /* Card glass effect with enhanced depth */
   .card-glass {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
@@ -293,17 +328,50 @@ All colors MUST be HSL.
     background: radial-gradient(circle at 20% 10%, var(--vibe-from) 0%, transparent 75%);
     opacity: .18;
     transition: opacity .3s;
+    /* Inner shadow for depth */
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+  }
+
+  .card-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3Ccircle cx='27' cy='27' r='1'/%3E%3Ccircle cx='47' cy='47' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
   }
 
   .card-glass:hover::before { 
     opacity: .35; 
   }
 
-  /* Performance optimization */
+  /* Performance optimization & accessibility */
   @media (prefers-reduced-motion: reduce) {
-    .animate-pulse-slow { 
-      animation: none; 
+    .animate-pulse-slow,
+    .animate-pulse,
+    .pulse-glow { 
+      animation: none !important;
     }
+  }
+
+  /* Text shadow for enhanced contrast */
+  .text-shadow-subtle {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ActionPill enhancements */
+  .action-pill-primary {
+    background: linear-gradient(135deg, var(--vibe-from) 0%, hsl(var(--vibe-h) 95% 60%) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .action-pill-primary:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .action-pill-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.07);
   }
 
   /* Custom slider styles */
