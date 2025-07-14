@@ -5,7 +5,9 @@ export const formatTimeLeft = (endsAt: string | undefined): string => {
   const end = new Date(endsAt);
   const diffMs = end.getTime() - now.getTime();
   
-  if (diffMs <= 0) return 'Ended';
+  // Safety clamp for negative drift (client clock skew)
+  if (diffMs < -30000) return 'Ended'; // If more than 30s negative, consider it ended
+  if (diffMs <= 0) return 'Ending now';
   
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));

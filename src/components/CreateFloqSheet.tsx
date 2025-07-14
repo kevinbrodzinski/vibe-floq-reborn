@@ -185,14 +185,19 @@ export function CreateFloqSheet() {
 
                 {/* Description */}
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="description">Description</Label>
+                    <span className={`text-xs ${description.length > 140 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                      {description.length}/140
+                    </span>
+                  </div>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="What's this floq about? (optional)"
                     rows={3}
-                    maxLength={200}
+                    maxLength={140}
                   />
                 </div>
 
