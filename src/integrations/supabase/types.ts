@@ -3633,6 +3633,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_is_floq_participant: {
+        Args: { p_floq_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       username_available: {
         Args: { u: string } | { u: string }
         Returns: boolean
