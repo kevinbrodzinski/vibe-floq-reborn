@@ -77,6 +77,28 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
     floqDetails.starts_at
   ]);
 
+  // Pure validation function without side effects (for disabled state)
+  const isFormValid = () => {
+    // Title validation
+    if (!formData.title.trim()) return false;
+    if (formData.title.trim().length < 3) return false;
+
+    // Time validation for momentary floqs
+    if (formData.flock_type === 'momentary') {
+      if (formData.starts_at && formData.ends_at) {
+        const startTime = new Date(formData.starts_at);
+        const endTime = new Date(formData.ends_at);
+        if (endTime <= startTime) return false;
+      }
+    }
+
+    // Max participants validation
+    if (formData.max_participants < 2) return false;
+
+    return true;
+  };
+
+  // Validation function with side effects (for form submission)
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -352,7 +374,7 @@ export const EditFloqInfoForm: React.FC<EditFloqInfoFormProps> = ({ floqDetails 
         <div className="flex justify-end">
           <Button 
             onClick={handleSave} 
-            disabled={!validateForm() || isSaving}
+            disabled={!isFormValid() || isSaving}
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
