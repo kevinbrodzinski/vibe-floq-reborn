@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -40,10 +40,10 @@ export const useActivityTracking = (floqId: string) => {
     },
   });
 
-  // Create stable debounced function - only recreate when mutation.mutate or floqId changes
+  // Create stable debounced function - only recreate when mutation or floqId changes
   return useMemo(() => {
     return debounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
       mutation.mutate(section);
     }, 300);
-  }, [mutation.mutate, floqId]);
+  }, [mutation, floqId]);
 };

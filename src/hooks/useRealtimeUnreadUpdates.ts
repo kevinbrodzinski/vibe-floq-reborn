@@ -14,7 +14,9 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
   useEffect(() => {
     if (!user || joinedFloqIds.length === 0) return;
 
-    console.log('Setting up real-time unread updates for floqs:', joinedFloqIds);
+    if (import.meta.env.DEV) {
+      console.log('Setting up real-time unread updates for floqs:', joinedFloqIds);
+    }
 
     // Helper function to invalidate unread queries with correct keys
     function invalidateUnreadQueries(floqId: string) {
@@ -41,7 +43,9 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          console.log('New message detected:', payload);
+          if (import.meta.env.DEV) {
+            console.log('New message detected:', payload);
+          }
           // Only invalidate if message is from someone else
           if (payload.new?.sender_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -58,7 +62,9 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          console.log('New activity detected:', payload);
+          if (import.meta.env.DEV) {
+            console.log('New activity detected:', payload);
+          }
           // Only invalidate if event is from someone else
           if (payload.new?.user_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -75,7 +81,9 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          console.log('New plan detected:', payload);
+          if (import.meta.env.DEV) {
+            console.log('New plan detected:', payload);
+          }
           // Only invalidate if plan is from someone else
           if (payload.new?.creator_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -85,8 +93,19 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time unread subscriptions');
+      if (import.meta.env.DEV) {
+        console.log('Cleaning up real-time unread subscriptions');
+      }
       supabase.removeChannel(channel);
     };
   }, [user?.id, [...joinedFloqIds].sort().join(','), queryClient]);
+
+  // Cleanup all channels when user changes (logout/login scenarios)
+  useEffect(() => {
+    return () => {
+      if (user?.id) {
+        supabase.removeAllChannels();
+      }
+    };
+  }, [user?.id]);
 };
