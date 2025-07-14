@@ -115,21 +115,25 @@ export const useFloqTabBadges = (floqId: string) => {
 export const useNotificationCounts = (userId?: string) => {
   return useQuery({
     queryKey: ['notification-counts', userId],
-    queryFn: async (): Promise<{ notifications: number }> => {
-      if (!userId) return { notifications: 0 };
+    queryFn: async (): Promise<{ notifications: any[], total: number }> => {
+      if (!userId) return { notifications: [], total: 0 };
 
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('user_notifications')
-        .select('*', { count: 'exact', head: true })
+        .select('*')
         .eq('user_id', userId)
-        .is('read_at', null);
+        .is('read_at', null)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching notification counts:', error);
-        return { notifications: 0 };
+        return { notifications: [], total: 0 };
       }
 
-      return { notifications: count || 0 };
+      return { 
+        notifications: data || [], 
+        total: data?.length || 0 
+      };
     },
     enabled: !!userId,
     staleTime: 30_000,

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -57,6 +58,7 @@ const getNotificationColor = (kind: string) => {
 export const NotificationsList = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
@@ -80,59 +82,66 @@ export const NotificationsList = () => {
     enabled: !!user?.id,
   });
 
-  const markAsRead = async (notificationIds: string[]) => {
-    try {
+  const markAsReadMutation = useMutation({
+    mutationFn: async (notificationIds: string[]) => {
       const { error } = await supabase.rpc('mark_notifications_read', {
         notification_ids: notificationIds,
         mark_all_for_user: false
       });
-
-      if (error) {
-        console.error('Error marking notifications as read:', error);
-        toast({
-          title: "Error",
-          description: "Failed to mark notifications as read",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Invalidate queries to refresh data
-      // This will be handled by the query invalidation in the hook
-    } catch (error) {
-      console.error('Error in markAsRead:', error);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts'] });
+    },
+    onError: (error) => {
+      console.error('Error marking notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive"
+      });
     }
-  };
+  });
 
-  const markAllAsRead = async () => {
-    try {
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
       const { error } = await supabase.rpc('mark_notifications_read', {
         notification_ids: null,
         mark_all_for_user: true
       });
-
-      if (error) {
-        console.error('Error marking all notifications as read:', error);
-        toast({
-          title: "Error",
-          description: "Failed to mark all notifications as read",
-          variant: "destructive"
-        });
-        return;
-      }
-
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notification-counts'] });
       toast({
         title: "Success",
         description: "All notifications marked as read"
       });
-    } catch (error) {
-      console.error('Error in markAllAsRead:', error);
+    },
+    onError: (error) => {
+      console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to mark all notifications as read",
+        variant: "destructive"
+      });
     }
+  });
+
+  const handleMarkAsRead = (notificationIds: string[]) => {
+    markAsReadMutation.mutate(notificationIds);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
   };
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center text-muted-foreground">
+      <div className="flex items-center justify-center p-8 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" />
         Loading notifications...
       </div>
     );
@@ -165,10 +174,18 @@ export const NotificationsList = () => {
           <Button 
             size="sm" 
             variant="outline"
-            onClick={markAllAsRead}
+            onClick={handleMarkAllAsRead}
+            disabled={markAllAsReadMutation.isPending}
             className="text-xs"
           >
-            Mark all read
+            {markAllAsReadMutation.isPending ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                Marking...
+              </>
+            ) : (
+              'Mark all read'
+            )}
           </Button>
         </div>
       )}
@@ -183,7 +200,7 @@ export const NotificationsList = () => {
                   ? 'bg-muted/20 border-border/50' 
                   : 'bg-card border-border cursor-pointer hover:bg-muted/30'
               }`}
-              onClick={() => !notification.read_at && markAsRead([notification.id])}
+              onClick={() => !notification.read_at && handleMarkAsRead([notification.id])}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex-shrink-0 ${getNotificationColor(notification.kind)}`}>

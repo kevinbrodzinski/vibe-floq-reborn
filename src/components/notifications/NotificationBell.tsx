@@ -13,19 +13,17 @@ export const NotificationBell = ({ onClick, className }: NotificationBellProps) 
   const { user } = useAuth();
   const { data: notificationCounts } = useNotificationCounts(user?.id);
 
-  const totalUnread = notificationCounts?.notifications || 0;
+  const totalUnread = notificationCounts?.total || 0;
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onClick}
-        className={className}
-        aria-label={`Notifications${totalUnread > 0 ? ` (${totalUnread} unread)` : ''}`}
-      >
-        <Bell className="w-5 h-5" />
-      </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={onClick}
+      className={`relative ${className || ''}`}
+      aria-label={totalUnread > 0 ? `Notifications (${totalUnread} unread)` : 'Notifications'}
+    >
+      <Bell className="w-5 h-5" />
       
       {totalUnread > 0 && (
         <Badge 
@@ -37,6 +35,6 @@ export const NotificationBell = ({ onClick, className }: NotificationBellProps) 
           {totalUnread > 99 ? '99+' : totalUnread}
         </Badge>
       )}
-    </div>
+    </Button>
   );
 };
