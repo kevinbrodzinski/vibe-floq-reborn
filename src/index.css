@@ -280,7 +280,10 @@ All colors MUST be HSL.
 
   /* Card glass effect with vibe-aware gradients */
   .card-glass {
-    @apply bg-white/3 backdrop-blur-md relative overflow-hidden;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
   }
 
   .card-glass::before {
