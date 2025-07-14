@@ -19,7 +19,7 @@ interface UseGeolocationOptions {
 
 const GEO_OPTIONS: PositionOptions = {
   enableHighAccuracy: false,      // stop CoreLocation GPS spam
-  timeout: 10_000,                // 10 s
+  timeout: 30_000,                // 30 s - desktop-friendly timeout
   maximumAge: 60_000              // cache a 1-min old fix
 };
 
@@ -150,8 +150,24 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
           errorMessage = 'Location information is unavailable. Please check your device GPS settings.';
           break;
         case error.TIMEOUT:
-          errorMessage = 'Location request timed out. Please try again or check your connection.';
-          break;
+          errorMessage = 'Location request timed out. Trying low-accuracy fallback...';
+          // Try low-accuracy fallback after timeout
+          navigator.geolocation.getCurrentPosition(
+            handleSuccess,
+            (fallbackError) => {
+              setLocation(prev => ({
+                ...prev,
+                loading: false,
+                error: 'Location unavailable. Please try again or check your connection.',
+                permissionDenied: false,
+              }));
+              permissionChecked.current = false;
+            },
+            { enableHighAccuracy: false, timeout: 30_000, maximumAge: 60_000 }
+          );
+          return; // Don't set error state yet, let fallback try
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Location information is unavailable. Please check your device GPS settings.';
         default:
           errorMessage = 'An unknown error occurred while retrieving location.';
           break;
