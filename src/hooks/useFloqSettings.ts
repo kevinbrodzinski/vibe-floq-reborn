@@ -31,7 +31,7 @@ export function useFloqSettings(floqId: string) {
       };
     },
     enabled: !!floqId,
-    staleTime: 30000,
+    staleTime: 5000, // Reduced for active editing sessions
     placeholderData: (previousData) => previousData,
   });
 
@@ -42,14 +42,16 @@ export function useFloqSettings(floqId: string) {
       });
 
       if (error) throw error;
-      return data;
+      return data as FloqSettings;
     },
     onSuccess: (data: FloqSettings) => {
       queryClient.setQueryData(["floq-settings", floqId], data);
+      toast.dismiss(); // Prevent duplicate toasts
       toast.success('Settings saved successfully');
     },
     onError: (error: any) => {
       console.error('Failed to save settings:', error);
+      queryClient.invalidateQueries({ queryKey: ["floq-settings", floqId] }); // Refetch on error
       toast.error(`Failed to save settings: ${error.message || 'Please try again.'}`);
     },
   });

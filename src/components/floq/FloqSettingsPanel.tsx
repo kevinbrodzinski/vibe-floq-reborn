@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -17,11 +17,23 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   const { settings: loadedSettings, isLoading, saveSettings, saving } = useFloqSettings(floqDetails.id);
   const [localSettings, setLocalSettings] = useState<FloqSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const uid = useId(); // For unique IDs
 
   // Always sync local settings when loaded settings change
   useEffect(() => {
     setLocalSettings(loadedSettings ?? null);
+    // Reset hasChanges when query data changes and there are no local changes
+    if (!hasChanges) {
+      setHasChanges(false);
+    }
   }, [loadedSettings]);
+
+  // Reset local settings when navigating away without changes
+  useEffect(() => {
+    if (!hasChanges && loadedSettings) {
+      setLocalSettings(loadedSettings);
+    }
+  }, [hasChanges, loadedSettings]);
 
   const currentSettings = localSettings;
 
@@ -39,9 +51,20 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
   const handleSave = async () => {
     if (!localSettings || !hasChanges || saving) return;
     
+    // Dismiss mobile keyboard
+    if (document.activeElement && 'blur' in document.activeElement) {
+      (document.activeElement as HTMLElement).blur();
+    }
+    
+    // Normalize line endings for cross-platform consistency
+    const normalizedSettings = {
+      ...localSettings,
+      welcome_message: localSettings.welcome_message?.replace(/\r\n/g, '\n') || ''
+    };
+    
     try {
-      await saveSettings(localSettings);
-      setHasChanges(false); // Set here on successful save
+      await saveSettings(normalizedSettings);
+      setHasChanges(false);
     } catch (error) {
       // Error handling is done in the mutation
     }
@@ -68,16 +91,16 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="notifications-switch">
-                  <span id="notifications-label">Group Notifications</span>
+                <Label htmlFor={`${uid}-notifications-switch`}>
+                  <span id={`${uid}-notifications-label`}>Group Notifications</span>
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Send notifications for new messages and activities
                 </p>
               </div>
               <Switch
-                id="notifications-switch"
-                aria-labelledby="notifications-label"
+                id={`${uid}-notifications-switch`}
+                aria-labelledby={`${uid}-notifications-label`}
                 checked={currentSettings.notifications_enabled}
                 onCheckedChange={(checked) => handleSettingChange('notifications_enabled', checked)}
               />
@@ -96,7 +119,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label id="mention-label">Who can @mention everyone</Label>
+                <Label id={`${uid}-mention-label`}>Who can @mention everyone</Label>
                 <p className="text-sm text-muted-foreground">
                   Control who can send @all mentions to the group
                 </p>
@@ -107,7 +130,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                   handleSettingChange('mention_permissions', value)
                 }
               >
-                <SelectTrigger className="w-32" aria-labelledby="mention-label">
+                <SelectTrigger className="w-32 pr-7" aria-labelledby={`${uid}-mention-label`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,16 +154,16 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="approval-switch">
-                  <span id="approval-label">Join Approval Required</span>
+                <Label htmlFor={`${uid}-approval-switch`}>
+                  <span id={`${uid}-approval-label`}>Join Approval Required</span>
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Require host approval for new members
                 </p>
               </div>
               <Switch
-                id="approval-switch"
-                aria-labelledby="approval-label"
+                id={`${uid}-approval-switch`}
+                aria-labelledby={`${uid}-approval-label`}
                 checked={currentSettings.join_approval_required}
                 onCheckedChange={(checked) => handleSettingChange('join_approval_required', checked)}
               />
@@ -148,8 +171,8 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
 
             <div className="flex items-center justify-between">
               <div>
-                <Label id="visibility-label">Activity Visibility</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label id={`${uid}-visibility-label`}>Activity Visibility</Label>
+                <p className="text-sm text-muted-foreground text-balance">
                   Who can see floq activities and participant list
                 </p>
               </div>
@@ -159,7 +182,7 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
                   handleSettingChange('activity_visibility', value)
                 }
               >
-                <SelectTrigger className="w-36" aria-labelledby="visibility-label">
+                <SelectTrigger className="w-36 pr-7" aria-labelledby={`${uid}-visibility-label`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -177,11 +200,11 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
           <h4 className="font-medium">Welcome Message</h4>
           
           <div>
-            <Label htmlFor="welcome_message">
+            <Label htmlFor={`${uid}-welcome_message`}>
               Message for new members (optional)
             </Label>
             <Textarea
-              id="welcome_message"
+              id={`${uid}-welcome_message`}
               value={currentSettings.welcome_message || ''}
               onChange={(e) => handleSettingChange('welcome_message', e.target.value)}
               placeholder="Welcome to our floq! Here's what you need to know..."
@@ -198,7 +221,12 @@ export const FloqSettingsPanel: React.FC<FloqSettingsPanelProps> = ({ floqDetail
 
       {hasChanges && (
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving || !hasChanges}>
+          <Button 
+            onClick={handleSave} 
+            disabled={saving || !hasChanges}
+            variant={hasChanges ? "default" : "secondary"}
+            className={!hasChanges ? "text-muted-foreground cursor-not-allowed" : ""}
+          >
             {saving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
