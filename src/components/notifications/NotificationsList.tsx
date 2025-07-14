@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { invalidateNotifications } from '@/hooks/useUnreadCounts';
 
 interface Notification {
   id: string;
@@ -91,8 +92,7 @@ export const NotificationsList = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
+      invalidateNotifications(queryClient, user?.id);
     },
     onError: (error) => {
       console.error('Error marking notifications as read:', error);
@@ -113,8 +113,7 @@ export const NotificationsList = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['notification-counts', user?.id] });
+      invalidateNotifications(queryClient, user?.id);
       toast({
         title: "All notifications marked as read"
       });

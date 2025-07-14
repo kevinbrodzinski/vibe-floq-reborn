@@ -14,7 +14,7 @@ interface UnreadCounts {
 export const useUnreadCounts = (floqId: string) => {
   const { session } = useAuth();
 
-  return useQuery({
+  return useQuery<UnreadCounts | null>({
     queryKey: ['unread-counts', floqId, session?.user?.id],
     queryFn: async (): Promise<UnreadCounts | null> => {
       if (!session?.user?.id) return null;
@@ -48,6 +48,7 @@ export const useUnreadCounts = (floqId: string) => {
     enabled: !!session?.user?.id && !!floqId,
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // Refetch every minute
+    refetchOnWindowFocus: false,
   });
 };
 
