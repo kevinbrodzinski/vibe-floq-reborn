@@ -4,7 +4,7 @@ import { MapPin, Compass } from "lucide-react";
 import { AvatarDropdown } from "@/components/AvatarDropdown";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
-import { HeartbeatIndicator } from "@/components/HeartbeatIndicator";
+
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 
@@ -83,7 +83,7 @@ export const FieldHeader = ({
       
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        <HeartbeatIndicator lastHeartbeat={lastHeartbeat} />
+        
         {onToggleMiniMap && (
           <Button 
             variant="ghost" 
