@@ -76,6 +76,7 @@ export const useMyFlocks = () => {
 
   return useQuery({
     queryKey: ['my-floqs', userId],
+    placeholderData: [],        // Instant empty array on first load
     queryFn: async () => {
       if (!userId) return [];
 
@@ -101,7 +102,8 @@ export const useMyFlocks = () => {
         `)
         .eq('user_id', userId)
         .neq('role', 'creator')
-        .is('floqs.deleted_at', null);
+        .is('floqs.deleted_at', null)
+        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()', { foreignTable: 'floqs' });
 
       // Query for floqs I created
       const createdQuery = supabase
@@ -117,7 +119,8 @@ export const useMyFlocks = () => {
           last_activity_at
         `)
         .eq('creator_id', userId)
-        .is('deleted_at', null);
+        .is('deleted_at', null)
+        .or('ends_at.is.null,ends_at.gt.now()');
 
       const [participatedResult, createdResult] = await Promise.all([
         participatedQuery,
@@ -139,8 +142,9 @@ export const useMyFlocks = () => {
       // Add participated floqs
       participatedResult.data?.forEach(row => {
         const floq = row.floqs;
-        // Filter out expired floqs
-        if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
+        // Debug log to check for undefined IDs
+        if (!floq?.id) {
+          console.warn('⚠️ Participated floq missing ID:', { row, floq });
           return;
         }
 
@@ -162,8 +166,9 @@ export const useMyFlocks = () => {
 
       // Add created floqs
       createdResult.data?.forEach(floq => {
-        // Filter out expired floqs (unless persistent - no ends_at)
-        if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
+        // Debug log to check for undefined IDs
+        if (!floq?.id) {
+          console.warn('⚠️ Created floq missing ID:', floq);
           return;
         }
 

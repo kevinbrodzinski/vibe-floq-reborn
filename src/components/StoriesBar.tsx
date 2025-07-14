@@ -98,11 +98,13 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
 
           {flocks.map((floq) => (
             <button
-              key={floq.id}
-              onClick={() => onFlockPress?.(floq.id)}
+              key={floq.id || `floq-${Math.random()}`}
+              onClick={() => floq.id && onFlockPress?.(floq.id)}
+              disabled={!floq.id}
               className={cn(
                 "flex flex-col items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1 transition-all",
-                getActivityIndicator(floq)
+                getActivityIndicator(floq),
+                !floq.id && "opacity-50 cursor-not-allowed"
               )}
               aria-label={`Open ${floq.title || 'Untitled'} floq`}
             >
