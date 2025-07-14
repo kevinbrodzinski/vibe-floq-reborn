@@ -992,6 +992,9 @@ export type Database = {
           available_until: string | null
           created_at: string
           notification_preferences: Json | null
+          preferred_welcome_template:
+            | Database["public"]["Enums"]["welcome_template_enum"]
+            | null
           privacy_settings: Json | null
           theme_preferences: Json | null
           updated_at: string
@@ -1001,6 +1004,9 @@ export type Database = {
           available_until?: string | null
           created_at?: string
           notification_preferences?: Json | null
+          preferred_welcome_template?:
+            | Database["public"]["Enums"]["welcome_template_enum"]
+            | null
           privacy_settings?: Json | null
           theme_preferences?: Json | null
           updated_at?: string
@@ -1010,6 +1016,9 @@ export type Database = {
           available_until?: string | null
           created_at?: string
           notification_preferences?: Json | null
+          preferred_welcome_template?:
+            | Database["public"]["Enums"]["welcome_template_enum"]
+            | null
           privacy_settings?: Json | null
           theme_preferences?: Json | null
           updated_at?: string
@@ -3819,6 +3828,13 @@ export type Database = {
         | "flowing"
         | "open"
       vibe_visibility: "public" | "friends" | "off"
+      welcome_template_enum:
+        | "casual-hangout"
+        | "professional-meetup"
+        | "event-based"
+        | "study-group"
+        | "creative-collab"
+        | "support-group"
     }
     CompositeTypes: {
       geometry_dump: {
@@ -4012,6 +4028,14 @@ export const Constants = {
         "open",
       ],
       vibe_visibility: ["public", "friends", "off"],
+      welcome_template_enum: [
+        "casual-hangout",
+        "professional-meetup",
+        "event-based",
+        "study-group",
+        "creative-collab",
+        "support-group",
+      ],
     },
   },
 } as const
