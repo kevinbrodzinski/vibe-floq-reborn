@@ -1,56 +1,72 @@
--- Migration: Fix Floq Creator Visibility with Minor Adjustments
--- Ensures creators can see their own floqs through RLS and auto-participation
+-- Migration: Auto-Join Floq Creators - Ensures creators can see their own floqs
+-- Addresses the "My Flocks" visibility issue by auto-adding creators to floq_participants
 
 BEGIN;
 
--- 0. Safety: ensure RLS is on
-ALTER TABLE public.floqs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.floq_participants ENABLE ROW LEVEL SECURITY;
+-- 1. Ensure primary key exists (safe, idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'floq_participants_pk'
+          AND conrelid = 'public.floq_participants'::regclass
+  ) THEN
+    -- Create unique index first, then attach as primary key
+    CREATE UNIQUE INDEX IF NOT EXISTS
+      idx_floq_participants_uniq
+      ON public.floq_participants(floq_id, user_id);
 
--- 1. SELECT policy (drop and recreate for idempotency)
-DROP POLICY IF EXISTS floqs_creator_or_participant_select ON public.floqs;
-CREATE POLICY floqs_creator_or_participant_select
-ON public.floqs FOR SELECT
-USING ( 
-  creator_id = auth.uid()
-  OR EXISTS (
-    SELECT 1 FROM public.floq_participants fp
-    WHERE fp.floq_id = id AND fp.user_id = auth.uid()
-  ) 
-);
+    ALTER TABLE public.floq_participants
+      ADD CONSTRAINT floq_participants_pk
+      PRIMARY KEY USING INDEX idx_floq_participants_uniq;
+  END IF;
+END$$;
 
--- 2. Trigger function with SECURITY DEFINER
-CREATE OR REPLACE FUNCTION public.handle_floq_creator_participant()
+-- 2. Auto-join creator function
+CREATE OR REPLACE FUNCTION public.auto_join_creator()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.floq_participants (floq_id, user_id, role, joined_at)
-  VALUES (NEW.id, NEW.creator_id, 'creator', now())
+  INSERT INTO public.floq_participants (user_id, floq_id, "role", joined_at)
+  VALUES (NEW.creator_id, NEW.id, 'creator', now())
   ON CONFLICT (floq_id, user_id) DO NOTHING;
   RETURN NEW;
 END;
 $$;
 
--- 3. Trigger (drop and recreate for clean state)
-DROP TRIGGER IF EXISTS trg_floq_creator_participant ON public.floqs;
-CREATE TRIGGER trg_floq_creator_participant
+-- 3. Create trigger to auto-join creators
+DROP TRIGGER IF EXISTS trg_auto_join_creator ON public.floqs;
+CREATE TRIGGER trg_auto_join_creator
 AFTER INSERT ON public.floqs
-FOR EACH ROW EXECUTE FUNCTION public.handle_floq_creator_participant();
+FOR EACH ROW EXECUTE FUNCTION public.auto_join_creator();
 
--- 4. Back-fill existing floqs (lock for safety)
-LOCK TABLE public.floq_participants IN SHARE ROW EXCLUSIVE MODE;
-INSERT INTO public.floq_participants (floq_id, user_id, role, joined_at)
-SELECT f.id, f.creator_id, 'creator', COALESCE(f.created_at, now())
-FROM   public.floqs f
-WHERE  f.creator_id IS NOT NULL
-  AND  NOT EXISTS (
-    SELECT 1 FROM public.floq_participants fp
-    WHERE fp.floq_id = f.id AND fp.user_id = f.creator_id
-  );
+-- 4. Back-fill existing floqs (idempotent & lock-friendly)
+WITH missing AS (
+  SELECT f.creator_id  AS user_id,
+         f.id          AS floq_id,
+         'creator'     AS "role",
+         COALESCE(f.created_at, now()) AS joined_at
+  FROM   public.floqs f
+  WHERE  f.creator_id IS NOT NULL
+    AND  f.deleted_at IS NULL
+    AND  NOT EXISTS (
+         SELECT 1
+         FROM   public.floq_participants fp
+         WHERE  fp.user_id = f.creator_id
+           AND  fp.floq_id = f.id)
+)
+INSERT INTO public.floq_participants (user_id, floq_id, "role", joined_at)
+SELECT * FROM missing
+ON CONFLICT (floq_id, user_id) DO NOTHING;
 
--- 5. Optimized index for RLS policy
+-- 5. Set function owner for RLS bypass
+ALTER FUNCTION public.auto_join_creator() OWNER TO postgres;
+GRANT EXECUTE ON FUNCTION public.auto_join_creator() TO service_role;
+
+-- 6. Optimized index for performance
 CREATE INDEX IF NOT EXISTS idx_fp_floq_user
 ON public.floq_participants (floq_id, user_id);
 
