@@ -118,7 +118,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
                       alt={floq.title}
                     />
                     <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-primary/10 to-secondary/10">
-                      {floq.title.slice(0, 2).toUpperCase()}
+                      {(floq.title || 'Untitled').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </VibeRing>
@@ -144,7 +144,7 @@ export const StoriesBar: React.FC<StoriesBarProps> = ({
               
               <div className="flex flex-col items-center gap-0.5">
                 <span className="max-w-[80px] truncate text-[11px] leading-tight font-medium text-foreground">
-                  {floq.title}
+                  {floq.title || 'Untitled'}
                 </span>
                 <span 
                   className="text-[9px] capitalize px-1.5 py-0.5 rounded-full text-white text-opacity-90"

@@ -50,10 +50,13 @@ export const useMyFlocks = () => {
 
       const floqData = data ?? [];
       
-      if (floqData.length === 0) return [];
+      // Filter out any records where floqs is null
+      const validFloqData = floqData.filter(item => item.floqs !== null);
+      
+      if (validFloqData.length === 0) return [];
 
       // Get participant counts for all flocks
-      const floqIds = floqData.map(item => item.floqs.id);
+      const floqIds = validFloqData.map(item => item.floqs.id);
       const { data: participantData } = await supabase
         .from('floq_participants')
         .select('floq_id')
@@ -65,7 +68,7 @@ export const useMyFlocks = () => {
       }, {} as Record<string, number>) || {};
 
       // Transform to MyFloq format
-      const result: MyFloq[] = floqData.map(item => ({
+      const result: MyFloq[] = validFloqData.map(item => ({
         id: item.floqs.id,
         title: item.floqs.title,
         name: item.floqs.name || undefined,
