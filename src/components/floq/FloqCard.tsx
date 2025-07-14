@@ -179,19 +179,14 @@ export const FloqCard = React.memo<FloqCardProps>(({
         {floq.primary_vibe}
       </div>
 
-      {/* Top-left status badges */}
-      <div className="absolute top-3 left-3 flex flex-col gap-1">
-        {isNew && (
-          <div className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/90 text-white rounded-full ring-1 ring-blue-400/50 uppercase tracking-wide">
-            NEW
-          </div>
-        )}
-        {isHot && !isNew && (
+      {/* Top-left status badges - removed NEW */}
+      {isHot && (
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
           <div className="px-2 py-0.5 text-[10px] font-bold bg-orange-500/90 text-white rounded-full ring-1 ring-orange-400/50 uppercase tracking-wide">
             HOT
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Bottom-right corner badges */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 items-end">
@@ -205,7 +200,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
       {/* Row 1: Main avatar + title + status */}
       <div className="relative z-10 flex items-start gap-3">
         <div className="mt-[2px]">
-          <VibeIcon vibe={floq.primary_vibe} size="md" />
+          <VibeIcon vibe={floq.primary_vibe} size="lg" />
         </div>
         
         <div>
@@ -237,9 +232,9 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
       </div>
 
-      {/* Row 2: Member avatar stack */}
+      {/* Row 2: Member avatar stack - aligned under title */}
       {floq.members && floq.members.length > 0 && (
-        <div className="relative z-10 mt-3 flex -space-x-2">
+        <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex -space-x-2">
           {floq.members.slice(0, 3).map((member, index) => (
             <Avatar key={member.id} className="h-6 w-6 border-2 border-white/20" style={{ zIndex: 10 - index }}>
               <AvatarImage 
