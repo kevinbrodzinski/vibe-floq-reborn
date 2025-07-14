@@ -14,6 +14,7 @@ interface Plan {
   is_joined?: boolean;
   participant_count?: number;
   max_participants?: number;
+  floq_id: string;
 }
 
 interface PlanCardProps {
@@ -21,7 +22,7 @@ interface PlanCardProps {
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const rsvp = usePlanRsvp();
+  const rsvp = usePlanRsvp(plan.floq_id);
   const isJoined = plan.is_joined ?? false;
 
   const handleRsvp = () => {

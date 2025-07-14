@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId, Suspense } from 'react';
+import React, { useState, useEffect, useId, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
