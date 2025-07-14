@@ -37,7 +37,15 @@ export const useMyFlocks = () => {
     // Clean up existing channel first
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
+
+    const invalidateQueries = () => {
+      // Add a small delay to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
+      }, 100);
+    };
 
     const channel = supabase
       .channel(`my-flocks-${userId}`)
@@ -46,32 +54,24 @@ export const useMyFlocks = () => {
         schema: 'public',
         table: 'floqs',
         filter: `creator_id=eq.${userId}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
-      })
+      }, invalidateQueries)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'floqs'
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
-      })
+      }, invalidateQueries)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'floq_participants',
         filter: `user_id=eq.${userId}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
-      })
+      }, invalidateQueries)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'floq_participants',
         filter: `user_id=eq.${userId}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
-      })
+      }, invalidateQueries)
       .subscribe();
 
     channelRef.current = channel;
@@ -209,6 +209,7 @@ export const useMyFlocks = () => {
 
       // Get participant counts for all floqs using Postgres aggregation
       const floqIds = allFloqs.map(f => f.id);
+      
       const { data: participantCounts } = await supabase
         .from('floq_participants')
         .select('floq_id, count:floq_id')

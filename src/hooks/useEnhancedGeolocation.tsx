@@ -17,6 +17,12 @@ interface UseGeolocationOptions {
   maximumAge?: number;
 }
 
+const GEO_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,      // stop CoreLocation GPS spam
+  timeout: 10_000,                // 10 s
+  maximumAge: 60_000              // cache a 1-min old fix
+};
+
 const initialState: GeolocationState = {
   coords: null,
   accuracy: null,
@@ -127,7 +133,9 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
     };
 
     const handleError = (error: GeolocationPositionError) => {
-      console.info('[GEOLOCATION] Error:', error.message, 'Code:', error.code);
+      if (import.meta.env.DEV) {
+        console.warn('[GEOLOCATION] Error:', error.message, 'Code:', error.code);
+      }
       
       let errorMessage: string;
       let permissionDenied = false;
@@ -159,15 +167,21 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
       permissionChecked.current = false;
     };
 
+    // First try getCurrentPosition for initial fix
     navigator.geolocation.getCurrentPosition(
       handleSuccess,
       handleError,
-      {
-        enableHighAccuracy: options.enableHighAccuracy ?? true,
-        timeout: options.timeout ?? 15000,
-        maximumAge: options.maximumAge ?? 60000,
-        ...options,
-      }
+      GEO_OPTIONS
+    );
+
+    // Then start watching for updates only after initial success
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        handleSuccess(position);
+        setLocation(prev => ({ ...prev, error: null }));
+      },
+      handleError,
+      GEO_OPTIONS
     );
   }, [options, location.isSupported]);
 
@@ -177,6 +191,13 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
       watchIdRef.current = null;
     }
   }, []);
+
+  // Clean up watch on unmount
+  useEffect(() => {
+    return () => {
+      clearWatch();
+    };
+  }, [clearWatch]);
 
   // Auto-request location on mount if permission is already granted
   useEffect(() => {
