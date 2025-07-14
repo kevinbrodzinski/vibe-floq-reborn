@@ -35,7 +35,7 @@ export function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300)
 export function throttle<F extends (...args: any[]) => void>(
   fn: F, 
   delay = 300, 
-  options: { leading?: boolean } = { leading: true }
+  options: { leading?: boolean; trailing?: boolean } = { leading: true, trailing: false }
 ): F {
   let lastCall = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -46,7 +46,7 @@ export function throttle<F extends (...args: any[]) => void>(
     if (options.leading && now - lastCall >= delay) {
       lastCall = now;
       fn(...args);
-    } else if (!options.leading) {
+    } else if (options.trailing) {
       // Trailing-edge throttle
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {

@@ -20,10 +20,13 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
   const channelRef = useRef<any>(null);
 
   // Memoize sorted IDs to prevent unnecessary re-subscriptions
-  const sortedIds = useMemo(() => [...joinedFloqIds].sort().join(','), [joinedFloqIds.join(',')]);
+  const sortedKey = useMemo(
+    () => (joinedFloqIds.length ? [...joinedFloqIds].sort().join(',') : ''),
+    [joinedFloqIds.length, joinedFloqIds.join('|')]
+  );
 
   useEffect(() => {
-    if (!user || joinedFloqIds.length === 0) return;
+    if (!user || !sortedKey) return;
 
     debug('Setting up real-time unread updates for floqs:', joinedFloqIds);
 
@@ -42,9 +45,8 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
 
     // Clean up existing channel before creating new one to prevent memory leaks
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current).then(() => {
-        channelRef.current = null;
-      });
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
     }
 
     // Create a single channel for all real-time updates and store ref for cleanup
@@ -106,21 +108,18 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
     return () => {
       debug('Cleaning up real-time unread subscriptions');
       if (channelRef.current) {
-        // Await the promise to avoid state update warnings
-        supabase.removeChannel(channelRef.current).then(() => {
-          channelRef.current = null;
-        });
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-  }, [user?.id, sortedIds, queryClient]);
+  }, [user?.id, sortedKey, queryClient]);
 
   // Cleanup individual channel when user changes (logout/login scenarios)
   useEffect(() => {
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current).then(() => {
-          channelRef.current = null;
-        });
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [user?.id]);

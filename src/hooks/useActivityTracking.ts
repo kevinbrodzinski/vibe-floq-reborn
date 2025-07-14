@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { debounce } from "@/utils/timing";
@@ -15,6 +15,7 @@ import { debounce } from "@/utils/timing";
 export const useActivityTracking = (floqId: string) => {
   const queryClient = useQueryClient();
   const { session } = useAuth();
+  const debouncedRef = useRef<ReturnType<typeof debounce> | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (section: 'chat' | 'activity' | 'plans' | 'all') => {
@@ -33,9 +34,23 @@ export const useActivityTracking = (floqId: string) => {
   });
 
   // Create stable debounced function - only recreate when mutation or floqId changes
-  return useMemo(() => {
+  const debouncedTracker = useMemo(() => {
     return debounce((section: 'chat' | 'activity' | 'plans' | 'all' = 'all') => {
       mutation.mutate(section);
     }, 300);
   }, [mutation, floqId]);
+
+  // Store ref for cleanup
+  debouncedRef.current = debouncedTracker;
+
+  // Cleanup debounced timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debouncedRef.current) {
+        debouncedRef.current.clear();
+      }
+    };
+  }, []);
+
+  return debouncedTracker;
 };
