@@ -2,6 +2,9 @@
 -- Bug fix: My Floqs refresh, Pinned Notes, Plan RSVP, @floq mentions
 -- Applied all lint fixes from review
 
+-- Enable pg_net extension for HTTP calls
+CREATE EXTENSION IF NOT EXISTS pg_net;
+
 -- 1. Add NOTIFY triggers for "My Floqs" auto-refresh
 CREATE OR REPLACE FUNCTION public.notify_my_floqs_create()
 RETURNS TRIGGER
@@ -195,7 +198,7 @@ CREATE TABLE IF NOT EXISTS public.floq_mention_cooldown (
   PRIMARY KEY (floq_id, user_id)
 );
 
--- 7. @floq mention detection and queuing trigger
+-- 7. @floq mention detection and direct edge function dispatch
 CREATE OR REPLACE FUNCTION public.enqueue_floq_mention()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -204,10 +207,13 @@ SET search_path TO 'public'
 AS $$
 DECLARE
   last_mention TIMESTAMPTZ;
-  participant_id UUID;
+  service_key TEXT;
+  hdrs JSONB;
+  body JSONB;
 BEGIN
   -- Check if message contains @floq mention (case-insensitive, word boundaries)
-  IF NEW.content !~* '\m@floq\M' THEN
+  IF NEW.body !~* '\m@floq\M' THEN
+    RAISE LOG 'No @floq mention in message %', NEW.id;
     RETURN NEW;
   END IF;
   
@@ -217,7 +223,8 @@ BEGIN
   WHERE floq_id = NEW.floq_id AND user_id = NEW.sender_id;
   
   IF last_mention IS NOT NULL AND last_mention > now() - interval '10 minutes' THEN
-    RETURN NEW; -- Skip if in cooldown
+    RAISE LOG 'Cooldown active for user % in floq %', NEW.sender_id, NEW.floq_id;
+    RETURN NEW;
   END IF;
   
   -- Update or insert cooldown record
@@ -226,25 +233,38 @@ BEGIN
   ON CONFLICT (floq_id, user_id) 
   DO UPDATE SET last_mention_at = now();
   
-  -- Queue notifications for all floq participants (except sender)
-  FOR participant_id IN 
-    SELECT fp.user_id
-    FROM public.floq_participants fp
-    WHERE fp.floq_id = NEW.floq_id 
-      AND fp.user_id != NEW.sender_id
-  LOOP
-    INSERT INTO public.notification_queue (user_id, event_type, payload)
-    VALUES (
-      participant_id,
-      'floq_mention',
-      jsonb_build_object(
-        'floq_id', NEW.floq_id,
-        'message_id', NEW.id,
-        'sender_id', NEW.sender_id,
-        'content', NEW.content
-      )
+  -- Get service role key
+  service_key := current_setting('app.service_role_key', true);
+  
+  IF service_key IS NULL THEN
+    RAISE LOG 'Service role key not configured, skipping edge function call';
+    RETURN NEW;
+  END IF;
+  
+  -- Prepare headers and body for HTTP call
+  hdrs := jsonb_build_object(
+    'Content-Type', 'application/json',
+    'Authorization', 'Bearer ' || service_key
+  );
+  
+  body := jsonb_build_object(
+    'floq_id', NEW.floq_id,
+    'sender_id', NEW.sender_id,
+    'message_content', LEFT(NEW.body, 1000), -- Truncate large messages
+    'message_id', NEW.id
+  );
+  
+  -- Call edge function with error handling
+  BEGIN
+    PERFORM net.http_post(
+      url := 'https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/floq-mention-handler',
+      headers := hdrs,
+      body := body
     );
-  END LOOP;
+    RAISE LOG 'Edge function called for @floq mention in floq %', NEW.floq_id;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE LOG 'pg_net HTTP error: %', SQLERRM;
+  END;
   
   RETURN NEW;
 END;
