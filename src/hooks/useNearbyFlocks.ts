@@ -9,6 +9,7 @@ export interface NearbyFloq {
   id: string;
   title: string;
   name?: string;
+  description?: string;
   primary_vibe: Vibe;
   vibe_tag?: Vibe;
   participant_count: number;
@@ -103,6 +104,7 @@ export function useNearbyFlocks({
         id: floq.id,
         title: floq.title,
         name: floq.name || undefined,
+        description: floq.description || undefined,
         primary_vibe: floq.primary_vibe,
         vibe_tag: floq.vibe_tag || undefined,
         participant_count: Number(floq.participant_count),
