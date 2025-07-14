@@ -2,15 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-
-// Utility — local debounce factory to avoid timer scope leaks
-function debounce<F extends (...args: any[]) => void>(fn: F, delay = 300): F {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  return ((...args: Parameters<F>) => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  }) as F;
-}
+import { debounce } from "@/utils/timing";
 
 /**
  * Hook that returns a debounced tracker.

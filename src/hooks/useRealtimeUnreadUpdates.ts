@@ -1,7 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+
+// Debug logger that works in both dev and test environments
+const debug = (...args: any[]) => {
+  if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+    console.log(...args);
+  }
+};
 
 /**
  * Real-time subscription hook that invalidates unread count queries 
@@ -10,13 +17,12 @@ import { useAuth } from '@/providers/AuthProvider';
 export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     if (!user || joinedFloqIds.length === 0) return;
 
-    if (import.meta.env.DEV) {
-      console.log('Setting up real-time unread updates for floqs:', joinedFloqIds);
-    }
+    debug('Setting up real-time unread updates for floqs:', joinedFloqIds);
 
     // Helper function to invalidate unread queries with correct keys
     function invalidateUnreadQueries(floqId: string) {
@@ -30,8 +36,8 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
     // Format UUIDs with quotes for Postgres filter, sorted to prevent unnecessary resubscriptions
     const quotedIds = [...joinedFloqIds].sort().map(id => `"${id}"`).join(',');
 
-    // Create a single channel for all real-time updates
-    const channel = supabase
+    // Create a single channel for all real-time updates and store ref for cleanup
+    const channel = channelRef.current = supabase
       .channel(`unread-updates-${user.id}`)
       // Listen for new messages in user's floqs
       .on(
@@ -43,9 +49,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          if (import.meta.env.DEV) {
-            console.log('New message detected:', payload);
-          }
+          debug('New message detected:', payload);
           // Only invalidate if message is from someone else
           if (payload.new?.sender_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -62,9 +66,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          if (import.meta.env.DEV) {
-            console.log('New activity detected:', payload);
-          }
+          debug('New activity detected:', payload);
           // Only invalidate if event is from someone else
           if (payload.new?.user_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -81,9 +83,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
           filter: `floq_id=in.(${quotedIds})`
         },
         (payload) => {
-          if (import.meta.env.DEV) {
-            console.log('New plan detected:', payload);
-          }
+          debug('New plan detected:', payload);
           // Only invalidate if plan is from someone else
           if (payload.new?.creator_id !== user.id) {
             invalidateUnreadQueries(payload.new?.floq_id);
@@ -93,18 +93,23 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
       .subscribe();
 
     return () => {
-      if (import.meta.env.DEV) {
-        console.log('Cleaning up real-time unread subscriptions');
+      debug('Cleaning up real-time unread subscriptions');
+      if (channelRef.current) {
+        // Await the promise to avoid state update warnings
+        supabase.removeChannel(channelRef.current).then(() => {
+          channelRef.current = null;
+        });
       }
-      supabase.removeChannel(channel);
     };
   }, [user?.id, [...joinedFloqIds].sort().join(','), queryClient]);
 
-  // Cleanup all channels when user changes (logout/login scenarios)
+  // Cleanup individual channel when user changes (logout/login scenarios)
   useEffect(() => {
     return () => {
-      if (user?.id) {
-        supabase.removeAllChannels();
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current).then(() => {
+          channelRef.current = null;
+        });
       }
     };
   }, [user?.id]);
