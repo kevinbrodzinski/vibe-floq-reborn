@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { FieldScreen } from '@/components/screens/FieldScreen';
 import { FlocksHome } from '@/components/FlocksHome';
 import FloqDetail from '@/pages/FloqDetail';
+import FloqManage from '@/pages/FloqManage';
 import { PulseScreen } from '@/components/screens/PulseScreen';
 import { VibeScreen } from '@/components/screens/VibeScreen';
 import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
@@ -12,6 +13,7 @@ import ProfileSettings from '@/pages/ProfileSettings';
 import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
+import { RoleGuard } from '@/components/RoleGuard';
 
 export const AppRoutes = () => (
   <Routes>
@@ -19,6 +21,11 @@ export const AppRoutes = () => (
     <Route path="/field" element={<LegacyRedirect />} />
     <Route path="/floqs" element={<FlocksHome />} />
     <Route path="/floqs/:floqId" element={<FloqDetail />} />
+    <Route path="/floqs/:floqId/manage" element={
+      <RoleGuard roles={['creator', 'co-admin']}>
+        <FloqManage />
+      </RoleGuard>
+    } />
     <Route path="/floqs/:floqId/plans/new" element={<NewPlan />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />

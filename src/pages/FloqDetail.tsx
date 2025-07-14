@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { PublicFloqPreview } from '@/components/floq/PublicFloqPreview';
@@ -149,10 +149,22 @@ const FloqDetail = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur flex items-center gap-2 px-4 py-3 border-b">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur flex items-center justify-between px-4 py-3 border-b">
         <Button variant="ghost" size="sm" onClick={goBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        
+        {/* Manage button for creator/co-admin */}
+        {(isHost || isMember) && (floqDetails.creator_id === session?.user?.id || 
+          floqDetails.participants?.find(p => p.user_id === session?.user?.id)?.role === 'co-admin') && (
+          <Link
+            to={`/floqs/${floqDetails.id}/manage`}
+            className="p-2 rounded-full hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+            aria-label="Manage floq"
+          >
+            <Settings2 className="h-5 w-5" />
+          </Link>
+        )}
       </header>
 
       {/* Scrollable Body */}
