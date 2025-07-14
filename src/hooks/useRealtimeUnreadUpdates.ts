@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 
-// Debug logger that works in both dev and test environments
+// Debug logger that works in dev but stays quiet in tests and production
 const debug = (...args: any[]) => {
-  if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV !== 'production' && !process.env.VITEST && !process.env.NODE_ENV?.includes('test')) {
     console.log(...args);
   }
 };
@@ -18,6 +18,9 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const channelRef = useRef<any>(null);
+
+  // Memoize sorted IDs to prevent unnecessary re-subscriptions
+  const sortedIds = useMemo(() => [...joinedFloqIds].sort().join(','), [joinedFloqIds.join(',')]);
 
   useEffect(() => {
     if (!user || joinedFloqIds.length === 0) return;
@@ -33,8 +36,16 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
       queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', user.id] });
     }
 
-    // Format UUIDs with quotes for Postgres filter, sorted to prevent unnecessary resubscriptions
-    const quotedIds = [...joinedFloqIds].sort().map(id => `"${id}"`).join(',');
+    // Format UUIDs for Postgres filter (bare UUIDs without quotes work fine)
+    const sortedFloqIds = [...joinedFloqIds].sort();
+    const quotedIds = sortedFloqIds.map(id => `${id}`).join(',');
+
+    // Clean up existing channel before creating new one to prevent memory leaks
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current).then(() => {
+        channelRef.current = null;
+      });
+    }
 
     // Create a single channel for all real-time updates and store ref for cleanup
     const channel = channelRef.current = supabase
@@ -101,7 +112,7 @@ export const useRealtimeUnreadUpdates = (joinedFloqIds: string[] = []) => {
         });
       }
     };
-  }, [user?.id, [...joinedFloqIds].sort().join(','), queryClient]);
+  }, [user?.id, sortedIds, queryClient]);
 
   // Cleanup individual channel when user changes (logout/login scenarios)
   useEffect(() => {
