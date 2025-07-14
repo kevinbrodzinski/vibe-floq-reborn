@@ -3,6 +3,9 @@ project_id = "reztyrrafsmlvvlqvsqt"
 [functions.notification-worker]
 verify_jwt = false
 
+[functions.floq-mention-handler]
+verify_jwt = false
+
 [functions.upsert-presence]
 verify_jwt = true
 

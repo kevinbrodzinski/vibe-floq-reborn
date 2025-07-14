@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MapPin, Compass } from "lucide-react";
 import { AvatarDropdown } from "@/components/AvatarDropdown";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
 import { HeartbeatIndicator } from "@/components/HeartbeatIndicator";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
@@ -30,6 +33,8 @@ export const FieldHeader = ({
   venueCount = 0,
   onOpenVenues
 }: FieldHeaderProps) => {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  
   return (
     <header 
       className={cn(
@@ -107,8 +112,19 @@ export const FieldHeader = ({
             )}
           </button>
         )}
+        
+        <NotificationBell 
+          onClick={() => setNotificationsOpen(true)}
+          className="pointer-events-auto"
+        />
+        
         <AvatarDropdown />
       </div>
+      
+      <NotificationsSheet 
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+      />
     </header>
   );
 };

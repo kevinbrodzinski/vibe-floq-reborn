@@ -110,3 +110,29 @@ export const useFloqTabBadges = (floqId: string) => {
     error: unreadCounts.error
   };
 };
+
+// Hook for notification counts (from user_notifications table)
+export const useNotificationCounts = (userId?: string) => {
+  return useQuery({
+    queryKey: ['notification-counts', userId],
+    queryFn: async (): Promise<{ notifications: number }> => {
+      if (!userId) return { notifications: 0 };
+
+      const { count, error } = await supabase
+        .from('user_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('read_at', null);
+
+      if (error) {
+        console.error('Error fetching notification counts:', error);
+        return { notifications: 0 };
+      }
+
+      return { notifications: count || 0 };
+    },
+    enabled: !!userId,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+};
