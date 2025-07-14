@@ -107,7 +107,7 @@ export function useCreateFloq() {
       });
 
       // Invalidate list caches - fix query key to match useMyFlocks
-      queryClient.invalidateQueries({ queryKey: ["my-flocks"] });
+      queryClient.invalidateQueries({ queryKey: ["my-floqs", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });

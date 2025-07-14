@@ -49,8 +49,8 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
     `)
     .eq('user_id', userId)
     .neq('role', 'creator')
-    .filter('floqs.deleted_at', 'is', null)
-    .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');
+    .is('deleted_at', null, { foreignTable: 'floqs' })
+    .or('ends_at.is.null,ends_at.gt.now()', { foreignTable: 'floqs' });
 
   // Query for floqs I created
   const createdQuery = supabase
@@ -156,8 +156,9 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
   try {
     const { data, error } = await supabase
       .from('floq_participants')
-      .select('floq_id, count(*)', { group: 'floq_id' })
-      .in('floq_id', floqIds);
+      .select('floq_id, count(*)')
+      .in('floq_id', floqIds)
+      .group('floq_id');
     
     if (error) {
       if (import.meta.env.DEV) {

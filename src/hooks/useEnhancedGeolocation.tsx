@@ -180,6 +180,7 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
         permissionDenied,
       }));
 
+      // Reset to allow retry attempts
       permissionChecked.current = false;
     };
 
