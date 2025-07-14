@@ -123,7 +123,7 @@ export const useMyFlocks = () => {
         .eq('user_id', userId)
         .neq('role', 'creator')
         .is('floqs.deleted_at', null)
-        .or('ends_at.is.null,ends_at.gt.now()');
+        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');
 
       // Query for floqs I created
       const createdQuery = supabase
@@ -228,9 +228,8 @@ export const useMyFlocks = () => {
       try {
         const { data, error } = await supabase
           .from('floq_participants')
-          .select('floq_id, count(*)')
-          .in('floq_id', floqIds)
-          .group('floq_id');
+          .select('floq_id, count(*)', { group: 'floq_id' })
+          .in('floq_id', floqIds);
         
         if (error) {
           if (import.meta.env.DEV) {
