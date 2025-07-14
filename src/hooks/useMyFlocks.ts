@@ -47,6 +47,13 @@ export const useMyFlocks = () => {
     } as const;
   }
 
+  const invalidate = useCallback(() => {
+    // Add a small delay to prevent race conditions
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
+    }, 100);
+  }, [queryClient, userId]);
+
   useEffect(() => {
     if (!userId) return;
 
@@ -55,13 +62,6 @@ export const useMyFlocks = () => {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
-
-    const invalidate = useCallback(() => {
-      // Add a small delay to prevent race conditions
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
-      }, 100);
-    }, [queryClient, userId]);
 
     const channel = supabase
       .channel(`my-flocks-${userId}`)
@@ -98,7 +98,7 @@ export const useMyFlocks = () => {
         channelRef.current = null;
       }
     };
-  }, [userId, queryClient]);
+  }, [userId, invalidate]);
 
   return useQuery({
     queryKey: ['my-floqs', userId],
@@ -126,8 +126,8 @@ export const useMyFlocks = () => {
         `)
         .eq('user_id', userId)
         .neq('role', 'creator')
-        .filter('deleted_at', 'is', null, { foreignTable: 'floqs' })
-        .or('ends_at.is.null,ends_at.gt.now()', { foreignTable: 'floqs' });
+        .filter('floqs.deleted_at', 'is', null)
+        .or('floqs.ends_at.is.null,floqs.ends_at.gt.now()');
 
       // Query for floqs I created
       const createdQuery = supabase
