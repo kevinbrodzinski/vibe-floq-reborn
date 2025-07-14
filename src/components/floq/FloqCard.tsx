@@ -232,6 +232,13 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
       </div>
 
+      {/* Vibe match percentage */}
+      <div className="relative z-10 mt-2 ml-[calc(theme(spacing.20)+theme(spacing.3))]">
+        <span className="text-xs text-emerald-400 font-medium">
+          87% vibe match
+        </span>
+      </div>
+
       {/* Row 2: Member avatar stack - aligned under title */}
       {floq.members && floq.members.length > 0 && (
         <div className="relative z-10 mt-3 ml-[calc(theme(spacing.20)+theme(spacing.3))] flex -space-x-2">
