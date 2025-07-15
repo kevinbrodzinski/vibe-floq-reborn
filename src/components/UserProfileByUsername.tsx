@@ -34,7 +34,16 @@ export const UserProfileByUsername = () => {
   });
 
   if (!username) {
-    return <Navigate to="/404" replace />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Invalid username</p>
+          <Button onClick={() => window.history.back()} variant="outline" className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (isLoading) {
@@ -49,7 +58,16 @@ export const UserProfileByUsername = () => {
   }
 
   if (error || !profiles || profiles.length === 0) {
-    return <Navigate to="/404" replace />;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">User not found</p>
+          <Button onClick={() => window.history.back()} variant="outline" className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const profile = profiles[0];
