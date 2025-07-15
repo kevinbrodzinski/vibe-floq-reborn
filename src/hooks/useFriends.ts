@@ -7,17 +7,27 @@ import { track } from '@/lib/analytics';
 import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 import { OFFLINE_MODE } from '@/lib/constants';
 
-export function useFriends() {
-  
+export type FriendPresence = {
+  friend_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  username: string;
+  bio: string | null;
+  vibe_tag: string | null;
+  started_at: string | null;
+  online: boolean;
+};
+
+export function useFriendsWithPresence() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Optimized query using new RPC function for friends list
-  const { data: friendsWithProfile = [], isLoading, error: friendsError } = useQuery({
-    queryKey: ['friends-list', user?.id, OFFLINE_MODE],
+  // New query using get_friends_with_presence
+  const { data: friendsWithPresence = [], isLoading, error: friendsError } = useQuery({
+    queryKey: ['friends-with-presence', user?.id, OFFLINE_MODE],
     enabled: !!user?.id && !OFFLINE_MODE,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 30 * 1000, // 30 seconds
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 1000,
@@ -27,44 +37,23 @@ export function useFriends() {
       const { data, error } = await supabase.rpc('get_friends_with_presence');
       
       if (error) {
-        console.error('Friends list query error:', error);
+        console.error('Friends with presence query error:', error);
         throw error;
       }
       return data ?? [];
     },
   });
 
-  // Extract friend IDs for compatibility
-  const friendIds = useMemo(() => 
-    friendsWithProfile.map(friend => friend.friend_id), 
-    [friendsWithProfile]
-  );
-
-  // Profiles are already included in the RPC result
-  const profiles = useMemo(() => 
-    friendsWithProfile.map(friend => ({
-      id: friend.friend_id,
-      display_name: friend.display_name,
-      avatar_url: friend.avatar_url,
-      username: friend.username,
-      bio: friend.bio
-    })), 
-    [friendsWithProfile]
-  );
-
-  const profilesError = false; // No separate profiles query
-
   // Real mutations using Supabase RPC functions
   const addFriend = useMutation({
     mutationFn: async (targetUserId: string) => {
-      if (OFFLINE_MODE) return; // Short-circuit in offline mode
+      if (OFFLINE_MODE) return;
       
       try {
         const { data, error } = await supabase.rpc('send_friend_request', {
           _target: targetUserId
         });
         if (error) {
-          // Log the error for debugging but don't crash the UI
           console.error('[send_friend_request] RPC error:', error);
           toast({
             title: "Could not send friend request",
@@ -74,7 +63,6 @@ export function useFriends() {
           return;
         }
       } catch (error: any) {
-        // Handle network/connection errors gracefully
         console.error('[add_friend] Network error:', error);
         toast({
           title: "Connection error", 
@@ -86,7 +74,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-with-presence'] });
         queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
         toast({
           title: "Friend request sent",
@@ -94,24 +82,17 @@ export function useFriends() {
         });
       }
     },
-    onError: (error: any) => {
-      // Additional fallback for any errors that slip through
-      if (!OFFLINE_MODE) {
-        console.warn('Add friend mutation error:', error);
-      }
-    },
   });
 
   const removeFriend = useMutation({
     mutationFn: async (targetUserId: string) => {
-      if (OFFLINE_MODE) return; // Short-circuit in offline mode
+      if (OFFLINE_MODE) return;
       
       try {
         const { data, error } = await supabase.rpc('remove_friend', {
           _friend: targetUserId
         });
         if (error) {
-          // Log the error for debugging but don't crash the UI
           console.error('[remove_friend] RPC error:', error);
           toast({
             title: "Could not remove friend",
@@ -121,7 +102,6 @@ export function useFriends() {
           return;
         }
       } catch (error: any) {
-        // Handle network/connection errors gracefully
         console.error('[remove_friend] Network error:', error);
         toast({
           title: "Connection error",
@@ -133,7 +113,7 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-with-presence'] });
         queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
         toast({
           title: "Friend removed",
@@ -141,42 +121,63 @@ export function useFriends() {
         });
       }
     },
-    onError: (error: any) => {
-      // Additional fallback for any errors that slip through
-      if (!OFFLINE_MODE) {
-        console.warn('Remove friend mutation error:', error);
-      }
-    },
   });
 
-  // Optimized friend set for O(1) lookups
-  const friendsSet = useMemo(() => new Set(friendIds), [friendIds]);
+  // Extract profiles for backward compatibility
+  const profiles = useMemo(() => 
+    friendsWithPresence.map(friend => ({
+      id: friend.friend_id,
+      display_name: friend.display_name,
+      avatar_url: friend.avatar_url,
+      username: friend.username,
+      bio: friend.bio
+    })), 
+    [friendsWithPresence]
+  );
+
+  // Extract friend IDs for compatibility with existing components
+  const friendIds = useMemo(() => 
+    friendsWithPresence.map(friend => friend.friend_id), 
+    [friendsWithPresence]
+  );
+
+  // Check if a user is a friend
+  const isFriend = useMemo(() => {
+    const friendsSet = new Set(friendIds);
+    return (userId: string) => friendsSet.has(userId);
+  }, [friendIds]);
 
   // Mock data for offline mode
   if (OFFLINE_MODE) {
-    const mockFriends = ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
-    const mockFriendsSet = new Set(mockFriends);
+    const mockFriends: FriendPresence[] = [{
+      friend_id: 'b25fd249-5bc0-4b67-a012-f64dacbaef1a',
+      display_name: 'Mock Friend',
+      avatar_url: null,
+      username: 'mockfriend',
+      bio: null,
+      vibe_tag: null,
+      started_at: null,
+      online: false
+    }];
 
     return {
-      friends: mockFriends,
-      friendCount: 1,
-      profiles: [], // Mock empty profiles for offline mode
+      friendsWithPresence: mockFriends,
+      friends: mockFriends.map(f => f.friend_id),
+      friendCount: mockFriends.length,
+      profiles: mockFriends.map(f => ({ id: f.friend_id, display_name: f.display_name, avatar_url: f.avatar_url, username: f.username, bio: f.bio })),
       isLoading: false,
-      addFriend: (targetUserId: string) => {
-        console.log('Mock: would add friend', targetUserId);
-      },
-      removeFriend: (targetUserId: string) => {
-        console.log('Mock: would remove friend', targetUserId);
-      },
+      addFriend: () => {},
+      removeFriend: () => {},
       isAddingFriend: false,
       isRemovingFriend: false,
-      isFriend: (userId: string) => mockFriendsSet.has(userId),
+      isFriend: () => true,
     };
   }
 
   // Handle auth/loading states gracefully
   if (!user?.id || isLoading || friendsError) {
     return {
+      friendsWithPresence: [],
       friends: [],
       friendCount: 0,
       profiles: [],
@@ -189,15 +190,11 @@ export function useFriends() {
     };
   }
 
-  // Check if a user is a friend
-  const isFriend = (userId: string) => {
-    return friendsSet.has(userId);
-  };
-
   return {
+    friendsWithPresence,
     friends: friendIds,
     friendCount: friendIds.length,
-    profiles: profiles || [],
+    profiles,
     isLoading,
     addFriend: addFriend.mutate,
     removeFriend: removeFriend.mutate,
@@ -205,4 +202,8 @@ export function useFriends() {
     isRemovingFriend: removeFriend.isPending,
     isFriend,
   };
+}
+
+export function useFriends() {
+  return useFriendsWithPresence();
 }

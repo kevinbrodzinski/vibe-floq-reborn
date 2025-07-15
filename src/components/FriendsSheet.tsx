@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { User } from 'lucide-react';
+import { User, MapPin } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
-import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
@@ -29,7 +28,7 @@ interface FriendsSheetProps {
 }
 
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
-  const { friends, friendCount, profiles, isLoading } = useFriends();
+  const { friendsWithPresence, friendCount, isLoading } = useFriends();
   const { pendingRequests, acceptRequest, declineRequest, isAccepting, isDeclining } = useFriendRequests();
   const { lat, lng } = useGeolocation();
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
@@ -107,17 +106,47 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                     <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
                   </div>
                 </div>
-              ) : friends.length > 0 ? (
+              ) : friendsWithPresence.length > 0 ? (
                 <div className="max-h-96 overflow-y-auto space-y-1">
-                  {friends.map(id => {
-                    const nearbyFriend = friendsNearby.find(f => f.id === id);
+                  {friendsWithPresence.map(friend => {
+                    const nearbyFriend = friendsNearby.find(f => f.id === friend.friend_id);
                     return (
-                      <OnlineFriendRow 
-                        key={id} 
-                        userId={id} 
-                        isNearby={!!nearbyFriend}
-                        distance={nearbyFriend?.distance_m}
-                      />
+                      <div 
+                        key={friend.friend_id}
+                        className={`flex items-center gap-3 p-2 rounded-md ${nearbyFriend ? 'bg-primary/5 border border-primary/20' : ''}`}
+                      >
+                        <div className="relative">
+                          <AvatarWithFallback 
+                            src={friend.avatar_url ? getAvatarUrl(friend.avatar_url, 32) : null}
+                            fallbackText={friend.display_name || friend.username || 'U'}
+                            className="w-8 h-8"
+                          />
+                          {friend.online && (
+                            <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">
+                            {friend.display_name || friend.username}
+                          </p>
+                          {friend.online && friend.vibe_tag && (
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {friend.vibe_tag}
+                            </p>
+                          )}
+                        </div>
+                        {nearbyFriend && (
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {nearbyFriend.distance_m < 1000 
+                                ? `${Math.round(nearbyFriend.distance_m)}m`
+                                : `${(nearbyFriend.distance_m / 1000).toFixed(1)}km`
+                              }
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
