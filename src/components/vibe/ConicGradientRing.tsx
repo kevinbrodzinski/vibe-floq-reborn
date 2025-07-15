@@ -41,16 +41,16 @@ export const RingGradient: React.FC<RingGradientProps> = ({
         height: size,
         borderRadius: '50%',
         background: `conic-gradient(
-          #4C92FF 0deg,      /* Chill - Blue */
-          #FF6B35 40deg,     /* Flowing - Orange */
-          #FF1744 80deg,     /* Romantic - Pink */
-          #FF4757 120deg,    /* Hype - Red */
-          #A855F7 160deg,    /* Weird - Purple */
-          #6B7280 200deg,    /* Solo - Gray */
-          #10B981 240deg,    /* Social - Green */
-          #8B5CF6 280deg,    /* Open - Purple */
-          #1E40AF 320deg,    /* Down - Dark Blue */
-          #4C92FF 360deg     /* Back to Chill */
+          #5B9BD5 0deg,      /* Chill - Soft Blue */
+          #FFB84D 40deg,     /* Flowing - Warm Orange/Yellow */
+          #FFE066 80deg,     /* Romantic - Golden Yellow */
+          #FF7F7F 120deg,    /* Hype - Soft Red */
+          #D4AF37 160deg,    /* Weird - Gold */
+          #A8A8A8 200deg,    /* Solo - Soft Gray */
+          #90EE90 240deg,    /* Social - Soft Green */
+          #DDA0DD 280deg,    /* Open - Soft Purple */
+          #87CEEB 320deg,    /* Down - Sky Blue */
+          #5B9BD5 360deg     /* Back to Chill */
         )`,
         /* Cross-browser mask to cut the center hole */
         WebkitMaskImage: `radial-gradient(circle ${size / 2 - strokeWidth}px, transparent 99%, #000 100%)`,
