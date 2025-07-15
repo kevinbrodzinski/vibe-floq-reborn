@@ -2124,6 +2124,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      clear_user_vibe: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cluster_precision: {
         Args: { requested_precision?: number }
         Returns: number

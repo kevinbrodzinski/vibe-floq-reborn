@@ -11,12 +11,16 @@ type VibeState = {
   updatedAt: string | null;
   isUpdating: boolean;
   hydrated: boolean;
+  currentRow: any | null; // Store the full vibe row with started_at
   setVibe: (v: VibeEnum) => Promise<void>;
+  clearVibe: () => Promise<void>;
   syncFromRemote: (v: string, ts: string) => void;
+  setCurrentRow: (row: any) => void;
 };
 
-// Selector helper to avoid repeating everywhere
+// Selector helpers to avoid repeating everywhere
 export const useCurrentVibe = () => useVibe((s) => s.vibe);
+export const useCurrentVibeRow = () => useVibe((s) => s.currentRow);
 
 export const useVibe = create<VibeState>()(
   persist(
@@ -25,6 +29,7 @@ export const useVibe = create<VibeState>()(
       updatedAt: null,
       isUpdating: false,
       hydrated: false,
+      currentRow: null,
 
       /** optimistic setter → rolls back on error */
       setVibe: async (newVibe) => {
@@ -76,9 +81,52 @@ export const useVibe = create<VibeState>()(
               s.updatedAt = null;
               s.isUpdating = false;
             });
+          } else {
+            // Fetch the updated row to get the started_at timestamp
+            const { data: currentRow } = await supabase
+              .from('user_vibe_states')
+              .select('*')
+              .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+              .eq('active', true)
+              .single();
+            
+            if (currentRow) {
+              set((s) => {
+                s.currentRow = currentRow;
+              });
+            }
           }
         } finally {
           set((s) => { s.isUpdating = false; });
+        }
+      },
+
+      /** clear vibe functionality */
+      clearVibe: async () => {
+        try {
+          const { error } = await supabase.rpc('clear_user_vibe');
+          if (error) {
+            console.error('clear_user_vibe failed', error);
+            toast({
+              variant: 'destructive',
+              title: 'Could not clear vibe',
+              description: 'Check your connection and try again.',
+              duration: 4000,
+            });
+          } else {
+            set((s) => {
+              s.vibe = null;
+              s.updatedAt = null;
+              s.currentRow = null;
+            });
+            toast({
+              title: 'Vibe cleared',
+              description: 'Your vibe has been cleared successfully.',
+              duration: 2000,
+            });
+          }
+        } catch (error) {
+          console.error('Error clearing vibe:', error);
         }
       },
 
@@ -93,6 +141,17 @@ export const useVibe = create<VibeState>()(
         set((s) => { 
           s.vibe = v as VibeEnum; 
           s.updatedAt = ts; 
+        });
+      },
+
+      /** set current row data */
+      setCurrentRow: (row) => {
+        set((s) => {
+          s.currentRow = row;
+          if (row) {
+            s.vibe = row.vibe_tag;
+            s.updatedAt = row.started_at;
+          }
         });
       },
     })),

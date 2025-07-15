@@ -15,7 +15,7 @@ import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
-import { useVibe } from "@/lib/store/useVibe";
+import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
 import { VibeWheel } from "@/components/vibe/VibeWheel";
@@ -31,10 +31,11 @@ interface VibeInfo {
 
 export const VibeScreen = () => {
   const { user } = useAuth();
-  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated } = useVibe();
+  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated, clearVibe } = useVibe();
+  const currentVibeRow = useCurrentVibeRow();
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
-  const [activeDuration, setActiveDuration] = useState(37);
+  const [elapsed, setElapsed] = useState<string>('—');
   const [autoMode, setAutoMode] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
@@ -288,6 +289,28 @@ export const VibeScreen = () => {
     applyVibe(suggestion);
   }, [handleVibeSelect, applyVibe]);
 
+  // Live timer for active duration
+  useEffect(() => {
+    if (!currentVibeRow?.started_at) return;
+
+    const tick = () => {
+      const ms = Date.now() - new Date(currentVibeRow.started_at).getTime();
+      const mins = Math.floor(ms / 60_000);
+      const hrs = Math.floor(mins / 60);
+      setElapsed(
+        hrs > 0 ? `${hrs} h ${mins % 60} min` : `${mins} min`
+      );
+    };
+
+    tick(); // initial render
+    const id = setInterval(tick, 30_000); // update every 30 seconds
+    return () => clearInterval(id);
+  }, [currentVibeRow?.started_at]);
+
+  const handleClearVibe = useCallback(async () => {
+    await clearVibe();
+  }, [clearVibe]);
+
   const getVisibilityIcon = () => {
     switch (visibility) {
       case "public": return <Eye className="w-5 h-5" />;
@@ -518,66 +541,82 @@ export const VibeScreen = () => {
 
       {/* Enhanced Mini Vibe Card */}
       <div className="fixed bottom-20 left-6 right-6">
-        <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div 
-                className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
-                style={{ 
-                  backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeVibe].color} 80%, ${tintColor} 20%)` : vibes[safeVibe].color,
-                  transform: `scale(${pulseScale})`,
-                  boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
-                }}
-              >
-                <span className="text-lg font-bold text-white drop-shadow-sm">
-                  {vibes[safeVibe].label.charAt(0).toUpperCase()}
-                </span>
-                {/* Accessibility: Reduced motion fallback */}
-                <style>{`
-                  @media (prefers-reduced-motion: reduce) {
-                    .vibe-card { 
-                      transition: none !important; 
-                      transform: none !important; 
-                      box-shadow: none !important;
+        {selectedVibe ? (
+          <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
+                  style={{ 
+                    backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeVibe].color} 80%, ${tintColor} 20%)` : vibes[safeVibe].color,
+                    transform: `scale(${pulseScale})`,
+                    boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
+                  }}
+                >
+                  <span className="text-lg font-bold text-white drop-shadow-sm">
+                    {vibes[safeVibe].label.charAt(0).toUpperCase()}
+                  </span>
+                  {/* Accessibility: Reduced motion fallback */}
+                  <style>{`
+                    @media (prefers-reduced-motion: reduce) {
+                      .vibe-card { 
+                        transition: none !important; 
+                        transform: none !important; 
+                        box-shadow: none !important;
+                      }
                     }
-                  }
-                `}</style>
-              </div>
-              <div>
-                <span className="font-medium text-foreground">{vibes[safeVibe].label}</span>
-                <div className="text-xs text-muted-foreground">
-                  Active for {activeDuration} min
-                  {clusters.length > 0 && (
-                    <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
-                  )}
-                  {isRealTimeConnected && lastUpdateTime && (
-                    <span className="ml-2 flex items-center text-xs text-emerald-400">
-                      <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
-                      LIVE
-                    </span>
-                  )}
-                  {!isRealTimeConnected && clusters.length > 0 && (
-                    <span className="ml-2 opacity-40 text-xs">
-                      • Cached
-                    </span>
-                  )}
-                  {lastUpdateTime && (
-                    <span className="ml-2 opacity-40 text-[10px]">
-                      {new Intl.DateTimeFormat('en', { 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        second: '2-digit'
-                      }).format(lastUpdateTime)}
-                    </span>
-                  )}
+                  `}</style>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">{vibes[safeVibe].label}</span>
+                   <div className="text-xs text-muted-foreground">
+                     Active for {elapsed}
+                    {clusters.length > 0 && (
+                      <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
+                    )}
+                    {isRealTimeConnected && lastUpdateTime && (
+                      <span className="ml-2 flex items-center text-xs text-emerald-400">
+                        <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
+                        LIVE
+                      </span>
+                    )}
+                    {!isRealTimeConnected && clusters.length > 0 && (
+                      <span className="ml-2 opacity-40 text-xs">
+                        • Cached
+                      </span>
+                    )}
+                    {lastUpdateTime && (
+                      <span className="ml-2 opacity-40 text-[10px]">
+                        {new Intl.DateTimeFormat('en', { 
+                          hour: 'numeric', 
+                          minute: '2-digit',
+                          second: '2-digit'
+                        }).format(lastUpdateTime)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <button 
+                onClick={handleClearVibe}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
+              >
+                Clear Vibe
+              </button>
             </div>
-            <button className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200">
-              Clear Vibe
-            </button>
           </div>
-        </div>
+        ) : (
+          <div className="bg-card/60 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
+            <div className="flex items-center justify-center">
+              <Button 
+                onClick={() => {/* Navigate to vibe selector */}}
+                className="text-sm"
+              >
+                Set your vibe
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Smart Suggestion Toast */}
