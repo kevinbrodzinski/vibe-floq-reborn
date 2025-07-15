@@ -24,7 +24,7 @@ export function useFriends() {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase.rpc('get_friends_list');
+      const { data, error } = await supabase.rpc('get_friends_with_presence');
       
       if (error) {
         console.error('Friends list query error:', error);
