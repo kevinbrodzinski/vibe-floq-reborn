@@ -63,7 +63,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: false
+          autoGainControl: true // Enable for Android hardware stability
         }
       });
       newPermissions.microphone = true;
