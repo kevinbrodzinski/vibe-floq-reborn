@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Vibe Flow Orb</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+	
+	<!-- Microphone – ambient noise level for vibe detection -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Floq uses the microphone ONLY to measure ambient noise levels so it can suggest a matching vibe. Audio is never recorded or stored.</string>
+	
+	<!-- Motion – detect walking / dancing patterns -->
+	<key>NSMotionUsageDescription</key>
+	<string>Floq analyses your device motion to recognise walking or dancing patterns and suggest a vibe that matches your activity.</string>
+	
+	<!-- Location – optional context for vibe & map clustering -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Floq uses your location to show nearby people and places that fit your current vibe. Precise location is never shared publicly without consent.</string>
+	
+	<!-- Bluetooth – for external sensor connectivity -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights.</string>
+	
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights.</string>
+</dict>
+</plist>
