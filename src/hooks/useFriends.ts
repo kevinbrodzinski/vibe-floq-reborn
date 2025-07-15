@@ -34,12 +34,19 @@ export function useFriendsWithPresence() {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
+      // Debug: Check current user session
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      console.log('🔍 Auth debug - Frontend user ID:', user?.id);
+      console.log('🔍 Auth debug - Supabase user ID:', currentUser?.id);
+      
       const { data, error } = await supabase.rpc('get_friends_with_presence');
       
       if (error) {
         console.error('Friends with presence query error:', error);
         throw error;
       }
+      
+      console.log('🔍 Friends data returned:', data);
       return data ?? [];
     },
   });
