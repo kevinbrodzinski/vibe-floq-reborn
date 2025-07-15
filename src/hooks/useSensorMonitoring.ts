@@ -22,6 +22,7 @@ interface SensorPermissions {
 }
 
 export const useSensorMonitoring = (enabled: boolean = false) => {
+  // ✅ ALL hooks declared unconditionally at top level
   const analysisEngineRef = useRef<VibeAnalysisEngine>(new VibeAnalysisEngine());
   const [sensorData, setSensorData] = useState<SensorData>({
     audioLevel: 0,
@@ -90,7 +91,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
   // Audio level monitoring with adaptive throttling
   const startAudioMonitoring = useCallback(async () => {
-    if (!permissions.microphone || !streamRef.current) return;
+    if (!enabled || !permissions.microphone || !streamRef.current) return;
 
     try {
       audioContextRef.current = new AudioContext();
@@ -164,7 +165,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
   // Movement pattern detection
   const startMotionMonitoring = useCallback(() => {
-    if (!permissions.motion) return;
+    if (!enabled || !permissions.motion) return;
 
     const motionData: number[] = [];
     const maxSamples = 20;
@@ -221,6 +222,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
   // Ambient light monitoring with web fallback
   const startLightMonitoring = useCallback(() => {
+    if (!enabled) return;
     if ('AmbientLightSensor' in window) {
       try {
         // @ts-ignore - Experimental API
@@ -341,13 +343,13 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     }
   }, [enabled]);
 
-  // Start monitoring when enabled
+  // Start monitoring when enabled  
   useEffect(() => {
-    if (!enabled) return;
-
     let cleanups: (() => void)[] = [];
 
     const startMonitoring = async () => {
+      if (!enabled) return; // ✅ Guard inside effect
+      
       const perms = await requestPermissions();
       
       if (perms.microphone) {
