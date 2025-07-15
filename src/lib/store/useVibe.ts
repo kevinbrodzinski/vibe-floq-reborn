@@ -52,13 +52,14 @@ export const useVibe = create<VibeState>()(
               lng = position.coords.longitude;
             } catch (geoError) {
               console.log('Could not get location, setting vibe without location');
+              // lat and lng remain null
             }
           }
 
           const { error } = await supabase.rpc('set_user_vibe', {
             new_vibe: newVibe,
-            lat,
-            lng
+            lat: lat,     // explicitly pass null if no location
+            lng: lng      // explicitly pass null if no location
           });
 
           if (error) {
