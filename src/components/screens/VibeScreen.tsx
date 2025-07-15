@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Radio, Eye, EyeOff, Users, Zap, ZapOff, Brain } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FeedbackButtons } from "@/components/ui/FeedbackButtons";
 import { LearningPatterns } from "@/components/ui/LearningPatterns";
@@ -293,6 +294,10 @@ export const VibeScreen = () => {
             const x = Math.cos(radian) * radius;
             const y = Math.sin(radian) * radius;
             
+            // Calculate glow intensity based on learning preference
+            const prefScore = learningData.preferences[key as Vibe] ?? 0;
+            const glowIntensity = Math.min(1, 0.3 + prefScore * 2);
+            
             return (
               <button
                 key={key}
@@ -305,6 +310,9 @@ export const VibeScreen = () => {
                 style={{
                   left: `calc(50% + ${x}px)`,
                   top: `calc(50% + ${y}px)`,
+                  boxShadow: prefScore > 0.1 
+                    ? `0 0 ${12 * glowIntensity}px hsl(var(--primary) / ${0.6 * glowIntensity})` 
+                    : undefined,
                 }}
               >
                 <span className="text-sm font-medium">{vibe.label}</span>
@@ -399,15 +407,21 @@ export const VibeScreen = () => {
         </div>
       )}
 
-      {/* Learning Patterns */}
+      {/* Learning Patterns with slide-in animation */}
       {autoMode && (
         <div className="px-6 mb-6">
-          <LearningPatterns
-            patterns={learningData.patterns}
-            topPreferences={learningData.preferences}
-            accuracy={learningData.accuracy}
-            correctionCount={learningData.correctionCount}
-          />
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <LearningPatterns
+              patterns={learningData.patterns}
+              topPreferences={learningData.preferences}
+              accuracy={learningData.accuracy}
+              correctionCount={learningData.correctionCount}
+            />
+          </motion.div>
         </div>
       )}
 
@@ -455,25 +469,43 @@ export const VibeScreen = () => {
         </div>
       </div>
 
-      {/* Emotional Density Map Preview */}
+      {/* Emotional Density Map Preview with contextual pulse */}
       <div className="px-6 mb-6">
-        <button className="w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border border-border/30 transition-all duration-300 hover:bg-card/60 hover:scale-[1.02]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-secondary/20 flex items-center justify-center">
-                <div className="w-4 h-4 rounded-full bg-gradient-secondary animate-pulse"></div>
+        {(() => {
+          // Check if patterns suggest outdoor activities (≥3 with high confidence)
+          const outdoorPatterns = learningData.patterns.filter(p => 
+            p.context.toLowerCase().includes('outdoor') && p.confidence > 0.7
+          );
+          const shouldPulse = outdoorPatterns.length >= 3;
+          
+          return (
+            <button 
+              className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
+                shouldPulse 
+                  ? "border-accent/50 animate-pulse shadow-[0_0_20px_hsl(var(--accent)/30)]" 
+                  : "border-border/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-secondary/20 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-gradient-secondary animate-pulse"></div>
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-medium text-foreground">Emotional Density Map</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {shouldPulse ? "Outdoor patterns detected • Tap to explore" : "Tap to explore energy clusters"}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-accent">4 matches</div>
+                  <div className="text-xs text-muted-foreground">2mi radius</div>
+                </div>
               </div>
-              <div className="text-left">
-                <h4 className="font-medium text-foreground">Emotional Density Map</h4>
-                <p className="text-xs text-muted-foreground">Tap to explore energy clusters</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-medium text-accent">4 matches</div>
-              <div className="text-xs text-muted-foreground">2mi radius</div>
-            </div>
-          </div>
-        </button>
+            </button>
+          );
+        })()}
       </div>
 
       {/* Mini Vibe Card */}
