@@ -2656,11 +2656,13 @@ export type Database = {
       get_friends_with_presence: {
         Args: Record<PropertyKey, never>
         Returns: {
-          friend: string | null
-          location: unknown | null
-          me: string | null
-          started_at: string | null
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
+          friend_id: string
+          display_name: string
+          avatar_url: string
+          username: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          started_at: string
+          online: boolean
         }[]
       }
       get_friends_with_profile: {
