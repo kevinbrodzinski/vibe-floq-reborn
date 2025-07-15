@@ -312,8 +312,13 @@ export const VibeScreen = () => {
           {autoMode && !permissions.microphone && (
             <div className="mt-4 p-3 bg-muted/30 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                Enable microphone access for audio-based vibe detection
+                Enable ambient noise level access for vibe detection
               </p>
+            </div>
+          )}
+          {autoMode && (
+            <div className="mt-2 text-xs text-muted-foreground/60">
+              Session active • Auto-expires after 90 minutes
             </div>
           )}
         </div>

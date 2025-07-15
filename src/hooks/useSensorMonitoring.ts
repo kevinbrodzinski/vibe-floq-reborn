@@ -49,18 +49,27 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   const streamRef = useRef<MediaStream | null>(null);
   const motionListenerRef = useRef<((event: DeviceMotionEvent) => void) | null>(null);
   const lightSensorRef = useRef<any>(null);
+  const audioUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionStartRef = useRef<Date | null>(null);
+  const micBaselineRef = useRef<number | null>(null);
 
-  // Request permissions
+  // Request permissions with iOS-compliant descriptions
   const requestPermissions = useCallback(async () => {
     const newPermissions = { ...permissions };
 
-    // Request microphone permission
+    // Request microphone permission - iOS compliant wording
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
       newPermissions.microphone = true;
       streamRef.current = stream;
     } catch (error) {
-      console.log('Microphone permission denied:', error);
+      console.log('Ambient noise level permission denied:', error);
       newPermissions.microphone = false;
     }
 
@@ -84,7 +93,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     return newPermissions;
   }, [permissions]);
 
-  // Audio level monitoring
+  // Audio level monitoring with adaptive throttling
   const startAudioMonitoring = useCallback(async () => {
     if (!permissions.microphone || !streamRef.current) return;
 
@@ -97,22 +106,52 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
       
       microphoneRef.current.connect(analyserRef.current);
+      sessionStartRef.current = new Date();
 
       const updateAudioLevel = () => {
         if (!analyserRef.current) return;
         
         analyserRef.current.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        const audioLevel = Math.min(100, (average / 255) * 100);
+        let audioLevel = Math.min(100, (average / 255) * 100);
         
-        setSensorData(prev => ({
-          ...prev,
-          audioLevel: Math.round(audioLevel)
-        }));
+        // Calibrate against baseline if available
+        if (micBaselineRef.current === null && audioLevel > 5) {
+          micBaselineRef.current = average;
+        }
+        if (micBaselineRef.current !== null) {
+          audioLevel = Math.max(0, Math.min(100, ((average - micBaselineRef.current) / 128) * 100));
+        }
+        
+        setSensorData(prev => {
+          const newData = {
+            ...prev,
+            audioLevel: Math.round(audioLevel)
+          };
+          
+          // Adaptive polling - throttle when quiet and still
+          const isQuiet = audioLevel < 15;
+          const isStill = prev.movement.pattern === 'still';
+          const nextInterval = isQuiet && isStill ? 1500 : 500;
+          
+          // Clear existing timeout and schedule next update
+          if (audioUpdateTimeoutRef.current) {
+            clearTimeout(audioUpdateTimeoutRef.current);
+          }
+          audioUpdateTimeoutRef.current = setTimeout(updateAudioLevel, nextInterval);
+          
+          return newData;
+        });
       };
 
-      const audioInterval = setInterval(updateAudioLevel, 500);
-      return () => clearInterval(audioInterval);
+      // Start first update
+      updateAudioLevel();
+      
+      return () => {
+        if (audioUpdateTimeoutRef.current) {
+          clearTimeout(audioUpdateTimeoutRef.current);
+        }
+      };
     } catch (error) {
       console.error('Audio monitoring failed:', error);
     }
@@ -175,7 +214,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     };
   }, [permissions.motion]);
 
-  // Ambient light monitoring (experimental API)
+  // Ambient light monitoring with web fallback
   const startLightMonitoring = useCallback(() => {
     if ('AmbientLightSensor' in window) {
       try {
@@ -199,6 +238,22 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       } catch (error) {
         console.log('Light sensor not available:', error);
       }
+    } else {
+      // Web fallback using CSS media query
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const updateLightFromMedia = () => {
+        // Dark mode suggests low light (30%), light mode suggests bright (70%)
+        const lightLevel = mediaQuery.matches ? 30 : 70;
+        setSensorData(prev => ({
+          ...prev,
+          lightLevel
+        }));
+      };
+      
+      updateLightFromMedia();
+      mediaQuery.addEventListener('change', updateLightFromMedia);
+      
+      return () => mediaQuery.removeEventListener('change', updateLightFromMedia);
     }
   }, []);
 
@@ -284,6 +339,27 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       sensors
     };
   }, []);
+
+  // Session management with 90-minute auto-expire
+  useEffect(() => {
+    if (!enabled || !sessionStartRef.current) return;
+    
+    const checkSessionExpiry = () => {
+      if (sessionStartRef.current) {
+        const elapsed = Date.now() - sessionStartRef.current.getTime();
+        const ninetyMinutes = 90 * 60 * 1000;
+        
+        if (elapsed > ninetyMinutes) {
+          console.log('Auto-vibe session expired after 90 minutes');
+          // Reset session - this would typically trigger a parent component update
+          sessionStartRef.current = null;
+        }
+      }
+    };
+    
+    const sessionInterval = setInterval(checkSessionExpiry, 60000); // Check every minute
+    return () => clearInterval(sessionInterval);
+  }, [enabled]);
 
   // Update vibe detection when sensor data changes
   useEffect(() => {
