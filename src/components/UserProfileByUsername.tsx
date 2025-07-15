@@ -38,17 +38,6 @@ export const UserProfileByUsername = () => {
     enabled: !!username
   });
 
-  // Always call hooks at the top level - fix for React hooks rules
-  const profile = profiles?.[0];
-  const { data: vibe } = useUserVibe(profile?.id);
-  
-  // Get current user ID for actions
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
-    });
-  }, []);
-
   if (!username) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -85,6 +74,16 @@ export const UserProfileByUsername = () => {
       </div>
     );
   }
+
+  const profile = profiles[0];
+  const { data: vibe } = useUserVibe(profile.id);
+  
+  // Get current user ID for actions
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
 
   const displayName = profile.username ? `@${profile.username}` : profile.display_name || 'Unknown User';
   const subtitle = profile.username && profile.display_name ? profile.display_name : null;
