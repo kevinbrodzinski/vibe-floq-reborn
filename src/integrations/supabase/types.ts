@@ -932,6 +932,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ping_requests: {
+        Row: {
+          id: string
+          requested_at: string
+          requester_id: string
+          responded_at: string | null
+          status: string
+          target_id: string
+        }
+        Insert: {
+          id?: string
+          requested_at?: string
+          requester_id: string
+          responded_at?: string | null
+          status: string
+          target_id: string
+        }
+        Update: {
+          id?: string
+          requested_at?: string
+          requester_id?: string
+          responded_at?: string | null
+          status?: string
+          target_id?: string
+        }
+        Relationships: []
+      }
       place_banners: {
         Row: {
           channel: string | null
@@ -1077,6 +1104,33 @@ export type Database = {
         }
         Update: {
           name?: string
+        }
+        Relationships: []
+      }
+      shared_location_pins: {
+        Row: {
+          created_at: string
+          expires_at: string
+          geom: unknown
+          id: string
+          owner_id: string
+          viewer_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          geom: unknown
+          id?: string
+          owner_id: string
+          viewer_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          geom?: unknown
+          id?: string
+          owner_id?: string
+          viewer_id?: string
         }
         Relationships: []
       }
@@ -1609,6 +1663,16 @@ export type Database = {
         Row: {
           metric: string | null
           value: string | null
+        }
+        Relationships: []
+      }
+      friend_presence: {
+        Row: {
+          friend: string | null
+          location: unknown | null
+          me: string | null
+          started_at: string | null
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
         }
         Relationships: []
       }
@@ -2624,6 +2688,18 @@ export type Database = {
       get_proj4_from_srid: {
         Args: { "": number }
         Returns: string
+      }
+      get_social_suggestions: {
+        Args: { me: string; max_dist_m?: number; limit_n?: number }
+        Returns: {
+          friend_id: string
+          display_name: string
+          avatar_url: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          vibe_match: number
+          distance_m: number
+          started_at: string
+        }[]
       }
       get_unread_counts: {
         Args: { user_id_param: string }
