@@ -38,7 +38,6 @@ const App = () => {
             <Routes>
               {/* Main app routes (field, floqs, etc.) are handled inside Index */}
               <Route path="/*" element={<Index />} />
-              <Route path="/u/:userId" element={<UserProfile />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
             </Routes>
             {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
