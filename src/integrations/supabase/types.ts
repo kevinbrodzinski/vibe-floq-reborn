@@ -1489,6 +1489,24 @@ export type Database = {
         }
         Relationships: []
       }
+      vibe_clusters_history: {
+        Row: {
+          gh6: string
+          snapshot_at: string
+          total: number
+        }
+        Insert: {
+          gh6: string
+          snapshot_at?: string
+          total: number
+        }
+        Update: {
+          gh6?: string
+          snapshot_at?: string
+          total?: number
+        }
+        Relationships: []
+      }
       vibe_similarity: {
         Row: {
           score: number
@@ -1721,6 +1739,18 @@ export type Database = {
           friendship_created_at: string | null
           friendship_id: string | null
           username: string | null
+        }
+        Relationships: []
+      }
+      vibe_cluster_momentum: {
+        Row: {
+          centroid: unknown | null
+          delta_15m: number | null
+          delta_5m: number | null
+          dom_count: number | null
+          dom_vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          gh6: string | null
+          total_now: number | null
         }
         Relationships: []
       }
@@ -2936,6 +2966,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      publish_hotspots: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       publish_presence_counts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -2945,6 +2979,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_venue_social_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_vibe_cluster_momentum: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
