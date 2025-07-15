@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useEffect } from 'react';
-import { RefreshCcw, Filter, Search } from 'lucide-react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { RefreshCcw, Filter, Search, Settings, Map } from 'lucide-react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,13 @@ import { FloqStatusBadge } from '@/components/FloqStatusBadge';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { FilterModal } from '@/components/FilterModal';
+import { AdvancedSearchSheet } from '@/components/AdvancedSearchSheet';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { FloqCard } from '@/components/floq/FloqCard';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
+import { useFloqSearch } from '@/hooks/useFloqSearch';
 import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
@@ -45,7 +47,12 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     hasActiveFilters,
     selectedFloqId,
     setSelectedFloqId,
+    advancedFilters,
+    useAdvancedSearch,
+    setUseAdvancedSearch,
   } = useFloqUI();
+
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -78,6 +85,22 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   useEffect(() => {
     if (myFlocksError) console.error('[MyFlocks] query failed', myFlocksError);
   }, [myFlocksError]);
+
+  // Advanced search hook
+  const { 
+    data: advancedSearchResults = [], 
+    isLoading: advancedSearchLoading 
+  } = useFloqSearch(
+    geo,
+    {
+      query: advancedFilters.query,
+      radiusKm: advancedFilters.radiusKm,
+      vibes: advancedFilters.vibes,
+      timeRange: advancedFilters.timeRange,
+    },
+    useAdvancedSearch && geo !== null
+  );
+
   const { data: nearbyFlocks = [], isLoading: nearbyLoading } = useNearbyFlocks({ 
     geo, 
     filters: { ...filters, searchQuery } // Include search query in filters
@@ -85,6 +108,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   const { data: suggestions = [], isLoading: suggestionsLoading } = useFloqSuggestions({ 
     geo 
   });
+
+  // Use advanced search results when advanced search is active
+  const displayFlocks = useAdvancedSearch ? advancedSearchResults : nearbyFlocks;
+  const isSearching = useAdvancedSearch ? advancedSearchLoading : nearbyLoading;
 
   // Memoized handlers for FloqCard actions
   const handleBoost = useCallback((floqId: string) => {
@@ -144,13 +171,44 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search flocks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={useAdvancedSearch ? "Using advanced search..." : "Search flocks..."}
+                value={useAdvancedSearch ? advancedFilters.query : searchQuery}
+                onChange={(e) => {
+                  if (useAdvancedSearch) {
+                    // Update advanced search query
+                  } else {
+                    setSearchQuery(e.target.value);
+                  }
+                }}
                 className="pl-10 bg-background/50"
+                disabled={useAdvancedSearch}
               />
             </div>
           </form>
+          
+          {/* Advanced Search Toggle */}
+          <Button
+            variant={useAdvancedSearch ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              if (useAdvancedSearch) {
+                setUseAdvancedSearch(false);
+              } else {
+                setShowAdvancedSearch(true);
+              }
+            }}
+            className={cn(
+              "relative",
+              useAdvancedSearch && "border-primary bg-primary text-primary-foreground"
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            {useAdvancedSearch && (
+              <Badge variant="secondary" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px]">
+                A
+              </Badge>
+            )}
+          </Button>
           
           <Button
             variant="outline"
@@ -158,11 +216,12 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             onClick={() => setShowFiltersModal(true)}
             className={cn(
               "relative",
-              hasActiveFilters && "border-primary bg-primary/10"
+              hasActiveFilters && !useAdvancedSearch && "border-primary bg-primary/10"
             )}
+            disabled={useAdvancedSearch}
           >
             <Filter className="w-4 h-4" />
-            {hasActiveFilters && (
+            {hasActiveFilters && !useAdvancedSearch && (
               <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px]">
                 !
               </Badge>
@@ -179,6 +238,36 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             <RefreshCcw className="w-4 h-4" />
           </Button>
         </div>
+
+        {/* Advanced Search Status Bar */}
+        {useAdvancedSearch && (
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span>Advanced Search Active</span>
+              {advancedFilters.query && (
+                <Badge variant="outline" className="text-xs">
+                  "{advancedFilters.query}"
+                </Badge>
+              )}
+              {advancedFilters.vibes.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {advancedFilters.vibes.length} vibe{advancedFilters.vibes.length !== 1 ? 's' : ''}
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-xs">
+                {advancedFilters.radiusKm} km radius
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedSearch(true)}
+              className="text-xs h-6"
+            >
+              Edit
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -218,18 +307,18 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             </section>
           )}
 
-          {/* Nearby Flocks */}
+          {/* Floqs Results */}
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground">
-                Nearby Flocks
+                {useAdvancedSearch ? 'Search Results' : 'Nearby Flocks'}
               </h2>
               <Badge variant="secondary" className="text-xs">
-                {nearbyFlocks.length}
+                {displayFlocks.length}
               </Badge>
             </div>
             
-            {nearbyLoading ? (
+            {isSearching ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="flex items-center gap-4 p-5 bg-card/30 border border-border/20 backdrop-blur-md rounded-xl">
@@ -246,9 +335,9 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                   </div>
                 ))}
               </div>
-            ) : nearbyFlocks.length > 0 ? (
-              <ul role="list" aria-label="Nearby floqs" className="space-y-4">
-                {nearbyFlocks.slice(0, 5).map((floq) => (
+            ) : displayFlocks.length > 0 ? (
+              <ul role="list" aria-label={useAdvancedSearch ? "Search results" : "Nearby floqs"} className="space-y-4">
+                {displayFlocks.slice(0, 20).map((floq) => (
                   <li key={floq.id}>
                     <FloqCard 
                       floq={floq}
@@ -261,8 +350,13 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
               </ul>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No nearby flocks found</p>
-                <p className="text-sm mt-1">Try adjusting your filters or create one!</p>
+                <p>{useAdvancedSearch ? 'No floqs match your search' : 'No nearby flocks found'}</p>
+                <p className="text-sm mt-1">
+                  {useAdvancedSearch 
+                    ? 'Try adjusting your search criteria' 
+                    : 'Try adjusting your filters or create one!'
+                  }
+                </p>
               </div>
             )}
           </section>
@@ -271,6 +365,21 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
       {/* Modals */}
       <FilterModal />
+      <AdvancedSearchSheet 
+        open={showAdvancedSearch} 
+        onOpenChange={(open) => {
+          setShowAdvancedSearch(open);
+          if (!open && !useAdvancedSearch) {
+            // If closing without enabling, ensure advanced search is off
+            setUseAdvancedSearch(false);
+          } else if (!open && useAdvancedSearch) {
+            // If closing but advanced search is enabled, keep it on
+          } else if (open) {
+            // When opening, enable advanced search
+            setUseAdvancedSearch(true);
+          }
+        }} 
+      />
       <CreateFloqSheet />
     </div>
   );

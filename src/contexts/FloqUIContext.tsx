@@ -11,6 +11,15 @@ export interface FloqFilters {
   searchQuery?: string;
 }
 
+// Advanced search filters extending the basic ones
+export interface AdvancedFloqFilters {
+  query: string;
+  radiusKm: number; // 1-100 km range
+  vibes: string[]; // multiple vibe selection
+  timeRange: [Date, Date]; // time window
+  showOnlyActive?: boolean;
+}
+
 interface FloqUIContextValue {
   // Tab navigation
   activeTab: FloqTab;
@@ -21,6 +30,12 @@ interface FloqUIContextValue {
   setFilters: (filters: FloqFilters | ((prev: FloqFilters) => FloqFilters)) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  
+  // Advanced search
+  advancedFilters: AdvancedFloqFilters;
+  setAdvancedFilters: (filters: AdvancedFloqFilters | ((prev: AdvancedFloqFilters) => AdvancedFloqFilters)) => void;
+  useAdvancedSearch: boolean;
+  setUseAdvancedSearch: (use: boolean) => void;
   
   // UI state
   showCreateSheet: boolean;
@@ -59,6 +74,16 @@ export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
   const [showChat, setShowChat] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [sortBy, setSortBy] = useState<'distance' | 'activity' | 'recent'>('distance');
+  
+  // Advanced search state
+  const [useAdvancedSearch, setUseAdvancedSearch] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFloqFilters>({
+    query: '',
+    radiusKm: 25,
+    vibes: [],
+    timeRange: [new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)], // next 7 days
+    showOnlyActive: false,
+  });
 
   const clearFilters = () => {
     setFilters({} as FloqFilters);
@@ -83,6 +108,12 @@ export const FloqUIProvider = ({ children }: FloqUIProviderProps) => {
     setFilters,
     searchQuery,
     setSearchQuery,
+    
+    // Advanced search
+    advancedFilters,
+    setAdvancedFilters,
+    useAdvancedSearch,
+    setUseAdvancedSearch,
     
     // UI state
     showCreateSheet,
