@@ -13,6 +13,10 @@ export interface VenueCluster {
   lng: number;
   pointCount: number; // 0 = single venue, >0 = cluster
   props: Record<string, any>;
+  // For compatibility with existing field components
+  geometry?: { coordinates: [number, number] };
+  vibe?: string;
+  name?: string;
 }
 
 export interface ClusterVenue {
@@ -63,7 +67,7 @@ export function useVenueClusters(viewport: Viewport) {
   });
 
   // Use ref to persist supercluster index for performance
-  const indexRef = useRef<Supercluster<undefined, any> | null>(null);
+  const indexRef = useRef<Supercluster<any, any> | null>(null);
 
   // Create supercluster index and cluster venues
   const clusters = useMemo(() => {
@@ -71,7 +75,7 @@ export function useVenueClusters(viewport: Viewport) {
 
     // Create or reuse supercluster index
     if (!indexRef.current) {
-      indexRef.current = new Supercluster<undefined, any>({
+      indexRef.current = new Supercluster<any, any>({
         radius: 60, // Cluster radius in pixels
         maxZoom: 18, // Maximum zoom level for clustering
         minZoom: 0,
@@ -130,6 +134,10 @@ export function useVenueClusters(viewport: Viewport) {
           lng,
           pointCount: 0,
           props: feature.properties,
+          // Add compatibility fields
+          geometry: { coordinates: [lng, lat] as [number, number] },
+          vibe: feature.properties.vibe,
+          name: feature.properties.name,
         };
       }
     });

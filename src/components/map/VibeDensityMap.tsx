@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
 import { DeckClusterLayer } from './DeckClusterLayer'
 import { ClusterLegend } from './ClusterLegend'
@@ -7,16 +7,7 @@ import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
 
-// Simple viewport type
-interface ViewState {
-  longitude: number
-  latitude: number
-  zoom: number
-  pitch: number
-  bearing: number
-}
-
-const INITIAL_VIEW_STATE: ViewState = {
+const INITIAL_VIEW_STATE = {
   longitude: -122.4,
   latitude: 37.8,
   zoom: 11,
@@ -31,7 +22,7 @@ interface Props {
 }
 
 export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
-  const [viewState, setViewState] = useState<ViewState>(INITIAL_VIEW_STATE)
+  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null)
 
   // Calculate bounding box from current viewport
@@ -92,13 +83,13 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
 
       {/* Map Container */}
       <div className="absolute inset-0 pt-16 rounded-b-2xl overflow-hidden">
-        <DeckGL
-          initialViewState={INITIAL_VIEW_STATE}
-          onViewStateChange={({ viewState: newViewState }) => setViewState(newViewState as any)}
-          controller={true}
-          layers={layers}
-          style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#1a1a1a' }}
-        />
+        {React.createElement(DeckGL as any, {
+          initialViewState: INITIAL_VIEW_STATE,
+          controller: true,
+          layers: layers,
+          onViewStateChange: (params: any) => setViewState(params.viewState),
+          style: { width: '100%', height: '100%' }
+        })}
 
         {/* Legend */}
         <ClusterLegend 
