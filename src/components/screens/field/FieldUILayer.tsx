@@ -5,6 +5,8 @@ import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
 import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
+import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
+import { SocialToastProvider } from "@/components/social/SocialToast";
 import { Z } from "@/constants/zLayers";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
@@ -78,6 +80,9 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
 
   return (
     <>
+      {/* Social Toast Provider - always active */}
+      <SocialToastProvider />
+      
       {/* Header - hidden in full mode */}
       {!isFull && (
         <motion.div
@@ -147,6 +152,11 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
         >
           {/* Social Gesture Manager */}
           <SocialGestureManager onSocialAction={handleSocialAction} />
+
+          {/* Friend Suggestions Carousel */}
+          <div className="absolute bottom-20 left-0 right-0 px-4 pointer-events-auto">
+            <FriendSuggestionCarousel />
+          </div>
 
           {/* Time Warp Slider */}
           <TimeWarpSlider 
