@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { useVibe, useCurrentVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_COLORS, type VibeEnum } from '@/constants/vibes';
 
-const SEGMENT = 360 / VIBE_ORDER.length; // ~40° per vibe
+const SEGMENT = 360 / VIBE_ORDER.length;
 const SPRING_CONFIG = { stiffness: 170, damping: 18, mass: 0.6 };
 
 interface VibeWheelProps {
@@ -16,11 +16,9 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
   const current = useCurrentVibe() ?? VIBE_ORDER[0];
   const [isDragging, setIsDragging] = useState(false);
   
-  // Motion values for smooth animation
   const theta = useMotionValue(VIBE_ORDER.indexOf(current) * SEGMENT);
   const lastSnapRef = useRef(current);
 
-  // Update wheel position when vibe changes externally
   useEffect(() => {
     if (!isDragging && current !== lastSnapRef.current) {
       const targetAngle = VIBE_ORDER.indexOf(current) * SEGMENT;
@@ -29,7 +27,6 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
     }
   }, [current, isDragging, theta]);
 
-  // Color interpolation based on rotation
   const backgroundColor = useTransform(theta, (angle) => {
     const rawIndex = angle / SEGMENT;
     const baseIdx = Math.floor(((rawIndex % VIBE_ORDER.length) + VIBE_ORDER.length) % VIBE_ORDER.length);
@@ -39,56 +36,53 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
     return mixColor(t, c0, c1);
   });
 
-  const glowOpacity = useTransform(() => isDragging ? 0.6 : 0.35);
+  const glowOpacity = useMotionValue(0.35);
 
   const handlePanStart = () => {
     if (disabled) return;
     setIsDragging(true);
+    glowOpacity.set(0.6);
   };
 
   const handlePan = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (disabled) return;
-    
     const deltaX = info.delta.x;
     const currentAngle = theta.get();
-    theta.set(currentAngle + deltaX * 0.5); // 0.5° per px
+    theta.set(currentAngle + deltaX * 0.5);
   };
 
   const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (disabled) {
       setIsDragging(false);
+      glowOpacity.set(0.35);
       return;
     }
 
-    // Apply momentum and snap to nearest segment
     const velocity = info.velocity.x * 0.5;
     const currentAngle = theta.get();
     const targetAngle = Math.round((currentAngle + velocity * 0.1) / SEGMENT) * SEGMENT;
     
-    // Animate to target
     theta.set(targetAngle);
     
-    // Calculate which vibe we snapped to
     const normalizedAngle = ((targetAngle % 360) + 360) % 360;
     const vibeIndex = Math.round(normalizedAngle / SEGMENT) % VIBE_ORDER.length;
     const newVibe = VIBE_ORDER[vibeIndex];
     
     setIsDragging(false);
+    glowOpacity.set(0.35);
     
-    // Trigger snap if vibe changed
     if (newVibe !== current) {
       triggerSnap(newVibe);
     }
   };
 
   const triggerSnap = (vibe: VibeEnum) => {
-    // Haptic feedback with web fallback
     try {
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(10);
       }
     } catch (error) {
-      // Silent fallback - haptics not available
+      // Silent fallback
     }
     
     setVibe(vibe);
@@ -121,7 +115,6 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
         role="slider"
         tabIndex={disabled ? -1 : 0}
       >
-        {/* Animated glow effect */}
         <motion.div
           className="absolute inset-0 rounded-full"
           style={{
@@ -130,7 +123,6 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
           }}
         />
         
-        {/* Vibe segments */}
         {VIBE_ORDER.map((vibe, index) => {
           const angle = index * SEGMENT;
           const isActive = vibe === current;
@@ -160,7 +152,6 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
           );
         })}
         
-        {/* Center indicator */}
         <div className="absolute top-1/2 left-1/2 w-5 h-5 -mt-2.5 -ml-2.5 rounded-full bg-white flex items-center justify-center shadow-lg">
           <div
             className="w-3 h-3 rounded-full"
@@ -172,7 +163,6 @@ export const VibeWheel = memo(({ size = 280, disabled = false }: VibeWheelProps)
   );
 });
 
-/** Linear blend of two hex colors */
 function mixColor(t: number, c0: string, c1: string): string {
   const a = parseInt(c0.slice(1), 16);
   const b = parseInt(c1.slice(1), 16);
