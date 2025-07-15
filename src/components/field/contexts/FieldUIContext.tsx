@@ -4,6 +4,7 @@ import { useTimeSyncContext } from '@/components/TimeSyncProvider';
 import { useDebug } from '@/lib/useDebug';
 import { useFullscreenMap } from '@/store/useFullscreenMap';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
+import { useCurrentVibe, useVibe } from '@/lib/store/useVibe';
 import type { Vibe } from '@/types';
 
 interface FieldUIContextValue {
@@ -50,7 +51,8 @@ export const FieldUIProvider = ({ children }: FieldUIProviderProps) => {
   const [showBanner, setShowBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [venuesSheetOpen, setVenuesSheetOpen] = useState(false);
-  const [currentVibe, setCurrentVibe] = useState<Vibe>('social');
+  const currentVibe = useCurrentVibe() || 'social';
+  const { setVibe: setCurrentVibe } = useVibe();
   const { selectedVenueId, setSelectedVenueId } = useSelectedVenue();
   
   const { mode, setMode } = useFullscreenMap();
