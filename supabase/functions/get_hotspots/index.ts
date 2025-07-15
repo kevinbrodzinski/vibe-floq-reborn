@@ -14,10 +14,22 @@ export default serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const lat = parseFloat(url.searchParams.get('lat') ?? '')
-    const lng = parseFloat(url.searchParams.get('lng') ?? '')
-    const vibe = url.searchParams.get('vibe') ?? ''
-    const radius = parseInt(url.searchParams.get('radius') ?? '1500', 10)
+    let lat: number, lng: number, vibe: string, radius: number
+
+    // Handle POST requests with JSON body
+    if (req.method === 'POST') {
+      const body = await req.json()
+      lat = parseFloat(body.lat ?? '')
+      lng = parseFloat(body.lng ?? '')
+      vibe = body.vibe ?? ''
+      radius = parseInt(body.radius ?? '1500', 10)
+    } else {
+      // Handle GET requests with query parameters
+      lat = parseFloat(url.searchParams.get('lat') ?? '')
+      lng = parseFloat(url.searchParams.get('lng') ?? '')
+      vibe = url.searchParams.get('vibe') ?? ''
+      radius = parseInt(url.searchParams.get('radius') ?? '1500', 10)
+    }
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || !vibe) {
       return new Response(

@@ -15,19 +15,13 @@ export interface Hotspot {
 }
 
 const fetchHotspots = async (lat: number, lng: number, vibe: string): Promise<Hotspot[]> => {
-  const params = new URLSearchParams({
-    lat: lat.toString(),
-    lng: lng.toString(),
-    vibe: vibe,
-    radius: '1500' // 1.5km max radius
-  })
-
   const { data, error } = await supabase.functions.invoke('get_hotspots', {
-    method: 'GET',
-    body: undefined,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    body: {
+      lat,
+      lng,
+      vibe,
+      radius: 1500
+    }
   })
 
   if (error) {
