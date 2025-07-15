@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Filter, MapPin, Users, Clock, X, RotateCcw } from 'lucide-react';
+import { Calendar, Filter, X, RotateCcw, MapPin, Users, Clock } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -229,7 +229,7 @@ export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalP
         </div>
 
         {/* Date Range Popover */}
-        <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+        <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen} modal>
           <PopoverContent className="w-auto p-0" align="start">
             <CalendarComponent
               mode="range"

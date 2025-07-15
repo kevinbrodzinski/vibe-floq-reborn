@@ -35,7 +35,7 @@ export function SearchBarWithTypeahead({
   
   const { coords } = useEnhancedGeolocation();
   
-  const debouncedOnChange = useDebouncedCallback(onChange, 250);
+  const debouncedOnChange = useDebouncedCallback(onChange, 250, { leading: false });
   
   // Use search hook for typeahead with basic filters
   const { 
