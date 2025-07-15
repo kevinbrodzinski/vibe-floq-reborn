@@ -114,7 +114,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     enableRealtime: presenceMode === 'live',
     enableGeolocation: presenceMode !== 'offline',
     enablePresenceUpdates: presenceMode === 'live',
-    hotSpotHalos: import.meta.env.VITE_HOTSPOT_HALOS === 'true' || false,
+    hotSpotHalos: false,
     debugPresence,
     debugGeohash,
     debugNetwork,
@@ -231,7 +231,7 @@ export function getProductionConfig(): EnvironmentConfig {
     enableRealtime: true,
     enableGeolocation: true,
     enablePresenceUpdates: true,
-    hotSpotHalos: true, // Enable in production
+    hotSpotHalos: false, // Disabled until MV data is populated
     debugPresence: false,
     debugGeohash: false,
     debugNetwork: false,
