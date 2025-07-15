@@ -56,41 +56,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Only create if profile doesn't exist
-        if (!existing) {
-          // Generate a safe username once
-          const base = slugify(user.email?.split("@")[0] ?? "user", {
-            lower: true,
-            strict: true,
-          });
-          // Append 4-char hash to avoid collisions
-          const username = `${base}_${user.id.slice(0, 4)}`;
+        if (existing) {
+          // ✅ profile already exists – do nothing
+          return;
+        }
 
-          const { data, error: insErr } = await supabase.from("profiles").insert({
-            id: user.id,
-            display_name: user.user_metadata?.full_name ?? base,
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-            username,
-          }).select().single();
+        // Generate a safe username once
+        const base = slugify(user.email?.split("@")[0] ?? "user", {
+          lower: true,
+          strict: true,
+        });
+        // Append 4-char hash to avoid collisions
+        const username = `${base}_${user.id.slice(0, 4)}`;
 
-          if (insErr) {
-            console.error("[Auth] profile insert failed", insErr);
-          } else if (data) {
-            // Cache the new profile
-            queryClient.setQueryData(['profile', user.id], data);
-            console.log("[Auth] Profile created successfully", { username: data.username });
-          }
-        } else {
-          // Profile exists, just cache it and ensure we fetch full profile data
-          const { data: fullProfile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-          
-          if (fullProfile) {
-            queryClient.setQueryData(['profile', user.id], fullProfile);
-            console.log("[Auth] Profile cached successfully", { username: fullProfile.username });
-          }
+        const { data, error: insErr } = await supabase.from("profiles").insert({
+          id: user.id,
+          display_name: user.user_metadata?.full_name ?? base,
+          avatar_url: user.user_metadata?.avatar_url ?? null,
+          username,
+        }).select().single();
+
+        if (insErr) {
+          console.error("[Auth] profile insert failed", insErr);
+        } else if (data) {
+          // Cache the new profile
+          queryClient.setQueryData(['profile', user.id], data);
+          console.log("[Auth] Profile created successfully", { username: data.username });
         }
       }
     );
