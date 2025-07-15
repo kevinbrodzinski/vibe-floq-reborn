@@ -10,6 +10,8 @@ import { FloqStatusBadge } from '@/components/FloqStatusBadge';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
 import { FilterModal } from '@/components/FilterModal';
+import { EnhancedFilterModal } from '@/components/EnhancedFilterModal';
+import { SearchBarWithTypeahead } from '@/components/SearchBarWithTypeahead';
 import { AdvancedSearchSheet } from '@/components/AdvancedSearchSheet';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { FloqCard } from '@/components/floq/FloqCard';
@@ -167,24 +169,31 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
       {/* Header with search and filters */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
         <div className="flex items-center gap-3">
-          <form onSubmit={handleSearchSubmit} className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={useAdvancedSearch ? "Using advanced search..." : "Search flocks..."}
-                value={useAdvancedSearch ? advancedFilters.query : searchQuery}
-                onChange={(e) => {
-                  if (useAdvancedSearch) {
-                    // Update advanced search query
-                  } else {
-                    setSearchQuery(e.target.value);
-                  }
-                }}
-                className="pl-10 bg-background/50"
-                disabled={useAdvancedSearch}
-              />
-            </div>
-          </form>
+          {useAdvancedSearch ? (
+            <form onSubmit={handleSearchSubmit} className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Using advanced search..."
+                  value={advancedFilters.query}
+                  onChange={() => {}} // Disabled for advanced search
+                  className="pl-10 bg-background/50"
+                  disabled
+                />
+              </div>
+            </form>
+          ) : (
+            <SearchBarWithTypeahead
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onSelect={(result) => {
+                // Navigate to selected floq
+                navigate(`/floqs/${result.id}`);
+              }}
+              placeholder="Search flocks..."
+              className="flex-1"
+            />
+          )}
           
           {/* Advanced Search Toggle */}
           <Button
@@ -364,7 +373,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
       </div>
 
       {/* Modals */}
-      <FilterModal />
+      <EnhancedFilterModal 
+        open={showFiltersModal} 
+        onOpenChange={setShowFiltersModal} 
+      />
       <AdvancedSearchSheet 
         open={showAdvancedSearch} 
         onOpenChange={(open) => {
