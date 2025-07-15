@@ -20,6 +20,7 @@ import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
 import { Loader2, Check, X } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/avatar';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
+import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 
 interface FriendsSheetProps {
   open: boolean;
@@ -111,42 +112,12 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                   {friendsWithPresence.map(friend => {
                     const nearbyFriend = friendsNearby.find(f => f.id === friend.friend_id);
                     return (
-                      <div 
+                      <OnlineFriendRow 
                         key={friend.friend_id}
-                        className={`flex items-center gap-3 p-2 rounded-md ${nearbyFriend ? 'bg-primary/5 border border-primary/20' : ''}`}
-                      >
-                        <div className="relative">
-                          <AvatarWithFallback 
-                            src={friend.avatar_url ? getAvatarUrl(friend.avatar_url, 32) : null}
-                            fallbackText={friend.display_name || friend.username || 'U'}
-                            className="w-8 h-8"
-                          />
-                          {friend.online && (
-                            <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">
-                            {friend.display_name || friend.username}
-                          </p>
-                          {friend.online && friend.vibe_tag && (
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {friend.vibe_tag}
-                            </p>
-                          )}
-                        </div>
-                        {nearbyFriend && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            <span>
-                              {nearbyFriend.distance_m < 1000 
-                                ? `${Math.round(nearbyFriend.distance_m)}m`
-                                : `${(nearbyFriend.distance_m / 1000).toFixed(1)}km`
-                              }
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                        userId={friend.friend_id}
+                        isNearby={!!nearbyFriend}
+                        distance={nearbyFriend?.distance_m}
+                      />
                     );
                   })}
                 </div>
