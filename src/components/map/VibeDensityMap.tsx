@@ -38,17 +38,19 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null)
 
-  // Calculate bounding box from current viewport
+  // Calculate bounding box from current viewport with clamping
   const bbox = useMemo(() => {
     const { longitude, latitude, zoom } = viewState
     const latDelta = 180 / Math.pow(2, zoom) * 2
     const lngDelta = 360 / Math.pow(2, zoom) * 2
     
+    const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
+    
     return [
-      longitude - lngDelta,
-      latitude - latDelta,
-      longitude + lngDelta,
-      latitude + latDelta
+      clamp(longitude - lngDelta, -180, 180),
+      clamp(latitude - latDelta, -85, 85),
+      clamp(longitude + lngDelta, -180, 180),
+      clamp(latitude + latDelta, -85, 85)
     ] as [number, number, number, number]
   }, [viewState])
 
@@ -64,11 +66,16 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   const { clusters, loading, error } = useClusters(bbox, precision)
 
   // Color scale based on cluster size
-  const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
-  const colorScale = useMemo(
-    () => scaleSequential((t: number) => interpolateTurbo(t)).domain([0, maxTotal]),
-    [maxTotal]
-  )
+  const colorScale = useMemo(() => {
+    const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
+    return (n: number) => {
+      const t = n / maxTotal
+      const r = Math.round(255 * Math.min(1, Math.max(0, 4 * t - 1.5)))
+      const g = Math.round(255 * Math.min(1, Math.max(0, -2 * Math.abs(t - 0.5) + 1)))
+      const b = Math.round(255 * Math.min(1, Math.max(0, -4 * t + 2.5)))
+      return [r, g, b] as [number, number, number]
+    }
+  }, [clusters])
 
   const handleClusterClick = useCallback((cluster: Cluster) => {
     setSelectedCluster(cluster)
