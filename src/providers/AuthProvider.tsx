@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
               // Generate a unique temporary username with collision guard
               const emailPrefix = session.user.email?.split('@')[0] || 'user';
-              const tempUsername = `${emailPrefix}_${nanoid(6)}`.toLowerCase();
+              const tempUsername = `${emailPrefix.slice(0, 25)}_${nanoid(6)}`.toLowerCase();
               
               const profileData = {
                 id: session.user.id,
