@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useFloqSearch } from '@/hooks/useFloqSearch';
 import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
-import { formatDistance } from '@/utils/formatDistance';
+import { formatDistanceMeters } from '@/utils/formatDistanceMeters';
 import { cn } from '@/lib/utils';
 import { useDebouncedCallback } from 'use-debounce';
 import type { FloqSearchResult } from '@/types/SearchFilters';
@@ -118,7 +118,7 @@ export function SearchBarWithTypeahead({
 
   // Format distance for display
   const getDistanceText = (distanceM: number) => {
-    return `${(distanceM / 1000).toFixed(1)}km`;
+    return formatDistanceMeters(distanceM);
   };
 
   return (
