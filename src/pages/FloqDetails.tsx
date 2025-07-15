@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { ArrowLeft, Activity, Users, Info, Settings2, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,28 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { FloqAnalyticsDashboard } from '@/components/floq/FloqAnalyticsDashboard';
 import { FloqInfoTab } from '@/components/floq/FloqInfoTab';
 import { FloqPlansTab } from '@/components/floq/FloqPlansTab';
+import { FloqChat } from '@/components/floq/FloqChat';
 
 const FloqDetails = () => {
   const { floqId } = useParams<{ floqId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { session } = useAuth();
   const { goBack } = useNavigation();
   const [activeTab, setActiveTab] = useState('info');
+
+  // Handle deep-link tab selection
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['info', 'chat', 'plans', 'analytics', 'settings'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value }, { replace: true });
+  };
   
   const { data: floqDetails, isLoading, error } = useFloqDetails(floqId, session?.user?.id);
 
@@ -94,32 +110,52 @@ const FloqDetails = () => {
         </div>
 
         {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="info" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="info" 
+              className="flex items-center gap-2"
+              aria-current={activeTab === 'info' ? 'page' : undefined}
+            >
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Info</span>
             </TabsTrigger>
             {hasAccess && (
-              <TabsTrigger value="chat" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="chat" 
+                className="flex items-center gap-2"
+                aria-current={activeTab === 'chat' ? 'page' : undefined}
+              >
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Chat</span>
               </TabsTrigger>
             )}
             {hasAccess && (
-              <TabsTrigger value="plans" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="plans" 
+                className="flex items-center gap-2"
+                aria-current={activeTab === 'plans' ? 'page' : undefined}
+              >
                 <Calendar className="h-4 w-4" />
                 <span className="hidden sm:inline">Plans</span>
               </TabsTrigger>
             )}
             {isCreator && (
-              <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="analytics" 
+                className="flex items-center gap-2"
+                aria-current={activeTab === 'analytics' ? 'page' : undefined}
+              >
                 <Activity className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
               </TabsTrigger>
             )}
             {isCreator && (
-              <TabsTrigger value="settings" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="settings" 
+                className="flex items-center gap-2"
+                aria-current={activeTab === 'settings' ? 'page' : undefined}
+              >
                 <Settings2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Settings</span>
               </TabsTrigger>
@@ -134,11 +170,13 @@ const FloqDetails = () => {
 
             {hasAccess && (
               <TabsContent value="chat" className="mt-0">
-                <Card className="p-4 h-[500px]">
-                  <div className="text-center py-8 text-muted-foreground">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                    <p>Chat integration coming soon</p>
-                  </div>
+                <Card className="h-[500px] flex flex-col">
+                  <FloqChat 
+                    floqId={floqDetails.id}
+                    isOpen={true}
+                    onClose={() => {}}
+                    isJoined={hasAccess}
+                  />
                 </Card>
               </TabsContent>
             )}

@@ -159,27 +159,7 @@ export function useFloqDetails(
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'floq_participants',
-          filter: `floq_id=eq.${floqId}`
-        },
-        () => debouncedRefetch()
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'floq_participants',
-          filter: `floq_id=eq.${floqId}`
-        },
-        () => debouncedRefetch()
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'floq_participants',
           filter: `floq_id=eq.${floqId}`
