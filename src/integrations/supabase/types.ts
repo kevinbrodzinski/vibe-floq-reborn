@@ -935,6 +935,7 @@ export type Database = {
           custom_status: string | null
           display_name: string
           first_name: string | null
+          full_name: string | null
           id: string
           interests: string[] | null
           last_name: string | null
@@ -948,6 +949,7 @@ export type Database = {
           custom_status?: string | null
           display_name: string
           first_name?: string | null
+          full_name?: string | null
           id?: string
           interests?: string[] | null
           last_name?: string | null
@@ -961,6 +963,7 @@ export type Database = {
           custom_status?: string | null
           display_name?: string
           first_name?: string | null
+          full_name?: string | null
           id?: string
           interests?: string[] | null
           last_name?: string | null
@@ -3890,6 +3893,10 @@ export type Database = {
       update_user_activity_tracking: {
         Args: { p_floq_id: string; p_section?: string }
         Returns: undefined
+      }
+      update_username: {
+        Args: { p_username: string }
+        Returns: Json
       }
       updategeometrysrid: {
         Args: {
