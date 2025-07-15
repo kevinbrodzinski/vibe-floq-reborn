@@ -8,6 +8,7 @@ import { useFloqSearch } from '@/hooks/useFloqSearch';
 import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
+import { useDebouncedCallback } from 'use-debounce';
 import type { FloqSearchResult } from '@/types/SearchFilters';
 
 interface SearchBarWithTypeaheadProps {
@@ -34,6 +35,8 @@ export function SearchBarWithTypeahead({
   
   const { coords } = useEnhancedGeolocation();
   
+  const debouncedOnChange = useDebouncedCallback(onChange, 250);
+  
   // Use search hook for typeahead with basic filters
   const { 
     data: suggestions = [], 
@@ -46,7 +49,7 @@ export function SearchBarWithTypeahead({
       vibes: [], // No vibe filter for suggestions
       timeRange: [new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)] // Next 30 days
     },
-    // Only search when we have a query and it's shown
+    // Only search when we have coords, a query, and suggestions are shown
     Boolean(value.trim() && showSuggestions && coords)
   );
 
@@ -55,7 +58,7 @@ export function SearchBarWithTypeahead({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    onChange(newValue);
+    debouncedOnChange(newValue);
     setSelectedIndex(-1);
     setShowSuggestions(newValue.trim().length > 0);
   };
@@ -159,12 +162,16 @@ export function SearchBarWithTypeahead({
       {showSuggestions && filteredSuggestions.length > 0 && (
         <Card 
           ref={suggestionsRef}
+          role="listbox"
+          tabIndex={-1}
           className="absolute top-full left-0 right-0 mt-1 z-50 overflow-hidden shadow-lg border bg-background"
         >
           <div className="max-h-80 overflow-y-auto">
             {filteredSuggestions.map((suggestion, index) => (
               <div
                 key={suggestion.id}
+                role="option"
+                aria-selected={selectedIndex === index}
                 onClick={() => handleSuggestionClick(suggestion)}
                 className={cn(
                   "flex items-center justify-between p-3 cursor-pointer transition-colors border-b border-border/50 last:border-b-0",
@@ -198,7 +205,7 @@ export function SearchBarWithTypeahead({
           {/* Footer hint */}
           <div className="px-3 py-2 bg-muted/30 border-t border-border/50">
             <p className="text-xs text-muted-foreground">
-              Use ↑↓ to navigate, Enter to select, Esc to close
+              ↑↓ to navigate · Enter to select · Esc to close
             </p>
           </div>
         </Card>

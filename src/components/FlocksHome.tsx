@@ -55,6 +55,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   } = useFloqUI();
 
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -374,8 +375,8 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
       {/* Modals */}
       <EnhancedFilterModal 
-        open={showFiltersModal} 
-        onOpenChange={setShowFiltersModal} 
+        open={advancedSearchOpen} 
+        onOpenChange={setAdvancedSearchOpen} 
       />
       <AdvancedSearchSheet 
         open={showAdvancedSearch} 

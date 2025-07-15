@@ -10,7 +10,7 @@ export function useFloqSearch(
   return useQuery({
     queryKey: ['floq-search', coords, filters],
     enabled: enabled && !!coords,
-    staleTime: 60_000,
+    staleTime: 30_000,
     queryFn: async () => {
       if (!coords) return [];
 

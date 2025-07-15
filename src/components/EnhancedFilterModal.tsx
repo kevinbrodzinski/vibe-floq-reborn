@@ -1,22 +1,19 @@
-import React, { useState } from 'react';
-import { X, RotateCcw, Calendar, MapPin, Clock, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { Calendar, Filter, MapPin, Users, Clock, X, RotateCcw } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useFloqUI } from '@/contexts/FloqUIContext';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { useFloqUI } from '@/contexts/FloqUIContext';
+import type { DateRange } from 'react-day-picker';
 import type { Vibe } from '@/types';
-
-const VIBE_OPTIONS: Vibe[] = [
-  'chill', 'hype', 'romantic', 'social', 'solo', 'weird', 'flowing', 'down'
-];
 
 const VIBE_COLORS: Partial<Record<Vibe, string>> = {
   chill: 'hsl(180, 70%, 60%)',
@@ -29,170 +26,168 @@ const VIBE_COLORS: Partial<Record<Vibe, string>> = {
   down: 'hsl(220, 15%, 55%)',
 };
 
+const VIBE_OPTIONS: Vibe[] = [
+  'chill', 'hype', 'romantic', 'social', 'solo', 'weird', 'flowing', 'down'
+];
+
 interface EnhancedFilterModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalProps) {
-  const { filters, setFilters, clearFilters, hasActiveFilters } = useFloqUI();
-  const [localFilters, setLocalFilters] = useState(filters);
+  const { advancedFilters, setAdvancedFilters } = useFloqUI();
+  const [localFilters, setLocalFilters] = useState(advancedFilters);
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
   
-  // Local state for date range (extending filters interface)
-  const [timeRange, setTimeRange] = useState<[Date, Date]>([
-    new Date(),
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  ]);
-  
+  // Sync local state when sheet opens
+  useEffect(() => {
+    if (open) setLocalFilters(advancedFilters);
+  }, [open, advancedFilters]);
+
+  const timeRange = localFilters.timeRange;
+
   const handleDistanceChange = (distance: number[]) => {
-    setLocalFilters(prev => ({ ...prev, distanceKm: distance[0] }));
+    setLocalFilters(prev => ({ ...prev, radiusKm: distance[0] }));
   };
 
   const handleVibeToggle = (vibe: Vibe) => {
-    setLocalFilters(prev => ({
-      ...prev,
-      vibe: prev.vibe === vibe ? undefined : vibe
-    }));
+    setLocalFilters(prev => {
+      const currentVibes = prev.vibes || [];
+      const isSelected = currentVibes.includes(vibe);
+      
+      return {
+        ...prev,
+        vibes: isSelected 
+          ? currentVibes.filter(v => v !== vibe)
+          : [...currentVibes, vibe]
+      };
+    });
   };
 
   const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
     if (range.from && range.to) {
-      setTimeRange([range.from, range.to]);
+      setLocalFilters(prev => ({
+        ...prev,
+        timeRange: [range.from!, range.to!]
+      }));
       setDateRangeOpen(false);
     }
   };
 
-  const handleActiveToggle = (isActive: boolean) => {
-    setLocalFilters(prev => ({ ...prev, isActive: isActive || undefined }));
+  const handleActiveToggle = (checked: boolean) => {
+    setLocalFilters(prev => ({ ...prev, showOnlyActive: checked }));
   };
 
-  const handleSearchChange = (searchQuery: string) => {
-    setLocalFilters(prev => ({ ...prev, searchQuery: searchQuery || undefined }));
+  const handleSearchChange = (query: string) => {
+    setLocalFilters(prev => ({ ...prev, query }));
   };
 
   const handleApplyFilters = () => {
-    setFilters(localFilters);
+    setAdvancedFilters(localFilters);
     onOpenChange(false);
   };
 
   const handleClearFilters = () => {
-    setLocalFilters({});
-    setTimeRange([new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)]);
-    clearFilters();
+    const defaultFilters = {
+      query: '',
+      radiusKm: 25,
+      vibes: [],
+      timeRange: [new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)] as [Date, Date],
+      showOnlyActive: false
+    };
+    setLocalFilters(defaultFilters);
+    setAdvancedFilters(defaultFilters);
+    onOpenChange(false);
   };
 
   const hasLocalFilters = Boolean(
-    localFilters.vibe ||
-    localFilters.distanceKm !== undefined ||
-    localFilters.isActive !== undefined ||
-    localFilters.searchQuery?.trim()
+    localFilters.query?.trim() ||
+    localFilters.radiusKm !== 25 ||
+    localFilters.vibes?.length > 0 ||
+    localFilters.showOnlyActive
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[90vh]">
+        <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <DialogTitle>Filter Floqs</DialogTitle>
-            <div className="flex items-center gap-2">
-              {hasLocalFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilters}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1" />
-                  Clear
-                </Button>
-              )}
-            </div>
+            <SheetTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Advanced Search
+            </SheetTitle>
+            {hasLocalFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="text-destructive hover:text-destructive"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Clear All
+              </Button>
+            )}
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-20">
           {/* Search Query */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">
-              Search Term
-            </Label>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Search Term</Label>
             <Input
               placeholder="Search floqs by title..."
-              value={localFilters.searchQuery || ''}
+              value={localFilters.query}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full"
+              className="bg-background/50"
             />
           </div>
 
           {/* Distance Slider */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">
-              <MapPin className="w-4 h-4 inline mr-1" />
-              Max Distance: {localFilters.distanceKm || 25} km
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              Distance
             </Label>
-            <Slider
-              value={[localFilters.distanceKm || 25]}
-              onValueChange={handleDistanceChange}
-              max={100}
-              min={1}
-              step={1}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>1 km</span>
-              <span>100 km</span>
+            <div className="flex items-center gap-3">
+              <Slider
+                value={[localFilters.radiusKm]}
+                onValueChange={handleDistanceChange}
+                max={100}
+                min={1}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-sm text-muted-foreground min-w-12">
+                {localFilters.radiusKm}km
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1km</span>
+              <span>100km</span>
             </div>
           </div>
 
-          {/* Time Range */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">
-              <Clock className="w-4 h-4 inline mr-1" />
-              Time Range
-            </Label>
-            <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {format(timeRange[0], 'MMM dd')} - {format(timeRange[1], 'MMM dd, yyyy')}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="range"
-                  selected={{
-                    from: timeRange[0],
-                    to: timeRange[1]
-                  }}
-                  onSelect={handleDateRangeChange}
-                  numberOfMonths={2}
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
           {/* Vibe Selection */}
-          <div>
-            <Label className="text-sm font-medium mb-2 block">
-              Primary Vibe
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Vibes
             </Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {VIBE_OPTIONS.map((vibe) => {
-                const isSelected = localFilters.vibe === vibe;
+                const isSelected = localFilters.vibes?.includes(vibe) || false;
+                const color = VIBE_COLORS[vibe] || 'hsl(var(--primary))';
+                
                 return (
                   <Badge
                     key={vibe}
                     variant={isSelected ? "default" : "outline"}
-                    className="cursor-pointer px-3 py-1 capitalize hover:scale-105 transition-transform"
+                    className="cursor-pointer p-3 justify-center capitalize hover:scale-105 transition-transform"
                     style={{
-                      backgroundColor: isSelected ? (VIBE_COLORS[vibe] || 'hsl(var(--primary))') : 'transparent',
-                      borderColor: VIBE_COLORS[vibe] || 'hsl(var(--primary))',
-                      color: isSelected ? 'white' : (VIBE_COLORS[vibe] || 'hsl(var(--primary))'),
+                      backgroundColor: isSelected ? color : 'transparent',
+                      borderColor: color,
+                      color: isSelected ? 'white' : color,
                     }}
                     onClick={() => handleVibeToggle(vibe)}
                   >
@@ -203,41 +198,71 @@ export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalP
             </div>
           </div>
 
-          {/* Active Only Filter */}
-          <div className="flex items-center justify-between">
+          {/* Time Range */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Time Range
+            </Label>
+            <Button
+              variant="outline"
+              onClick={() => setDateRangeOpen(true)}
+              className="w-full justify-start"
+            >
+              {format(timeRange[0], 'MMM dd')} – {format(timeRange[1], 'MMM dd, yyyy')}
+            </Button>
+          </div>
+
+          {/* Active Only Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-lg border">
             <div>
-              <Label className="text-sm font-medium">
-                <Zap className="w-4 h-4 inline mr-1" />
-                Active Floqs Only
-              </Label>
+              <Label className="text-sm font-medium">Active Floqs Only</Label>
               <p className="text-xs text-muted-foreground">
                 Show only floqs with recent activity
               </p>
             </div>
             <Switch
-              checked={localFilters.isActive || false}
+              checked={localFilters.showOnlyActive || false}
               onCheckedChange={handleActiveToggle}
             />
           </div>
         </div>
 
+        {/* Date Range Popover */}
+        <Popover open={dateRangeOpen} onOpenChange={setDateRangeOpen}>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="range"
+              selected={{
+                from: timeRange[0],
+                to: timeRange[1]
+              }}
+              onSelect={handleDateRangeChange}
+              numberOfMonths={2}
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-6">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button 
-            className="flex-1" 
-            onClick={handleApplyFilters}
-          >
-            Apply Filters
-          </Button>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="flex-1" 
+              onClick={handleApplyFilters}
+            >
+              Apply Filters
+            </Button>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
