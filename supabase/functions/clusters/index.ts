@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    // Read JSON body
-    const { bbox, precision = 6 } = await req.json()
+    // Read JSON body instead of query string
+    const { bbox, precision = 6 } = await req.json().catch(() => ({}))
 
     // Validate required parameters
     if (!bbox) {

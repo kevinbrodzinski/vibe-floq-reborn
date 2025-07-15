@@ -87,9 +87,10 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
     }))
   }, [])
 
-  const layers = useMemo(() => [
-    createDeckClusterLayer(clusters, colorScale, handleClusterClick)
-  ].filter(Boolean), [clusters, colorScale, handleClusterClick])
+  const layers = useMemo(() => {
+    const layer = createDeckClusterLayer(clusters, colorScale, handleClusterClick)
+    return layer ? [layer] : []
+  }, [clusters, colorScale, handleClusterClick])
 
   // Conditional rendering AFTER all hooks
   if (!isOpen) return null
