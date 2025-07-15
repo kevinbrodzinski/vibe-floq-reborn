@@ -3149,13 +3149,11 @@ export type Database = {
         Returns: undefined
       }
       set_user_vibe: {
-        Args:
-          | {
-              new_vibe: Database["public"]["Enums"]["vibe_enum"]
-              lat?: number
-              lng?: number
-            }
-          | { new_vibe: string; lat?: number; lng?: number }
+        Args: {
+          new_vibe: Database["public"]["Enums"]["vibe_enum"]
+          lat?: number
+          lng?: number
+        }
         Returns: undefined
       }
       should_log_presence: {
