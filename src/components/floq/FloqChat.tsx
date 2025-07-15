@@ -126,11 +126,9 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       const rect = div.getBoundingClientRect();
       const taRect = ta.getBoundingClientRect();
       
-      // Account for scroll position and cross-browser zoom
+      // Account for scroll position and cross-browser zoom (null-guard for iOS ≤12)
       const scrollTop = ta.scrollTop;
-      const zoom = window.visualViewport
-        ? window.visualViewport.scale
-        : 1;
+      const zoom = window.visualViewport?.scale ?? 1;
       
       // Calculate line height for better positioning
       const lineHeight = parseFloat(style.lineHeight) || parseInt(style.fontSize) * 1.2;
