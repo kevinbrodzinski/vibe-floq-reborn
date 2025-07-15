@@ -275,10 +275,23 @@ export const VibeScreen = () => {
     });
   }, [updateVisibility]);
 
-  const handleApplySuggestion = (vibe: string, clusterId: string) => {
-    handleVibeSelect(vibe as VibeState);
-    dismissSuggestion(clusterId);
-  };
+  const handleApplySuggestion = useCallback(async (suggestion: any) => {
+    handleVibeSelect(suggestion.vibe as VibeState);
+    
+    // Update user vibe in database
+    try {
+      const { error } = await supabase.rpc('set_user_vibe', { 
+        new_vibe: suggestion.vibe 
+      });
+      if (error) {
+        console.error('Failed to update vibe:', error);
+      }
+    } catch (error) {
+      console.error('Error updating vibe:', error);
+    }
+    
+    applyVibe(suggestion);
+  }, [handleVibeSelect, applyVibe]);
 
   const getVisibilityIcon = () => {
     switch (visibility) {
@@ -630,7 +643,7 @@ export const VibeScreen = () => {
         <SuggestionToast
           key={suggestionQueue[0].clusterId}
           suggestion={suggestionQueue[0]}
-          onApply={applyVibe}
+          onApply={handleApplySuggestion}
           onDismiss={dismissSuggestion}
         />
       )}
