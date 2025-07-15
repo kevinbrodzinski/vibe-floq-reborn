@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { FeedbackButtons } from "@/components/ui/FeedbackButtons";
 import { LearningPatterns } from "@/components/ui/LearningPatterns";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
@@ -27,6 +28,7 @@ export const VibeScreen = () => {
   const [autoMode, setAutoMode] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
+  const [showPulse, setShowPulse] = useState(false);
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loggedThisSessionRef = useRef<boolean>(false);
   const dialRef = useRef<HTMLDivElement>(null);
@@ -168,6 +170,19 @@ export const VibeScreen = () => {
     }
   }, [autoMode]);
 
+  // Controlled pulse for outdoor patterns detection
+  useEffect(() => {
+    const outdoorPatterns = learningData.patterns.filter(p => 
+      p.context.toLowerCase().includes('outdoor') && p.confidence > 0.7
+    );
+    
+    if (outdoorPatterns.length >= 3) {
+      setShowPulse(true);
+      const timeout = setTimeout(() => setShowPulse(false), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [learningData.patterns]);
+
   // Toggle auto mode
   const toggleAutoMode = useCallback(async () => {
     if (!autoMode) {
@@ -296,7 +311,8 @@ export const VibeScreen = () => {
             
             // Calculate glow intensity based on learning preference
             const prefScore = learningData.preferences[key as Vibe] ?? 0;
-            const glowIntensity = Math.min(1, 0.3 + prefScore * 2);
+            const glow = Math.min(1, 0.3 + prefScore * 2);
+            const shouldGlow = prefScore > 0.1;
             
             return (
               <button
@@ -306,13 +322,10 @@ export const VibeScreen = () => {
                   isSelected 
                     ? "text-primary font-bold scale-110 bg-primary/10 backdrop-blur-sm border border-primary/20" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/30 hover:scale-105"
-                }`}
+                } ${shouldGlow ? `shadow-[0_0_${Math.round(12*glow)}px_hsl(var(--primary)/60%)]` : ""}`}
                 style={{
                   left: `calc(50% + ${x}px)`,
                   top: `calc(50% + ${y}px)`,
-                  boxShadow: prefScore > 0.1 
-                    ? `0 0 ${12 * glowIntensity}px hsl(var(--primary) / ${0.6 * glowIntensity})` 
-                    : undefined,
                 }}
               >
                 <span className="text-sm font-medium">{vibe.label}</span>
@@ -365,12 +378,16 @@ export const VibeScreen = () => {
                       Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
                     </Button>
                     {vibeDetection.learningBoost?.boosted && (
-                      <div 
-                        className="text-xs text-accent flex items-center gap-1" 
-                        title={`Boosted by your preferences (+${Math.round(bias * 100)}%)`}
-                      >
-                        💡 <span className="text-[10px] hidden sm:inline">learned</span>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-accent flex items-center gap-1 cursor-help">
+                            💡 <span className="text-[10px] hidden sm:inline">learned</span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Boosted by learning (+{Math.round(bias * 100)}%)
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                 );
@@ -407,13 +424,14 @@ export const VibeScreen = () => {
         </div>
       )}
 
-      {/* Learning Patterns with slide-in animation */}
+      {/* Learning Patterns with spring animation on first learning */}
       {autoMode && (
         <div className="px-6 mb-6">
           <motion.div
-            initial={{ y: 40, opacity: 0 }}
+            key={learningData.correctionCount} // Spring only on first correction
+            initial={{ y: 32, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", damping: 18, stiffness: 140 }}
           >
             <LearningPatterns
               patterns={learningData.patterns}
@@ -469,43 +487,35 @@ export const VibeScreen = () => {
         </div>
       </div>
 
-      {/* Emotional Density Map Preview with contextual pulse */}
+      {/* Emotional Density Map Preview with controlled pulse */}
       <div className="px-6 mb-6">
-        {(() => {
-          // Check if patterns suggest outdoor activities (≥3 with high confidence)
-          const outdoorPatterns = learningData.patterns.filter(p => 
-            p.context.toLowerCase().includes('outdoor') && p.confidence > 0.7
-          );
-          const shouldPulse = outdoorPatterns.length >= 3;
-          
-          return (
-            <button 
-              className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
-                shouldPulse 
-                  ? "border-accent/50 animate-pulse shadow-[0_0_20px_hsl(var(--accent)/30)]" 
-                  : "border-border/30"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-secondary/20 flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-gradient-secondary animate-pulse"></div>
-                  </div>
-                  <div className="text-left">
-                    <h4 className="font-medium text-foreground">Emotional Density Map</h4>
-                    <p className="text-xs text-muted-foreground">
-                      {shouldPulse ? "Outdoor patterns detected • Tap to explore" : "Tap to explore energy clusters"}
-                    </p>
-                  </div>
+        <div className={`relative ${showPulse ? "animate-pulse" : ""}`}>
+          <button 
+            className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
+              showPulse 
+                ? "border-accent/50 ring-2 ring-accent/30 shadow-[0_0_20px_hsl(var(--accent)/30)]" 
+                : "border-border/30"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-secondary/20 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full bg-gradient-secondary animate-pulse"></div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-accent">4 matches</div>
-                  <div className="text-xs text-muted-foreground">2mi radius</div>
+                <div className="text-left">
+                  <h4 className="font-medium text-foreground">Emotional Density Map</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {showPulse ? "Outdoor patterns detected • Tap to explore" : "Tap to explore energy clusters"}
+                  </p>
                 </div>
               </div>
-            </button>
-          );
-        })()}
+              <div className="text-right">
+                <div className="text-sm font-medium text-accent">4 matches</div>
+                <div className="text-xs text-muted-foreground">2mi radius</div>
+              </div>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Mini Vibe Card */}
