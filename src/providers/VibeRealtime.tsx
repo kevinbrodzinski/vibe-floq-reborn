@@ -77,8 +77,9 @@ export function VibeRealtime() {
           }
         });
         
-        // Clear persisted store for fresh start
+        // Clear persisted store and reset state for fresh start
         useVibe.persist.clearStorage();
+        useVibe.setState({ vibe: null, updatedAt: null });
       }
     });
 
