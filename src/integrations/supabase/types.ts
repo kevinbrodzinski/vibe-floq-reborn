@@ -2792,16 +2792,28 @@ export type Database = {
         }[]
       }
       search_floqs: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_km?: number
-          p_query?: string
-          p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
-          p_time_from?: string
-          p_time_to?: string
-          p_limit?: number
-        }
+        Args:
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km?: number
+              p_query?: string
+              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+              p_time_from?: string
+              p_time_to?: string
+              p_limit?: number
+            }
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km?: number
+              p_query?: string
+              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+              p_time_from?: string
+              p_time_to?: string
+              p_limit?: number
+              p_visibilities?: string[]
+            }
         Returns: {
           id: string
           title: string
