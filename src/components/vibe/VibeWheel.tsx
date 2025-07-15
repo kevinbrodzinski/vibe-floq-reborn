@@ -4,6 +4,7 @@ import { useVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_RGB, VibeEnum } from '@/constants/vibes';
 import { VIBE_DESCRIPTIONS } from '@/constants/vibeDescriptions';
 import { RingGradient } from './ConicGradientRing';
+import { useCompatGlow } from '@/hooks/useCompatGlow';
 
 // Web-compatible haptics helper
 const triggerHaptic = () => {
@@ -33,6 +34,7 @@ const PULSE_ANIMATION = {
 
 export const VibeWheel = memo(() => {
   const { vibe: current, setVibe } = useVibe();
+  const { strength, hue } = useCompatGlow();
 
   /* ---------- motion values ---------- */
   const orbAngle = useMotionValue(VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT);
@@ -104,6 +106,23 @@ export const VibeWheel = memo(() => {
         size={280}
         strokeWidth={6}
       />
+      
+      {/* Compatibility glow overlay */}
+      {strength > 0 && (
+        <div
+          className="absolute pointer-events-none transition-all duration-500"
+          style={{
+            width: 280,
+            height: 280,
+            borderRadius: '50%',
+            borderWidth: `${4 + strength * 6}px`,
+            borderStyle: 'solid',
+            borderColor: hue,
+            opacity: strength,
+            boxShadow: `0 0 20px ${hue}`,
+          }}
+        />
+      )}
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
       {VIBE_ORDER.map((vibe, index) => {
