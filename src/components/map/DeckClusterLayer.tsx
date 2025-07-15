@@ -9,6 +9,8 @@ export function createDeckClusterLayer(
   colorScale: (n: number) => [number, number, number],
   onClick?: (cluster: Cluster) => void
 ) {
+  // Skip creating layer when there's no data to avoid WebGL warnings
+  if (!clusters.length) return null
   return new (ScatterplotLayer as any)({
     id: 'vibe-clusters',
     data: clusters,
