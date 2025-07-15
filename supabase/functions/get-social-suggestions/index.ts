@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     );
 
     const { data, error } = await supabase
-      .rpc("get_social_suggestions", { me: null, max_dist_m: radius });
+      .rpc("get_social_suggestions", { p_uid: null, max_dist_m: radius, limit_n: 5 });
 
     if (error) {
       console.error("[get-social-suggestions]", error);

@@ -18,7 +18,7 @@ export function VibeRealtime() {
           .from('vibes_now')
           .select('vibe, updated_at')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
         
         if (data && !error) {
           sync(data.vibe, data.updated_at);
