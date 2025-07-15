@@ -111,14 +111,24 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       const updateAudioLevel = () => {
         if (!analyserRef.current) return;
         
+        // Handle AudioContext suspension on iOS
+        if (audioContextRef.current?.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+        
         analyserRef.current.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         let audioLevel = Math.min(100, (average / 255) * 100);
         
-        // Calibrate against baseline if available
+        // Persist mic baseline in localStorage
         if (micBaselineRef.current === null && audioLevel > 5) {
           micBaselineRef.current = average;
+          localStorage.setItem('micBaseline', String(micBaselineRef.current));
+        } else if (micBaselineRef.current === null) {
+          const stored = Number(localStorage.getItem('micBaseline'));
+          if (!Number.isNaN(stored)) micBaselineRef.current = stored;
         }
+        
         if (micBaselineRef.current !== null) {
           audioLevel = Math.max(0, Math.min(100, ((average - micBaselineRef.current) / 128) * 100));
         }
@@ -234,12 +244,16 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
         sensor.start();
         
-        return () => sensor.stop();
+        return () => {
+          if (lightSensorRef.current) {
+            lightSensorRef.current.stop();
+          }
+        };
       } catch (error) {
         console.log('Light sensor not available:', error);
       }
     } else {
-      // Web fallback using CSS media query
+      // Web fallback using CSS media query with compatibility
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const updateLightFromMedia = () => {
         // Dark mode suggests low light (30%), light mode suggests bright (70%)
@@ -251,9 +265,20 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       };
       
       updateLightFromMedia();
-      mediaQuery.addEventListener('change', updateLightFromMedia);
       
-      return () => mediaQuery.removeEventListener('change', updateLightFromMedia);
+      // Handle older browser compatibility
+      const addListener = mediaQuery.addEventListener || mediaQuery.addListener;
+      const removeListener = mediaQuery.removeEventListener || mediaQuery.removeListener;
+      
+      if (addListener) {
+        addListener.call(mediaQuery, 'change', updateLightFromMedia);
+      }
+      
+      return () => {
+        if (removeListener) {
+          removeListener.call(mediaQuery, 'change', updateLightFromMedia);
+        }
+      };
     }
   }, []);
 
@@ -351,8 +376,10 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         
         if (elapsed > ninetyMinutes) {
           console.log('Auto-vibe session expired after 90 minutes');
-          // Reset session - this would typically trigger a parent component update
+          // Reset session and stop auto-vibe
           sessionStartRef.current = null;
+          // This would trigger parent component to call stopVibe() 
+          setVibeDetection(null);
         }
       }
     };
@@ -368,6 +395,14 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       setVibeDetection(detection);
     }
   }, [sensorData, enabled, permissions.microphone, detectVibe]);
+
+  // Clear audio timeout when disabled
+  useEffect(() => {
+    if (!enabled && audioUpdateTimeoutRef.current) {
+      clearTimeout(audioUpdateTimeoutRef.current);
+      audioUpdateTimeoutRef.current = null;
+    }
+  }, [enabled]);
 
   // Start monitoring when enabled
   useEffect(() => {
