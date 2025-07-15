@@ -9,7 +9,8 @@ import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import { UserProfileByUsername } from '@/components/UserProfileByUsername';
-import ProfileSettings from '@/pages/ProfileSettings';
+import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
 import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
@@ -33,8 +34,9 @@ export const AppRoutes = () => (
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
-    <Route path="/profile-settings" element={<ProfileSettings />} />
-    <Route path="/settings" element={<ProfileSettings />} />
+    <Route path="/profile" element={<Profile />} />
+    <Route path="/profile-settings" element={<Profile />} />
+    <Route path="/settings" element={<Settings />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

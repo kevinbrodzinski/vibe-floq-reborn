@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -69,9 +69,14 @@ export const AvatarDropdown = () => {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="pointer-events-auto w-56">
+          <DropdownMenuItem onSelect={() => navigate('/profile')}>
+            <User className="w-4 h-4 mr-2" />
+            Profile
+          </DropdownMenuItem>
+          
           <DropdownMenuItem onSelect={() => navigate('/settings')}>
             <Settings className="w-4 h-4 mr-2" />
-            Profile / Settings
+            Settings
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />

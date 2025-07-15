@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-const ProfileSettings = () => {
+const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -94,7 +94,7 @@ const ProfileSettings = () => {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold">Profile Settings</h1>
+          <h1 className="text-lg font-semibold">My Profile</h1>
         </div>
 
         <div className="space-y-6">
@@ -259,4 +259,4 @@ const ProfileSettings = () => {
   );
 };
 
-export default ProfileSettings;
+export default Profile;

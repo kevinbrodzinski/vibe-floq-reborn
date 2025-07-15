@@ -15,7 +15,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import FloqDetails from "./pages/FloqDetails";
 import UserProfile from "./pages/UserProfile";
-import ProfileSettings from "./pages/ProfileSettings";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +38,7 @@ const App = () => {
             <Routes>
               {/* Main app routes (field, floqs, etc.) are handled inside Index */}
               <Route path="/*" element={<Index />} />
-              <Route path="/settings/profile" element={<ProfileSettings />} />
+              <Route path="/settings/profile" element={<Settings />} />
             </Routes>
             {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
             <EnvironmentDebugPanel 
