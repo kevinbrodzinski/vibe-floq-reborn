@@ -13,20 +13,26 @@ export function VibeRealtime() {
     if (!userId) return;
     
     const fetchInitialVibe = async () => {
-      const { data, error } = await supabase
-        .from('vibes_now')
-        .select('vibe, updated_at')
-        .eq('user_id', userId)
-        .single();
-      
-      if (data && !error) {
-        sync(data.vibe, data.updated_at);
+      try {
+        const { data, error } = await supabase
+          .from('vibes_now')
+          .select('vibe, updated_at')
+          .eq('user_id', userId)
+          .single();
+        
+        if (data && !error) {
+          sync(data.vibe, data.updated_at);
+        }
+        // If row doesn't exist (404), leave local state untouched
+      } catch (err) {
+        // Silently ignore - user hasn't set a vibe yet
       }
     };
     
     fetchInitialVibe();
   }, [userId, sync]);
 
+  // Realtime subscription management
   useEffect(() => {
     if (!userId) return;
 
@@ -52,6 +58,22 @@ export function VibeRealtime() {
 
     return () => supabase.removeChannel(channel);
   }, [userId, sync]);
+
+  // Clean up channels on auth state change
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        // Remove all vibe channels and reset store
+        supabase.getChannels().forEach(channel => {
+          if (channel.topic.startsWith('vibe-now-')) {
+            supabase.removeChannel(channel);
+          }
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return null;
 }

@@ -15,6 +15,7 @@ import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 import { useVibe } from "@/lib/store/useVibe";
+import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
 type VisibilityState = "public" | "friends" | "off";
@@ -289,8 +290,8 @@ export const VibeScreen = () => {
     }
   };
 
-  // Show loading while hydrating from AsyncStorage
-  if (!hydrated) return null;
+  // Show loading skeleton while hydrating from AsyncStorage
+  if (!hydrated) return <FullScreenSpinner />;
 
   // Safe vibe fallback to prevent crashes
   const safeVibe = selectedVibe ?? 'chill';

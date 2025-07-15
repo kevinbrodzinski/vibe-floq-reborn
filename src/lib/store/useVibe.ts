@@ -3,13 +3,16 @@ import { immer } from 'zustand/middleware/immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+type VibeEnum = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
 
 type VibeState = {
-  vibe: string | null;
+  vibe: VibeEnum | null;
   updatedAt: string | null;
   isUpdating: boolean;
   hydrated: boolean;
-  setVibe: (v: string) => Promise<void>;
+  setVibe: (v: VibeEnum) => Promise<void>;
   syncFromRemote: (v: string, ts: string) => void;
 };
 
@@ -40,10 +43,16 @@ export const useVibe = create<VibeState>()(
 
           if (error) {
             console.error('set_user_vibe failed', error);
+            toast({
+              variant: 'destructive',
+              title: 'Could not update vibe',
+              description: 'Check your connection and try again.',
+            });
             // rollback
             set((s) => {
               s.vibe = null;
               s.updatedAt = null;
+              s.isUpdating = false;
             });
           }
         } finally {
@@ -53,18 +62,29 @@ export const useVibe = create<VibeState>()(
 
       /** called by realtime subscription */
       syncFromRemote: (v, ts) => {
+        // Optimize: parse local timestamp once
+        const localTs = Date.parse(get().updatedAt ?? '0');
+        const remoteTs = Date.parse(ts);
+        
         // ignore if local change is newer (optimistic update)
-        if (get().updatedAt && Date.parse(get().updatedAt) > Date.parse(ts)) return;
+        if (localTs > remoteTs) return;
         set((s) => { 
-          s.vibe = v; 
+          s.vibe = v as VibeEnum; 
           s.updatedAt = ts; 
         });
       },
     })),
     { 
       name: '@vibe',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
       partialize: ({ vibe, updatedAt }) => ({ vibe, updatedAt }),
+      migrate: (persisted, version) => {
+        if (version < 1) {
+          // add migration steps here later
+        }
+        return persisted as any;
+      },
       onRehydrateStorage: () => (state) => {
         if (state) state.hydrated = true;
       },
