@@ -9,6 +9,8 @@ import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
 import { VibeDensityMap } from "@/components/map/VibeDensityMap";
+import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
+import { useClusters } from "@/hooks/useClusters";
 import type { Vibe } from "@/utils/vibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
@@ -37,6 +39,21 @@ export const VibeScreen = () => {
   
   // Sensor monitoring for auto-detection
   const { sensorData, vibeDetection, permissions, requestPermissions, recordFeedback, learningData } = useSensorMonitoring(autoMode);
+  
+  // Mock user location for demo (replace with real geolocation)
+  const userLocation = { lat: 37.7749, lng: -122.4194 };
+  
+  // Mock bounding box for cluster data
+  const bbox = [-122.5, 37.7, -122.3, 37.8] as [number, number, number, number];
+  const { clusters } = useClusters(bbox, 6);
+  
+  // Enhanced vibe card dynamics
+  const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
+    clusters,
+    userLocation,
+    selectedVibe,
+    learningData.preferences
+  );
 
   const vibes: Record<VibeState, VibeInfo> = {
     chill: { label: "Chill", angle: 0, color: "hsl(var(--accent))" },
@@ -534,18 +551,41 @@ export const VibeScreen = () => {
         userLocation={null} // TODO: Add user location when available
       />
 
-      {/* Mini Vibe Card */}
+      {/* Enhanced Mini Vibe Card */}
       <div className="fixed bottom-20 left-6 right-6">
         <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div 
-                className="w-3 h-3 rounded-full animate-pulse"
-                style={{ backgroundColor: vibes[selectedVibe].color }}
-              ></div>
+                className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
+                style={{ 
+                  backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[selectedVibe].color} 80%, ${tintColor} 20%)` : vibes[selectedVibe].color,
+                  transform: `scale(${pulseScale})`,
+                  boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
+                }}
+              >
+                <span className="text-lg font-bold text-white drop-shadow-sm">
+                  {vibes[selectedVibe].label.charAt(0).toUpperCase()}
+                </span>
+                {/* Accessibility: Reduced motion fallback */}
+                <style>{`
+                  @media (prefers-reduced-motion: reduce) {
+                    .vibe-card { 
+                      transition: none !important; 
+                      transform: none !important; 
+                      box-shadow: none !important;
+                    }
+                  }
+                `}</style>
+              </div>
               <div>
                 <span className="font-medium text-foreground">{vibes[selectedVibe].label}</span>
-                <div className="text-xs text-muted-foreground">Active for {activeDuration} min</div>
+                <div className="text-xs text-muted-foreground">
+                  Active for {activeDuration} min
+                  {clusters.length > 0 && (
+                    <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
+                  )}
+                </div>
               </div>
             </div>
             <button className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200">
