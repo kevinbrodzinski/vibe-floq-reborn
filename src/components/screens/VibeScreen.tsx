@@ -26,6 +26,8 @@ export const VibeScreen = () => {
   const [autoMode, setAutoMode] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
+  const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loggedThisSessionRef = useRef<boolean>(false);
   const dialRef = useRef<HTMLDivElement>(null);
   
   // Sensor monitoring for auto-detection
@@ -91,13 +93,16 @@ export const VibeScreen = () => {
       const threshold = getPersonalisedThreshold(vibeDetection.suggestedVibe);
       
       if (vibeDetection.confidence >= threshold) {
-        // Debug log for performance analysis
-        console.info(
-          `[VibeAI] applied="${vibeDetection.suggestedVibe}" ` +
-          `conf=${vibeDetection.confidence.toFixed(2)} ` +
-          `bias=${(learningData.preferences[vibeDetection.suggestedVibe] ?? 0).toFixed(2)} ` +
-          `threshold=${threshold.toFixed(2)}`
-        );
+        // Throttled debug log for performance analysis (once per session)
+        if (!loggedThisSessionRef.current) {
+          console.info(
+            `[VibeAI] applied="${vibeDetection.suggestedVibe}" ` +
+            `conf=${vibeDetection.confidence.toFixed(2)} ` +
+            `bias=${(learningData.preferences[vibeDetection.suggestedVibe] ?? 0).toFixed(2)} ` +
+            `threshold=${threshold.toFixed(2)}`
+          );
+          loggedThisSessionRef.current = true;
+        }
         
         // Only apply if it's a valid VibeState
         const vibeAsState = vibeDetection.suggestedVibe as VibeState;
@@ -115,6 +120,15 @@ export const VibeScreen = () => {
     }
   }, [vibeDetection, learningData.preferences, getPersonalisedThreshold, showFeedback]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle feedback acceptance
   const handleAcceptFeedback = useCallback(async () => {
     if (!vibeDetection) return;
@@ -122,8 +136,8 @@ export const VibeScreen = () => {
     setIsLearning(true);
     try {
       await recordFeedback(true);
-      // Small delay to show completion before hiding
-      setTimeout(() => setShowFeedback(false), 200);
+      // Small delay to show completion before hiding with cleanup
+      feedbackTimeoutRef.current = setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
       console.error('Failed to record acceptance:', error);
       setShowFeedback(false);
@@ -140,8 +154,8 @@ export const VibeScreen = () => {
     try {
       await recordFeedback(false, correctedVibe);
       setSelectedVibe(correctedVibe as VibeState);
-      // Small delay to show completion before hiding
-      setTimeout(() => setShowFeedback(false), 200);
+      // Small delay to show completion before hiding with cleanup
+      feedbackTimeoutRef.current = setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
       console.error('Failed to record correction:', error);
       setShowFeedback(false);
@@ -336,6 +350,8 @@ export const VibeScreen = () => {
                   <Button
                     onClick={applyDetectedVibe}
                     size="sm"
+                    role="button"
+                    aria-label="Apply detected vibe"
                     className={`text-xs px-3 py-1 h-6 ${
                       vibeDetection.learningBoost?.boosted 
                         ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
@@ -347,7 +363,7 @@ export const VibeScreen = () => {
                   </Button>
                   {vibeDetection.learningBoost?.boosted && (
                     <div className="text-xs text-accent flex items-center gap-1" title="Boosted by your preferences">
-                      💡 <span className="text-[10px]">learned</span>
+                      💡 <span className="text-[10px] hidden sm:inline">learned</span>
                     </div>
                   )}
                 </div>

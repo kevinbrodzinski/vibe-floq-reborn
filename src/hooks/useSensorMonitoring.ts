@@ -66,6 +66,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   const motionListenerRef = useRef<((event: DeviceMotionEvent) => void) | null>(null);
   const lightSensorRef = useRef<any>(null);
   const audioUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartRef = useRef<Date | null>(null);
   const micBaselineRef = useRef<number | null>(null);
 
@@ -391,7 +392,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       
       // Persist learning data cache
       try {
-        localStorage.setItem('vibe-learning-cache', JSON.stringify(newLearningData));
+        localStorage.setItem('vibe_learning_v1', JSON.stringify(newLearningData));
       } catch (error) {
         console.warn('Failed to cache learning data:', error);
       }
@@ -405,7 +406,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     const loadLearningData = async () => {
       try {
         // Try to load cached data first
-        const cached = localStorage.getItem('vibe-learning-cache');
+        const cached = localStorage.getItem('vibe_learning_v1');
         if (cached) {
           setLearningData(JSON.parse(cached));
         }
@@ -445,7 +446,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         
         // Update cache if we got new data
         if (!cached || JSON.stringify(newLearningData) !== cached) {
-          localStorage.setItem('vibe-learning-cache', JSON.stringify(newLearningData));
+          localStorage.setItem('vibe_learning_v1', JSON.stringify(newLearningData));
         }
       } catch (error) {
         console.error('Failed to load learning data:', error);

@@ -101,7 +101,9 @@ export class ConfidenceCalculator {
     Object.entries(prefs).forEach(([vibe, bias]) => {
       if (bias === undefined) return;
       // bias ∈ [-0.3, +0.3] from UserLearningSystem
-      const multiplier = 1 + bias;               // 0.7 → 1.3
+      // Cap boost multiplier at ±20% to prevent over-confident behavior
+      const cappedBias = Math.max(-0.2, Math.min(0.2, bias));
+      const multiplier = 1 + cappedBias;               // 0.8 → 1.2
       biased[vibe as Vibe] *= multiplier;
     });
 
