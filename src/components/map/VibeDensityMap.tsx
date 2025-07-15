@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
-import { DeckClusterLayer } from './DeckClusterLayer'
+import { createDeckClusterLayer } from './DeckClusterLayer'
 import { ClusterLegend } from './ClusterLegend'
 import { useClusters } from '@/hooks/useClusters'
 import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
 
-// Debug import
-console.log('DeckGL is', DeckGL, typeof DeckGL)
-
-// Cast DeckGL to work around type issues
+// Type assertion for DeckGL component
 const DeckGLComponent = DeckGL as any
 
 const INITIAL_VIEW_STATE = {
@@ -67,7 +64,7 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   }, [])
 
   const layers = useMemo(() => [
-    DeckClusterLayer({ clusters, onClick: handleClusterClick })
+    createDeckClusterLayer(clusters, handleClusterClick)
   ], [clusters, handleClusterClick])
 
   // Conditional rendering AFTER all hooks
@@ -92,9 +89,10 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
       <div className="absolute inset-0 pt-16 rounded-b-2xl overflow-hidden">
         <DeckGLComponent
           initialViewState={INITIAL_VIEW_STATE}
+          viewState={viewState}
           controller={true}
           layers={layers}
-          onViewStateChange={(params: any) => setViewState(params.viewState)}
+          onViewStateChange={({viewState}) => setViewState(viewState)}
           style={{ width: '100%', height: '100%' }}
         />
 
