@@ -29,7 +29,7 @@ export const useUsernameAvailability = (username: string) => {
     try {
       // Check if username exists using the secure RPC function
       const { data: usernameExists, error: usernameError } = await supabase
-        .rpc('username_exists', { p_username: usernameToCheck });
+        .rpc('username_exists', { username: usernameToCheck });
 
       if (usernameError) throw usernameError;
 
