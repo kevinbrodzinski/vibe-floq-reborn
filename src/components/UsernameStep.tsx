@@ -14,7 +14,7 @@ interface UsernameStepProps {
 }
 
 export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps) => {
-  const { claimUsername, isClaimingUsername } = useUsername();
+  const { updateUsername, isUpdatingUsername } = useUsername();
   const [localValue, setLocalValue] = useState('');
   
   const {
@@ -27,7 +27,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isAvailable && localValue.trim() && validationState === 'available') {
-      claimUsername(localValue.toLowerCase().trim());
+      updateUsername(localValue.toLowerCase().trim());
     }
   };
 
@@ -38,7 +38,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   };
 
   const previewUsername = localValue.toLowerCase();
-  const canSubmit = validationState === 'available' && !isClaimingUsername;
+  const canSubmit = validationState === 'available' && !isUpdatingUsername;
   const characterCount = localValue.length;
   const maxCharacters = 32;
 
@@ -91,7 +91,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
                   onKeyDown={handleKeyDown}
                   className="pl-8 pr-10"
                   autoFocus
-                  disabled={isClaimingUsername}
+                  disabled={isUpdatingUsername}
                   maxLength={maxCharacters}
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -121,13 +121,13 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
             disabled={!canSubmit}
             className="w-full"
           >
-            {isClaimingUsername ? (
+            {isUpdatingUsername ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Claiming...
+                Updating...
               </>
             ) : (
-              'Claim Username'
+              'Update Username'
             )}
           </Button>
 
@@ -137,7 +137,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
               variant="ghost" 
               onClick={onComplete}
               className="w-full"
-              disabled={isClaimingUsername}
+              disabled={isUpdatingUsername}
             >
               Skip for now
             </Button>

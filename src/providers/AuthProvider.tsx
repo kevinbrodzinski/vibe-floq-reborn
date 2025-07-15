@@ -41,14 +41,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             try {
               // Generate a temporary username from email if no username exists
               const emailPrefix = session.user.email?.split('@')[0] || 'user';
-              const tempUsername = `${emailPrefix}_${session.user.id.slice(0, 8)}`;
+              const tempUsername = `${emailPrefix}_${session.user.id.slice(0, 6)}`.toLowerCase();
               
               const { error } = await supabase
                 .from('profiles')
                 .upsert({
                   id: session.user.id,
-                  display_name: session.user.email || 'User',
-                  username: tempUsername
+                  username: tempUsername,
+                  display_name: 'New User',   // placeholder; UI will prompt for full name
+                  full_name: null
                 }, { onConflict: 'id' });
               
               if (error) {

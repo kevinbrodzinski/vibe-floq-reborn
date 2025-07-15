@@ -10,7 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { AvatarUpload } from '@/components/AvatarUpload';
 import { TransformCDNTester } from '@/components/debug/TransformCDNTester';
-import { UsernameStep } from '@/components/UsernameStep';
+import UsernameSettings from '@/components/settings/UsernameSettings';
 import { ProfileStats } from '@/components/profile/ProfileStats';
 import { RecentActivity } from '@/components/profile/RecentActivity';
 import { VibeHistorySparkline } from '@/components/analytics/VibeHistorySparkline';
@@ -106,23 +106,7 @@ const ProfileSettings = () => {
           <Separator />
 
           {/* Username Section */}
-          <div className="space-y-3">
-            <h2 className="text-base font-medium">Username</h2>
-            {hasUsername ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-                  <span className="text-sm">@{(userProfile as any)?.username}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your username helps friends find you. Changing usernames is not currently supported.
-                </p>
-              </div>
-            ) : (
-              <div className="border rounded-lg p-4">
-                <UsernameStep />
-              </div>
-            )}
-          </div>
+          <UsernameSettings />
 
           <Separator />
 

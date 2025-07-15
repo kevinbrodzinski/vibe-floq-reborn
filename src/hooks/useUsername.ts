@@ -83,30 +83,27 @@ export function useUsername() {
     debouncedCheck(username.toLowerCase());
   }, [debouncedCheck]);
 
-  // Claim username mutation
-  const claimMutation = useMutation({
+  // Update username mutation using our new RPC
+  const updateMutation = useMutation({
     mutationFn: async (username: string) => {
-      // Always convert to lowercase before sending to backend
-      const cleanUsername = username.toLowerCase().trim();
-      
-      const { data, error } = await supabase.rpc('attempt_claim_username', { 
-        desired: cleanUsername 
+      const { data, error } = await supabase.rpc('update_username', { 
+        p_username: username 
       });
 
       if (error) {
         throw error;
       }
 
-      if (!data) {
-        throw new Error('Username is not available or invalid format');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Username update failed');
       }
 
-      return data;
+      return data.username;
     },
-    onSuccess: () => {
+    onSuccess: (newUsername) => {
       toast({
-        title: "Username claimed!",
-        description: `@${draft.toLowerCase()} is now yours`,
+        title: "Username updated!",
+        description: `@${newUsername} is now yours`,
       });
 
       // Invalidate relevant queries
@@ -118,9 +115,9 @@ export function useUsername() {
       setIsAvailable(null);
     },
     onError: (error: any) => {
-      console.error('Username claim error:', error);
+      console.error('Username update error:', error);
       toast({
-        title: "Failed to claim username",
+        title: "Failed to update username",
         description: error.message || "Please try a different username",
         variant: "destructive",
       });
@@ -133,8 +130,8 @@ export function useUsername() {
     updateDraft,
     isAvailable,
     isCheckingAvailability,
-    claimUsername: claimMutation.mutate,
-    isClaimingUsername: claimMutation.isPending,
+    updateUsername: updateMutation.mutate,
+    isUpdatingUsername: updateMutation.isPending,
     hasUsername: !!(currentUser as any)?.username,
   };
 }

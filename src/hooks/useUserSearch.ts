@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SearchedUser {
   id: string;
   display_name: string;
+  full_name?: string | null;  // Add full_name for search
   username: string;  // Now guaranteed to be non-null after our migration
   avatar_url: string | null;
   created_at: string;
@@ -34,9 +35,12 @@ export function useUserSearch(query: string, enabled = true) {
         console.time(`search_users_${debouncedQuery.trim()}`);
       }
 
-      const { data, error } = await supabase.rpc('search_users', {
-        search_query: debouncedQuery.trim()
-      });
+      // Enhanced search including full_name, username, and display_name
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, display_name, avatar_url, created_at')
+        .or(`username.ilike.%${debouncedQuery.trim()}%,full_name.ilike.%${debouncedQuery.trim()}%,display_name.ilike.%${debouncedQuery.trim()}%`)
+        .limit(20);
 
       if (import.meta.env.DEV) {
         console.timeEnd(`search_users_${debouncedQuery.trim()}`);

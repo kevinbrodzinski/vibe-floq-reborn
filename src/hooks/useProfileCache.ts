@@ -3,11 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { SearchedUser } from '@/hooks/useUserSearch';
 import { getEnvironmentConfig } from '@/lib/environment';
 
-// Updated Profile interface to match our hardened database schema
+// Updated Profile interface to match our hardened database schema with Phase 2 changes
 export interface Profile {
   id: string;
+  // ➊ canonical @handle – always lowercase / unique
   username: string;        // now required (NOT NULL in DB)
+  
+  // ➋ the name we want to show most of the time
+  full_name?: string | null;
+  
+  // ➌ legacy / fallback display name
   display_name: string;    // now required (NOT NULL in DB)
+  
   first_name?: string | null;
   last_name?: string | null;
   avatar_url: string | null;
@@ -26,6 +33,7 @@ export function useProfileCache() {
         id: user.id,
         username: user.username,     // Now guaranteed to be present
         display_name: user.display_name,  // Now guaranteed to be present
+        full_name: user.full_name || null,
         avatar_url: user.avatar_url,
         created_at: user.created_at,
       });
@@ -73,7 +81,7 @@ export function useProfile(userId: string) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, display_name, full_name, first_name, last_name, avatar_url, bio, interests, custom_status, created_at')
         .eq('id', userId)
         .maybeSingle();
 
