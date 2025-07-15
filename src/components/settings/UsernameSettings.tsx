@@ -31,6 +31,8 @@ export default function UsernameSettings() {
       const { data, error } = await supabase
         .rpc('update_username', { p_username: newName });
       
+      console.debug('RPC result', data);
+      
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Username update failed');
       

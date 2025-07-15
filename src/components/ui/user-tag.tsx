@@ -11,7 +11,7 @@ export const UserTag = ({ profile, showUsername = true, className }: UserTagProp
   const primary = profile.full_name?.trim() || profile.display_name;
   
   return (
-    <div className={cn("inline-flex flex-col sm:flex-row sm:items-center sm:gap-1 min-w-0", className)}>
+    <div className={cn("inline-flex flex-col sm:flex-row sm:items-center sm:gap-1 min-w-0", className)} title={profile.username}>
       {primary && (
         <span className="font-medium text-sm truncate">{primary}</span>
       )}
