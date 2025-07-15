@@ -107,21 +107,11 @@ export const VibeWheel = memo(() => {
         strokeWidth={6}
       />
       
-      {/* Compatibility glow overlay */}
+      {/* Confidence percentage display */}
       {strength > 0 && (
-        <div
-          className="absolute pointer-events-none transition-all duration-500"
-          style={{
-            width: 280,
-            height: 280,
-            borderRadius: '50%',
-            borderWidth: `${4 + strength * 6}px`,
-            borderStyle: 'solid',
-            borderColor: hue,
-            opacity: strength,
-            boxShadow: `0 0 20px ${hue}`,
-          }}
-        />
+        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full pointer-events-none">
+          {Math.round(strength * 100)}%
+        </div>
       )}
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
@@ -163,16 +153,26 @@ export const VibeWheel = memo(() => {
         className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
         style={{ pointerEvents: 'none' }}
       >
-        <div className="text-center">
-          <h2 
-            className="text-3xl font-bold text-white capitalize mb-1"
+        <div className="text-center relative">
+          {/* Glow background behind vibe label */}
+          <div
+            className="absolute w-[140px] h-[140px] rounded-full blur-2xl opacity-30 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              backgroundColor: currentColor,
+            }}
+          />
+          
+          {/* Vibe label with glow */}
+          <span 
+            className="relative z-10 text-2xl font-bold capitalize text-white mb-1 block"
             style={{ fontSize: 24, fontWeight: '700', color: '#fff' }}
           >
-            {current?.toUpperCase() ?? 'SELECT'}
-          </h2>
+            {current ?? 'SELECT'}
+          </span>
+          
           {current && (
             <p 
-              className="text-sm text-white/70 font-medium max-w-40 text-center"
+              className="relative z-10 text-sm text-white/70 font-medium max-w-40 text-center"
               style={{ fontSize: 12, color: '#ccc', textAlign: 'center', maxWidth: 160 }}
             >
               {VIBE_DESCRIPTIONS[current]}
