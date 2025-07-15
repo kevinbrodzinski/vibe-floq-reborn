@@ -92,7 +92,10 @@ export const AvatarDropdown = () => {
             )}
           </DropdownMenuItem>
           
-          <DropdownMenuItem onSelect={() => setFriendsSheetOpen(true)}>
+          <DropdownMenuItem onSelect={() => {
+            console.log('🔍 Friends button clicked');
+            setFriendsSheetOpen(true);
+          }}>
             <Users className="w-4 h-4 mr-2" />
             Friends ({friendCount})
             {pendingRequests.length > 0 && (
