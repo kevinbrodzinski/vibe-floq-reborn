@@ -20,10 +20,12 @@ export function useRealtimeFriends() {
           event: '*',
           schema: 'public',
           table: 'friends',
-          filter: `user_a=eq.${user.id},user_b=eq.${user.id}`,
+          filter: `or=(user_a.eq.${user.id},user_b.eq.${user.id})`,
         },
         (payload) => {
           console.log('Friend change received:', payload);
+          
+          const row = payload.new ?? payload.old as { status?: string } | null;
           
           // Invalidate relevant queries
           queryClient.invalidateQueries({ queryKey: ['friends-list'] });
@@ -31,7 +33,7 @@ export function useRealtimeFriends() {
           queryClient.invalidateQueries({ queryKey: ['friend-activity'] });
 
           // Show toast for new friend requests
-          if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
+          if (payload.eventType === 'INSERT' && row?.status === 'pending') {
             toast({
               title: "📬 New friend request",
               description: "You have a new friend request!",
@@ -39,7 +41,7 @@ export function useRealtimeFriends() {
           }
 
           // Show toast for accepted requests
-          if (payload.eventType === 'UPDATE' && payload.new?.status === 'accepted') {
+          if (payload.eventType === 'UPDATE' && row?.status === 'accepted') {
             toast({
               title: "🎉 Friend request accepted",
               description: "You are now friends!",

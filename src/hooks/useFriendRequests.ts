@@ -34,7 +34,7 @@ export function useFriendRequests() {
   const acceptRequest = useMutation({
     mutationFn: async (friendId: string) => {
       const { data, error } = await supabase.rpc('accept_friend_request', {
-        _friend: friendId
+        requester_user_id: friendId
       });
 
       if (error) throw error;

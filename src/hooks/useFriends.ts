@@ -5,9 +5,10 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useMemo } from 'react';
 import { track } from '@/lib/analytics';
 import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
+import { OFFLINE_MODE } from '@/lib/constants';
 
 export function useFriends() {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
+  
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
