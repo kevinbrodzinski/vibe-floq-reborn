@@ -1,4 +1,5 @@
 import { memo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfileCache';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -18,6 +19,7 @@ interface OnlineFriendRowProps {
 }
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
+  const navigate = useNavigate();
   const { data: p, isLoading, isError } = useProfile(userId);
   const statusMap = useFriendsPresence();
   const online = statusMap[userId] === 'online';
@@ -37,10 +39,16 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
     });
   }, []);
 
-  // Long-press to open DM
+  // Long-press to open DM, click to view profile
   const longPressGestures = useLongPress({
     onLongPress: () => setDmOpen(true)
   });
+
+  const handleClick = () => {
+    if (p?.username) {
+      navigate(`/u/${p.username}`);
+    }
+  };
 
   if (isLoading) {
     return <FriendRowSkeleton showDistance={isNearby} />;
@@ -61,8 +69,12 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
     <>
       <div 
         {...longPressGestures.handlers}
-        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}
+        onClick={handleClick}
+        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 ${isNearby ? 'bg-primary/5 border border-primary/20' : ''}`}
         data-test-avatar={userId}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && handleClick()}
       >
         <div className="relative">
           <AvatarWithLoading 

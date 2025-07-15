@@ -3,11 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, MessageCircle, MapPin, Zap } from 'lucide-react';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
+import { useUserVibe } from '@/hooks/useUserVibe';
+import { usePing } from '@/hooks/usePing';
+import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { openNativeMaps } from '@/utils/nativeNavigation';
+import { useState, useEffect } from 'react';
 
 export const UserProfileByUsername = () => {
   const { username } = useParams<{ username: string }>();
+  const sendPing = usePing();
+  const [dmOpen, setDmOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   const { data: profiles, isLoading, error } = useQuery({
     queryKey: ['user-by-username', username],
@@ -46,6 +55,32 @@ export const UserProfileByUsername = () => {
   const profile = profiles[0];
   const displayName = profile.username ? `@${profile.username}` : profile.display_name || 'Unknown User';
   const subtitle = profile.username && profile.display_name ? profile.display_name : null;
+  
+  // Fetch current user vibe data
+  const { data: vibe } = useUserVibe(profile.id);
+  
+  // Get current user ID for actions
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id || null);
+    });
+  }, []);
+  
+  const isOwnProfile = currentUserId === profile.id;
+  
+  const handlePing = () => {
+    sendPing(profile.id);
+  };
+  
+  const handleDM = () => {
+    setDmOpen(true);
+  };
+  
+  const handleNavigate = () => {
+    if (vibe?.location) {
+      openNativeMaps(vibe.location);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,16 +106,57 @@ export const UserProfileByUsername = () => {
               </AvatarFallback>
             </Avatar>
             
-            <h1 className="text-2xl font-bold mb-1">{displayName}</h1>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <h1 className="text-2xl font-bold">{displayName}</h1>
+              {vibe?.vibe && (
+                <Badge variant="secondary" className="capitalize">
+                  {vibe.vibe}
+                </Badge>
+              )}
+            </div>
+            
             {subtitle && (
-              <p className="text-muted-foreground mb-4">{subtitle}</p>
+              <p className="text-muted-foreground mb-2">{subtitle}</p>
             )}
             
-            <div className="text-sm text-muted-foreground">
+            {profile.bio && (
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                {profile.bio}
+              </p>
+            )}
+            
+            <div className="text-sm text-muted-foreground mb-6">
               Member since {new Date(profile.created_at).toLocaleDateString()}
             </div>
+            
+            {/* Action Buttons */}
+            {!isOwnProfile && (
+              <div className="flex gap-3 justify-center">
+                <Button onClick={handlePing} variant="default" size="sm" className="gap-2">
+                  <Zap className="h-4 w-4" />
+                  Wave
+                </Button>
+                <Button onClick={handleDM} variant="outline" size="sm" className="gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  Message
+                </Button>
+                {vibe?.location && (
+                  <Button onClick={handleNavigate} variant="outline" size="sm" className="gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Navigate
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
+        
+        {/* DM Quick Sheet */}
+        <DMQuickSheet
+          open={dmOpen}
+          onOpenChange={setDmOpen}
+          friendId={profile.id}
+        />
       </div>
     </div>
   );
