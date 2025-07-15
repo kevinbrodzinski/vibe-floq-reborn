@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS public.message_mentions (
 -- ╰─────────────────────────────────────────────────────────╯
 
 -- Index for efficient "who mentioned me?" queries
-CREATE INDEX IF NOT EXISTS idx_message_mentions_user
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_message_mentions_user
   ON public.message_mentions (mentioned_user);
 
 -- Index for efficient "who did this message mention?" queries
-CREATE INDEX IF NOT EXISTS idx_message_mentions_msg
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_message_mentions_msg
   ON public.message_mentions (message_id);
 
 -- ╭─────────────────────────────────────────────────────────╮
@@ -51,10 +51,13 @@ CREATE POLICY "message_mentions_floq_members_read"
   USING (
     EXISTS (
       SELECT 1 
-      FROM public.floq_messages fm
-      JOIN public.floq_participants fp ON fp.floq_id = fm.floq_id
-      WHERE fm.id = message_mentions.message_id
-        AND fp.user_id = auth.uid()
+      FROM public.floq_participants fp 
+      WHERE fp.user_id = auth.uid() 
+        AND fp.floq_id = (
+          SELECT floq_id 
+          FROM public.floq_messages 
+          WHERE id = message_mentions.message_id
+        )
     )
   );
 
@@ -64,7 +67,7 @@ CREATE POLICY "message_mentions_floq_members_read"
 
 CREATE OR REPLACE FUNCTION public.extract_mentions()
 RETURNS TRIGGER
-LANGUAGE plpgsql
+LANGUAGE plpgsql VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -108,7 +111,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.extract_mentions_update()
 RETURNS TRIGGER
-LANGUAGE plpgsql
+LANGUAGE plpgsql VOLATILE
 SECURITY DEFINER
 SET search_path = public
 AS $$
