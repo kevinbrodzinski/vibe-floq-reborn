@@ -16,7 +16,7 @@ export const useClusters = (
   const [clusters, setClusters] = useState<Cluster[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const abortRef = useRef<AbortController>()
+  const abortRef = useRef<AbortController | undefined>(undefined)
 
   const fetchClusters = useCallback(
     async (box: [number, number, number, number]) => {
@@ -28,7 +28,7 @@ export const useClusters = (
       setError(null)
 
       try {
-        console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
+        if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
 
         const { data, error } = await supabase.functions.invoke('clusters', {
           body: null,
@@ -49,7 +49,7 @@ export const useClusters = (
           return
         }
 
-        console.log(`[useClusters] Received ${data?.length || 0} clusters`)
+        if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
         setClusters(data || [])
         setError(null)
 

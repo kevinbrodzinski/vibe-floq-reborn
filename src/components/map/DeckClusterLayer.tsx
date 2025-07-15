@@ -1,3 +1,4 @@
+// @ts-ignore - deck.gl types issue
 import { ScatterplotLayer } from '@deck.gl/layers'
 import { useMemo } from 'react'
 import { scaleSequential } from 'd3-scale'
