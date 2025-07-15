@@ -30,27 +30,24 @@ export const useClusters = (
       try {
         if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
 
-        const { data, error } = await supabase.functions.invoke('clusters', {
+        const response = await supabase.functions.invoke('clusters', {
           body: null,
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
         }, {
           url: new URL(`/clusters?bbox=${box.join(',')}&precision=${precision}`, 
             `https://${supabase.supabaseUrl.split('//')[1]}/functions/v1`
           )
         })
 
-        if (error) {
-          console.error('[useClusters] Error:', error)
-          setError(error.message || 'Failed to fetch clusters')
+        if (response.error) {
+          console.error('[useClusters] Error:', response.error)
+          setError(response.error.message || 'Failed to fetch clusters')
           setClusters([])
           return
         }
 
-        if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
-        setClusters(data || [])
+        if (import.meta.env.DEV) console.log(`[useClusters] Received ${response.data?.length || 0} clusters`)
+        setClusters(response.data || [])
         setError(null)
 
       } catch (err: any) {

@@ -22,9 +22,6 @@ interface Props {
 }
 
 export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
-  // Early return BEFORE any hooks
-  if (!isOpen) return null
-
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null)
 
@@ -66,6 +63,9 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   const layers = useMemo(() => [
     DeckClusterLayer({ clusters, onClick: handleClusterClick })
   ], [clusters, handleClusterClick])
+
+  // Conditional rendering AFTER all hooks
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-4 z-40 bg-background rounded-2xl border border-border shadow-2xl">
