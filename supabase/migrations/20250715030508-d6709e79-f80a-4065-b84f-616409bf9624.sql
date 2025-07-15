@@ -1,31 +1,34 @@
 -- Advanced Search Infrastructure for Phase A-2
 -- Migration: Advanced Search & Filters
 
--- Enable required extensions
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- Enable required extensions (wrapped to avoid transaction issues)
+DO $$
+BEGIN
+  CREATE EXTENSION IF NOT EXISTS pg_trgm;
+END$$;
 
--- Create optimized indexes for search_floqs function
-CREATE INDEX IF NOT EXISTS idx_floqs_location_gist
+-- Create optimized indexes for search_floqs function (CONCURRENTLY to avoid write locks)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_location_gist
   ON public.floqs USING gist (location);
 COMMENT ON INDEX idx_floqs_location_gist IS 'Used by search_floqs() for spatial queries';
 
-CREATE INDEX IF NOT EXISTS idx_floqs_title_trgm
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_title_trgm
   ON public.floqs USING gin (lower(title) gin_trgm_ops);
 COMMENT ON INDEX idx_floqs_title_trgm IS 'Used by search_floqs() for fuzzy text search on titles';
 
 -- Filtered index for visibility and soft-delete filtering
-CREATE INDEX IF NOT EXISTS idx_floqs_visibility_deleted
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_visibility_deleted
   ON public.floqs (visibility, deleted_at)
   WHERE deleted_at IS NULL;
 COMMENT ON INDEX idx_floqs_visibility_deleted IS 'Used by search_floqs() for visibility and soft-delete filtering';
 
 -- Composite index for vibe and time range queries
-CREATE INDEX IF NOT EXISTS idx_floqs_vibe_time
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_vibe_time
   ON public.floqs (primary_vibe, starts_at);
 COMMENT ON INDEX idx_floqs_vibe_time IS 'Used by search_floqs() for vibe filtering and time sorting';
 
 -- Performance index for "up-next" sorting
-CREATE INDEX IF NOT EXISTS idx_floqs_starts_at
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_floqs_starts_at
   ON public.floqs (starts_at);
 COMMENT ON INDEX idx_floqs_starts_at IS 'Used for sorting by upcoming events';
 
@@ -66,7 +69,10 @@ BEGIN
     f.primary_vibe,
     f.starts_at,
     f.ends_at,
-    ST_DistanceSphere(f.location, ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)) AS distance_m,
+    ST_Distance(
+      f.location,
+      ST_SetSRID(ST_MakePoint(p_lng, p_lat), 4326)::geography
+    ) AS distance_m,
     COALESCE(pc.participant_count, 0) AS participant_count
   FROM public.floqs f
   LEFT JOIN LATERAL (
