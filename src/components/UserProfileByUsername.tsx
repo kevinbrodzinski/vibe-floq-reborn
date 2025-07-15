@@ -86,13 +86,15 @@ export const UserProfileByUsername = () => {
     );
   }
 
-  const displayName = profile.username ? `@${profile.username}` : profile.display_name || 'Unknown User';
-  const subtitle = profile.username && profile.display_name ? profile.display_name : null;
+  const displayName = profile?.username ? `@${profile.username}` : profile?.display_name || 'Unknown User';
+  const subtitle = profile?.username && profile?.display_name ? profile.display_name : null;
   
   const isOwnProfile = currentUserId === profile?.id;
   
   const handlePing = () => {
-    sendPing(profile.id);
+    if (profile?.id) {
+      sendPing(profile.id);
+    }
   };
   
   const handleDM = () => {
@@ -123,9 +125,9 @@ export const UserProfileByUsername = () => {
         <div className="bg-card rounded-lg border p-6">
           <div className="text-center">
             <Avatar className="w-24 h-24 mx-auto mb-4">
-              <AvatarImage src={getAvatarUrl(profile.avatar_url, 96)} />
+              <AvatarImage src={getAvatarUrl(profile?.avatar_url, 96)} />
               <AvatarFallback className="text-xl">
-                {getInitials(profile.display_name || profile.username)}
+                {getInitials(profile?.display_name || profile?.username)}
               </AvatarFallback>
             </Avatar>
             
@@ -142,14 +144,14 @@ export const UserProfileByUsername = () => {
               <p className="text-muted-foreground mb-2">{subtitle}</p>
             )}
             
-            {profile.bio && (
+            {profile?.bio && (
               <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
                 {profile.bio}
               </p>
             )}
             
             <div className="text-sm text-muted-foreground mb-6">
-              Member since {new Date(profile.created_at).toLocaleDateString()}
+              Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
             </div>
             
             {/* Action Buttons */}
@@ -178,7 +180,7 @@ export const UserProfileByUsername = () => {
         <DMQuickSheet
           open={dmOpen}
           onOpenChange={setDmOpen}
-          friendId={profile.id}
+          friendId={profile?.id || ''}
         />
       </div>
     </div>
