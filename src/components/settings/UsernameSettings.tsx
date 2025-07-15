@@ -72,11 +72,11 @@ export default function UsernameSettings() {
     setIsCheckingAvailability(true);
     try {
       const { data, error } = await supabase
-        .rpc('username_exists', { username: candidate.toLowerCase() });
+        .rpc('username_available', { username: candidate.toLowerCase() });
       
       if (error) throw error;
       
-      setIsAvailable(!data); // username_exists returns true if taken, we want opposite
+      setIsAvailable(data); // username_available returns true if available
     } catch (error) {
       setIsAvailable(false);
     } finally {

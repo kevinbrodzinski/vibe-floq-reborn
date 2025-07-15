@@ -23,11 +23,16 @@ export const UserProfileByUsername = () => {
     queryFn: async () => {
       if (!username) throw new Error('Username is required');
       
+      console.log('🔍 Looking up username:', username);
       const { data, error } = await supabase.rpc('get_user_by_username', { 
         lookup_username: username 
       });
       
-      if (error) throw error;
+      console.log('📊 Profile lookup result:', { data, error, username });
+      if (error) {
+        console.error('❌ Profile lookup error:', error);
+        throw error;
+      }
       return data;
     },
     enabled: !!username
