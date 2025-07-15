@@ -2993,6 +2993,10 @@ export type Database = {
         Args: { p_floq_id: string; p_user_id: string; p_new_role: string }
         Returns: undefined
       }
+      set_user_vibe: {
+        Args: { new_vibe: string; lat?: number; lng?: number }
+        Returns: undefined
+      }
       should_log_presence: {
         Args: { p_user: string; p_loc: unknown; p_now?: string }
         Returns: boolean
