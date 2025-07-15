@@ -62,19 +62,63 @@ const Settings = () => {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Clean up auth state first
+      const cleanupAuthState = () => {
+        // Remove all Supabase auth keys from localStorage
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Remove from sessionStorage if in use
+        Object.keys(sessionStorage || {}).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      };
+
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+        console.warn('Global signout failed:', err);
+      }
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully"
       });
-      navigate('/');
+      
+      // Force page reload for a clean state
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
+      
+      // Even if logout fails, try to clean up and redirect
+      const cleanupAuthState = () => {
+        Object.keys(localStorage).forEach((key) => {
+          if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+      };
+      
+      cleanupAuthState();
+      
       toast({
-        title: "Logout failed",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive"
+        title: "Logout completed",
+        description: "You have been logged out (with cleanup)",
+        variant: "default"
       });
+      
+      // Force page reload regardless
+      window.location.href = '/';
     }
   };
 
