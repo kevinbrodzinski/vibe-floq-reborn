@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from '@/utils/vibe';
 import { VibeAnalysisEngine, type SensorData, type VibeAnalysisResult } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
+import { UserLearningSystem } from '@/lib/vibeAnalysis/UserLearningSystem';
 
 interface VibeDetection {
   suggestedVibe: Vibe;
@@ -21,9 +22,17 @@ interface SensorPermissions {
   location: boolean;
 }
 
+interface LearningData {
+  patterns: Array<{ context: string; preferredVibe: Vibe; confidence: number }>;
+  preferences: Partial<Record<Vibe, number>>;
+  accuracy: number;
+  correctionCount: number;
+}
+
 export const useSensorMonitoring = (enabled: boolean = false) => {
   // ✅ ALL hooks declared unconditionally at top level
   const analysisEngineRef = useRef<VibeAnalysisEngine>(new VibeAnalysisEngine());
+  const learningSystemRef = useRef<UserLearningSystem>(new UserLearningSystem());
   const [sensorData, setSensorData] = useState<SensorData>({
     audioLevel: 0,
     lightLevel: 50, // Default mid-level
@@ -36,6 +45,13 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     microphone: false,
     motion: false,
     location: false
+  });
+  
+  const [learningData, setLearningData] = useState<LearningData>({
+    patterns: [],
+    preferences: {},
+    accuracy: 0,
+    correctionCount: 0
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -279,6 +295,139 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     }
   }, []);
 
+  // Record user feedback for learning
+  const recordFeedback = useCallback(async (accepted: boolean, correctedVibe?: Vibe) => {
+    if (!vibeDetection) return;
+
+    const now = new Date();
+    const hour = now.getHours();
+    const getTimeOfDay = (hour: number) => {
+      if (hour >= 0 && hour < 6) return 'late-night' as const;
+      if (hour >= 6 && hour < 8) return 'early-morning' as const;
+      if (hour >= 8 && hour < 12) return 'morning' as const;
+      if (hour >= 12 && hour < 17) return 'afternoon' as const;
+      if (hour >= 17 && hour < 21) return 'evening' as const;
+      return 'night' as const;
+    };
+    
+    const context = {
+      timestamp: now,
+      timeOfDay: getTimeOfDay(hour),
+      dayOfWeek: now.getDay(),
+      hourOfDay: hour,
+      isWeekend: now.getDay() === 0 || now.getDay() === 6,
+      locationHistory: sensorData.location ? [{
+        context: sensorData.location.context,
+        timestamp: now
+      }] : []
+    };
+
+    try {
+      if (accepted) {
+        // Record as correct prediction
+        await analysisEngineRef.current.recordUserFeedback(
+          {
+            suggestedVibe: vibeDetection.suggestedVibe,
+            confidence: vibeDetection.confidence,
+            reasoning: vibeDetection.reasoning,
+            alternatives: vibeDetection.alternatives || [],
+            contextFactors: vibeDetection.contextFactors || {
+              temporal: 0.5,
+              environmental: 0.5,
+              personal: 0.5
+            },
+            sensorQuality: {
+              audio: permissions.microphone ? 0.8 : 0,
+              motion: permissions.motion ? 0.8 : 0,
+              light: 0.6,
+              location: sensorData.location ? 0.7 : 0,
+              overall: 0.7
+            }
+          },
+          vibeDetection.suggestedVibe,
+          context
+        );
+      } else if (correctedVibe) {
+        // Record as correction
+        await analysisEngineRef.current.recordUserFeedback(
+          {
+            suggestedVibe: vibeDetection.suggestedVibe,
+            confidence: vibeDetection.confidence,
+            reasoning: vibeDetection.reasoning,
+            alternatives: vibeDetection.alternatives || [],
+            contextFactors: vibeDetection.contextFactors || {
+              temporal: 0.5,
+              environmental: 0.5,
+              personal: 0.5
+            },
+            sensorQuality: {
+              audio: permissions.microphone ? 0.8 : 0,
+              motion: permissions.motion ? 0.8 : 0,
+              light: 0.6,
+              location: sensorData.location ? 0.7 : 0,
+              overall: 0.7
+            }
+          },
+          correctedVibe,
+          context
+        );
+      }
+
+      // Update learning data display
+      const personalFactors = await learningSystemRef.current.getPersonalFactors(sensorData, context);
+      setLearningData({
+        patterns: personalFactors.contextualPatterns,
+        preferences: personalFactors.vibePreferences,
+        accuracy: personalFactors.accuracy,
+        correctionCount: Math.round(personalFactors.relevance * 100) // Approximate correction count
+      });
+    } catch (error) {
+      console.error('Failed to record feedback:', error);
+    }
+  }, [vibeDetection, sensorData]);
+
+  // Load learning data on mount
+  useEffect(() => {
+    const loadLearningData = async () => {
+      try {
+        const now = new Date();
+        const hour = now.getHours();
+        const getTimeOfDay = (hour: number) => {
+          if (hour >= 0 && hour < 6) return 'late-night' as const;
+          if (hour >= 6 && hour < 8) return 'early-morning' as const;
+          if (hour >= 8 && hour < 12) return 'morning' as const;
+          if (hour >= 12 && hour < 17) return 'afternoon' as const;
+          if (hour >= 17 && hour < 21) return 'evening' as const;
+          return 'night' as const;
+        };
+        
+        const context = {
+          timestamp: now,
+          timeOfDay: getTimeOfDay(hour),
+          dayOfWeek: now.getDay(),
+          hourOfDay: hour,
+          isWeekend: now.getDay() === 0 || now.getDay() === 6,
+          locationHistory: sensorData.location ? [{
+            context: sensorData.location.context,
+            timestamp: now
+          }] : []
+        };
+        
+        const personalFactors = await learningSystemRef.current.getPersonalFactors(sensorData, context);
+        setLearningData({
+          patterns: personalFactors.contextualPatterns,
+          preferences: personalFactors.vibePreferences,
+          accuracy: personalFactors.accuracy,
+          correctionCount: Math.round(personalFactors.relevance * 100)
+        });
+      } catch (error) {
+        console.error('Failed to load learning data:', error);
+      }
+    };
+
+    loadLearningData();
+  }, [sensorData.location]);
+
   // Enhanced vibe detection using analysis engine
   const detectVibe = useCallback(async (sensors: SensorData): Promise<VibeDetection> => {
     try {
@@ -388,6 +537,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     vibeDetection,
     permissions,
     requestPermissions,
-    enabled
+    recordFeedback,
+    learningData
   };
 };

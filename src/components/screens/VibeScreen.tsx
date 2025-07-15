@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Radio, Eye, EyeOff, Users, Zap, ZapOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FeedbackButtons } from "@/components/ui/FeedbackButtons";
+import { LearningPatterns } from "@/components/ui/LearningPatterns";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
@@ -22,10 +24,12 @@ export const VibeScreen = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [activeDuration, setActiveDuration] = useState(37);
   const [autoMode, setAutoMode] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [isLearning, setIsLearning] = useState(false);
   const dialRef = useRef<HTMLDivElement>(null);
   
   // Sensor monitoring for auto-detection
-  const { sensorData, vibeDetection, permissions, requestPermissions } = useSensorMonitoring(autoMode);
+  const { sensorData, vibeDetection, permissions, requestPermissions, recordFeedback, learningData } = useSensorMonitoring(autoMode);
 
   const vibes: Record<VibeState, VibeInfo> = {
     chill: { label: "Chill", angle: 0, color: "hsl(var(--accent))" },
@@ -77,12 +81,49 @@ export const VibeScreen = () => {
       const vibeAsState = vibeDetection.suggestedVibe as VibeState;
       if (vibes[vibeAsState]) {
         setSelectedVibe(vibeAsState);
+        setShowFeedback(true); // Show feedback buttons
         if (navigator.vibrate) {
           navigator.vibrate([50, 100, 50]);
         }
       }
     }
   }, [vibeDetection, vibes]);
+
+  // Handle feedback acceptance
+  const handleAcceptFeedback = useCallback(async () => {
+    if (!vibeDetection) return;
+    
+    setIsLearning(true);
+    try {
+      await recordFeedback(true);
+      setShowFeedback(false);
+    } catch (error) {
+      console.error('Failed to record acceptance:', error);
+    } finally {
+      setIsLearning(false);
+    }
+  }, [vibeDetection, recordFeedback]);
+
+  // Handle feedback correction
+  const handleCorrectFeedback = useCallback(async (correctedVibe: Vibe) => {
+    if (!vibeDetection) return;
+    
+    setIsLearning(true);
+    try {
+      await recordFeedback(false, correctedVibe);
+      setSelectedVibe(correctedVibe as VibeState);
+      setShowFeedback(false);
+    } catch (error) {
+      console.error('Failed to record correction:', error);
+    } finally {
+      setIsLearning(false);
+    }
+  }, [vibeDetection, recordFeedback]);
+
+  // Close feedback without recording
+  const handleCloseFeedback = useCallback(() => {
+    setShowFeedback(false);
+  }, []);
 
   // Toggle auto mode
   const toggleAutoMode = useCallback(async () => {
@@ -253,7 +294,7 @@ export const VibeScreen = () => {
                   autoMode ? "bg-gradient-secondary" : "bg-gradient-primary"
                 }`}></div>
               </div>
-              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && (
+              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (
                 <Button
                   onClick={applyDetectedVibe}
                   size="sm"
@@ -279,6 +320,32 @@ export const VibeScreen = () => {
           ></div>
         </div>
       </div>
+
+      {/* Feedback Buttons */}
+      {showFeedback && vibeDetection && (
+        <div className="px-6 mb-6">
+          <FeedbackButtons
+            suggestedVibe={vibeDetection.suggestedVibe}
+            confidence={vibeDetection.confidence}
+            onAccept={handleAcceptFeedback}
+            onCorrect={handleCorrectFeedback}
+            onClose={handleCloseFeedback}
+            isProcessing={isLearning}
+          />
+        </div>
+      )}
+
+      {/* Learning Patterns */}
+      {autoMode && (
+        <div className="px-6 mb-6">
+          <LearningPatterns
+            patterns={learningData.patterns}
+            topPreferences={learningData.preferences}
+            accuracy={learningData.accuracy}
+            correctionCount={learningData.correctionCount}
+          />
+        </div>
+      )}
 
       {/* Vibe Impact Panel */}
       <div className="px-6 mb-6">
