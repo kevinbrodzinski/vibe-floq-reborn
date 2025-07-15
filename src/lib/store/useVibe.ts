@@ -36,8 +36,29 @@ export const useVibe = create<VibeState>()(
         });
 
         try {
+          // Get current location if available
+          let lat: number | null = null;
+          let lng: number | null = null;
+          
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                  timeout: 5000,
+                  maximumAge: 60000 // Use cached position up to 1 minute old
+                });
+              });
+              lat = position.coords.latitude;
+              lng = position.coords.longitude;
+            } catch (geoError) {
+              console.log('Could not get location, setting vibe without location');
+            }
+          }
+
           const { error } = await supabase.rpc('set_user_vibe', {
             new_vibe: newVibe,
+            lat,
+            lng
           });
 
           if (error) {
