@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, Loader2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -194,6 +194,17 @@ export function SearchBarWithTypeahead({
                       {suggestion.primary_vibe}
                     </Badge>
                   </div>
+                  
+                  {/* Friends Going Badge */}
+                  {suggestion.friendsGoing?.count > 0 && (
+                    <div className="flex items-center gap-1 text-xs font-medium text-primary mb-1">
+                      <Users className="h-3 w-3 shrink-0" />
+                      {suggestion.friendsGoing.count === 1
+                        ? '1 friend going'
+                        : `${suggestion.friendsGoing.count} friends going`}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{getDistanceText(suggestion.distance_m)}</span>
                     <span>•</span>

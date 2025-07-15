@@ -29,6 +29,11 @@ export interface NearbyFloq {
   is_joined: boolean;
   creator_id?: string;
   hasUserBoosted?: boolean;
+  friendsGoing?: {
+    count: number;
+    avatars: string[];
+    names: string[];
+  };
 }
 
 interface UseNearbyFlocksOptions {

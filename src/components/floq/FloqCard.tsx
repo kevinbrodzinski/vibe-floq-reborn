@@ -234,6 +234,16 @@ export const FloqCard = React.memo<FloqCardProps>(({
           <h3 className="text-lg font-semibold leading-tight text-white">
             {floq.title}
           </h3>
+
+          {/* Friends Going Badge */}
+          {floq.friendsGoing?.count > 0 && (
+            <div className="mt-1 flex items-center gap-1 text-xs font-medium text-blue-400">
+              <Users className="h-3 w-3 shrink-0" />
+              {floq.friendsGoing.count === 1
+                ? '1 friend going'
+                : `${floq.friendsGoing.count} friends going`}
+            </div>
+          )}
           <p className="mt-0.5 text-sm text-muted-foreground tracking-tight">
             {(() => {
               const now = new Date();

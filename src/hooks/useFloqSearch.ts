@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
 import type { FloqSearchFilters, FloqSearchResult } from '@/types/SearchFilters';
 
 export function useFloqSearch(
@@ -7,8 +8,9 @@ export function useFloqSearch(
   filters: FloqSearchFilters,
   enabled = true
 ) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ['floq-search', coords, filters],
+    queryKey: ['floq-search', coords, filters, user?.id],
     enabled: enabled && !!coords,
     staleTime: 30_000,
     queryFn: async () => {
@@ -23,10 +25,18 @@ export function useFloqSearch(
         p_time_from: filters.timeRange[0].toISOString(),
         p_time_to: filters.timeRange[1].toISOString(),
         p_limit: 200,
+        _viewer_id: user?.id || null,
       });
 
       if (error) throw error;
-      return (data ?? []) as FloqSearchResult[];
+      return (data ?? []).map(floq => ({
+        ...floq,
+        friendsGoing: {
+          count: floq.friends_going_count,
+          avatars: floq.friends_going_avatars,
+          names: floq.friends_going_names,
+        },
+      })) as FloqSearchResult[];
     },
     placeholderData: (prev) => prev ?? [],
   });
