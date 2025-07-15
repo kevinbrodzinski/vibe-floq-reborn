@@ -7,29 +7,39 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- Create optimized indexes for search_floqs function
 CREATE INDEX IF NOT EXISTS idx_floqs_location_gist
   ON public.floqs USING gist (location);
+COMMENT ON INDEX idx_floqs_location_gist IS 'Used by search_floqs() for spatial queries';
 
 CREATE INDEX IF NOT EXISTS idx_floqs_title_trgm
   ON public.floqs USING gin (lower(title) gin_trgm_ops);
+COMMENT ON INDEX idx_floqs_title_trgm IS 'Used by search_floqs() for fuzzy text search on titles';
 
 -- Filtered index for visibility and soft-delete filtering
 CREATE INDEX IF NOT EXISTS idx_floqs_visibility_deleted
   ON public.floqs (visibility, deleted_at)
   WHERE deleted_at IS NULL;
+COMMENT ON INDEX idx_floqs_visibility_deleted IS 'Used by search_floqs() for visibility and soft-delete filtering';
 
 -- Composite index for vibe and time range queries
 CREATE INDEX IF NOT EXISTS idx_floqs_vibe_time
   ON public.floqs (primary_vibe, starts_at);
+COMMENT ON INDEX idx_floqs_vibe_time IS 'Used by search_floqs() for vibe filtering and time sorting';
+
+-- Performance index for "up-next" sorting
+CREATE INDEX IF NOT EXISTS idx_floqs_starts_at
+  ON public.floqs (starts_at);
+COMMENT ON INDEX idx_floqs_starts_at IS 'Used for sorting by upcoming events';
 
 -- Advanced search function with optimized performance
 CREATE OR REPLACE FUNCTION public.search_floqs(
-  p_lat        DOUBLE PRECISION,
-  p_lng        DOUBLE PRECISION,
-  p_radius_km  DOUBLE PRECISION DEFAULT 25,
-  p_query      TEXT DEFAULT '',
-  p_vibe_ids   vibe_enum[] DEFAULT '{}',
-  p_time_from  TIMESTAMPTZ DEFAULT now(),
-  p_time_to    TIMESTAMPTZ DEFAULT now() + interval '7 days',
-  p_limit      INT DEFAULT 100
+  p_lat           DOUBLE PRECISION,
+  p_lng           DOUBLE PRECISION,
+  p_radius_km     DOUBLE PRECISION DEFAULT 25,
+  p_query         TEXT DEFAULT '',
+  p_vibe_ids      vibe_enum[] DEFAULT '{}',
+  p_time_from     TIMESTAMPTZ DEFAULT now(),
+  p_time_to       TIMESTAMPTZ DEFAULT now() + interval '7 days',
+  p_limit         INT DEFAULT 100,
+  p_visibilities  TEXT[] DEFAULT ARRAY['public']
 )
 RETURNS TABLE (
   id           uuid,
@@ -65,7 +75,7 @@ BEGIN
     WHERE fp.floq_id = f.id
   ) pc ON TRUE
   WHERE f.deleted_at IS NULL
-    AND f.visibility = 'public'
+    AND f.visibility = ANY(p_visibilities)
     -- Spatial filter using geography for performance
     AND ST_DWithin(
           f.location,
