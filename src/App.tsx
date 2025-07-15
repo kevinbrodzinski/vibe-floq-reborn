@@ -8,7 +8,7 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
-import { UsernameBanner } from "@/components/UsernameBanner";
+
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import Index from "./pages/Index";
@@ -34,7 +34,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <UsernameBanner />
+            
             <Routes>
               {/* Main app routes (field, floqs, etc.) are handled inside Index */}
               <Route path="/*" element={<Index />} />
