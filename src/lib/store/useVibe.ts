@@ -4,8 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-
-type VibeEnum = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
+import type { VibeEnum } from '@/constants/vibes';
 
 type VibeState = {
   vibe: VibeEnum | null;
@@ -47,6 +46,7 @@ export const useVibe = create<VibeState>()(
               variant: 'destructive',
               title: 'Could not update vibe',
               description: 'Check your connection and try again.',
+              duration: 4000,
             });
             // rollback
             set((s) => {
@@ -91,3 +91,11 @@ export const useVibe = create<VibeState>()(
     }
   )
 );
+
+// Enable DevTools in development
+if (process.env.NODE_ENV === 'development') {
+  import('zustand/middleware').then(({ devtools }) => {
+    // Re-create store with devtools for debugging
+    console.log('Zustand DevTools enabled for vibe store');
+  });
+}

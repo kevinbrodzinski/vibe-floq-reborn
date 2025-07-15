@@ -22,10 +22,17 @@ export function VibeRealtime() {
         
         if (data && !error) {
           sync(data.vibe, data.updated_at);
+        } else if (data === null && !error) {
+          // Row doesn't exist yet - user hasn't set vibe
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[VibeRealtime] No vibe row found for user - fresh start');
+          }
         }
-        // If row doesn't exist (404), leave local state untouched
       } catch (err) {
         // Silently ignore - user hasn't set a vibe yet
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[VibeRealtime] Initial fetch failed:', err);
+        }
       }
     };
     
@@ -59,16 +66,19 @@ export function VibeRealtime() {
     return () => supabase.removeChannel(channel);
   }, [userId, sync]);
 
-  // Clean up channels on auth state change
+  // Clean up channels and store on auth state change
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_OUT') {
-        // Remove all vibe channels and reset store
+        // Remove all vibe channels
         supabase.getChannels().forEach(channel => {
           if (channel.topic.startsWith('vibe-now-')) {
             supabase.removeChannel(channel);
           }
         });
+        
+        // Clear persisted store for fresh start
+        useVibe.persist.clearStorage();
       }
     });
 

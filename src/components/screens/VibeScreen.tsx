@@ -16,8 +16,9 @@ import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 import { useVibe } from "@/lib/store/useVibe";
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
+import type { VibeEnum } from "@/constants/vibes";
 
-type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
+type VibeState = VibeEnum;
 type VisibilityState = "public" | "friends" | "off";
 
 interface VibeInfo {
