@@ -45,7 +45,7 @@ export const VibeScreen = () => {
   
   // Mock bounding box for cluster data
   const bbox = [-122.5, 37.7, -122.3, 37.8] as [number, number, number, number];
-  const { clusters } = useClusters(bbox, 6);
+  const { clusters, loading, isRealTimeConnected, lastUpdateTime } = useClusters(bbox, 6);
   
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
@@ -584,6 +584,21 @@ export const VibeScreen = () => {
                   Active for {activeDuration} min
                   {clusters.length > 0 && (
                     <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
+                  )}
+                  {isRealTimeConnected && (
+                    <span className="ml-2 opacity-50">
+                      • <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></span>
+                      Live
+                    </span>
+                  )}
+                  {lastUpdateTime && (
+                    <span className="ml-2 opacity-40 text-[10px]">
+                      Updated {new Intl.DateTimeFormat('en', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        second: '2-digit'
+                      }).format(lastUpdateTime)}
+                    </span>
                   )}
                 </div>
               </div>
