@@ -27,7 +27,7 @@ interface VibeInfo {
 
 export const VibeScreen = () => {
   const { user } = useAuth();
-  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating } = useVibe();
+  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated } = useVibe();
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [activeDuration, setActiveDuration] = useState(37);
@@ -289,6 +289,12 @@ export const VibeScreen = () => {
     }
   };
 
+  // Show loading while hydrating from AsyncStorage
+  if (!hydrated) return null;
+
+  // Safe vibe fallback to prevent crashes
+  const safeVibe = selectedVibe ?? 'chill';
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {/* Header Bar */}
@@ -370,7 +376,7 @@ export const VibeScreen = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-center">
               <h2 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-                {vibes[selectedVibe].label}
+                {vibes[safeVibe].label}
               </h2>
               <p className="text-sm text-muted-foreground mb-2">
                 {getCurrentVibeDescription()}
@@ -432,10 +438,10 @@ export const VibeScreen = () => {
           <div 
             className="absolute w-3 h-3 rounded-full transition-all duration-500 animate-pulse-glow"
             style={{
-              backgroundColor: vibes[selectedVibe].color,
-              boxShadow: `0 0 15px ${vibes[selectedVibe].color}`,
-              left: `calc(50% + ${Math.cos((vibes[selectedVibe].angle * Math.PI) / 180) * 115}px)`,
-              top: `calc(50% + ${Math.sin((vibes[selectedVibe].angle * Math.PI) / 180) * 115}px)`,
+              backgroundColor: vibes[safeVibe].color,
+              boxShadow: `0 0 15px ${vibes[safeVibe].color}`,
+              left: `calc(50% + ${Math.cos((vibes[safeVibe].angle * Math.PI) / 180) * 115}px)`,
+              top: `calc(50% + ${Math.sin((vibes[safeVibe].angle * Math.PI) / 180) * 115}px)`,
               transform: "translate(-50%, -50%)"
             }}
           ></div>
@@ -570,13 +576,13 @@ export const VibeScreen = () => {
               <div 
                 className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
                 style={{ 
-                  backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[selectedVibe].color} 80%, ${tintColor} 20%)` : vibes[selectedVibe].color,
+                  backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeVibe].color} 80%, ${tintColor} 20%)` : vibes[safeVibe].color,
                   transform: `scale(${pulseScale})`,
                   boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
                 }}
               >
                 <span className="text-lg font-bold text-white drop-shadow-sm">
-                  {vibes[selectedVibe].label.charAt(0).toUpperCase()}
+                  {vibes[safeVibe].label.charAt(0).toUpperCase()}
                 </span>
                 {/* Accessibility: Reduced motion fallback */}
                 <style>{`
@@ -590,7 +596,7 @@ export const VibeScreen = () => {
                 `}</style>
               </div>
               <div>
-                <span className="font-medium text-foreground">{vibes[selectedVibe].label}</span>
+                <span className="font-medium text-foreground">{vibes[safeVibe].label}</span>
                 <div className="text-xs text-muted-foreground">
                   Active for {activeDuration} min
                   {clusters.length > 0 && (

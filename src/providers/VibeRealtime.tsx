@@ -8,6 +8,25 @@ export function VibeRealtime() {
   const { user } = useAuth();
   const userId = user?.id;
 
+  // Initial fetch for brand-new installs
+  useEffect(() => {
+    if (!userId) return;
+    
+    const fetchInitialVibe = async () => {
+      const { data, error } = await supabase
+        .from('vibes_now')
+        .select('vibe, updated_at')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data && !error) {
+        sync(data.vibe, data.updated_at);
+      }
+    };
+    
+    fetchInitialVibe();
+  }, [userId, sync]);
+
   useEffect(() => {
     if (!userId) return;
 
