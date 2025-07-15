@@ -2759,7 +2759,7 @@ export type Database = {
         }[]
       }
       search_users: {
-        Args: { search_query: string }
+        Args: { p_query: string; p_limit?: number } | { search_query: string }
         Returns: {
           id: string
           display_name: string
