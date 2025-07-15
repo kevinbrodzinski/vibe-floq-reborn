@@ -17,8 +17,8 @@ export function useFriendSuggestions(userId?: string, limit = 6) {
     queryKey: ['friend-suggestions', userId, limit],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('suggest_friends', {
-        target_user_id: userId,
-        limit_count: limit
+        p_uid: userId,
+        limit_n: limit
       });
 
       if (error) throw error;

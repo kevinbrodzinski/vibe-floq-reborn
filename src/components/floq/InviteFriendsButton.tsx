@@ -54,16 +54,16 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
       if (!user) return [];
 
       const { data, error } = await supabase
-        .from('friendships')
+        .from('friends')
         .select(`
-          friend_id,
-          profiles!friendships_friend_id_fkey (
+          user_b,
+          profiles!friends_user_b_fkey (
             username,
             display_name,
             avatar_url
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_a', user.id);
 
       if (error) throw error;
 

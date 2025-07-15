@@ -47,13 +47,13 @@ export function RecentActivity() {
 
       // Get recent friendships (approximate by creation date)
       const { data: recentFriends } = await supabase
-        .from('friendships')
+        .from('friends')
         .select(`
-          friend_id,
+          user_b,
           created_at,
-          profiles!friendships_friend_id_fkey(display_name, avatar_url)
+          profiles!friends_user_b_fkey(display_name, avatar_url)
         `)
-        .eq('user_id', user.id)
+        .eq('user_a', user.id)
         .gte('created_at', yesterday.toISOString())
         .order('created_at', { ascending: false })
         .limit(3);

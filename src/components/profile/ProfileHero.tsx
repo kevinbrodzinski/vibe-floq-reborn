@@ -41,7 +41,7 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
         .from('vibes_now')
         .select('vibe, expires_at')
         .eq('user_id', targetUserId)
-        .single();
+        .maybeSingle();
       
       return data;
     },
