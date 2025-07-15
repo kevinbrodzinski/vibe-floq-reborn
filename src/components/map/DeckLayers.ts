@@ -65,3 +65,33 @@ export const usePulseLayer = (
     updateTriggers: {getRadius: t, getFillColor: [prefs]}
   })
 }
+
+/** Hotspot halo layer - animated rings around surging clusters */
+export const createHaloLayer = (
+  hotspots: any[],
+  pulseTime: number,
+  prefs: Record<string, number>
+) => {
+  if (!hotspots.length) return null
+
+  const maxDelta = Math.max(...hotspots.map(h => h.delta), 1)
+
+  return new (ScatterplotLayer as any)({
+    id: 'hotspot-halos',
+    data: hotspots,
+    getPosition: d => d.centroid.coordinates,
+    getRadius: d => {
+      const baseRadius = Math.sqrt(d.total_now || d.user_cnt || 1) * 80
+      const pulseMultiplier = 1 + Math.sin(pulseTime * Math.PI * 2) * 0.6 * (d.delta / maxDelta)
+      return baseRadius * pulseMultiplier
+    },
+    radiusUnits: 'meters',
+    getFillColor: d => [
+      ...getClusterColor(d.delta / maxDelta, { [d.dom_vibe]: d.user_cnt || 1 }, prefs),
+      Math.floor(120 + (d.delta / maxDelta) * 60) // Opacity based on surge intensity
+    ],
+    opacity: 0.35,
+    pickable: false,
+    updateTriggers: { getRadius: pulseTime, getFillColor: [prefs, hotspots] }
+  })
+}

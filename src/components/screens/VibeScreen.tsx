@@ -12,6 +12,7 @@ import { VibeDensityMap } from "@/components/map/VibeDensityMap";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
 import { useClusters } from "@/hooks/useClusters";
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
+import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 import { useVibe } from "@/lib/store/useVibe";
@@ -45,6 +46,9 @@ export const VibeScreen = () => {
   
   // Sensor monitoring for auto-detection
   const { sensorData, vibeDetection, permissions, requestPermissions, recordFeedback, learningData } = useSensorMonitoring(autoMode);
+  
+  // Hotspot toast notifications
+  useHotspotToast();
   
   // Mock user location for demo (replace with real geolocation)
   const userLocation = { lat: 37.7749, lng: -122.4194 };

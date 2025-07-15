@@ -15,6 +15,7 @@ export interface EnvironmentConfig {
   enableRealtime: boolean;
   enableGeolocation: boolean;
   enablePresenceUpdates: boolean;
+  hotSpotHalos: boolean;
   
   // Debug flags
   debugPresence: boolean;
@@ -113,6 +114,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     enableRealtime: presenceMode === 'live',
     enableGeolocation: presenceMode !== 'offline',
     enablePresenceUpdates: presenceMode === 'live',
+    hotSpotHalos: import.meta.env.VITE_HOTSPOT_HALOS === 'true' || false,
     debugPresence,
     debugGeohash,
     debugNetwork,
@@ -229,6 +231,7 @@ export function getProductionConfig(): EnvironmentConfig {
     enableRealtime: true,
     enableGeolocation: true,
     enablePresenceUpdates: true,
+    hotSpotHalos: true, // Enable in production
     debugPresence: false,
     debugGeohash: false,
     debugNetwork: false,

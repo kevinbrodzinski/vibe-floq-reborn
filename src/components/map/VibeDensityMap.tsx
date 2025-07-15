@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
-import { createDensityLayer, usePulseLayer } from './DeckLayers'
+import { createDensityLayer, usePulseLayer, createHaloLayer } from './DeckLayers'
 import { ClusterLegend } from './ClusterLegend'
 import { useClusters } from '@/hooks/useClusters'
+import { useHotspots } from '@/hooks/useHotspots'
+import { usePulseTime } from '@/hooks/usePulseTime'
+import { getEnvironmentConfig } from '@/lib/environment'
 import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
@@ -78,11 +81,15 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   }, [])
 
   const pulseLayer = usePulseLayer(clusters, prefs)
+  const { hotspots } = useHotspots()
+  const haloTime = usePulseTime(2.5) // Faster pulse for hotspots
+  const env = getEnvironmentConfig()
 
   const layers = useMemo(() => {
     const base = createDensityLayer(clusters, prefs, handleClusterClick)
-    return [base, pulseLayer].filter(Boolean)
-  }, [clusters, prefs, handleClusterClick, pulseLayer])
+    const halo = env.hotSpotHalos ? createHaloLayer(hotspots, haloTime, prefs) : null
+    return [base, pulseLayer, halo].filter(Boolean)
+  }, [clusters, prefs, handleClusterClick, pulseLayer, hotspots, haloTime, env.hotSpotHalos])
 
   // Conditional rendering AFTER all hooks
   if (!isOpen) return null

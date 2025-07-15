@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.update-floq-settings]
 verify_jwt = true
+
+[functions.get_hotspots]
+verify_jwt = true
