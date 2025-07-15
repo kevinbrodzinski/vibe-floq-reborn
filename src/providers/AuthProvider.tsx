@@ -42,7 +42,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user && event === 'SIGNED_IN') {
           setTimeout(async () => {
             try {
-              // Generate a unique temporary username with collision guard
+              // Check if profile already exists
+              const { data: existingProfile, error: fetchError } = await supabase
+                .from('profiles')
+                .select('id, username')
+                .eq('id', session.user.id)
+                .maybeSingle();
+              
+              if (fetchError) {
+                console.error('Error fetching profile:', fetchError);
+                return;
+              }
+              
+              // If profile exists, just cache it and don't modify
+              if (existingProfile) {
+                queryClient.setQueryData(['profile', session.user.id], existingProfile);
+                return;
+              }
+              
+              // Only create new profile if one doesn't exist
               const emailPrefix = session.user.email?.split('@')[0] || 'user';
               const tempUsername = `${emailPrefix.slice(0, 25)}_${nanoid(6)}`.toLowerCase();
               
@@ -55,26 +73,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
               const { data, error } = await supabase
                 .from('profiles')
-                .upsert(profileData, { onConflict: 'id' })
+                .insert(profileData)
                 .select()
                 .single();
               
               if (error) {
-                // Handle race conditions with migration or unique violations
-                if (error.code === '23514' || error.code === '23505') {
-                  // Retry with a fresh random handle
+                // Handle unique violations with retry
+                if (error.code === '23505') {
                   const fallbackUsername = `user_${nanoid(10)}`.toLowerCase();
                   const { data: retryData, error: retryError } = await supabase
                     .from('profiles')
-                    .upsert({
+                    .insert({
                       ...profileData,
                       username: fallbackUsername
-                    }, { onConflict: 'id' })
+                    })
                     .select()
                     .single();
                   
                   if (!retryError && retryData) {
-                    // Cache the profile in React Query
                     queryClient.setQueryData(['profile', session.user.id], retryData);
                   } else {
                     console.error('Profile creation retry failed:', retryError);
@@ -83,11 +99,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   console.error('Profile creation error:', error);
                 }
               } else if (data) {
-                // Cache the profile in React Query
                 queryClient.setQueryData(['profile', session.user.id], data);
               }
             } catch (err) {
-              console.error('Profile upsert failed:', err);
+              console.error('Profile operation failed:', err);
             }
           }, 0);
         }
