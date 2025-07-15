@@ -4335,7 +4335,7 @@ export type Database = {
         Returns: boolean
       }
       username_available: {
-        Args: { u: string } | { u: string }
+        Args: { u: string } | { username: string }
         Returns: boolean
       }
       venue_details: {
