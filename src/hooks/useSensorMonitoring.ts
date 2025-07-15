@@ -375,12 +375,21 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
       // Update learning data display
       const personalFactors = await learningSystemRef.current.getPersonalFactors(sensorData, context);
-      setLearningData({
+      const newLearningData = {
         patterns: personalFactors.contextualPatterns,
         preferences: personalFactors.vibePreferences,
         accuracy: personalFactors.accuracy,
         correctionCount: Math.round(personalFactors.relevance * 100) // Approximate correction count
-      });
+      };
+      
+      setLearningData(newLearningData);
+      
+      // Persist learning data cache
+      try {
+        localStorage.setItem('vibe-learning-cache', JSON.stringify(newLearningData));
+      } catch (error) {
+        console.warn('Failed to cache learning data:', error);
+      }
     } catch (error) {
       console.error('Failed to record feedback:', error);
     }
@@ -390,6 +399,12 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   useEffect(() => {
     const loadLearningData = async () => {
       try {
+        // Try to load cached data first
+        const cached = localStorage.getItem('vibe-learning-cache');
+        if (cached) {
+          setLearningData(JSON.parse(cached));
+        }
+        
         const now = new Date();
         const hour = now.getHours();
         const getTimeOfDay = (hour: number) => {
@@ -414,12 +429,19 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         };
         
         const personalFactors = await learningSystemRef.current.getPersonalFactors(sensorData, context);
-        setLearningData({
+        const newLearningData = {
           patterns: personalFactors.contextualPatterns,
           preferences: personalFactors.vibePreferences,
           accuracy: personalFactors.accuracy,
           correctionCount: Math.round(personalFactors.relevance * 100)
-        });
+        };
+        
+        setLearningData(newLearningData);
+        
+        // Update cache if we got new data
+        if (!cached || JSON.stringify(newLearningData) !== cached) {
+          localStorage.setItem('vibe-learning-cache', JSON.stringify(newLearningData));
+        }
       } catch (error) {
         console.error('Failed to load learning data:', error);
       }

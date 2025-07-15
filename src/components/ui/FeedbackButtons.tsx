@@ -59,7 +59,7 @@ export const FeedbackButtons = ({
           </p>
         </div>
         
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="grid grid-cols-3 gap-2 mb-3 max-h-32 overflow-y-auto">
           {vibeOptions.map((vibe) => (
             <Button
               key={vibe}
@@ -68,8 +68,8 @@ export const FeedbackButtons = ({
               onClick={() => handleVibeCorrection(vibe)}
               className={`h-8 text-xs capitalize transition-all duration-200 ${
                 vibe === suggestedVibe 
-                  ? "opacity-50 border-dashed" 
-                  : "hover:bg-primary/10 hover:text-primary"
+                  ? "opacity-50 border-dashed bg-muted/30" 
+                  : "hover:bg-primary/10 hover:text-primary bg-muted/20"
               }`}
               disabled={isProcessing}
             >
@@ -138,7 +138,7 @@ export const FeedbackButtons = ({
       {isProcessing && (
         <div className="mt-2 text-center">
           <div className="inline-flex items-center gap-1 text-xs text-accent">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+            <div className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin"></div>
             Learning...
           </div>
         </div>

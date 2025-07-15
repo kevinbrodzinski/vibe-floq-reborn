@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Radio, Eye, EyeOff, Users, Zap, ZapOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeedbackButtons } from "@/components/ui/FeedbackButtons";
@@ -81,13 +81,16 @@ export const VibeScreen = () => {
       const vibeAsState = vibeDetection.suggestedVibe as VibeState;
       if (vibes[vibeAsState]) {
         setSelectedVibe(vibeAsState);
-        setShowFeedback(true); // Show feedback buttons
+        // Debounce feedback banner to prevent double-shows
+        if (!showFeedback) {
+          setShowFeedback(true);
+        }
         if (navigator.vibrate) {
           navigator.vibrate([50, 100, 50]);
         }
       }
     }
-  }, [vibeDetection, vibes]);
+  }, [vibeDetection, vibes, showFeedback]);
 
   // Handle feedback acceptance
   const handleAcceptFeedback = useCallback(async () => {
@@ -96,9 +99,11 @@ export const VibeScreen = () => {
     setIsLearning(true);
     try {
       await recordFeedback(true);
-      setShowFeedback(false);
+      // Small delay to show completion before hiding
+      setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
       console.error('Failed to record acceptance:', error);
+      setShowFeedback(false);
     } finally {
       setIsLearning(false);
     }
@@ -112,9 +117,11 @@ export const VibeScreen = () => {
     try {
       await recordFeedback(false, correctedVibe);
       setSelectedVibe(correctedVibe as VibeState);
-      setShowFeedback(false);
+      // Small delay to show completion before hiding
+      setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
       console.error('Failed to record correction:', error);
+      setShowFeedback(false);
     } finally {
       setIsLearning(false);
     }
@@ -124,6 +131,13 @@ export const VibeScreen = () => {
   const handleCloseFeedback = useCallback(() => {
     setShowFeedback(false);
   }, []);
+
+  // Hide feedback banner when auto-mode is disabled
+  useEffect(() => {
+    if (!autoMode) {
+      setShowFeedback(false);
+    }
+  }, [autoMode]);
 
   // Toggle auto mode
   const toggleAutoMode = useCallback(async () => {
