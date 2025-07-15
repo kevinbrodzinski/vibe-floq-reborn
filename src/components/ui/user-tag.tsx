@@ -12,7 +12,9 @@ export const UserTag = ({ profile, showUsername = true, className }: UserTagProp
   
   return (
     <div className={cn("inline-flex flex-col sm:flex-row sm:items-center sm:gap-1 min-w-0", className)}>
-      <span className="font-medium text-sm truncate">{primary}</span>
+      {primary && (
+        <span className="font-medium text-sm truncate">{primary}</span>
+      )}
       {showUsername && (
         <span className="text-muted-foreground text-xs truncate">@{profile.username}</span>
       )}

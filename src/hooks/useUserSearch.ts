@@ -40,6 +40,7 @@ export function useUserSearch(query: string, enabled = true) {
         .from('profiles')
         .select('id, username, full_name, display_name, avatar_url, created_at')
         .or(`username.ilike.%${debouncedQuery.trim()}%,full_name.ilike.%${debouncedQuery.trim()}%,display_name.ilike.%${debouncedQuery.trim()}%`)
+        .order('username', { ascending: false })
         .limit(20);
 
       if (import.meta.env.DEV) {

@@ -72,7 +72,7 @@ export default function UsernameSettings() {
       const { data } = await supabase
         .from('profiles')
         .select('id')
-        .ilike('username', candidate)
+        .eq('username', candidate.toLowerCase())
         .limit(1);
       
       setIsAvailable(data?.length === 0);

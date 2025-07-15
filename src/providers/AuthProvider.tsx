@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
+import { nanoid } from 'nanoid';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -26,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -39,21 +42,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user && event === 'SIGNED_IN') {
           setTimeout(async () => {
             try {
-              // Generate a temporary username from email if no username exists
+              // Generate a unique temporary username with collision guard
               const emailPrefix = session.user.email?.split('@')[0] || 'user';
-              const tempUsername = `${emailPrefix}_${session.user.id.slice(0, 6)}`.toLowerCase();
+              const tempUsername = `${emailPrefix}_${nanoid(6)}`.toLowerCase();
               
-              const { error } = await supabase
+              const profileData = {
+                id: session.user.id,
+                username: tempUsername,
+                display_name: 'New User',   // placeholder; UI will prompt for full name
+                full_name: null
+              };
+
+              const { data, error } = await supabase
                 .from('profiles')
-                .upsert({
-                  id: session.user.id,
-                  username: tempUsername,
-                  display_name: 'New User',   // placeholder; UI will prompt for full name
-                  full_name: null
-                }, { onConflict: 'id' });
+                .upsert(profileData, { onConflict: 'id' })
+                .select()
+                .single();
               
               if (error) {
-                console.error('Profile creation error:', error);
+                // Handle race conditions with migration or unique violations
+                if (error.code === '23514' || error.code === '23505') {
+                  // Retry with a fresh random handle
+                  const fallbackUsername = `user_${nanoid(10)}`.toLowerCase();
+                  const { data: retryData, error: retryError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                      ...profileData,
+                      username: fallbackUsername
+                    }, { onConflict: 'id' })
+                    .select()
+                    .single();
+                  
+                  if (!retryError && retryData) {
+                    // Cache the profile in React Query
+                    queryClient.setQueryData(['profile', session.user.id], retryData);
+                  } else {
+                    console.error('Profile creation retry failed:', retryError);
+                  }
+                } else {
+                  console.error('Profile creation error:', error);
+                }
+              } else if (data) {
+                // Cache the profile in React Query
+                queryClient.setQueryData(['profile', session.user.id], data);
               }
             } catch (err) {
               console.error('Profile upsert failed:', err);
