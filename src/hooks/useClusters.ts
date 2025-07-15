@@ -9,6 +9,9 @@ export interface Cluster {
   vibe_counts: Record<string, number>
 }
 
+// Keep last fetch for delta tracking
+const lastDataRef = useRef<Cluster[]>([])
+
 export const useClusters = (
   bbox: [number, number, number, number] | null,
   precision = 6
@@ -43,6 +46,7 @@ export const useClusters = (
 
         if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
         setClusters(data || [])
+        lastDataRef.current = data || []  // save for next diff
         setError(null)
 
       } catch (err: any) {

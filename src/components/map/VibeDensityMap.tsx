@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
-import { makeClusterLayer } from './DeckClusterLayer'
+import { createDensityLayer, usePulseLayer } from './DeckLayers'
 import { ClusterLegend } from './ClusterLegend'
 import { useClusters } from '@/hooks/useClusters'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,17 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
 
   const { clusters, loading, error } = useClusters(bbox, precision)
 
+  // Simple mock preferences - you can replace this with actual user preferences
+  const prefs = useMemo(() => ({
+    social: 0.2,
+    chill: 0.1,
+    hype: -0.1,
+    focus: 0.3,
+    explore: 0.0,
+    create: 0.2,
+    relax: 0.1,
+    exercise: -0.2
+  }), [])
 
   const handleClusterClick = useCallback((cluster: Cluster) => {
     setSelectedCluster(cluster)
@@ -66,10 +77,12 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
     }))
   }, [])
 
+  const pulseLayer = usePulseLayer(clusters, prefs)
+
   const layers = useMemo(() => {
-    const layer = makeClusterLayer(clusters, handleClusterClick)
-    return layer ? [layer] : []
-  }, [clusters, handleClusterClick])
+    const base = createDensityLayer(clusters, prefs, handleClusterClick)
+    return [base, pulseLayer].filter(Boolean)
+  }, [clusters, prefs, handleClusterClick, pulseLayer])
 
   // Conditional rendering AFTER all hooks
   if (!isOpen) return null
