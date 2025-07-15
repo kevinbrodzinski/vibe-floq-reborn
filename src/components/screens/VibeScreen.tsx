@@ -609,7 +609,10 @@ export const VibeScreen = () => {
           <div className="bg-card/60 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
             <div className="flex items-center justify-center">
               <Button 
-                onClick={() => {/* Navigate to vibe selector */}}
+                onClick={() => {
+                  // Focus on the vibe wheel - scroll to top where the wheel is
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="text-sm"
               >
                 Set your vibe

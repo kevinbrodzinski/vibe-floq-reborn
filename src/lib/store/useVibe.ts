@@ -61,11 +61,13 @@ export const useVibe = create<VibeState>()(
             }
           }
 
-          const { error } = await supabase.rpc('set_user_vibe', {
-            new_vibe: newVibe,
-            lat: lat,     // explicitly pass null if no location
-            lng: lng      // explicitly pass null if no location
-          });
+          const { data, error } = await supabase
+            .rpc('set_user_vibe', {
+              new_vibe: newVibe,
+              lat: lat,     // explicitly pass null if no location
+              lng: lng      // explicitly pass null if no location
+            })
+            .single();
 
           if (error) {
             console.error('set_user_vibe failed', error);
@@ -81,20 +83,13 @@ export const useVibe = create<VibeState>()(
               s.updatedAt = null;
               s.isUpdating = false;
             });
-          } else {
-            // Fetch the updated row to get the started_at timestamp
-            const { data: currentRow } = await supabase
-              .from('user_vibe_states')
-              .select('*')
-              .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-              .eq('active', true)
-              .single();
-            
-            if (currentRow) {
-              set((s) => {
-                s.currentRow = currentRow;
-              });
-            }
+          } else if (data) {
+            // Use the returned row directly - no second query needed
+            set((s) => {
+              s.currentRow = data;
+              s.vibe = data.vibe_tag;
+              s.updatedAt = data.started_at;
+            });
           }
         } finally {
           set((s) => { s.isUpdating = false; });
