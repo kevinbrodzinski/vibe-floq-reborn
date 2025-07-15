@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { useUserLocation } from '@/hooks/useUserLocation'
+import { getEnvironmentConfig } from '@/lib/environment'
 
 export interface SocialSuggestion {
   friend_id: string
@@ -26,10 +27,11 @@ const fetchSuggestions = async (radius: number = 1000): Promise<SocialSuggestion
 }
 
 export const useSocialSuggestions = (radius: number = 1000) => {
+  const env = getEnvironmentConfig()
   const { location, loading: locLoading } = useUserLocation()
   const currentVibe = useCurrentVibe()
 
-  const key = locLoading || !currentVibe || !location?.coords
+  const key = !env.smartSocialSuggestions || locLoading || !currentVibe || !location?.coords
     ? null
     : `social:${currentVibe}:${radius}:${location.coords.latitude.toFixed(3)},${location.coords.longitude.toFixed(3)}`
 
