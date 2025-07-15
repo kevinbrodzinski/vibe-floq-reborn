@@ -4269,7 +4269,9 @@ export type Database = {
           display_name: string
           avatar_url: string
           compatibility_score: number
-          reasoning: Json
+          mutual_friends_count: number
+          crossed_paths_count: number
+          shared_interests: string[]
         }[]
       }
       text: {
