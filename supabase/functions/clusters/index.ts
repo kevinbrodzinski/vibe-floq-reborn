@@ -13,20 +13,18 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url)
-    const bboxParam = url.searchParams.get('bbox')
-    const precisionParam = url.searchParams.get('precision')
+    // Read JSON body
+    const { bbox, precision = 6 } = await req.json()
 
     // Validate required parameters
-    if (!bboxParam) {
+    if (!bbox) {
       return new Response('Missing bbox parameter', { 
         status: 400,
         headers: corsHeaders 
       })
     }
 
-    const [minLng, minLat, maxLng, maxLat] = bboxParam.split(',').map(Number)
-    const precision = Number(precisionParam || 6)
+    const [minLng, minLat, maxLng, maxLat] = bbox.split(',').map(Number)
 
     // Validate bbox values
     if ([minLng, minLat, maxLng, maxLat].some((v) => isNaN(v))) {
@@ -58,7 +56,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    console.log(`[clusters] Fetching clusters for bbox: ${bboxParam}, precision: ${precision}`)
+    console.log(`[clusters] Fetching clusters for bbox: ${bbox}, precision: ${precision}`)
 
     // Call the database function
     const { data, error } = await supabase.rpc('get_vibe_clusters', {

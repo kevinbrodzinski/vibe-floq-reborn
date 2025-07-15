@@ -112,7 +112,6 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
       {/* Map Container */}
       <div className="absolute inset-0 pt-16 rounded-b-2xl overflow-hidden">
         <DeckGLComponent
-          initialViewState={INITIAL_VIEW_STATE}
           viewState={viewState}
           controller={true}
           layers={layers}

@@ -30,7 +30,10 @@ export const useClusters = (
       try {
         if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
 
-        const body = { bbox: box.join(','), precision }
+        const body = {
+          bbox: box.join(','),
+          precision
+        }
 
         const response = await supabase.functions.invoke('clusters', {
           body
