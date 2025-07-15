@@ -1044,6 +1044,30 @@ export type Database = {
         }
         Relationships: []
       }
+      refresh_metrics: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: string
+          started_at: string
+          view_name: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          id?: string
+          started_at: string
+          view_name: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          started_at?: string
+          view_name?: string
+        }
+        Relationships: []
+      }
       reserved_usernames: {
         Row: {
           name: string
@@ -1664,6 +1688,16 @@ export type Database = {
         }
         Relationships: []
       }
+      vibe_clusters: {
+        Row: {
+          centroid: unknown | null
+          gh6: string | null
+          last_updated: string | null
+          total: number | null
+          vibe_counts: Json | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -1958,6 +1992,10 @@ export type Database = {
       cleanup_old_vibes_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cluster_precision: {
+        Args: { requested_precision?: number }
+        Returns: number
       }
       create_floq: {
         Args:
@@ -2536,6 +2574,21 @@ export type Database = {
           source: string
         }[]
       }
+      get_vibe_clusters: {
+        Args: {
+          min_lng: number
+          min_lat: number
+          max_lng: number
+          max_lat: number
+          p_precision?: number
+        }
+        Returns: {
+          gh6: string
+          centroid: unknown
+          total: number
+          vibe_counts: Json
+        }[]
+      }
       get_walkable_floqs: {
         Args: { user_lat: number; user_lng: number; max_walk_meters?: number }
         Returns: {
@@ -2830,6 +2883,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_venue_social_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_vibe_clusters_with_metrics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
