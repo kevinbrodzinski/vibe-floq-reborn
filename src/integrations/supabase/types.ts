@@ -2690,7 +2690,7 @@ export type Database = {
         Returns: string
       }
       get_social_suggestions: {
-        Args: { me: string; max_dist_m?: number; limit_n?: number }
+        Args: { p_uid: string; max_dist_m?: number; limit_n?: number }
         Returns: {
           friend_id: string
           display_name: string
