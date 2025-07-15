@@ -2,7 +2,8 @@ import React, { memo, useCallback } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { useVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_RGB, VibeEnum } from '@/constants/vibes';
-import { RingGradient } from './RingGradient';
+import { VIBE_DESCRIPTIONS } from '@/constants/vibeDescriptions';
+import { ConicGradientRing } from './ConicGradientRing';
 
 // Web-compatible haptics helper
 const triggerHaptic = () => {
@@ -96,51 +97,54 @@ export const VibeWheel = memo(() => {
       className="relative w-[280px] h-[280px] mx-auto"
       style={{ touchAction: 'none' }}
     >
-      {/* Static gradient ring */}
-      <RingGradient />
+      {/* Conic gradient ring with proper color segments */}
+      <ConicGradientRing />
       
-      {/* Vibe labels around the circle - static */}
+      {/* Vibe labels around the circle - positioned to align with ring segments */}
       {VIBE_ORDER.map((vibe, index) => {
-        const angle = index * SEGMENT;
-        const radian = ((angle - 90) * Math.PI) / 180; // -90 so 0° is at top
-        const labelRadius = 95;
+        const angle = index * SEGMENT - 90; // -90 to start at top
+        const radian = (angle * Math.PI) / 180;
+        const labelRadius = 105; // Slightly further out to clear the ring
         const x = Math.cos(radian) * labelRadius;
         const y = Math.sin(radian) * labelRadius;
         const isSelected = vibe === current;
         
         return (
-          <motion.div
+          <div
             key={vibe}
-            className="absolute flex items-center justify-center w-12 h-8 rounded-full backdrop-blur-sm pointer-events-none"
+            className="absolute flex items-center justify-center pointer-events-none"
             style={{
-              left: RADIUS + x - 24, // center + offset - half width
-              top: RADIUS + y - 16,  // center + offset - half height
-              backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'transparent',
-              border: isSelected ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
+              left: RADIUS + x - 30, // center + offset - half width
+              top: RADIUS + y - 12,  // center + offset - half height
+              width: 60,
+              height: 24,
             }}
-            animate={{
-              scale: isSelected ? 1.1 : 1,
-              opacity: isSelected ? 1 : 0.7,
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             <span
-              className="text-xs font-medium capitalize select-none"
+              className="text-xs font-medium capitalize select-none text-center"
               style={{
-                color: isSelected ? '#ffffff' : '#999999',
-                fontWeight: isSelected ? 'bold' : 'normal'
+                color: isSelected ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                fontWeight: isSelected ? '600' : '500',
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
               }}
             >
               {vibe}
             </span>
-          </motion.div>
+          </div>
         );
       })}
       
-      {/* Center indicator */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-10 h-10 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-sm">
-          <div className="w-4 h-4 rounded-full bg-white/80" />
+      {/* Center content with vibe name and description */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-white capitalize mb-1">
+            {current || 'Select'}
+          </h2>
+          {current && (
+            <p className="text-sm text-white/70 font-medium">
+              {VIBE_DESCRIPTIONS[current]}
+            </p>
+          )}
         </div>
       </div>
 

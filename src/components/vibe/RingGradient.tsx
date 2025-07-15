@@ -8,17 +8,21 @@ interface RingGradientProps {
 export const RingGradient: React.FC<RingGradientProps> = ({ size = 280, stroke = 6 }) => (
   <svg width={size} height={size} className="absolute inset-0">
     <defs>
-      <linearGradient id="wheel-gradient" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#4C92FF" />   {/* Chill */}
-        <stop offset="12%" stopColor="#00C2D1" />  {/* Flowing */}
-        <stop offset="23%" stopColor="#FF63C7" />  {/* Romantic */}
-        <stop offset="34%" stopColor="#FF4757" />  {/* Hype */}
-        <stop offset="45%" stopColor="#FFD60A" />  {/* Weird */}
-        <stop offset="56%" stopColor="#8E8E93" />  {/* Solo */}
-        <stop offset="67%" stopColor="#007AFF" />  {/* Social */}
-        <stop offset="78%" stopColor="#AF52DE" />  {/* Open */}
-        <stop offset="89%" stopColor="#5856D6" />  {/* Down */}
-        <stop offset="100%" stopColor="#4C92FF" /> {/* Back to Chill */}
+      <linearGradient id="wheel-gradient">
+        <defs>
+          <radialGradient id="conic-gradient" cx="50%" cy="50%">
+            <stop offset="0%" stopColor="#4C92FF" />     {/* Chill - Blue */}
+            <stop offset="11.11%" stopColor="#FF6B35" /> {/* Flowing - Orange */}
+            <stop offset="22.22%" stopColor="#FF1744" /> {/* Romantic - Pink/Red */}
+            <stop offset="33.33%" stopColor="#FF4757" /> {/* Hype - Red */}
+            <stop offset="44.44%" stopColor="#A855F7" /> {/* Weird - Purple */}
+            <stop offset="55.55%" stopColor="#6B7280" /> {/* Solo - Gray */}
+            <stop offset="66.66%" stopColor="#10B981" /> {/* Social - Green */}
+            <stop offset="77.77%" stopColor="#8B5CF6" /> {/* Open - Purple */}
+            <stop offset="88.88%" stopColor="#1E40AF" /> {/* Down - Dark Blue */}
+            <stop offset="100%" stopColor="#4C92FF" />   {/* Back to Chill */}
+          </radialGradient>
+        </defs>
       </linearGradient>
     </defs>
     <circle
