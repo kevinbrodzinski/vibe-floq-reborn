@@ -585,15 +585,20 @@ export const VibeScreen = () => {
                   {clusters.length > 0 && (
                     <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
                   )}
-                  {isRealTimeConnected && (
-                    <span className="ml-2 opacity-50">
-                      • <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></span>
-                      Live
+                  {isRealTimeConnected && lastUpdateTime && (
+                    <span className="ml-2 flex items-center text-xs text-emerald-400">
+                      <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
+                      LIVE
+                    </span>
+                  )}
+                  {!isRealTimeConnected && clusters.length > 0 && (
+                    <span className="ml-2 opacity-40 text-xs">
+                      • Cached
                     </span>
                   )}
                   {lastUpdateTime && (
                     <span className="ml-2 opacity-40 text-[10px]">
-                      Updated {new Intl.DateTimeFormat('en', { 
+                      {new Intl.DateTimeFormat('en', { 
                         hour: 'numeric', 
                         minute: '2-digit',
                         second: '2-digit'

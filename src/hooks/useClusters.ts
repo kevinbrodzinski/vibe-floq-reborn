@@ -8,6 +8,8 @@ export interface Cluster {
   centroid: { type: 'Point'; coordinates: [number, number] }
   total: number
   vibe_counts: Record<string, number>
+  fillRgb?: [number, number, number]
+  totalNorm?: number
 }
 
 export const useClusters = (
@@ -48,8 +50,16 @@ export const useClusters = (
         }
 
         if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
-        setClusters(data || [])
-        lastDataRef.current = data || []  // save for next diff
+        
+        // Process clusters with visual properties
+        const processedClusters = (data || []).map((cluster: any) => ({
+          ...cluster,
+          fillRgb: [100, 150, 255] as [number, number, number], // Default blue
+          totalNorm: cluster.total / Math.max(...(data || []).map((c: any) => c.total), 1)
+        }))
+        
+        setClusters(processedClusters)
+        lastDataRef.current = processedClusters
         setError(null)
 
       } catch (err: any) {
@@ -84,30 +94,28 @@ export const useClusters = (
     }, 2000)
   }, [bbox, fetchClusters])
 
-  // Set up real-time subscription
+  // Set up real-time subscription using broadcast channel (listening for checksum changes)
   useEffect(() => {
-    if (!bbox) return
+    if (!bbox || clusters.length > 300) return // Guard rail: skip for large datasets
 
-    // Clean up existing channel
-    if (channelRef.current) {
-      channelRef.current.unsubscribe()
-    }
-
-    // Create new channel for user vibe state changes
     const channel = supabase
-      .channel('vibe-cluster-updates')
+      .channel('clusters-updates-live')
       .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'user_vibe_states'
-        },
+        'broadcast',
+        { event: 'clusters_updated' },
         (payload) => {
-          if (import.meta.env.DEV) {
-            console.log('[useClusters] Real-time vibe update:', payload.eventType, payload.new || payload.old)
+          try {
+            const { checksum } = payload.payload ?? {}
+            if (checksum) {
+              if (import.meta.env.DEV) {
+                console.log('[useClusters] Checksum changed → refetching clusters')
+              }
+              setLastUpdateTime(new Date())
+              fetchClusters(bbox)
+            }
+          } catch (e) {
+            console.error('[useClusters] Error processing broadcast:', e)
           }
-          handleRealTimeUpdate()
         }
       )
       .subscribe((status) => {
@@ -119,11 +127,9 @@ export const useClusters = (
 
     return () => {
       channel.unsubscribe()
-      if (realTimeThrottleRef.current) {
-        clearTimeout(realTimeThrottleRef.current)
-      }
+      setIsRealTimeConnected(false)
     }
-  }, [bbox, handleRealTimeUpdate])
+  }, [bbox, fetchClusters, clusters.length])
 
   useEffect(() => {
     if (bbox) {
@@ -137,9 +143,7 @@ export const useClusters = (
       abortRef.current?.abort()
       throttledFetch.cancel()
       channelRef.current?.unsubscribe()
-      if (realTimeThrottleRef.current) {
-        clearTimeout(realTimeThrottleRef.current)
-      }
+      setIsRealTimeConnected(false)
     }
   }, [throttledFetch])
 
