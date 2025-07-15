@@ -27,14 +27,11 @@ export const useUsernameAvailability = (username: string) => {
     setError(null);
 
     try {
-      // Check if username exists in profiles (case-insensitive)
-      const { data, error: queryError } = await supabase
-        .from('profiles')
-        .select('username')
-        .ilike('username', usernameToCheck)
-        .limit(1);
+      // Check if username exists using the secure RPC function
+      const { data: usernameExists, error: usernameError } = await supabase
+        .rpc('username_exists', { p_username: usernameToCheck });
 
-      if (queryError) throw queryError;
+      if (usernameError) throw usernameError;
 
       // Check if username is reserved
       const { data: reservedData, error: reservedError } = await supabase
@@ -45,13 +42,13 @@ export const useUsernameAvailability = (username: string) => {
 
       if (reservedError) throw reservedError;
 
-      const isUsernameTaken = (data && data.length > 0) || (reservedData && reservedData.length > 0);
+      const isUsernameTaken = usernameExists || (reservedData && reservedData.length > 0);
       setIsAvailable(!isUsernameTaken);
 
       if (import.meta.env.DEV) {
         console.log(`Username "${usernameToCheck}" availability:`, {
           available: !isUsernameTaken,
-          existingProfiles: data?.length || 0,
+          usernameExists: usernameExists,
           reservedNames: reservedData?.length || 0
         });
       }
