@@ -112,28 +112,34 @@ export function useNearbyFlocks({
       }
 
       // Transform and filter the data
-      let filteredData = data.map(floq => ({
-        id: floq.id,
-        title: floq.title,
-        name: floq.name || undefined,
-        description: floq.description || undefined,
-        primary_vibe: floq.primary_vibe,
-        vibe_tag: floq.vibe_tag || undefined,
-        participant_count: Number(floq.participant_count),
-        boost_count: 0, // search_floqs doesn't return boost_count
-        distance_meters: Number(floq.distance_m || 0),
-        activity_score: 0, // search_floqs doesn't return activity_score
-        starts_at: floq.starts_at || undefined,
-        ends_at: floq.ends_at || undefined,
-        starts_in_min: 0, // Calculate from starts_at if needed
-        max_participants: undefined, // search_floqs doesn't return max_participants
-        members: [], // search_floqs doesn't return members array
-        is_joined: joinedFloqIds.includes(floq.id),
-        creator_id: undefined, // search_floqs doesn't return creator_id
-        friends_going_count: floq.friends_going_count || 0,
-        friends_going_avatars: floq.friends_going_avatars || [],
-        friends_going_names: floq.friends_going_names || [],
-      }));
+      let filteredData = data.map(floq => {
+        const startsAt = floq.starts_at ? new Date(floq.starts_at) : new Date();
+        const now = new Date();
+        const startsInMin = Math.max(0, Math.floor((startsAt.getTime() - now.getTime()) / (1000 * 60)));
+        
+        return {
+          id: floq.id,
+          title: floq.title,
+          name: floq.name || undefined,
+          description: floq.description || undefined,
+          primary_vibe: floq.primary_vibe,
+          vibe_tag: floq.vibe_tag || undefined,
+          participant_count: Number(floq.participant_count),
+          boost_count: 0, // search_floqs doesn't return boost_count
+          distance_meters: Number(floq.distance_m || 0),
+          activity_score: 50, // Default activity score
+          starts_at: floq.starts_at || undefined,
+          ends_at: floq.ends_at || undefined,
+          starts_in_min: startsInMin,
+          max_participants: undefined, // search_floqs doesn't return max_participants
+          members: [], // search_floqs doesn't return members array
+          is_joined: joinedFloqIds.includes(floq.id),
+          creator_id: undefined, // search_floqs doesn't return creator_id
+          friends_going_count: floq.friends_going_count || 0,
+          friends_going_avatars: floq.friends_going_avatars || [],
+          friends_going_names: floq.friends_going_names || [],
+        };
+      });
 
       // Apply filters
       if (filters.vibe) {

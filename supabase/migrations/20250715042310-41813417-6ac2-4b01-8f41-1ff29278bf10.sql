@@ -97,11 +97,13 @@ BEGIN
   friends AS (
     SELECT friend_id as user_id
     FROM public.friendships
-    WHERE user_id = _viewer_id
+    WHERE _viewer_id IS NOT NULL 
+      AND user_id = _viewer_id
     UNION
     SELECT user_id
     FROM public.friendships  
-    WHERE friend_id = _viewer_id
+    WHERE _viewer_id IS NOT NULL 
+      AND friend_id = _viewer_id
   ),
   joined AS (
     SELECT 
@@ -137,7 +139,7 @@ BEGIN
   ORDER BY 
     b.distance_m,                       -- primary key: proximity
     COALESCE(j.cnt,0) DESC,             -- friends_going_count (more friends first)
-    participant_count DESC              -- general popularity fallback
+    COALESCE(pc.participant_count, 0) DESC -- general popularity fallback
   LIMIT p_limit;
 END;
 $$;

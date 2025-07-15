@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AvatarStack } from '@/components/ui/AvatarStack';
 import { useFloqSearch } from '@/hooks/useFloqSearch';
 import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
 import { formatDistanceMeters } from '@/utils/formatDistanceMeters';
@@ -197,14 +198,17 @@ export function SearchBarWithTypeahead({
                   
                   {/* Friends Going Badge */}
                   {suggestion.friendsGoing?.count > 0 && (
-                    <div 
-                      className="flex items-center gap-1 text-xs font-medium text-primary mb-1"
-                      aria-label={`${suggestion.friendsGoing.count} friend${suggestion.friendsGoing.count > 1 ? 's' : ''} going`}
-                    >
-                      <Users className="h-3 w-3 shrink-0" />
-                      {suggestion.friendsGoing.count === 1
-                        ? '1 friend going'
-                        : `${suggestion.friendsGoing.count} friends going`}
+                    <div className="flex items-center gap-1 mb-1">
+                      <AvatarStack
+                        urls={suggestion.friendsGoing?.avatars || []}
+                        names={suggestion.friendsGoing?.names || []}
+                        size={16}
+                        max={3}
+                        className="pr-1"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {suggestion.friendsGoing.count === 1 ? '1 friend going' : `${suggestion.friendsGoing.count} friends going`}
+                      </span>
                     </div>
                   )}
 

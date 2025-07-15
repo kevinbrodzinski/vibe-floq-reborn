@@ -23,32 +23,38 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
   const tooltipText = visibleNames.length > 0 ? visibleNames.join(', ') : '';
 
   const content = (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex items-center', className)} tabIndex={0}>
       <div className="flex -space-x-2">
-        {visible.map((url, i) => (
-          <div
-            key={i}
-            style={{ width: size, height: size }}
-            className={cn(
-              'rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-xs font-medium text-background',
-              !url && 'bg-primary'
-            )}
-          >
-            {url ? (
-              <img
-                src={url}
-                alt=""
-                className="w-full h-full rounded-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              '?' /* fallback */
-            )}
-          </div>
-        ))}
+        {visible.map((url, i) => 
+          url ? (
+            <img
+              key={i}
+              src={url}
+              alt={names[i] ?? ''}
+              width={size}
+              height={size}
+              className="rounded-full ring-2 ring-background -ml-2 first:ml-0"
+              loading="lazy"
+            />
+          ) : (
+            <span
+              key={i}
+              aria-label={names[i] ?? ''}
+              className="flex items-center justify-center bg-muted text-xs font-medium rounded-full ring-2 ring-background -ml-2 first:ml-0"
+              style={{ width: size, height: size }}
+            >
+              {(names[i]?.[0] ?? '?').toUpperCase()}
+            </span>
+          )
+        )}
       </div>
       {hidden > 0 && (
-        <span className="ml-2 text-xs text-muted-foreground">+{hidden}</span>
+        <span
+          className="text-xs font-medium bg-muted rounded-full px-1 -ml-2 ring-2 ring-background"
+          style={{ minWidth: size - 8 }}
+        >
+          +{hidden}
+        </span>
       )}
     </div>
   );

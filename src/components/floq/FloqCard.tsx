@@ -237,7 +237,7 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </h3>
 
           {/* Friends Going Badge */}
-          {(floq.friends_going_count > 0 || floq.friendsGoing?.count > 0) && (
+          {floq.friends_going_count > 0 && (
             <div className="flex items-center gap-1 mt-1">
               <AvatarStack
                 urls={floq.friends_going_avatars || []}
@@ -246,13 +246,9 @@ export const FloqCard = React.memo<FloqCardProps>(({
                 className="pr-1"
               />
               <span className="text-xs text-muted-foreground">
-                {(() => {
-                  const count = floq.friends_going_count || floq.friendsGoing?.count || 0;
-                  const firstName = floq.friends_going_names?.[0] || floq.friendsGoing?.names?.[0];
-                  return count === 1 && firstName
-                    ? `${firstName} is going`
-                    : `${count} friends going`;
-                })()}
+                {floq.friends_going_count === 1 
+                  ? `${floq.friends_going_names?.[0]} is going`
+                  : `${floq.friends_going_count} friends going`}
               </span>
             </div>
           )}
