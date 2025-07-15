@@ -7,7 +7,7 @@ export const useUsernameAvailability = (username: string) => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const debouncedUsername = useDebounce(username.toLowerCase().trim(), 300);
+  const debouncedUsername = useDebounce(username.trim(), 300);
 
   const checkAvailability = useCallback(async (usernameToCheck: string) => {
     if (!usernameToCheck || usernameToCheck.length < 3) {
@@ -27,9 +27,9 @@ export const useUsernameAvailability = (username: string) => {
     setError(null);
 
     try {
-      // Check if username exists using the secure RPC function
-      const { data: usernameExists, error: usernameError } = await supabase
-        .rpc('username_exists', { username: usernameToCheck });
+      // Check if username is available using the secure RPC function
+      const { data: usernameAvailable, error: usernameError } = await supabase
+        .rpc('username_available', { u: usernameToCheck });
 
       if (usernameError) throw usernameError;
 
@@ -42,13 +42,14 @@ export const useUsernameAvailability = (username: string) => {
 
       if (reservedError) throw reservedError;
 
-      const isUsernameTaken = usernameExists || (reservedData && reservedData.length > 0);
-      setIsAvailable(!isUsernameTaken);
+      const isReserved = reservedData && reservedData.length > 0;
+      const isUsernameAvailable = (usernameAvailable ?? false) && !isReserved;
+      setIsAvailable(isUsernameAvailable);
 
       if (import.meta.env.DEV) {
         console.log(`Username "${usernameToCheck}" availability:`, {
-          available: !isUsernameTaken,
-          usernameExists: usernameExists,
+          available: isUsernameAvailable,
+          usernameAvailable: usernameAvailable,
           reservedNames: reservedData?.length || 0
         });
       }
@@ -95,6 +96,6 @@ export const useUsernameAvailability = (username: string) => {
     error,
     validationMessage: getValidationMessage(),
     validationState: getValidationState(),
-    recheckAvailability: () => checkAvailability(username.toLowerCase().trim())
+    recheckAvailability: () => checkAvailability(username.trim())
   };
 };
