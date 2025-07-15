@@ -1,24 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
-import { createDeckClusterLayer } from './DeckClusterLayer'
+import { makeClusterLayer } from './DeckClusterLayer'
 import { ClusterLegend } from './ClusterLegend'
 import { useClusters } from '@/hooks/useClusters'
-import { scaleSequential } from 'd3-scale'
 import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
 
 // Type assertion for DeckGL component
 const DeckGLComponent = DeckGL as any
-
-// Turbo colormap approximation (simplified)
-const interpolateTurbo = (t: number): string => {
-  // Simplified turbo colormap - purple to pink to yellow
-  const r = Math.round(255 * Math.min(1, Math.max(0, 4 * t - 1.5)))
-  const g = Math.round(255 * Math.min(1, Math.max(0, -2 * Math.abs(t - 0.5) + 1)))
-  const b = Math.round(255 * Math.min(1, Math.max(0, -4 * t + 2.5)))
-  return `rgb(${r}, ${g}, ${b})`
-}
 
 const INITIAL_VIEW_STATE = {
   longitude: -122.4,
@@ -65,17 +55,6 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
 
   const { clusters, loading, error } = useClusters(bbox, precision)
 
-  // Color scale based on cluster size
-  const colorScale = useMemo(() => {
-    const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
-    return (n: number) => {
-      const t = n / maxTotal
-      const r = Math.round(255 * Math.min(1, Math.max(0, 4 * t - 1.5)))
-      const g = Math.round(255 * Math.min(1, Math.max(0, -2 * Math.abs(t - 0.5) + 1)))
-      const b = Math.round(255 * Math.min(1, Math.max(0, -4 * t + 2.5)))
-      return [r, g, b] as [number, number, number]
-    }
-  }, [clusters])
 
   const handleClusterClick = useCallback((cluster: Cluster) => {
     setSelectedCluster(cluster)
@@ -88,9 +67,9 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   }, [])
 
   const layers = useMemo(() => {
-    const layer = createDeckClusterLayer(clusters, colorScale, handleClusterClick)
+    const layer = makeClusterLayer(clusters, handleClusterClick)
     return layer ? [layer] : []
-  }, [clusters, colorScale, handleClusterClick])
+  }, [clusters, handleClusterClick])
 
   // Conditional rendering AFTER all hooks
   if (!isOpen) return null
@@ -102,7 +81,7 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
         <div>
           <h2 className="text-lg font-semibold">Vibe Density Map</h2>
           <p className="text-sm text-muted-foreground">
-            {loading ? 'Loading clusters...' : `${clusters.length} clusters in view`}
+            {loading ? 'Loading…' : `${clusters.length} cluster${clusters.length === 1 ? '' : 's'} in view`}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onClose} className="p-2">
