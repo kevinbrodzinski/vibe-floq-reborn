@@ -1,5 +1,9 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { distance } from '@/utils/geo'
+import { supabase } from '@/integrations/supabase/client'
+import type { Cluster } from './useClusters'
+import type { VibeSuggestion } from '@/components/vibe/SuggestionToast'
+
 // Mock learning data for now - replace with actual context when available
 const mockPreferences = {
   focused: 0.8,
@@ -8,8 +12,6 @@ const mockPreferences = {
   social: 0.7,
   creative: 0.5
 }
-import { supabase } from '@/integrations/supabase/client'
-import type { Cluster } from './useClusters'
 
 interface ClusterSuggestion {
   cluster_id: string
@@ -30,7 +32,7 @@ export const useSmartSuggestions = (
   maxDistanceMeters = 500
 ) => {
   const preferences = mockPreferences
-  const [suggestion, setSuggestion] = useState<SmartSuggestion | null>(null)
+  const [suggestionQueue, setSuggestionQueue] = useState<VibeSuggestion[]>([])
   const [dismissedClusters, setDismissedClusters] = useState<Set<string>>(new Set())
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -73,16 +75,24 @@ export const useSmartSuggestions = (
               const relevanceScore = (userPreference * 0.4) + (proximityScore * 0.4) + (topVibe.score * 0.2) + hotBonus
 
               if (relevanceScore > 0.3) { // Minimum relevance threshold
-                setSuggestion({
-                  ...clusterSuggestion,
-                  distance_meters: Math.round(distanceMeters),
-                  relevance_score: Number(relevanceScore.toFixed(3))
+                const newSuggestion: VibeSuggestion = {
+                  clusterId: clusterSuggestion.cluster_id,
+                  vibe: topVibe.vibe,
+                  distanceMeters: Math.round(distanceMeters),
+                  peopleEstimate: clusterSuggestion.people_estimate,
+                  isHot: clusterSuggestion.is_hot
+                }
+
+                setSuggestionQueue(prev => {
+                  // Only add if not already in queue
+                  if (prev.some(s => s.clusterId === newSuggestion.clusterId)) return prev
+                  return [newSuggestion] // Replace any existing suggestion
                 })
 
                 // Set cooldown
                 if (cooldownRef.current) clearTimeout(cooldownRef.current)
                 cooldownRef.current = setTimeout(() => {
-                  setSuggestion(null)
+                  setSuggestionQueue([])
                 }, 30000) // 30 second display time
                 
                 break // Only show one suggestion at a time
@@ -103,27 +113,36 @@ export const useSmartSuggestions = (
     }
   }, [userLocation, maxDistanceMeters, preferences, dismissedClusters])
 
-  const dismissSuggestion = (clusterId?: string) => {
-    if (clusterId) {
-      setDismissedClusters(prev => new Set([...prev, clusterId]))
-      // Clear dismissal after 90 minutes
-      setTimeout(() => {
-        setDismissedClusters(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(clusterId)
-          return newSet
-        })
-      }, 90 * 60 * 1000)
-    }
-    setSuggestion(null)
+  const dismissSuggestion = useCallback((clusterId: string) => {
+    setDismissedClusters(prev => new Set([...prev, clusterId]))
+    setSuggestionQueue(prev => prev.filter(s => s.clusterId !== clusterId))
+    
+    // Clear dismissal after 90 minutes
+    setTimeout(() => {
+      setDismissedClusters(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(clusterId)
+        return newSet
+      })
+    }, 90 * 60 * 1000)
+
     if (cooldownRef.current) {
       clearTimeout(cooldownRef.current)
       cooldownRef.current = null
     }
-  }
+  }, [])
+
+  const applyVibe = useCallback((suggestion: VibeSuggestion) => {
+    // TODO: Integrate with your vibe update logic
+    console.log('Applying vibe:', suggestion.vibe, 'from cluster:', suggestion.clusterId)
+    dismissSuggestion(suggestion.clusterId)
+  }, [dismissSuggestion])
 
   return {
-    suggestion,
-    dismissSuggestion
+    suggestionQueue,
+    dismissSuggestion,
+    applyVibe,
+    // Legacy support
+    suggestion: suggestionQueue[0] || null
   }
 }

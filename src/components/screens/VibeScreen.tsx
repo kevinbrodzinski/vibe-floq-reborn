@@ -12,7 +12,7 @@ import { VibeDensityMap } from "@/components/map/VibeDensityMap";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
 import { useClusters } from "@/hooks/useClusters";
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
-import { SmartSuggestionBanner } from "@/components/SmartSuggestionBanner";
+import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
@@ -50,7 +50,7 @@ export const VibeScreen = () => {
   const { clusters, loading, isRealTimeConnected, lastUpdateTime } = useClusters(bbox, 6);
   
   // Smart suggestions based on nearby clusters
-  const { suggestion, dismissSuggestion } = useSmartSuggestions(clusters, userLocation);
+  const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions(clusters, userLocation);
   
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
@@ -625,11 +625,12 @@ export const VibeScreen = () => {
         </div>
       </div>
 
-      {/* Smart Suggestion Banner */}
-      {suggestion && (
-        <SmartSuggestionBanner
-          suggestion={suggestion}
-          onApply={handleApplySuggestion}
+      {/* Smart Suggestion Toast */}
+      {suggestionQueue[0] && (
+        <SuggestionToast
+          key={suggestionQueue[0].clusterId}
+          suggestion={suggestionQueue[0]}
+          onApply={applyVibe}
           onDismiss={dismissSuggestion}
         />
       )}
