@@ -31,7 +31,12 @@ export class ConfidenceCalculator {
     personalFactors: any
   ): ConfidenceResult {
     // Step 1: Normalize vibe scores to probabilities
-    const probabilities = this.normalizeToProbabilities(vibeScores);
+    let probabilities = this.normalizeToProbabilities(vibeScores);
+
+    // Step 1.5: Apply personal bias if available
+    if (personalFactors?.vibePreferences && Object.keys(personalFactors.vibePreferences).length > 0) {
+      probabilities = this.applyPersonalBias(probabilities, personalFactors.vibePreferences);
+    }
     
     // Step 2: Calculate base confidence from sensor quality
     const sensorContribution = this.calculateSensorContribution(sensorQuality);
@@ -82,6 +87,29 @@ export class ConfidenceCalculator {
         crossValidation
       }
     };
+  }
+
+  /**
+   * Apply personal preference bias to vibe probabilities
+   */
+  private applyPersonalBias(
+    probs: Record<Vibe, number>,
+    prefs: Partial<Record<Vibe, number>>
+  ): Record<Vibe, number> {
+    const biased: Record<Vibe, number> = { ...probs };
+
+    Object.entries(prefs).forEach(([vibe, bias]) => {
+      if (bias === undefined) return;
+      // bias ∈ [-0.3, +0.3] from UserLearningSystem
+      const multiplier = 1 + bias;               // 0.7 → 1.3
+      biased[vibe as Vibe] *= multiplier;
+    });
+
+    // re-normalise so total = 1
+    const total = Object.values(biased).reduce((s, p) => s + p, 0) || 1;
+    Object.keys(biased).forEach(v => (biased[v as Vibe] /= total));
+
+    return biased;
   }
 
   /**

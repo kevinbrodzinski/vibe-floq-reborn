@@ -74,13 +74,31 @@ export const VibeScreen = () => {
     }
   }, [autoMode]);
 
+  // Dynamic threshold calculation based on personal preferences
+  const getPersonalisedThreshold = useCallback(
+    (suggested: Vibe): number => {
+      const bias = learningData.preferences[suggested] ?? 0;   // −0.3…+0.3
+      // Base 0.50 → as low as 0.25 for strong positive preference,
+      // or as high as 0.65 for strong negative
+      return 0.50 - bias * 0.25;
+    },
+    [learningData.preferences]
+  );
+
   // Auto-apply detected vibe with adaptive threshold
   const applyDetectedVibe = useCallback(() => {
     if (vibeDetection) {
-      // Lower threshold for learned preferences (0.5 → 0.35 for boosted vibes)
-      const threshold = vibeDetection.learningBoost?.boosted ? 0.35 : 0.5;
+      const threshold = getPersonalisedThreshold(vibeDetection.suggestedVibe);
       
-      if (vibeDetection.confidence > threshold) {
+      if (vibeDetection.confidence >= threshold) {
+        // Debug log for performance analysis
+        console.info(
+          `[VibeAI] applied="${vibeDetection.suggestedVibe}" ` +
+          `conf=${vibeDetection.confidence.toFixed(2)} ` +
+          `bias=${(learningData.preferences[vibeDetection.suggestedVibe] ?? 0).toFixed(2)} ` +
+          `threshold=${threshold.toFixed(2)}`
+        );
+        
         // Only apply if it's a valid VibeState
         const vibeAsState = vibeDetection.suggestedVibe as VibeState;
         if (vibes[vibeAsState]) {
@@ -95,7 +113,7 @@ export const VibeScreen = () => {
         }
       }
     }
-  }, [vibeDetection, vibes, showFeedback]);
+  }, [vibeDetection, learningData.preferences, getPersonalisedThreshold, showFeedback]);
 
   // Handle feedback acceptance
   const handleAcceptFeedback = useCallback(async () => {
@@ -320,10 +338,10 @@ export const VibeScreen = () => {
                     size="sm"
                     className={`text-xs px-3 py-1 h-6 ${
                       vibeDetection.learningBoost?.boosted 
-                        ? "bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
+                        ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
                         : ""
                     }`}
-                    disabled={vibeDetection.confidence < (vibeDetection.learningBoost?.boosted ? 0.35 : 0.5)}
+                    disabled={vibeDetection.confidence < (learningData.preferences[vibeDetection.suggestedVibe] ? 0.50 - (learningData.preferences[vibeDetection.suggestedVibe] || 0) * 0.25 : 0.5)}
                   >
                     Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
                   </Button>

@@ -50,9 +50,8 @@ export const LearningPatterns = ({
           <Brain className="w-4 h-4 text-accent" />
           <h4 className="font-medium text-foreground">Learning Progress</h4>
         </div>
-        <div className="flex items-center gap-1 text-xs text-accent">
-          <TrendingUp className="w-3 h-3" />
-          {Math.round(accuracy * 100)}%
+        <div className="px-2 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs text-accent font-medium tracking-wide">
+          {Math.round(accuracy * 100)}% • {correctionCount} corrections
         </div>
       </div>
 
