@@ -35,15 +35,15 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
   }, [data]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'ArrowDown' && data.length > 0) {
       e.preventDefault();
       setSelectedIndex((i) => (i + 1) % data.length);
     }
-    if (e.key === 'ArrowUp') {
+    if (e.key === 'ArrowUp' && data.length > 0) {
       e.preventDefault();
       setSelectedIndex((i) => (i - 1 + data.length) % data.length);
     }
-    if (e.key === 'Enter' && data[selectedIndex]) {
+    if (e.key === 'Enter' && data.length > 0 && data[selectedIndex]) {
       e.preventDefault();
       onSelect(data[selectedIndex].username);
       onClose();
@@ -63,6 +63,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
       onKeyDown={handleKeyDown}
       role="listbox"
       aria-label="User mention suggestions"
+      aria-activedescendant={selectedIndex >= 0 && data.length > 0 ? `mention-${selectedIndex}` : undefined}
       style={{
         position: 'fixed',
         top: anchorRect.bottom + 4,
@@ -84,6 +85,7 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
             data.map((profile, index) => (
             <button
               key={profile.id}
+              id={`mention-${index}`}
               className={cn(
                 'w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left',
                 selectedIndex === index && 'bg-muted/50'

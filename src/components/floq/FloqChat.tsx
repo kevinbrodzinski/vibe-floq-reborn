@@ -85,7 +85,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   useLayoutEffect(() => {
     if (!activeMention || !textareaRef.current) { 
       setAnchor(null); 
-      return; 
+      return undefined; // Explicit void return for TS
     }
     
     const { start } = activeMention;
@@ -126,9 +126,11 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       const rect = div.getBoundingClientRect();
       const taRect = ta.getBoundingClientRect();
       
-      // Account for scroll position and zoom level
+      // Account for scroll position and cross-browser zoom
       const scrollTop = ta.scrollTop;
-      const zoom = parseFloat(style.zoom || '1');
+      const zoom = window.visualViewport
+        ? window.visualViewport.scale
+        : 1;
       
       // Calculate line height for better positioning
       const lineHeight = parseFloat(style.lineHeight) || parseInt(style.fontSize) * 1.2;
@@ -358,7 +360,9 @@ export const FloqChat: React.FC<FloqChatProps> = ({
                 setMessage(e.target.value);
                 setCaret(e.target.selectionStart);
               }}
-              onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)}
+              onKeyUp={(e) => {
+                if (!isComposing) setCaret(e.currentTarget.selectionStart || 0);
+              }}
               onKeyPress={handleKeyPress}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}

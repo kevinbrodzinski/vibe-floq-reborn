@@ -15,11 +15,11 @@ export function useUserPresence() {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    // Subscribe to presence updates
+    // Subscribe to presence updates with modern API
     const channel = supabase
       .channel('user_presence')
       .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
+        const state = channel.presenceState?.() || {};
         const presenceMap = new Map<string, UserPresence>();
         
         Object.entries(state).forEach(([userId, presences]) => {
@@ -60,6 +60,8 @@ export function useUserPresence() {
       });
 
     return () => {
+      // Untrack presence before removing channel
+      channel.untrack?.();
       supabase.removeChannel(channel);
     };
   }, [session?.user?.id]);

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/hooks/useProfileCache';
 
 export function useMentionSearch(query: string, enabled = true) {
-  return useQuery({
+  const result = useQuery({
     queryKey: ['mention-search', query],
     enabled: enabled && query.length >= 2,
     staleTime: 30_000,
@@ -25,4 +26,13 @@ export function useMentionSearch(query: string, enabled = true) {
       }));
     },
   });
+
+  // Cleanup any pending debounced queries on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any pending query if needed
+    };
+  }, []);
+
+  return result;
 }

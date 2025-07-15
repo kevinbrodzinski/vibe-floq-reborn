@@ -34,18 +34,18 @@ export function useMentionNotifications() {
         },
         async (payload) => {
           try {
-            // Fetch additional details about the mention
+            // Fetch additional details about the mention with explicit join
             const { data: mentionDetails } = await supabase
               .from('message_mentions')
               .select(`
                 *,
-                floq_messages!inner(
+                floq_messages!message_id(
                   body,
                   sender_id,
                   floq_id,
-                  profiles!inner(username)
+                  profiles!sender_id(username)
                 ),
-                floqs!floq_messages_floq_id_fkey(title)
+                floqs!inner(title)
               `)
               .eq('message_id', payload.new.message_id)
               .single();
@@ -76,12 +76,16 @@ export function useMentionNotifications() {
                 },
               });
 
-              // Play notification sound (if supported)
+              // Play notification sound and vibrate (with error handling)
               if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(`${notification.sender_username} mentioned you`, {
-                  body: `In ${notification.floq_title || 'a floq'}`,
-                  icon: '/favicon.ico',
-                });
+                try {
+                  new Notification(`${notification.sender_username} mentioned you`, {
+                    body: `In ${notification.floq_title || 'a floq'}`,
+                    icon: '/favicon.ico',
+                  });
+                } catch (error) {
+                  console.warn('Notification blocked or failed:', error);
+                }
               }
 
               // Vibrate on mobile (if supported)
