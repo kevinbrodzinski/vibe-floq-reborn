@@ -2653,6 +2653,19 @@ export type Database = {
           friend_since: string
         }[]
       }
+      get_friends_with_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          friend_id: string
+          display_name: string
+          avatar_url: string
+          username: string
+          bio: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          started_at: string
+          online: boolean
+        }[]
+      }
       get_friends_with_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
