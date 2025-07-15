@@ -166,8 +166,6 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
             { enableHighAccuracy: false, timeout: 30_000, maximumAge: 60_000 }
           );
           return; // Don't set error state yet, let fallback try
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = 'Location information is unavailable. Please check your device GPS settings.';
         default:
           errorMessage = 'An unknown error occurred while retrieving location.';
           break;

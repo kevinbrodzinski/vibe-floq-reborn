@@ -1,6 +1,15 @@
 import React, { memo, useRef, useCallback, useEffect } from 'react';
 import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
-import * as Haptics from 'expo-haptics';
+// Web-compatible haptics helper
+const triggerHaptic = () => {
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  } catch (error) {
+    // Silently fail on unsupported browsers
+  }
+};
 import { useVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_COLORS, VibeEnum } from '@/constants/vibes';
 
@@ -91,29 +100,8 @@ export const VibeWheel = memo(() => {
   const commitSnap = useCallback(async (v: VibeEnum) => {
     if (v === current) return;
     
-    // Enhanced haptics
-    try {
-      if (current) {
-        const oldIndex = VIBE_ORDER.indexOf(current);
-        const newIndex = VIBE_ORDER.indexOf(v);
-        const distance = Math.abs(newIndex - oldIndex);
-        
-        if (distance >= 4) {
-          // Large jump - stronger haptic
-          await Haptics.impactAsync?.(Haptics.ImpactFeedbackStyle.Medium);
-        } else {
-          // Normal selection
-          await Haptics.selectionAsync?.();
-        }
-      } else {
-        await Haptics.selectionAsync?.();
-      }
-    } catch (error) {
-      // Fallback to web vibration
-      if ('vibrate' in navigator) {
-        navigator.vibrate(10);
-      }
-    }
+    // Web-compatible haptics
+    triggerHaptic();
     
     setVibe(v);
   }, [current, setVibe]);
