@@ -2726,13 +2726,13 @@ export type Database = {
         }[]
       }
       get_user_by_username: {
-        Args: { lookup_username: string } | { lookup_username: string }
+        Args: { lookup_username: string }
         Returns: {
           id: string
           username: string
           display_name: string
           avatar_url: string
-          created_at: string
+          bio: string
         }[]
       }
       get_user_location: {
