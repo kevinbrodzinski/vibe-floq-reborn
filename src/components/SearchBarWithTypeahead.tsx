@@ -134,6 +134,8 @@ export function SearchBarWithTypeahead({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
+          aria-autocomplete="list"
+          aria-controls={showSuggestions ? "suggestions-list" : undefined}
           className={cn(
             "pl-10 pr-10 bg-background/50",
             value && "pr-16"
@@ -161,6 +163,7 @@ export function SearchBarWithTypeahead({
       {/* Suggestions dropdown */}
       {showSuggestions && filteredSuggestions.length > 0 && (
         <Card 
+          id="suggestions-list"
           ref={suggestionsRef}
           role="listbox"
           tabIndex={-1}

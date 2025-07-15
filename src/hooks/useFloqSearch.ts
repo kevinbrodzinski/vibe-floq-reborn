@@ -17,7 +17,7 @@ export function useFloqSearch(
       const { data, error } = await supabase.rpc('search_floqs', {
         p_lat: coords.lat,
         p_lng: coords.lng,
-        p_radius_km: filters.radiusKm,
+        p_radius_km: filters.radiusKm ?? 25,
         p_query: filters.query,
         p_vibe_ids: filters.vibes,
         p_time_from: filters.timeRange[0].toISOString(),

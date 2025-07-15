@@ -271,7 +271,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowAdvancedSearch(true)}
+              onClick={() => setAdvancedSearchOpen(true)}
               className="text-xs h-6"
             >
               Edit
@@ -379,7 +379,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
         onOpenChange={setAdvancedSearchOpen} 
       />
       <AdvancedSearchSheet 
-        open={showAdvancedSearch} 
+        open={showAdvancedSearch}
         onOpenChange={(open) => {
           setShowAdvancedSearch(open);
           if (!open && !useAdvancedSearch) {

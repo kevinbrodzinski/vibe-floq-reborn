@@ -15,6 +15,10 @@ import { useFloqUI } from '@/contexts/FloqUIContext';
 import type { DateRange } from 'react-day-picker';
 import type { Vibe } from '@/types';
 
+const VIBE_OPTIONS: Vibe[] = [
+  'chill', 'hype', 'romantic', 'social', 'solo', 'weird', 'flowing', 'down'
+];
+
 const VIBE_COLORS: Partial<Record<Vibe, string>> = {
   chill: 'hsl(180, 70%, 60%)',
   hype: 'hsl(260, 70%, 65%)',
@@ -25,10 +29,6 @@ const VIBE_COLORS: Partial<Record<Vibe, string>> = {
   flowing: 'hsl(100, 70%, 60%)',
   down: 'hsl(220, 15%, 55%)',
 };
-
-const VIBE_OPTIONS: Vibe[] = [
-  'chill', 'hype', 'romantic', 'social', 'solo', 'weird', 'flowing', 'down'
-];
 
 interface EnhancedFilterModalProps {
   open: boolean;
@@ -45,7 +45,7 @@ export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalP
     if (open) setLocalFilters(advancedFilters);
   }, [open, advancedFilters]);
 
-  const timeRange = localFilters.timeRange;
+  const timeRange = localFilters.timeRange || [new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)];
 
   const handleDistanceChange = (distance: number[]) => {
     setLocalFilters(prev => ({ ...prev, radiusKm: distance[0] }));
@@ -151,7 +151,7 @@ export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalP
             </Label>
             <div className="flex items-center gap-3">
               <Slider
-                value={[localFilters.radiusKm]}
+                value={[localFilters.radiusKm ?? 25]}
                 onValueChange={handleDistanceChange}
                 max={100}
                 min={1}
@@ -159,7 +159,7 @@ export function EnhancedFilterModal({ open, onOpenChange }: EnhancedFilterModalP
                 className="flex-1"
               />
               <span className="text-sm text-muted-foreground min-w-12">
-                {localFilters.radiusKm}km
+                {localFilters.radiusKm ?? 25}km
               </span>
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
