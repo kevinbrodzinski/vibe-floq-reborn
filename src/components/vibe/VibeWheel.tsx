@@ -1,5 +1,8 @@
-import React, { memo, useRef, useCallback, useEffect } from 'react';
-import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
+import React, { memo, useCallback } from 'react';
+import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import { useVibe } from '@/lib/store/useVibe';
+import { VIBE_ORDER, VIBE_COLORS, VibeEnum } from '@/constants/vibes';
+
 // Web-compatible haptics helper
 const triggerHaptic = () => {
   try {
@@ -10,12 +13,12 @@ const triggerHaptic = () => {
     // Silently fail on unsupported browsers
   }
 };
-import { useVibe } from '@/lib/store/useVibe';
-import { VIBE_ORDER, VIBE_COLORS, VibeEnum } from '@/constants/vibes';
 
 /* ---------- constants ---------- */
-const SEGMENT = 360 / VIBE_ORDER.length;           // 40°
-const SPRING_CONFIG = { type: "spring" as const, stiffness: 170, damping: 18, mass: 0.6 };
+const RADIUS = 140;                                    // Circle radius
+const ORB_RADIUS = 12;                                // Orb radius  
+const SEGMENT = 360 / VIBE_ORDER.length;             // 40° per segment
+const SPRING_CONFIG = { type: "spring" as const, stiffness: 300, damping: 25 };
 
 /* ---------- helpers ---------- */
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -72,17 +75,24 @@ const VIBE_HSL_VALUES = VIBE_ORDER.map((vibe) => {
 
 export const VibeWheel = memo(() => {
   const { vibe: current, setVibe } = useVibe();
-  const constraintsRef = useRef<HTMLDivElement>(null);
 
   /* ---------- motion values ---------- */
-  const theta = useMotionValue(VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT);
-  const glowOpacity = useMotionValue(0.34);
-
-  /* ---------- derived values ---------- */
-  const wheelRotation = useTransform(theta, (value) => `${value}deg`);
+  const orbAngle = useMotionValue(VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT);
   
-  const glowColor = useTransform(theta, (value) => {
-    const raw = value / SEGMENT;
+  /* ---------- derived orb position ---------- */
+  const orbX = useTransform(orbAngle, (angle) => {
+    const rad = ((angle - 90) * Math.PI) / 180; // -90 so 0° is at top
+    return Math.cos(rad) * (RADIUS - ORB_RADIUS - 10); // 10px padding from edge
+  });
+  
+  const orbY = useTransform(orbAngle, (angle) => {
+    const rad = ((angle - 90) * Math.PI) / 180;
+    return Math.sin(rad) * (RADIUS - ORB_RADIUS - 10);
+  });
+
+  /* ---------- background glow color ---------- */
+  const glowColor = useTransform(orbAngle, (angle) => {
+    const raw = angle / SEGMENT;
     const base = Math.floor(((raw % VIBE_ORDER.length) + VIBE_ORDER.length) % VIBE_ORDER.length);
     const t = raw - base;
     
@@ -96,82 +106,73 @@ export const VibeWheel = memo(() => {
     return rgbFromHsl(h, s, l);
   });
 
-  /* ---------- commit snap ---------- */
-  const commitSnap = useCallback(async (v: VibeEnum) => {
+  /* ---------- commit vibe change ---------- */
+  const commitVibe = useCallback((v: VibeEnum) => {
     if (v === current) return;
-    
-    // Web-compatible haptics
     triggerHaptic();
-    
     setVibe(v);
   }, [current, setVibe]);
 
-  /* ---------- pan handlers ---------- */
-  const handlePanStart = useCallback(() => {
-    glowOpacity.set(0.5);
-  }, [glowOpacity]);
+  /* ---------- sync orb position when vibe changes externally ---------- */
+  React.useEffect(() => {
+    const targetAngle = VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT;
+    if (Math.abs(orbAngle.get() - targetAngle) > 1) {
+      orbAngle.set(targetAngle);
+    }
+  }, [current, orbAngle]);
 
-  const handlePan = useCallback((_: any, info: PanInfo) => {
-    const currentTheta = theta.get();
-    theta.set(currentTheta + info.delta.x * 0.5); // 0.5° per pixel
-  }, [theta]);
-
-  const handlePanEnd = useCallback((_: any, info: PanInfo) => {
-    glowOpacity.set(0.34);
+  /* ---------- orb drag handlers ---------- */
+  const handleOrbDragEnd = useCallback((_: any, info: PanInfo) => {
+    // Use velocity and offset to determine direction of drag
+    const velocity = Math.sqrt(info.velocity.x ** 2 + info.velocity.y ** 2);
+    const offset = Math.sqrt(info.offset.x ** 2 + info.offset.y ** 2);
     
-    // Calculate final position with momentum
-    const currentTheta = theta.get();
-    const velocity = info.velocity.x * 0.5;
-    const finalTheta = currentTheta + velocity * 0.1; // momentum factor
+    // Calculate angle based on drag offset
+    let angle = (Math.atan2(info.offset.y, info.offset.x) * 180) / Math.PI + 90; // +90 so 0° is at top
+    if (angle < 0) angle += 360;
+    
+    // Add the offset to current angle
+    const currentAngle = orbAngle.get();
+    const dragAngle = (info.offset.x > 0 ? 1 : -1) * Math.min(offset * 0.5, 180); // limit max rotation
+    let newAngle = currentAngle + dragAngle;
+    
+    // Normalize angle
+    while (newAngle < 0) newAngle += 360;
+    while (newAngle >= 360) newAngle -= 360;
     
     // Snap to nearest segment
-    const snappedTheta = Math.round(finalTheta / SEGMENT) * SEGMENT;
-    
-    // Animate to snapped position
-    theta.set(snappedTheta);
+    const snappedAngle = Math.round(newAngle / SEGMENT) * SEGMENT;
+    orbAngle.set(snappedAngle);
     
     // Determine which vibe was selected
-    const idx = ((Math.round(snappedTheta / SEGMENT) % VIBE_ORDER.length) + VIBE_ORDER.length) % VIBE_ORDER.length;
-    commitSnap(VIBE_ORDER[idx]);
-  }, [theta, glowOpacity, commitSnap]);
-
-  // Sync wheel position when vibe changes externally
-  const handleVibeChange = useCallback(() => {
-    const targetTheta = VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT;
-    theta.set(targetTheta);
-  }, [current, theta]);
-
-  // Update wheel position when current vibe changes
-  useEffect(() => {
-    handleVibeChange();
-  }, [current, handleVibeChange]);
+    const idx = ((Math.round(snappedAngle / SEGMENT) % VIBE_ORDER.length) + VIBE_ORDER.length) % VIBE_ORDER.length;
+    commitVibe(VIBE_ORDER[idx]);
+  }, [orbAngle, commitVibe]);
 
   return (
     <div 
-      ref={constraintsRef}
       className="relative w-[280px] h-[280px] mx-auto"
       style={{ touchAction: 'none' }}
     >
-      <motion.div
-        className="relative w-full h-full rounded-full overflow-hidden bg-black/10 shadow-lg"
-        style={{ 
-          rotate: wheelRotation,
-          backdropFilter: 'blur(10px)',
-        }}
-        onPanStart={handlePanStart}
-        onPan={handlePan}
-        onPanEnd={handlePanEnd}
-        drag={false}
-        whileTap={{ scale: 0.98 }}
-        transition={SPRING_CONFIG}
-      >
-        {/* Vibe labels around the circle */}
+      {/* Static circle background */}
+      <div className="relative w-full h-full rounded-full overflow-hidden bg-black/10 shadow-lg backdrop-blur-sm">
+        
+        {/* Animated glow background */}
+        <motion.div 
+          className="absolute inset-0 rounded-full"
+          style={{
+            backgroundColor: glowColor,
+            opacity: 0.35,
+          }}
+        />
+        
+        {/* Vibe labels around the circle - static */}
         {VIBE_ORDER.map((vibe, index) => {
           const angle = index * SEGMENT;
-          const radian = (angle * Math.PI) / 180;
-          const radius = 100;
-          const x = Math.cos(radian) * radius;
-          const y = Math.sin(radian) * radius;
+          const radian = ((angle - 90) * Math.PI) / 180; // -90 so 0° is at top
+          const labelRadius = 95;
+          const x = Math.cos(radian) * labelRadius;
+          const y = Math.sin(radian) * labelRadius;
           const isSelected = vibe === current;
           
           return (
@@ -179,8 +180,8 @@ export const VibeWheel = memo(() => {
               key={vibe}
               className="absolute flex items-center justify-center w-12 h-8 rounded-full backdrop-blur-sm"
               style={{
-                left: 140 + x - 24, // center + offset - half width
-                top: 140 + y - 16,  // center + offset - half height
+                left: RADIUS + x - 24, // center + offset - half width
+                top: RADIUS + y - 16,  // center + offset - half height
                 backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'transparent',
                 border: isSelected ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
               }}
@@ -188,7 +189,7 @@ export const VibeWheel = memo(() => {
                 scale: isSelected ? 1.1 : 1,
                 opacity: isSelected ? 1 : 0.7,
               }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              transition={SPRING_CONFIG}
             >
               <span
                 className="text-xs font-medium capitalize select-none"
@@ -203,22 +204,38 @@ export const VibeWheel = memo(() => {
           );
         })}
         
-        {/* Animated glow background */}
-        <motion.div 
-          className="absolute inset-0 rounded-full"
-          style={{
-            backgroundColor: glowColor,
-            opacity: glowOpacity,
-          }}
-        />
-        
         {/* Center indicator */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center backdrop-blur-sm">
             <div className="w-4 h-4 rounded-full bg-white/80" />
           </div>
         </div>
-      </motion.div>
+      </div>
+
+      {/* Draggable mood orb */}
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragConstraints={false}
+        onDragEnd={handleOrbDragEnd}
+        className="absolute rounded-full shadow-lg cursor-grab active:cursor-grabbing"
+        style={{
+          width: ORB_RADIUS * 2,
+          height: ORB_RADIUS * 2,
+          x: orbX,
+          y: orbY,
+          left: RADIUS,
+          top: RADIUS,
+          backgroundColor: VIBE_COLORS[current ?? 'chill'],
+          border: '3px solid rgba(255,255,255,0.8)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        }}
+        whileHover={{ scale: 1.1 }}
+        whileDrag={{ scale: 1.2, zIndex: 10 }}
+        transition={SPRING_CONFIG}
+        role="slider"
+        aria-label={`Current vibe: ${current}. Drag to change.`}
+      />
     </div>
   );
 });
