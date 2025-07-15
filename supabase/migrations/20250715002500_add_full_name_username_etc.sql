@@ -1,10 +1,10 @@
 -- Phase 1: Display-name & username enhancement
 -- ===========================================
 
--- 0. Make sure citext exists (needed for reserved_usernames and case-insensitive compares)
+-- 0. citext must be outside any explicit txn
 CREATE EXTENSION IF NOT EXISTS citext;
 
-BEGIN;  -- keep DDL that *must* be transactional here
+BEGIN;
 ---------------------------------------------
 
 -- 1. new column ---------------------------------------------------------------
@@ -17,7 +17,7 @@ UPDATE public.profiles
 SET username = lower(
       left(
         COALESCE(
-          NULLIF(regexp_replace(display_name, '[^a-zA-Z0-9_]', '', 'g'), ''),
+          NULLIF(regexp_replace(display_name, '[^a-z0-9_]', '', 'gi'), ''),
           'user_' || substr(id::text,1,8)
         ), 32)
     )
@@ -31,7 +31,18 @@ WHERE full_name IS NULL
   AND display_name !~ '@'
   AND length(trim(display_name)) > 0;
 
--- 4. username format CHECK (now that data is clean) ---------------------------
+-- 4. length guard (in case any user_XXXXXXXX strings exceed 32) ---------------
+UPDATE public.profiles 
+SET username = left(username, 32) 
+WHERE length(username) > 32;
+
+-- 5. remove case-insensitive duplicates before creating unique index ----------
+DELETE FROM public.profiles a 
+USING public.profiles b 
+WHERE a.id > b.id 
+  AND lower(a.username) = lower(b.username);
+
+-- 6. username format CHECK (now that data is clean) ---------------------------
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -45,24 +56,17 @@ BEGIN
   END IF;
 END$$;
 
-COMMIT;  -- stop the txn so we can create index CONCURRENTLY
+COMMIT;
 -------------------------------------------------------------------------------
 
--- 5. CI-unique index (non-blocking) ------------------------------------------
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_class WHERE relname = 'uniq_profiles_username_ci'
-  ) THEN
-    -- must be executed *outside* a transaction
-    EXECUTE 'CREATE UNIQUE INDEX CONCURRENTLY uniq_profiles_username_ci
-             ON public.profiles ( lower(username) )';
-  END IF;
-END$$ LANGUAGE plpgsql;
+-- 7. create index (blocking for a moment but safe & simple) ------------------
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_profiles_username_ci
+ON public.profiles (lower(username));
 
--- 6. reserved usernames table -------------------------------------------------
+-- 8. reserved usernames table -------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.reserved_usernames (
-  name citext PRIMARY KEY
+  name citext NOT NULL PRIMARY KEY,
+  CONSTRAINT chk_reserved_username_format CHECK ( name ~ '^[a-z0-9_]{3,32}$' )
 );
 
 INSERT INTO public.reserved_usernames (name)
@@ -77,7 +81,7 @@ FROM (VALUES
 ) AS t(name)
 ON CONFLICT DO NOTHING;
 
--- 7. RPC for username updates -------------------------------------------------
+-- 9. RPC for username updates -------------------------------------------------
 CREATE OR REPLACE FUNCTION public.update_username(p_username text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -116,5 +120,6 @@ BEGIN
 END;
 $$;
 
--- 8. permissions --------------------------------------------------------------
+-- 10. function ownership and permissions --------------------------------------
+ALTER FUNCTION public.update_username(text) OWNER TO postgres;
 GRANT EXECUTE ON FUNCTION public.update_username(text) TO authenticated;
