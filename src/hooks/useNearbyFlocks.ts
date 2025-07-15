@@ -29,6 +29,9 @@ export interface NearbyFloq {
   is_joined: boolean;
   creator_id?: string;
   hasUserBoosted?: boolean;
+  friends_going_count?: number;
+  friends_going_avatars?: string[];
+  friends_going_names?: string[];
   friendsGoing?: {
     count: number;
     avatars: string[];
@@ -77,13 +80,17 @@ export function useNearbyFlocks({
         return [];
       }
       
-      // Get active flocks with member data - use 5-parameter version to avoid overloading
-      const { data, error } = await supabase.rpc("get_active_floqs_with_members", {
-        p_use_demo: false,
+      // Use search_floqs to get friends going data
+      const { data, error } = await supabase.rpc("search_floqs", {
+        p_lat: Number(geo.lat),
+        p_lng: Number(geo.lng),
+        p_radius_km: 25,
+        p_query: '',
+        p_vibe_ids: [],
+        p_time_from: new Date().toISOString(),
+        p_time_to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         p_limit: limit,
-        p_offset: 0,
-        p_user_lat: Number(geo.lat),
-        p_user_lng: Number(geo.lng),
+        _viewer_id: user?.id || null,
       });
 
       if (error) {
@@ -113,16 +120,19 @@ export function useNearbyFlocks({
         primary_vibe: floq.primary_vibe,
         vibe_tag: floq.vibe_tag || undefined,
         participant_count: Number(floq.participant_count),
-        boost_count: Number(floq.boost_count),
-        distance_meters: Number(floq.distance_meters || 0),
-        activity_score: Number(floq.activity_score || 0),
+        boost_count: 0, // search_floqs doesn't return boost_count
+        distance_meters: Number(floq.distance_m || 0),
+        activity_score: 0, // search_floqs doesn't return activity_score
         starts_at: floq.starts_at || undefined,
         ends_at: floq.ends_at || undefined,
-        starts_in_min: floq.starts_in_min,
-        max_participants: floq.max_participants || undefined,
-        members: floq.members || [],
+        starts_in_min: 0, // Calculate from starts_at if needed
+        max_participants: undefined, // search_floqs doesn't return max_participants
+        members: [], // search_floqs doesn't return members array
         is_joined: joinedFloqIds.includes(floq.id),
-        creator_id: floq.creator_id || undefined,
+        creator_id: undefined, // search_floqs doesn't return creator_id
+        friends_going_count: floq.friends_going_count || 0,
+        friends_going_avatars: floq.friends_going_avatars || [],
+        friends_going_names: floq.friends_going_names || [],
       }));
 
       // Apply filters

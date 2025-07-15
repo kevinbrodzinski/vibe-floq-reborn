@@ -134,7 +134,10 @@ BEGIN
     FROM public.floq_participants fp
     WHERE fp.floq_id = b.id
   ) pc ON true
-  ORDER BY b.distance_m, COALESCE(j.cnt, 0) DESC
+  ORDER BY 
+    b.distance_m,                       -- primary key: proximity
+    COALESCE(j.cnt,0) DESC,             -- friends_going_count (more friends first)
+    participant_count DESC              -- general popularity fallback
   LIMIT p_limit;
 END;
 $$;

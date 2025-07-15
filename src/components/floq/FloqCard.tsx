@@ -11,6 +11,7 @@ import { VibeIcon } from '@/components/VibeIcon';
 import { toast } from 'sonner';
 import { ActionPill } from '@/components/ui/ActionPill';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { AvatarStack } from '@/components/ui/AvatarStack';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
 import { useAuth } from '@/providers/AuthProvider';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
@@ -236,15 +237,23 @@ export const FloqCard = React.memo<FloqCardProps>(({
           </h3>
 
           {/* Friends Going Badge */}
-          {floq.friendsGoing?.count > 0 && (
-            <div 
-              className="mt-1 flex items-center gap-1 text-xs font-medium text-blue-400"
-              aria-label={`${floq.friendsGoing.count} friend${floq.friendsGoing.count > 1 ? 's' : ''} going`}
-            >
-              <Users className="h-3 w-3 shrink-0" />
-              {floq.friendsGoing.count === 1
-                ? '1 friend going'
-                : `${floq.friendsGoing.count} friends going`}
+          {(floq.friends_going_count > 0 || floq.friendsGoing?.count > 0) && (
+            <div className="flex items-center gap-1 mt-1">
+              <AvatarStack
+                urls={floq.friends_going_avatars || []}
+                names={floq.friends_going_names || []}
+                max={4}
+                className="pr-1"
+              />
+              <span className="text-xs text-muted-foreground">
+                {(() => {
+                  const count = floq.friends_going_count || floq.friendsGoing?.count || 0;
+                  const firstName = floq.friends_going_names?.[0] || floq.friendsGoing?.names?.[0];
+                  return count === 1 && firstName
+                    ? `${firstName} is going`
+                    : `${count} friends going`;
+                })()}
+              </span>
             </div>
           )}
           <p className="mt-0.5 text-sm text-muted-foreground tracking-tight">
