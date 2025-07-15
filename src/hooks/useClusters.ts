@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { RealtimeChannel } from '@supabase/supabase-js'
+import { debounce } from 'lodash-es'
 import { supabase } from '@/integrations/supabase/client'
-import { throttle } from 'lodash-es'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+
+// Types --------------------------------------------------------------------
 
 export interface Cluster {
   gh6: string
@@ -12,6 +14,8 @@ export interface Cluster {
   totalNorm?: number
 }
 
+// Hook ---------------------------------------------------------------------
+
 export const useClusters = (
   bbox: [number, number, number, number] | null,
   precision = 6
@@ -21,85 +25,46 @@ export const useClusters = (
   const [error, setError] = useState<string | null>(null)
   const [isRealTimeConnected, setIsRealTimeConnected] = useState(false)
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
+
+  /** ---- stable key: precision + bbox rounded to 3 dp ---- */
+  const key = useMemo(() => {
+    if (!bbox) return null
+    const k = bbox.map(n => n.toFixed(3)).join(',')
+    return `${precision}:${k}`
+  }, [bbox, precision])
+
+  /** ---- keep channel instance across renders ---- */
+  const channelRef = useRef<RealtimeChannel | null>(null)
   const abortRef = useRef<AbortController | undefined>(undefined)
-  const lastDataRef = useRef<Cluster[]>([]) // Move this inside the hook
-  const channelRef = useRef<RealtimeChannel | undefined>(undefined)
-  const realTimeThrottleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const lastDataRef = useRef<Cluster[]>([])
 
-  const fetchClusters = useCallback(
-    async (box: [number, number, number, number]) => {
-      // Cancel previous request
-      abortRef.current?.abort()
-      abortRef.current = new AbortController()
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
-
-        const { data, error } = await supabase.functions.invoke('clusters', {
-          body: { bbox: box, precision },
-        })
-
-        if (error) {
-          console.error('[useClusters] Error:', error)
-          setError(error.message || 'Failed to fetch clusters')
-          setClusters([])
-          return
-        }
-
-        if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
-        
-        // Process clusters with visual properties
-        const processedClusters = (data || []).map((cluster: any) => ({
-          ...cluster,
-          fillRgb: [100, 150, 255] as [number, number, number], // Default blue
-          totalNorm: cluster.total / Math.max(...(data || []).map((c: any) => c.total), 1)
-        }))
-        
-        setClusters(processedClusters)
-        lastDataRef.current = processedClusters
-        setError(null)
-
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.error('[useClusters] Fetch error:', err)
-          setError(err.message || 'Failed to fetch clusters')
-          setClusters([])
-        }
-      } finally {
-        setLoading(false)
-      }
-    },
-    [precision]
-  )
-
-  // Throttle network requests to once every 750ms
-  const throttledFetch = useRef(throttle(fetchClusters, 750)).current
-
-  // Real-time subscription with throttling to prevent spam
-  const handleRealTimeUpdate = useCallback(() => {
-    if (realTimeThrottleRef.current) {
-      clearTimeout(realTimeThrottleRef.current)
-    }
+  /** ---- process clusters with visual properties ---- */
+  const processClusterData = useCallback((data: any[]) => {
+    const processedClusters = (data || []).map((cluster: any) => ({
+      ...cluster,
+      fillRgb: [100, 150, 255] as [number, number, number], // Default blue
+      totalNorm: cluster.total / Math.max(...(data || []).map((c: any) => c.total), 1)
+    }))
     
-    // Throttle real-time updates to every 2 seconds
-    realTimeThrottleRef.current = setTimeout(() => {
-      if (bbox) {
-        if (import.meta.env.DEV) console.log('[useClusters] Real-time update triggered')
-        setLastUpdateTime(new Date())
-        fetchClusters(bbox)
-      }
-    }, 2000)
-  }, [bbox, fetchClusters])
+    setClusters(processedClusters)
+    lastDataRef.current = processedClusters
+    setLastUpdateTime(new Date())
+    return processedClusters
+  }, [])
 
-  // Set up real-time subscription using broadcast channel (listening for checksum changes)
+  /** ---- subscribe once per key change ---- */
   useEffect(() => {
-    if (!bbox || clusters.length > 300) return // Guard rail: skip for large datasets
+    if (!key || clusters.length > 300) return // Guard rail: skip for large datasets or no key
 
-    const channel = supabase
-      .channel('clusters-updates-live')
+    // unsubscribe old channel if key changes
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+      setIsRealTimeConnected(false)
+    }
+
+    const ch = supabase
+      .channel(`clusters-${key}`)
       .on(
         'broadcast',
         { event: 'clusters_updated' },
@@ -110,42 +75,92 @@ export const useClusters = (
               if (import.meta.env.DEV) {
                 console.log('[useClusters] Checksum changed → refetching clusters')
               }
-              setLastUpdateTime(new Date())
-              fetchClusters(bbox)
+              // Trigger debounced fetch
+              if (bbox) {
+                debouncedFetch(bbox)
+              }
             }
           } catch (e) {
             console.error('[useClusters] Error processing broadcast:', e)
           }
         }
       )
-      .subscribe((status) => {
-        if (import.meta.env.DEV) console.log('[useClusters] Subscription status:', status)
+      .subscribe(status => {
+        if (import.meta.env.DEV) {
+          console.log('[useClusters] Subscription status:', status)
+        }
         setIsRealTimeConnected(status === 'SUBSCRIBED')
       })
 
-    channelRef.current = channel
-
+    channelRef.current = ch
     return () => {
-      channel.unsubscribe()
+      supabase.removeChannel(ch)
       setIsRealTimeConnected(false)
     }
-  }, [bbox, fetchClusters, clusters.length])
+  }, [key, clusters.length])
+
+  /** ---- debounced edge-function fetch ---- */
+  const fetchClusters = useCallback(async (box: [number, number, number, number]) => {
+    // Cancel previous request
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
+
+      const { data, error } = await supabase.functions.invoke('clusters', {
+        body: { bbox: box, precision },
+      })
+
+      if (error) {
+        console.error('[useClusters] Error:', error)
+        setError(error.message || 'Failed to fetch clusters')
+        setClusters([])
+        return
+      }
+
+      if (import.meta.env.DEV) console.log(`[useClusters] Received ${data?.length || 0} clusters`)
+      
+      processClusterData(data)
+      setError(null)
+
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('[useClusters] Fetch error:', err)
+        setError(err.message || 'Failed to fetch clusters')
+        setClusters([])
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [precision, processClusterData])
+
+  const debouncedFetch = useMemo(
+    () =>
+      debounce(fetchClusters, 500), // 500 ms debounce
+    [fetchClusters]
+  )
 
   useEffect(() => {
-    if (bbox) {
-      throttledFetch(bbox)
-    }
-  }, [bbox, throttledFetch])
+    if (!bbox) return
+    debouncedFetch.cancel()                  // reset debounce when bbox changes
+    debouncedFetch(bbox)                     // fetch with new bbox
+  }, [bbox, debouncedFetch])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
-      throttledFetch.cancel()
-      channelRef.current?.unsubscribe()
+      debouncedFetch.cancel()
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
       setIsRealTimeConnected(false)
     }
-  }, [throttledFetch])
+  }, [debouncedFetch])
 
   return { 
     clusters, 
