@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
 
+// Debug import
+console.log('DeckGL is', DeckGL, typeof DeckGL)
+
+// Cast DeckGL to work around type issues
+const DeckGLComponent = DeckGL as any
+
 const INITIAL_VIEW_STATE = {
   longitude: -122.4,
   latitude: 37.8,
@@ -84,13 +90,13 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
 
       {/* Map Container */}
       <div className="absolute inset-0 pt-16 rounded-b-2xl overflow-hidden">
-        {React.createElement(DeckGL as any, {
-          initialViewState: INITIAL_VIEW_STATE,
-          controller: true,
-          layers: layers,
-          onViewStateChange: (params: any) => setViewState(params.viewState),
-          style: { width: '100%', height: '100%' }
-        })}
+        <DeckGLComponent
+          initialViewState={INITIAL_VIEW_STATE}
+          controller={true}
+          layers={layers}
+          onViewStateChange={(params: any) => setViewState(params.viewState)}
+          style={{ width: '100%', height: '100%' }}
+        />
 
         {/* Legend */}
         <ClusterLegend 

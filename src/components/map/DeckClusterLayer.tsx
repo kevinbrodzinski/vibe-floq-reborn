@@ -1,8 +1,13 @@
-// @ts-ignore - deck.gl types issue
-import { ScatterplotLayer } from '@deck.gl/layers'
+import * as deckLayers from '@deck.gl/layers'
 import { useMemo } from 'react'
 import { scaleSequential } from 'd3-scale'
 import type { Cluster } from '@/hooks/useClusters'
+
+// Extract ScatterplotLayer from the deck.gl layers module
+const ScatterplotLayer = (deckLayers as any).ScatterplotLayer
+
+// Debug import
+console.log('ScatterplotLayer is', ScatterplotLayer, typeof ScatterplotLayer)
 
 // Turbo colormap approximation (simplified)
 const interpolateTurbo = (t: number): string => {
