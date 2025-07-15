@@ -31,6 +31,9 @@ export function useFloqSearch(
       if (error) throw error;
       return (data ?? []).map(floq => ({
         ...floq,
+        friends_going_count: floq.friends_going_count || 0,
+        friends_going_avatars: floq.friends_going_avatars || [],
+        friends_going_names: floq.friends_going_names || [],
         friendsGoing: {
           count: floq.friends_going_count || 0,
           avatars: floq.friends_going_avatars || [],

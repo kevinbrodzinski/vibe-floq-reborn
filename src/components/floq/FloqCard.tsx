@@ -242,10 +242,14 @@ export const FloqCard = React.memo<FloqCardProps>(({
               <AvatarStack
                 urls={floq.friends_going_avatars || []}
                 names={floq.friends_going_names || []}
+                size={20}
                 max={4}
                 className="pr-1"
               />
-              <span className="text-xs text-muted-foreground">
+              <span 
+                className="text-xs text-muted-foreground"
+                aria-label={`${floq.friends_going_count} friends going`}
+              >
                 {floq.friends_going_count === 1 
                   ? `${floq.friends_going_names?.[0]} is going`
                   : `${floq.friends_going_count} friends going`}

@@ -41,9 +41,13 @@ export const AvatarStack: React.FC<AvatarStackProps> = ({
               key={i}
               aria-label={names[i] ?? ''}
               className="flex items-center justify-center bg-muted text-xs font-medium rounded-full ring-2 ring-background -ml-2 first:ml-0"
-              style={{ width: size, height: size }}
+              style={{ 
+                width: size, 
+                height: size, 
+                fontSize: Math.max(size * 0.4, 10) 
+              }}
             >
-              {(names[i]?.[0] ?? '?').toUpperCase()}
+              {(names[i]?.[0]?.toUpperCase() ?? '?')}
             </span>
           )
         )}

@@ -13,6 +13,9 @@ export interface FloqSearchResult {
   ends_at: string | null;
   distance_m: number;
   participant_count: number;
+  friends_going_count: number;
+  friends_going_avatars: string[];
+  friends_going_names: string[];
   friendsGoing: {
     count: number;
     avatars: string[];

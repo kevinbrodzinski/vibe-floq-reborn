@@ -32,11 +32,6 @@ export interface NearbyFloq {
   friends_going_count?: number;
   friends_going_avatars?: string[];
   friends_going_names?: string[];
-  friendsGoing?: {
-    count: number;
-    avatars: string[];
-    names: string[];
-  };
 }
 
 interface UseNearbyFlocksOptions {
@@ -127,7 +122,7 @@ export function useNearbyFlocks({
           participant_count: Number(floq.participant_count),
           boost_count: 0, // search_floqs doesn't return boost_count
           distance_meters: Number(floq.distance_m || 0),
-          activity_score: 50, // Default activity score
+          activity_score: 0, // Default to 0 to avoid mis-ranking
           starts_at: floq.starts_at || undefined,
           ends_at: floq.ends_at || undefined,
           starts_in_min: startsInMin,

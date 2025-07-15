@@ -197,17 +197,17 @@ export function SearchBarWithTypeahead({
                   </div>
                   
                   {/* Friends Going Badge */}
-                  {suggestion.friendsGoing?.count > 0 && (
+                  {suggestion.friends_going_count > 0 && (
                     <div className="flex items-center gap-1 mb-1">
                       <AvatarStack
-                        urls={suggestion.friendsGoing?.avatars || []}
-                        names={suggestion.friendsGoing?.names || []}
+                        urls={suggestion.friends_going_avatars || []}
+                        names={suggestion.friends_going_names || []}
                         size={16}
                         max={3}
                         className="pr-1"
                       />
                       <span className="text-xs text-muted-foreground">
-                        {suggestion.friendsGoing.count === 1 ? '1 friend going' : `${suggestion.friendsGoing.count} friends going`}
+                        {suggestion.friends_going_count === 1 ? '1 friend going' : `${suggestion.friends_going_count} friends going`}
                       </span>
                     </div>
                   )}
