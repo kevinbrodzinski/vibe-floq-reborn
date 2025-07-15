@@ -11,6 +11,7 @@ import { Z } from "@/constants/zLayers";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useLocationDisplay } from "@/hooks/useLocationDisplay";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldUILayerProps {
@@ -20,6 +21,12 @@ interface FieldUILayerProps {
 export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   const { isLocationReady, location, lastHeartbeat } = useFieldLocation();
   const { people } = useFieldSocial();
+  const locationDisplay = useLocationDisplay(
+    location.lat, 
+    location.lng, 
+    !!(location.lat && location.lng), // hasPermission approximation
+    location.error
+  );
   const { 
     isFull,
     currentVibe,
@@ -93,8 +100,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         >
           <FieldHeader 
-            locationReady={isLocationReady} 
-            currentLocation={location.error ? "Location unavailable" : "Current location"}
+            locationReady={locationDisplay.isReady} 
+            currentLocation={locationDisplay.displayText}
             lastHeartbeat={lastHeartbeat}
             venueCount={nearbyVenues?.length || 0}
             onOpenVenues={() => setVenuesSheetOpen(true)}
