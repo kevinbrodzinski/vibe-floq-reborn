@@ -11,6 +11,8 @@ import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
 import { VibeDensityMap } from "@/components/map/VibeDensityMap";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
 import { useClusters } from "@/hooks/useClusters";
+import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
+import { SmartSuggestionBanner } from "@/components/SmartSuggestionBanner";
 import type { Vibe } from "@/utils/vibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
@@ -46,6 +48,9 @@ export const VibeScreen = () => {
   // Mock bounding box for cluster data
   const bbox = [-122.5, 37.7, -122.3, 37.8] as [number, number, number, number];
   const { clusters, loading, isRealTimeConnected, lastUpdateTime } = useClusters(bbox, 6);
+  
+  // Smart suggestions based on nearby clusters
+  const { suggestion, dismissSuggestion } = useSmartSuggestions(clusters, userLocation);
   
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
@@ -269,6 +274,11 @@ export const VibeScreen = () => {
       return newVisibility;
     });
   }, [updateVisibility]);
+
+  const handleApplySuggestion = (vibe: string, clusterId: string) => {
+    handleVibeSelect(vibe as VibeState);
+    dismissSuggestion(clusterId);
+  };
 
   const getVisibilityIcon = () => {
     switch (visibility) {
@@ -614,6 +624,15 @@ export const VibeScreen = () => {
           </div>
         </div>
       </div>
+
+      {/* Smart Suggestion Banner */}
+      {suggestion && (
+        <SmartSuggestionBanner
+          suggestion={suggestion}
+          onApply={handleApplySuggestion}
+          onDismiss={dismissSuggestion}
+        />
+      )}
 
       {/* Bottom Navigation Spacer */}
       <div className="h-32"></div>
