@@ -1281,6 +1281,7 @@ export type Database = {
       user_vibe_states: {
         Row: {
           active: boolean | null
+          gh5: string | null
           location: unknown | null
           started_at: string
           user_id: string
@@ -1289,6 +1290,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          gh5?: string | null
           location?: unknown | null
           started_at?: string
           user_id: string
@@ -1297,6 +1299,7 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          gh5?: string | null
           location?: unknown | null
           started_at?: string
           user_id?: string
@@ -2930,6 +2933,10 @@ export type Database = {
         }[]
       }
       publish_cluster_deltas: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      publish_presence_counts: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
