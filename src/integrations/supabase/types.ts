@@ -4338,10 +4338,6 @@ export type Database = {
         Args: { u: string } | { u: string }
         Returns: boolean
       }
-      username_exists: {
-        Args: { username: string }
-        Returns: boolean
-      }
       venue_details: {
         Args: { v_id: string }
         Returns: {
