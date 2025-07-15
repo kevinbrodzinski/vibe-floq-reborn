@@ -6,9 +6,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import type { CrossedPath } from '@/types';
+import { OFFLINE_MODE } from '@/lib/constants';
 
 export function useCrossedPathsToday() {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   const { user } = useAuth();
   const { friends } = useFriends();

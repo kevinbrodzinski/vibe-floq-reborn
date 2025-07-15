@@ -13,7 +13,7 @@ export function useRealtimeFriends() {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('friends-realtime')
+      .channel('dashboard:friends-realtime')
       .on(
         'postgres_changes',
         {

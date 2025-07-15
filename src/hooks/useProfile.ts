@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/hooks/useProfileCache';
+import { OFFLINE_MODE } from '@/lib/constants';
 
 // Re-export the consolidated Profile type for backward compatibility
 export type { Profile };
 
 export const useProfile = (userId: string | undefined) => {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
@@ -49,7 +49,6 @@ export const useProfile = (userId: string | undefined) => {
 };
 
 export const useProfileByUsername = (username: string | undefined) => {
-  const OFFLINE_MODE = import.meta.env.NEXT_PUBLIC_OFFLINE_MODE === 'true';
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
