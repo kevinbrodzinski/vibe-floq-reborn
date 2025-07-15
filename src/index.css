@@ -605,12 +605,43 @@ All colors MUST be HSL.
   will-change: transform;
 }
 
-/* Reduce motion for accessibility */
+/* Single pulse animation keyframes */
+@keyframes pulseOnce {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Accessibility & Performance */
 @media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-[pulseOnce_2s_ease-out],
+  .pulse-glow,
+  [class*="animate-"] {
+    animation: none !important;
+    transition: none !important;
+  }
+  
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Ensure glow effects don't affect contrast in high contrast mode */
+@media (prefers-contrast: high) {
+  [class*="shadow-[0_0_"] {
+    box-shadow: none !important;
   }
 }
 

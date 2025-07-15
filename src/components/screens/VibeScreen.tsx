@@ -312,6 +312,7 @@ export const VibeScreen = () => {
             // Calculate glow intensity based on learning preference
             const prefScore = learningData.preferences[key as Vibe] ?? 0;
             const glow = Math.min(1, 0.3 + prefScore * 2);
+            const glowRadius = Math.max(8, Math.min(14, Math.round(12 * glow)));
             const shouldGlow = prefScore > 0.1;
             
             return (
@@ -322,7 +323,9 @@ export const VibeScreen = () => {
                   isSelected 
                     ? "text-primary font-bold scale-110 bg-primary/10 backdrop-blur-sm border border-primary/20" 
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/30 hover:scale-105"
-                } ${shouldGlow ? `shadow-[0_0_${Math.round(12*glow)}px_hsl(var(--primary)/60%)]` : ""}`}
+                } ${shouldGlow ? `shadow-[0_0_${glowRadius}px_hsl(var(--primary)/70%)] dark:shadow-[0_0_${glowRadius}px_hsl(var(--primary)/40%)] transition-shadow duration-300` : ""} ${
+                  shouldGlow ? "motion-reduce:shadow-none" : ""
+                }`}
                 style={{
                   left: `calc(50% + ${x}px)`,
                   top: `calc(50% + ${y}px)`,
@@ -378,7 +381,7 @@ export const VibeScreen = () => {
                       Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
                     </Button>
                     {vibeDetection.learningBoost?.boosted && (
-                      <Tooltip>
+                      <Tooltip delayDuration={300}>
                         <TooltipTrigger asChild>
                           <span className="text-xs text-accent flex items-center gap-1 cursor-help">
                             💡 <span className="text-[10px] hidden sm:inline">learned</span>
@@ -428,17 +431,20 @@ export const VibeScreen = () => {
       {autoMode && (
         <div className="px-6 mb-6">
           <motion.div
-            key={learningData.correctionCount} // Spring only on first correction
+            key={learningData.correctionCount}
             initial={{ y: 32, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring", damping: 18, stiffness: 140 }}
+            transition={{ type: "spring", damping: 24, stiffness: 260 }}
+            style={{ willChange: 'transform, opacity' }}
           >
-            <LearningPatterns
-              patterns={learningData.patterns}
-              topPreferences={learningData.preferences}
-              accuracy={learningData.accuracy}
-              correctionCount={learningData.correctionCount}
-            />
+            <div aria-live="polite">
+              <LearningPatterns
+                patterns={learningData.patterns}
+                topPreferences={learningData.preferences}
+                accuracy={learningData.accuracy}
+                correctionCount={learningData.correctionCount}
+              />
+            </div>
           </motion.div>
         </div>
       )}
@@ -489,7 +495,7 @@ export const VibeScreen = () => {
 
       {/* Emotional Density Map Preview with controlled pulse */}
       <div className="px-6 mb-6">
-        <div className={`relative ${showPulse ? "animate-pulse" : ""}`}>
+        <div className={`relative ${showPulse ? "animate-[pulseOnce_2s_ease-out] motion-reduce:animate-none" : ""}`}>
           <button 
             className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
               showPulse 
