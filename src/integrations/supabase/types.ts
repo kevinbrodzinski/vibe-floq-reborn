@@ -830,6 +830,39 @@ export type Database = {
         }
         Relationships: []
       }
+      message_mentions: {
+        Row: {
+          created_at: string
+          mentioned_user: string
+          message_id: string
+        }
+        Insert: {
+          created_at?: string
+          mentioned_user: string
+          message_id: string
+        }
+        Update: {
+          created_at?: string
+          mentioned_user?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_message_mentions_message"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_message_mentions_user"
+            columns: ["mentioned_user"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_queue: {
         Row: {
           created_at: string
