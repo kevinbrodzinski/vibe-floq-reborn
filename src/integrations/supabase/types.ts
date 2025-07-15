@@ -1471,6 +1471,21 @@ export type Database = {
         }
         Relationships: []
       }
+      vibe_clusters_checksum: {
+        Row: {
+          checksum: string
+          id: number
+        }
+        Insert: {
+          checksum: string
+          id?: number
+        }
+        Update: {
+          checksum?: string
+          id?: number
+        }
+        Relationships: []
+      }
       vibes_log: {
         Row: {
           location: unknown
@@ -2877,6 +2892,10 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
           visibility: string | null
         }[]
+      }
+      publish_cluster_deltas: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       refresh_leaderboard_cache: {
         Args: Record<PropertyKey, never>
