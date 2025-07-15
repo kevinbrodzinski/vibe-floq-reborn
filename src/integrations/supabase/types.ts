@@ -1710,6 +1710,8 @@ export type Database = {
           last_updated: string | null
           total: number | null
           vibe_counts: Json | null
+          vibe_momentum: number | null
+          vibe_popularity: number | null
         }
         Relationships: []
       }
