@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback } from "react";
-import { Radio, Eye, EyeOff, Users } from "lucide-react";
+import { Radio, Eye, EyeOff, Users, Zap, ZapOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
+import type { Vibe } from "@/utils/vibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
 type VisibilityState = "public" | "friends" | "off";
@@ -19,7 +21,11 @@ export const VibeScreen = () => {
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [activeDuration, setActiveDuration] = useState(37);
+  const [autoMode, setAutoMode] = useState(false);
   const dialRef = useRef<HTMLDivElement>(null);
+  
+  // Sensor monitoring for auto-detection
+  const { sensorData, vibeDetection, permissions, requestPermissions } = useSensorMonitoring(autoMode);
 
   const vibes: Record<VibeState, VibeInfo> = {
     chill: { label: "Chill", angle: 0, color: "hsl(var(--accent))" },
@@ -33,20 +39,58 @@ export const VibeScreen = () => {
     solo: { label: "Solo", angle: 320, color: "hsl(240 70% 60%)" }
   };
 
-  const statusUpdates = [
-    "Feed priority has shifted toward Chill Floqs",
-    "Pulse is scanning venues with low lighting + mellow music", 
-    "Your vibe is now visible to 19 friends nearby",
-    "4 people with matching vibes in a 2-mile radius"
-  ];
+  // Dynamic status updates based on auto-detection
+  const getStatusUpdates = () => {
+    if (autoMode && vibeDetection) {
+      return [
+        `Auto-detected: ${vibeDetection.suggestedVibe} (${Math.round(vibeDetection.confidence * 100)}% confidence)`,
+        ...vibeDetection.reasoning,
+        `Audio: ${sensorData.audioLevel}% • Movement: ${sensorData.movement.pattern}`,
+        "Your vibe is now visible to 19 friends nearby"
+      ];
+    }
+    
+    return [
+      "Feed priority has shifted toward Chill Floqs",
+      "Pulse is scanning venues with low lighting + mellow music", 
+      "Your vibe is now visible to 19 friends nearby",
+      "4 people with matching vibes in a 2-mile radius"
+    ];
+  };
 
   const handleVibeSelect = useCallback((vibe: VibeState) => {
     setSelectedVibe(vibe);
+    // Turn off auto mode when manually selecting
+    if (autoMode) {
+      setAutoMode(false);
+    }
     // Brief haptic feedback simulation
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
-  }, []);
+  }, [autoMode]);
+
+  // Auto-apply detected vibe
+  const applyDetectedVibe = useCallback(() => {
+    if (vibeDetection && vibeDetection.confidence > 0.5) {
+      // Only apply if it's a valid VibeState
+      const vibeAsState = vibeDetection.suggestedVibe as VibeState;
+      if (vibes[vibeAsState]) {
+        setSelectedVibe(vibeAsState);
+        if (navigator.vibrate) {
+          navigator.vibrate([50, 100, 50]);
+        }
+      }
+    }
+  }, [vibeDetection, vibes]);
+
+  // Toggle auto mode
+  const toggleAutoMode = useCallback(async () => {
+    if (!autoMode) {
+      await requestPermissions();
+    }
+    setAutoMode(!autoMode);
+  }, [autoMode, requestPermissions]);
 
   const handleDragStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     setIsDragging(true);
@@ -120,9 +164,16 @@ export const VibeScreen = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       {/* Header Bar */}
       <div className="flex justify-between items-center p-6 pt-16">
-        <button className="p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60">
-          <Radio className="w-5 h-5 text-muted-foreground" />
-        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleAutoMode}
+          className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
+            autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
+          }`}
+        >
+          {autoMode ? <Zap className="w-5 h-5" /> : <ZapOff className="w-5 h-5" />}
+        </Button>
         <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
         <Button
           variant="ghost"
@@ -184,12 +235,34 @@ export const VibeScreen = () => {
               <h2 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
                 {vibes[selectedVibe].label}
               </h2>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-2">
                 {getCurrentVibeDescription()}
               </p>
-              <div className="w-16 h-16 rounded-full bg-gradient-primary/20 backdrop-blur-sm border border-primary/30 flex items-center justify-center transition-all duration-500 animate-pulse-glow">
-                <div className="w-8 h-8 rounded-full bg-gradient-primary"></div>
+              {autoMode && (
+                <p className="text-xs text-accent mb-2 flex items-center justify-center gap-1">
+                  <Brain className="w-3 h-3" />
+                  Auto Mode
+                </p>
+              )}
+              <div className={`w-16 h-16 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all duration-500 ${
+                autoMode 
+                  ? "bg-accent/20 border-accent/30 animate-pulse" 
+                  : "bg-gradient-primary/20 border-primary/30 animate-pulse-glow"
+              }`}>
+                <div className={`w-8 h-8 rounded-full ${
+                  autoMode ? "bg-gradient-secondary" : "bg-gradient-primary"
+                }`}></div>
               </div>
+              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && (
+                <Button
+                  onClick={applyDetectedVibe}
+                  size="sm"
+                  className="mt-2 text-xs px-3 py-1 h-6"
+                  disabled={vibeDetection.confidence < 0.5}
+                >
+                  Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
+                </Button>
+              )}
             </div>
           </div>
 
@@ -210,18 +283,39 @@ export const VibeScreen = () => {
       {/* Vibe Impact Panel */}
       <div className="px-6 mb-6">
         <div className="bg-card/60 backdrop-blur-xl rounded-2xl p-6 border border-border/30">
-          <h3 className="font-semibold mb-4 text-foreground">Vibe Impact</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-foreground">Vibe Impact</h3>
+            {autoMode && (
+              <div className="text-xs text-accent flex items-center gap-1">
+                <Brain className="w-3 h-3" />
+                Sensor Data
+              </div>
+            )}
+          </div>
           <div className="space-y-3">
-            {statusUpdates.map((update, index) => (
+            {getStatusUpdates().map((update, index) => (
               <div key={index} className="flex items-start space-x-3 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
                 <div 
                   className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
-                  style={{ backgroundColor: index < 2 ? "hsl(var(--muted-foreground))" : "hsl(var(--accent))" }}
+                  style={{ 
+                    backgroundColor: autoMode && index === 0 
+                      ? "hsl(var(--accent))" 
+                      : index < 2 
+                        ? "hsl(var(--muted-foreground))" 
+                        : "hsl(var(--accent))" 
+                  }}
                 ></div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{update}</p>
               </div>
             ))}
           </div>
+          {autoMode && !permissions.microphone && (
+            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                Enable microphone access for audio-based vibe detection
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
