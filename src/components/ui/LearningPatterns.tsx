@@ -50,8 +50,8 @@ export const LearningPatterns = ({
           <Brain className="w-4 h-4 text-accent" />
           <h4 className="font-medium text-foreground">Learning Progress</h4>
         </div>
-        <div className="px-2 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs text-accent font-medium tracking-wide">
-          {Math.round(accuracy * 100)}% • {correctionCount} corrections
+        <div className="px-2 py-1 rounded-full bg-accent/10 border border-accent/20 text-xs text-accent font-medium tracking-wide whitespace-nowrap">
+          {Math.round(accuracy * 100)}% • {correctionCount.toLocaleString()} corrections
         </div>
       </div>
 
@@ -94,8 +94,8 @@ export const LearningPatterns = ({
       )}
 
       {/* Learning Stats */}
-      <div className="text-xs text-muted-foreground/60 border-t border-border/20 pt-2">
-        {correctionCount} corrections • Learning improves over time
+      <div className="text-xs text-muted-foreground/60 border-t border-border/20 pt-2 whitespace-nowrap">
+        {correctionCount.toLocaleString()} corrections • Learning improves over time
       </div>
     </div>
   );

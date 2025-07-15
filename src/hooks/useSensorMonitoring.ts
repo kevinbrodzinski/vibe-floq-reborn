@@ -390,9 +390,10 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       
       setLearningData(newLearningData);
       
-      // Persist learning data cache
+      // Persist learning data cache with schema versioning
       try {
-        localStorage.setItem('vibe_learning_v1', JSON.stringify(newLearningData));
+        const versionedData = { schema: 1, data: newLearningData };
+        localStorage.setItem('vibe_learning_v1', JSON.stringify(versionedData));
       } catch (error) {
         console.warn('Failed to cache learning data:', error);
       }
@@ -405,10 +406,12 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   useEffect(() => {
     const loadLearningData = async () => {
       try {
-        // Try to load cached data first
+        // Try to load cached data first with schema versioning
         const cached = localStorage.getItem('vibe_learning_v1');
         if (cached) {
-          setLearningData(JSON.parse(cached));
+          const parsedData = JSON.parse(cached);
+          // Support both old format and new schema-versioned format
+          setLearningData(parsedData.schema ? parsedData.data : parsedData);
         }
         
         const now = new Date();
@@ -444,9 +447,10 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         
         setLearningData(newLearningData);
         
-        // Update cache if we got new data
-        if (!cached || JSON.stringify(newLearningData) !== cached) {
-          localStorage.setItem('vibe_learning_v1', JSON.stringify(newLearningData));
+        // Update cache if we got new data with schema versioning
+        const versionedData = { schema: 1, data: newLearningData };
+        if (!cached || JSON.stringify(versionedData) !== cached) {
+          localStorage.setItem('vibe_learning_v1', JSON.stringify(versionedData));
         }
       } catch (error) {
         console.error('Failed to load learning data:', error);

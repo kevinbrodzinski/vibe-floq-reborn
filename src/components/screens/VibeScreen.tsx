@@ -76,29 +76,20 @@ export const VibeScreen = () => {
     }
   }, [autoMode]);
 
-  // Dynamic threshold calculation based on personal preferences
-  const getPersonalisedThreshold = useCallback(
-    (suggested: Vibe): number => {
-      const bias = learningData.preferences[suggested] ?? 0;   // −0.3…+0.3
-      // Base 0.50 → as low as 0.25 for strong positive preference,
-      // or as high as 0.65 for strong negative
-      return 0.50 - bias * 0.25;
-    },
-    [learningData.preferences]
-  );
-
   // Auto-apply detected vibe with adaptive threshold
   const applyDetectedVibe = useCallback(() => {
     if (vibeDetection) {
-      const threshold = getPersonalisedThreshold(vibeDetection.suggestedVibe);
+      const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
+      // Base 0.50 → as low as 0.25, capped upper bound at 0.60 to avoid locking out vibes
+      const threshold = Math.min(0.60, Math.max(0.25, 0.50 - bias * 0.25));
       
       if (vibeDetection.confidence >= threshold) {
-        // Throttled debug log for performance analysis (once per session)
-        if (!loggedThisSessionRef.current) {
+        // Throttled debug log with dev guard (once per session)
+        if (import.meta.env.DEV && !loggedThisSessionRef.current) {
           console.info(
             `[VibeAI] applied="${vibeDetection.suggestedVibe}" ` +
             `conf=${vibeDetection.confidence.toFixed(2)} ` +
-            `bias=${(learningData.preferences[vibeDetection.suggestedVibe] ?? 0).toFixed(2)} ` +
+            `bias=${bias.toFixed(2)} ` +
             `threshold=${threshold.toFixed(2)}`
           );
           loggedThisSessionRef.current = true;
@@ -118,7 +109,7 @@ export const VibeScreen = () => {
         }
       }
     }
-  }, [vibeDetection, learningData.preferences, getPersonalisedThreshold, showFeedback]);
+  }, [vibeDetection, learningData.preferences, showFeedback]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -345,29 +336,37 @@ export const VibeScreen = () => {
                   autoMode ? "bg-gradient-secondary" : "bg-gradient-primary"
                 }`}></div>
               </div>
-              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={applyDetectedVibe}
-                    size="sm"
-                    role="button"
-                    aria-label="Apply detected vibe"
-                    className={`text-xs px-3 py-1 h-6 ${
-                      vibeDetection.learningBoost?.boosted 
-                        ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
-                        : ""
-                    }`}
-                    disabled={vibeDetection.confidence < (learningData.preferences[vibeDetection.suggestedVibe] ? 0.50 - (learningData.preferences[vibeDetection.suggestedVibe] || 0) * 0.25 : 0.5)}
-                  >
-                    Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
-                  </Button>
-                  {vibeDetection.learningBoost?.boosted && (
-                    <div className="text-xs text-accent flex items-center gap-1" title="Boosted by your preferences">
-                      💡 <span className="text-[10px] hidden sm:inline">learned</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (() => {
+                const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
+                const threshold = Math.min(0.60, Math.max(0.25, 0.50 - bias * 0.25));
+                
+                return (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={applyDetectedVibe}
+                      size="sm"
+                      role="button"
+                      aria-label="Apply detected vibe"
+                      className={`text-xs px-3 py-1 h-6 ${
+                        vibeDetection.learningBoost?.boosted 
+                          ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
+                          : ""
+                      }`}
+                      disabled={vibeDetection.confidence < threshold}
+                    >
+                      Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
+                    </Button>
+                    {vibeDetection.learningBoost?.boosted && (
+                      <div 
+                        className="text-xs text-accent flex items-center gap-1" 
+                        title={`Boosted by your preferences (+${Math.round(bias * 100)}%)`}
+                      >
+                        💡 <span className="text-[10px] hidden sm:inline">learned</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
