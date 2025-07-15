@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
+import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { UsernameBanner } from "@/components/UsernameBanner";
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
@@ -20,6 +21,9 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const { isDebugPanelOpen, setIsDebugPanelOpen } = useEnvironmentDebug();
+  
+  // Auto-join presence channels for all users
+  usePresenceChannel();
   
   return (
     <QueryClientProvider client={queryClient}>
