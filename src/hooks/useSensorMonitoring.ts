@@ -1,25 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from '@/utils/vibe';
-
-interface SensorData {
-  audioLevel: number; // 0-100
-  lightLevel: number; // 0-100  
-  movement: {
-    intensity: number; // 0-100
-    pattern: 'still' | 'walking' | 'dancing' | 'active';
-    frequency: number; // Hz
-  };
-  location: {
-    context: 'indoor' | 'outdoor' | 'venue' | 'transport' | 'unknown';
-    density: number; // people/km²
-  };
-}
+import { VibeAnalysisEngine, type SensorData, type VibeAnalysisResult } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 
 interface VibeDetection {
   suggestedVibe: Vibe;
   confidence: number; // 0-1
   reasoning: string[];
   sensors: SensorData;
+  alternatives?: Array<{ vibe: Vibe; confidence: number }>;
+  contextFactors?: {
+    temporal: number;
+    environmental: number;
+    personal: number;
+  };
 }
 
 interface SensorPermissions {
@@ -29,6 +22,7 @@ interface SensorPermissions {
 }
 
 export const useSensorMonitoring = (enabled: boolean = false) => {
+  const analysisEngineRef = useRef<VibeAnalysisEngine>(new VibeAnalysisEngine());
   const [sensorData, setSensorData] = useState<SensorData>({
     audioLevel: 0,
     lightLevel: 50, // Default mid-level
@@ -283,87 +277,30 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     }
   }, []);
 
-  // Vibe detection algorithm
-  const detectVibe = useCallback((sensors: SensorData): VibeDetection => {
-    const reasoning: string[] = [];
-    let suggestedVibe: Vibe = 'chill';
-    let confidence = 0;
-
-    const { audioLevel, lightLevel, movement, location } = sensors;
-
-    // Audio-based detection
-    if (audioLevel > 70) {
-      reasoning.push('High audio level detected');
-      confidence += 0.3;
-      if (movement.pattern === 'dancing') {
-        suggestedVibe = 'hype';
-        reasoning.push('Dancing motion with loud music');
-        confidence += 0.4;
-      } else {
-        suggestedVibe = 'social';
-        reasoning.push('Loud environment suggests social setting');
-        confidence += 0.2;
-      }
-    } else if (audioLevel < 20) {
-      reasoning.push('Quiet environment detected');
-      confidence += 0.2;
-      suggestedVibe = movement.intensity > 20 ? 'solo' : 'chill';
-      reasoning.push(`Low activity suggests ${suggestedVibe} vibe`);
-      confidence += 0.2;
+  // Enhanced vibe detection using analysis engine
+  const detectVibe = useCallback(async (sensors: SensorData): Promise<VibeDetection> => {
+    try {
+      const analysisResult = await analysisEngineRef.current.analyzeVibe(sensors);
+      
+      return {
+        suggestedVibe: analysisResult.suggestedVibe,
+        confidence: analysisResult.confidence,
+        reasoning: analysisResult.reasoning,
+        sensors,
+        alternatives: analysisResult.alternatives,
+        contextFactors: analysisResult.contextFactors
+      };
+    } catch (error) {
+      console.error('Vibe analysis failed, falling back to simple detection:', error);
+      
+      // Fallback to simplified detection
+      return {
+        suggestedVibe: 'chill',
+        confidence: 0.3,
+        reasoning: ['Using simplified detection due to analysis error'],
+        sensors
+      };
     }
-
-    // Light-based detection
-    if (lightLevel < 30) {
-      reasoning.push('Low light environment');
-      confidence += 0.1;
-      if (audioLevel > 50) {
-        suggestedVibe = 'romantic';
-        reasoning.push('Dim lighting with music suggests intimate setting');
-        confidence += 0.3;
-      }
-    } else if (lightLevel > 80) {
-      reasoning.push('Bright environment detected');
-      if (movement.intensity > 40) {
-        suggestedVibe = 'open';
-        reasoning.push('Bright and active environment');
-        confidence += 0.2;
-      }
-    }
-
-    // Movement-based detection
-    if (movement.pattern === 'dancing') {
-      suggestedVibe = 'hype';
-      reasoning.push('Dancing motion detected');
-      confidence += 0.4;
-    } else if (movement.pattern === 'walking' && movement.intensity > 30) {
-      suggestedVibe = 'flowing';
-      reasoning.push('Active movement pattern');
-      confidence += 0.3;
-    } else if (movement.pattern === 'still') {
-      if (audioLevel < 30 && lightLevel < 50) {
-        suggestedVibe = 'down';
-        reasoning.push('Still and quiet environment');
-        confidence += 0.3;
-      }
-    }
-
-    // Weird detection (unusual combinations)
-    if ((audioLevel > 60 && movement.pattern === 'still') || 
-        (lightLevel < 20 && movement.pattern === 'dancing' && audioLevel < 40)) {
-      suggestedVibe = 'weird';
-      reasoning.push('Unusual sensor combination detected');
-      confidence += 0.2;
-    }
-
-    // Ensure confidence is between 0-1
-    confidence = Math.min(1, Math.max(0, confidence));
-
-    return {
-      suggestedVibe,
-      confidence,
-      reasoning,
-      sensors
-    };
   }, []);
 
   // Session management with 90-minute auto-expire
@@ -392,8 +329,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   // Update vibe detection when sensor data changes
   useEffect(() => {
     if (enabled && permissions.microphone) {
-      const detection = detectVibe(sensorData);
-      setVibeDetection(detection);
+      detectVibe(sensorData).then(setVibeDetection);
     }
   }, [sensorData, enabled, permissions.microphone, detectVibe]);
 
