@@ -3,12 +3,22 @@ import DeckGL from '@deck.gl/react'
 import { createDeckClusterLayer } from './DeckClusterLayer'
 import { ClusterLegend } from './ClusterLegend'
 import { useClusters } from '@/hooks/useClusters'
+import { scaleSequential } from 'd3-scale'
 import { Button } from '@/components/ui/button'
 import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
 import type { Cluster } from '@/hooks/useClusters'
 
 // Type assertion for DeckGL component
 const DeckGLComponent = DeckGL as any
+
+// Turbo colormap approximation (simplified)
+const interpolateTurbo = (t: number): string => {
+  // Simplified turbo colormap - purple to pink to yellow
+  const r = Math.round(255 * Math.min(1, Math.max(0, 4 * t - 1.5)))
+  const g = Math.round(255 * Math.min(1, Math.max(0, -2 * Math.abs(t - 0.5) + 1)))
+  const b = Math.round(255 * Math.min(1, Math.max(0, -4 * t + 2.5)))
+  return `rgb(${r}, ${g}, ${b})`
+}
 
 const INITIAL_VIEW_STATE = {
   longitude: -122.4,
@@ -53,6 +63,13 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
 
   const { clusters, loading, error } = useClusters(bbox, precision)
 
+  // Color scale based on cluster size
+  const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
+  const colorScale = useMemo(
+    () => scaleSequential((t: number) => interpolateTurbo(t)).domain([0, maxTotal]),
+    [maxTotal]
+  )
+
   const handleClusterClick = useCallback((cluster: Cluster) => {
     setSelectedCluster(cluster)
     setViewState(prev => ({
@@ -64,8 +81,8 @@ export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
   }, [])
 
   const layers = useMemo(() => [
-    createDeckClusterLayer(clusters, handleClusterClick)
-  ], [clusters, handleClusterClick])
+    createDeckClusterLayer(clusters, colorScale, handleClusterClick)
+  ], [clusters, colorScale, handleClusterClick])
 
   // Conditional rendering AFTER all hooks
   if (!isOpen) return null

@@ -1,31 +1,16 @@
 import * as deckLayers from '@deck.gl/layers'
-import { useMemo } from 'react'
-import { scaleSequential } from 'd3-scale'
 import type { Cluster } from '@/hooks/useClusters'
 
 // Extract ScatterplotLayer from deck.gl layers
 const ScatterplotLayer = (deckLayers as any).ScatterplotLayer
 
-// Turbo colormap approximation (simplified)
-const interpolateTurbo = (t: number): string => {
-  // Simplified turbo colormap - purple to pink to yellow
-  const r = Math.round(255 * Math.min(1, Math.max(0, 4 * t - 1.5)))
-  const g = Math.round(255 * Math.min(1, Math.max(0, -2 * Math.abs(t - 0.5) + 1)))
-  const b = Math.round(255 * Math.min(1, Math.max(0, -4 * t + 2.5)))
-  return `rgb(${r}, ${g}, ${b})`
-}
-
 interface Props {
   clusters: Cluster[]
-  onClick?: (cluster: Cluster, info: any) => void
+  colorScale: (n: number) => string
+  onClick?: (cluster: Cluster) => void
 }
 
-export const createDeckClusterLayer = (clusters: Cluster[], onClick?: (cluster: Cluster) => void) => {
-  // Color scale based on cluster size
-  const colorScale = useMemo(() => {
-    const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
-    return scaleSequential((t: number) => interpolateTurbo(t)).domain([0, maxTotal])
-  }, [clusters])
+export const createDeckClusterLayer = (clusters: Cluster[], colorScale: (n: number) => string, onClick?: (cluster: Cluster) => void) => {
 
   return new (ScatterplotLayer as any)({
     id: 'vibe-clusters',
