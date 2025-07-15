@@ -65,6 +65,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const [caret, setCaret] = useState<number>(0);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -80,7 +81,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     [message, caret]
   );
 
-  // Update anchor rect for dropdown
+  // Enhanced caret positioning for dropdowns
   useLayoutEffect(() => {
     if (!activeMention || !textareaRef.current) { 
       setAnchor(null); 
@@ -88,38 +89,71 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     }
     
     const { start } = activeMention;
-    // Create a hidden dummy div to measure caret position
     const ta = textareaRef.current;
     const div = document.createElement('div');
     const style = window.getComputedStyle(ta);
     
-    // Copy textarea styles to measurement div
+    // Enhanced style copying for better accuracy
     const stylesToCopy = [
-      'font', 'padding', 'border', 'boxSizing', 'whiteSpace', 'overflowWrap'
+      'font', 'fontSize', 'fontFamily', 'fontWeight', 'fontStyle',
+      'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+      'border', 'borderWidth', 'borderStyle', 'borderColor',
+      'boxSizing', 'whiteSpace', 'overflowWrap', 'wordWrap',
+      'lineHeight', 'letterSpacing', 'textIndent', 'textTransform'
     ] as const;
     
     for (const prop of stylesToCopy) {
       (div.style as any)[prop] = style[prop];
     }
     
+    // Enhanced positioning setup
     div.style.position = 'absolute';
     div.style.visibility = 'hidden';
     div.style.whiteSpace = 'pre-wrap';
     div.style.wordWrap = 'break-word';
+    div.style.width = style.width;
+    div.style.height = 'auto';
+    div.style.overflow = 'hidden';
+    div.style.pointerEvents = 'none';
+    
+    // Add text content up to caret position
     div.textContent = ta.value.slice(0, start);
     
     document.body.appendChild(div);
-    const rect = div.getBoundingClientRect();
-    const taRect = ta.getBoundingClientRect();
     
-    setAnchor(
-      new DOMRect(
+    try {
+      // Measure text dimensions
+      const rect = div.getBoundingClientRect();
+      const taRect = ta.getBoundingClientRect();
+      
+      // Account for scroll position and zoom level
+      const scrollTop = ta.scrollTop;
+      const zoom = parseFloat(style.zoom || '1');
+      
+      // Calculate line height for better positioning
+      const lineHeight = parseFloat(style.lineHeight) || parseInt(style.fontSize) * 1.2;
+      
+      // Enhanced position calculation
+      const textWidth = rect.width;
+      const textHeight = rect.height;
+      const containerWidth = ta.clientWidth - parseInt(style.paddingLeft) - parseInt(style.paddingRight);
+      
+      const x = taRect.left + (textWidth % containerWidth) + parseInt(style.paddingLeft);
+      const y = taRect.top + textHeight - scrollTop + parseInt(style.paddingTop) + lineHeight * 0.2;
+      
+      setAnchor(new DOMRect(x * zoom, y * zoom, 0, 0));
+    } catch (error) {
+      // Fallback to basic positioning
+      console.warn('Enhanced caret positioning failed, using fallback:', error);
+      const rect = div.getBoundingClientRect();
+      const taRect = ta.getBoundingClientRect();
+      setAnchor(new DOMRect(
         taRect.left + rect.width % taRect.width,
         taRect.top + rect.height,
         0,
         0
-      )
-    );
+      ));
+    }
     
     return () => div.remove();
   }, [activeMention]);
@@ -191,12 +225,20 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
       e.preventDefault();
       if (canSend && !isSending) {
         handleSend();
       }
     }
+  };
+
+  const handleCompositionStart = () => {
+    setIsComposing(true);
+  };
+
+  const handleCompositionEnd = () => {
+    setIsComposing(false);
   };
 
   const handleMentionSelect = (handle: string) => {
@@ -318,6 +360,8 @@ export const FloqChat: React.FC<FloqChatProps> = ({
               }}
               onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)}
               onKeyPress={handleKeyPress}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               placeholder="Type a message..."
               className="min-h-[40px] max-h-[120px] resize-none pr-12"
               disabled={isSending}
