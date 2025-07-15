@@ -22,21 +22,19 @@ export const ConicGradientRing: React.FC<ConicGradientRingProps> = ({
     <svg width={size} height={size} className="absolute inset-0" style={{ transform: 'rotate(-90deg)' }}>
       <defs>
         {mode === 'rainbow' ? (
-          // Rainbow mode: Create individual gradient for each segment
+          // Rainbow mode: Create solid color for each segment (no gradients)
           VIBE_ORDER.map((vibe, index) => {
             const [r, g, b] = VIBE_RGB[vibe];
-            const nextIndex = (index + 1) % VIBE_ORDER.length;
-            const [nr, ng, nb] = VIBE_RGB[VIBE_ORDER[nextIndex]];
             
             return (
-              <linearGradient key={vibe} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
+              <linearGradient key={vibe} id={`segment-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor={`rgb(${r},${g},${b})`} />
-                <stop offset="100%" stopColor={`rgb(${nr},${ng},${nb})`} />
+                <stop offset="100%" stopColor={`rgb(${r},${g},${b})`} />
               </linearGradient>
             );
           })
         ) : (
-          // Solid mode: Single color gradient
+          // Solid mode: Single color
           <linearGradient id="solid-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor={singleColor} />
             <stop offset="100%" stopColor={singleColor} />
@@ -45,7 +43,7 @@ export const ConicGradientRing: React.FC<ConicGradientRingProps> = ({
       </defs>
       
       {mode === 'rainbow' ? (
-        // Rainbow mode: Render each segment with its gradient
+        // Rainbow mode: Render each segment with its solid color (hard cut-offs)
         VIBE_ORDER.map((vibe, index) => {
           const strokeDasharray = `${segmentLength} ${circumference}`;
           const strokeDashoffset = -segmentLength * index;
@@ -57,7 +55,7 @@ export const ConicGradientRing: React.FC<ConicGradientRingProps> = ({
               cy={size / 2}
               r={radius}
               fill="none"
-              stroke={`url(#gradient-${index})`}
+              stroke={`url(#segment-${index})`}
               strokeWidth={strokeWidth}
               strokeDasharray={strokeDasharray}
               strokeDashoffset={strokeDashoffset}
