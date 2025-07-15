@@ -32,9 +32,9 @@ export function useFloqSearch(
       return (data ?? []).map(floq => ({
         ...floq,
         friendsGoing: {
-          count: floq.friends_going_count,
-          avatars: floq.friends_going_avatars,
-          names: floq.friends_going_names,
+          count: floq.friends_going_count || 0,
+          avatars: floq.friends_going_avatars || [],
+          names: floq.friends_going_names || [],
         },
       })) as FloqSearchResult[];
     },

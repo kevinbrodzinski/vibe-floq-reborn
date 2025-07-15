@@ -197,7 +197,10 @@ export function SearchBarWithTypeahead({
                   
                   {/* Friends Going Badge */}
                   {suggestion.friendsGoing?.count > 0 && (
-                    <div className="flex items-center gap-1 text-xs font-medium text-primary mb-1">
+                    <div 
+                      className="flex items-center gap-1 text-xs font-medium text-primary mb-1"
+                      aria-label={`${suggestion.friendsGoing.count} friend${suggestion.friendsGoing.count > 1 ? 's' : ''} going`}
+                    >
                       <Users className="h-3 w-3 shrink-0" />
                       {suggestion.friendsGoing.count === 1
                         ? '1 friend going'

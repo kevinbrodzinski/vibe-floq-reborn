@@ -237,7 +237,10 @@ export const FloqCard = React.memo<FloqCardProps>(({
 
           {/* Friends Going Badge */}
           {floq.friendsGoing?.count > 0 && (
-            <div className="mt-1 flex items-center gap-1 text-xs font-medium text-blue-400">
+            <div 
+              className="mt-1 flex items-center gap-1 text-xs font-medium text-blue-400"
+              aria-label={`${floq.friendsGoing.count} friend${floq.friendsGoing.count > 1 ? 's' : ''} going`}
+            >
               <Users className="h-3 w-3 shrink-0" />
               {floq.friendsGoing.count === 1
                 ? '1 friend going'
