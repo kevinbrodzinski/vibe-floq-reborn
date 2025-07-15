@@ -14,6 +14,7 @@ import { useClusters } from "@/hooks/useClusters";
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
+import { useVibe } from "@/lib/store/useVibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
 type VisibilityState = "public" | "friends" | "off";
@@ -26,7 +27,7 @@ interface VibeInfo {
 
 export const VibeScreen = () => {
   const { user } = useAuth();
-  const [selectedVibe, setSelectedVibe] = useState<VibeState>("chill");
+  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating } = useVibe();
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [activeDuration, setActiveDuration] = useState(37);
@@ -91,8 +92,8 @@ export const VibeScreen = () => {
     ];
   };
 
-  const handleVibeSelect = useCallback((vibe: VibeState) => {
-    setSelectedVibe(vibe);
+  const handleVibeSelect = useCallback(async (vibe: VibeState) => {
+    await setSelectedVibe(vibe);
     // Turn off auto mode when manually selecting
     if (autoMode) {
       setAutoMode(false);
@@ -101,10 +102,10 @@ export const VibeScreen = () => {
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
-  }, [autoMode]);
+  }, [autoMode, setSelectedVibe]);
 
   // Auto-apply detected vibe with adaptive threshold
-  const applyDetectedVibe = useCallback(() => {
+  const applyDetectedVibe = useCallback(async () => {
     if (vibeDetection) {
       const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
       // Base 0.50 → as low as 0.25, capped upper bound at 0.60 to avoid locking out vibes
@@ -125,7 +126,7 @@ export const VibeScreen = () => {
         // Only apply if it's a valid VibeState
         const vibeAsState = vibeDetection.suggestedVibe as VibeState;
         if (vibes[vibeAsState]) {
-          setSelectedVibe(vibeAsState);
+          await setSelectedVibe(vibeAsState);
           // Debounce feedback banner to prevent double-shows
           if (!showFeedback) {
             setShowFeedback(true);
@@ -136,7 +137,7 @@ export const VibeScreen = () => {
         }
       }
     }
-  }, [vibeDetection, learningData.preferences, showFeedback]);
+  }, [vibeDetection, learningData.preferences, showFeedback, setSelectedVibe]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -171,7 +172,7 @@ export const VibeScreen = () => {
     setIsLearning(true);
     try {
       await recordFeedback(false, correctedVibe);
-      setSelectedVibe(correctedVibe as VibeState);
+      await setSelectedVibe(correctedVibe as VibeState);
       // Small delay to show completion before hiding with cleanup
       feedbackTimeoutRef.current = setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
@@ -276,20 +277,7 @@ export const VibeScreen = () => {
   }, [updateVisibility]);
 
   const handleApplySuggestion = useCallback(async (suggestion: any) => {
-    handleVibeSelect(suggestion.vibe as VibeState);
-    
-    // Update user vibe in database
-    try {
-      const { error } = await supabase.rpc('set_user_vibe', { 
-        new_vibe: suggestion.vibe 
-      });
-      if (error) {
-        console.error('Failed to update vibe:', error);
-      }
-    } catch (error) {
-      console.error('Error updating vibe:', error);
-    }
-    
+    await handleVibeSelect(suggestion.vibe as VibeState);
     applyVibe(suggestion);
   }, [handleVibeSelect, applyVibe]);
 
