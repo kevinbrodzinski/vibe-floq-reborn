@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
+import { VibeDensityMap } from "@/components/map/VibeDensityMap";
 import type { Vibe } from "@/utils/vibe";
 
 type VibeState = "hype" | "social" | "romantic" | "weird" | "open" | "flowing" | "down" | "solo" | "chill";
@@ -29,6 +30,7 @@ export const VibeScreen = () => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
+  const [showDensityMap, setShowDensityMap] = useState(false);
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loggedThisSessionRef = useRef<boolean>(false);
   const dialRef = useRef<HTMLDivElement>(null);
@@ -497,6 +499,7 @@ export const VibeScreen = () => {
       <div className="px-6 mb-6">
         <div className={`relative ${showPulse ? "animate-[pulseOnce_2s_ease-out] motion-reduce:animate-none" : ""}`}>
           <button 
+            onClick={() => setShowDensityMap(true)}
             className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
               showPulse 
                 ? "border-accent/50 ring-2 ring-accent/30 shadow-[0_0_20px_hsl(var(--accent)/30)]" 
@@ -516,13 +519,20 @@ export const VibeScreen = () => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-accent">4 matches</div>
-                <div className="text-xs text-muted-foreground">2mi radius</div>
+                <div className="text-sm font-medium text-accent">Live</div>
+                <div className="text-xs text-muted-foreground">Real-time vibes</div>
               </div>
             </div>
           </button>
         </div>
       </div>
+
+      {/* Density Map Modal */}
+      <VibeDensityMap
+        isOpen={showDensityMap}
+        onClose={() => setShowDensityMap(false)}
+        userLocation={null} // TODO: Add user location when available
+      />
 
       {/* Mini Vibe Card */}
       <div className="fixed bottom-20 left-6 right-6">
