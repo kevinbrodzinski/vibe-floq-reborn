@@ -17,6 +17,11 @@ export interface EnvironmentConfig {
   enablePresenceUpdates: boolean;
   hotSpotHalos: boolean;
   
+  // Smart Social Suggestions flags
+  smartSocialSuggestions: boolean;
+  socialPingFlow: boolean;
+  defaultPrivacyMode: 'off' | 'recs-only' | 'precise';
+  
   // Debug flags
   debugPresence: boolean;
   debugGeohash: boolean;
@@ -115,6 +120,18 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     enableGeolocation: presenceMode !== 'offline',
     enablePresenceUpdates: presenceMode === 'live',
     hotSpotHalos: import.meta.env.VITE_HOTSPOT_HALOS === 'true' || false,
+    
+    // Smart Social Suggestions flags - default enabled in dev
+    smartSocialSuggestions: !import.meta.env.PROD || 
+      urlParams.has('social_suggestions') || 
+      localConfig.smartSocialSuggestions === true,
+    socialPingFlow: !import.meta.env.PROD || 
+      urlParams.has('social_ping') || 
+      localConfig.socialPingFlow === true,
+    defaultPrivacyMode: (urlParams.get('privacy_mode') as any) || 
+      localConfig.defaultPrivacyMode || 
+      'recs-only',
+    
     debugPresence,
     debugGeohash,
     debugNetwork,
@@ -232,11 +249,17 @@ export function getProductionConfig(): EnvironmentConfig {
     enableGeolocation: true,
     enablePresenceUpdates: true,
     hotSpotHalos: true, // Enable in production
+    
+    // Smart Social Suggestions - 10% rollout in production
+    smartSocialSuggestions: false, // Controlled by rollout
+    socialPingFlow: false, // Controlled by rollout  
+    defaultPrivacyMode: 'recs-only',
+    
     debugPresence: false,
     debugGeohash: false,
     debugNetwork: false,
     presenceUpdateInterval: 15000, // 15 seconds for production
     presenceRetryDelay: 5000,
-    rolloutPercentage: 100, // 100% rollout for TestFlight
+    rolloutPercentage: 10, // 10% rollout for social features
   };
 }
