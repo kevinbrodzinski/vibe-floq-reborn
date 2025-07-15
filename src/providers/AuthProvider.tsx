@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
-import { nanoid } from 'nanoid';
+import slugify from 'slugify';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -38,73 +38,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Ensure profile exists for authenticated user
-        if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(async () => {
-            try {
-              // Check if profile already exists
-              const { data: existingProfile, error: fetchError } = await supabase
-                .from('profiles')
-                .select('id, username')
-                .eq('id', session.user.id)
-                .maybeSingle();
-              
-              if (fetchError) {
-                console.error('Error fetching profile:', fetchError);
-                return;
-              }
-              
-              // If profile exists, just cache it and don't modify
-              if (existingProfile) {
-                queryClient.setQueryData(['profile', session.user.id], existingProfile);
-                return;
-              }
-              
-              // Only create new profile if one doesn't exist
-              const emailPrefix = session.user.email?.split('@')[0] || 'user';
-              const tempUsername = `${emailPrefix.slice(0, 25)}_${nanoid(6)}`.toLowerCase();
-              
-              const profileData = {
-                id: session.user.id,
-                username: tempUsername,
-                display_name: 'New User',   // placeholder; UI will prompt for full name
-                full_name: null
-              };
+        // Only handle profile creation for authenticated users
+        if (!session?.user) return;
 
-              const { data, error } = await supabase
-                .from('profiles')
-                .insert(profileData)
-                .select()
-                .single();
-              
-              if (error) {
-                // Handle unique violations with retry
-                if (error.code === '23505') {
-                  const fallbackUsername = `user_${nanoid(10)}`.toLowerCase();
-                  const { data: retryData, error: retryError } = await supabase
-                    .from('profiles')
-                    .insert({
-                      ...profileData,
-                      username: fallbackUsername
-                    })
-                    .select()
-                    .single();
-                  
-                  if (!retryError && retryData) {
-                    queryClient.setQueryData(['profile', session.user.id], retryData);
-                  } else {
-                    console.error('Profile creation retry failed:', retryError);
-                  }
-                } else {
-                  console.error('Profile creation error:', error);
-                }
-              } else if (data) {
-                queryClient.setQueryData(['profile', session.user.id], data);
-              }
-            } catch (err) {
-              console.error('Profile operation failed:', err);
-            }
-          }, 0);
+        const user = session.user;
+        
+        // Check if profile already exists
+        const { data: existing, error: selErr } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (selErr) {
+          console.error("[Auth] profile lookup failed", selErr);
+          return;
+        }
+
+        // Only create if profile doesn't exist
+        if (!existing) {
+          // Generate a safe username once
+          const base = slugify(user.email?.split("@")[0] ?? "user", {
+            lower: true,
+            strict: true,
+          });
+          // Append 4-char hash to avoid collisions
+          const username = `${base}_${user.id.slice(0, 4)}`;
+
+          const { data, error: insErr } = await supabase.from("profiles").insert({
+            id: user.id,
+            display_name: user.user_metadata?.full_name ?? base,
+            avatar_url: user.user_metadata?.avatar_url ?? null,
+            username,
+          }).select().single();
+
+          if (insErr) {
+            console.error("[Auth] profile insert failed", insErr);
+          } else if (data) {
+            // Cache the new profile
+            queryClient.setQueryData(['profile', user.id], data);
+          }
+        } else {
+          // Profile exists, just cache it
+          queryClient.setQueryData(['profile', user.id], existing);
         }
       }
     );
@@ -117,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   return (
     <AuthContext.Provider value={{ user, session, loading }}>
