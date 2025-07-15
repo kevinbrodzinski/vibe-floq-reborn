@@ -27,15 +27,15 @@ export const VIBE_COLORS: Record<VibeEnum, string> = {
 };
 
 export const VIBE_RGB: Record<VibeEnum, [number, number, number]> = {
-  chill:    [76, 146, 255],
-  flowing:  [0, 194, 209],
-  romantic: [255, 99, 199],
-  hype:     [255, 71, 87],
-  weird:    [255, 214, 10],
-  solo:     [142, 142, 147],
-  social:   [0, 122, 255],
-  open:     [175, 82, 222],
-  down:     [88, 86, 214],
+  chill:   [ 76, 146, 255],
+  flowing: [  0, 194, 209],
+  romantic:[255,  99, 199],
+  hype:    [255,  71,  87],
+  weird:   [167,  80, 255],
+  solo:    [142, 142, 147],
+  social:  [ 35, 209,  96],
+  open:    [175,  82, 222],
+  down:    [ 88,  86, 214],
 };
 
 export const VIBE_OPTIONS: VibeEnum[] = [...VIBE_ORDER];
