@@ -35,7 +35,7 @@ export function renderMentions(
   text: string,
   linkRenderer: (handle: string) => JSX.Element
 ): (string | JSX.Element)[] {
-  const parts = text.split(MENTION_REGEX);
+  const parts = React.useMemo(() => text.split(MENTION_REGEX), [text]);
   return parts.map((part, i) =>
     i % 2 === 1 ? (
       React.createElement(React.Fragment, { key: i }, linkRenderer(part))

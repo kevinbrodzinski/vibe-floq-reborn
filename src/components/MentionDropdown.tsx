@@ -2,7 +2,7 @@ import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMentionSearch } from '@/hooks/useMentionSearch';
 import { getAvatarUrl } from '@/lib/avatar';
 
@@ -20,11 +20,44 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
   onClose,
 }) => {
   const { data = [], isFetching } = useMentionSearch(query);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    cardRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [data]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((i) => (i + 1) % data.length);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((i) => (i - 1 + data.length) % data.length);
+    }
+    if (e.key === 'Enter' && data[selectedIndex]) {
+      e.preventDefault();
+      onSelect(data[selectedIndex].username);
+      onClose();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+    }
+  };
 
   if (!anchorRect || (!isFetching && data.length === 0)) return null;
 
   return (
     <Card
+      ref={cardRef}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
       style={{
         position: 'fixed',
         top: anchorRect.bottom + 4,
@@ -37,11 +70,12 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
     >
       <ScrollArea className="h-full w-full">
         <CardContent className="p-0 divide-y divide-border">
-          {data.map((profile) => (
+          {data.map((profile, index) => (
             <button
               key={profile.id}
               className={cn(
-                'w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left'
+                'w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left',
+                selectedIndex === index && 'bg-muted/50'
               )}
               onClick={() => {
                 onSelect(profile.username);

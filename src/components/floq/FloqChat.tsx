@@ -121,7 +121,7 @@ export const FloqChat: React.FC<FloqChatProps> = ({
       )
     );
     
-    document.body.removeChild(div);
+    return () => div.remove();
   }, [activeMention]);
 
   // Derive canSend from props and state with fallback for edge cases
