@@ -9,9 +9,6 @@ export interface Cluster {
   vibe_counts: Record<string, number>
 }
 
-// Keep last fetch for delta tracking
-const lastDataRef = useRef<Cluster[]>([])
-
 export const useClusters = (
   bbox: [number, number, number, number] | null,
   precision = 6
@@ -20,6 +17,7 @@ export const useClusters = (
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | undefined>(undefined)
+  const lastDataRef = useRef<Cluster[]>([]) // Move this inside the hook
 
   const fetchClusters = useCallback(
     async (box: [number, number, number, number]) => {
