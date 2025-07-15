@@ -63,7 +63,8 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
-          autoGainControl: true // Enable for Android hardware stability
+          autoGainControl: false,    // Safari / iOS flag
+          googAutoGainControl: false // Chromium / Android flag
         }
       });
       newPermissions.microphone = true;
