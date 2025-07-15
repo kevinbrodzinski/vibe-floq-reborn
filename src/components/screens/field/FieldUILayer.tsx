@@ -7,6 +7,7 @@ import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
 import { SocialToastProvider } from "@/components/social/SocialToast";
+import { LocationDisplay } from "@/components/LocationDisplay";
 import { Z } from "@/constants/zLayers";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
@@ -100,11 +101,26 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
         >
           <FieldHeader 
-            locationReady={locationDisplay.isReady} 
-            currentLocation={locationDisplay.displayText}
-            lastHeartbeat={lastHeartbeat}
             venueCount={nearbyVenues?.length || 0}
             onOpenVenues={() => setVenuesSheetOpen(true)}
+          />
+        </motion.div>
+      )}
+
+      {/* Location Display - below header */}
+      {!isFull && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="absolute top-16 left-0 right-0 px-6 pt-2 pointer-events-auto"
+          style={{ zIndex: Z.header - 1 }}
+        >
+          <LocationDisplay
+            locationText={locationDisplay.displayText}
+            isReady={locationDisplay.isReady}
+            isLoading={locationDisplay.isLoading}
+            lastHeartbeat={lastHeartbeat}
           />
         </motion.div>
       )}

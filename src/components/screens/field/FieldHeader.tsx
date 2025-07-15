@@ -9,27 +9,21 @@ import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 
 interface FieldHeaderProps {
-  locationReady?: boolean;
-  currentLocation?: string;
   className?: string;
   style?: React.CSSProperties;
   onNavigate?: () => void;
   showMiniMap?: boolean;
   onToggleMiniMap?: () => void;
-  lastHeartbeat?: number;
   venueCount?: number;
   onOpenVenues?: () => void;
 }
 
 export const FieldHeader = ({ 
-  locationReady = false, 
-  currentLocation = "Locating...",
   className,
   style,
   onNavigate,
   showMiniMap,
   onToggleMiniMap,
-  lastHeartbeat,
   venueCount = 0,
   onOpenVenues
 }: FieldHeaderProps) => {
@@ -46,25 +40,8 @@ export const FieldHeader = ({
       )}
       style={style}
     >
-      {/* Left: Location */}
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className={cn(
-          "flex items-center space-x-2 text-foreground/80 hover:text-foreground",
-          "hover:bg-accent/50 transition-all duration-200",
-          "min-h-[44px] px-3" // Touch-friendly
-        )}
-      >
-        {locationReady ? (
-          <MapPin className="w-4 h-4 text-primary" />
-        ) : (
-          <Compass className="w-4 h-4 text-muted-foreground animate-spin" />
-        )}
-        <span className="text-sm font-medium truncate max-w-[120px]">
-          {currentLocation}
-        </span>
-      </Button>
+      {/* Left: Empty space for balance */}
+      <div className="w-[120px]" />
       
       {/* Center: Logo */}
       <div 
