@@ -2657,9 +2657,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           friend_id: string
-          display_name: string
-          avatar_url: string
           username: string
+          avatar_url: string
+          display_name: string
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
           started_at: string
           online: boolean
