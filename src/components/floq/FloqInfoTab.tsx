@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Clock, MapPin, Users, Calendar, Activity } from 'lucide-react';
 import { formatTimeFromNow } from '@/lib/dateUtils';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
@@ -68,10 +69,18 @@ export const FloqInfoTab: React.FC<FloqInfoTabProps> = ({ floqDetails }) => {
             </div>
           )}
           
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">📍 View on map</span>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex items-center gap-2 text-sm h-auto p-0 justify-start text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              // TODO: Open map view
+              console.log('Open map for floq location');
+            }}
+          >
+            <MapPin className="h-4 w-4" />
+            <span>📍 View on map</span>
+          </Button>
           
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />

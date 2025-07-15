@@ -14,6 +14,9 @@ import { FloqAnalyticsDashboard } from '@/components/floq/FloqAnalyticsDashboard
 import { FloqInfoTab } from '@/components/floq/FloqInfoTab';
 import { FloqPlansTab } from '@/components/floq/FloqPlansTab';
 import { FloqChat } from '@/components/floq/FloqChat';
+import { FloqActivityFeed } from '@/components/floq/FloqActivityFeed';
+
+const VALID_TABS = ['info', 'activity', 'chat', 'plans', 'analytics', 'settings'];
 
 const FloqDetails = () => {
   const { floqId } = useParams<{ floqId: string }>();
@@ -25,7 +28,7 @@ const FloqDetails = () => {
   // Handle deep-link tab selection
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['info', 'chat', 'plans', 'analytics', 'settings'].includes(tabParam)) {
+    if (tabParam && VALID_TABS.includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -111,7 +114,7 @@ const FloqDetails = () => {
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger 
               value="info" 
               className="flex items-center gap-2"
@@ -120,6 +123,16 @@ const FloqDetails = () => {
               <Info className="h-4 w-4" />
               <span className="hidden sm:inline">Info</span>
             </TabsTrigger>
+            {hasAccess && (
+              <TabsTrigger 
+                value="activity" 
+                className="flex items-center gap-2"
+                aria-current={activeTab === 'activity' ? 'page' : undefined}
+              >
+                <Activity className="h-4 w-4" />
+                <span className="hidden sm:inline">Activity</span>
+              </TabsTrigger>
+            )}
             {hasAccess && (
               <TabsTrigger 
                 value="chat" 
@@ -167,6 +180,12 @@ const FloqDetails = () => {
             <TabsContent value="info" className="mt-0">
               <FloqInfoTab floqDetails={floqDetails} />
             </TabsContent>
+
+            {hasAccess && (
+              <TabsContent value="activity" className="mt-0">
+                <FloqActivityFeed floqId={floqDetails.id} />
+              </TabsContent>
+            )}
 
             {hasAccess && (
               <TabsContent value="chat" className="mt-0">
