@@ -30,11 +30,11 @@ CREATE TABLE IF NOT EXISTS public.message_mentions (
 -- ╰─────────────────────────────────────────────────────────╯
 
 -- Index for efficient "who mentioned me?" queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_message_mentions_user
+CREATE INDEX IF NOT EXISTS idx_message_mentions_user
   ON public.message_mentions (mentioned_user);
 
 -- Index for efficient "who did this message mention?" queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_message_mentions_msg
+CREATE INDEX IF NOT EXISTS idx_message_mentions_msg
   ON public.message_mentions (message_id);
 
 -- ╭─────────────────────────────────────────────────────────╮
