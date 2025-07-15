@@ -2,6 +2,8 @@ import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FloqMessage } from '@/hooks/useFloqChat';
 import { cn } from '@/lib/utils';
+import { renderMentions } from '@/utils/mentions';
+import { Link } from 'react-router-dom';
 
 interface MessageBubbleProps {
   message: FloqMessage;
@@ -49,7 +51,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         {message.emoji ? (
           <span className="text-2xl">{message.emoji}</span>
         ) : (
-          <p className="text-sm whitespace-pre-wrap">{message.body}</p>
+          <p className="text-sm whitespace-pre-wrap">
+            {renderMentions(message.body || '', (handle) => (
+              <Link
+                to={`/u/${handle}`}
+                className="font-medium text-primary hover:underline"
+              >
+                @{handle}
+              </Link>
+            ))}
+          </p>
         )}
       </div>
       

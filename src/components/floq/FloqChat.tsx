@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useLayoutEffect } from 'react';
 import { Send, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -10,6 +10,8 @@ import { MessageBubble } from './MessageBubble';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { getActiveMention, insertMention } from '@/utils/mentions';
+import { MentionDropdown } from '@/components/MentionDropdown';
 
 interface FloqChatProps {
   floqId: string;
@@ -60,6 +62,8 @@ export const FloqChat: React.FC<FloqChatProps> = ({
     );
   }
   const [message, setMessage] = useState('');
+  const [caret, setCaret] = useState<number>(0);
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -69,6 +73,56 @@ export const FloqChat: React.FC<FloqChatProps> = ({
   const { messages, hasNextPage, fetchNextPage, isLoading, sendMessage, isSending } = useFloqChat(floqId);
 
   const track = useActivityTracking(floqId);
+
+  // Detect active @mention as user types
+  const activeMention = useMemo(
+    () => getActiveMention(message, caret),
+    [message, caret]
+  );
+
+  // Update anchor rect for dropdown
+  useLayoutEffect(() => {
+    if (!activeMention || !textareaRef.current) { 
+      setAnchor(null); 
+      return; 
+    }
+    
+    const { start } = activeMention;
+    // Create a hidden dummy div to measure caret position
+    const ta = textareaRef.current;
+    const div = document.createElement('div');
+    const style = window.getComputedStyle(ta);
+    
+    // Copy textarea styles to measurement div
+    const stylesToCopy = [
+      'font', 'padding', 'border', 'boxSizing', 'whiteSpace', 'overflowWrap'
+    ] as const;
+    
+    for (const prop of stylesToCopy) {
+      (div.style as any)[prop] = style[prop];
+    }
+    
+    div.style.position = 'absolute';
+    div.style.visibility = 'hidden';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordWrap = 'break-word';
+    div.textContent = ta.value.slice(0, start);
+    
+    document.body.appendChild(div);
+    const rect = div.getBoundingClientRect();
+    const taRect = ta.getBoundingClientRect();
+    
+    setAnchor(
+      new DOMRect(
+        taRect.left + rect.width % taRect.width,
+        taRect.top + rect.height,
+        0,
+        0
+      )
+    );
+    
+    document.body.removeChild(div);
+  }, [activeMention]);
 
   // Derive canSend from props and state with fallback for edge cases
   const hasContent = !!message.trim() && message.trim().length > 0;
@@ -143,6 +197,13 @@ export const FloqChat: React.FC<FloqChatProps> = ({
         handleSend();
       }
     }
+  };
+
+  const handleMentionSelect = (handle: string) => {
+    if (!activeMention) return;
+    const newVal = insertMention(message, { ...activeMention, handle });
+    setMessage(newVal + ' ');                     // trailing space
+    setTimeout(() => textareaRef.current?.focus(), 0);
   };
 
 
@@ -251,7 +312,11 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             <Textarea
               ref={textareaRef}
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                setCaret(e.target.selectionStart);
+              }}
+              onKeyUp={(e) => setCaret(e.currentTarget.selectionStart)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               className="min-h-[40px] max-h-[120px] resize-none pr-12"
@@ -280,6 +345,16 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             )}
           </div>
         </div>
+        
+        {/* Mention Autocomplete */}
+        {activeMention && (
+          <MentionDropdown
+            anchorRect={anchor}
+            query={activeMention.handle}
+            onSelect={handleMentionSelect}
+            onClose={() => setAnchor(null)}
+          />
+        )}
       </div>
     </div>
   );
