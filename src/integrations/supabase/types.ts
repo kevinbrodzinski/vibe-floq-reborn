@@ -3158,7 +3158,15 @@ export type Database = {
           lat?: number
           lng?: number
         }
-        Returns: undefined
+        Returns: {
+          active: boolean | null
+          gh5: string | null
+          location: unknown | null
+          started_at: string
+          user_id: string
+          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
+          visible_to: string | null
+        }
       }
       should_log_presence: {
         Args: { p_user: string; p_loc: unknown; p_now?: string }
