@@ -2791,6 +2791,27 @@ export type Database = {
           starts_at: string
         }[]
       }
+      search_floqs: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_km?: number
+          p_query?: string
+          p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+          p_time_from?: string
+          p_time_to?: string
+          p_limit?: number
+        }
+        Returns: {
+          id: string
+          title: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          starts_at: string
+          ends_at: string
+          distance_m: number
+          participant_count: number
+        }[]
+      }
       search_users: {
         Args: { p_query: string; p_limit?: number } | { search_query: string }
         Returns: {
