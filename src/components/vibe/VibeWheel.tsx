@@ -97,8 +97,11 @@ export const VibeWheel = memo(() => {
       className="relative w-[280px] h-[280px] mx-auto"
       style={{ touchAction: 'none' }}
     >
-      {/* Conic gradient ring with proper color segments */}
-      <ConicGradientRing />
+      {/* Flexible gradient ring - easy to toggle between rainbow and solid modes */}
+      <ConicGradientRing 
+        mode="rainbow" 
+        singleColor={currentColor}
+      />
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
       {VIBE_ORDER.map((vibe, index) => {
