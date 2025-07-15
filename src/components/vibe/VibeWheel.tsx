@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { useVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_RGB, VibeEnum } from '@/constants/vibes';
 import { VIBE_DESCRIPTIONS } from '@/constants/vibeDescriptions';
-import { ConicGradientRing } from './ConicGradientRing';
+import { RingGradient } from './ConicGradientRing';
 
 // Web-compatible haptics helper
 const triggerHaptic = () => {
@@ -97,10 +97,12 @@ export const VibeWheel = memo(() => {
       className="relative w-[280px] h-[280px] mx-auto"
       style={{ touchAction: 'none' }}
     >
-      {/* Flexible gradient ring - easy to toggle between rainbow and solid modes */}
-      <ConicGradientRing 
+      {/* Cross-platform gradient ring with proper masking */}
+      <RingGradient 
         mode="rainbow" 
         singleColor={currentColor}
+        size={280}
+        strokeWidth={6}
       />
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
@@ -137,14 +139,23 @@ export const VibeWheel = memo(() => {
         );
       })}
       
-      {/* Center content with vibe name and description */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+      {/* Center content with vibe name and description - non-blocking */}
+      <div 
+        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+        style={{ pointerEvents: 'none' }}
+      >
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-white capitalize mb-1">
-            {current || 'Select'}
+          <h2 
+            className="text-3xl font-bold text-white capitalize mb-1"
+            style={{ fontSize: 24, fontWeight: '700', color: '#fff' }}
+          >
+            {current?.toUpperCase() ?? 'SELECT'}
           </h2>
           {current && (
-            <p className="text-sm text-white/70 font-medium">
+            <p 
+              className="text-sm text-white/70 font-medium max-w-40 text-center"
+              style={{ fontSize: 12, color: '#ccc', textAlign: 'center', maxWidth: 160 }}
+            >
               {VIBE_DESCRIPTIONS[current]}
             </p>
           )}
