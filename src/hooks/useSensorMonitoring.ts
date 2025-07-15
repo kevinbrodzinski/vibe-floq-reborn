@@ -59,13 +59,13 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
     // Request microphone permission - iOS compliant wording
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,    // Safari / iOS flag
           googAutoGainControl: false // Chromium / Android flag
-        }
+        } as MediaTrackConstraints
       });
       newPermissions.microphone = true;
       streamRef.current = stream;
