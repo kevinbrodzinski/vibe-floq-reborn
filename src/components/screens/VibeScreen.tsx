@@ -50,7 +50,7 @@ export const VibeScreen = () => {
   const { clusters, loading, isRealTimeConnected, lastUpdateTime } = useClusters(bbox, 6);
   
   // Smart suggestions based on nearby clusters
-  const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions(clusters, userLocation);
+  const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions();
   
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
