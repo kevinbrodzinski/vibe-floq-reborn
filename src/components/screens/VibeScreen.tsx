@@ -74,19 +74,24 @@ export const VibeScreen = () => {
     }
   }, [autoMode]);
 
-  // Auto-apply detected vibe
+  // Auto-apply detected vibe with adaptive threshold
   const applyDetectedVibe = useCallback(() => {
-    if (vibeDetection && vibeDetection.confidence > 0.5) {
-      // Only apply if it's a valid VibeState
-      const vibeAsState = vibeDetection.suggestedVibe as VibeState;
-      if (vibes[vibeAsState]) {
-        setSelectedVibe(vibeAsState);
-        // Debounce feedback banner to prevent double-shows
-        if (!showFeedback) {
-          setShowFeedback(true);
-        }
-        if (navigator.vibrate) {
-          navigator.vibrate([50, 100, 50]);
+    if (vibeDetection) {
+      // Lower threshold for learned preferences (0.5 → 0.35 for boosted vibes)
+      const threshold = vibeDetection.learningBoost?.boosted ? 0.35 : 0.5;
+      
+      if (vibeDetection.confidence > threshold) {
+        // Only apply if it's a valid VibeState
+        const vibeAsState = vibeDetection.suggestedVibe as VibeState;
+        if (vibes[vibeAsState]) {
+          setSelectedVibe(vibeAsState);
+          // Debounce feedback banner to prevent double-shows
+          if (!showFeedback) {
+            setShowFeedback(true);
+          }
+          if (navigator.vibrate) {
+            navigator.vibrate([50, 100, 50]);
+          }
         }
       }
     }
@@ -309,14 +314,25 @@ export const VibeScreen = () => {
                 }`}></div>
               </div>
               {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (
-                <Button
-                  onClick={applyDetectedVibe}
-                  size="sm"
-                  className="mt-2 text-xs px-3 py-1 h-6"
-                  disabled={vibeDetection.confidence < 0.5}
-                >
-                  Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={applyDetectedVibe}
+                    size="sm"
+                    className={`text-xs px-3 py-1 h-6 ${
+                      vibeDetection.learningBoost?.boosted 
+                        ? "bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
+                        : ""
+                    }`}
+                    disabled={vibeDetection.confidence < (vibeDetection.learningBoost?.boosted ? 0.35 : 0.5)}
+                  >
+                    Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
+                  </Button>
+                  {vibeDetection.learningBoost?.boosted && (
+                    <div className="text-xs text-accent flex items-center gap-1" title="Boosted by your preferences">
+                      💡 <span className="text-[10px]">learned</span>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -345,6 +361,7 @@ export const VibeScreen = () => {
             onCorrect={handleCorrectFeedback}
             onClose={handleCloseFeedback}
             isProcessing={isLearning}
+            learningBoost={vibeDetection.learningBoost}
           />
         </div>
       )}

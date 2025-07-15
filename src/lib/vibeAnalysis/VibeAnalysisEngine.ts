@@ -20,20 +20,25 @@ export interface SensorData {
 
 export interface VibeAnalysisResult {
   suggestedVibe: Vibe;
-  confidence: number; // 0-1
+  confidence: number;
   reasoning: string[];
   alternatives: Array<{ vibe: Vibe; confidence: number }>;
   contextFactors: {
-    temporal: number; // 0-1 temporal relevance
-    environmental: number; // 0-1 environmental match
-    personal: number; // 0-1 personal pattern match
+    temporal: number;
+    environmental: number;
+    personal: number;
   };
   sensorQuality: {
-    overall: number; // 0-1
     audio: number;
     motion: number;
     light: number;
     location: number;
+    overall: number;
+  };
+  learningBoost?: {
+    boosted: boolean;
+    boostFactor: number;
+    originalConfidence: number;
   };
 }
 
@@ -93,7 +98,7 @@ export class VibeAnalysisEngine {
     // Step 4: Multi-dimensional vibe classification
     const vibeScores = this.calculateVibeScores(fusionResult, temporalFactors, personalFactors);
     
-    // Step 5: Calculate confidence and alternatives
+    // Step 5: Calculate confidence and alternatives with personal boosts
     const confidenceResult = this.confidenceCalculator.calculateConfidence(
       vibeScores,
       fusionResult.quality,
@@ -101,17 +106,27 @@ export class VibeAnalysisEngine {
       personalFactors
     );
     
+    // Apply personal preference boost to confidence
+    const personalBoost = personalFactors.vibePreferences[confidenceResult.primaryVibe] || 0;
+    const hasPersonalBoost = personalBoost > 0.1; // Significant personal preference
+    
+    // Lower threshold for learned preferences (0.5 → 0.3-0.4)
+    const adjustedConfidence = hasPersonalBoost 
+      ? Math.min(1.0, confidenceResult.confidence * (1 + personalBoost * 0.5))
+      : confidenceResult.confidence;
+    
     // Step 6: Generate reasoning
     const reasoning = this.generateReasoning(
       fusionResult, 
       temporalFactors, 
       personalFactors, 
-      confidenceResult
+      confidenceResult,
+      hasPersonalBoost
     );
     
     return {
       suggestedVibe: confidenceResult.primaryVibe,
-      confidence: confidenceResult.confidence,
+      confidence: adjustedConfidence,
       reasoning,
       alternatives: confidenceResult.alternatives,
       contextFactors: {
@@ -119,7 +134,13 @@ export class VibeAnalysisEngine {
         environmental: fusionResult.environmentalMatch,
         personal: personalFactors.relevance
       },
-      sensorQuality: fusionResult.quality
+      sensorQuality: fusionResult.quality,
+      // Add learning boost indicator
+      learningBoost: hasPersonalBoost ? {
+        boosted: true,
+        boostFactor: personalBoost,
+        originalConfidence: confidenceResult.confidence
+      } : undefined
     };
   }
 
@@ -257,7 +278,8 @@ export class VibeAnalysisEngine {
     fusionResult: any,
     temporalFactors: any,
     personalFactors: any,
-    confidenceResult: any
+    confidenceResult: any,
+    hasPersonalBoost: boolean = false
   ): string[] {
     const reasoning: string[] = [];
     
@@ -284,6 +306,11 @@ export class VibeAnalysisEngine {
     // Personal pattern reasoning
     if (personalFactors.relevance > 0.3) {
       reasoning.push(`Personal pattern: ${personalFactors.description}`);
+      
+      // Add learning boost reasoning
+      if (hasPersonalBoost) {
+        reasoning.push(`💡 Learned boost: You often choose ${confidenceResult.primaryVibe} in similar contexts`);
+      }
     }
     
     // Confidence reasoning

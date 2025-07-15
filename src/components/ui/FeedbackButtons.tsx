@@ -10,6 +10,11 @@ interface FeedbackButtonsProps {
   onCorrect: (correctedVibe: Vibe) => void;
   onClose: () => void;
   isProcessing?: boolean;
+  learningBoost?: {
+    boosted: boolean;
+    boostFactor: number;
+    originalConfidence: number;
+  };
 }
 
 export const FeedbackButtons = ({ 
@@ -18,7 +23,8 @@ export const FeedbackButtons = ({
   onAccept, 
   onCorrect, 
   onClose,
-  isProcessing = false 
+  isProcessing = false,
+  learningBoost
 }: FeedbackButtonsProps) => {
   const [showCorrection, setShowCorrection] = useState(false);
 
@@ -93,11 +99,24 @@ export const FeedbackButtons = ({
   return (
     <div className="bg-card/95 backdrop-blur-xl rounded-xl p-4 border border-border/30 animate-scale-in">
       <div className="text-center mb-3">
-        <p className="text-sm font-medium text-foreground mb-1">
-          Detected: <span className="text-primary capitalize">{suggestedVibe}</span>
-        </p>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <p className="text-sm font-medium text-foreground">
+            Detected: <span className="text-primary capitalize">{suggestedVibe}</span>
+          </p>
+          {learningBoost?.boosted && (
+            <div className="text-accent text-xs flex items-center gap-1" title="Boosted by your preferences">
+              💡
+            </div>
+          )}
+        </div>
         <p className="text-xs text-muted-foreground">
-          {Math.round(confidence * 100)}% confidence • Is this correct?
+          {Math.round(confidence * 100)}% confidence
+          {learningBoost?.boosted && (
+            <span className="text-accent ml-1">
+              • learned boost +{Math.round((confidence - learningBoost.originalConfidence) * 100)}%
+            </span>
+          )}
+          {" • Is this correct?"}
         </p>
       </div>
       

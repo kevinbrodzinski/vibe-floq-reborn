@@ -14,6 +14,11 @@ interface VibeDetection {
     environmental: number;
     personal: number;
   };
+  learningBoost?: {
+    boosted: boolean;
+    boostFactor: number;
+    originalConfidence: number;
+  };
 }
 
 interface SensorPermissions {
@@ -461,7 +466,8 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         reasoning: analysisResult.reasoning,
         sensors,
         alternatives: analysisResult.alternatives,
-        contextFactors: analysisResult.contextFactors
+        contextFactors: analysisResult.contextFactors,
+        learningBoost: analysisResult.learningBoost
       };
     } catch (error) {
       console.error('Vibe analysis failed, falling back to simple detection:', error);
