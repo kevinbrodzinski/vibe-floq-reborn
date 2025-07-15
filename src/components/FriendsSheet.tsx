@@ -88,17 +88,8 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
         </SheetHeader>
 
         <div className="flex-1 py-4 space-y-6">
-            {/* Online Friends Section */}
+            {/* Friends Section */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Online now
-                </h3>
-                {isLoadingNearby && (
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              
               {isLoading ? (
                 <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                   <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
@@ -108,18 +99,65 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                   </div>
                 </div>
               ) : friendsWithPresence.length > 0 ? (
-                <div className="max-h-96 overflow-y-auto space-y-1">
-                  {friendsWithPresence.map(friend => {
-                    const nearbyFriend = friendsNearby.find(f => f.id === friend.friend_id);
+                <div className="space-y-4">
+                  {/* Online Friends */}
+                  {(() => {
+                    const onlineFriends = friendsWithPresence.filter(f => f.online);
+                    const offlineFriends = friendsWithPresence.filter(f => !f.online);
+                    
                     return (
-                      <OnlineFriendRow 
-                        key={friend.friend_id}
-                        userId={friend.friend_id}
-                        isNearby={!!nearbyFriend}
-                        distance={nearbyFriend?.distance_m}
-                      />
+                      <>
+                        {onlineFriends.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <h3 className="text-sm font-medium text-muted-foreground">
+                                Online now
+                              </h3>
+                              {isLoadingNearby && (
+                                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                              )}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto space-y-1">
+                              {onlineFriends.map(friend => {
+                                const nearbyFriend = friendsNearby.find(f => f.id === friend.friend_id);
+                                return (
+                                  <OnlineFriendRow 
+                                    key={friend.friend_id}
+                                    userId={friend.friend_id}
+                                    isNearby={!!nearbyFriend}
+                                    distance={nearbyFriend?.distance_m}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {offlineFriends.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <h3 className="text-sm font-medium text-muted-foreground">
+                                Offline
+                              </h3>
+                            </div>
+                            <div className="max-h-48 overflow-y-auto space-y-1">
+                              {offlineFriends.map(friend => {
+                                const nearbyFriend = friendsNearby.find(f => f.id === friend.friend_id);
+                                return (
+                                  <OnlineFriendRow 
+                                    key={friend.friend_id}
+                                    userId={friend.friend_id}
+                                    isNearby={!!nearbyFriend}
+                                    distance={nearbyFriend?.distance_m}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     );
-                  })}
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">

@@ -38,13 +38,17 @@ export const useProfile = (userId: string | undefined) => {
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) throw new Error('Profile not found');
+      if (!data) {
+        console.warn(`Profile not found for user ${userId}`);
+        throw new Error('Profile not found');
+      }
       
       return data as Profile;
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
 

@@ -77,10 +77,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } else if (data) {
             // Cache the new profile
             queryClient.setQueryData(['profile', user.id], data);
+            console.log("[Auth] Profile created successfully", { username: data.username });
           }
         } else {
-          // Profile exists, just cache it
-          queryClient.setQueryData(['profile', user.id], existing);
+          // Profile exists, just cache it and ensure we fetch full profile data
+          const { data: fullProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+          
+          if (fullProfile) {
+            queryClient.setQueryData(['profile', user.id], fullProfile);
+            console.log("[Auth] Profile cached successfully", { username: fullProfile.username });
+          }
         }
       }
     );
