@@ -1486,6 +1486,24 @@ export type Database = {
         }
         Relationships: []
       }
+      vibe_similarity: {
+        Row: {
+          score: number
+          vibe_high: Database["public"]["Enums"]["vibe_enum"]
+          vibe_low: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Insert: {
+          score: number
+          vibe_high: Database["public"]["Enums"]["vibe_enum"]
+          vibe_low: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Update: {
+          score?: number
+          vibe_high?: Database["public"]["Enums"]["vibe_enum"]
+          vibe_low?: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Relationships: []
+      }
       vibes_log: {
         Row: {
           location: unknown
@@ -1706,12 +1724,11 @@ export type Database = {
       vibe_clusters: {
         Row: {
           centroid: unknown | null
+          dom_count: number | null
+          dom_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           gh6: string | null
-          last_updated: string | null
           total: number | null
           vibe_counts: Json | null
-          vibe_momentum: number | null
-          vibe_popularity: number | null
         }
         Relationships: []
       }
@@ -2461,6 +2478,23 @@ export type Database = {
           vibe_score: number
           live_count: number
           check_ins: number
+        }[]
+      }
+      get_compat_clusters: {
+        Args: {
+          u_lat: number
+          u_lng: number
+          u_vibe: Database["public"]["Enums"]["vibe_enum"]
+          radius_m?: number
+          limit_n?: number
+        }
+        Returns: {
+          gh6: string
+          centroid: unknown
+          dom_vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_match: number
+          distance_m: number
+          user_count: number
         }[]
       }
       get_floq_full_details: {
@@ -4181,6 +4215,13 @@ export type Database = {
           distance_m: number
           live_count: number
         }[]
+      }
+      vibe_similarity: {
+        Args: {
+          a: Database["public"]["Enums"]["vibe_enum"]
+          b: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Returns: number
       }
       walkable_floqs: {
         Args: { lat: number; lng: number; max_walk_meters: number }
