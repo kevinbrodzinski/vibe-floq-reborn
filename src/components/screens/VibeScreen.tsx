@@ -17,6 +17,7 @@ import type { Vibe } from "@/utils/vibe";
 import { useVibe } from "@/lib/store/useVibe";
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
+import { VibeWheel } from "@/components/vibe/VibeWheel";
 
 type VibeState = VibeEnum;
 type VisibilityState = "public" | "friends" | "off";
@@ -324,129 +325,70 @@ export const VibeScreen = () => {
         </Button>
       </div>
 
-      {/* Radial Vibe Selector */}
+      {/* Magical Vibe Wheel with Physics */}
       <div className="px-6 mb-8">
-        <div 
-          ref={dialRef}
-          className="relative w-80 h-80 mx-auto"
-          onTouchStart={handleDragStart}
-          onTouchEnd={handleDragEnd}
-          onMouseDown={handleDragStart}
-          onMouseUp={handleDragEnd}
-        >
-          {/* Outer gradient ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-vibe p-1">
-            <div className="w-full h-full rounded-full bg-background/95 backdrop-blur-sm"></div>
-          </div>
-          
-          {/* Vibe labels around the circle */}
-          {Object.entries(vibes).map(([key, vibe]) => {
-            const isSelected = key === selectedVibe;
-            const radian = (vibe.angle * Math.PI) / 180;
-            const radius = 130;
-            const x = Math.cos(radian) * radius;
-            const y = Math.sin(radian) * radius;
-            
-            // Calculate glow intensity based on learning preference
-            const prefScore = learningData.preferences[key as Vibe] ?? 0;
-            const glow = Math.min(1, 0.3 + prefScore * 2);
-            const glowRadius = Math.max(8, Math.min(14, Math.round(12 * glow)));
-            const shouldGlow = prefScore > 0.1;
-            
-            return (
-              <button
-                key={key}
-                onClick={() => handleVibeSelect(key as VibeState)}
-                className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 px-3 py-2 rounded-xl min-w-[44px] min-h-[44px] flex items-center justify-center ${
-                  isSelected 
-                    ? "text-primary font-bold scale-110 bg-primary/10 backdrop-blur-sm border border-primary/20" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/30 hover:scale-105"
-                } ${shouldGlow ? `shadow-[0_0_${glowRadius}px_hsl(var(--primary)/70%)] dark:shadow-[0_0_${glowRadius}px_hsl(var(--primary)/40%)] transition-shadow duration-300` : ""} ${
-                  shouldGlow ? "motion-reduce:shadow-none" : ""
-                }`}
-                style={{
-                  left: `calc(50% + ${x}px)`,
-                  top: `calc(50% + ${y}px)`,
-                }}
-              >
-                <span className="text-sm font-medium">{vibe.label}</span>
-              </button>
-            );
-          })}
-
-          {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
-                {vibes[safeVibe].label}
-              </h2>
-              <p className="text-sm text-muted-foreground mb-2">
-                {getCurrentVibeDescription()}
+        <VibeWheel />
+        
+        {/* Center content overlay */}
+        <div className="relative -mt-[280px] flex flex-col items-center justify-center h-[280px] pointer-events-none">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+              {vibes[safeVibe]?.label || 'Chill'}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-2">
+              {getCurrentVibeDescription()}
+            </p>
+            {autoMode && (
+              <p className="text-xs text-accent mb-2 flex items-center justify-center gap-1">
+                <Brain className="w-3 h-3" />
+                Auto Mode
               </p>
-              {autoMode && (
-                <p className="text-xs text-accent mb-2 flex items-center justify-center gap-1">
-                  <Brain className="w-3 h-3" />
-                  Auto Mode
-                </p>
-              )}
-              <div className={`w-16 h-16 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all duration-500 ${
-                autoMode 
-                  ? "bg-accent/20 border-accent/30 animate-pulse" 
-                  : "bg-gradient-primary/20 border-primary/30 animate-pulse-glow"
-              }`}>
-                <div className={`w-8 h-8 rounded-full ${
-                  autoMode ? "bg-gradient-secondary" : "bg-gradient-primary"
-                }`}></div>
-              </div>
-              {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (() => {
-                const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
-                const threshold = Math.min(0.60, Math.max(0.25, 0.50 - bias * 0.25));
-                
-                return (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={applyDetectedVibe}
-                      size="sm"
-                      role="button"
-                      aria-label="Apply detected vibe"
-                      className={`text-xs px-3 py-1 h-6 ${
-                        vibeDetection.learningBoost?.boosted 
-                          ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
-                          : ""
-                      }`}
-                      disabled={vibeDetection.confidence < threshold}
-                    >
-                      Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
-                    </Button>
-                    {vibeDetection.learningBoost?.boosted && (
-                      <Tooltip delayDuration={300}>
-                        <TooltipTrigger asChild>
-                          <span className="text-xs text-accent flex items-center gap-1 cursor-help">
-                            💡 <span className="text-[10px] hidden sm:inline">learned</span>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Boosted by learning (+{Math.round(bias * 100)}%)
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                );
-              })()}
+            )}
+            <div className={`w-16 h-16 rounded-full backdrop-blur-sm border flex items-center justify-center transition-all duration-500 ${
+              autoMode 
+                ? "bg-accent/20 border-accent/30 animate-pulse" 
+                : "bg-gradient-primary/20 border-primary/30 animate-pulse-glow"
+            }`}>
+              <div className={`w-8 h-8 rounded-full ${
+                autoMode ? "bg-gradient-secondary" : "bg-gradient-primary"
+              }`}></div>
             </div>
+            {autoMode && vibeDetection && vibeDetection.confidence > 0.3 && !showFeedback && (() => {
+              const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
+              const threshold = Math.min(0.60, Math.max(0.25, 0.50 - bias * 0.25));
+              
+              return (
+                <div className="flex items-center gap-2 pointer-events-auto">
+                  <Button
+                    onClick={applyDetectedVibe}
+                    size="sm"
+                    role="button"
+                    aria-label="Apply detected vibe"
+                    className={`text-xs px-3 py-1 h-6 ${
+                      vibeDetection.learningBoost?.boosted 
+                        ? "shadow-[0_0_6px_hsl(var(--accent)/40)] bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30" 
+                        : ""
+                    }`}
+                    disabled={vibeDetection.confidence < threshold}
+                  >
+                    Apply {vibeDetection.suggestedVibe} ({Math.round(vibeDetection.confidence * 100)}%)
+                  </Button>
+                  {vibeDetection.learningBoost?.boosted && (
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <span className="text-xs text-accent flex items-center gap-1 cursor-help">
+                          💡 <span className="text-[10px] hidden sm:inline">learned</span>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Boosted by learning (+{Math.round(bias * 100)}%)
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              );
+            })()}
           </div>
-
-          {/* Selection indicator */}
-          <div 
-            className="absolute w-3 h-3 rounded-full transition-all duration-500 animate-pulse-glow"
-            style={{
-              backgroundColor: vibes[safeVibe].color,
-              boxShadow: `0 0 15px ${vibes[safeVibe].color}`,
-              left: `calc(50% + ${Math.cos((vibes[safeVibe].angle * Math.PI) / 180) * 115}px)`,
-              top: `calc(50% + ${Math.sin((vibes[safeVibe].angle * Math.PI) / 180) * 115}px)`,
-              transform: "translate(-50%, -50%)"
-            }}
-          ></div>
         </div>
       </div>
 
