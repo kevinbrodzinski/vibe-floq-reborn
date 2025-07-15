@@ -167,16 +167,14 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
     return [];
   }
 
-  // Get participant counts for all floqs using Postgres aggregation
+  // Get participant counts for all floqs using the new RPC function
   const floqIds = allFloqs.map(f => f.id);
   
-  let participantCounts: CountRow[] = [];
+  let participantCounts: { floq_id: string; participant_count: number }[] = [];
   try {
-    const { data, error } = await supabase
-      .from('floq_participants')
-      .select('floq_id, count')
-      .in('floq_id', floqIds)
-      .group('floq_id');
+    const { data, error } = await supabase.rpc('get_floq_participant_counts', {
+      floq_ids: floqIds
+    });
     
     if (error) {
       if (import.meta.env.DEV) {
@@ -191,10 +189,10 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
     }
   }
 
-  // Create count lookup map with safe casting and destructuring
-  const countMap = (participantCounts as CountRow[])
-    .reduce<Record<string, number>>((acc, { floq_id, count }) => {
-      acc[floq_id] = Number(count) || 0;
+  // Create count lookup map
+  const countMap = participantCounts
+    .reduce<Record<string, number>>((acc, { floq_id, participant_count }) => {
+      acc[floq_id] = participant_count || 0;
       return acc;
     }, {});
 

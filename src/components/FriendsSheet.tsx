@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
+import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
 import { Loader2, Check, X } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/avatar';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
@@ -34,6 +35,9 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();
   const navigate = useNavigate();
+
+  // Enable realtime friend updates
+  useRealtimeFriends();
 
   // Prime profile cache for nearby friends with debouncing
   useEffect(() => {
@@ -139,16 +143,16 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
             
             {pendingRequests.length > 0 ? (
               <div className="space-y-2">
-                {pendingRequests.map((request: any) => (
-                  <div key={request.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                {pendingRequests.map((request) => (
+                  <div key={request.requester_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                     <AvatarWithFallback 
-                      src={request.profiles?.avatar_url ? getAvatarUrl(request.profiles.avatar_url, 40) : null}
-                      fallbackText={request.profiles?.display_name || request.profiles?.username || 'U'}
+                      src={request.avatar_url ? getAvatarUrl(request.avatar_url, 40) : null}
+                      fallbackText={request.display_name || request.username || 'U'}
                       className="w-10 h-10"
                     />
                     <div className="flex-1">
                       <p className="font-medium text-sm">
-                        {request.profiles?.display_name || request.profiles?.username || 'Unknown User'}
+                        {request.display_name || request.username || 'Unknown User'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Wants to be friends
@@ -158,7 +162,7 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                       <Button 
                         size="sm" 
                         variant="default"
-                        onClick={() => acceptRequest(request.id)}
+                        onClick={() => acceptRequest(request.requester_id)}
                         disabled={isAccepting || isDeclining}
                         className="h-8 px-3"
                       >
@@ -167,7 +171,7 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                       <Button 
                         size="sm" 
                         variant="outline"
-                        onClick={() => declineRequest(request.id)}
+                        onClick={() => declineRequest(request.requester_id)}
                         disabled={isAccepting || isDeclining}
                         className="h-8 px-3"
                       >

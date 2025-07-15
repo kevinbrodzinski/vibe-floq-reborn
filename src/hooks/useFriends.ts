@@ -12,9 +12,9 @@ export function useFriends() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Optimized query using RPC function for friends with profile data
+  // Optimized query using new RPC function for friends list
   const { data: friendsWithProfile = [], isLoading, error: friendsError } = useQuery({
-    queryKey: ['friends-with-profile', user?.id, OFFLINE_MODE],
+    queryKey: ['friends-list', user?.id, OFFLINE_MODE],
     enabled: !!user?.id && !OFFLINE_MODE,
     staleTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: false,
@@ -23,10 +23,10 @@ export function useFriends() {
     queryFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase.rpc('get_friends_with_profile');
+      const { data, error } = await supabase.rpc('get_friends_list');
       
       if (error) {
-        console.error('Friends with profile query error:', error);
+        console.error('Friends list query error:', error);
         throw error;
       }
       return data ?? [];
@@ -59,14 +59,14 @@ export function useFriends() {
       if (OFFLINE_MODE) return; // Short-circuit in offline mode
       
       try {
-        const { error } = await supabase.rpc('add_friend', {
-          target: targetUserId
+        const { data, error } = await supabase.rpc('send_friend_request', {
+          _target: targetUserId
         });
         if (error) {
           // Log the error for debugging but don't crash the UI
-          console.error('[add_friend] RPC error:', error);
+          console.error('[send_friend_request] RPC error:', error);
           toast({
-            title: "Could not add friend",
+            title: "Could not send friend request",
             description: "Please try again later",
             variant: 'destructive',
           });
@@ -85,13 +85,12 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+        queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
         toast({
-          title: "Friend added",
-          description: "You are now friends!",
+          title: "Friend request sent",
+          description: "Your friend request has been sent successfully",
         });
-        // Trigger achievement check
-        pushAchievementEvent('friend_added');
       }
     },
     onError: (error: any) => {
@@ -107,8 +106,8 @@ export function useFriends() {
       if (OFFLINE_MODE) return; // Short-circuit in offline mode
       
       try {
-        const { error } = await supabase.rpc('remove_friend', {
-          target: targetUserId
+        const { data, error } = await supabase.rpc('remove_friend', {
+          _friend: targetUserId
         });
         if (error) {
           // Log the error for debugging but don't crash the UI
@@ -133,7 +132,8 @@ export function useFriends() {
     },
     onSuccess: () => {
       if (!OFFLINE_MODE) {
-        queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
+        queryClient.invalidateQueries({ queryKey: ['friends-list'] });
+        queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
         toast({
           title: "Friend removed",
           description: "This person is no longer your friend.",

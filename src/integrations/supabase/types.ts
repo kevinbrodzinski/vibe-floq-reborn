@@ -812,6 +812,45 @@ export type Database = {
           },
         ]
       }
+      friends: {
+        Row: {
+          created_at: string
+          responded_at: string | null
+          status: string
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          responded_at?: string | null
+          status?: string
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          responded_at?: string | null
+          status?: string
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friends_user_a_fkey"
+            columns: ["user_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friends_user_b_fkey"
+            columns: ["user_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           created_at: string | null
@@ -1742,19 +1781,8 @@ export type Database = {
         Returns: boolean
       }
       accept_friend_request: {
-        Args: { req_id: string }
-        Returns: {
-          created_at: string | null
-          friend_id: string
-          id: string
-          responded_at: string | null
-          status: string | null
-          user_id: string
-        }
-      }
-      add_friend: {
-        Args: { target: string }
-        Returns: undefined
+        Args: { _friend: string }
+        Returns: Json
       }
       addauth: {
         Args: { "": string }
@@ -2025,6 +2053,13 @@ export type Database = {
       friend_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      friend_pair: {
+        Args: { a: string; b: string }
+        Returns: {
+          ua: string
+          ub: string
+        }[]
       }
       friends_nearby: {
         Args: { user_lat: number; user_lng: number; radius_km?: number }
@@ -2396,6 +2431,38 @@ export type Database = {
           pending_invites: Json
         }[]
       }
+      get_floq_participant_counts: {
+        Args: { floq_ids: string[] }
+        Returns: {
+          floq_id: string
+          participant_count: number
+        }[]
+      }
+      get_friend_feed: {
+        Args: { _since?: string; _limit?: number; _uid?: string }
+        Returns: {
+          floq_id: string
+          joined_at: string
+          role: string
+          floq_title: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          friend_id: string
+          friend_username: string
+          friend_display_name: string
+          friend_avatar_url: string
+        }[]
+      }
+      get_friends_list: {
+        Args: { _uid?: string }
+        Returns: {
+          friend_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          bio: string
+          friend_since: string
+        }[]
+      }
       get_friends_with_profile: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2416,6 +2483,16 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
           distance_meters: number
           updated_at: string
+        }[]
+      }
+      get_pending_friend_requests: {
+        Args: { _uid?: string }
+        Returns: {
+          requester_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          requested_at: string
         }[]
       }
       get_profile_stats: {
@@ -2521,10 +2598,6 @@ export type Database = {
       leave_floq: {
         Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
-      }
-      list_friends: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
       }
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
@@ -2761,23 +2834,8 @@ export type Database = {
         Returns: undefined
       }
       remove_friend: {
-        Args: { target: string }
-        Returns: undefined
-      }
-      request_friendship: {
-        Args: { _target: string }
-        Returns: undefined
-      }
-      respond_friend_request: {
-        Args: { request_user_id: string; response_type: string }
-        Returns: {
-          created_at: string | null
-          friend_id: string
-          id: string
-          responded_at: string | null
-          status: string | null
-          user_id: string
-        }
+        Args: { _friend: string }
+        Returns: Json
       }
       search_everything: {
         Args: { query: string; limit_count?: number }
@@ -2832,6 +2890,10 @@ export type Database = {
           avatar_url: string
           created_at: string
         }[]
+      }
+      send_friend_request: {
+        Args: { _target: string }
+        Returns: Json
       }
       set_limit: {
         Args: { "": number }

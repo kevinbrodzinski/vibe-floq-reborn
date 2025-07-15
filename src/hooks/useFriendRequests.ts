@@ -6,11 +6,11 @@ import { track } from '@/lib/analytics';
 import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 
 export interface FriendRequest {
-  id: string;
-  user_id: string;
-  friend_id: string;
-  status: 'pending' | 'accepted' | 'declined';
-  created_at: string;
+  requester_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+  requested_at: string;
 }
 
 export function useFriendRequests() {
@@ -23,23 +23,7 @@ export function useFriendRequests() {
     queryKey: ['friend-requests', user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('friend_requests')
-        .select(`
-          id,
-          user_id,
-          friend_id,
-          status,
-          created_at,
-          profiles:user_id (
-            display_name,
-            avatar_url,
-            username
-          )
-        `)
-        .eq('friend_id', user!.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_pending_friend_requests');
       
       if (error) throw error;
       return data || [];
@@ -48,21 +32,22 @@ export function useFriendRequests() {
 
   // Accept friend request mutation
   const acceptRequest = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async (friendId: string) => {
       const { data, error } = await supabase.rpc('accept_friend_request', {
-        req_id: requestId
+        _friend: friendId
       });
 
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, requestId) => {
+    onSuccess: (data, friendId) => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
       queryClient.invalidateQueries({ queryKey: ['friends'] });
       queryClient.invalidateQueries({ queryKey: ['friends-with-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['friends-list'] });
       
       // Track friend achievement
-      pushAchievementEvent('friend_added', { friend_id: data?.user_id });
+      pushAchievementEvent('friend_added', { friend_id: friendId });
       
       toast({
         title: "Friend request accepted",
@@ -80,12 +65,10 @@ export function useFriendRequests() {
 
   // Decline friend request mutation  
   const declineRequest = useMutation({
-    mutationFn: async (requestId: string) => {
-      const { data, error } = await supabase
-        .from('friend_requests')
-        .update({ status: 'declined', responded_at: new Date().toISOString() })
-        .eq('id', requestId)
-        .eq('friend_id', user!.id); // Only allow declining requests sent to you
+    mutationFn: async (friendId: string) => {
+      const { data, error } = await supabase.rpc('remove_friend', {
+        _friend: friendId
+      });
 
       if (error) throw error;
       return data;
@@ -109,11 +92,12 @@ export function useFriendRequests() {
   // Send friend request mutation
   const sendRequest = useMutation({
     mutationFn: async (targetUserId: string) => {
-      const { error } = await supabase.rpc('add_friend', {
-        target: targetUserId
+      const { data, error } = await supabase.rpc('send_friend_request', {
+        _target: targetUserId
       });
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
