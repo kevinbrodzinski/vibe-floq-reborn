@@ -11,30 +11,16 @@ export function usePresenceCount(vibe: VibeEnum | null): number {
       return;
     }
 
-    // Create a presence channel for this vibe
-    // For now we'll use a simple channel name - in production we'd add geohash
-    const channelName = `vibe-${vibe}`;
-    
-    const channel = supabase.channel(channelName)
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        const totalUsers = Object.keys(state).length;
-        setCount(totalUsers);
-      })
-      .on('presence', { event: 'join' }, ({ newPresences }) => {
-        setCount(prev => prev + newPresences.length);
-      })
-      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        setCount(prev => Math.max(0, prev - leftPresences.length));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Track our own presence
-          await channel.track({
-            online_at: new Date().toISOString(),
-          });
+    // Listen to presence count updates from the database function
+    const channel = supabase
+      .channel('presence_counts')
+      .on('broadcast', { event: 'presence_counts' }, ({ payload }) => {
+        // Check if this update is for our current vibe
+        if (payload.vibe === vibe) {
+          setCount(payload.count || 0);
         }
-      });
+      })
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

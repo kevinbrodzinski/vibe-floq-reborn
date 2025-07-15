@@ -25,21 +25,10 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
-    );
-
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const jwt = authHeader.replace(/^Bearer\s+/i, '');
+    if (!jwt) {
       return new Response(
-        JSON.stringify({ error: "Authentication required" }), 
+        JSON.stringify({ error: "Invalid authorization format" }), 
         { 
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -48,8 +37,8 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const lat = url.searchParams.get('lat');
-    const lng = url.searchParams.get('lng');
+    const lat = Number(url.searchParams.get('lat'));
+    const lng = Number(url.searchParams.get('lng'));
     const vibe = url.searchParams.get('vibe');
 
     if (!lat || !lng || !vibe) {
@@ -61,11 +50,20 @@ serve(async (req) => {
         }
       );
     }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      {
+        global: {
+          headers: { Authorization: `Bearer ${jwt}` }
+        }
+      }
     );
 
     const { data, error } = await supabase.rpc("get_compat_clusters", {
-      u_lat: parseFloat(lat),
-      u_lng: parseFloat(lng),
+      u_lat: lat,
+      u_lng: lng,
       u_vibe: vibe,
     });
 
@@ -81,12 +79,12 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(data ?? []), {
+      status: 200,
       headers: { 
         ...corsHeaders,
         "Content-Type": "application/json", 
         "Cache-Control": "max-age=10" 
-      },
-      status: 200,
+      }
     });
 
   } catch (err) {
