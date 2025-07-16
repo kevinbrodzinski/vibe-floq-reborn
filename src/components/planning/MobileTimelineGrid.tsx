@@ -55,10 +55,10 @@ export function MobileTimelineGrid({
       onSwipeLeft={() => setShowCompactView(!showCompactView)}
       onSwipeRight={() => setShowCompactView(!showCompactView)}
       onLongPress={() => onStopSelect?.(selectedStopIds[0] || '')}
-      className="h-full w-full"
+      className="w-full min-h-fit"
     >
       <div className={cn(
-        "space-y-3 p-4",
+        "space-y-3 p-4 min-h-fit",
         showCompactView && "space-y-2"
       )}>
         {/* Mobile Header */}
@@ -115,7 +115,7 @@ function MobileCompactTimeline({
   selectedStopIds: string[]
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pb-safe-area-inset-bottom">
       {/* Would integrate with actual stops data */}
       {[1, 2, 3].map((_, i) => (
         <motion.div
@@ -178,7 +178,7 @@ function MobileExpandedTimeline({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-safe-area-inset-bottom">
       {/* Time blocks for mobile */}
       {[18, 19, 20, 21, 22, 23].map((hour) => (
         <div key={hour} className="space-y-2">
