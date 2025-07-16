@@ -1,172 +1,232 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, Clock } from 'lucide-react'
-import { StopCard } from './StopCard'
-import { AddStopModal } from './AddStopModal'
+import { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core'
+import { arrayMove } from '@dnd-kit/sortable'
+import { Plus } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
+import { usePlanSync } from '@/hooks/usePlanSync'
+import { cn } from '@/lib/utils'
+
+interface Stop {
+  id: string
+  title: string
+  start_time: string
+  end_time?: string
+  duration_minutes?: number
+  venue?: any
+}
 
 interface TimelineGridProps {
   planId: string
-  startTime?: string  // e.g., "18:00"
-  endTime?: string    // e.g., "23:00"
+  startTime?: string
+  endTime?: string
 }
 
-export function TimelineGrid({ 
-  planId, 
-  startTime = "18:00", 
-  endTime = "23:00" 
-}: TimelineGridProps) {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: string, end: string } | null>(null)
-  
+export function TimelineGrid({ planId, startTime = '18:00', endTime = '00:00' }: TimelineGridProps) {
+  const [activeId, setActiveId] = useState<string | null>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
+  const { mutate: syncChanges } = usePlanSync()
 
-  // Generate time slots based on start and end time
-  const generateTimeSlots = () => {
-    const slots = []
-    const [startHour, startMin] = startTime.split(':').map(Number)
-    const [endHour, endMin] = endTime.split(':').map(Number)
+  // Generate time blocks based on window
+  const timeBlocks = useMemo(() => {
+    const start = parseInt(startTime.split(':')[0])
+    const end = parseInt(endTime.split(':')[0]) || 24
+    const blocks = []
     
-    let currentHour = startHour
-    let currentMin = startMin
-    
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-      const nextHour = currentMin === 30 ? currentHour + 1 : currentHour
-      const nextMin = currentMin === 30 ? 0 : currentMin + 30
-      
-      const currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`
-      const nextTime = `${nextHour.toString().padStart(2, '0')}:${nextMin.toString().padStart(2, '0')}`
-      
-      slots.push({
-        start: currentTime,
-        end: nextTime,
-        label: formatTimeLabel(currentTime)
+    for (let hour = start; hour !== end; hour = (hour + 1) % 24) {
+      blocks.push({
+        hour,
+        label: formatHour(hour),
+        time: `${hour.toString().padStart(2, '0')}:00`
       })
-      
-      currentHour = nextHour
-      currentMin = nextMin
+      if (blocks.length >= 12) break // Safety limit
     }
     
-    return slots
+    return blocks
+  }, [startTime, endTime])
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = stops.findIndex(stop => stop.id === active.id)
+      const newIndex = stops.findIndex(stop => stop.id === over.id)
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newStops = arrayMove(stops, oldIndex, newIndex)
+        
+        // Update stop order in backend
+        syncChanges({
+          plan_id: planId,
+          changes: {
+            type: 'reorder_stops',
+            data: {
+              updates: newStops.map((stop, index) => ({
+                id: (stop as Stop).id,
+                stop_order: index
+              }))
+            }
+          }
+        })
+      }
+    }
+    
+    setActiveId(null)
   }
 
-  const formatTimeLabel = (timeStr: string) => {
-    const [hours, minutes] = timeStr.split(':').map(Number)
-    const ampm = hours >= 12 ? 'PM' : 'AM'
-    const displayHour = hours % 12 || 12
-    return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
-  }
-
-  const getStopsInTimeSlot = (slotStart: string, slotEnd: string) => {
-    return stops.filter(stop => {
-      return stop.start_time >= slotStart && stop.start_time < slotEnd
+  const handleAddStop = (timeSlot: string) => {
+    syncChanges({
+      plan_id: planId,
+      changes: {
+        type: 'update_stop',
+        data: {
+          title: 'New Stop',
+          start_time: timeSlot,
+          duration_minutes: 60,
+          stop_order: stops.length
+        }
+      }
     })
   }
 
-  const handleAddStop = (slotStart: string, slotEnd: string) => {
-    setSelectedTimeSlot({ start: slotStart, end: slotEnd })
-    setIsAddModalOpen(true)
-  }
-
-  const timeSlots = generateTimeSlots()
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-20 bg-muted/50 rounded-xl animate-pulse" />
+        ))}
       </div>
     )
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-        <Clock className="h-4 w-4" />
-        <span>Timeline: {formatTimeLabel(startTime)} - {formatTimeLabel(endTime)}</span>
+    <DndContext onDragEnd={handleDragEnd}>
+      <div className="space-y-3">
+        {timeBlocks.map((block) => {
+          const stopsAtTime = stops.filter(stop => 
+            stop.start_time?.startsWith(block.time.substring(0, 2))
+          )
+
+          return (
+            <TimeSlot
+              key={block.time}
+              timeBlock={block}
+              stops={stopsAtTime}
+              onAddStop={handleAddStop}
+            />
+          )
+        })}
       </div>
+      
+      <DragOverlay>
+        {activeId ? (
+          <StopCard 
+            stop={stops.find(s => s.id === activeId)!}
+            isDragging
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  )
+}
 
-      <ScrollArea className="h-[600px] w-full">
-        <div className="space-y-1">
-          {timeSlots.map((slot, index) => {
-            const slotStops = getStopsInTimeSlot(slot.start, slot.end)
-            const hasStops = slotStops.length > 0
+function TimeSlot({ 
+  timeBlock, 
+  stops, 
+  onAddStop 
+}: { 
+  timeBlock: any
+  stops: Stop[]
+  onAddStop: (time: string) => void 
+}) {
+  const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
-            return (
-              <div
-                key={index}
-                className={`relative border rounded-lg p-3 transition-colors ${
-                  hasStops 
-                    ? 'bg-card border-border' 
-                    : 'bg-muted/30 border-dashed border-muted-foreground/30 hover:bg-muted/50'
-                }`}
-                style={{ minHeight: '80px' }}
-              >
-                {/* Time label */}
-                <div className="absolute top-2 left-3 text-xs font-medium text-muted-foreground">
-                  {slot.label}
-                </div>
-
-                {/* Content area */}
-                <div className="mt-6">
-                  {hasStops ? (
-                    <div className="space-y-2">
-                      {slotStops.map((stop) => (
-                        <StopCard
-                          key={stop.id}
-                          stop={stop}
-                          // TODO: Add edit and delete handlers
-                          onEdit={(stop) => console.log('Edit stop:', stop)}
-                          onDelete={(stopId) => console.log('Delete stop:', stopId)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-12">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAddStop(slot.start, slot.end)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Stop
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Add another stop button for filled slots */}
-                {hasStops && (
-                  <div className="mt-2 flex justify-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAddStop(slot.start, slot.end)}
-                      className="text-xs"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Another
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </ScrollArea>
-
-      {/* Add Stop Modal */}
-      <AddStopModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false)
-          setSelectedTimeSlot(null)
-        }}
-        planId={planId}
-        defaultStartTime={selectedTimeSlot?.start}
-        defaultEndTime={selectedTimeSlot?.end}
-      />
+  return (
+    <div 
+      ref={setNodeRef}
+      className="flex items-center gap-4 min-h-[80px] p-4 rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm"
+    >
+      <div className="w-16 text-sm font-medium text-muted-foreground">
+        {timeBlock.label}
+      </div>
+      
+      <div className="flex-1">
+        {stops.length > 0 ? (
+          <div className="space-y-2">
+            {stops.map(stop => (
+              <StopCard key={stop.id} stop={stop} />
+            ))}
+          </div>
+        ) : (
+          <AddStopTrigger 
+            onAdd={() => onAddStop(timeBlock.time)}
+          />
+        )}
+      </div>
     </div>
   )
+}
+
+function StopCard({ stop, isDragging = false }: { stop: Stop; isDragging?: boolean }) {
+  const { 
+    attributes, 
+    listeners, 
+    setNodeRef, 
+    transform 
+  } = useDraggable({ 
+    id: stop.id,
+    data: { stop }
+  })
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "p-3 rounded-xl bg-primary/10 border border-primary/20 cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50 rotate-2 scale-105"
+      )}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="font-medium text-foreground">{stop.title}</h4>
+          {stop.venue?.name && (
+            <p className="text-sm text-muted-foreground">{stop.venue.name}</p>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {stop.duration_minutes || 60}min
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function AddStopTrigger({ onAdd }: { onAdd: () => void }) {
+  return (
+    <button
+      onClick={onAdd}
+      className="w-full h-16 border-2 border-dashed border-muted-foreground/30 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+    >
+      <Plus size={16} />
+      <span className="text-sm">Add Stop</span>
+    </button>
+  )
+}
+
+function formatHour(hour: number): string {
+  const date = new Date()
+  date.setHours(hour, 0, 0, 0)
+  return date.toLocaleTimeString([], { 
+    hour: 'numeric', 
+    hour12: true 
+  })
 }

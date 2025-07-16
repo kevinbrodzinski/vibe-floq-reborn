@@ -1,162 +1,162 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Clock, Calendar } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 interface PlanTimeWindowSelectorProps {
   onConfirm: (startTime: string, endTime: string) => void
-  defaultStartTime?: string
-  defaultEndTime?: string
+  initialStart?: number
+  initialDuration?: number
 }
 
-export function PlanTimeWindowSelector({ 
-  onConfirm, 
-  defaultStartTime = "18:00",
-  defaultEndTime = "23:00" 
+export function PlanTimeWindowSelector({
+  onConfirm,
+  initialStart = 18,
+  initialDuration = 6
 }: PlanTimeWindowSelectorProps) {
-  const [startTime, setStartTime] = useState(defaultStartTime)
-  const [endTime, setEndTime] = useState(defaultEndTime)
+  const [startHour, setStartHour] = useState(initialStart)
+  const [duration, setDuration] = useState(initialDuration)
 
-  const formatTimeRange = (start: string, end: string) => {
-    const formatTime = (timeStr: string) => {
-      const [hours, minutes] = timeStr.split(':').map(Number)
-      const ampm = hours >= 12 ? 'PM' : 'AM'
-      const displayHour = hours % 12 || 12
-      return `${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`
-    }
-    
-    return `${formatTime(start)} - ${formatTime(end)}`
-  }
+  const endHour = (startHour + duration) % 24
 
-  const calculateDuration = (start: string, end: string) => {
-    const [startHour, startMin] = start.split(':').map(Number)
-    const [endHour, endMin] = end.split(':').map(Number)
-    
-    let totalMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin)
-    
-    // Handle next day scenarios (e.g., 10 PM to 2 AM)
-    if (totalMinutes <= 0) {
-      totalMinutes += 24 * 60
-    }
-    
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
-    
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+  const formatTime = (hour: number) => {
+    const date = new Date()
+    date.setHours(hour, 0, 0, 0)
+    return date.toLocaleTimeString([], { 
+      hour: 'numeric', 
+      hour12: true 
+    })
   }
 
   const handleConfirm = () => {
+    const startTime = `${startHour.toString().padStart(2, '0')}:00`
+    const endTime = `${endHour.toString().padStart(2, '0')}:00`
     onConfirm(startTime, endTime)
   }
 
-  const duration = calculateDuration(startTime, endTime)
-
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="flex items-center justify-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Set Plan Time Window
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Choose the time range for your plan
+    <div className="flex flex-col items-center gap-6 p-6">
+      <div className="text-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <Clock className="w-5 h-5 text-primary" />
+          <h2 className="text-xl font-semibold">Set Your Plan Window</h2>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          Choose when your plan starts and how long it runs
         </p>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-6">
-        {/* Visual time range display */}
-        <div className="text-center p-4 bg-muted rounded-lg">
-          <div className="text-2xl font-bold text-primary">
-            {formatTimeRange(startTime, endTime)}
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            Duration: {duration}
-          </div>
-        </div>
+      {/* Circular Time Selector */}
+      <div className="relative w-[240px] h-[240px]">
+        <svg 
+          className="w-full h-full" 
+          viewBox="0 0 240 240"
+        >
+          {/* Clock face */}
+          <circle
+            cx="120"
+            cy="120"
+            r="100"
+            fill="none"
+            stroke="hsl(var(--border))"
+            strokeWidth="2"
+          />
+          
+          {/* Hour markers */}
+          {Array.from({ length: 24 }, (_, i) => {
+            const angle = (i * 15) - 90 // -90 to start at top
+            const radian = (angle * Math.PI) / 180
+            const x1 = 120 + 90 * Math.cos(radian)
+            const y1 = 120 + 90 * Math.sin(radian)
+            const x2 = 120 + 100 * Math.cos(radian)
+            const y2 = 120 + 100 * Math.sin(radian)
+            
+            return (
+              <g key={i}>
+                <line
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={i % 6 === 0 ? "3" : "1"}
+                />
+                {i % 6 === 0 && (
+                  <text
+                    x={120 + 80 * Math.cos(radian)}
+                    y={120 + 80 * Math.sin(radian)}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="text-xs fill-muted-foreground"
+                  >
+                    {i === 0 ? '12AM' : i < 12 ? i : i === 12 ? '12PM' : i - 12}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+          
+          {/* Duration arc */}
+          <path
+            d={`M ${120 + 85 * Math.cos(((startHour * 15) - 90) * Math.PI / 180)} ${120 + 85 * Math.sin(((startHour * 15) - 90) * Math.PI / 180)} A 85 85 0 ${duration > 12 ? 1 : 0} 1 ${120 + 85 * Math.cos(((endHour * 15) - 90) * Math.PI / 180)} ${120 + 85 * Math.sin(((endHour * 15) - 90) * Math.PI / 180)}`}
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+        </svg>
 
-        {/* Time inputs */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="start-time" className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              Start Time
-            </Label>
-            <Input
-              id="start-time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="end-time" className="flex items-center gap-1">
-              <Clock className="h-4 w-4" />
-              End Time
-            </Label>
-            <Input
-              id="end-time"
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Quick preset buttons */}
-        <div className="space-y-2">
-          <Label className="text-sm">Quick Presets:</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setStartTime("17:00")
-                setEndTime("22:00")
-              }}
-            >
-              Dinner (5h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setStartTime("20:00")
-                setEndTime("02:00")
-              }}
-            >
-              Night Out (6h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setStartTime("12:00")
-                setEndTime("18:00")
-              }}
-            >
-              Day Trip (6h)
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setStartTime("10:00")
-                setEndTime("22:00")
-              }}
-            >
-              Full Day (12h)
-            </Button>
+        {/* Center display */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center bg-background rounded-xl p-4 border shadow-lg">
+            <div className="text-lg font-bold text-primary">
+              {formatTime(startHour)} – {formatTime(endHour)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {duration} hours
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Confirm button */}
-        <Button onClick={handleConfirm} className="w-full">
-          Confirm Time Window
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Controls */}
+      <div className="space-y-4 w-full max-w-sm">
+        <div>
+          <label className="text-sm font-medium text-foreground mb-2 block">
+            Start Time: {formatTime(startHour)}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="23"
+            value={startHour}
+            onChange={(e) => setStartHour(parseInt(e.target.value))}
+            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium text-foreground mb-2 block">
+            Duration: {duration} hours
+          </label>
+          <input
+            type="range"
+            min="2"
+            max="12"
+            value={duration}
+            onChange={(e) => setDuration(parseInt(e.target.value))}
+            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+          />
+        </div>
+      </div>
+
+      <Button 
+        onClick={handleConfirm}
+        size="lg"
+        className="w-full max-w-sm"
+      >
+        Confirm Time Window
+      </Button>
+    </div>
   )
 }

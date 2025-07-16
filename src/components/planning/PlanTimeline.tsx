@@ -69,11 +69,11 @@ export function PlanTimeline({ plan }: PlanTimelineProps) {
           <p className="text-muted-foreground">First, let's set up your time window</p>
         </CardHeader>
         <CardContent>
-          <PlanTimeWindowSelector
-            onConfirm={handleTimeWindowConfirm}
-            defaultStartTime={plan.start_time}
-            defaultEndTime={plan.end_time}
-          />
+        <PlanTimeWindowSelector
+          onConfirm={handleTimeWindowConfirm}
+          initialStart={plan.start_time ? parseInt(plan.start_time.split(':')[0]) : 18}
+          initialDuration={6}
+        />
         </CardContent>
       </Card>
     )

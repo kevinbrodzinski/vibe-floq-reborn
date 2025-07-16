@@ -39,6 +39,7 @@ export const AppRoutes = () => (
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
+    <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
     <Route path="/invites" element={<Invites />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />

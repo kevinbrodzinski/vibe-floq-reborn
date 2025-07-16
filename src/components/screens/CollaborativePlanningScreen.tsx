@@ -265,7 +265,7 @@ export const CollaborativePlanningScreen = () => {
             ...p,
             checkInStatus: 'checked-in' as const // Mock status
           }))}
-          onParticipantUpdate={updateParticipantStatus}
+          onParticipantUpdate={(userId, updates) => updateParticipantStatus(userId, JSON.stringify(updates))}
         />
 
         {/* RSVP Card */}
