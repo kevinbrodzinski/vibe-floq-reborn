@@ -23,7 +23,7 @@ import { useDeleteStop } from '@/hooks/useDeleteStop'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { VoteActivityOverlay } from '@/components/plans/VoteActivityOverlay'
-import { useVoteActivityTracker } from '@/hooks/useVoteActivityTracker'
+import type { VoteActivity } from '@/hooks/useVoteActivityTracker'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -37,6 +37,7 @@ interface ResizableStopCardProps {
   suggested?: boolean
   allStops?: PlanStop[]
   snapSuggestion?: SnapSuggestion
+  voteActivity?: VoteActivity | null
   onSelect?: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
   onStartResize?: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize?: (clientY: number) => number | undefined
@@ -58,6 +59,7 @@ export function ResizableStopCard({
   suggested = false,
   allStops = [],
   snapSuggestion,
+  voteActivity,
   onSelect,
   onStartResize,
   onResize,
@@ -80,7 +82,6 @@ export function ResizableStopCard({
   const { recordNovaSnap } = useNovaSnap()
   const { canEditPlan } = usePlanStatusValidation()
   const { mutate: deleteStop } = useDeleteStop()
-  const { voteOverlays } = useVoteActivityTracker()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -242,7 +243,7 @@ export function ResizableStopCard({
         
         {/* Vote activity overlay */}
         <VoteActivityOverlay 
-          activity={voteOverlays[stop.id] || null}
+          activity={voteActivity}
         />
       </AnimatePresence>
 

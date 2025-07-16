@@ -545,6 +545,7 @@ export const CollaborativePlanningScreen = () => {
                 connectionStatus={connectionStatus}
                 isOptimistic={isOptimistic}
                 isDragOperationPending={isDragOperationPending}
+                activities={activities}
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
                 selectedStopIds={selectedStopIds}

@@ -57,18 +57,21 @@ const {
       const { stopId, voteType, userId, username } = payload
       if (!stopId || !voteType) return
 
-      // Add vote activity to timeline
+      // Add vote activity to timeline with vote data for overlays
       setActivities(prev => [
         ...prev,
         {
           id: `vote-${Date.now()}`,
           type: 'vote_cast',
           timestamp: new Date().toISOString(),
-          stopId: stopId,
-          user: userId,
-          username: username || 'Someone',
-          vote: voteType,
-          details: `${username || 'Someone'} voted ${voteType === 'up' ? '👍' : '👎'}`
+          user: userId || 'Unknown',
+          details: `${username || 'Someone'} voted ${voteType === 'up' ? '👍' : '👎'} on a stop`,
+          voteData: {
+            stopId: stopId,
+            userId: userId,
+            username: username,
+            voteType: voteType
+          }
         }
       ])
 
