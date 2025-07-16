@@ -68,6 +68,101 @@ export type Database = {
         }
         Relationships: []
       }
+      afterglow_collection_items: {
+        Row: {
+          added_at: string | null
+          collection_id: string
+          daily_afterglow_id: string
+          id: string
+        }
+        Insert: {
+          added_at?: string | null
+          collection_id: string
+          daily_afterglow_id: string
+          id?: string
+        }
+        Update: {
+          added_at?: string | null
+          collection_id?: string
+          daily_afterglow_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "afterglow_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "afterglow_collection_items_daily_afterglow_id_fkey"
+            columns: ["daily_afterglow_id"]
+            isOneToOne: false
+            referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      afterglow_collections: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      afterglow_favorites: {
+        Row: {
+          created_at: string | null
+          daily_afterglow_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_afterglow_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_afterglow_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_favorites_daily_afterglow_id_fkey"
+            columns: ["daily_afterglow_id"]
+            isOneToOne: false
+            referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       afterglow_moments: {
         Row: {
           color: string | null
@@ -2435,6 +2530,10 @@ export type Database = {
           radius_m: number
         }[]
       }
+      export_afterglow_data: {
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
+        Returns: Json
+      }
       find_or_create_dm: {
         Args: { a: string; b: string; p_use_demo?: boolean }
         Returns: string
@@ -2796,6 +2895,10 @@ export type Database = {
       }
       get_afterglow_weekly_patterns: {
         Args: { p_user_id?: string; p_weeks_back?: number }
+        Returns: Json
+      }
+      get_archive_stats: {
+        Args: { p_user_id?: string }
         Returns: Json
       }
       get_cluster_venues: {
@@ -3321,6 +3424,37 @@ export type Database = {
       remove_friend: {
         Args: { _friend: string }
         Returns: Json
+      }
+      search_afterglows: {
+        Args: {
+          p_user_id?: string
+          p_search_query?: string
+          p_start_date?: string
+          p_end_date?: string
+          p_min_energy?: number
+          p_max_energy?: number
+          p_dominant_vibe?: string
+          p_tags?: string[]
+          p_is_pinned?: boolean
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          date: string
+          energy_score: number
+          social_intensity: number
+          dominant_vibe: string
+          summary_text: string
+          total_venues: number
+          total_floqs: number
+          crossed_paths_count: number
+          vibe_path: string[]
+          is_pinned: boolean
+          moments_count: number
+          created_at: string
+          search_rank: number
+        }[]
       }
       search_everything: {
         Args: { query: string; limit_count?: number }
