@@ -1,42 +1,10 @@
 import { useMemo } from 'react'
-import type { PlanStop } from '@/types/plan'
-import { checkStopConflicts, isOverlapping } from '@/utils/stopTimeUtils'
-
-export interface ConflictInfo {
-  stopId: string
-  conflictsWith: string[]
-  type: 'time_overlap' | 'travel_impossible' | 'venue_closed'
-  severity: 'low' | 'medium' | 'high'
-  message: string
-  suggestion?: string
-}
+import type { PlanStop, ConflictInfo } from '@/types/plan'
+import { checkStopConflicts, generateConflictDetails } from '@/utils/conflict-utils'
 
 export function useStopConflictChecker(stops: PlanStop[]) {
   const conflicts = useMemo(() => {
-    const conflictingIds = checkStopConflicts(stops)
-    const conflictDetails: ConflictInfo[] = []
-
-    conflictingIds.forEach(stopId => {
-      const stop = stops.find(s => s.id === stopId)
-      if (!stop) return
-
-      const conflictsWith = stops
-        .filter(other => other.id !== stopId && isOverlapping(stop, [other]))
-        .map(other => other.id)
-
-      if (conflictsWith.length > 0) {
-        conflictDetails.push({
-          stopId,
-          conflictsWith,
-          type: 'time_overlap',
-          severity: conflictsWith.length > 1 ? 'high' : 'medium',
-          message: `${stop.title} overlaps with ${conflictsWith.length} other stop${conflictsWith.length > 1 ? 's' : ''}`,
-          suggestion: 'Adjust the timing or duration to resolve the conflict'
-        })
-      }
-    })
-
-    return conflictDetails
+    return generateConflictDetails(stops)
   }, [stops])
 
   const hasConflicts = conflicts.length > 0

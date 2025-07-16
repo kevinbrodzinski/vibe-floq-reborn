@@ -37,3 +37,49 @@ export interface Plan {
   stops: PlanStop[]
   participants: PlanParticipant[]
 }
+
+// AI Suggestion Types
+export interface TimeSlotSuggestion {
+  startTime: string
+  endTime: string
+  confidence: number
+  reason: string
+  venueType?: string
+  spacingScore?: number
+}
+
+export interface NovaTimeSuggestion {
+  id: string
+  startTime: string
+  endTime: string
+  confidence: number
+  reasoning: string[]
+  venueMetadata?: {
+    type: string
+    peakHours: string[]
+    averageDuration: number
+  }
+  spacing: {
+    beforeGap: number
+    afterGap: number
+    idealSpacing: boolean
+  }
+}
+
+// Conflict Types
+export interface ConflictInfo {
+  stopId: string
+  conflictsWith: string[]
+  type: 'time_overlap' | 'travel_impossible' | 'venue_closed'
+  severity: 'low' | 'medium' | 'high'
+  message: string
+  suggestion?: string
+  reasons: string[]
+}
+
+export interface SnapSuggestion {
+  startTime: string
+  endTime: string
+  confidence: number
+  reason?: string
+}

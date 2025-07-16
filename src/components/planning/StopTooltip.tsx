@@ -2,12 +2,13 @@ import { motion } from 'framer-motion'
 import { Clock } from 'lucide-react'
 
 interface StopTooltipProps {
+  id?: string
   timeRange: string
   isVisible: boolean
   duration?: number
 }
 
-export function StopTooltip({ timeRange, isVisible, duration }: StopTooltipProps) {
+export function StopTooltip({ id, timeRange, isVisible, duration }: StopTooltipProps) {
   if (!isVisible) return null
 
   return (
@@ -15,6 +16,7 @@ export function StopTooltip({ timeRange, isVisible, duration }: StopTooltipProps
       initial={{ opacity: 0, y: -5, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -5, scale: 0.9 }}
+      id={id}
       className="absolute -top-8 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap z-30"
       transition={{
         type: 'spring',

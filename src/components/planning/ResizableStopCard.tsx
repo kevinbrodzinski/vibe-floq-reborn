@@ -12,7 +12,7 @@ import { StopEditingIndicators } from '@/components/collaboration/StopEditingInd
 import { useStopEditingPresence } from '@/hooks/useStopEditingPresence'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 import { useAudioFeedback } from '@/hooks/useAudioFeedback'
-import type { PlanStop } from '@/types/plan'
+import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
   stop: PlanStop
@@ -23,12 +23,7 @@ interface ResizableStopCardProps {
   hasConflict?: boolean
   suggested?: boolean
   allStops?: PlanStop[]
-  snapSuggestion?: {
-    startTime: string
-    endTime: string
-    confidence: number
-    reason?: string
-  }
+  snapSuggestion?: SnapSuggestion
   onSelect?: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
   onStartResize?: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize?: (clientY: number) => number | undefined
@@ -138,6 +133,7 @@ export function ResizableStopCard({
       }}
       role="listitem"
       aria-label={`Stop: ${stop.title}`}
+      aria-describedby={showTooltip ? `tooltip-${stop.id}` : undefined}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -152,6 +148,7 @@ export function ResizableStopCard({
           suggestion={snapSuggestion}
         />
         <StopTooltip 
+          id={`tooltip-${stop.id}`}
           timeRange={`${stop.start_time} - ${stop.end_time || formatTimeFromMinutes(timeToMinutes(stop.start_time || '') + duration)}`}
           isVisible={showTooltip && !isDragging}
           duration={duration}
