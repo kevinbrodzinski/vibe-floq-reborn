@@ -237,8 +237,7 @@ export const CollaborativePlanningScreen = () => {
         overlayTimeoutRef.current = null;
       }, ms);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [setOverlayAction, setOverlayFeedback, setShowExecutionOverlay]
+    [] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // Enhanced RSVP handler with persistence

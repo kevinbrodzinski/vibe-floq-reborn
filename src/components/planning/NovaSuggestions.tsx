@@ -338,9 +338,14 @@ export function NovaSuggestions({
                   onClick={async (e) => {
                     e.stopPropagation()
                     try {
+                      // ⬇️ forward the promise so the parent can await if it wants
                       await onAcceptSuggestion(suggestion)
-                    } catch (error) {
-                      console.error('Failed to add suggestion:', error)
+                      const { toastSuccess } = await import('@/lib/toast')
+                      toastSuccess('Stop added to timeline')
+                    } catch (err) {
+                      console.error('Failed to add suggestion:', err)
+                      const { toastError } = await import('@/lib/toast')
+                      toastError('Could not add stop', (err as Error).message)
                     }
                   }}
                   className="w-full bg-gradient-primary text-primary-foreground py-2 px-3 sm:px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform text-sm sm:text-base"

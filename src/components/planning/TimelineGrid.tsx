@@ -193,7 +193,12 @@ export function TimelineGrid({
       title: 'New Stop',
       start_time: timeSlot,
       duration_minutes: suggestedSlot ? 60 : 60, // Use AI suggestion or default
-      stop_order: (Math.max(...stops.map(s => s.stop_order || 0), 0)) + 1,
+      stop_order: Math.max(
+        0,
+        ...stops.map(s =>
+          Number.isFinite(s.stop_order) ? (s.stop_order as number) : 0
+        )
+      ) + 1,
       suggested: !!suggestedSlot
     }
     
@@ -241,7 +246,12 @@ export function TimelineGrid({
             data: {
               ...originalStop,
               title: `${originalStop.title} (Copy)`,
-              stop_order: (Math.max(...stops.map(s => s.stop_order || 0), 0)) + 1
+              stop_order: Math.max(
+                0,
+                ...stops.map(s =>
+                  Number.isFinite(s.stop_order) ? (s.stop_order as number) : 0
+                )
+              ) + 1
             }
           }
         })
@@ -533,9 +543,9 @@ function AddStopTrigger({ onAdd }: { onAdd: () => void }) {
   return (
     <button
       onClick={onAdd}
+      aria-label="Add stop at this time slot"
       className="w-full border-2 border-dashed border-border/30 rounded-xl h-20 flex items-center justify-center text-muted-foreground cursor-pointer hover:border-border/60 hover:bg-muted/20 transition-all duration-200"
       role="button"
-      aria-label="Add new stop to this time slot"
     >
       <div className="flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-current opacity-50" />
