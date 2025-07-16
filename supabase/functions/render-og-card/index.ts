@@ -167,28 +167,60 @@ function generateOGCardHTML(afterglow: any): string {
 }
 
 async function generatePlaceholderImage(afterglow: any): Promise<Uint8Array> {
-  // This is a placeholder implementation
-  // In a real implementation, you'd convert the HTML to an image using a proper library
+  // Create a simple PNG image - basic implementation for now
+  // TODO: Replace with proper HTML-to-image conversion using Puppeteer/Satori
   
-  // Create a simple PNG header for a 1200x630 purple image
   const width = 1200
   const height = 630
   
-  // This is a very basic placeholder - in practice you'd use a proper HTML-to-image service
-  const canvas = new Array(width * height * 4).fill(0)
+  // Create minimal PNG data structure
+  const pngSignature = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
   
-  // Fill with purple gradient-like colors
+  // IHDR chunk (image header)
+  const ihdr = new ArrayBuffer(25)
+  const ihdrView = new DataView(ihdr)
+  ihdrView.setUint32(0, 13) // length
+  ihdrView.setUint32(4, 0x49484452) // "IHDR"
+  ihdrView.setUint32(8, width)
+  ihdrView.setUint32(12, height)
+  ihdrView.setUint8(16, 8) // bit depth
+  ihdrView.setUint8(17, 2) // color type (RGB)
+  ihdrView.setUint8(18, 0) // compression
+  ihdrView.setUint8(19, 0) // filter
+  ihdrView.setUint8(20, 0) // interlace
+  ihdrView.setUint32(21, 0x22) // CRC placeholder
+  
+  // Simple gradient RGB data
+  const pixelData = new Uint8Array(width * height * 3)
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4
-      canvas[index] = 102 + (x / width) * 50     // R
-      canvas[index + 1] = 126 + (y / height) * 50 // G  
-      canvas[index + 2] = 234 + (x / width) * 20  // B
-      canvas[index + 3] = 255                     // A
+      const index = (y * width + x) * 3
+      pixelData[index] = Math.floor(102 + (x / width) * 50)     // R
+      pixelData[index + 1] = Math.floor(126 + (y / height) * 50) // G  
+      pixelData[index + 2] = Math.floor(234 + (x / width) * 20)  // B
     }
   }
   
-  // Convert to basic PNG format (simplified)
-  // In reality, you'd use a proper PNG encoder or HTML-to-image service
-  return new Uint8Array(canvas)
+  // IDAT chunk (image data) - simplified
+  const idat = new ArrayBuffer(pixelData.length + 12)
+  const idatView = new DataView(idat)
+  idatView.setUint32(0, pixelData.length + 4) // length
+  idatView.setUint32(4, 0x49444154) // "IDAT"
+  new Uint8Array(idat, 8, pixelData.length).set(pixelData)
+  
+  // IEND chunk
+  const iend = new Uint8Array([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])
+  
+  // Combine all chunks
+  const result = new Uint8Array(pngSignature.length + ihdr.byteLength + idat.byteLength + iend.length)
+  let offset = 0
+  result.set(pngSignature, offset)
+  offset += pngSignature.length
+  result.set(new Uint8Array(ihdr), offset)
+  offset += ihdr.byteLength
+  result.set(new Uint8Array(idat), offset)
+  offset += idat.byteLength
+  result.set(iend, offset)
+  
+  return result
 }

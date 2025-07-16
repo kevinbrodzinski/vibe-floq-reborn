@@ -21,6 +21,14 @@ interface SharedAfterglowData {
     total_floqs: number | null;
     crossed_paths_count: number | null;
     moments: any[] | null;
+    afterglow_moments: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      timestamp: string;
+      moment_type: string;
+      color: string | null;
+    }> | null;
   };
 }
 
@@ -32,6 +40,8 @@ export default function SharedAfterglow() {
 
   useEffect(() => {
     if (!slug) return;
+    
+    const controller = new AbortController();
 
     const fetchSharedAfterglow = async () => {
       try {
@@ -53,11 +63,14 @@ export default function SharedAfterglow() {
               total_venues,
               total_floqs,
               crossed_paths_count,
-              moments
+              moments,
+              afterglow_moments (*)
             )
           `)
           .eq('slug', slug)
           .single();
+
+        if (controller.signal.aborted) return;
 
         if (fetchError) {
           console.error('Error fetching shared afterglow:', fetchError);
@@ -68,14 +81,21 @@ export default function SharedAfterglow() {
         console.log('Fetched shared afterglow:', shareData);
         setData(shareData as SharedAfterglowData);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error('Error:', err);
         setError('Failed to load afterglow');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSharedAfterglow();
+    
+    return () => {
+      controller.abort();
+    };
   }, [slug]);
 
   if (!slug) {

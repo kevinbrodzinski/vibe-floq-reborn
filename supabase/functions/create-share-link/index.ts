@@ -23,55 +23,55 @@ serve(async (req) => {
       .eq('daily_afterglow_id', daily_afterglow_id)
       .maybeSingle()
 
+    // Improved site URL derivation with SITE_URL env var
+    const siteUrl = Deno.env.get('SITE_URL') ?? 
+      `https://${Deno.env.get('SUPABASE_URL')?.replace('https://','').replace('.supabase.co','')}.supabase.co`
+
     if (existing) {
       console.log('Share link already exists:', existing.slug)
       return new Response(
         JSON.stringify({
           slug: existing.slug,
-          url: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app')}/a/${existing.slug}`
+          url: `${siteUrl}/a/${existing.slug}`
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Retry loop for slug collisions (rare)
-    let row, attempts = 0
-    while (attempts < 5 && !row) {
-      const { data, error } = await supabase
-        .from('afterglow_share_links')
-        .insert({ daily_afterglow_id })
-        .select('slug')
-        .maybeSingle()
+    // Use the safe database helper function instead of retry loop
+    const { data: slug, error: insertError } = await supabase
+      .rpc('insert_share_link_safe', { p_afterglow_id: daily_afterglow_id })
 
-      if (!error) { 
-        row = data
-        console.log('Generated new slug:', row?.slug)
-      }
-      else if (error.code !== '23505') {
-        console.error('Database error:', error)
-        throw error  // not unique_violation
-      }
-      attempts++
+    if (insertError) {
+      console.error('Database error:', insertError)
+      throw insertError
     }
-    if (!row) throw new Error('Could not generate unique slug')
 
-    // Kick off OG-image render *fire-and-forget*
+    console.log('Generated new slug:', slug)
+
+    // Kick off OG-image render using fetch instead of invoke
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    
     try {
-      await supabase.functions.invoke('render-og-card', {
-        body: { daily_afterglow_id, slug: row.slug }
+      await fetch(`${supabaseUrl}/functions/v1/render-og-card`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${supabaseServiceKey}` 
+        },
+        body: JSON.stringify({ daily_afterglow_id, slug })
       })
-      console.log('OG card render job queued for slug:', row.slug)
+      console.log('OG card render job queued for slug:', slug)
     } catch (err) {
       console.error('Failed to queue OG card render:', err)
       // Don't fail the request if OG card generation fails
     }
-
-    const siteUrl = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 'https://localhost:5173'
     
     return new Response(
       JSON.stringify({
-        slug: row.slug,
-        url: `${siteUrl}/a/${row.slug}`
+        slug,
+        url: `${siteUrl}/a/${slug}`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

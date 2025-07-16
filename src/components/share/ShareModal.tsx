@@ -40,16 +40,45 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
     if (!shareLink) return;
     
     try {
-      await navigator.clipboard.writeText(shareLink.url);
-      toast({
-        title: "Link copied!",
-        description: "Share link has been copied to your clipboard.",
-      });
+      // Check if clipboard API is available and we're in a secure context
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareLink.url);
+        toast({
+          title: "Link copied!",
+          description: "Share link has been copied to your clipboard.",
+        });
+      } else {
+        // Fallback for older browsers or insecure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = shareLink.url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          toast({
+            title: "Link copied!",
+            description: "Share link has been copied to your clipboard.",
+          });
+        } catch {
+          toast({
+            title: "Copy failed",
+            description: "Long-press to select and copy the link manually.",
+            variant: "destructive",
+          });
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
     } catch (err) {
       console.error('Failed to copy link:', err);
       toast({
         title: "Copy failed",
-        description: "Could not copy link to clipboard.",
+        description: "Long-press to select and copy the link manually.",
         variant: "destructive",
       });
     }
@@ -108,7 +137,7 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
               ) : (
                 <Button
                   onClick={handleGenerateLink}
-                  disabled={creatingLink}
+                  disabled={creatingLink || processing}
                   variant="outline"
                   className="w-full"
                 >
