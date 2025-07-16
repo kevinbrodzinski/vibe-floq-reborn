@@ -94,7 +94,7 @@ export function useCollaborativeState(fallbackPlanId?: string) {
   const { data: planData, isLoading } = useQuery({
     queryKey: ['floq-plan', planId],
     queryFn: async () => {
-      if (!planId || planId === 'plan-1') return MOCK_PLAN
+      if (!planId || (process.env.NODE_ENV === 'development' && planId === 'plan-1')) return MOCK_PLAN
       
       const { data, error } = await supabase
         .from('floq_plans')
@@ -160,6 +160,7 @@ export function useCollaborativeState(fallbackPlanId?: string) {
     const optimisticStop = {
       id: tempId,
       ...newStop,
+      duration_minutes: newStop.duration_minutes ?? 60, // Fallback to 60 minutes
       status: 'pending' as const
     }
     

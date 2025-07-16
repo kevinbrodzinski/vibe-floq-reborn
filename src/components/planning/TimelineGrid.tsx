@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragOverlay, useDroppable } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
 import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
+import { StopCardBase } from './StopCardBase'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -44,8 +45,10 @@ export function TimelineGrid({
     const start = parseInt(startTime.split(':')[0])
     const end = parseInt(endTime.split(':')[0]) || 24
     const blocks = []
+    let loopCount = 0
     
     for (let hour = start; hour !== end; hour = (hour + 1) % 24) {
+      if (loopCount++ > 48) break // Prevent infinite loop
       blocks.push({
         hour,
         label: formatHour(hour),
@@ -56,6 +59,13 @@ export function TimelineGrid({
     
     return blocks
   }, [startTime, endTime])
+
+  // Memoize stops in time slots for performance
+  const getStopsInTimeSlot = useMemo(() => {
+    return (timeSlot: string) => stops.filter(stop => 
+      stop.start_time?.startsWith(timeSlot.substring(0, 2))
+    )
+  }, [stops])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -111,6 +121,27 @@ export function TimelineGrid({
     )
   }
 
+  // Empty timeline fallback
+  if (stops.length === 0) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <div className="text-6xl">🚀</div>
+        <h3 className="text-xl font-semibold text-foreground">
+          Let's start your night
+        </h3>
+        <p className="text-muted-foreground">
+          Add your first stop to begin planning
+        </p>
+        <button
+          onClick={() => handleAddStop('19:00')}
+          className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
+        >
+          Add First Stop
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Collaboration Header */}
@@ -140,9 +171,7 @@ export function TimelineGrid({
       <DndContext onDragEnd={handleDragEnd}>
         <div className="space-y-3">
           {timeBlocks.map((block) => {
-            const stopsAtTime = stops.filter(stop => 
-              stop.start_time?.startsWith(block.time.substring(0, 2))
-            )
+            const stopsAtTime = getStopsInTimeSlot(block.time)
 
             return (
               <TimeSlot
@@ -212,45 +241,12 @@ function TimeSlot({
 }
 
 function StopCard({ stop, isDragging = false }: { stop: Stop; isDragging?: boolean }) {
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform 
-  } = useDraggable({ 
-    id: stop.id,
-    data: { stop }
-  })
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined
-
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={cn(
-        "p-3 rounded-xl bg-primary/10 border border-primary/20 cursor-grab active:cursor-grabbing",
-        isDragging && "opacity-50 rotate-2 scale-105"
-      )}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <h4 className="font-medium text-foreground">{stop.title}</h4>
-          {stop.venue?.name && (
-            <p className="text-sm text-muted-foreground">{stop.venue.name}</p>
-          )}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {stop.duration_minutes || 60}min
-        </div>
-      </div>
-    </motion.div>
+    <StopCardBase 
+      stop={stop}
+      isDragging={isDragging}
+      draggable={true}
+    />
   )
 }
 
