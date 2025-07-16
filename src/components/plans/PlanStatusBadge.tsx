@@ -1,58 +1,83 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Play, Pencil, CheckCircle, Archive } from 'lucide-react'
+import { Play, Pencil, CheckCircle, Archive, Clock } from 'lucide-react'
+import { planStatusConfig, type PlanStatus } from '@/lib/planStatusConfig'
 
 interface PlanStatusBadgeProps {
   status: string
   className?: string
   showIcon?: boolean
   size?: 'sm' | 'default' | 'lg'
+  withAnimation?: boolean
 }
 
 export function PlanStatusBadge({ 
   status, 
   className, 
   showIcon = true, 
-  size = 'default' 
+  size = 'default',
+  withAnimation = false
 }: PlanStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
+    // Use the centralized status config if available
+    if (status in planStatusConfig) {
+      const config = planStatusConfig[status as PlanStatus]
+      return {
+        className: config.className,
+        label: config.label,
+        icon: getStatusIcon(status),
+      }
+    }
+
+    // Fallback for unknown statuses
     switch (status) {
       case 'executing':
         return {
-          color: 'bg-green-500/10 text-green-600 border-green-500/20',
+          className: 'bg-gradient-primary text-primary-foreground border-primary glow-primary',
           icon: Play,
-          label: 'Executing'
+          label: 'Live'
         }
       case 'finalized':
         return {
-          color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+          className: 'bg-success/10 text-success border-success/30',
           icon: CheckCircle,
           label: 'Finalized'
         }
       case 'draft':
         return {
-          color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+          className: 'bg-muted/50 text-muted-foreground border-muted',
           icon: Pencil,
           label: 'Draft'
         }
       case 'completed':
         return {
-          color: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+          className: 'bg-muted text-muted-foreground border-muted',
           icon: CheckCircle,
           label: 'Completed'
         }
       case 'cancelled':
         return {
-          color: 'bg-red-500/10 text-red-600 border-red-500/20',
+          className: 'bg-destructive/10 text-destructive border-destructive/30',
           icon: Archive,
           label: 'Cancelled'
         }
       default:
         return {
-          color: 'bg-muted text-muted-foreground',
-          icon: Pencil,
-          label: status
+          className: 'bg-muted text-muted-foreground border-muted',
+          icon: Clock,
+          label: status.charAt(0).toUpperCase() + status.slice(1)
         }
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'executing': return Play
+      case 'finalized': return CheckCircle
+      case 'draft': return Pencil
+      case 'completed': return CheckCircle
+      case 'cancelled': return Archive
+      default: return Clock
     }
   }
 
@@ -75,9 +100,10 @@ export function PlanStatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        'border font-medium',
-        config.color,
+        'border font-medium transition-all duration-200',
+        config.className,
         sizeClasses[size],
+        withAnimation && 'animate-fade-in',
         className
       )}
       aria-label={`Plan status: ${config.label}`}

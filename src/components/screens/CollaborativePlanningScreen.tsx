@@ -342,13 +342,14 @@ export const CollaborativePlanningScreen = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            {/* Status action buttons */}
+            {/* Status transition buttons - prominent for major actions */}
             <PlanStatusActions 
               planId={plan.id}
               currentStatus={plan.status || 'draft'}
               isCreator={plan.createdBy === 'current-user'} // This would come from auth
               hasStops={plan.stops.length > 0}
               hasParticipants={plan.participants.length > 0}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             />
             
             <PlanInviteButton />
@@ -363,6 +364,7 @@ export const CollaborativePlanningScreen = () => {
               className={`p-2 rounded-xl transition-all duration-300 ${
                 showChat ? 'bg-primary text-primary-foreground glow-primary' : 'bg-card/50 text-muted-foreground hover:bg-card/80'
               }`}
+              title="Toggle chat"
             >
               <MessageCircle size={20} />
             </button>
@@ -413,13 +415,15 @@ export const CollaborativePlanningScreen = () => {
           className="mb-6"
         />
 
-        {/* Voting Threshold Meter */}
-        <VotingThresholdMeter
-          totalParticipants={activeParticipants.length || plan.participants.length}
-          votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
-          threshold={60}
-          className="mb-6"
-        />
+        {/* Voting Threshold Meter - Only show for finalized+ plans */}
+        {canVoteOnStops(plan.status || 'draft') && (
+          <VotingThresholdMeter
+            totalParticipants={activeParticipants.length || plan.participants.length}
+            votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
+            threshold={60}
+            className="mb-6"
+          />
+        )}
 
         {planMode === 'planning' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

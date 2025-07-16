@@ -86,7 +86,7 @@ export default function FloqPlanExecutionScreen() {
             currentStopIndex={currentStopIndex}
             progress={progress}
           />
-          <PlanStatusTag status="active" />
+          <PlanStatusTag status="executing" />
         </div>
 
         {/* Main Execution Content */}
