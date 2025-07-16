@@ -37,6 +37,7 @@ interface ResizableStopCardProps {
   suggested?: boolean
   allStops?: PlanStop[]
   snapSuggestion?: SnapSuggestion
+  recentVotes?: any[]
   onSelect?: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
   onStartResize?: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize?: (clientY: number) => number | undefined
@@ -58,6 +59,7 @@ export function ResizableStopCard({
   suggested = false,
   allStops = [],
   snapSuggestion,
+  recentVotes,
   onSelect,
   onStartResize,
   onResize,
@@ -80,7 +82,7 @@ export function ResizableStopCard({
   const { recordNovaSnap } = useNovaSnap()
   const { canEditPlan } = usePlanStatusValidation()
   const { mutate: deleteStop } = useDeleteStop()
-  const { voteOverlays } = useVoteActivityTracker()
+  const voteOverlays = useVoteActivityTracker(recentVotes?.filter(v => v.stopId === stop.id) ?? [])
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)

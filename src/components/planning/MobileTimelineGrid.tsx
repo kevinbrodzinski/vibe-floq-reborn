@@ -18,6 +18,7 @@ interface MobileTimelineGridProps {
   onStopReorder?: (stopId: string, newIndex: number) => void
   onStopSelect?: (stopId: string) => void
   selectedStopIds?: string[]
+  recentVotes?: any[]
 }
 
 export function MobileTimelineGrid({
@@ -30,7 +31,8 @@ export function MobileTimelineGrid({
   isDragOperationPending,
   onStopReorder,
   onStopSelect,
-  selectedStopIds = []
+  selectedStopIds = [],
+  recentVotes = []
 }: MobileTimelineGridProps) {
   const isMobile = useIsMobile()
   const [draggedStopId, setDraggedStopId] = useState<string | null>(null)
@@ -46,6 +48,7 @@ export function MobileTimelineGrid({
         connectionStatus={connectionStatus}
         isOptimistic={isOptimistic}
         isDragOperationPending={isDragOperationPending}
+        recentVotes={recentVotes}
       />
     )
   }

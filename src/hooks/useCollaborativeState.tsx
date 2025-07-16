@@ -153,6 +153,9 @@ export const useCollaborativeState = (planId: string) => {
     }
   ]);
 
+  // Recent votes for real-time overlays
+  const [recentVotes, setRecentVotes] = useState<any[]>([]);
+
   const [draggedStop, setDraggedStop] = useState<PlanStop | null>(null);
   const syncTimerRef = useRef<NodeJS.Timeout>();
 
@@ -281,8 +284,36 @@ export const useCollaborativeState = (planId: string) => {
     }));
   }, []);
 
-  // Mock real-time updates from other users
+  // Mock real-time updates from other users including vote broadcasts
   useEffect(() => {
+    // Mock socket channel for vote events
+    const mockVoteChannel = {
+      on: (event: string, callback: (payload: any) => void) => {
+        // Simulate receiving vote events
+        const interval = setInterval(() => {
+          if (Math.random() > 0.95) { // Occasional votes
+            const voteActivity = {
+              id: `vote-${Date.now()}`,
+              type: 'vote_cast',
+              timestamp: new Date().toISOString(),
+              stopId: plan.stops[Math.floor(Math.random() * plan.stops.length)]?.id || '',
+              userId: Math.random() > 0.5 ? 'alex' : 'sam',
+              username: Math.random() > 0.5 ? 'Alex' : 'Sam',
+              vote: Math.random() > 0.5 ? 'up' : 'down'
+            }
+            callback(voteActivity)
+          }
+        }, 2000)
+        
+        return () => clearInterval(interval)
+      }
+    }
+
+    const unsubscribe = mockVoteChannel.on('vote', (payload: any) => {
+      setActivities(a => [...a, payload])
+      setRecentVotes([payload])        // <— bump to trigger tracker
+    })
+
     const interval = setInterval(() => {
       // Simulate Alex editing
       if (Math.random() > 0.7) {
@@ -300,8 +331,19 @@ export const useCollaborativeState = (planId: string) => {
       }
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, [updateParticipantStatus]);
+    return () => {
+      clearInterval(interval);
+      unsubscribe?.();
+    };
+  }, [updateParticipantStatus, plan.stops]);
+
+  // Clear recent votes after a tick so we don't keep re-sending
+  useEffect(() => {
+    if (recentVotes.length) {
+      const timer = setTimeout(() => setRecentVotes([]), 100)
+      return () => clearTimeout(timer)
+    }
+  }, [recentVotes]);
 
   // Load draft on mount
   useEffect(() => {
@@ -330,6 +372,7 @@ export const useCollaborativeState = (planId: string) => {
     voteOnStop,
     updateParticipantStatus,
     isAutoSaving,
-    clearDraft
+    clearDraft,
+    recentVotes
   };
 };

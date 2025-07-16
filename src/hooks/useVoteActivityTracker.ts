@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export interface VoteActivity {
   id: string
@@ -10,34 +10,44 @@ export interface VoteActivity {
   vote: 'up' | 'down'
 }
 
-export function useVoteActivityTracker() {
-  const [voteOverlays, setVoteOverlays] = useState<Record<string, VoteActivity>>({})
+export function useVoteActivityTracker(
+  liveActivities: VoteActivity[]      // ← new prop coming from the parent
+) {
+  /** overlays keyed by stopId */
+  const [overlays, setOverlays] = useState<Record<string, VoteActivity>>({})
 
-  const addVoteActivity = useCallback((activity: VoteActivity) => {
-    setVoteOverlays(prev => ({
-      ...prev,
-      [activity.stopId]: activity
-    }))
+  /** keep timeout ids so we can clear them */
+  const timersRef = useRef<Record<string, NodeJS.Timeout>>({})
 
-    // Auto-remove after 2 seconds
-    setTimeout(() => {
-      setVoteOverlays(prev => {
-        const { [activity.stopId]: removed, ...rest } = prev
-        return rest
-      })
-    }, 2000)
-  }, [])
+  /* listen to live vote events */
+  useEffect(() => {
+    if (!liveActivities.length) return
 
-  const clearVoteOverlay = useCallback((stopId: string) => {
-    setVoteOverlays(prev => {
-      const { [stopId]: removed, ...rest } = prev
-      return rest
+    liveActivities.forEach(a => {
+      // show (or replace) overlay for this stop
+      setOverlays(prev => ({ ...prev, [a.stopId]: a }))
+
+      // clear any previous timer for this stop
+      if (timersRef.current[a.stopId]) clearTimeout(timersRef.current[a.stopId])
+
+      // hide after 2 s
+      timersRef.current[a.stopId] = setTimeout(() => {
+        setOverlays(prev => {
+          const { [a.stopId]: _, ...rest } = prev
+          return rest
+        })
+        delete timersRef.current[a.stopId]
+      }, 2000)
     })
-  }, [])
+  }, [liveActivities])
 
-  return {
-    voteOverlays,
-    addVoteActivity,
-    clearVoteOverlay
-  }
+  /* tidy up on unmount */
+  useEffect(
+    () => () => {
+      Object.values(timersRef.current).forEach(clearTimeout)
+    },
+    []
+  )
+
+  return overlays            // { stopId → last-vote-activity }
 }

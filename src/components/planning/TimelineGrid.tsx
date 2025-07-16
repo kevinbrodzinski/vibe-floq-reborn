@@ -37,6 +37,7 @@ interface TimelineGridProps {
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
   isOptimistic?: boolean
   isDragOperationPending?: boolean
+  recentVotes?: any[]
 }
 
 export function TimelineGrid({ 
@@ -46,7 +47,8 @@ export function TimelineGrid({
   activeParticipants = [],
   connectionStatus = 'disconnected',
   isOptimistic = false,
-  isDragOperationPending = false
+  isDragOperationPending = false,
+  recentVotes = []
 }: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [showConflictOverlay, setShowConflictOverlay] = useState(false)
@@ -412,6 +414,7 @@ export function TimelineGrid({
                 isStopConflicting={isStopConflicting}
                 allStops={stops}
                 planId={planId}
+                recentVotes={recentVotes}
               />
             )
           })}
@@ -471,7 +474,8 @@ function TimeSlot({
   getStopColor,
   isStopConflicting,
   allStops,
-  planId
+  planId,
+  recentVotes
 }: { 
   timeBlock: any
   stops: PlanStop[]
@@ -488,6 +492,7 @@ function TimeSlot({
   isStopConflicting: (stopId: string) => boolean
   allStops: PlanStop[]
   planId: string
+  recentVotes?: any[]
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -508,24 +513,25 @@ function TimeSlot({
           <div className="space-y-2">
             {stops.map(stop => (
                <ResizableStopCard 
-                 key={stop.id} 
-                 stop={stop}
-                 planId={planId}
-                 isSelected={selectedStops.has(stop.id)}
-                 isResizing={resizingStop === stop.id}
-                 hasConflict={isStopConflicting(stop.id)}
-                 suggested={(stop as any).suggested}
-                 allStops={allStops}
-                 onSelect={onSelectStop}
-                 onStartResize={onStartResize}
-                 onResize={onResize}
-                 onEndResize={onEndResize}
-                 onRemove={() => onDeleteStop(stop.id)}
-                  style={getStopColor?.(stop) ? { 
-                    borderColor: getStopColor(stop), 
-                    backgroundColor: `${getStopColor(stop)}10` 
-                  } : undefined}
-               />
+                  key={stop.id} 
+                  stop={stop}
+                  planId={planId}
+                  isSelected={selectedStops.has(stop.id)}
+                  isResizing={resizingStop === stop.id}
+                  hasConflict={isStopConflicting(stop.id)}
+                  suggested={(stop as any).suggested}
+                  allStops={allStops}
+                  recentVotes={recentVotes}
+                  onSelect={onSelectStop}
+                  onStartResize={onStartResize}
+                  onResize={onResize}
+                  onEndResize={onEndResize}
+                  onRemove={() => onDeleteStop(stop.id)}
+                   style={getStopColor?.(stop) ? { 
+                     borderColor: getStopColor(stop), 
+                     backgroundColor: `${getStopColor(stop)}10` 
+                   } : undefined}
+                />
             ))}
           </div>
         ) : (

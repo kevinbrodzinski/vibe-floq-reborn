@@ -35,6 +35,9 @@ export function useCollaborativeState(fallbackPlanId?: string) {
   const [optimisticStops, setOptimisticStops] = useState<PlanStop[]>([])
   const [activities, setActivities] = useState<any[]>([])
   
+  // Recent votes for real-time overlays
+  const [recentVotes, setRecentVotes] = useState<any[]>([])
+  
   // Hooks
   const planSync = usePlanSync()
   const presence = usePresence(planId || '')
@@ -352,6 +355,7 @@ const {
     groupedParticipants,
     connectionStatus,
     broadcastTyping: presence.broadcastTyping,
-    isOptimistic: planSync?.isPending || false
+    isOptimistic: planSync?.isPending || false,
+    recentVotes
   }
 }

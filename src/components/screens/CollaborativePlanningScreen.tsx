@@ -66,7 +66,8 @@ export const CollaborativePlanningScreen = () => {
     removeStop,
     reorderStops,
     voteOnStop,
-    updateParticipantStatus
+    updateParticipantStatus,
+    recentVotes
   } = useCollaborativeState("plan-1");
 
   // Status validation for edit guards
@@ -548,6 +549,7 @@ export const CollaborativePlanningScreen = () => {
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
                 selectedStopIds={selectedStopIds}
+                recentVotes={recentVotes}
               />
 
               {/* Plan Summary Card - Finalized Mode */}
