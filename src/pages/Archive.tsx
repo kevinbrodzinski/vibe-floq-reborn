@@ -297,7 +297,7 @@ export default function Archive() {
                             key={afterglow.id}
                             afterglow={afterglow}
                             onFavorite={handleFavorite}
-                            onAddToCollection={(id) => handleAddToCollection(afterglow.id, afterglow.summary_text)}
+                            onAddToCollection={() => handleAddToCollection(afterglow.id, afterglow.summary_text)}
                             onViewDetails={() => handleViewDetails(afterglow.id)}
                             isFavorited={isFavorited(afterglow.id)}
                           />
@@ -335,7 +335,7 @@ export default function Archive() {
                           key={favorite.id}
                           afterglow={favorite.daily_afterglow as any}
                           onFavorite={handleFavorite}
-                          onAddToCollection={(id) => handleAddToCollection(favorite.daily_afterglow.id, favorite.daily_afterglow?.summary_text)}
+                          onAddToCollection={() => handleAddToCollection(favorite.daily_afterglow.id, favorite.daily_afterglow?.summary_text)}
                           onViewDetails={() => handleViewDetails(favorite.daily_afterglow.id)}
                           isFavorited={true}
                         />

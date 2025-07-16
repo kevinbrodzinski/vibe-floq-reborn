@@ -14,6 +14,9 @@ import { Loader, AlertCircle } from "lucide-react";
 
 export default function AfterglowDetailPage() {
   const { afterglowId } = useParams<{ afterglowId: string }>();
+  
+  if (!afterglowId) return <p>Invalid afterglow id</p>;
+  
   const { data, isLoading, isError, error } = useAfterglowDetail(afterglowId);
 
   if (isLoading)
@@ -56,7 +59,7 @@ export default function AfterglowDetailPage() {
           </Badge>
           <Badge variant="outline">{afterglow.total_venues} venues</Badge>
           <Badge variant="outline">{moments.length} moments</Badge>
-          {afterglow.is_pinned && <Badge variant="destructive">Pinned</Badge>}
+          {afterglow.is_pinned && <Badge variant="outline">Pinned</Badge>}
         </div>
       </header>
 
@@ -65,8 +68,8 @@ export default function AfterglowDetailPage() {
         {moments.map((m, i) => (
           <TimelineItem key={m.id}>
             <TimelineSeparator>
-              <TimelineDot color={m.color || "#6b7280"} />
-              {i !== moments.length - 1 && <TimelineConnector />}
+              <TimelineDot color={m.color ?? "#6b7280"} />
+              {i < moments.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
             <TimelineContent>
               <div className="pb-8">
@@ -84,7 +87,7 @@ export default function AfterglowDetailPage() {
       </Timeline>
 
       {/* Navigation back */}
-      <Link to="/archive" className="text-sm text-blue-600 hover:underline">
+      <Link to="/archive" className="text-sm text-primary hover:underline">
         ← Back to Archive
       </Link>
     </div>

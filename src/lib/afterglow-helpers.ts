@@ -40,15 +40,14 @@ export const fetchAfterglowDetail = async (
   });
 
   if (error) throw error;
-  if (data?.error) throw new Error(data.error);
 
   return data as AfterglowDetail;
 };
 
 /* ---------- React-query hook ---------- */
 export const useAfterglowDetail = (afterglowId?: string) =>
-  useQuery({
+  useQuery<AfterglowDetail>({
     queryKey: ["afterglow-detail", afterglowId],
-    queryFn: () => (afterglowId ? fetchAfterglowDetail(afterglowId) : Promise.reject()),
-    enabled: !!afterglowId
+    queryFn: () => fetchAfterglowDetail(afterglowId!),
+    enabled: Boolean(afterglowId)
   });
