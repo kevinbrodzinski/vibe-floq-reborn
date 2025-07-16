@@ -25,7 +25,7 @@ export async function fetchWeeklyTrends(
 ): Promise<WeeklyTrend[]> {
   const { data, error } = await supabase.rpc(
     'get_afterglow_weekly_trends',
-    { /* no params (auth.uid() inside)*/ }
+    { p_weeks_back: weeksBack }          // <- now forwarded
   );
   if (error) throw error;
   return (data ?? []) as WeeklyTrend[];
@@ -33,8 +33,7 @@ export async function fetchWeeklyTrends(
 
 export async function fetchDailyTrends(): Promise<DailyTrend[]> {
   const { data, error } = await supabase.rpc(
-    'get_afterglow_daily_trends',
-    { /* auth.uid() inside */ }
+    'get_afterglow_daily_trends'
   );
   if (error) throw error;
   return (data ?? []) as DailyTrend[];

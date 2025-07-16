@@ -6,16 +6,16 @@ import {
   DailyTrend,
 } from '@/lib/afterglow-trends';
 
-export const useWeeklyTrends = () =>
+export const useWeeklyTrends = (weeksBack = 8) =>
   useQuery<WeeklyTrend[], Error>({
-    queryKey: ['afterglow', 'weekly-trends'],
-    queryFn: () => fetchWeeklyTrends(),
-    staleTime: 60 * 60 * 1000, // 1 h
+    queryKey: ['afterglow', 'weekly-trends', weeksBack],
+    queryFn: () => fetchWeeklyTrends(weeksBack),
+    staleTime: 1000 * 60 * 60, // 1h
   });
 
 export const useDailyTrends = () =>
   useQuery<DailyTrend[], Error>({
     queryKey: ['afterglow', 'daily-trends'],
     queryFn: () => fetchDailyTrends(),
-    staleTime: 30 * 60 * 1000, // 30 min
+    staleTime: 1000 * 60 * 30, // 30 min
   });
