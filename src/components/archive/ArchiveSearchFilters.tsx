@@ -62,12 +62,12 @@ export function ArchiveSearchFilters({
 
   const handleStartDateChange = (date: Date | undefined) => {
     setStartDate(date);
-    updateFilters({ startDate: date ? format(date, 'yyyy-MM-dd') : undefined });
+    updateFilters({ startDate: date ? format(date, 'yyyy-MM-dd') : null });
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
     setEndDate(date);
-    updateFilters({ endDate: date ? format(date, 'yyyy-MM-dd') : undefined });
+    updateFilters({ endDate: date ? format(date, 'yyyy-MM-dd') : null });
   };
 
   const hasActiveFilters = Object.keys(filters).some(key => {

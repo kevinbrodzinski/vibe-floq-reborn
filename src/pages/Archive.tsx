@@ -74,8 +74,8 @@ export default function Archive() {
   });
 
   const exportMutation = useMutation({
-    mutationFn: ({ startDate, endDate }: { startDate?: string; endDate?: string }) => 
-      exportAfterglowData(startDate, endDate),
+    mutationFn: (params: { startDate?: string; endDate?: string }) => 
+      exportAfterglowData(params),
     onSuccess: (data) => {
       // Create and download JSON file
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

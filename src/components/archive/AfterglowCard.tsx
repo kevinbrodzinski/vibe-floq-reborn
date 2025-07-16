@@ -55,7 +55,7 @@ export function AfterglowCard({
 
   const getEnergyColor = (score: number) => {
     if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
+    if (score >= 60) return 'text-blue-600';
     if (score >= 40) return 'text-orange-600';
     return 'text-red-600';
   };
@@ -145,14 +145,14 @@ export function AfterglowCard({
           
           {afterglow.vibe_path && afterglow.vibe_path.length > 1 && (
             <div className="flex flex-wrap gap-1">
-              {afterglow.vibe_path.slice(0, 3).map((tag, index) => (
+              {[...new Set(afterglow.vibe_path)].slice(0, 3).map((tag, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
                   {tag}
                 </Badge>
               ))}
-              {afterglow.vibe_path.length > 3 && (
+              {[...new Set(afterglow.vibe_path)].length > 3 && (
                 <Badge variant="outline" className="text-xs">
-                  +{afterglow.vibe_path.length - 3} more
+                  +{[...new Set(afterglow.vibe_path)].length - 3} more
                 </Badge>
               )}
             </div>

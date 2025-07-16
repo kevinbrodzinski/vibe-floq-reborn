@@ -51,17 +51,25 @@ export const safeGetUserByUsername = async (username: string) => {
 // PHASE 3B: INTELLIGENT ARCHIVE HELPERS
 // ======================================================
 
+export type Trend = 'improving' | 'declining' | 'stable';
+export type ActivityRate = 'high' | 'medium' | 'low';
+
 export interface SearchAfterglowsParams {
-  searchQuery?: string;
-  startDate?: string;
-  endDate?: string;
-  minEnergy?: number;
-  maxEnergy?: number;
-  dominantVibe?: string;
-  tags?: string[];
-  isPinned?: boolean;
+  searchQuery?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  minEnergy?: number | null;
+  maxEnergy?: number | null;
+  dominantVibe?: string | null;
+  tags?: string[] | null;
+  isPinned?: boolean | null;
   limit?: number;
   offset?: number;
+}
+
+export interface ExportParams {
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface AfterglowSearchResult {
@@ -94,13 +102,13 @@ export interface ArchiveStats {
     avg_energy_all_time: number;
     avg_energy_last_30: number;
     high_energy_days: number;
-    energy_trend: 'improving' | 'declining' | 'stable';
+    energy_trend: Trend;
   };
   social_insights: {
     avg_social_all_time: number;
     avg_social_last_30: number;
     high_social_days: number;
-    social_trend: 'improving' | 'declining' | 'stable';
+    social_trend: Trend;
   };
   activity_summary: {
     total_venues_visited: number;
@@ -117,26 +125,26 @@ export interface ArchiveStats {
   };
   recent_activity: {
     days_logged_last_30: number;
-    activity_rate_last_30: 'high' | 'medium' | 'low';
+    activity_rate_last_30: ActivityRate;
   };
 }
 
 export const searchAfterglows = async (params: SearchAfterglowsParams = {}): Promise<AfterglowSearchResult[]> => {
   const { data, error } = await supabase.rpc('search_afterglows', {
-    p_search_query: params.searchQuery || null,
-    p_start_date: params.startDate || null,
-    p_end_date: params.endDate || null,
-    p_min_energy: params.minEnergy || null,
-    p_max_energy: params.maxEnergy || null,
-    p_dominant_vibe: params.dominantVibe || null,
-    p_tags: params.tags || null,
-    p_is_pinned: params.isPinned !== undefined ? params.isPinned : null,
-    p_limit: params.limit || 20,
-    p_offset: params.offset || 0
+    p_search_query: params.searchQuery ?? null,
+    p_start_date: params.startDate ?? null,
+    p_end_date: params.endDate ?? null,
+    p_min_energy: params.minEnergy ?? null,
+    p_max_energy: params.maxEnergy ?? null,
+    p_dominant_vibe: params.dominantVibe ?? null,
+    p_tags: params.tags ?? null,
+    p_is_pinned: params.isPinned ?? null,
+    p_limit: params.limit ?? 20,
+    p_offset: params.offset ?? 0
   });
 
   if (error) throw error;
-  return data || [];
+  return data ?? [];
 };
 
 export const getArchiveStats = async (): Promise<ArchiveStats> => {
@@ -146,10 +154,10 @@ export const getArchiveStats = async (): Promise<ArchiveStats> => {
   return data;
 };
 
-export const exportAfterglowData = async (startDate?: string, endDate?: string) => {
+export const exportAfterglowData = async (params: ExportParams = {}) => {
   const { data, error } = await supabase.rpc('export_afterglow_data', {
-    p_start_date: startDate || null,
-    p_end_date: endDate || null
+    p_start_date: params.startDate ?? null,
+    p_end_date: params.endDate ?? null
   });
 
   if (error) throw error;
