@@ -19,8 +19,12 @@ import { ExecutionOverlay } from "@/components/ExecutionOverlay";
 import { PlanPresenceIndicator } from "@/components/PlanPresenceIndicator";
 import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
 import { PlanChatSidebar } from "@/components/PlanChatSidebar";
+import { PlanSummaryCard } from "@/components/plan/PlanSummaryCard";
+import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
 import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
+import { usePlanSummaries } from "@/hooks/usePlanSummaries";
+import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
 import { supabase } from "@/integrations/supabase/client";
 
 export const CollaborativePlanningScreen = () => {
@@ -33,6 +37,7 @@ export const CollaborativePlanningScreen = () => {
   const [overlayAction, setOverlayAction] = useState<'vote' | 'rsvp' | 'check-in' | 'stop-action'>('vote');
   const [overlayFeedback, setOverlayFeedback] = useState('');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [showSummaryEditModal, setShowSummaryEditModal] = useState(false);
   
   const {
     plan,
@@ -43,6 +48,10 @@ export const CollaborativePlanningScreen = () => {
     voteOnStop,
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
+
+  // Plan summaries
+  const { data: summaries } = usePlanSummaries(plan.id);
+  const generateSummary = useGeneratePlanSummary();
 
   // Real-time presence tracking
   const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id);
@@ -286,6 +295,14 @@ export const CollaborativePlanningScreen = () => {
                 isEditable={true}
               />
 
+              {/* Plan Summary Card - Finalized Mode */}
+              <PlanSummaryCard
+                planId={plan.id}
+                mode="finalized"
+                editable={true}
+                title="Plan Summary"
+              />
+
               {/* Summary Review Panel */}
               <SummaryReviewPanel
                 planTitle={plan.title}
@@ -383,6 +400,15 @@ export const CollaborativePlanningScreen = () => {
           </div>
         )}
       </div>
+
+      {/* Summary Edit Modal */}
+      {showSummaryEditModal && (
+        <PlanSummaryEditModal
+          planId={plan.id}
+          mode="finalized"
+          onClose={() => setShowSummaryEditModal(false)}
+        />
+      )}
     </div>
   );
 };

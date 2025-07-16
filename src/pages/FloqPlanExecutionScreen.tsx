@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanParticipants } from '@/hooks/usePlanParticipants'
@@ -12,6 +13,9 @@ import { AutoAfterglowPrompt } from '@/components/AutoAfterglowPrompt'
 import { AfterglowReflectionForm } from '@/components/AfterglowReflectionForm'
 import { AfterglowSummaryCard } from '@/components/AfterglowSummaryCard'
 import { AfterglowShareView } from '@/components/AfterglowShareView'
+import { PostPlanReviewModal } from '@/components/plan/PostPlanReviewModal'
+import { PlanFeedbackDisplay } from '@/components/plan/PlanFeedbackDisplay'
+import { usePlanFeedback } from '@/hooks/usePlanFeedback'
 
 export default function FloqPlanExecutionScreen() {
   const { planId } = useParams<{ floqId: string; planId: string }>()
@@ -23,6 +27,7 @@ export default function FloqPlanExecutionScreen() {
   const { data: stops = [] } = usePlanStops(planId)
   const { data: participants = [] } = usePlanParticipants(planId)
   const { data: afterglow } = useAfterglowByPlan(planId)
+  const { data: feedback = [] } = usePlanFeedback(planId)
   
   const {
     currentStopIndex,
@@ -38,6 +43,8 @@ export default function FloqPlanExecutionScreen() {
     snoozeAfterglow,
   } = usePlanExecutionState(planId)
 
+  const [showReviewModal, setShowReviewModal] = useState(false)
+
   // Set up real-time sync
   useRealtimePlanSync({ plan_id: planId })
 
@@ -45,6 +52,14 @@ export default function FloqPlanExecutionScreen() {
   const shouldShowReflectionForm = afterglowStarted && !reflectionSubmitted && !afterglow
   const shouldShowSummary = afterglow && !reflectionSubmitted
   const shouldShowShare = afterglow && reflectionSubmitted
+
+  // Auto-show review modal when execution completes
+  useEffect(() => {
+    if (isExecutionComplete && !showReviewModal) {
+      const timer = setTimeout(() => setShowReviewModal(true), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [isExecutionComplete, showReviewModal])
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,6 +140,11 @@ export default function FloqPlanExecutionScreen() {
             <AfterglowSummaryCard afterglow={afterglow} />
           )}
 
+          {/* Plan Feedback Display */}
+          <PlanFeedbackDisplay 
+            planId={planId}
+          />
+
           {/* Share View */}
           {shouldShowShare && afterglow && (
             <AfterglowShareView afterglow={afterglow} />
@@ -165,6 +185,15 @@ export default function FloqPlanExecutionScreen() {
           )}
         </div>
       </div>
+
+      {/* Post Plan Review Modal */}
+      {showReviewModal && (
+        <PostPlanReviewModal
+          planId={planId}
+          planTitle={stops[0]?.title || 'Your Experience'}
+          onClose={() => setShowReviewModal(false)}
+        />
+      )}
     </div>
   )
 }
