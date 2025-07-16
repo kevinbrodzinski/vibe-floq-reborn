@@ -5,6 +5,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
 import { CrossedPathsCard } from "@/components/CrossedPathsCard";
 import { useAfterglowData } from "@/hooks/useAfterglowData";
+import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
+import { getVibeDisplayName } from "@/utils/afterglowHelpers";
 
 interface NightEvent {
   id: string;
@@ -24,7 +26,7 @@ export const AfterglowScreen = () => {
   
   // Get today's date for afterglow data
   const today = new Date().toISOString().split('T')[0];
-  const { afterglow, isLoading: afterglowLoading, isGenerating, error: afterglowError, generateAfterglow } = useAfterglowData(today);
+  const { afterglow, isLoading: afterglowLoading, isGenerating, error: afterglowError, generateAfterglow, togglePin, getShareUrl } = useAfterglowData(today);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -90,7 +92,7 @@ export const AfterglowScreen = () => {
     totalStops: afterglow?.total_venues || 0,
     peopleCrossed: crossedPathsCount,
     floqsJoined: afterglow?.total_floqs || 0,
-    mostFeltVibe: afterglow?.dominant_vibe || "chill",
+    mostFeltVibe: getVibeDisplayName(afterglow?.dominant_vibe || "chill"),
     vibeIntensity: afterglow?.energy_score || 0,
     connectionsMade: afterglow?.crossed_paths_count || 0
   };
@@ -290,51 +292,25 @@ export const AfterglowScreen = () => {
         ) : afterglow?.moments?.length ? (
           <div className="space-y-8">
             {afterglow.moments.map((moment, index) => (
-              <div key={`${moment.timestamp}-${index}`} className="relative flex items-start space-x-6">
-                {/* Timeline dot */}
-                <div 
-                  className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
-                  style={{
-                    backgroundColor: moment.color.startsWith('#') ? moment.color : getTimelineColor(index),
-                    boxShadow: `0 0 30px ${moment.color.startsWith('#') ? moment.color : getTimelineColor(index)}40`
-                  }}
-                ></div>
-
-                {/* Event card */}
-                <div className="flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02]">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-muted-foreground text-sm font-medium">
-                        {new Date(moment.timestamp).toLocaleTimeString('en-US', { 
-                          hour: 'numeric', 
-                          minute: '2-digit', 
-                          hour12: true 
-                        })}
-                      </span>
-                      {getEventTypeIcon(moment.moment_type)}
-                    </div>
-                    
-                    {index === 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-secondary">
-                          <Mail className="w-3 h-3 mr-1" />
-                          Share
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-active">
-                          <Heart className="w-3 h-3 mr-1" />
-                          Save
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  <h3 className="text-lg font-bold mb-2 text-foreground">{moment.title}</h3>
-                  
-                  {moment.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{moment.description}</p>
-                  )}
-                </div>
-              </div>
+              <AfterglowMomentCard
+                key={`${moment.timestamp}-${index}`}
+                moment={moment}
+                index={index}
+                isFirst={index === 0}
+                onShare={() => {
+                  const shareUrl = getShareUrl()
+                  if (shareUrl && navigator.share) {
+                    navigator.share({
+                      title: 'My Afterglow',
+                      text: afterglow.summary_text,
+                      url: shareUrl
+                    })
+                  } else if (shareUrl) {
+                    navigator.clipboard.writeText(shareUrl)
+                  }
+                }}
+                onSave={() => togglePin()}
+              />
             ))}
           </div>
         ) : (

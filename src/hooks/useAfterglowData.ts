@@ -27,7 +27,6 @@ export interface DailyAfterglowData {
   summary_text: string
   moments: AfterglowMoment[]
   is_pinned: boolean
-  share_token: string
   created_at: string
   regenerated_at?: string
 }
@@ -122,7 +121,7 @@ export function useAfterglowData(date: string) {
 
   const getShareUrl = () => {
     if (!afterglow) return null
-    return `${window.location.origin}/shared-afterglow/${afterglow.share_token}`
+    return `${window.location.origin}/afterglow?date=${afterglow.date}&user=${afterglow.user_id}`
   }
 
   // Fetch data when user or date changes
