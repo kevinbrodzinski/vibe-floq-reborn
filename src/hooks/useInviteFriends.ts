@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { toast } from '@/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface InviteExternalFriendsParams {
   plan_id: string
@@ -8,10 +8,19 @@ interface InviteExternalFriendsParams {
   message?: string
 }
 
+interface InviteFriendsResponse {
+  success: true
+  invited: string[]
+  already_invited: string[]
+  invitations: any[]
+  message: string
+}
+
 export function useInviteFriends() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<InviteFriendsResponse, Error, InviteExternalFriendsParams>({
     mutationFn: async (params: InviteExternalFriendsParams) => {
       const { data, error } = await supabase.functions.invoke('invite-external-friends', {
         body: params
@@ -19,7 +28,8 @@ export function useInviteFriends() {
       
       if (error) {
         console.error('Friend invitation error:', error)
-        throw new Error(error.message || 'Failed to send invitations')
+        const message = error?.message ?? error?.error?.message ?? 'Something went wrong on the server'
+        throw new Error(message)
       }
       
       return data
@@ -52,7 +62,7 @@ export function useInviteFriends() {
       toast({
         variant: "destructive",
         title: "Failed to send invitations",
-        description: error.message || "Something went wrong. Please try again.",
+        description: error?.message ?? "Something went wrong. Please try again.",
       })
     }
   })

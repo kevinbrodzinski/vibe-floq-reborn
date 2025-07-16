@@ -1,16 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { toast } from '@/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface FinalizePlanParams {
   plan_id: string
   force_finalize?: boolean
 }
 
+interface FinalizePlanResponse {
+  success: true
+  plan: any
+  final_stops: any[]
+}
+
 export function useFinalizePlan() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<FinalizePlanResponse, Error, FinalizePlanParams>({
     mutationFn: async (params: FinalizePlanParams) => {
       const { data, error } = await supabase.functions.invoke('finalize-plan', {
         body: params
@@ -18,7 +25,8 @@ export function useFinalizePlan() {
       
       if (error) {
         console.error('Plan finalization error:', error)
-        throw new Error(error.message || 'Failed to finalize plan')
+        const message = error?.message ?? error?.error?.message ?? 'Something went wrong on the server'
+        throw new Error(message)
       }
       
       return data
@@ -39,7 +47,7 @@ export function useFinalizePlan() {
       toast({
         variant: "destructive",
         title: "Failed to finalize plan",
-        description: error.message || "Something went wrong. Please try again.",
+        description: error?.message ?? "Something went wrong. Please try again.",
       })
     }
   })

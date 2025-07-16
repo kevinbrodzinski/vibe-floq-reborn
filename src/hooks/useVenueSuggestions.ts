@@ -25,7 +25,8 @@ export function useVenueSuggestions(params: SuggestVenuesParams) {
       
       if (error) {
         console.error('Venue suggestions error:', error)
-        throw new Error(error.message || 'Failed to fetch venue suggestions')
+        const message = error?.message ?? error?.error?.message ?? 'Something went wrong on the server'
+        throw new Error(message)
       }
       
       return data.suggestions || []

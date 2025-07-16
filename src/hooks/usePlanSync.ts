@@ -9,10 +9,16 @@ interface SyncPlanChangesParams {
   }
 }
 
+interface SyncResponse {
+  success: true
+  message: string
+  data: any
+}
+
 export function usePlanSync() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<SyncResponse, Error, SyncPlanChangesParams>({
     mutationFn: async (params: SyncPlanChangesParams) => {
       const { data, error } = await supabase.functions.invoke('sync-plan-changes', {
         body: params
@@ -20,7 +26,8 @@ export function usePlanSync() {
       
       if (error) {
         console.error('Plan sync error:', error)
-        throw new Error(error.message || 'Failed to sync plan changes')
+        const message = error?.message ?? error?.error?.message ?? 'Something went wrong on the server'
+        throw new Error(message)
       }
       
       return data
