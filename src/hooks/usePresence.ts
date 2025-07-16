@@ -1,70 +1,45 @@
-import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { Vibe } from '@/types';
+import { useState, useCallback } from 'react'
 
-export function usePresence(vibe: Vibe, lat?: number, lng?: number) {
-  // refs to keep mutable state outside render cycle
-  const intervalId = useRef<NodeJS.Timeout>();
-  const inFlight = useRef(false);         // prevents overlap
-  const lastPayload = useRef<{ v: Vibe; x: number; y: number }>();
+export function usePresence(planId: string) {
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [lastActivity, setLastActivity] = useState<Record<string, number>>({})
 
-  useEffect(() => {
-    if (!lat || !lng) return;                 // wait for a valid fix
-
-    // ① clear any previous timer once, not on every render
-    if (intervalId.current) clearInterval(intervalId.current);
-
-    intervalId.current = setInterval(async () => {
-      // ② skip if a fetch is still pending
-      if (inFlight.current) return;
-
-      // ③ skip if nothing important changed (≤10 m movement)
-      const prev = lastPayload.current;
-      const moved =
-        !prev ||
-        vibe !== prev.v ||
-        haversineDistance(lat, lng, prev.x, prev.y) > 0.01; // km
-      if (!moved) return;
-
-      inFlight.current = true;
-      try {
-        const { data, error } = await supabase.functions.invoke('upsert-presence', {
-          body: {
-            vibe,
-            lat,
-            lng,
-            broadcast_radius: 500,
-          },
-        });
-
-        if (error) throw error;
-        
-        lastPayload.current = { v: vibe, x: lat, y: lng };
-      } catch (err) {
-        console.error('presence upsert failed', err);
-      } finally {
-        inFlight.current = false;
+  const broadcastTyping = useCallback((isTyping: boolean) => {
+    if (!planId) return
+    
+    // Update local typing state
+    setTypingUsers(prev => {
+      if (isTyping) {
+        return prev.includes('current-user') ? prev : [...prev, 'current-user']
+      } else {
+        return prev.filter(id => id !== 'current-user')
       }
-    }, 15_000);                               // one request / 15 s is plenty
+    })
+    
+    // Update activity timestamp
+    setLastActivity(prev => ({
+      ...prev,
+      'current-user': Date.now()
+    }))
+  }, [planId])
 
-    // ④ cleanup
-    return () => {
-      if (intervalId.current) clearInterval(intervalId.current);
-    };
-  }, [vibe, lat, lng]);
-}
+  const updateActivity = useCallback((userId: string) => {
+    setLastActivity(prev => ({
+      ...prev,
+      [userId]: Date.now()
+    }))
+  }, [])
 
-/* small helper so we don't retrigger on GPS jitter */
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    0.5 -
-    Math.cos(dLat) / 2 +
-    (Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      (1 - Math.cos(dLon))) /
-      2;
-  return R * 2 * Math.asin(Math.sqrt(a));
+  const isUserActive = useCallback((userId: string) => {
+    const activity = lastActivity[userId]
+    if (!activity) return false
+    return Date.now() - activity < 60000 // Active if seen in last minute
+  }, [lastActivity])
+
+  return {
+    typingUsers,
+    broadcastTyping,
+    updateActivity,
+    isUserActive
+  }
 }

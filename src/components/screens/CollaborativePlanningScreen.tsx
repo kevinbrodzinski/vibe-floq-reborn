@@ -265,8 +265,14 @@ export const CollaborativePlanningScreen = () => {
         {/* Live Participant Tracker */}
         <LiveParticipantTracker 
           participants={plan.participants.map(p => ({
-            ...p,
-            checkInStatus: 'checked-in' as const // Mock status
+            id: p.id,
+            name: p.name,
+            avatar: p.avatar,
+            status: 'online' as const,
+            isEditing: false,
+            lastActivity: Date.now(),
+            role: 'participant' as const,
+            checkInStatus: 'checked-in' as const
           }))}
           onParticipantUpdate={(userId, updates) => updateParticipantStatus(userId, JSON.stringify(updates))}
         />
@@ -400,8 +406,14 @@ export const CollaborativePlanningScreen = () => {
           <div>
             <PlanExecutionTracker
               stops={plan.stops.map(stop => ({
-                ...stop,
-                status: 'upcoming' as const // This would be calculated based on real time
+                id: stop.id,
+                title: stop.title,
+                venue: stop.venue,
+                startTime: stop.startTime,
+                endTime: stop.endTime || stop.startTime,
+                location: stop.location || '',
+                participants: [],
+                status: 'upcoming' as const
               }))}
               currentTime="19:30"
               groupLocation="Arts District"

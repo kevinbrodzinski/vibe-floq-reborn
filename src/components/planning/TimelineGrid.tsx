@@ -9,15 +9,9 @@ import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
 import { StopCardBase } from './StopCardBase'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import type { PlanStop } from '@/types/plan'
 
-interface Stop {
-  id: string
-  title: string
-  start_time: string
-  end_time?: string
-  duration_minutes?: number
-  venue?: any
-}
+// Using PlanStop directly instead of duplicate interface
 
 interface TimelineGridProps {
   planId: string
@@ -40,7 +34,7 @@ export function TimelineGrid({
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
 
-  // Generate time blocks based on window
+  // Generate time blocks based on window with safety guards
   const timeBlocks = useMemo(() => {
     const start = parseInt(startTime.split(':')[0])
     const end = parseInt(endTime.split(':')[0]) || 24
@@ -63,9 +57,19 @@ export function TimelineGrid({
   // Memoize stops in time slots for performance
   const getStopsInTimeSlot = useMemo(() => {
     return (timeSlot: string) => stops.filter(stop => 
-      stop.start_time?.startsWith(timeSlot.substring(0, 2))
+      (stop.start_time || stop.startTime)?.startsWith(timeSlot.substring(0, 2))
     )
   }, [stops])
+
+  // Color-code stops by status for visual scanability
+  const getStopColor = (stop: PlanStop) => {
+    switch (stop.status) {
+      case 'confirmed': return 'hsl(220 70% 60%)'
+      case 'suggested': return 'hsl(280 70% 60%)'
+      case 'pending': return 'hsl(45 70% 60%)'
+      default: return 'hsl(220 70% 60%)'
+    }
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -84,7 +88,7 @@ export function TimelineGrid({
             type: 'reorder_stops',
             data: {
               updates: newStops.map((stop, index) => ({
-                id: (stop as Stop).id,
+                id: (stop as PlanStop).id,
                 stop_order: index
               }))
             }
@@ -144,8 +148,12 @@ export function TimelineGrid({
 
   return (
     <div className="space-y-4">
-      {/* Collaboration Header */}
-      <div className="flex items-center justify-between p-3 bg-card/50 rounded-lg border">
+      {/* Collaboration Header with aria-live for accessibility */}
+      <div 
+        className="flex items-center justify-between p-3 bg-card/50 rounded-lg border"
+        aria-live="polite"
+        aria-label="Collaboration status"
+      >
         <PresenceIndicator 
           participants={activeParticipants}
           connectionStatus={connectionStatus}
@@ -180,6 +188,7 @@ export function TimelineGrid({
                 stops={stopsAtTime}
                 onAddStop={handleAddStop}
                 isOptimistic={isOptimistic}
+                getStopColor={getStopColor}
               />
             )
           })}
@@ -202,12 +211,14 @@ function TimeSlot({
   timeBlock, 
   stops, 
   onAddStop,
-  isOptimistic 
+  isOptimistic,
+  getStopColor
 }: { 
   timeBlock: any
-  stops: Stop[]
+  stops: PlanStop[]
   onAddStop: (time: string) => void
   isOptimistic?: boolean
+  getStopColor?: (stop: PlanStop) => string
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -227,7 +238,11 @@ function TimeSlot({
         {stops.length > 0 ? (
           <div className="space-y-2">
             {stops.map(stop => (
-              <StopCard key={stop.id} stop={stop} />
+              <StopCard 
+                key={stop.id} 
+                stop={stop} 
+                color={getStopColor?.(stop)}
+              />
             ))}
           </div>
         ) : (
@@ -240,13 +255,33 @@ function TimeSlot({
   )
 }
 
-function StopCard({ stop, isDragging = false }: { stop: Stop; isDragging?: boolean }) {
+function StopCard({ 
+  stop, 
+  isDragging = false,
+  color 
+}: { 
+  stop: PlanStop; 
+  isDragging?: boolean;
+  color?: string;
+}) {
   return (
-    <StopCardBase 
-      stop={stop}
-      isDragging={isDragging}
-      draggable={true}
-    />
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      style={color ? { '--stop-color': color } as any : undefined}
+      className={cn(
+        "transition-all duration-300",
+        isDragging && "animate-pulse"
+      )}
+    >
+      <StopCardBase 
+        stop={stop}
+        isDragging={isDragging}
+        draggable={true}
+        className={color ? 'border-[var(--stop-color)] bg-[var(--stop-color)]/10' : undefined}
+      />
+    </motion.div>
   )
 }
 

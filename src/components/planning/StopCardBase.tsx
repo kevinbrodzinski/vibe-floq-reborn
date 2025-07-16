@@ -2,19 +2,10 @@ import { motion } from 'framer-motion'
 import { useDraggable } from '@dnd-kit/core'
 import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-interface Stop {
-  id: string
-  title: string
-  start_time: string
-  end_time?: string
-  duration_minutes?: number
-  venue?: any
-  hasConflict?: boolean
-}
+import type { PlanStop } from '@/types/plan'
 
 interface StopCardBaseProps {
-  stop: Stop
+  stop: PlanStop
   isDragging?: boolean
   draggable?: boolean
   onEdit?: (stopId: string) => void
@@ -51,7 +42,6 @@ export function StopCardBase({
         "p-3 rounded-xl bg-primary/10 border border-primary/20 transition-all duration-200",
         draggable && "cursor-grab active:cursor-grabbing",
         isDragging && "opacity-50 rotate-2 scale-105",
-        stop.hasConflict && "border-destructive bg-destructive/10 ring-2 ring-destructive/20",
         className
       )}
       whileHover={draggable ? { scale: 1.02 } : undefined}
@@ -64,15 +54,9 @@ export function StopCardBase({
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h4 className="font-medium text-foreground">{stop.title}</h4>
-            {stop.hasConflict && (
-              <AlertTriangle 
-                className="w-4 h-4 text-destructive" 
-                aria-label="Time conflict with another stop"
-              />
-            )}
           </div>
-          {stop.venue?.name && (
-            <p className="text-sm text-muted-foreground">{stop.venue.name}</p>
+          {stop.venue && (
+            <p className="text-sm text-muted-foreground">{stop.venue}</p>
           )}
         </div>
         <div className="text-xs text-muted-foreground">
