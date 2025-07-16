@@ -17,7 +17,7 @@ const MOCK_PLAN: Plan = {
   title: "Night Out in Arts District",
   date: "2024-07-16",
   status: "draft",
-  createdBy: "current-user",
+  creator_id: "current-user",
   stops: [
     {
       id: "stop-1",

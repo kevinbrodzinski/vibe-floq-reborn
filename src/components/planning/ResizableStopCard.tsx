@@ -2,9 +2,9 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GripVertical, Clock, AlertTriangle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
 import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
 import { useUpdateStopPosition } from '@/hooks/useUpdateStopPosition'
-import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
 import { ConflictGlow } from './ConflictGlow'
 import { SnapSuggestionOverlay } from './SnapSuggestionOverlay'
 import { StopTooltip } from './StopTooltip'
@@ -276,7 +276,7 @@ export function ResizableStopCard({
         </div>
 
         {/* Voting buttons for finalized+ plans */}
-        {showVoting && (
+        {showVoting && planId && (
           <VoteButtons 
             planId={planId}
             stopId={stop.id}

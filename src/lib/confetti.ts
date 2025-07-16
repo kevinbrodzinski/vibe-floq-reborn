@@ -7,7 +7,7 @@ export interface ConfettiOptions {
 }
 
 export function triggerConfetti(duration: number = 3000, options: ConfettiOptions = {}) {
-  // Guard for non-browser environments
+  // Guard for non-browser environments (React Native compatibility)
   if (typeof window === 'undefined' || typeof document === 'undefined') return
   
   const {
@@ -93,7 +93,7 @@ function createConfettiPiece(color: string, shape: 'circle' | 'square' | 'triang
     ${shapeStyles}
     pointer-events: none;
     z-index: 9999;
-    left: ${Math.random() * 100}%;
+    left: ${Math.random() * 100}vw;
     top: -20px;
     animation: confetti-fall ${fallDuration}s linear forwards;
     transform: rotate(${Math.random() * 360}deg);

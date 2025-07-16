@@ -39,7 +39,7 @@ export function usePlanVote() {
             emoji_reaction: params.emoji_reaction || null,
           },
           {
-            onConflict: 'stop_id,user_id',
+            onConflict: 'plan_id,stop_id,user_id',
           }
         )
         .select()

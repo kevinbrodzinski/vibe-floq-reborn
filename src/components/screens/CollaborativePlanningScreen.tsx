@@ -181,7 +181,7 @@ export const CollaborativePlanningScreen = () => {
     planId: plan.id,
     planStatus: plan.status || 'draft',
     stops: plan.stops,
-    isCreator: plan.createdBy === 'current-user',
+    isCreator: plan.creator_id === 'current-user',
     enabled: true
   });
 
@@ -361,7 +361,7 @@ export const CollaborativePlanningScreen = () => {
             <PlanStatusActions 
               planId={plan.id}
               currentStatus={getSafeStatus(plan.status)}
-              isCreator={plan.createdBy === 'current-user'} // This would come from auth
+              isCreator={plan.creator_id === 'current-user'} // This would come from auth
               hasStops={plan.stops.length > 0}
               hasParticipants={plan.participants.length > 0}
               className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"

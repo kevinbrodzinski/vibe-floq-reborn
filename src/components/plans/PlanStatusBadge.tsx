@@ -48,7 +48,7 @@ export function PlanStatusBadge({
     >
       <div className="flex items-center gap-1">
         {showIcon && Icon && (
-          <Icon className={cn('inline', iconSizes[size])} />
+          <Icon className={iconSizes[size]} />
         )}
         <span>{config.label}</span>
       </div>

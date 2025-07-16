@@ -97,7 +97,7 @@ export function useUpdatePlanStatus() {
           setTimeout(() => celebrationEffects.planExecuting(), 300)
           break
         case 'completed':
-          contextualHaptics.planCompletion() // Strong celebration haptic
+          contextualHaptics.planCompletion()
           setTimeout(() => celebrationEffects.planCompleted(), 500)
           break
         case 'cancelled':
