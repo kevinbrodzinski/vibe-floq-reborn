@@ -95,14 +95,11 @@ export const RSVPCard = ({
             <p className="text-sm text-muted-foreground">{planDate}</p>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className={`flex items-center gap-1 ${getStatusColor(currentUserRSVP)}`}>
-              {getStatusIcon(currentUserRSVP)}
-              <span className="text-sm font-medium capitalize">
-                {currentUserRSVP === 'not_attending' ? 'Not Going' : currentUserRSVP}
-              </span>
-            </div>
-            <StatusBadge hasConflict={hasConflict} />
+          <div className={`flex items-center gap-1 ${getStatusColor(currentUserRSVP)}`}>
+            {getStatusIcon(currentUserRSVP)}
+            <span className="text-sm font-medium capitalize">
+              {currentUserRSVP === 'not_attending' ? 'Not Going' : currentUserRSVP}
+            </span>
           </div>
         </div>
 
@@ -156,6 +153,7 @@ export const RSVPCard = ({
               </span>
             )}
           </div>
+          <StatusBadge hasConflict={hasConflict} />
         </div>
       </div>
     </Card>
