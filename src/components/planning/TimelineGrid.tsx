@@ -26,7 +26,6 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { PlanStop } from '@/types/plan'
 import { TimelineGridSkeleton, DragOperationSkeleton } from './TimelineGridSkeleton'
-import { usePlanVoteActivities } from '@/hooks/usePlanVoteActivities'
 
 // Using PlanStop directly instead of duplicate interface
 
@@ -38,7 +37,6 @@ interface TimelineGridProps {
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
   isOptimistic?: boolean
   isDragOperationPending?: boolean
-  activities?: any[]
 }
 
 export function TimelineGrid({ 
@@ -48,8 +46,7 @@ export function TimelineGrid({
   activeParticipants = [],
   connectionStatus = 'disconnected',
   isOptimistic = false,
-  isDragOperationPending = false,
-  activities = []
+  isDragOperationPending = false
 }: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [showConflictOverlay, setShowConflictOverlay] = useState(false)
@@ -63,9 +60,6 @@ export function TimelineGrid({
   const { setContainer } = useAutoScroll({ enabled: true })
   const { timelineHaptics } = useAdvancedHaptics()
   const { timelineAudio } = useAudioFeedback()
-  
-  // Vote activities for real-time overlay
-  const voteActivities = usePlanVoteActivities(activities)
 
   // Stop selection
   const {
@@ -418,7 +412,6 @@ export function TimelineGrid({
                 isStopConflicting={isStopConflicting}
                 allStops={stops}
                 planId={planId}
-                voteActivities={voteActivities}
               />
             )
           })}
@@ -478,8 +471,7 @@ function TimeSlot({
   getStopColor,
   isStopConflicting,
   allStops,
-  planId,
-  voteActivities
+  planId
 }: { 
   timeBlock: any
   stops: PlanStop[]
@@ -496,7 +488,6 @@ function TimeSlot({
   isStopConflicting: (stopId: string) => boolean
   allStops: PlanStop[]
   planId: string
-  voteActivities: Record<string, any>
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -517,25 +508,24 @@ function TimeSlot({
           <div className="space-y-2">
             {stops.map(stop => (
                <ResizableStopCard 
-                  key={stop.id} 
-                  stop={stop}
-                  planId={planId}
-                  isSelected={selectedStops.has(stop.id)}
-                  isResizing={resizingStop === stop.id}
-                  hasConflict={isStopConflicting(stop.id)}
-                  suggested={(stop as any).suggested}
-                  allStops={allStops}
-                  voteActivity={voteActivities[stop.id] || null}
-                  onSelect={onSelectStop}
-                  onStartResize={onStartResize}
-                  onResize={onResize}
-                  onEndResize={onEndResize}
-                  onRemove={() => onDeleteStop(stop.id)}
-                   style={getStopColor?.(stop) ? { 
-                     borderColor: getStopColor(stop), 
-                     backgroundColor: `${getStopColor(stop)}10` 
-                   } : undefined}
-                />
+                 key={stop.id} 
+                 stop={stop}
+                 planId={planId}
+                 isSelected={selectedStops.has(stop.id)}
+                 isResizing={resizingStop === stop.id}
+                 hasConflict={isStopConflicting(stop.id)}
+                 suggested={(stop as any).suggested}
+                 allStops={allStops}
+                 onSelect={onSelectStop}
+                 onStartResize={onStartResize}
+                 onResize={onResize}
+                 onEndResize={onEndResize}
+                 onRemove={() => onDeleteStop(stop.id)}
+                  style={getStopColor?.(stop) ? { 
+                    borderColor: getStopColor(stop), 
+                    backgroundColor: `${getStopColor(stop)}10` 
+                  } : undefined}
+               />
             ))}
           </div>
         ) : (

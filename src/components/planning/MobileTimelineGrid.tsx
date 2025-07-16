@@ -15,7 +15,6 @@ interface MobileTimelineGridProps {
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
   isOptimistic?: boolean
   isDragOperationPending?: boolean
-  activities?: any[]
   onStopReorder?: (stopId: string, newIndex: number) => void
   onStopSelect?: (stopId: string) => void
   selectedStopIds?: string[]
@@ -29,7 +28,6 @@ export function MobileTimelineGrid({
   connectionStatus,
   isOptimistic,
   isDragOperationPending,
-  activities = [],
   onStopReorder,
   onStopSelect,
   selectedStopIds = []
@@ -48,7 +46,6 @@ export function MobileTimelineGrid({
         connectionStatus={connectionStatus}
         isOptimistic={isOptimistic}
         isDragOperationPending={isDragOperationPending}
-        activities={activities}
       />
     )
   }
