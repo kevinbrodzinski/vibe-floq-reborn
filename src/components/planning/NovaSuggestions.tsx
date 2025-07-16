@@ -159,23 +159,29 @@ export function NovaSuggestions({
   const generateSuggestions = useCallback(async () => {
     setIsLoading(true)
     
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    
-    // Simulate AI processing delay
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        const suggestions = await fetchSuggestions()
-        setSuggestions(suggestions)
-      } catch (error) {
-        console.error('Failed to fetch suggestions:', error)
-        setSuggestions([])
-      } finally {
-        setIsLoading(false)
+    try {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
       }
-    }, 1500)
+      
+      // Simulate AI processing delay
+      timeoutRef.current = setTimeout(async () => {
+        try {
+          const suggestions = await fetchSuggestions()
+          setSuggestions(suggestions)
+        } catch (error) {
+          console.error('Failed to fetch suggestions:', error)
+          setSuggestions([])
+        } finally {
+          setIsLoading(false)
+        }
+      }, 1500)
+    } catch (error) {
+      console.error('Failed to generate suggestions:', error)
+      setSuggestions([])
+      setIsLoading(false)
+    }
   }, [planId, refreshKey, fetchSuggestions])
 
   // Only run on mount + manual refresh

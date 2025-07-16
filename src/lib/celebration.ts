@@ -1,31 +1,32 @@
 // Celebration effects for plan status changes
 
+const isDev = import.meta.env.MODE === 'development'
+
 export const celebrationEffects = {
   planFinalized: () => {
-    // Simple confetti or animation for finalized plans
-    console.log('🎉 Plan finalized!')
-    // Could integrate with confetti library here
+    if (isDev) console.log('🎉 Plan finalized!')
+    // TODO: Add confetti or visual celebration
+    // import('canvas-confetti').then(confetti => confetti.default())
   },
 
   planExecuting: () => {
-    // Subtle celebration for execution start
-    console.log('🚀 Plan execution started!')
-    // Could add visual feedback here
+    if (isDev) console.log('🚀 Plan execution started!')
+    // TODO: Add subtle visual feedback
   },
 
   planCompleted: () => {
-    // Major celebration for completion
-    console.log('✅ Plan completed successfully!')
-    // Could add confetti or achievement unlock here
+    if (isDev) console.log('✅ Plan completed successfully!')
+    // TODO: Add major celebration with confetti
+    // import('canvas-confetti').then(confetti => confetti.default({ particleCount: 100 }))
   },
 
   // Generic success celebration
   success: () => {
-    console.log('✨ Success!')
+    if (isDev) console.log('✨ Success!')
   },
 
   // Generic celebration
   celebrate: () => {
-    console.log('🎊 Celebration!')
+    if (isDev) console.log('🎊 Celebration!')
   }
 }

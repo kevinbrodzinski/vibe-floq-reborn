@@ -19,6 +19,12 @@ export function useLogSnapSuggestion() {
     reason = 'nova_suggestion'
   }: LogSnapSuggestionParams) => {
     try {
+      // Guard against empty planId/stopId (new plans before save)
+      if (!planId || !stopId) {
+        console.warn('Snap logging skipped: missing planId or stopId')
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
