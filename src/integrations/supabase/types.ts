@@ -1517,6 +1517,44 @@ export type Database = {
           },
         ]
       }
+      plan_feedback: {
+        Row: {
+          created_at: string | null
+          favorite_moment: string | null
+          id: string
+          plan_id: string
+          user_id: string
+          vibe_rating: number | null
+          would_repeat: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          favorite_moment?: string | null
+          id?: string
+          plan_id: string
+          user_id: string
+          vibe_rating?: number | null
+          would_repeat?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          favorite_moment?: string | null
+          id?: string
+          plan_id?: string
+          user_id?: string
+          vibe_rating?: number | null
+          would_repeat?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_feedback_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_invitations: {
         Row: {
           expires_at: string | null
@@ -1667,6 +1705,41 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_summaries: {
+        Row: {
+          created_at: string | null
+          generated_at: string | null
+          id: string
+          mode: Database["public"]["Enums"]["summary_mode"]
+          plan_id: string
+          summary: string
+        }
+        Insert: {
+          created_at?: string | null
+          generated_at?: string | null
+          id?: string
+          mode: Database["public"]["Enums"]["summary_mode"]
+          plan_id: string
+          summary: string
+        }
+        Update: {
+          created_at?: string | null
+          generated_at?: string | null
+          id?: string
+          mode?: Database["public"]["Enums"]["summary_mode"]
+          plan_id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -5227,6 +5300,7 @@ export type Database = {
         | "recommend_venue"
         | "schedule_activity"
         | "change_vibe"
+      summary_mode: "finalized" | "afterglow"
       vibe_enum:
         | "chill"
         | "hype"
@@ -5439,6 +5513,7 @@ export const Constants = {
         "schedule_activity",
         "change_vibe",
       ],
+      summary_mode: ["finalized", "afterglow"],
       vibe_enum: [
         "chill",
         "hype",
