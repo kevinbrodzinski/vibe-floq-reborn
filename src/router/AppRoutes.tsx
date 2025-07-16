@@ -14,6 +14,7 @@ import Settings from '@/pages/Settings';
 import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
+import Archive from '@/pages/Archive';
 import { RoleGuard } from '@/components/RoleGuard';
 
 export const AppRoutes = () => (
@@ -31,6 +32,7 @@ export const AppRoutes = () => (
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
     <Route path="/afterglow" element={<AfterglowScreen />} />
+    <Route path="/archive" element={<Archive />} />
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
