@@ -2502,6 +2502,10 @@ export type Database = {
           reasoning: Json
         }[]
       }
+      generate_personal_insights: {
+        Args: { p_user_id?: string }
+        Returns: Json
+      }
       geography: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
@@ -2781,6 +2785,18 @@ export type Database = {
           distance_meters: number
           members: Json
         }[]
+      }
+      get_afterglow_location_insights: {
+        Args: { p_user_id?: string; p_days_back?: number }
+        Returns: Json
+      }
+      get_afterglow_monthly_trends: {
+        Args: { p_user_id?: string; p_months_back?: number }
+        Returns: Json
+      }
+      get_afterglow_weekly_patterns: {
+        Args: { p_user_id?: string; p_weeks_back?: number }
+        Returns: Json
       }
       get_cluster_venues: {
         Args: {
