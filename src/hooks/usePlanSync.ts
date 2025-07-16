@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 interface SyncPlanChangesParams {
   plan_id: string
   changes: {
-    type: 'reorder_stops' | 'update_stop' | 'presence_update'
+    type: 'reorder_stops' | 'update_stop' | 'presence_update' | 'delete_stop'
     data: any
   }
 }
@@ -34,7 +34,7 @@ export function usePlanSync() {
     },
     onSuccess: (data, variables) => {
       // Invalidate relevant queries based on change type
-      if (variables.changes.type === 'reorder_stops' || variables.changes.type === 'update_stop') {
+      if (variables.changes.type === 'reorder_stops' || variables.changes.type === 'update_stop' || variables.changes.type === 'delete_stop') {
         queryClient.invalidateQueries({ queryKey: ['plan-stops', variables.plan_id] })
         queryClient.invalidateQueries({ queryKey: ['plan-activities', variables.plan_id] })
       }

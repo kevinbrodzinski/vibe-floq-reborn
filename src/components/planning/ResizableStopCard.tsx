@@ -17,6 +17,9 @@ import { VoteButtons } from '@/components/plans/VoteButtons'
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
 import { getSafeStatus } from '@/lib/planStatusConfig'
 import { StopOverlayHint } from './StopOverlayHint'
+import { StopActionsSheet } from './StopActionsSheet'
+import { useLongPress } from '@/hooks/useLongPress'
+import { useDeleteStop } from '@/hooks/useDeleteStop'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -61,6 +64,7 @@ export function ResizableStopCard({
   const [isDragging, setIsDragging] = useState(false)
   const [previewDuration, setPreviewDuration] = useState<number | null>(null)
   const [showTooltip, setShowTooltip] = useState(false)
+  const [showActionsSheet, setShowActionsSheet] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const { isStopConflicting, getConflictForStop } = useStopConflictChecker(allStops)
   const updatePosition = useUpdateStopPosition()
@@ -69,6 +73,7 @@ export function ResizableStopCard({
   const { timelineAudio } = useAudioFeedback()
   const { recordNovaSnap } = useNovaSnap()
   const { canEditPlan } = usePlanStatusValidation()
+  const { mutate: deleteStop } = useDeleteStop()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -77,14 +82,37 @@ export function ResizableStopCard({
   // Show voting only for finalized+ plans and when planId is available
   const showVoting = planId && planStatus && !['draft'].includes(planStatus)
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Enhanced click handler - single tap to edit if no modifiers
+  const handleClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as Element).closest('.resize-handle')) {
       return // Don't select when starting resize
     }
     
     timelineHaptics.stopDragStart()
     onSelect?.(stop.id, e.metaKey || e.ctrlKey, e.shiftKey)
+    
+    // If neither shift nor meta, this is a pure click - open edit modal
+    if (!e.shiftKey && !e.metaKey) {
+      const normalizedStatus = getSafeStatus(planStatus)
+      if (canEditPlan(normalizedStatus)) {
+        onEdit?.()
+      }
+    }
   }
+
+  // Long press handler for action sheet
+  const handleLongPress = () => {
+    // Only trigger sheet if not currently dragging
+    if (!isDragging) {
+      setShowActionsSheet(true)
+    }
+  }
+
+  // Long press gesture setup
+  const longPressGestures = useLongPress({
+    onLongPress: handleLongPress,
+    delay: 350
+  })
 
   const handleDoubleClick = () => {
     // Check if plan can be edited before allowing editing - normalize status with fallback
@@ -95,6 +123,15 @@ export function ResizableStopCard({
     
     startEditing(stop.id, 'editing')
     onEdit?.()
+  }
+
+  // Delete handler
+  const handleDelete = () => {
+    if (planId) {
+      deleteStop({ planId, stopId: stop.id })
+    } else {
+      onRemove?.()
+    }
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -146,7 +183,8 @@ export function ResizableStopCard({
     <motion.div
       ref={cardRef}
       layout
-      onMouseDown={handleMouseDown}
+      {...longPressGestures}
+      onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
@@ -308,6 +346,20 @@ export function ResizableStopCard({
           </motion.span>
         )}
       </div>
+
+      {/* Action Sheet */}
+      <StopActionsSheet
+        stop={stop}
+        open={showActionsSheet}
+        onClose={() => setShowActionsSheet(false)}
+        onEdit={() => {
+          const normalizedStatus = getSafeStatus(planStatus)
+          if (canEditPlan(normalizedStatus)) {
+            onEdit?.()
+          }
+        }}
+        onDelete={handleDelete}
+      />
     </motion.div>
   )
 }
