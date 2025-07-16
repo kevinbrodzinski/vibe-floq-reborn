@@ -14,10 +14,17 @@ serve(async (req) => {
   }
 
   try {
-    const { plan_id } = await req.json();
+    const { plan_id, mode = 'finalized' } = await req.json();
 
     if (!plan_id) {
       return new Response(JSON.stringify({ error: 'Missing plan_id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!['finalized', 'afterglow'].includes(mode)) {
+      return new Response(JSON.stringify({ error: 'Invalid mode. Must be "finalized" or "afterglow"' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -73,7 +80,8 @@ serve(async (req) => {
       .filter(Boolean)
       .join(', ') || 'the group';
 
-    const prompt = `Write a fun, engaging 2-3 sentence summary for a group plan called "${planTitle}". 
+    const prompt = mode === 'finalized' 
+      ? `Write a fun, engaging 2-3 sentence summary for a group plan called "${planTitle}". 
 
 Details:
 - ${participantCount} participants: ${participantNames}
@@ -81,7 +89,16 @@ Details:
 - Vibe: ${topVibe}
 - Date: ${plan.planned_at}
 
-Make it sound exciting and capture the energy of the plan. Focus on the experience they'll have together.`;
+Make it sound exciting and capture the energy they'll have together. Focus on what they're planning to do.`
+      : `Write a nostalgic, warm 2-3 sentence summary reflecting on a completed group experience called "${planTitle}". 
+
+Details:
+- ${participantCount} participants: ${participantNames}
+- ${stopCount} stops visited: ${stops}
+- Vibe: ${topVibe}
+- Date: ${plan.planned_at}
+
+Capture the afterglow feeling - the memories made, connections formed, and moments shared. Use past tense and focus on what they experienced together.`;
 
     // Add 10s timeout for OpenAI request
     const controller = new AbortController();
@@ -143,14 +160,18 @@ Make it sound exciting and capture the energy of the plan. Focus on the experien
       throw fetchError;
     }
 
-    // Update plan with AI summary
-    const { error: updateError } = await supabase
-      .from('floq_plans')
-      .update({ ai_summary: summary })
-      .eq('id', plan_id);
+    // Store summary in plan_summaries table
+    const { error: insertError } = await supabase
+      .from('plan_summaries')
+      .upsert({
+        plan_id,
+        mode: mode as 'finalized' | 'afterglow',
+        summary,
+        generated_at: new Date().toISOString(),
+      });
 
-    if (updateError) {
-      console.error('Update error:', updateError);
+    if (insertError) {
+      console.error('Insert error:', insertError);
       return new Response(JSON.stringify({ error: 'Failed to save summary' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
