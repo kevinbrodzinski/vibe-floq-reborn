@@ -48,8 +48,17 @@ export function NewPlanWizard() {
     { title: 'Review & Create', description: 'Ready to make it happen?' }
   ]
 
-  const handleNext = () => setStep(s => (s + 1) as 1 | 2)
-  const handleBack = () => setStep(s => (s - 1) as 0 | 1)
+  const handleNext = () => {
+    if (step < 2) {
+      setStep(prev => prev + 1 as 1 | 2)
+    }
+  }
+  
+  const handleBack = () => {
+    if (step > 0) {
+      setStep(prev => prev - 1 as 0 | 1)
+    }
+  }
 
   const handleTimeChange = (range: TimeRange, duration: 4 | 6 | 8 | 12) => {
     setTimeRange(range)
@@ -121,6 +130,7 @@ export function NewPlanWizard() {
                 draft={details}
                 onChange={setDetails}
                 onNext={handleNext}
+                onBack={handleBack}
               />
             )}
             
@@ -133,6 +143,7 @@ export function NewPlanWizard() {
                 }}
                 onCreate={handleCreate}
                 isCreating={isPending}
+                onBack={handleBack}
               />
             )}
           </div>

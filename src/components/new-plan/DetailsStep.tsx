@@ -17,13 +17,14 @@ interface Props {
   draft: PlanDetails
   onChange: (details: PlanDetails) => void
   onNext: () => void
+  onBack?: () => void
 }
 
 const vibeOptions = [
   'chill', 'energetic', 'romantic', 'wild', 'cozy', 'deep', 'social', 'adventure'
 ]
 
-export function DetailsStep({ draft, onChange, onNext }: Props) {
+export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
   const [details, setDetails] = useState(draft)
 
   const updateField = <K extends keyof PlanDetails>(field: K, value: PlanDetails[K]) => {

@@ -18,9 +18,10 @@ interface Props {
   draft: PlanDraft
   onCreate: () => void
   isCreating: boolean
+  onBack?: () => void
 }
 
-export function ReviewStep({ draft, onCreate, isCreating }: Props) {
+export function ReviewStep({ draft, onCreate, isCreating, onBack }: Props) {
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number)
     const date = new Date()

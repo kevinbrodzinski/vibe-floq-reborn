@@ -58,11 +58,14 @@ export function useCreatePlan() {
       if (planError) throw planError
 
       // Add current user as plan participant
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (!user?.id) throw new Error('User not authenticated')
+      
       const { error: participantError } = await supabase
         .from('plan_participants')
         .insert({
           plan_id: planData.id,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user.id
         })
 
       if (participantError) throw participantError
