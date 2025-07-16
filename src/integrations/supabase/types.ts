@@ -102,7 +102,15 @@ export type Database = {
           timestamp?: string
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_moments_daily_afterglow_id_fkey"
+            columns: ["daily_afterglow_id"]
+            isOneToOne: false
+            referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_afterglow: {
         Row: {
