@@ -1,10 +1,13 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { GripVertical, Clock, AlertTriangle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
 import { useUpdateStopPosition } from '@/hooks/useUpdateStopPosition'
 import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
+import { ConflictGlow } from './ConflictGlow'
+import { SnapSuggestionOverlay } from './SnapSuggestionOverlay'
+import { StopTooltip } from './StopTooltip'
 import type { PlanStop } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -15,6 +18,12 @@ interface ResizableStopCardProps {
   hasConflict?: boolean
   suggested?: boolean
   allStops?: PlanStop[]
+  snapSuggestion?: {
+    startTime: string
+    endTime: string
+    confidence: number
+    reason?: string
+  }
   onSelect?: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
   onStartResize?: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize?: (clientY: number) => number | undefined
@@ -32,6 +41,7 @@ export function ResizableStopCard({
   hasConflict = false,
   suggested = false,
   allStops = [],
+  snapSuggestion,
   onSelect,
   onStartResize,
   onResize,
@@ -42,11 +52,13 @@ export function ResizableStopCard({
 }: ResizableStopCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [previewDuration, setPreviewDuration] = useState<number | null>(null)
+  const [showTooltip, setShowTooltip] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
-  const { isStopConflicting } = useStopConflictChecker(allStops)
+  const { isStopConflicting, getConflictForStop } = useStopConflictChecker(allStops)
   const updatePosition = useUpdateStopPosition()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
+  const conflictInfo = getConflictForStop(stop.id)
   const duration = stop.duration_minutes || 60
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -90,6 +102,8 @@ export function ResizableStopCard({
       layout
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
       className={cn(
         'relative bg-card/90 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 cursor-grab select-none',
         'hover:scale-[1.02] hover:shadow-lg',
@@ -110,6 +124,22 @@ export function ResizableStopCard({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
+      {/* Visual Overlays */}
+      <AnimatePresence>
+        <ConflictGlow 
+          isConflicting={isConflicting} 
+          message={conflictInfo?.message}
+        />
+        <SnapSuggestionOverlay 
+          show={!!snapSuggestion && !isConflicting} 
+          suggestion={snapSuggestion}
+        />
+        <StopTooltip 
+          timeRange={`${stop.start_time} - ${stop.end_time || formatTimeFromMinutes(timeToMinutes(stop.start_time || '') + duration)}`}
+          isVisible={showTooltip && !isDragging}
+          duration={duration}
+        />
+      </AnimatePresence>
       {/* Conflict indicator */}
       {isConflicting && (
         <motion.div
