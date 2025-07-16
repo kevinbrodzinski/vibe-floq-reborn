@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
+import { useRealtimeAfterglowData } from './useRealtimeAfterglowData'
+import { useRealtimeAfterglowHistory } from './useRealtimeAfterglowHistory'
 
 export interface AfterglowMoment {
   timestamp: string
@@ -33,10 +35,19 @@ export interface DailyAfterglowData {
 
 export function useAfterglowData(date: string) {
   const { user } = useAuth()
-  const [afterglow, setAfterglow] = useState<DailyAfterglowData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Use real-time hook for live updates
+  const { 
+    afterglow, 
+    setAfterglow, 
+    generationProgress, 
+    isGenerating: realtimeIsGenerating,
+    startGeneration
+  } = useRealtimeAfterglowData(date)
+  
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const fetchAfterglow = async () => {
     if (!user) return
@@ -73,6 +84,7 @@ export function useAfterglowData(date: string) {
 
     setIsGenerating(true)
     setError(null)
+    startGeneration() // Start real-time progress tracking
 
     try {
       const { data, error: generateError } = await supabase.functions.invoke(
@@ -89,12 +101,10 @@ export function useAfterglowData(date: string) {
         throw generateError
       }
 
-      // Refresh the data after generation
-      await fetchAfterglow()
+      // Real-time hook will handle the update automatically
     } catch (err) {
       console.error('Error generating afterglow:', err)
       setError(err instanceof Error ? err.message : 'Failed to generate afterglow')
-    } finally {
       setIsGenerating(false)
     }
   }
@@ -149,7 +159,8 @@ export function useAfterglowData(date: string) {
   return {
     afterglow,
     isLoading,
-    isGenerating,
+    isGenerating: isGenerating || realtimeIsGenerating,
+    generationProgress,
     error,
     generateAfterglow,
     togglePin,
@@ -159,48 +170,6 @@ export function useAfterglowData(date: string) {
 }
 
 export function useAfterglowHistory(limit: number = 10) {
-  const { user } = useAuth()
-  const [history, setHistory] = useState<DailyAfterglowData[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchHistory = async () => {
-    if (!user) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('daily_afterglow')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
-        .limit(limit)
-
-      if (fetchError) {
-        throw fetchError
-      }
-
-      setHistory(data || [])
-    } catch (err) {
-      console.error('Error fetching afterglow history:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch afterglow history')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (user) {
-      fetchHistory()
-    }
-  }, [user?.id, limit])
-
-  return {
-    history,
-    isLoading,
-    error,
-    refetch: fetchHistory
-  }
+  // Use the real-time hook for live updates
+  return useRealtimeAfterglowHistory(limit)
 }

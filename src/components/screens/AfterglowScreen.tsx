@@ -6,6 +6,7 @@ import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
 import { CrossedPathsCard } from "@/components/CrossedPathsCard";
 import { useAfterglowData } from "@/hooks/useAfterglowData";
 import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
+import { AfterglowGenerationProgress } from "@/components/AfterglowGenerationProgress";
 import { getVibeDisplayName } from "@/utils/afterglowHelpers";
 
 interface NightEvent {
@@ -26,7 +27,7 @@ export const AfterglowScreen = () => {
   
   // Get today's date for afterglow data
   const today = new Date().toISOString().split('T')[0];
-  const { afterglow, isLoading: afterglowLoading, isGenerating, error: afterglowError, generateAfterglow, togglePin, getShareUrl } = useAfterglowData(today);
+  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow, togglePin, getShareUrl } = useAfterglowData(today);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -265,13 +266,18 @@ export const AfterglowScreen = () => {
           />
         </svg>
 
-        {/* Loading state */}
-        {afterglowLoading || isGenerating ? (
+        {/* Loading and generation states */}
+        {afterglowLoading && !isGenerating ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">
-              {isGenerating ? "Generating your afterglow..." : "Loading afterglow data..."}
-            </p>
+            <p className="text-muted-foreground">Loading afterglow data...</p>
+          </div>
+        ) : isGenerating && generationProgress ? (
+          <AfterglowGenerationProgress progress={generationProgress} />
+        ) : isGenerating ? (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground">Generating your afterglow...</p>
           </div>
         ) : afterglowError ? (
           <Alert variant="destructive" className="mb-6">

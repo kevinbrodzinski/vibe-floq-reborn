@@ -1,0 +1,113 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/providers/AuthProvider'
+import { DailyAfterglowData } from './useAfterglowData'
+import { useToast } from '@/hooks/use-toast'
+
+export function useRealtimeAfterglowHistory(limit: number = 10) {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [history, setHistory] = useState<DailyAfterglowData[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchHistory = async () => {
+    if (!user) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('daily_afterglow')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(limit)
+
+      if (fetchError) {
+        throw fetchError
+      }
+
+      setHistory(data || [])
+    } catch (err) {
+      console.error('Error fetching afterglow history:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch afterglow history')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchHistory()
+    }
+  }, [user?.id, limit])
+
+  useEffect(() => {
+    if (!user) return
+
+    // Subscribe to new afterglow entries
+    const channel = supabase
+      .channel(`afterglow-history-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'daily_afterglow',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('New afterglow added to history:', payload)
+          const newAfterglow = payload.new as DailyAfterglowData
+          
+          setHistory(prev => {
+            // Insert new item and maintain sort order
+            const newHistory = [newAfterglow, ...prev.filter(item => item.id !== newAfterglow.id)]
+            return newHistory.slice(0, limit) // Maintain limit
+          })
+          
+          // Show notification for newly completed afterglows
+          const today = new Date().toISOString().split('T')[0]
+          if (newAfterglow.date === today) {
+            toast({
+              title: "Today's Afterglow Complete! 🌟",
+              description: "Your daily afterglow is now available in your archive.",
+            })
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'daily_afterglow',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Afterglow updated in history:', payload)
+          const updatedAfterglow = payload.new as DailyAfterglowData
+          
+          setHistory(prev => 
+            prev.map(item => 
+              item.id === updatedAfterglow.id ? updatedAfterglow : item
+            )
+          )
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, limit, toast])
+
+  return {
+    history,
+    isLoading,
+    error,
+    refetch: fetchHistory
+  }
+}

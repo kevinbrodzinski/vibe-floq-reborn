@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useRealtimeAfterglowHistory } from '@/hooks/useRealtimeAfterglowHistory';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -63,6 +64,9 @@ export default function Archive() {
   const [collectionViewOpen, setCollectionViewOpen] = useState(false);
   const [viewingCollection, setViewingCollection] = useState<Collection | null>(null);
   const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
+
+  // Real-time afterglow history
+  const { history: realtimeHistory, isLoading: historyLoading } = useRealtimeAfterglowHistory(50);
 
   // Queries
   const { data: searchResults, isLoading: searchLoading, refetch: refetchSearch } = useQuery({
@@ -242,8 +246,12 @@ export default function Archive() {
       </div>
 
       <div className="container max-w-7xl mx-auto px-4 py-6">
-        <Tabs defaultValue="search" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="recent" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="recent" className="gap-2">
+              <ArchiveIcon className="w-4 h-4" />
+              Recent
+            </TabsTrigger>
             <TabsTrigger value="search" className="gap-2">
               <Search className="w-4 h-4" />
               Search
@@ -257,6 +265,46 @@ export default function Archive() {
               Collections
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="recent" className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <ArchiveIcon className="w-5 h-5" />
+                  Recent Afterglows {realtimeHistory && `(${realtimeHistory.length})`}
+                </h3>
+              </div>
+
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : realtimeHistory && realtimeHistory.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {realtimeHistory.map((afterglow) => (
+                    <AfterglowCard
+                      key={afterglow.id}
+                      afterglow={{
+                        ...afterglow,
+                        moments_count: afterglow.moments?.length || 0,
+                        search_rank: 1
+                      } as any}
+                      onFavorite={handleFavorite}
+                      onAddToCollection={() => handleAddToCollection(afterglow.id, afterglow.summary_text)}
+                      onViewDetails={() => handleViewDetails(afterglow.id)}
+                      isFavorited={isFavorited(afterglow.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ArchiveIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No afterglows yet</p>
+                  <p className="text-sm">Start exploring to create your first afterglow!</p>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
 
           <TabsContent value="search" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

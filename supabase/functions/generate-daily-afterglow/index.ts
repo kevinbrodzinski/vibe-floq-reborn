@@ -97,6 +97,25 @@ Deno.serve(async (req) => {
   }
 })
 
+async function sendProgressUpdate(supabase: any, userId: string, step: string, progress: number, message?: string) {
+  try {
+    await supabase
+      .channel(`progress-${userId}`)
+      .send({
+        type: 'broadcast',
+        event: 'afterglow_progress',
+        payload: {
+          step,
+          progress,
+          status: progress >= 100 ? 'completed' : 'in_progress',
+          message
+        }
+      })
+  } catch (error) {
+    console.error('Failed to send progress update:', error)
+  }
+}
+
 async function generateAfterglowForUser(
   supabase: any, 
   userId: string, 
@@ -107,6 +126,9 @@ async function generateAfterglowForUser(
   const startOfDay = `${date}T00:00:00`
   const endOfDay = `${date}T23:59:59`
 
+  // Send initial progress
+  await sendProgressUpdate(supabase, userId, 'Collecting Data', 10, 'Gathering your day\'s activities...')
+
   // 1. Get vibe state changes throughout the day
   const { data: vibeStates } = await supabase
     .from('user_vibe_states')
@@ -116,6 +138,8 @@ async function generateAfterglowForUser(
     .lte('started_at', endOfDay)
     .order('started_at')
 
+  await sendProgressUpdate(supabase, userId, 'Collecting Data', 25, 'Found your vibe changes...')
+
   // 2. Get venue presence data
   const { data: venuePresence } = await supabase
     .from('venue_live_presence')
@@ -124,6 +148,8 @@ async function generateAfterglowForUser(
     .gte('checked_in_at', startOfDay)
     .lte('checked_in_at', endOfDay)
     .order('checked_in_at')
+
+  await sendProgressUpdate(supabase, userId, 'Collecting Data', 40, 'Analyzing venue visits...')
 
   // 3. Get floq participation
   const { data: floqParticipation } = await supabase
@@ -151,7 +177,11 @@ async function generateAfterglowForUser(
     .gte('detected_at', startOfDay)
     .lte('detected_at', endOfDay)
 
+  await sendProgressUpdate(supabase, userId, 'Social Connections', 60, 'Calculating crossed paths...')
+
   // 6. Process data into moments and metrics
+  await sendProgressUpdate(supabase, userId, 'Generating Moments', 75, 'Creating your story...')
+  
   const moments: AfterglowMoment[] = []
   const vibePath: string[] = []
   const emotionJourney: any[] = []
@@ -270,6 +300,8 @@ async function generateAfterglowForUser(
   // Sort moments by timestamp
   moments.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
+  await sendProgressUpdate(supabase, userId, 'Finalizing', 90, 'Saving your afterglow...')
+
   const afterglowData: DailyAfterglowData = {
     user_id: userId,
     date,
@@ -304,6 +336,8 @@ async function generateAfterglowForUser(
     throw error
   }
 
+  await sendProgressUpdate(supabase, userId, 'Complete', 100, 'Your afterglow is ready!')
+  
   console.log(`Generated afterglow for ${userId} on ${date}: ${moments.length} moments, ${energyScore} energy`)
   return afterglowData
 }
