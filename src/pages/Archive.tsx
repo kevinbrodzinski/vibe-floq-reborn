@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Archive as ArchiveIcon,
   Search,
@@ -11,11 +21,16 @@ import {
   Heart,
   FolderOpen,
   Plus,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { ArchiveSearchFilters } from '@/components/archive/ArchiveSearchFilters';
 import { ArchiveStatsCard } from '@/components/archive/ArchiveStatsCard';
 import { AfterglowCard } from '@/components/archive/AfterglowCard';
+import { CollectionPicker } from '@/components/collections/CollectionPicker';
+import { CollectionCard } from '@/components/collections/CollectionCard';
+import { CollectionDialog } from '@/components/collections/CollectionDialog';
+import { CollectionView } from '@/components/collections/CollectionView';
 import { 
   searchAfterglows,
   getArchiveStats,
@@ -23,7 +38,10 @@ import {
   getFavorites,
   addToFavorites,
   removeFromFavorites,
-  SearchAfterglowsParams
+  getCollections,
+  deleteCollection,
+  SearchAfterglowsParams,
+  Collection
 } from '@/lib/supabase-helpers';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,6 +51,16 @@ export default function Archive() {
   
   const [searchFilters, setSearchFilters] = useState<SearchAfterglowsParams>({});
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // Collection states
+  const [collectionPickerOpen, setCollectionPickerOpen] = useState(false);
+  const [selectedAfterglowId, setSelectedAfterglowId] = useState<string>('');
+  const [selectedAfterglowTitle, setSelectedAfterglowTitle] = useState<string>('');
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+  const [collectionViewOpen, setCollectionViewOpen] = useState(false);
+  const [viewingCollection, setViewingCollection] = useState<Collection | null>(null);
+  const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
 
   // Queries
   const { data: searchResults, isLoading: searchLoading, refetch: refetchSearch } = useQuery({
@@ -51,6 +79,11 @@ export default function Archive() {
     queryFn: getFavorites
   });
 
+  const { data: collections, isLoading: collectionsLoading } = useQuery({
+    queryKey: ['collections'],
+    queryFn: getCollections
+  });
+
   // Mutations
   const favoriteMutation = useMutation({
     mutationFn: async ({ afterglowId, isFavorited }: { afterglowId: string; isFavorited: boolean }) => {
@@ -62,6 +95,7 @@ export default function Archive() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['archive-search'] });
       toast({ title: 'Favorites updated successfully' });
     },
     onError: (error) => {
@@ -83,6 +117,7 @@ export default function Archive() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `afterglow-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -93,6 +128,22 @@ export default function Archive() {
     onError: (error) => {
       toast({ 
         title: 'Export failed', 
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const deleteCollectionMutation = useMutation({
+    mutationFn: deleteCollection,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
+      setDeleteCollectionId(null);
+      toast({ title: 'Collection deleted successfully' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to delete collection',
         description: error.message,
         variant: 'destructive'
       });
@@ -114,9 +165,10 @@ export default function Archive() {
     favoriteMutation.mutate({ afterglowId, isFavorited: !!isFavorited });
   };
 
-  const handleAddToCollection = (afterglowId: string) => {
-    // TODO: Open collection selector dialog
-    toast({ title: 'Collections feature coming soon!' });
+  const handleAddToCollection = (afterglowId: string, afterglowTitle?: string) => {
+    setSelectedAfterglowId(afterglowId);
+    setSelectedAfterglowTitle(afterglowTitle || '');
+    setCollectionPickerOpen(true);
   };
 
   const handleViewDetails = (afterglowId: string) => {
@@ -130,6 +182,32 @@ export default function Archive() {
 
   const isFavorited = (afterglowId: string) => {
     return favorites?.some(fav => fav.daily_afterglow?.id === afterglowId) || false;
+  };
+
+  // Collection handlers
+  const handleCreateCollection = () => {
+    setEditingCollection(null);
+    setCollectionDialogOpen(true);
+  };
+
+  const handleEditCollection = (collection: Collection) => {
+    setEditingCollection(collection);
+    setCollectionDialogOpen(true);
+  };
+
+  const handleViewCollection = (collection: Collection) => {
+    setViewingCollection(collection);
+    setCollectionViewOpen(true);
+  };
+
+  const handleDeleteCollection = (id: string) => {
+    setDeleteCollectionId(id);
+  };
+
+  const confirmDeleteCollection = () => {
+    if (deleteCollectionId) {
+      deleteCollectionMutation.mutate(deleteCollectionId);
+    }
   };
 
   return (
@@ -218,7 +296,7 @@ export default function Archive() {
                             key={afterglow.id}
                             afterglow={afterglow}
                             onFavorite={handleFavorite}
-                            onAddToCollection={handleAddToCollection}
+                            onAddToCollection={(id) => handleAddToCollection(id, afterglow.summary_text)}
                             onViewDetails={handleViewDetails}
                             isFavorited={isFavorited(afterglow.id)}
                           />
@@ -252,14 +330,14 @@ export default function Archive() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {favorites.map((favorite) => (
                     favorite.daily_afterglow && (
-                      <AfterglowCard
-                        key={favorite.id}
-                        afterglow={favorite.daily_afterglow as any}
-                        onFavorite={handleFavorite}
-                        onAddToCollection={handleAddToCollection}
-                        onViewDetails={handleViewDetails}
-                        isFavorited={true}
-                      />
+                        <AfterglowCard
+                          key={favorite.id}
+                          afterglow={favorite.daily_afterglow as any}
+                          onFavorite={handleFavorite}
+                          onAddToCollection={(id) => handleAddToCollection(id, favorite.daily_afterglow?.summary_text)}
+                          onViewDetails={handleViewDetails}
+                          isFavorited={true}
+                        />
                     )
                   ))}
                 </div>
@@ -278,23 +356,103 @@ export default function Archive() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <FolderOpen className="w-5 h-5" />
-                  Collections
+                  Collections {collections && `(${collections.length})`}
                 </h3>
-                <Button size="sm" className="gap-2">
+                <Button size="sm" className="gap-2" onClick={handleCreateCollection}>
                   <Plus className="w-4 h-4" />
                   New Collection
                 </Button>
               </div>
 
-              <div className="text-center py-12 text-muted-foreground">
-                <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Collections feature coming soon!</p>
-                <p className="text-sm">Organize your afterglows into custom collections</p>
-              </div>
+              {collectionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : collections && collections.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {collections.map((collection) => (
+                    <CollectionCard
+                      key={collection.id}
+                      collection={collection}
+                      onEdit={handleEditCollection}
+                      onDelete={handleDeleteCollection}
+                      onView={() => handleViewCollection(collection)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No collections yet</p>
+                  <p className="text-sm">Create your first collection to organize your afterglows</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-4 gap-2"
+                    onClick={handleCreateCollection}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Collection
+                  </Button>
+                </div>
+              )}
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Collection Picker Dialog */}
+      <CollectionPicker
+        open={collectionPickerOpen}
+        onOpenChange={setCollectionPickerOpen}
+        afterglowId={selectedAfterglowId}
+        afterglowTitle={selectedAfterglowTitle}
+      />
+
+      {/* Collection Create/Edit Dialog */}
+      <CollectionDialog
+        open={collectionDialogOpen}
+        onOpenChange={setCollectionDialogOpen}
+        collection={editingCollection}
+        mode={editingCollection ? 'edit' : 'create'}
+      />
+
+      {/* Collection View Dialog */}
+      <CollectionView
+        open={collectionViewOpen}
+        onOpenChange={setCollectionViewOpen}
+        collection={viewingCollection}
+        onAddToCollection={(id) => handleAddToCollection(id)}
+        onViewDetails={handleViewDetails}
+        onFavorite={handleFavorite}
+        isFavorited={isFavorited}
+      />
+
+      {/* Delete Collection Confirmation */}
+      <AlertDialog 
+        open={!!deleteCollectionId} 
+        onOpenChange={() => setDeleteCollectionId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Collection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this collection? This action cannot be undone.
+              All afterglows in this collection will remain in your archive.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCollection}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
