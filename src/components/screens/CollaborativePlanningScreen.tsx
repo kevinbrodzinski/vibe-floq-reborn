@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Settings, Play, Users, MessageCircle, HelpCircle } from "lucide-react";
+import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
 import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
 import { toastError } from '@/lib/toast';
 import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
@@ -52,6 +53,7 @@ export const CollaborativePlanningScreen = () => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSummaryEditModal, setShowSummaryEditModal] = useState(false);
   const [showNovaSuggestions, setShowNovaSuggestions] = useState(true);
+  const [isNovaSuggestionsExpanded, setIsNovaSuggestionsExpanded] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isDragOperationPending, setIsDragOperationPending] = useState(false);
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
@@ -453,6 +455,69 @@ export const CollaborativePlanningScreen = () => {
           className="mb-6"
         />
 
+        {/* Nova AI Suggestions - Moved from sidebar to main flow */}
+        {showNovaSuggestions && (
+          <Collapsible 
+            open={isNovaSuggestionsExpanded} 
+            onOpenChange={setIsNovaSuggestionsExpanded}
+            className="mb-6"
+          >
+            <CollapsibleTrigger className="w-full">
+              <div className="bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30 hover:border-border/50 transition-all duration-300 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
+                      <span className="text-primary-foreground text-sm font-bold">AI</span>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-foreground">Nova AI Suggestions</h3>
+                      <p className="text-sm text-muted-foreground">Smart recommendations for your timeline</p>
+                    </div>
+                  </div>
+                  {isNovaSuggestionsExpanded ? (
+                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-2">
+                <NovaSuggestions
+                  planId={plan.id}
+                  existingStops={plan.stops}
+                  timeRange={{ start: "18:00", end: "23:59" }}
+                  participants={plan.participants.length}
+                  preferences={{
+                    budget: 'medium',
+                    vibes: ['energetic', 'social'],
+                    interests: ['dining', 'nightlife']
+                  }}
+                  onAcceptSuggestion={async (suggestion) => {
+                    const newStop = {
+                      title: suggestion.title,
+                      venue: suggestion.venue || 'TBD',
+                      description: `AI suggested: ${suggestion.reasons[0]?.description || ''}`,
+                      startTime: suggestion.startTime,
+                      endTime: suggestion.endTime,
+                      location: suggestion.location || 'TBD',
+                      vibeMatch: suggestion.vibeMatch,
+                      status: 'suggested' as const,
+                      color: "hsl(280 70% 60%)"
+                    };
+                    
+                    // Await the stop addition before showing overlay
+                    await addStop(newStop);
+                    showOverlay('stop-action', 'AI suggestion added!');
+                  }}
+                  onDismiss={() => setShowNovaSuggestions(false)}
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
         {/* Voting Threshold Meter - Only show for finalized+ plans */}
         {canVoteOnStops(getSafeStatus(plan.status)) && (
           <VotingThresholdMeter
@@ -569,40 +634,6 @@ export const CollaborativePlanningScreen = () => {
                 onLoadTemplate={handleLoadTemplate}
                 className="mb-4"
               />
-
-              {/* Nova AI Suggestions */}
-              {showNovaSuggestions && (
-                <NovaSuggestions
-                  planId={plan.id}
-                  existingStops={plan.stops}
-                  timeRange={{ start: "18:00", end: "23:59" }}
-                  participants={plan.participants.length}
-                  preferences={{
-                    budget: 'medium',
-                    vibes: ['energetic', 'social'],
-                    interests: ['dining', 'nightlife']
-                  }}
-                  onAcceptSuggestion={async (suggestion) => {
-                    const newStop = {
-                      title: suggestion.title,
-                      venue: suggestion.venue || 'TBD',
-                      description: `AI suggested: ${suggestion.reasons[0]?.description || ''}`,
-                      startTime: suggestion.startTime,
-                      endTime: suggestion.endTime,
-                      location: suggestion.location || 'TBD',
-                      vibeMatch: suggestion.vibeMatch,
-                      status: 'suggested' as const,
-                      color: "hsl(280 70% 60%)"
-                    };
-                    
-                    // Await the stop addition before showing overlay
-                    await addStop(newStop);
-                    showOverlay('stop-action', 'AI suggestion added!');
-                  }}
-                  onDismiss={() => setShowNovaSuggestions(false)}
-                  className="mb-4"
-                />
-              )}
 
               {/* Planning Chat */}
               {showChat && (
