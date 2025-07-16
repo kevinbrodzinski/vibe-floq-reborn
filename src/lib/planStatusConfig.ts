@@ -50,3 +50,8 @@ export function getStatusBadgeProps(status: string) {
     label: status.charAt(0).toUpperCase() + status.slice(1)
   };
 }
+
+// Centralized utility for safe status handling
+export function getSafeStatus(status: string | undefined): PlanStatus {
+  return (status as PlanStatus) ?? 'draft';
+}

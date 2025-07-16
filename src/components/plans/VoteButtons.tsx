@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useSession } from '@supabase/auth-helpers-react'
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
+import { getSafeStatus } from '@/lib/planStatusConfig'
 
 interface VoteButtonsProps {
   planId: string
@@ -56,7 +57,7 @@ export function VoteButtons({
   const buttonSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'default'
 
   // Don't show if user not authenticated or voting not allowed for this plan status
-  const normalizedStatus = (planStatus || 'draft') as any
+  const normalizedStatus = getSafeStatus(planStatus)
   if (!session?.user || !canVoteOnStops(normalizedStatus)) {
     return null
   }

@@ -15,6 +15,7 @@ import { useAudioFeedback } from '@/hooks/useAudioFeedback'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { VoteButtons } from '@/components/plans/VoteButtons'
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
+import { getSafeStatus } from '@/lib/planStatusConfig'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -86,7 +87,7 @@ export function ResizableStopCard({
 
   const handleDoubleClick = () => {
     // Check if plan can be edited before allowing editing - normalize status with fallback
-    const normalizedStatus = (planStatus || 'draft') as any
+    const normalizedStatus = getSafeStatus(planStatus)
     if (!canEditPlan(normalizedStatus)) {
       return
     }
@@ -99,7 +100,7 @@ export function ResizableStopCard({
     e.stopPropagation()
     
     // Check if plan can be edited before allowing resize - normalize status with fallback
-    const normalizedStatus = (planStatus || 'draft') as any
+    const normalizedStatus = getSafeStatus(planStatus)
     if (!canEditPlan(normalizedStatus)) {
       return
     }

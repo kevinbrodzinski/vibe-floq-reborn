@@ -36,6 +36,8 @@ import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
 import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
 import { supabase } from "@/integrations/supabase/client";
+import { getSafeStatus } from '@/lib/planStatusConfig';
+import { toastError } from '@/lib/toast';
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
@@ -94,9 +96,9 @@ export const CollaborativePlanningScreen = () => {
 
   const handleStopAdd = (timeSlot: string) => {
     // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = (plan.status || 'draft') as any
+    const normalizedStatus = getSafeStatus(plan.status)
     if (!canEditPlan(normalizedStatus)) {
-      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      toastError('Action blocked', 'This plan cannot be edited in its current status.');
       return;
     }
 
@@ -120,9 +122,9 @@ export const CollaborativePlanningScreen = () => {
 
   const handleStopReorder = async (stopId: string, newIndex: number) => {
     // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = (plan.status || 'draft') as any
+    const normalizedStatus = getSafeStatus(plan.status)
     if (!canEditPlan(normalizedStatus)) {
-      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      toastError('Action blocked', 'This plan cannot be edited in its current status.');
       return;
     }
 
@@ -266,9 +268,9 @@ export const CollaborativePlanningScreen = () => {
 
   const handleVenueSelect = (venue: any) => {
     // Check if plan can be edited - normalize status with fallback
-    const normalizedStatus = (plan.status || 'draft') as any
+    const normalizedStatus = getSafeStatus(plan.status)
     if (!canEditPlan(normalizedStatus)) {
-      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      toastError('Action blocked', 'This plan cannot be edited in its current status.');
       return;
     }
 
@@ -334,7 +336,7 @@ export const CollaborativePlanningScreen = () => {
                 {plan.title}
               </h1>
               <PlanStatusBadge 
-                status={plan.status || 'draft'} 
+                status={getSafeStatus(plan.status)} 
                 size="default"
               />
             </div>
@@ -354,7 +356,7 @@ export const CollaborativePlanningScreen = () => {
             {/* Status transition buttons - prominent for major actions */}
             <PlanStatusActions 
               planId={plan.id}
-              currentStatus={plan.status || 'draft'}
+              currentStatus={getSafeStatus(plan.status)}
               isCreator={plan.createdBy === 'current-user'} // This would come from auth
               hasStops={plan.stops.length > 0}
               hasParticipants={plan.participants.length > 0}
@@ -425,7 +427,7 @@ export const CollaborativePlanningScreen = () => {
         />
 
         {/* Voting Threshold Meter - Only show for finalized+ plans */}
-        {canVoteOnStops((plan.status || 'draft') as any) && (
+        {canVoteOnStops(getSafeStatus(plan.status)) && (
           <VotingThresholdMeter
             totalParticipants={activeParticipants.length || plan.participants.length}
             votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
