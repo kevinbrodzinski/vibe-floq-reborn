@@ -872,14 +872,17 @@ export type Database = {
       }
       floq_plans: {
         Row: {
+          archived_at: string | null
           budget_per_person: number | null
           collaboration_status: string | null
           created_at: string | null
           creator_id: string
+          current_stop_id: string | null
           description: string | null
           duration_hours: number | null
           end_at: string | null
           end_time: string | null
+          execution_started_at: string | null
           floq_id: string
           id: string
           location: unknown | null
@@ -890,17 +893,21 @@ export type Database = {
           title: string
           total_budget: number | null
           updated_at: string | null
+          vibe_tag: string | null
           vibe_tags: string[] | null
         }
         Insert: {
+          archived_at?: string | null
           budget_per_person?: number | null
           collaboration_status?: string | null
           created_at?: string | null
           creator_id: string
+          current_stop_id?: string | null
           description?: string | null
           duration_hours?: number | null
           end_at?: string | null
           end_time?: string | null
+          execution_started_at?: string | null
           floq_id: string
           id?: string
           location?: unknown | null
@@ -911,17 +918,21 @@ export type Database = {
           title: string
           total_budget?: number | null
           updated_at?: string | null
+          vibe_tag?: string | null
           vibe_tags?: string[] | null
         }
         Update: {
+          archived_at?: string | null
           budget_per_person?: number | null
           collaboration_status?: string | null
           created_at?: string | null
           creator_id?: string
+          current_stop_id?: string | null
           description?: string | null
           duration_hours?: number | null
           end_at?: string | null
           end_time?: string | null
+          execution_started_at?: string | null
           floq_id?: string
           id?: string
           location?: unknown | null
@@ -932,9 +943,17 @@ export type Database = {
           title?: string
           total_budget?: number | null
           updated_at?: string | null
+          vibe_tag?: string | null
           vibe_tags?: string[] | null
         }
         Relationships: [
+          {
+            foreignKeyName: "floq_plans_current_stop_id_fkey"
+            columns: ["current_stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "floq_plans_floq_id_fkey"
             columns: ["floq_id"]
@@ -2013,6 +2032,24 @@ export type Database = {
           },
         ]
       }
+      user_action_log: {
+        Row: {
+          action: string
+          happened_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          happened_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          happened_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_floq_activity_tracking: {
         Row: {
           created_at: string
@@ -2934,6 +2971,10 @@ export type Database = {
         Args: { p_floq_id: string }
         Returns: string
       }
+      check_rate_limit: {
+        Args: { p_action: string; p_limit?: number; p_window?: unknown }
+        Returns: boolean
+      }
       citext: {
         Args: { "": boolean } | { "": string } | { "": unknown }
         Returns: string
@@ -3650,6 +3691,21 @@ export type Database = {
           unread_count: number
         }[]
       }
+      get_user_accessible_plans: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          title: string
+          planned_at: string
+          status: Database["public"]["Enums"]["plan_status_enum"]
+          vibe_tag: string
+          archived_at: string
+          current_stop_id: string
+          execution_started_at: string
+          participant_count: number
+          stops_count: number
+        }[]
+      }
       get_user_by_username: {
         Args: { lookup_username: string }
         Returns: {
@@ -3663,6 +3719,13 @@ export type Database = {
       get_user_location: {
         Args: Record<PropertyKey, never>
         Returns: unknown
+      }
+      get_user_plans_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          status_name: string
+          plan_count: number
+        }[]
       }
       get_venues_in_bbox: {
         Args: { west: number; south: number; east: number; north: number }
