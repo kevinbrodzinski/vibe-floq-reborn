@@ -51,7 +51,7 @@ export function AddStopModal({
 
   // Auto-apply Nova suggestion when modal opens
   useEffect(() => {
-    if (isOpen && title && userPreferences?.feedback_sentiment?.prefer_suggestions !== false) {
+    if (isOpen && title && userPreferences?.prefer_smart_suggestions !== false) {
       const suggestion = suggestedTime
       if (suggestion && suggestion !== startTime) {
         setStartTime(suggestion)

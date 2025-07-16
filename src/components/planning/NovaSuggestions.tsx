@@ -51,7 +51,7 @@ export function NovaSuggestions({
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // API-ready toggle for future server integration
   const USE_MOCK = true
@@ -145,20 +145,15 @@ export function NovaSuggestions({
     }
   }, [])
 
-  // Debounced refresh to prevent rapid clicks and twitching
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  // Genuine debounced refresh to prevent rapid clicks
   const debouncedRefresh = useCallback(() => {
-    if (isRefreshing) return // Guard against double-clicks
+    if (timeoutRef.current) return // Genuine debounce guard
     
-    setIsRefreshing(true)
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
+    setRefreshKey(k => k + 1)
     timeoutRef.current = setTimeout(() => {
-      setRefreshKey(k => k + 1)
-      setIsRefreshing(false)
+      timeoutRef.current = null
     }, 300)
-  }, [isRefreshing])
+  }, [])
 
   // Stable callback – only recreated when planId or refreshKey changes
   const generateSuggestions = useCallback(async () => {
@@ -252,11 +247,11 @@ export function NovaSuggestions({
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={debouncedRefresh}
-            disabled={isLoading || isRefreshing}
+            disabled={isLoading}
             className="p-2 hover:bg-muted/50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh suggestions"
           >
-            <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={onDismiss}
