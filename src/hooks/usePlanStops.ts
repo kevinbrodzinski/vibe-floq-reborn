@@ -12,7 +12,7 @@ export function usePlanStops(plan_id: string) {
           venue:venues(*)
         `)
         .eq('plan_id', plan_id)
-        .order('stop_order', { ascending: true })
+        .order('start_time', { ascending: true })
       
       if (error) {
         console.error('Plan stops fetch error:', error)
