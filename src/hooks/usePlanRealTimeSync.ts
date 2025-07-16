@@ -6,11 +6,14 @@ interface UsePlanRealTimeSyncOptions {
   onVoteUpdate?: (voteData: any) => void;
   onStopUpdate?: (stopData: any) => void;
   onChatMessage?: (message: any) => void;
+  onRSVPUpdate?: (rsvpData: any) => void;
+  onPlanModeChange?: (mode: 'planning' | 'executing') => void;
 }
 
 export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSyncOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
+  const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
 
   useEffect(() => {
     if (!planId) return;
@@ -89,6 +92,24 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
       )
       .subscribe();
 
+    // Subscribe to RSVP changes
+    const rsvpChannel = supabase
+      .channel(`plan-rsvp-${planId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'plan_participants',
+          filter: `plan_id=eq.${planId}`,
+        },
+        (payload) => {
+          options.onRSVPUpdate?.(payload);
+          fetchParticipantCount();
+        }
+      )
+      .subscribe();
+
     // Initial participant count fetch
     fetchParticipantCount();
 
@@ -106,11 +127,30 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
       supabase.removeChannel(votesChannel);
       supabase.removeChannel(stopsChannel);
       supabase.removeChannel(chatChannel);
+      supabase.removeChannel(rsvpChannel);
     };
   }, [planId, options]);
+
+  // Function to update plan mode
+  const updatePlanMode = async (newMode: 'planning' | 'executing') => {
+    setPlanMode(newMode);
+    options.onPlanModeChange?.(newMode);
+    
+    // Persist to Supabase for cross-device sync
+    try {
+      await supabase
+        .from('floq_plans')
+        .update({ collaboration_status: newMode })
+        .eq('id', planId);
+    } catch (error) {
+      console.error('Failed to persist plan mode:', error);
+    }
+  };
 
   return {
     isConnected,
     participantCount,
+    planMode,
+    updatePlanMode,
   };
 }

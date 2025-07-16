@@ -13,7 +13,12 @@ import { VotingThresholdMeter } from "@/components/VotingThresholdMeter";
 import { TiebreakerSuggestions } from "@/components/TiebreakerSuggestions";
 import { RSVPCard } from "@/components/RSVPCard";
 import { SharePlanButton } from "@/components/SharePlanButton";
+import { ExecutionOverlay } from "@/components/ExecutionOverlay";
+import { PlanPresenceIndicator } from "@/components/PlanPresenceIndicator";
+import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
+import { PlanChatSidebar } from "@/components/PlanChatSidebar";
 import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
+import { supabase } from "@/integrations/supabase/client";
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
@@ -21,6 +26,10 @@ export const CollaborativePlanningScreen = () => {
   const [venueSearchQuery, setVenueSearchQuery] = useState("");
   const [showTiebreaker, setShowTiebreaker] = useState(false);
   const [currentUserRSVP, setCurrentUserRSVP] = useState<'attending' | 'maybe' | 'not_attending' | 'pending'>('pending');
+  const [showExecutionOverlay, setShowExecutionOverlay] = useState(false);
+  const [overlayAction, setOverlayAction] = useState<'vote' | 'rsvp' | 'check-in' | 'stop-action'>('vote');
+  const [overlayFeedback, setOverlayFeedback] = useState('');
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   
   const {
     plan,
@@ -33,17 +42,61 @@ export const CollaborativePlanningScreen = () => {
   } = useCollaborativeState("plan-1");
 
   // Real-time sync hook for live collaboration
-  const { isConnected, participantCount } = usePlanRealTimeSync(plan.id, {
+  const { isConnected, participantCount, planMode: syncedPlanMode, updatePlanMode } = usePlanRealTimeSync(plan.id, {
     onParticipantJoin: (participant) => {
       console.log('Participant joined:', participant);
     },
     onVoteUpdate: (voteData) => {
       console.log('Vote update:', voteData);
+      showOverlay('vote', 'Vote recorded!');
     },
     onStopUpdate: (stopData) => {
       console.log('Stop update:', stopData);
+    },
+    onChatMessage: (message) => {
+      console.log('New chat message:', message);
+      setChatMessages(prev => [...prev, {
+        id: message.id,
+        userId: message.user_id,
+        userName: 'User', // Would come from profiles join
+        userAvatar: '',
+        content: message.content,
+        timestamp: new Date(message.created_at),
+        type: 'message'
+      }]);
+    },
+    onRSVPUpdate: (rsvpData) => {
+      console.log('RSVP update:', rsvpData);
+      showOverlay('rsvp', 'RSVP updated!');
+    },
+    onPlanModeChange: (mode) => {
+      setPlanMode(mode);
     }
   });
+
+  // Overlay feedback helper
+  const showOverlay = (action: typeof overlayAction, feedback: string) => {
+    setOverlayAction(action);
+    setOverlayFeedback(feedback);
+    setShowExecutionOverlay(true);
+  };
+
+  // Enhanced RSVP handler with persistence
+  const handleRSVPChange = async (status: typeof currentUserRSVP) => {
+    setCurrentUserRSVP(status);
+    
+    // Persist RSVP to Supabase
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Note: In production, this would update the participant's RSVP status
+        console.log('RSVP updated:', status);
+        showOverlay('rsvp', `RSVP: ${status}`);
+      }
+    } catch (error) {
+      console.error('Failed to persist RSVP:', error);
+    }
+  };
 
   const { socialHaptics } = useHapticFeedback();
 
@@ -87,6 +140,7 @@ export const CollaborativePlanningScreen = () => {
       color: venue.color
     };
     addStop(newStop);
+    showOverlay('stop-action', 'Stop added!');
   };
 
   const handleStopAdd = (timeSlot: string) => {
@@ -103,15 +157,41 @@ export const CollaborativePlanningScreen = () => {
       color: "hsl(200 70% 60%)"
     };
     addStop(newStop);
+    showOverlay('stop-action', 'Stop created!');
   };
 
-  const handleExecutePlan = () => {
+  const handleExecutePlan = async () => {
     socialHaptics.vibeMatch();
-    setPlanMode('executing');
+    await updatePlanMode('executing');
+    showOverlay('check-in', 'Plan execution started!');
+  };
+
+  const handleSendChatMessage = (content: string, type = 'message') => {
+    // In a real app, this would send to Supabase
+    const newMessage = {
+      id: Date.now().toString(),
+      userId: 'current-user',
+      userName: 'You',
+      userAvatar: '',
+      content,
+      timestamp: new Date(),
+      type
+    };
+    setChatMessages(prev => [...prev, newMessage]);
   };
 
   return (
     <div className="min-h-screen bg-gradient-field pb-24">
+      {/* Execution Overlay */}
+      <ExecutionOverlay
+        isVisible={showExecutionOverlay}
+        action={overlayAction}
+        feedback={overlayFeedback}
+        onComplete={() => setShowExecutionOverlay(false)}
+      />
+
+      {/* Chat will be integrated with existing PlanningChat */}
+
       {/* Social Pulse Overlay */}
       <SocialPulseOverlay isPlanning={planMode === 'planning'} currentPlan={plan} />
 
@@ -125,12 +205,12 @@ export const CollaborativePlanningScreen = () => {
             <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
               <span>{plan.date}</span>
               <span>•</span>
-              <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4" />
-                <span>{plan.participants.length} people</span>
-              </div>
+              <PlanPresenceIndicator
+                participants={plan.participants}
+                isConnected={isConnected}
+              />
               <span>•</span>
-              <span className="capitalize text-primary">{plan.status}</span>
+              <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
             </div>
           </div>
           
@@ -169,7 +249,7 @@ export const CollaborativePlanningScreen = () => {
           currentUserRSVP={currentUserRSVP}
           attendeeCount={3} // Mock data - would come from real RSVP data
           maybeCount={1} // Mock data - would come from real RSVP data
-          onRSVPChange={setCurrentUserRSVP}
+          onRSVPChange={handleRSVPChange}
           className="mb-6"
         />
 
@@ -183,11 +263,31 @@ export const CollaborativePlanningScreen = () => {
 
         {planMode === 'planning' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Timeline Editor */}
+            {/* Left Column - Timeline Editor & Summary */}
             <div className="lg:col-span-2 space-y-6">
               <TimelineEditor
                 planId={plan.id}
                 isEditable={true}
+              />
+
+              {/* Summary Review Panel */}
+              <SummaryReviewPanel
+                planTitle={plan.title}
+                planDate={plan.date}
+                stops={plan.stops.map(stop => ({
+                  id: stop.id,
+                  title: stop.title,
+                  venue: stop.venue,
+                  startTime: stop.startTime,
+                  endTime: stop.endTime,
+                  estimatedCost: 25,
+                  votes: { positive: 8, negative: 1, total: 9 },
+                  status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
+                }))}
+                participants={plan.participants.map(p => ({ id: p.id, name: p.name, rsvpStatus: 'pending' }))}
+                totalBudget={150}
+                onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
+                onEdit={(stopId) => console.log('Edit stop:', stopId)}
               />
 
               {/* Tiebreaker Suggestions */}
@@ -198,6 +298,7 @@ export const CollaborativePlanningScreen = () => {
                   onSelectRecommendation={(rec) => {
                     console.log('AI recommends:', rec);
                     setShowTiebreaker(false);
+                    showOverlay('vote', 'Tiebreaker applied!');
                   }}
                   className="mb-6"
                 />
