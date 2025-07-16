@@ -2885,6 +2885,17 @@ export type Database = {
           members: Json
         }[]
       }
+      get_afterglow_daily_trends: {
+        Args: { p_user_id?: string }
+        Returns: {
+          day: string
+          energy_score: number
+          social_intensity: number
+          total_moments: number
+          rolling_energy_7d: number
+          rolling_social_7d: number
+        }[]
+      }
       get_afterglow_location_insights: {
         Args: { p_user_id?: string; p_days_back?: number }
         Returns: Json
@@ -2896,6 +2907,17 @@ export type Database = {
       get_afterglow_weekly_patterns: {
         Args: { p_user_id?: string; p_weeks_back?: number }
         Returns: Json
+      }
+      get_afterglow_weekly_trends: {
+        Args: { p_user_id?: string }
+        Returns: {
+          week_start: string
+          avg_energy: number
+          avg_social: number
+          day_count: number
+          energy_trend: string
+          social_trend: string
+        }[]
       }
       get_afterglow_with_moments: {
         Args: { p_afterglow_id: string; p_user_id?: string }
