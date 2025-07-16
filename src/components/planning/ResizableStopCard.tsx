@@ -298,6 +298,7 @@ export function ResizableStopCard({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 opacity-60 hover:opacity-100 transition-opacity"
+                  aria-label="Stop actions"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </Button>

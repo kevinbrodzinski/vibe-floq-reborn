@@ -337,7 +337,11 @@ export function NovaSuggestions({
                 <button
                   onClick={async (e) => {
                     e.stopPropagation()
-                    await onAcceptSuggestion(suggestion)
+                    try {
+                      await onAcceptSuggestion(suggestion)
+                    } catch (error) {
+                      console.error('Failed to add suggestion:', error)
+                    }
                   }}
                   className="w-full bg-gradient-primary text-primary-foreground py-2 px-3 sm:px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform text-sm sm:text-base"
                 >
