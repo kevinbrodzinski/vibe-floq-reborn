@@ -207,6 +207,38 @@ export type Database = {
           },
         ]
       }
+      afterglow_share_links: {
+        Row: {
+          created_at: string | null
+          daily_afterglow_id: string
+          id: string
+          og_image_url: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_afterglow_id: string
+          id?: string
+          og_image_url?: string | null
+          slug?: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_afterglow_id?: string
+          id?: string
+          og_image_url?: string | null
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_share_links_daily_afterglow_id_fkey"
+            columns: ["daily_afterglow_id"]
+            isOneToOne: false
+            referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_afterglow: {
         Row: {
           ai_summary: string | null
@@ -219,6 +251,7 @@ export type Database = {
           energy_score: number | null
           id: string
           is_pinned: boolean | null
+          is_public: boolean | null
           moments: Json | null
           peak_vibe_time: string | null
           regenerated_at: string | null
@@ -240,6 +273,7 @@ export type Database = {
           energy_score?: number | null
           id?: string
           is_pinned?: boolean | null
+          is_public?: boolean | null
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
@@ -261,6 +295,7 @@ export type Database = {
           energy_score?: number | null
           id?: string
           is_pinned?: boolean | null
+          is_public?: boolean | null
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
@@ -2569,6 +2604,10 @@ export type Database = {
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      gen_share_slug: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_daily_afterglow_sql: {
         Args: { p_user_id: string; p_date: string }
