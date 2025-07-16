@@ -141,7 +141,11 @@ export const CheckInButton = ({
     const baseClasses = "transition-all duration-200";
     
     if (checkedIn) {
-      return `${baseClasses} bg-green-600 hover:bg-green-700 text-white border-green-600`;
+      return `${baseClasses} bg-green-600 hover:bg-green-700 text-white border-green-600 animate-pulse`;
+    }
+    
+    if (isLoading) {
+      return `${baseClasses} animate-pulse`;
     }
     
     return baseClasses;

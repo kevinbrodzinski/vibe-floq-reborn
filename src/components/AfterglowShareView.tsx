@@ -53,7 +53,7 @@ export const AfterglowShareView = ({
     const rating = afterglow.overall_rating;
     const vibe = afterglow.overall_vibe;
     
-    return `Just had an amazing night out! ${vibe}\n\n"${afterglow.plan_title}" - ${rating}/10 ⭐\n\nWith ${afterglow.participants.length} amazing people. ${afterglow.moments.best ? `Best moment: ${afterglow.moments.best}` : ''}\n\n#VibeFlow #Afterglow`;
+    return `Just had an amazing night out! ${vibe}\n\n"${afterglow.plan_title}" - ${rating}/10 ⭐\n\nWith ${afterglow.participants.length} amazing people. ${afterglow.moments.best ? `Best moment: ${afterglow.moments.best}` : ''}\n\n#FloqAfterglow #VibeFlow #Memories`;
   };
 
   const handleShare = async (method: 'native' | 'copy' | 'download') => {

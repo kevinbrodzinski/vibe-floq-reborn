@@ -88,11 +88,11 @@ export const AfterglowSummaryCard = ({
         {/* Ratings Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className={`text-2xl font-bold ${getRatingColor(afterglow.overall_rating)}`}>
+            <div className={`text-2xl font-bold ${getRatingColor(afterglow.overall_rating)} animate-pulse`}>
               {afterglow.overall_rating}/10
             </div>
             <div className="text-xs text-muted-foreground">Overall</div>
-            <div className="text-lg">{getRatingEmoji(afterglow.overall_rating)}</div>
+            <div className="text-lg animate-bounce">{getRatingEmoji(afterglow.overall_rating)}</div>
           </div>
           
           <div className="text-center">

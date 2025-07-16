@@ -57,8 +57,8 @@ export const AutoAfterglowPrompt = ({
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className={`w-full max-w-md p-6 border-primary/20 bg-gradient-to-br from-purple-50 to-pink-50 animate-scale-in ${className}`}>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <Card className={`w-full max-w-md p-6 border-primary/20 bg-gradient-to-br from-purple-50 to-pink-50 animate-scale-in shadow-2xl ${className}`}>
         <div className="text-center space-y-4">
           {/* Header */}
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -132,6 +132,9 @@ export const AutoAfterglowPrompt = ({
           {/* Benefits preview */}
           <div className="text-xs text-muted-foreground pt-3 border-t">
             <p>📸 Capture moments • 🎭 Share vibes • 📝 Log memories</p>
+            <button className="text-primary hover:underline mt-1" title="Afterglow helps preserve memories and strengthens social bonds">
+              Why Afterglow?
+            </button>
           </div>
         </div>
       </Card>

@@ -166,7 +166,7 @@ export const AfterglowReflectionForm = ({
               className="w-full"
             />
             <div className="text-center text-sm font-medium">
-              {reflection.overall_rating[0]}/10
+              {reflection.overall_rating[0]}/10 {reflection.overall_rating[0] >= 8 ? '🔥' : reflection.overall_rating[0] >= 6 ? '✨' : '😊'}
             </div>
           </div>
 
@@ -181,7 +181,7 @@ export const AfterglowReflectionForm = ({
               className="w-full"
             />
             <div className="text-center text-sm font-medium">
-              {reflection.energy_level[0]}/10
+              {reflection.energy_level[0]}/10 {reflection.energy_level[0] >= 8 ? '⚡' : reflection.energy_level[0] >= 6 ? '💫' : '😴'}
             </div>
           </div>
         </div>
@@ -235,6 +235,7 @@ export const AfterglowReflectionForm = ({
               placeholder="What made you smile the most?"
               value={reflection.best_moment}
               onChange={(e) => handleTextChange('best_moment', e.target.value)}
+              maxLength={300}
               rows={3}
             />
           </div>
@@ -245,6 +246,7 @@ export const AfterglowReflectionForm = ({
               placeholder="A place, person, or experience..."
               value={reflection.new_discovery}
               onChange={(e) => handleTextChange('new_discovery', e.target.value)}
+              maxLength={300}
               rows={3}
             />
           </div>
@@ -256,6 +258,7 @@ export const AfterglowReflectionForm = ({
             placeholder="Someone said something memorable..."
             value={reflection.memorable_quote}
             onChange={(e) => handleTextChange('memorable_quote', e.target.value)}
+            maxLength={150}
           />
         </div>
 
@@ -299,6 +302,7 @@ export const AfterglowReflectionForm = ({
             placeholder="How are you feeling? What are you grateful for? Any insights?"
             value={reflection.final_thoughts}
             onChange={(e) => handleTextChange('final_thoughts', e.target.value)}
+            maxLength={500}
             rows={4}
           />
         </div>

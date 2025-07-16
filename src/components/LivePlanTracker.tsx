@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Clock, MapPin, Users, ArrowRight, CheckCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,13 +43,18 @@ export const LivePlanTracker = ({
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [progress, setProgress] = useState(0);
 
-  const currentStop = stops[currentStopIndex];
+  const currentStop = useMemo(() => stops[currentStopIndex], [stops, currentStopIndex]);
   const nextStop = stops[currentStopIndex + 1];
   const isLastStop = currentStopIndex === stops.length - 1;
   
-  const checkedInParticipants = participants.filter(p => p.checked_in_at);
-  const checkedInCount = checkedInParticipants.length;
-  const totalCount = participants.length;
+  const { checkedInParticipants, checkedInCount, totalCount } = useMemo(() => {
+    const checkedIn = participants.filter(p => p.checked_in_at);
+    return {
+      checkedInParticipants: checkedIn,
+      checkedInCount: checkedIn.length,
+      totalCount: participants.length
+    };
+  }, [participants]);
 
   // Calculate time remaining and progress
   useEffect(() => {
@@ -153,7 +158,7 @@ export const LivePlanTracker = ({
               <span className="text-muted-foreground">Time Progress</span>
               <span className="font-medium">{timeRemaining}</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-2 transition-all duration-500" />
           </div>
         )}
       </Card>
@@ -229,10 +234,10 @@ export const LivePlanTracker = ({
               variant="outline"
               size="sm"
               onClick={handleAdvanceToNext}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 transition-all duration-200 hover:scale-105"
             >
               <span>Move to Next</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
             </Button>
           </div>
         </Card>
