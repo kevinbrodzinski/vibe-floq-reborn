@@ -17,7 +17,7 @@ export function useNovaSnap() {
         stopId,
         originalTime,
         snappedTime,
-        confidence: matchStrength * 100, // Convert to percentage
+        confidence: Math.min(100, Math.round(matchStrength * 100 * 100) / 100), // Convert to percentage and cap at 100
         reason: 'nova_suggestion'
       })
     }

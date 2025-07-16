@@ -145,15 +145,20 @@ export function NovaSuggestions({
     }
   }, [])
 
-  // Debounced refresh to prevent rapid clicks
+  // Debounced refresh to prevent rapid clicks and twitching
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const debouncedRefresh = useCallback(() => {
+    if (isRefreshing) return // Guard against double-clicks
+    
+    setIsRefreshing(true)
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
     }
     timeoutRef.current = setTimeout(() => {
       setRefreshKey(k => k + 1)
+      setIsRefreshing(false)
     }, 300)
-  }, [])
+  }, [isRefreshing])
 
   // Stable callback – only recreated when planId or refreshKey changes
   const generateSuggestions = useCallback(async () => {
@@ -247,11 +252,11 @@ export function NovaSuggestions({
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={debouncedRefresh}
-            disabled={isLoading}
+            disabled={isLoading || isRefreshing}
             className="p-2 hover:bg-muted/50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh suggestions"
           >
-            <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading || isRefreshing ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={onDismiss}
