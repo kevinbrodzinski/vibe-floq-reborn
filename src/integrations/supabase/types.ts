@@ -209,6 +209,8 @@ export type Database = {
       }
       daily_afterglow: {
         Row: {
+          ai_summary: string | null
+          ai_summary_generated_at: string | null
           created_at: string | null
           crossed_paths_count: number | null
           date: string
@@ -228,6 +230,8 @@ export type Database = {
           vibe_path: string[] | null
         }
         Insert: {
+          ai_summary?: string | null
+          ai_summary_generated_at?: string | null
           created_at?: string | null
           crossed_paths_count?: number | null
           date: string
@@ -247,6 +251,8 @@ export type Database = {
           vibe_path?: string[] | null
         }
         Update: {
+          ai_summary?: string | null
+          ai_summary_generated_at?: string | null
           created_at?: string | null
           crossed_paths_count?: number | null
           date?: string
