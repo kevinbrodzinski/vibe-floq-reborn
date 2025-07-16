@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -48,6 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function Archive() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   const [searchFilters, setSearchFilters] = useState<SearchAfterglowsParams>({});
   const [hasSearched, setHasSearched] = useState(false);
@@ -172,8 +174,7 @@ export default function Archive() {
   };
 
   const handleViewDetails = (afterglowId: string) => {
-    // TODO: Navigate to detailed afterglow view
-    toast({ title: 'Detailed view coming soon!' });
+    navigate(`/afterglow/${afterglowId}`);
   };
 
   const handleExport = () => {
@@ -296,8 +297,8 @@ export default function Archive() {
                             key={afterglow.id}
                             afterglow={afterglow}
                             onFavorite={handleFavorite}
-                            onAddToCollection={(id) => handleAddToCollection(id, afterglow.summary_text)}
-                            onViewDetails={handleViewDetails}
+                            onAddToCollection={(id) => handleAddToCollection(afterglow.id, afterglow.summary_text)}
+                            onViewDetails={() => handleViewDetails(afterglow.id)}
                             isFavorited={isFavorited(afterglow.id)}
                           />
                         ))}
@@ -334,8 +335,8 @@ export default function Archive() {
                           key={favorite.id}
                           afterglow={favorite.daily_afterglow as any}
                           onFavorite={handleFavorite}
-                          onAddToCollection={(id) => handleAddToCollection(id, favorite.daily_afterglow?.summary_text)}
-                          onViewDetails={handleViewDetails}
+                          onAddToCollection={(id) => handleAddToCollection(favorite.daily_afterglow.id, favorite.daily_afterglow?.summary_text)}
+                          onViewDetails={() => handleViewDetails(favorite.daily_afterglow.id)}
                           isFavorited={true}
                         />
                     )
