@@ -290,7 +290,7 @@ export const AfterglowScreen = () => {
         ) : afterglow?.moments?.length ? (
           <div className="space-y-8">
             {afterglow.moments.map((moment, index) => (
-              <div key={moment.timestamp} className="relative flex items-start space-x-6">
+              <div key={`${moment.timestamp}-${index}`} className="relative flex items-start space-x-6">
                 {/* Timeline dot */}
                 <div 
                   className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"

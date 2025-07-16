@@ -156,9 +156,9 @@ async function generateAfterglowForUser(
   const vibePath: string[] = []
   const emotionJourney: any[] = []
   
-  let totalVenues = new Set<string>()
-  let totalFloqs = new Set<string>()
-  let crossedPathsCount = crossedPaths ? new Set(crossedPaths.map(cp => cp.other_user_id)).size : 0
+  const totalVenues = new Set<string>()
+  const totalFloqs = new Set<string>()
+  let crossedPathsCount = crossedPaths ? new Set(crossedPaths.map(cp => cp.other_user_id).filter(Boolean)).size : 0
   let energyScore = 0
   let socialIntensity = 0
 
@@ -293,7 +293,8 @@ async function generateAfterglowForUser(
       ...afterglowData,
       regenerated_at: new Date().toISOString()
     }, {
-      onConflict: 'user_id,date'
+      onConflict: 'user_id,date',
+      ignoreDuplicates: false
     })
     .select('id')
     .single()
