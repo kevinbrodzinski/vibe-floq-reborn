@@ -27,14 +27,22 @@ export const UserAvatarGroup = ({
   const remainingCount = Math.max(0, participants.length - maxVisible);
 
   return (
-    <div className={`flex items-center -space-x-2 ${className}`}>
+    <div 
+      className={`flex items-center -space-x-2 ${className}`}
+      role="group"
+      aria-label={`${participants.length} participants`}
+    >
       {visibleParticipants.map((participant, index) => (
         <Avatar 
-          key={participant.id} 
+          key={participant.id}
           className={`${sizeClasses[size]} border-2 border-background ring-2 ring-primary/20 transition-transform hover:scale-110 hover:z-10 relative`}
           style={{ zIndex: visibleParticipants.length - index }}
+          title={participant.display_name}
         >
-          <AvatarImage src={participant.avatar_url} alt={participant.display_name} />
+          <AvatarImage 
+            src={participant.avatar_url} 
+            alt={`${participant.display_name}'s avatar`} 
+          />
           <AvatarFallback className="bg-gradient-primary text-primary-foreground font-medium">
             {participant.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
           </AvatarFallback>

@@ -1,5 +1,7 @@
-import { Clock, MapPin, Users, Trash2, Edit, Vote } from "lucide-react";
 import { VotePanel } from "./VotePanel";
+import { StopCardHeader } from "./StopCardHeader";
+import { StopCardMeta } from "./StopCardMeta";
+import { StopCardActions } from "./StopCardActions";
 
 interface PlanStop {
   id: string;
@@ -38,15 +40,6 @@ export const StopCard = ({
   onDragStart,
   className = ""
 }: StopCardProps) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'hsl(120 70% 60%)';
-      case 'voted': return 'hsl(60 70% 60%)';
-      case 'suggested': return 'hsl(280 70% 60%)';
-      default: return 'hsl(0 0% 50%)';
-    }
-  };
-
   return (
     <div
       draggable
@@ -60,50 +53,30 @@ export const StopCard = ({
         ${className}
       `}
       style={{ borderLeftColor: stop.color, borderLeftWidth: '4px' }}
+      role="listitem"
+      aria-label={`Stop: ${stop.title}`}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-1">
-            <h4 className="font-semibold text-foreground">{stop.title}</h4>
-            <div 
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: getStatusColor(stop.status) }}
-            />
-          </div>
+          <StopCardHeader 
+            title={stop.title}
+            status={stop.status}
+            color={stop.color}
+          />
           
-          <p className="text-sm text-muted-foreground mb-2">{stop.description}</p>
-          
-          <div className="flex items-center space-x-4 text-xs text-accent">
-            <div className="flex items-center space-x-1">
-              <MapPin className="w-3 h-3" />
-              <span>{stop.location}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="w-3 h-3" />
-              <span>{stop.startTime} - {stop.endTime}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Users className="w-3 h-3" />
-              <span>{stop.participants.length} going</span>
-            </div>
-          </div>
+          <StopCardMeta
+            location={stop.location}
+            startTime={stop.startTime}
+            endTime={stop.endTime}
+            participantCount={stop.participants.length}
+            description={stop.description}
+          />
         </div>
         
-        <div className="flex items-center space-x-2">
-          <div className="text-right text-sm">
-            <div className="text-primary font-medium">{stop.vibeMatch}% match</div>
-          </div>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className="p-1 rounded-full hover:bg-destructive/20 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </button>
-        </div>
+        <StopCardActions
+          vibeMatch={stop.vibeMatch}
+          onRemove={onRemove}
+        />
       </div>
       
       {/* Voting interface */}

@@ -1,6 +1,7 @@
 import { Users, Settings, MessageCircle, Calendar, Clock } from "lucide-react";
 import { UserAvatarGroup } from "./UserAvatarGroup";
 import { PlanStatusTag } from "./PlanStatusTag";
+import { type PlanStatus } from "@/lib/planStatusConfig";
 
 interface PlanHeaderProps {
   title: string;
@@ -12,11 +13,23 @@ interface PlanHeaderProps {
     display_name: string;
     avatar_url?: string;
   }>;
-  status: 'draft' | 'active' | 'voting' | 'finalized' | 'executing';
+  status: PlanStatus;
   showChat: boolean;
   onChatToggle: () => void;
   onSettingsClick?: () => void;
 }
+
+const formatTime = (time: string) => {
+  try {
+    // Convert HH:MM format to Date and use toLocaleTimeString
+    const [hours, minutes] = time.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return time; // Fallback to original format
+  }
+};
 
 export const PlanHeader = ({ 
   title, 
@@ -34,7 +47,7 @@ export const PlanHeader = ({
       <div className="flex justify-between items-start mb-6">
         <div className="flex-1">
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent mb-2">
-            {title}
+            {title || "(Untitled Plan)"}
           </h1>
           
           <div className="flex items-center flex-wrap gap-4 text-sm text-muted-foreground mb-4">
@@ -48,7 +61,7 @@ export const PlanHeader = ({
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Clock className="w-4 h-4" />
-                  <span>{startTime}</span>
+                  <span>{formatTime(startTime)}</span>
                 </div>
               </>
             )}
