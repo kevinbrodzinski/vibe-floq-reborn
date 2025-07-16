@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
 import { useDebug } from "@/lib/useDebug";
 import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
+import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
 
@@ -52,31 +52,15 @@ export const FieldOverlay = memo(({
 
       {/* Status Region - Top left under header */}
       <div className="absolute top-28 left-4 z-50 pointer-events-auto min-h-[44px]">
-        <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm font-medium">
-              {isLocationReady ? 'Location Active' : 'Getting Location...'}
-            </span>
-          </div>
-          {currentVibe && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Vibe:</span>
-              <Badge 
-                variant="outline" 
-                className="text-xs cursor-pointer hover:bg-primary/10 pointer-events-auto min-h-[44px] min-w-[44px] flex items-center justify-center"
-                onClick={changeVibe}
-              >
-                {currentVibe}
-              </Badge>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">
-            {nearbyUsersCount} nearby • {walkableFloqsCount} floqs
-          </div>
-          {updating && <div className="text-xs text-primary animate-pulse">Updating...</div>}
-          {error && <div className="text-xs text-destructive">{error}</div>}
-        </div>
+        <VibeSummaryCard
+          currentVibe={currentVibe}
+          nearbyUsersCount={nearbyUsersCount}
+          walkableFloqsCount={walkableFloqsCount}
+          onOpenVibeSelector={changeVibe}
+          isLocationReady={isLocationReady}
+          updating={updating}
+          error={error}
+        />
       </div>
 
       {/* Controls Region - Right center column */}
