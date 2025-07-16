@@ -356,9 +356,12 @@ export const VibeScreen = () => {
       <div className="px-6 mb-8">
         <VibeWheel />
         
-        {/* Center content overlay - removed duplicate vibe text */}
+        {/* Center content overlay */}
         <div className="relative -mt-[280px] flex flex-col items-center justify-center h-[280px] pointer-events-none">
           <div className="text-center">
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+              {vibes[safeVibe]?.label || 'Chill'}
+            </h2>
             <p className="text-sm text-muted-foreground mb-2">
               {getCurrentVibeDescription()}
             </p>
