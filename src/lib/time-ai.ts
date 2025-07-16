@@ -1,4 +1,5 @@
 import type { PlanStop, TimeSlotSuggestion, NovaTimeSuggestion } from '@/types/plan'
+import { calculateEnhancedConfidence } from './suggestions'
 
 // Venue-specific default durations
 export const defaultDurations: Record<string, number> = {
@@ -141,37 +142,9 @@ export function generateTimeSuggestions(
   return suggestions.sort((a, b) => b.confidence - a.confidence)
 }
 
-// Enhanced confidence calculation with venue awareness
-export function calculateEnhancedConfidence(
-  startTimeMinutes: number,
-  stops: PlanStop[],
-  venueType?: string
-): number {
-  let confidence = 0.8 // Base confidence
-  
-  // Time-of-day scoring
-  const hour = Math.floor(startTimeMinutes / 60)
-  if (venueType === 'restaurant' && (hour >= 18 && hour <= 21)) {
-    confidence += 0.1 // Dinner time boost
-  } else if (venueType === 'bar' && hour >= 20) {
-    confidence += 0.1 // Evening boost for bars
-  }
-  
-  // Spacing quality
-  const nearbyStops = stops.filter(stop => {
-    const stopTime = timeToMinutes(stop.start_time || stop.startTime)
-    return Math.abs(stopTime - startTimeMinutes) <= 180 // Within 3 hours
-  })
-  
-  if (nearbyStops.length > 2) {
-    confidence -= 0.2 // Penalty for crowded timeline
-  }
-  
-  return Math.max(0.1, Math.min(1.0, confidence))
-}
 
-// Get venue-specific peak hours
-function getVenuePeakHours(venueType: string): string[] {
+// Get venue-specific peak hours  
+export function getVenuePeakHours(venueType: string): string[] {
   const peakHours: Record<string, string[]> = {
     restaurant: ['12:00-14:00', '18:00-21:00'],
     bar: ['17:00-19:00', '21:00-01:00'],

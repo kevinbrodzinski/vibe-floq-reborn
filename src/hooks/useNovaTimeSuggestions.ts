@@ -6,11 +6,11 @@ export function useNovaTimeSuggestions(stops: PlanStop[], targetDuration: number
   const [suggestions, setSuggestions] = useState<NovaTimeSuggestion[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Memoize suggestions to prevent unnecessary re-computation
+  // Memoize suggestions based on plan ID and stops to prevent unnecessary re-computation
   const memoizedSuggestions = useMemo(() => {
     if (stops.length === 0) return []
     return generateTimeSuggestions(stops, targetDuration, venueType)
-  }, [stops.length, targetDuration, venueType, stops])
+  }, [stops.length, targetDuration, venueType, JSON.stringify(stops.map(s => ({ id: s.id, start_time: s.start_time, end_time: s.end_time })))])
 
   useEffect(() => {
     if (memoizedSuggestions.length === 0) {

@@ -23,6 +23,9 @@ export function useErrorBoundary() {
 
     // Log to console for debugging
     console.error('Error captured by boundary:', error, errorInfo)
+    
+    // TODO: Send to external service (e.g., Sentry) in production
+    // Example: Sentry.captureException(error, { extra: errorData })
 
     // Show user-friendly toast
     toast.error('Something went wrong', {
