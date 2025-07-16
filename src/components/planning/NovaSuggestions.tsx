@@ -53,19 +53,14 @@ export function NovaSuggestions({
   const [refreshKey, setRefreshKey] = useState(0)
   const timeoutRef = useRef<NodeJS.Timeout>()
 
-  // Stable callback – only recreated when planId or refreshKey changes
-  const generateSuggestions = useCallback(async () => {
-    setIsLoading(true)
-    
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    
-    // Simulate AI processing delay
-    timeoutRef.current = setTimeout(() => {
+  // API-ready toggle for future server integration
+  const USE_MOCK = true
+
+  // Fetch suggestions with API-ready toggle
+  const fetchSuggestions = useCallback(async (): Promise<TimeSlotSuggestion[]> => {
+    if (USE_MOCK) {
       // Mock AI suggestions based on existing stops and preferences
-      const mockSuggestions: TimeSlotSuggestion[] = [
+      return [
         {
           id: 'nova-1',
           startTime: '18:30',
@@ -144,11 +139,44 @@ export function NovaSuggestions({
           category: 'dining'
         }
       ]
-      
-      setSuggestions(mockSuggestions)
-      setIsLoading(false)
+    } else {
+      // Future: return await fetch('/ai/suggestions', ...)
+      throw new Error('AI API not implemented yet')
+    }
+  }, [])
+
+  // Debounced refresh to prevent rapid clicks
+  const debouncedRefresh = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    timeoutRef.current = setTimeout(() => {
+      setRefreshKey(k => k + 1)
+    }, 300)
+  }, [])
+
+  // Stable callback – only recreated when planId or refreshKey changes
+  const generateSuggestions = useCallback(async () => {
+    setIsLoading(true)
+    
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    
+    // Simulate AI processing delay
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const suggestions = await fetchSuggestions()
+        setSuggestions(suggestions)
+      } catch (error) {
+        console.error('Failed to fetch suggestions:', error)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
+      }
     }, 1500)
-  }, [planId, refreshKey])
+  }, [planId, refreshKey, fetchSuggestions])
 
   // Only run on mount + manual refresh
   useEffect(() => {
@@ -218,11 +246,12 @@ export function NovaSuggestions({
         
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
-            onClick={() => setRefreshKey(k => k + 1)}
-            className="p-2 hover:bg-muted/50 rounded-xl transition-colors"
+            onClick={debouncedRefresh}
+            disabled={isLoading}
+            className="p-2 hover:bg-muted/50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh suggestions"
           >
-            <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            <RefreshCw className={`w-4 h-4 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={onDismiss}
