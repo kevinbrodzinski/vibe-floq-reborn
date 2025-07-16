@@ -2897,6 +2897,10 @@ export type Database = {
         Args: { p_user_id?: string; p_weeks_back?: number }
         Returns: Json
       }
+      get_afterglow_with_moments: {
+        Args: { p_afterglow_id: string; p_user_id?: string }
+        Returns: Json
+      }
       get_archive_stats: {
         Args: { p_user_id?: string }
         Returns: Json
