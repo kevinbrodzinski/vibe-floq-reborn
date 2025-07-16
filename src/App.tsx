@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import FloqDetails from "./pages/FloqDetails";
 import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
+import SharedAfterglow from "./pages/SharedAfterglow";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,8 @@ const App = () => {
           <BrowserRouter>
             
             <Routes>
+              {/* Public shared afterglow route */}
+              <Route path="/a/:slug" element={<SharedAfterglow />} />
               {/* Main app routes (field, floqs, etc.) are handled inside Index */}
               <Route path="/*" element={<Index />} />
               <Route path="/settings/profile" element={<Settings />} />

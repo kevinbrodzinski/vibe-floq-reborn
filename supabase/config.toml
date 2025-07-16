@@ -29,3 +29,9 @@ verify_jwt = true
 
 [functions.generate-afterglow-summary]
 verify_jwt = true
+
+[functions.create-share-link]
+verify_jwt = true
+
+[functions.render-og-card]
+verify_jwt = false
