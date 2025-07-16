@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CheckInStatusBadge } from "./CheckInStatusBadge";
 
 interface Participant {
   id: string;
@@ -9,6 +10,7 @@ interface Participant {
   currentSelection?: string;
   lastActivity: number;
   role: 'organizer' | 'participant';
+  checkInStatus?: 'checked-in' | 'nearby' | 'away' | 'offline';
 }
 
 interface LiveParticipantTrackerProps {
@@ -100,8 +102,15 @@ export const LiveParticipantTracker = ({ participants, onParticipantUpdate }: Li
                 )}
               </div>
               
+              {/* Check-in Status Badge */}
+              {participant.checkInStatus && (
+                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                  <CheckInStatusBadge status={participant.checkInStatus} />
+                </div>
+              )}
+              
               {/* Typing indicator */}
-              {participant.isEditing && (
+              {participant.isEditing && !participant.checkInStatus && (
                 <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                   <div className="bg-primary/90 text-primary-foreground px-2 py-1 rounded-full text-xs font-medium animate-pulse-glow">
                     {getActivityText(participant)}

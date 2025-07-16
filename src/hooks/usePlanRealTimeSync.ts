@@ -3,17 +3,20 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface UsePlanRealTimeSyncOptions {
   onParticipantJoin?: (participant: any) => void;
+  onParticipantLeave?: (participant: any) => void;
   onVoteUpdate?: (voteData: any) => void;
   onStopUpdate?: (stopData: any) => void;
   onChatMessage?: (message: any) => void;
   onRSVPUpdate?: (rsvpData: any) => void;
   onPlanModeChange?: (mode: 'planning' | 'executing') => void;
+  onParticipantTyping?: (typingData: { userId: string; isTyping: boolean }) => void;
 }
 
 export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSyncOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
+  const [activeParticipants, setActiveParticipants] = useState<any[]>([]);
 
   useEffect(() => {
     if (!planId) return;
@@ -32,9 +35,12 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
         (payload) => {
           if (payload.eventType === 'INSERT') {
             options.onParticipantJoin?.(payload.new);
+          } else if (payload.eventType === 'DELETE') {
+            options.onParticipantLeave?.(payload.old);
           }
-          // Update participant count
+          // Update participant count and active participants
           fetchParticipantCount();
+          fetchActiveParticipants();
         }
       )
       .subscribe((status) => {
@@ -110,8 +116,9 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
       )
       .subscribe();
 
-    // Initial participant count fetch
+    // Initial data fetch
     fetchParticipantCount();
+    fetchActiveParticipants();
 
     async function fetchParticipantCount() {
       const { count } = await supabase
@@ -120,6 +127,23 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
         .eq('plan_id', planId);
       
       setParticipantCount(count || 0);
+    }
+
+    async function fetchActiveParticipants() {
+      const { data } = await supabase
+        .from('plan_participants')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('plan_id', planId);
+      
+      setActiveParticipants(data || []);
     }
 
     return () => {
@@ -147,10 +171,22 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
     }
   };
 
+  // Function to broadcast typing status
+  const broadcastTyping = (isTyping: boolean) => {
+    const channel = supabase.channel(`plan-presence-${planId}`);
+    channel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { userId: 'current-user', isTyping }
+    });
+  };
+
   return {
     isConnected,
     participantCount,
     planMode,
+    activeParticipants,
     updatePlanMode,
+    broadcastTyping,
   };
 }

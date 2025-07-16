@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Heart, Star, Zap, Users } from 'lucide-react';
+import { Check, Heart, Star, Zap, Users, ThumbsUp } from 'lucide-react';
 
 interface ExecutionOverlayProps {
   isVisible: boolean;
@@ -11,7 +11,7 @@ interface ExecutionOverlayProps {
 }
 
 const actionIcons = {
-  vote: Star,
+  vote: ThumbsUp,
   rsvp: Users,
   'check-in': Check,
   'stop-action': Zap

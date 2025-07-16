@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Search, Settings, Play, Users, MessageCircle } from "lucide-react";
+import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
+import { TimeProgressBar } from "@/components/TimeProgressBar";
 import { useCollaborativeState } from "@/hooks/useCollaborativeState";
 import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -18,6 +20,7 @@ import { PlanPresenceIndicator } from "@/components/PlanPresenceIndicator";
 import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
 import { PlanChatSidebar } from "@/components/PlanChatSidebar";
 import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
+import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { supabase } from "@/integrations/supabase/client";
 
 export const CollaborativePlanningScreen = () => {
@@ -41,14 +44,17 @@ export const CollaborativePlanningScreen = () => {
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
 
+  // Real-time presence tracking
+  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id);
+
   // Real-time sync hook for live collaboration
-  const { isConnected, participantCount, planMode: syncedPlanMode, updatePlanMode } = usePlanRealTimeSync(plan.id, {
+  const { isConnected, participantCount, planMode: syncedPlanMode, activeParticipants, updatePlanMode } = usePlanRealTimeSync(plan.id, {
     onParticipantJoin: (participant) => {
       console.log('Participant joined:', participant);
     },
     onVoteUpdate: (voteData) => {
       console.log('Vote update:', voteData);
-      showOverlay('vote', 'Vote recorded!');
+      showOverlay('vote', 'Vote submitted ✓');
     },
     onStopUpdate: (stopData) => {
       console.log('Stop update:', stopData);
@@ -235,9 +241,19 @@ export const CollaborativePlanningScreen = () => {
           </div>
         </div>
 
+        {/* Time Progress Bar */}
+        <TimeProgressBar
+          planStartTime={new Date(plan.date)}
+          planDuration={240} // 4 hours in minutes
+          className="mb-6"
+        />
+
         {/* Live Participant Tracker */}
         <LiveParticipantTracker 
-          participants={plan.participants}
+          participants={plan.participants.map(p => ({
+            ...p,
+            checkInStatus: 'checked-in' as const // Mock status
+          }))}
           onParticipantUpdate={updateParticipantStatus}
         />
 
@@ -255,8 +271,8 @@ export const CollaborativePlanningScreen = () => {
 
         {/* Voting Threshold Meter */}
         <VotingThresholdMeter
-          totalParticipants={plan.participants.length}
-          votedParticipants={Math.floor(plan.participants.length * 0.7)} // Mock 70% participation
+          totalParticipants={activeParticipants.length || plan.participants.length}
+          votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
           threshold={60}
           className="mb-6"
         />
@@ -284,7 +300,14 @@ export const CollaborativePlanningScreen = () => {
                   votes: { positive: 8, negative: 1, total: 9 },
                   status: stop.status === 'confirmed' ? 'confirmed' : 'pending'
                 }))}
-                participants={plan.participants.map(p => ({ id: p.id, name: p.name, rsvpStatus: 'pending' }))}
+                participants={activeParticipants.length > 0 
+                  ? activeParticipants.map(p => ({ 
+                      id: p.user_id, 
+                      name: p.profiles?.display_name || p.profiles?.username || 'Unknown', 
+                      rsvpStatus: p.rsvp_status || 'pending' 
+                    }))
+                  : plan.participants.map(p => ({ id: p.id, name: p.name, rsvpStatus: currentUserRSVP }))
+                }
                 totalBudget={150}
                 onFinalize={() => showOverlay('check-in', 'Plan finalized!')}
                 onEdit={(stopId) => console.log('Edit stop:', stopId)}
