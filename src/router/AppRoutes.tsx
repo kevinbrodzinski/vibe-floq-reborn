@@ -18,6 +18,7 @@ import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
 import Archive from '@/pages/Archive';
 import AfterglowDetailPage from '@/pages/AfterglowDetailPage';
 import { RoleGuard } from '@/components/RoleGuard';
+import InvitationsPage from '@/pages/InvitationsPage';
 
 export const AppRoutes = () => (
   <Routes>
@@ -38,6 +39,7 @@ export const AppRoutes = () => (
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
+    <Route path="/invites" element={<InvitationsPage />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
     <Route path="/profile" element={<Profile />} />

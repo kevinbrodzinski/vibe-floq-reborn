@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Star, Users, Heart, TrendingUp, Meh, Frown } from 'lucide-react';
 import { usePlanFeedback } from '@/hooks/usePlanFeedback';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PlanReflectionCard } from './PlanReflectionCard';
 
 interface PlanFeedbackDisplayProps {
   planId: string;
@@ -88,27 +89,35 @@ export function PlanFeedbackDisplay({ planId, className = '' }: PlanFeedbackDisp
           </div>
         )}
 
-        {/* Favorite Moments */}
-        {favoriteMoments.length > 0 && (
-          <div className="space-y-2">
+        {/* Individual Reflections */}
+        {feedback.length > 0 && (
+          <div className="space-y-3">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Favorite Moments
+              Individual Reflections
             </span>
-            <div className="space-y-2 animate-fade-in">
-              {favoriteMoments.slice(0, 3).map((moment, index) => (
-                <p 
-                  key={index} 
-                  className="text-sm text-muted-foreground italic leading-relaxed animate-scale-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                  aria-live="polite"
-                >
-                  &ldquo;{moment}&rdquo;
-                </p>
+            <div className="space-y-3">
+              {feedback.slice(0, 5).map((reflection, index) => (
+                <PlanReflectionCard 
+                  key={reflection.id || index}
+                  reflection={{
+                    id: reflection.id || `feedback-${index}`,
+                    user_id: reflection.user_id || '',
+                    user_display_name: (reflection as any).user_display_name || 'Anonymous',
+                    user_avatar_url: (reflection as any).user_avatar_url,
+                    vibe_rating: reflection.vibe_rating,
+                    favorite_moment: reflection.favorite_moment,
+                    would_repeat: reflection.would_repeat,
+                    created_at: reflection.created_at || new Date().toISOString(),
+                    vibe: reflection.vibe_rating && reflection.vibe_rating >= 4 ? 'energetic' : reflection.vibe_rating && reflection.vibe_rating >= 3 ? 'chill' : 'cozy'
+                  }}
+                />
               ))}
-              {favoriteMoments.length > 3 && (
-                <p className="text-xs text-muted-foreground">
-                  +{favoriteMoments.length - 3} more moments shared
-                </p>
+              {feedback.length > 5 && (
+                <div className="text-center">
+                  <Badge variant="outline" className="text-xs">
+                    +{feedback.length - 5} more reflection{feedback.length - 5 !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
               )}
             </div>
           </div>

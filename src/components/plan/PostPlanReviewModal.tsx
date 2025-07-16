@@ -15,12 +15,14 @@ interface PostPlanReviewModalProps {
   planId: string;
   planTitle: string;
   onClose: () => void;
+  onSubmit?: (feedback: StrictPlanFeedbackInput) => void;
 }
 
 export function PostPlanReviewModal({ 
   planId, 
   planTitle, 
-  onClose 
+  onClose,
+  onSubmit 
 }: PostPlanReviewModalProps) {
   const [feedback, setFeedback] = useState<StrictPlanFeedbackInput>({});
   const [momentCharCount, setMomentCharCount] = useState(0);
@@ -30,6 +32,10 @@ export function PostPlanReviewModal({
 
   const handleSubmit = async () => {
     await submitFeedback.mutateAsync({ planId, feedback });
+    
+    // Call the optional onSubmit callback for preference learning
+    onSubmit?.(feedback);
+    
     onClose();
   };
 

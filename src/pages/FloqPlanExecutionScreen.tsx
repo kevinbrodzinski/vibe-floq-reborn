@@ -16,6 +16,8 @@ import { AfterglowShareView } from '@/components/AfterglowShareView'
 import { PostPlanReviewModal } from '@/components/plan/PostPlanReviewModal'
 import { PlanFeedbackDisplay } from '@/components/plan/PlanFeedbackDisplay'
 import { usePlanFeedback } from '@/hooks/usePlanFeedback'
+import { useAutoPromptReview } from '@/hooks/useAutoPromptReview'
+import { useUpdatePreferencesFromFeedback } from '@/hooks/useUpdatePreferencesFromFeedback'
 
 export default function FloqPlanExecutionScreen() {
   const { planId } = useParams<{ floqId: string; planId: string }>()
@@ -44,22 +46,35 @@ export default function FloqPlanExecutionScreen() {
   } = usePlanExecutionState(planId)
 
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const updatePreferences = useUpdatePreferencesFromFeedback()
 
   // Set up real-time sync
   useRealtimePlanSync({ plan_id: planId })
+
+  // Auto-prompt review when plan execution completes
+  useAutoPromptReview(
+    planId,
+    isExecutionComplete,
+    () => setShowReviewModal(true)
+  )
 
   const shouldShowAfterglowPrompt = isExecutionComplete && !afterglow && !afterglowStarted
   const shouldShowReflectionForm = afterglowStarted && !reflectionSubmitted && !afterglow
   const shouldShowSummary = afterglow && !reflectionSubmitted
   const shouldShowShare = afterglow && reflectionSubmitted
 
-  // Auto-show review modal when execution completes
-  useEffect(() => {
-    if (isExecutionComplete && !showReviewModal) {
-      const timer = setTimeout(() => setShowReviewModal(true), 2000)
-      return () => clearTimeout(timer)
+  // Handle feedback submission with preference learning
+  const handleFeedbackSubmit = (feedback: any) => {
+    // Update user preferences based on feedback
+    if (feedback.favorite_moment) {
+      // Infer vibe from rating or default to 'chill'
+      const vibe = feedback.vibe_rating >= 4 ? 'energetic' : feedback.vibe_rating >= 3 ? 'chill' : 'cozy';
+      updatePreferences.mutate({
+        vibe,
+        moment: feedback.favorite_moment,
+      });
     }
-  }, [isExecutionComplete, showReviewModal])
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -192,6 +207,7 @@ export default function FloqPlanExecutionScreen() {
           planId={planId}
           planTitle={stops[0]?.title || 'Your Experience'}
           onClose={() => setShowReviewModal(false)}
+          onSubmit={handleFeedbackSubmit}
         />
       )}
     </div>
