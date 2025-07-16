@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
@@ -55,7 +55,7 @@ export const CollaborativePlanningScreen = () => {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isDragOperationPending, setIsDragOperationPending] = useState(false);
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
-  const overlayTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const {
     plan,
@@ -226,13 +226,13 @@ export const CollaborativePlanningScreen = () => {
       setOverlayFeedback(feedback);
       setShowExecutionOverlay(true);
       
-      if (overlayTimeoutId.current) {
-        clearTimeout(overlayTimeoutId.current);
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
       }
       
-      overlayTimeoutId.current = setTimeout(() => {
+      overlayTimeoutRef.current = setTimeout(() => {
         setShowExecutionOverlay(false);
-        overlayTimeoutId.current = null;
+        overlayTimeoutRef.current = null;
       }, ms);
     },
     []
@@ -286,8 +286,8 @@ export const CollaborativePlanningScreen = () => {
   // Cleanup overlay timeout on unmount
   useEffect(() => {
     return () => {
-      if (overlayTimeoutId.current) {
-        clearTimeout(overlayTimeoutId.current);
+      if (overlayTimeoutRef.current) {
+        clearTimeout(overlayTimeoutRef.current);
       }
     };
   }, []);
@@ -581,7 +581,7 @@ export const CollaborativePlanningScreen = () => {
                     vibes: ['energetic', 'social'],
                     interests: ['dining', 'nightlife']
                   }}
-                  onAcceptSuggestion={(suggestion) => {
+                  onAcceptSuggestion={async (suggestion) => {
                     const newStop = {
                       title: suggestion.title,
                       venue: suggestion.venue || 'TBD',
@@ -593,7 +593,9 @@ export const CollaborativePlanningScreen = () => {
                       status: 'suggested' as const,
                       color: "hsl(280 70% 60%)"
                     };
-                    addStop(newStop);
+                    
+                    // Await the stop addition before showing overlay
+                    await addStop(newStop);
                     showOverlay('stop-action', 'AI suggestion added!');
                   }}
                   onDismiss={() => setShowNovaSuggestions(false)}

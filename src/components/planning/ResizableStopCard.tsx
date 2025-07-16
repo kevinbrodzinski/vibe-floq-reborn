@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { GripVertical, Clock, AlertTriangle, Sparkles } from 'lucide-react'
+import { GripVertical, Clock, AlertTriangle, Sparkles, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
 import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
@@ -20,6 +20,8 @@ import { StopOverlayHint } from './StopOverlayHint'
 import { StopActionsSheet } from './StopActionsSheet'
 import { useLongPress } from '@/hooks/useLongPress'
 import { useDeleteStop } from '@/hooks/useDeleteStop'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -286,12 +288,48 @@ export function ResizableStopCard({
           </div>
         </div>
 
-        {/* Drag handle */}
-        <div 
-          className="resize-handle cursor-grab hover:cursor-grabbing ml-2 p-1 rounded hover:bg-muted/50"
-          onMouseDown={handleResizeStart}
-        >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        {/* Drag handle and dropdown menu */}
+        <div className="flex items-center gap-1">
+          {/* Dropdown Menu for Actions */}
+          {!isDragging && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="bottom" align="end">
+                <DropdownMenuItem 
+                  onSelect={() => {
+                    const normalizedStatus = getSafeStatus(planStatus)
+                    if (canEditPlan(normalizedStatus)) {
+                      onEdit?.()
+                    }
+                  }}
+                >
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onSelect={handleDelete}
+                  className="text-destructive"
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Drag handle */}
+          <div 
+            className="resize-handle cursor-grab hover:cursor-grabbing p-1 rounded hover:bg-muted/50"
+            onMouseDown={handleResizeStart}
+          >
+            <GripVertical className="w-4 h-4 text-muted-foreground" />
+          </div>
         </div>
       </div>
 

@@ -518,12 +518,15 @@ function AddStopTrigger({ onAdd }: { onAdd: () => void }) {
   return (
     <button
       onClick={onAdd}
-      className="w-full h-16 border-2 border-dashed border-muted-foreground/30 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2 text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+      className="w-full border-2 border-dashed border-border/30 rounded-xl h-20 flex items-center justify-center text-muted-foreground cursor-pointer hover:border-border/60 hover:bg-muted/20 transition-all duration-200"
       role="button"
       aria-label="Add new stop to this time slot"
     >
-      <Plus size={16} />
-      <span className="text-sm">Add Stop</span>
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-current opacity-50" />
+        <span className="text-sm">Add Stop</span>
+        <div className="w-2 h-2 rounded-full bg-current opacity-50" />
+      </div>
     </button>
   )
 }

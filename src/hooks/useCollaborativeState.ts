@@ -11,43 +11,14 @@ import type { Plan, PlanStop, PlanParticipant } from '@/types/plan'
 // Constants for fallbacks
 const MOCK_PLAN_ID = "plan-1"
 
-// Mock data for when no plan ID is provided
+// Mock data for when no plan ID is provided (disabled in production)
 const MOCK_PLAN: Plan = {
   id: MOCK_PLAN_ID,
-  title: "Night Out in Arts District",
+  title: "Night Out in Arts District", 
   date: "2024-07-16",
   status: "draft",
   creator_id: "current-user",
-  stops: [
-    {
-      id: "stop-1",
-      title: "Dinner at Bestia",
-      venue: "Bestia",
-      description: "Italian bone marrow, beef tartare",
-      startTime: "19:00",
-      endTime: "21:00",
-      location: "2121 E 7th Pl, Los Angeles",
-      vibeMatch: 85,
-      status: "confirmed" as const,
-      color: "hsl(220 70% 60%)",
-      duration_minutes: 120,
-      participants: []
-    },
-    {
-      id: "stop-2", 
-      title: "Cocktails at Seven Grand",
-      venue: "Seven Grand",
-      description: "Whiskey bar with live music",
-      startTime: "21:30",
-      endTime: "23:30",
-      location: "515 W 7th St, Los Angeles",
-      vibeMatch: 75,
-      status: "suggested" as const,
-      color: "hsl(280 70% 60%)",
-      duration_minutes: 120,
-      participants: []
-    }
-  ],
+  stops: process.env.NODE_ENV === 'development' ? [] : [], // Remove demo stops
   participants: [
     { id: "user-1", name: "Alex", avatar: "", status: "confirmed" },
     { id: "user-2", name: "Jamie", avatar: "", status: "pending" },
