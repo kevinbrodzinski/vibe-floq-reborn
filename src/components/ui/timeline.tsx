@@ -1,80 +1,54 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import clsx from "clsx";
 
-interface TimelineProps {
-  children: React.ReactNode;
-  className?: string;
-}
+/* Basic reusable prop helper */
+type CProps = React.HTMLAttributes<HTMLElement>;
 
-interface TimelineItemProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export const Timeline: React.FC<CProps> = ({ className, children, ...rest }) => (
+  <ol className={clsx("relative border-l border-muted-foreground/20", className)} {...rest}>
+    {children}
+  </ol>
+);
 
-interface TimelineSeparatorProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export const TimelineItem: React.FC<CProps> = ({ className, children, ...rest }) => (
+  <li className={clsx("mb-8 ml-4", className)} {...rest}>
+    {children}
+  </li>
+);
 
-interface TimelineDotProps {
-  sx?: { backgroundColor?: string };
-  className?: string;
-}
+export const TimelineSeparator: React.FC<CProps> = ({ className, children, ...rest }) => (
+  <div className={clsx("flex items-start gap-2", className)} {...rest}>
+    {children}
+  </div>
+);
 
-interface TimelineConnectorProps {
-  className?: string;
-}
+export const TimelineDot: React.FC<{ color?: string } & CProps> = ({
+  color = "#6b7280",
+  className,
+  ...rest
+}) => (
+  <span
+    className={clsx(
+      "block h-3 w-3 rounded-full border-2 border-background shrink-0",
+      className
+    )}
+    style={{ backgroundColor: color }}
+    {...rest}
+  />
+);
 
-interface TimelineContentProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export const TimelineConnector: React.FC<CProps> = ({ className, ...rest }) => (
+  <span
+    className={clsx(
+      "ml-[5px] mt-1 h-full border-l border-muted-foreground/20 grow",
+      className
+    )}
+    {...rest}
+  />
+);
 
-export const Timeline: React.FC<TimelineProps> = ({ children, className }) => {
-  return (
-    <div className={cn("relative", className)}>
-      {children}
-    </div>
-  );
-};
-
-export const TimelineItem: React.FC<TimelineItemProps> = ({ children, className }) => {
-  return (
-    <div className={cn("relative flex gap-4 pb-8 last:pb-0", className)}>
-      {children}
-    </div>
-  );
-};
-
-export const TimelineSeparator: React.FC<TimelineSeparatorProps> = ({ children, className }) => {
-  return (
-    <div className={cn("flex flex-col items-center", className)}>
-      {children}
-    </div>
-  );
-};
-
-export const TimelineDot: React.FC<TimelineDotProps> = ({ sx, className }) => {
-  const backgroundColor = sx?.backgroundColor || "#6b7280";
-  
-  return (
-    <div 
-      className={cn("w-3 h-3 rounded-full border-2 border-background", className)}
-      style={{ backgroundColor }}
-    />
-  );
-};
-
-export const TimelineConnector: React.FC<TimelineConnectorProps> = ({ className }) => {
-  return (
-    <div className={cn("w-0.5 h-8 bg-border mt-1", className)} />
-  );
-};
-
-export const TimelineContent: React.FC<TimelineContentProps> = ({ children, className }) => {
-  return (
-    <div className={cn("flex-1 min-w-0", className)}>
-      {children}
-    </div>
-  );
-};
+export const TimelineContent: React.FC<CProps> = ({ className, children, ...rest }) => (
+  <div className={clsx("pl-4", className)} {...rest}>
+    {children}
+  </div>
+);

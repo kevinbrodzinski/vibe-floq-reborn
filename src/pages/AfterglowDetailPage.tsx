@@ -65,9 +65,7 @@ export default function AfterglowDetailPage() {
         {moments.map((m, i) => (
           <TimelineItem key={m.id}>
             <TimelineSeparator>
-              <TimelineDot
-                sx={{ backgroundColor: m.color || "#6b7280" }}
-              />
+              <TimelineDot color={m.color || "#6b7280"} />
               {i !== moments.length - 1 && <TimelineConnector />}
             </TimelineSeparator>
             <TimelineContent>
