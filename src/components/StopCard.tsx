@@ -24,9 +24,11 @@ interface StopCardProps {
   isSelected: boolean;
   isDragOver: boolean;
   onSelect: () => void;
+  onEdit?: () => void;
   onRemove: () => void;
   onVote: (voteType: 'yes' | 'no' | 'maybe') => void;
   onDragStart: (e: React.DragEvent) => void;
+  draggable?: boolean;
   className?: string;
 }
 
@@ -35,9 +37,11 @@ export const StopCard = ({
   isSelected,
   isDragOver,
   onSelect,
+  onEdit,
   onRemove,
   onVote,
   onDragStart,
+  draggable = true,
   className = ""
 }: StopCardProps) => {
   return (

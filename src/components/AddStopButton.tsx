@@ -4,6 +4,7 @@ interface AddStopButtonProps {
   timeSlot: string;
   onAdd: (timeSlot: string) => void;
   isDragOver?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -11,25 +12,30 @@ export const AddStopButton = ({
   timeSlot, 
   onAdd, 
   isDragOver = false,
+  disabled = false,
   className = "" 
 }: AddStopButtonProps) => {
   return (
     <div
       className={`
         border-2 border-dashed rounded-2xl p-6 
-        transition-all duration-300 cursor-pointer
+        transition-all duration-300
+        ${disabled 
+          ? 'opacity-50 cursor-not-allowed' 
+          : 'cursor-pointer hover:border-border hover:bg-card/30'
+        }
         ${isDragOver 
           ? 'border-primary bg-primary/10 glow-primary animate-pulse' 
-          : 'border-border/50 hover:border-border hover:bg-card/30'
+          : 'border-border/50'
         }
         ${className}
       `}
-      onClick={() => onAdd(timeSlot)}
+      onClick={() => !disabled && onAdd(timeSlot)}
       role="button"
       aria-label={`Add stop at ${timeSlot}`}
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onAdd(timeSlot);
         }

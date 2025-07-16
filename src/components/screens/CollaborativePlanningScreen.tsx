@@ -140,11 +140,8 @@ export const CollaborativePlanningScreen = () => {
             {/* Left Column - Timeline Editor */}
             <div className="lg:col-span-2 space-y-6">
               <TimelineEditor
-                stops={plan.stops}
-                onStopsReorder={reorderStops}
-                onStopRemove={removeStop}
-                onStopVote={voteOnStop}
-                onStopAdd={handleStopAdd}
+                planId={plan.id}
+                isEditable={true}
               />
               
               {/* Execute Plan Button */}
