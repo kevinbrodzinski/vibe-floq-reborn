@@ -1,5 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Simple debounce utility
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+  let timeout: NodeJS.Timeout;
+  return ((...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  }) as T;
+}
 
 interface ParticipantPresence {
   userId: string;
@@ -17,74 +26,74 @@ interface UsePlanPresenceOptions {
 }
 
 export function usePlanPresence(planId: string, options: UsePlanPresenceOptions = {}) {
-  const [participants, setParticipants] = useState<ParticipantPresence[]>([]);
+  const [participants, setParticipants] = useState<any[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+
+  const fetchActiveParticipants = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('plan_participants')
+        .select(`
+          user_id,
+          profiles:user_id!inner (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('plan_id', planId);
+
+      if (error) throw error;
+
+      // Remove duplicates in case of multiple entries per user
+      const uniqueParticipants = data?.reduce((acc, participant) => {
+        if (!acc.find(p => p.user_id === participant.user_id)) {
+          acc.push(participant);
+        }
+        return acc;
+      }, [] as typeof data) || [];
+
+      setParticipants(uniqueParticipants);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+    }
+  }, [planId]);
+
+  // Debounced version to avoid bursts
+  const debouncedFetchParticipants = useCallback(
+    debounce(fetchActiveParticipants, 300),
+    [fetchActiveParticipants]
+  );
 
   useEffect(() => {
     if (!planId) return;
 
-    const channel = supabase.channel(`plan-presence-${planId}`);
+    // Initial fetch
+    debouncedFetchParticipants();
 
-    // Track own presence
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const presenceState = channel.presenceState();
-        const participantList: ParticipantPresence[] = [];
-        
-        Object.values(presenceState).forEach((presences: any) => {
-          presences.forEach((presence: any) => {
-            participantList.push({
-              userId: presence.user_id,
-              username: presence.username,
-              displayName: presence.display_name,
-              avatarUrl: presence.avatar_url,
-              isOnline: true,
-              lastSeen: new Date(),
-              currentActivity: presence.activity,
-              checkInStatus: presence.check_in_status
-            });
-          });
-        });
-        
-        setParticipants(participantList);
-        options.onPresenceUpdate?.(participantList);
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`plan-participants-${planId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'plan_participants',
+        filter: `plan_id=eq.${planId}`
+      }, () => {
+        const handleRealTimeUpdate = () => {
+          debouncedFetchParticipants();
+        };
+        handleRealTimeUpdate();
       })
-      .on('presence', { event: 'join' }, ({ newPresences }) => {
-        console.log('User joined:', newPresences);
-      })
-      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        console.log('User left:', leftPresences);
-      })
-      .subscribe(async (status) => {
+      .subscribe((status) => {
         setIsConnected(status === 'SUBSCRIBED');
-        
-        if (status === 'SUBSCRIBED') {
-          // Track current user's presence
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-          // Get user profile data
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username, display_name, avatar_url')
-            .eq('id', user.id)
-            .single();
-
-          await channel.track({
-            user_id: user.id,
-            username: profile?.username || 'Anonymous',
-            display_name: profile?.display_name || profile?.username || 'Anonymous',
-            avatar_url: profile?.avatar_url || '',
-            activity: 'timeline',
-            check_in_status: 'offline'
-          });
-          }
-        }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [planId, options]);
+  }, [planId, debouncedFetchParticipants]);
 
   const updateActivity = async (activity: ParticipantPresence['currentActivity']) => {
     const channel = supabase.channel(`plan-presence-${planId}`);

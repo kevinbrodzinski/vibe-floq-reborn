@@ -58,23 +58,6 @@ export function useExecutionState({
     onStateChange?.(state);
   }, [state, planId, onStateChange]);
 
-  const startExecution = useCallback(() => {
-    const startTime = new Date();
-    const estimatedEnd = new Date(startTime.getTime() + (totalStops * 2 * 60 * 60 * 1000)); // 2 hours per stop
-
-    setState(prev => ({
-      ...prev,
-      isExecuting: true,
-      executionStartTime: startTime,
-      estimatedEndTime: estimatedEnd,
-      currentStopIndex: 0,
-    }));
-
-    toast({
-      title: "Plan Execution Started! 🎉",
-      description: "Your plan is now live. Check in at each stop to track progress.",
-    });
-  }, [totalStops, toast]);
 
   const advanceToNextStop = useCallback(() => {
     setState(prev => {
@@ -116,7 +99,35 @@ export function useExecutionState({
         description: `${checkedInCount}/${totalParticipants} participants have checked in.`,
       });
     }
-  }, [state.participantCheckIns, autoAdvanceThreshold, advanceToNextStop, toast]);
+  }, [state.participantCheckIns, autoAdvanceThreshold, toast]);
+
+  const startExecution = useCallback(() => {
+    const startTime = new Date();
+    const estimatedEnd = new Date(startTime.getTime() + (totalStops * 2 * 60 * 60 * 1000)); // 2 hours per stop
+
+    // Check if plan has stops
+    if (totalStops === 0) {
+      toast({
+        title: "Cannot start execution",
+        description: "Plan must have at least one stop to begin execution.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setState(prev => ({
+      ...prev,
+      isExecuting: true,
+      executionStartTime: startTime,
+      estimatedEndTime: estimatedEnd,
+      currentStopIndex: 0,
+    }));
+
+    toast({
+      title: "Plan Execution Started! 🎉",
+      description: "Your plan is now live. Check in at each stop to track progress.",
+    });
+  }, [totalStops, toast]);
 
   const startAfterglow = useCallback(() => {
     setState(prev => ({

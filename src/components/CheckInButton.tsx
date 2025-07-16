@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useCheckInStatus } from '@/hooks/useCheckInStatus';
 import { useCheckInToggle } from '@/hooks/useCheckInToggle';
 import { LoadingOverlay } from '@/components/ExecutionFeedbackUtils';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 
 interface CheckInButtonProps {
@@ -109,12 +110,19 @@ export const CheckInButton = ({
         {getButtonContent()}
       </Button>
       
-      {/* Loading Overlay */}
+      {/* Loading Overlay - Fixed positioning for mobile */}
       {isLoading && (
-        <LoadingOverlay 
-          label={checkedIn ? 'Checking out...' : 'Checking in...'} 
-          variant="minimal" 
-        />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 md:absolute md:inset-0 md:transform-none"
+        >
+          <LoadingOverlay 
+            label={checkedIn ? 'Checking out...' : 'Checking in...'} 
+            variant="minimal" 
+          />
+        </motion.div>
       )}
     </div>
   );

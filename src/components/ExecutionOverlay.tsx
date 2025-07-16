@@ -75,16 +75,29 @@ export const ExecutionOverlay = ({
             }}
             className="bg-card/95 backdrop-blur-xl rounded-3xl p-8 text-center max-w-sm mx-4 border border-border/30"
           >
-            {/* Icon with pulse animation */}
+            {/* Icon with enhanced animations */}
             <motion.div
+              initial={{ scale: 0.8, rotate: -10 }}
               animate={{ 
                 scale: phase === 'feedback' ? [1, 1.2, 1] : 1,
                 rotate: phase === 'feedback' ? [0, 10, -10, 0] : 0
               }}
-              transition={{ duration: 0.6 }}
-              className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-primary flex items-center justify-center ${actionColors[action]}`}
+              transition={{ 
+                type: "spring",
+                stiffness: 400,
+                damping: 25,
+                duration: 0.6 
+              }}
+              className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-primary flex items-center justify-center ${actionColors[action]} shadow-lg`}
             >
-              <IconComponent className="w-8 h-8 text-white" />
+              <motion.div
+                animate={{ 
+                  scale: phase === 'feedback' ? [1, 1.1, 1] : 1,
+                }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <IconComponent className="w-8 h-8 text-white" />
+              </motion.div>
             </motion.div>
 
             {/* Feedback text */}
