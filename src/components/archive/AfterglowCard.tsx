@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,8 @@ import {
   MapPin,
   Plus,
   Star,
-  MoreVertical
+  MoreVertical,
+  Share
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -21,6 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AfterglowSearchResult } from '@/lib/supabase-helpers';
 import { format } from 'date-fns';
+import ShareModal from '@/components/share/ShareModal';
+import { useAfterglowDetail } from '@/lib/afterglow-helpers';
 
 interface AfterglowCardProps {
   afterglow: AfterglowSearchResult;
@@ -37,6 +40,8 @@ export function AfterglowCard({
   onViewDetails,
   isFavorited = false
 }: AfterglowCardProps) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const { data: afterglowDetail } = useAfterglowDetail(afterglow.id);
   const getVibeColor = (vibe: string) => {
     const colors: Record<string, string> = {
       chill: 'bg-blue-100 text-blue-800',
@@ -93,9 +98,22 @@ export function AfterglowCard({
                 <Plus className="w-4 h-4 mr-2" />
                 Add to Collection
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                <Share className="w-4 h-4 mr-2" />
+                Share
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Share Modal */}
+        {shareOpen && afterglowDetail && (
+          <ShareModal
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            afterglow={afterglowDetail.afterglow}
+          />
+        )}
 
         {/* Summary */}
         {afterglow.summary_text && (

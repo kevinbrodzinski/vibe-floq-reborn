@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   Timeline,
   TimelineItem,
@@ -10,10 +11,13 @@ import { useParams, Link } from "react-router-dom";
 import { useAfterglowDetail } from "@/lib/afterglow-helpers";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Loader, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader, AlertCircle, Share } from "lucide-react";
+import ShareModal from '@/components/share/ShareModal';
 
 export default function AfterglowDetailPage() {
   const { afterglowId } = useParams<{ afterglowId: string }>();
+  const [shareOpen, setShareOpen] = useState(false);
   
   if (!afterglowId) return <p>Invalid afterglow id</p>;
   
@@ -41,9 +45,19 @@ export default function AfterglowDetailPage() {
     <div className="mx-auto max-w-3xl p-4 space-y-6">
       {/* Header */}
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">
-          {format(new Date(afterglow.date), "PPP")}
-        </h1>
+        <div className="flex items-start justify-between">
+          <h1 className="text-2xl font-semibold">
+            {format(new Date(afterglow.date), "PPP")}
+          </h1>
+          <Button
+            variant="outline" 
+            size="sm"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share className="w-4 h-4 mr-2" />
+            Share
+          </Button>
+        </div>
 
         {afterglow.summary_text && (
           <p className="text-muted-foreground">{afterglow.summary_text}</p>
@@ -62,6 +76,15 @@ export default function AfterglowDetailPage() {
           {afterglow.is_pinned && <Badge variant="outline">Pinned</Badge>}
         </div>
       </header>
+
+      {/* Share Modal */}
+      {shareOpen && (
+        <ShareModal
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          afterglow={afterglow}
+        />
+      )}
 
       {/* Timeline */}
       <Timeline>
