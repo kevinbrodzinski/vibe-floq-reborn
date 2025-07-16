@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { ArchiveStats } from '@/lib/supabase-helpers';
 import { format } from 'date-fns';
+import EnergyTrendChart from './trends/EnergyTrendChart';
+import SocialTrendChart from './trends/SocialTrendChart';
 
 interface ArchiveStatsCardProps {
   stats: ArchiveStats;
@@ -91,6 +93,10 @@ export function ArchiveStatsCard({ stats }: ArchiveStatsCardProps) {
             <Zap className="w-4 h-4" />
             Energy Insights
           </h4>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Energy last 30 days</div>
+            <EnergyTrendChart />
+          </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="font-medium">All Time Average</div>
@@ -124,6 +130,10 @@ export function ArchiveStatsCard({ stats }: ArchiveStatsCardProps) {
             <Users className="w-4 h-4" />
             Social Insights
           </h4>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Social last 30 days</div>
+            <SocialTrendChart />
+          </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="font-medium">All Time Average</div>
