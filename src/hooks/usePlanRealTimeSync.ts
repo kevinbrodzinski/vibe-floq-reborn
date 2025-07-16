@@ -1,6 +1,9 @@
+// Phase 10: Real-Time Stop Planning + Voting UI
+
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface UsePlanRealTimeSyncOptions {
   onParticipantJoin?: (participant: any) => void;
@@ -11,8 +14,10 @@ interface UsePlanRealTimeSyncOptions {
   onRSVPUpdate?: (rsvpData: any) => void;
   onPlanModeChange?: (mode: 'planning' | 'executing') => void;
   onParticipantTyping?: (typingData: { userId: string; isTyping: boolean }) => void;
+  onVote?: (payload: any) => void;
 }
 
+// 2. Listen for Stop Changes in usePlanRealTimeSync
 export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSyncOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [participantCount, setParticipantCount] = useState(0);
@@ -22,6 +27,12 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
   
   const queryClient = useQueryClient();
   const channelsRef = useRef<any[]>([]);
+  const { toast } = useToast();
+
+  const flashVoteIndicator = (stopId: string) => {
+    // Visual feedback for vote casting
+    console.log(`Vote indicator flashed for stop: ${stopId}`)
+  }
 
   // Enhanced cleanup and connection management
   const cleanupChannels = useCallback(() => {
@@ -80,122 +91,112 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
     // Clean up existing channels
     cleanupChannels();
 
+    const channel = supabase.channel(`plan-${planId}`)
+
+    channel.on('broadcast', { event: 'stop_updated' }, ({ payload }) => {
+      options.onStopUpdate?.(payload)
+      toast({ title: `${payload.data.action === 'add' ? 'Stop added' : 'Stop updated'}` })
+    })
+
+    channel.on('broadcast', { event: 'vote_cast' }, ({ payload }) => {
+      options.onVote?.(payload)
+      flashVoteIndicator(payload.stopId)
+    })
+
     // Subscribe to plan participants changes
-    const participantsChannel = supabase
-      .channel(`plan-participants-${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_participants',
-          filter: `plan_id=eq.${planId}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            options.onParticipantJoin?.(payload.new);
-          } else if (payload.eventType === 'DELETE') {
-            options.onParticipantLeave?.(payload.old);
-          }
-          // Update participant count and active participants
-          fetchParticipantCount();
-          fetchActiveParticipants();
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'plan_participants',
+        filter: `plan_id=eq.${planId}`,
+      },
+      (payload) => {
+        if (payload.eventType === 'INSERT') {
+          options.onParticipantJoin?.(payload.new);
+        } else if (payload.eventType === 'DELETE') {
+          options.onParticipantLeave?.(payload.old);
         }
-      )
-      .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
-        setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
-      });
+        // Update participant count and active participants
+        fetchParticipantCount();
+        fetchActiveParticipants();
+      }
+    )
 
     // Subscribe to plan votes changes
-    const votesChannel = supabase
-      .channel(`plan-votes-${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_votes',
-          filter: `plan_id=eq.${planId}`,
-        },
-        (payload) => {
-          options.onVoteUpdate?.(payload);
-        }
-      )
-      .subscribe();
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'plan_votes',
+        filter: `plan_id=eq.${planId}`,
+      },
+      (payload) => {
+        options.onVoteUpdate?.(payload);
+      }
+    )
 
     // Subscribe to plan stops changes
-    const stopsChannel = supabase
-      .channel(`plan-stops-${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_stops',
-          filter: `plan_id=eq.${planId}`,
-        },
-        (payload) => {
-          options.onStopUpdate?.(payload);
-        }
-      )
-      .subscribe();
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'plan_stops',
+        filter: `plan_id=eq.${planId}`,
+      },
+      (payload) => {
+        options.onStopUpdate?.(payload);
+      }
+    )
 
     // Subscribe to plan comments/chat
-    const chatChannel = supabase
-      .channel(`plan-chat-${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'plan_comments',
-          filter: `plan_id=eq.${planId}`,
-        },
-        (payload) => {
-          options.onChatMessage?.(payload.new);
-        }
-      )
-      .subscribe();
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'plan_comments',
+        filter: `plan_id=eq.${planId}`,
+      },
+      (payload) => {
+        options.onChatMessage?.(payload.new);
+      }
+    )
 
     // Subscribe to RSVP changes
-    const rsvpChannel = supabase
-      .channel(`plan-rsvp-${planId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_participants',
-          filter: `plan_id=eq.${planId}`,
-        },
-        (payload) => {
-          options.onRSVPUpdate?.(payload);
-          fetchParticipantCount();
-        }
-      )
-      .subscribe();
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'plan_participants',
+        filter: `plan_id=eq.${planId}`,
+      },
+      (payload) => {
+        options.onRSVPUpdate?.(payload);
+        fetchParticipantCount();
+      }
+    )
+
+    channel.subscribe((status) => {
+      setIsConnected(status === 'SUBSCRIBED');
+      setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
+    });
 
     // Store channels for cleanup
-    channelsRef.current = [participantsChannel, votesChannel, stopsChannel, chatChannel, rsvpChannel];
+    channelsRef.current = [channel];
 
     // Initial data fetch
     fetchParticipantCount();
     fetchActiveParticipants();
 
-    // Connection error handling
-    const handleConnectionError = () => {
-      setConnectionStatus('error');
-      setTimeout(() => {
-        setConnectionStatus('connecting');
-        // Could implement retry logic here
-      }, 5000);
-    };
-
     return () => {
       cleanupChannels();
     };
-  }, [planId, options, fetchParticipantCount, fetchActiveParticipants, cleanupChannels]);
+  }, [planId, options, fetchParticipantCount, fetchActiveParticipants, cleanupChannels, toast]);
 
   // Function to update plan mode
   const updatePlanMode = async (newMode: 'planning' | 'executing') => {

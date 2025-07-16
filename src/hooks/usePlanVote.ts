@@ -1,3 +1,5 @@
+// 3. Cast Vote + Broadcast
+
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -15,7 +17,8 @@ interface VoteResponse {
   vote: any
 }
 
-export function usePlanVote() {
+// Backward compatible hook that keeps existing API
+export function usePlanVote(planId?: string) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -49,7 +52,17 @@ export function usePlanVote() {
         throw error
       }
 
-      return { success: true, vote: data }
+      // Broadcast vote to other clients if planId is provided
+      if (planId) {
+        const channel = supabase.channel(`plan-${planId}`)
+        channel.send({
+          type: 'broadcast',
+          event: 'vote_cast',
+          payload: { stopId: params.stop_id, voteType: params.vote_type }
+        })
+      }
+
+      return { success: true as const, vote: data }
     },
     onSuccess: (data, variables) => {
       // Invalidate plan-related queries to trigger refetch
