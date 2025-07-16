@@ -2468,6 +2468,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      generate_daily_afterglow_sql: {
+        Args: { p_user_id: string; p_date: string }
+        Returns: string
+      }
       generate_floq_suggestions: {
         Args: {
           p_user_id: string
