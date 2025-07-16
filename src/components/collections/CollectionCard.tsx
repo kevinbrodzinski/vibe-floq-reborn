@@ -1,4 +1,5 @@
 import React from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,6 @@ import {
   Eye
 } from 'lucide-react';
 import { Collection } from '@/lib/supabase-helpers';
-import { formatDistanceToNow } from 'date-fns';
 
 interface CollectionCardProps {
   collection: Collection & { itemCount?: number };
@@ -88,7 +88,7 @@ export function CollectionCard({
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
               <FolderOpen className="w-3 h-3" />
-              {collection.itemCount || 0} items
+              {(collection.itemCount ?? 0)} items
             </span>
           </div>
           

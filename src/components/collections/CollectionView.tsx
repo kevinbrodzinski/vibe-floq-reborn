@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatDistanceToNow, format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,6 @@ import {
 } from '@/lib/supabase-helpers';
 import { AfterglowCard } from '@/components/archive/AfterglowCard';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow, format } from 'date-fns';
 
 interface CollectionViewProps {
   open: boolean;

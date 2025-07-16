@@ -209,9 +209,11 @@ export interface Collection {
   id: string;
   name: string;
   description?: string;
-  color: string;
-  created_at: string;
-  updated_at: string;
+  color?: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id: string;
+  itemCount?: number;
 }
 
 export const createCollection = async (name: string, description?: string, color = '#3b82f6') => {
@@ -228,11 +230,27 @@ export const createCollection = async (name: string, description?: string, color
 export const getCollections = async (): Promise<Collection[]> => {
   const { data, error } = await supabase
     .from('afterglow_collections')
-    .select('*')
+    .select(`
+      id,
+      name,
+      description,
+      color,
+      created_at,
+      updated_at,
+      user_id,
+      afterglow_collection_items(count)
+    `)
     .order('updated_at', { ascending: false });
-
+  
   if (error) throw error;
-  return data || [];
+  
+  // Transform the data to include itemCount
+  const collections = data?.map(collection => ({
+    ...collection,
+    itemCount: collection.afterglow_collection_items?.[0]?.count || 0
+  })) || [];
+  
+  return collections;
 };
 
 export const updateCollection = async (id: string, updates: Partial<Collection>) => {

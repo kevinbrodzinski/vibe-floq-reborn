@@ -70,10 +70,10 @@ export function CollectionPicker({
       );
       return collection;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['collections'] });
+    onSuccess: (collection) => {
       setNewCollection({ name: '', description: '', color: '#3b82f6' });
       setShowCreateForm(false);
+      queryClient.invalidateQueries({ queryKey: ['collections'] });
       toast({ title: 'Collection created successfully' });
     },
     onError: (error) => {
@@ -188,14 +188,16 @@ export function CollectionPicker({
                 <Label>Color</Label>
                 <div className="flex gap-2 mt-1">
                   {colorOptions.map((color) => (
-                    <button
+                    <input
                       key={color}
-                      type="button"
-                      className={`w-6 h-6 rounded-full border-2 ${
+                      type="radio"
+                      name="collection-color"
+                      className={`w-6 h-6 rounded-full border-2 cursor-pointer ${
                         newCollection.color === color ? 'border-foreground' : 'border-border'
                       }`}
                       style={{ backgroundColor: color }}
-                      onClick={() => setNewCollection(prev => ({ ...prev, color }))}
+                      onChange={() => setNewCollection(prev => ({ ...prev, color }))}
+                      checked={newCollection.color === color}
                     />
                   ))}
                 </div>
