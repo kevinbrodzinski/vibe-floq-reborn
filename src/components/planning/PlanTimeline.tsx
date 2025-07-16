@@ -135,8 +135,6 @@ export function PlanTimeline({ plan }: PlanTimelineProps) {
         </CardContent>
       </Card>
 
-      {/* Overlap Warnings */}
-      <TimelineOverlapValidator stops={stops} />
 
       {/* Timeline Grid */}
       <Card>

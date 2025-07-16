@@ -469,6 +469,11 @@ export const CollaborativePlanningScreen = () => {
           attendeeCount={3} // Mock data - would come from real RSVP data
           maybeCount={1} // Mock data - would come from real RSVP data
           onRSVPChange={handleRSVPChange}
+          hasConflict={plan.stops.some(stop => plan.stops.some(other => 
+            stop.id !== other.id && 
+            stop.startTime < other.endTime && 
+            other.startTime < stop.endTime
+          ))}
           className="mb-6"
         />
 
@@ -528,15 +533,6 @@ export const CollaborativePlanningScreen = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Timeline Editor & Summary */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Timeline Overlap Validator */}
-              <TimelineOverlapValidator 
-                stops={plan.stops}
-                showResolutions={true}
-                onResolveOverlap={(stop1Id, stop2Id, resolution) => {
-                  console.log('Resolving overlap:', { stop1Id, stop2Id, resolution });
-                  showOverlay('stop-action', `Applied ${resolution} resolution`);
-                }}
-              />
               
               <MobileTimelineGrid
                 planId={plan.id}

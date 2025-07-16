@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { StatusBadge } from "@/components/StatusBadge";
 
 type RSVPStatus = 'attending' | 'maybe' | 'not_attending' | 'pending';
 
@@ -15,6 +16,7 @@ interface RSVPCardProps {
   attendeeCount?: number;
   maybeCount?: number;
   onRSVPChange?: (status: RSVPStatus) => void;
+  hasConflict?: boolean;
   className?: string;
 }
 
@@ -26,6 +28,7 @@ export const RSVPCard = ({
   attendeeCount = 0,
   maybeCount = 0,
   onRSVPChange,
+  hasConflict = false,
   className = ""
 }: RSVPCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -92,11 +95,14 @@ export const RSVPCard = ({
             <p className="text-sm text-muted-foreground">{planDate}</p>
           </div>
           
-          <div className={`flex items-center gap-1 ${getStatusColor(currentUserRSVP)}`}>
-            {getStatusIcon(currentUserRSVP)}
-            <span className="text-sm font-medium capitalize">
-              {currentUserRSVP === 'not_attending' ? 'Not Going' : currentUserRSVP}
-            </span>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-1 ${getStatusColor(currentUserRSVP)}`}>
+              {getStatusIcon(currentUserRSVP)}
+              <span className="text-sm font-medium capitalize">
+                {currentUserRSVP === 'not_attending' ? 'Not Going' : currentUserRSVP}
+              </span>
+            </div>
+            <StatusBadge hasConflict={hasConflict} />
           </div>
         </div>
 
