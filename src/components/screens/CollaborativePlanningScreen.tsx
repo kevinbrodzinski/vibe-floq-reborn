@@ -10,6 +10,8 @@ import { LiveParticipantTracker } from "@/components/LiveParticipantTracker";
 import { VenueCardLibrary } from "@/components/VenueCardLibrary";
 import { TimelineGrid } from "@/components/planning/TimelineGrid";
 import { PlanningChat } from "@/components/PlanningChat";
+import { NovaSuggestions } from "@/components/planning/NovaSuggestions";
+import { TimelineOverlapValidator } from "@/components/planning/TimelineOverlapValidator";
 import { SocialPulseOverlay } from "@/components/SocialPulseOverlay";
 import { PlanExecutionTracker } from "@/components/PlanExecutionTracker";
 import { VotingThresholdMeter } from "@/components/VotingThresholdMeter";
@@ -39,6 +41,7 @@ export const CollaborativePlanningScreen = () => {
   const [overlayFeedback, setOverlayFeedback] = useState('');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSummaryEditModal, setShowSummaryEditModal] = useState(false);
+  const [showNovaSuggestions, setShowNovaSuggestions] = useState(true);
   
   const {
     plan,
@@ -47,11 +50,13 @@ export const CollaborativePlanningScreen = () => {
     removeStop,
     reorderStops,
     voteOnStop,
-    updateParticipantStatus,
-    activeParticipants: collaborationParticipants,
-    connectionStatus,
-    isOptimistic
+    updateParticipantStatus
   } = useCollaborativeState("plan-1");
+
+  // Mock collaboration state for now
+  const collaborationParticipants = plan.participants;
+  const connectionStatus = 'connected';
+  const isOptimistic = false;
 
   // Plan summaries
   const { data: summaries } = usePlanSummaries(plan.id);
@@ -301,6 +306,16 @@ export const CollaborativePlanningScreen = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Timeline Editor & Summary */}
             <div className="lg:col-span-2 space-y-6">
+              {/* Timeline Overlap Validator */}
+              <TimelineOverlapValidator 
+                stops={plan.stops}
+                showResolutions={true}
+                onResolveOverlap={(stop1Id, stop2Id, resolution) => {
+                  console.log('Resolving overlap:', { stop1Id, stop2Id, resolution });
+                  showOverlay('stop-action', `Applied ${resolution} resolution`);
+                }}
+              />
+              
               <TimelineGrid
                 planId={plan.id}
                 startTime="18:00"
@@ -394,6 +409,38 @@ export const CollaborativePlanningScreen = () => {
                   searchQuery={venueSearchQuery}
                 />
               </div>
+
+              {/* Nova AI Suggestions */}
+              {showNovaSuggestions && (
+                <NovaSuggestions
+                  planId={plan.id}
+                  existingStops={plan.stops}
+                  timeRange={{ start: "18:00", end: "23:59" }}
+                  participants={plan.participants.length}
+                  preferences={{
+                    budget: 'medium',
+                    vibes: ['energetic', 'social'],
+                    interests: ['dining', 'nightlife']
+                  }}
+                  onAcceptSuggestion={(suggestion) => {
+                    const newStop = {
+                      title: suggestion.title,
+                      venue: suggestion.venue || 'TBD',
+                      description: `AI suggested: ${suggestion.reasons[0]?.description || ''}`,
+                      startTime: suggestion.startTime,
+                      endTime: suggestion.endTime,
+                      location: suggestion.location || 'TBD',
+                      vibeMatch: suggestion.vibeMatch,
+                      status: 'suggested' as const,
+                      color: "hsl(280 70% 60%)"
+                    };
+                    addStop(newStop);
+                    showOverlay('stop-action', 'AI suggestion added!');
+                  }}
+                  onDismiss={() => setShowNovaSuggestions(false)}
+                  className="mb-4"
+                />
+              )}
 
               {/* Planning Chat */}
               {showChat && (

@@ -1,0 +1,298 @@
+import { useState, useEffect, useCallback } from 'react'
+import { Sparkles, Clock, MapPin, Users, TrendingUp, X, RefreshCw } from 'lucide-react'
+import { PlanStop } from '@/types/plan'
+
+interface SuggestionReason {
+  type: 'optimal_timing' | 'travel_efficiency' | 'crowd_patterns' | 'weather' | 'popularity'
+  confidence: number
+  description: string
+}
+
+interface TimeSlotSuggestion {
+  id: string
+  startTime: string
+  endTime: string
+  title: string
+  venue?: string
+  location?: string
+  reasons: SuggestionReason[]
+  aiConfidence: number
+  estimatedCost?: number
+  vibeMatch: number
+  category: 'dining' | 'entertainment' | 'culture' | 'outdoor' | 'nightlife'
+}
+
+interface NovaSuggestionsProps {
+  planId: string
+  existingStops: PlanStop[]
+  timeRange: { start: string; end: string }
+  participants: number
+  preferences?: {
+    budget?: 'low' | 'medium' | 'high'
+    vibes?: string[]
+    interests?: string[]
+  }
+  onAcceptSuggestion: (suggestion: TimeSlotSuggestion) => void
+  onDismiss: () => void
+  className?: string
+}
+
+export function NovaSuggestions({
+  planId,
+  existingStops,
+  timeRange,
+  participants,
+  preferences,
+  onAcceptSuggestion,
+  onDismiss,
+  className = ""
+}: NovaSuggestionsProps) {
+  const [suggestions, setSuggestions] = useState<TimeSlotSuggestion[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null)
+
+  // Generate AI-powered suggestions
+  const generateSuggestions = useCallback(async () => {
+    setIsLoading(true)
+    
+    // Simulate AI processing delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    // Mock AI suggestions based on existing stops and preferences
+    const mockSuggestions: TimeSlotSuggestion[] = [
+      {
+        id: 'nova-1',
+        startTime: '18:30',
+        endTime: '20:00',
+        title: 'Aperitivo at Catch LA',
+        venue: 'Catch LA',
+        location: 'West Hollywood',
+        reasons: [
+          {
+            type: 'optimal_timing',
+            confidence: 95,
+            description: 'Perfect timing for sunset views and happy hour pricing'
+          },
+          {
+            type: 'travel_efficiency', 
+            confidence: 88,
+            description: '12 minutes from your previous stop with optimal traffic flow'
+          },
+          {
+            type: 'crowd_patterns',
+            confidence: 92,
+            description: 'Low crowd density at this time - 73% booking availability'
+          }
+        ],
+        aiConfidence: 91,
+        estimatedCost: 35,
+        vibeMatch: 94,
+        category: 'dining'
+      },
+      {
+        id: 'nova-2',
+        startTime: '20:30',
+        endTime: '22:00',
+        title: 'Live Jazz at The Dresden',
+        venue: 'The Dresden',
+        location: 'Los Feliz',
+        reasons: [
+          {
+            type: 'popularity',
+            confidence: 89,
+            description: 'Trending 23% above average for your group demographics'
+          },
+          {
+            type: 'optimal_timing',
+            confidence: 96,
+            description: 'Live performance starts at 9 PM - ideal arrival window'
+          }
+        ],
+        aiConfidence: 87,
+        estimatedCost: 28,
+        vibeMatch: 89,
+        category: 'entertainment'
+      },
+      {
+        id: 'nova-3',
+        startTime: '22:30',
+        endTime: '00:30',
+        title: 'Late Night Bites at Night + Market',
+        venue: 'Night + Market',
+        location: 'Sunset Strip',
+        reasons: [
+          {
+            type: 'travel_efficiency',
+            confidence: 94,
+            description: 'Optimal route continuation - 8 min drive from Dresden'
+          },
+          {
+            type: 'crowd_patterns',
+            confidence: 85,
+            description: 'Kitchen stays open until 1 AM - avoid restaurant closing rush'
+          }
+        ],
+        aiConfidence: 89,
+        estimatedCost: 42,
+        vibeMatch: 86,
+        category: 'dining'
+      }
+    ]
+    
+    setSuggestions(mockSuggestions)
+    setIsLoading(false)
+  }, [existingStops, preferences, timeRange, participants])
+
+  useEffect(() => {
+    generateSuggestions()
+  }, [generateSuggestions])
+
+  const getReasonIcon = (type: SuggestionReason['type']) => {
+    switch (type) {
+      case 'optimal_timing': return <Clock className="w-3 h-3" />
+      case 'travel_efficiency': return <MapPin className="w-3 h-3" />
+      case 'crowd_patterns': return <Users className="w-3 h-3" />
+      case 'popularity': return <TrendingUp className="w-3 h-3" />
+      default: return <Sparkles className="w-3 h-3" />
+    }
+  }
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 90) return 'text-green-600 dark:text-green-400'
+    if (confidence >= 75) return 'text-yellow-600 dark:text-yellow-400'
+    return 'text-orange-600 dark:text-orange-400'
+  }
+
+  if (isLoading) {
+    return (
+      <div className={`bg-card/90 backdrop-blur-xl rounded-2xl p-6 border border-border/30 ${className}`}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-primary-foreground animate-pulse" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Nova AI Suggestions</h3>
+            <p className="text-sm text-muted-foreground">Analyzing optimal time slots...</p>
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-4 bg-muted/30 rounded mb-2"></div>
+              <div className="h-3 bg-muted/20 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`bg-card/90 backdrop-blur-xl rounded-2xl p-6 border border-border/30 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Nova AI Suggestions</h3>
+            <p className="text-sm text-muted-foreground">Smart recommendations for your timeline</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={generateSuggestions}
+            className="p-2 hover:bg-muted/50 rounded-xl transition-colors"
+            title="Refresh suggestions"
+          >
+            <RefreshCw className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <button
+            onClick={onDismiss}
+            className="p-2 hover:bg-muted/50 rounded-xl transition-colors"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {suggestions.map((suggestion) => (
+          <div
+            key={suggestion.id}
+            className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
+              selectedSuggestion === suggestion.id
+                ? 'border-primary bg-primary/5 shadow-sm'
+                : 'border-border/30 hover:border-border/50 hover:bg-muted/20'
+            }`}
+            onClick={() => setSelectedSuggestion(
+              selectedSuggestion === suggestion.id ? null : suggestion.id
+            )}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-foreground">{suggestion.title}</span>
+                  <div className={`text-xs px-2 py-1 rounded-full bg-primary/10 ${getConfidenceColor(suggestion.aiConfidence)}`}>
+                    {suggestion.aiConfidence}% confidence
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {suggestion.startTime} - {suggestion.endTime}
+                  {suggestion.location && ` • ${suggestion.location}`}
+                  {suggestion.estimatedCost && ` • $${suggestion.estimatedCost}/person`}
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <div className="text-sm font-medium text-primary">
+                  {suggestion.vibeMatch}% vibe match
+                </div>
+              </div>
+            </div>
+
+            {selectedSuggestion === suggestion.id && (
+              <div className="mt-4 pt-4 border-t border-border/30">
+                <h4 className="text-sm font-medium text-foreground mb-3">AI Reasoning:</h4>
+                <div className="space-y-2 mb-4">
+                  {suggestion.reasons.map((reason, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs">
+                      <div className="text-muted-foreground mt-0.5">
+                        {getReasonIcon(reason.type)}
+                      </div>
+                      <div className="flex-1">
+                        <div className={`font-medium ${getConfidenceColor(reason.confidence)}`}>
+                          {reason.confidence}% {reason.type.replace('_', ' ')}
+                        </div>
+                        <div className="text-muted-foreground">{reason.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onAcceptSuggestion(suggestion)
+                  }}
+                  className="w-full bg-gradient-primary text-primary-foreground py-2 px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform"
+                >
+                  Add to Timeline
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-border/30 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          <span>Powered by Nova AI • Suggestions refresh every 5 minutes</span>
+        </div>
+      </div>
+    </div>
+  )
+}

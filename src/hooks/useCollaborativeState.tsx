@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useAutoSaveDrafts } from './useAutoSaveDrafts';
 
 export interface PlanStop {
   id: string;
@@ -49,6 +50,8 @@ export interface PlanActivity {
 }
 
 export const useCollaborativeState = (planId: string) => {
+  const { autoSave, loadDraft, clearDraft, isAutoSaving } = useAutoSaveDrafts({ planId })
+  
   const [plan, setPlan] = useState<CollaborativePlan>({
     id: planId,
     title: "Tonight's Adventure",
@@ -169,10 +172,17 @@ export const useCollaborativeState = (planId: string) => {
       votes: [{ userId: "you", vote: "yes" }]
     };
 
-    setPlan(prev => ({
-      ...prev,
-      stops: [...prev.stops, newStop]
-    }));
+    setPlan(prev => {
+      const updated = {
+        ...prev,
+        stops: [...prev.stops, newStop]
+      };
+      
+      // Auto-save draft
+      autoSave(updated.stops);
+      
+      return updated;
+    });
 
     setActivities(prev => [...prev, {
       id: `activity-${Date.now()}`,
@@ -184,16 +194,23 @@ export const useCollaborativeState = (planId: string) => {
     }]);
 
     syncChanges();
-  }, [syncChanges]);
+  }, [syncChanges, autoSave]);
 
   const removeStop = useCallback((stopId: string) => {
     const stop = plan.stops.find(s => s.id === stopId);
     if (!stop) return;
 
-    setPlan(prev => ({
-      ...prev,
-      stops: prev.stops.filter(s => s.id !== stopId)
-    }));
+    setPlan(prev => {
+      const updated = {
+        ...prev,
+        stops: prev.stops.filter(s => s.id !== stopId)
+      };
+      
+      // Auto-save draft
+      autoSave(updated.stops);
+      
+      return updated;
+    });
 
     setActivities(prev => [...prev, {
       id: `activity-${Date.now()}`,
@@ -205,16 +222,23 @@ export const useCollaborativeState = (planId: string) => {
     }]);
 
     syncChanges();
-  }, [plan.stops, syncChanges]);
+  }, [plan.stops, syncChanges, autoSave]);
 
   const reorderStops = useCallback((newOrder: PlanStop[]) => {
-    setPlan(prev => ({
-      ...prev,
-      stops: newOrder
-    }));
+    setPlan(prev => {
+      const updated = {
+        ...prev,
+        stops: newOrder
+      };
+      
+      // Auto-save draft
+      autoSave(updated.stops);
+      
+      return updated;
+    });
 
     syncChanges();
-  }, [syncChanges]);
+  }, [syncChanges, autoSave]);
 
   const voteOnStop = useCallback((stopId: string, vote: 'yes' | 'no' | 'maybe') => {
     setPlan(prev => ({
@@ -275,6 +299,22 @@ export const useCollaborativeState = (planId: string) => {
     return () => clearInterval(interval);
   }, [updateParticipantStatus]);
 
+  // Load draft on mount
+  useEffect(() => {
+    const loadInitialDraft = async () => {
+      const draft = await loadDraft();
+      if (draft && draft.stops.length > 0) {
+        setPlan(prev => ({
+          ...prev,
+          stops: draft.stops,
+          version: draft.metadata.version
+        }));
+      }
+    };
+    
+    loadInitialDraft();
+  }, [loadDraft]);
+
   return {
     plan,
     activities,
@@ -284,6 +324,8 @@ export const useCollaborativeState = (planId: string) => {
     removeStop,
     reorderStops,
     voteOnStop,
-    updateParticipantStatus
+    updateParticipantStatus,
+    isAutoSaving,
+    clearDraft
   };
 };
