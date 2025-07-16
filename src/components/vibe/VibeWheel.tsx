@@ -107,12 +107,6 @@ export const VibeWheel = memo(() => {
         strokeWidth={6}
       />
       
-      {/* Confidence percentage display */}
-      {strength > 0 && (
-        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full pointer-events-none">
-          {Math.round(strength * 100)}%
-        </div>
-      )}
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
       {VIBE_ORDER.map((vibe, index) => {
