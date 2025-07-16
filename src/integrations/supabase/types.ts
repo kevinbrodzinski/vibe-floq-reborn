@@ -1526,6 +1526,44 @@ export type Database = {
           },
         ]
       }
+      plan_drafts: {
+        Row: {
+          created_at: string
+          draft_data: Json
+          id: string
+          last_saved_at: string
+          plan_id: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          draft_data: Json
+          id?: string
+          last_saved_at?: string
+          plan_id: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          draft_data?: Json
+          id?: string
+          last_saved_at?: string
+          plan_id?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_drafts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_feedback: {
         Row: {
           created_at: string | null
