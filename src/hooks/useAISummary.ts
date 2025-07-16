@@ -1,62 +1,62 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 export function useAISummary() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const isMounted = useRef(true);
+  const { toast } = useToast();
 
-  useEffect(() => () => { isMounted.current = false; }, []);
+  const generateSummary = async (planId: string) => {
+    if (!planId) {
+      toast({
+        title: "Error",
+        description: "Plan ID is required",
+        variant: "destructive"
+      });
+      return null;
+    }
 
-  const generateSummary = async (afterglowId: string): Promise<string | null> => {
-    if (!user || !afterglowId) return null;
-
-    if (isMounted.current) setIsGenerating(true);
-    if (isMounted.current) setError(null);
-
+    setIsGenerating(true);
+    
     try {
-      const { data, error: functionError } = await supabase.functions.invoke(
-        'generate-afterglow-summary',
-        {
-          body: { afterglow_id: afterglowId }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('generate-plan-summary', {
+        body: { plan_id: planId }
+      });
 
-      if (functionError) {
-        throw functionError;
+      if (error) {
+        console.error('AI summary error:', error);
+        toast({
+          title: "Summary Generation Failed",
+          description: "Unable to generate AI summary. Please try again.",
+          variant: "destructive"
+        });
+        return null;
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      if (data?.success && data?.summary) {
+        toast({
+          title: "Summary Generated",
+          description: "AI summary has been created for your plan!",
+        });
+        return data.summary;
       }
 
-      const summary = data?.ai_summary;
-      if (!summary) {
-        throw new Error('No summary generated');
-      }
-
-      if (!data.cached) {
-        toast.success('AI summary generated successfully!');
-      }
-
-      return summary;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate AI summary';
-      if (isMounted.current) setError(errorMessage);
-      toast.error(errorMessage);
-      console.error('Error generating AI summary:', err);
+      return null;
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate summary",
+        variant: "destructive"
+      });
       return null;
     } finally {
-      if (isMounted.current) setIsGenerating(false);
+      setIsGenerating(false);
     }
   };
 
   return {
     generateSummary,
-    isGenerating,
-    error
+    isGenerating
   };
 }
