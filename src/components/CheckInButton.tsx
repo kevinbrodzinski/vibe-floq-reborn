@@ -110,18 +110,20 @@ export const CheckInButton = ({
         {getButtonContent()}
       </Button>
       
-      {/* Loading Overlay - Fixed positioning for mobile */}
-      {isLoading && (
+      {/* Success overlay with improved mobile positioning */}
+      {showSuccessOverlay && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 md:absolute md:inset-0 md:transform-none"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: -20 }}
+          className="fixed bottom-4 left-0 right-0 z-50 mx-4 md:absolute md:inset-0 md:mx-0"
         >
-          <LoadingOverlay 
-            label={checkedIn ? 'Checking out...' : 'Checking in...'} 
-            variant="minimal" 
-          />
+          <div className="bg-card/95 backdrop-blur-sm rounded-xl p-4 text-center border border-border/20 shadow-lg">
+            <Check className="w-6 h-6 mx-auto mb-2 text-green-500" />
+            <p className="text-sm font-medium text-foreground">
+              {checkedIn ? 'Checked out successfully!' : 'Checked in successfully!'}
+            </p>
+          </div>
         </motion.div>
       )}
     </div>

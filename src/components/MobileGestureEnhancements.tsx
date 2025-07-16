@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useGesture } from '@use-gesture/react';
+import { motion } from 'framer-motion';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface MobileGestureEnhancementsProps {
@@ -74,7 +75,13 @@ export function MobileGestureEnhancements({
 
   return (
     <div {...bind()} className={`touch-none ${className}`}>
-      {children}
+      <motion.div 
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.1 }}
+        className="h-full w-full"
+      >
+        {children}
+      </motion.div>
     </div>
   );
 }

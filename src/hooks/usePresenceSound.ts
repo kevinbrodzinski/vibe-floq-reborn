@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
+import { useDebounce } from 'use-debounce';
 import { useHapticFeedback } from './useHapticFeedback';
 
 // Simple sound utility for presence events
@@ -33,17 +34,25 @@ const playSound = (type: 'join' | 'leave') => {
 };
 
 export function usePresenceSound(participants: any[]) {
-  const previousParticipants = useRef<any[]>([]);
+  const previousParticipants = useRef<Set<string>>(new Set());
   const { socialHaptics } = useHapticFeedback();
   
+  // Debounce participants to prevent rapid fire feedback
+  const [debouncedParticipants] = useDebounce(participants, 300);
+  
+  // Use Set for faster lookups and cleaner diffing logic
+  const currentIds = useMemo(() => 
+    new Set(debouncedParticipants.map(p => p.user_id || p.id)), 
+    [debouncedParticipants]
+  );
+  
   useEffect(() => {
-    const currentIds = participants.map(p => p.user_id || p.id);
-    const previousIds = previousParticipants.current.map(p => p.user_id || p.id);
+    const previousIds = previousParticipants.current;
     
-    // Detect joins
-    const joined = currentIds.filter(id => !previousIds.includes(id));
-    // Detect leaves  
-    const left = previousIds.filter(id => !currentIds.includes(id));
+    // Detect joins - in current but not in previous
+    const joined = [...currentIds].filter(id => !previousIds.has(id));
+    // Detect leaves - in previous but not in current
+    const left = [...previousIds].filter(id => !currentIds.has(id));
     
     // Trigger feedback for joins
     if (joined.length > 0) {
@@ -58,6 +67,6 @@ export function usePresenceSound(participants: any[]) {
     }
     
     // Update ref for next comparison
-    previousParticipants.current = [...participants];
-  }, [participants, socialHaptics]);
+    previousParticipants.current = new Set(currentIds);
+  }, [currentIds, socialHaptics]);
 }

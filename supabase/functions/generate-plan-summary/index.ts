@@ -83,45 +83,64 @@ Details:
 
 Make it sound exciting and capture the energy of the plan. Focus on the experience they'll have together.`;
 
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a friendly social planning assistant. Write engaging, concise summaries that capture the excitement of group plans.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 150
-      }),
-    });
+    // Add 10s timeout for OpenAI request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!openAIResponse.ok) {
-      console.error('OpenAI API error:', await openAIResponse.text());
-      return new Response(JSON.stringify({ error: 'Failed to generate summary' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    let summary;
+    try {
+      const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a friendly social planning assistant. Write engaging, concise summaries that capture the excitement of group plans.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 150
+        }),
       });
-    }
 
-    const aiData = await openAIResponse.json();
-    const summary = aiData.choices?.[0]?.message?.content?.trim();
+      clearTimeout(timeoutId);
 
-    if (!summary) {
-      return new Response(JSON.stringify({ error: 'No summary generated' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (!openAIResponse.ok) {
+        console.error('OpenAI API error:', await openAIResponse.text());
+        return new Response(JSON.stringify({ error: 'Failed to generate summary' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const aiData = await openAIResponse.json();
+      summary = aiData.choices?.[0]?.message?.content?.trim();
+
+      if (!summary) {
+        return new Response(JSON.stringify({ error: 'No summary generated' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        return new Response(JSON.stringify({ error: 'Request timeout - please try again' }), {
+          status: 408,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw fetchError;
     }
 
     // Update plan with AI summary

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -37,6 +37,7 @@ export function useEnhancedRealTime(
   const channelRef = useRef<RealtimeChannel | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
   const pingStartRef = useRef<number | null>(null);
+  const presenceDataRef = useRef<any>(null); // Cache presence data
 
   // Connection health monitoring
   const startHealthMonitoring = useCallback(() => {
@@ -120,10 +121,16 @@ export function useEnhancedRealTime(
     });
   }, [enableTypingIndicators]);
 
-  // Presence tracking
+  // Presence tracking with caching
   const updatePresence = useCallback(async (presenceData: any) => {
     if (!enablePresence || !channelRef.current) return;
 
+    // Only update if presence data actually changed
+    if (JSON.stringify(presenceData) === JSON.stringify(presenceDataRef.current)) {
+      return;
+    }
+
+    presenceDataRef.current = presenceData;
     return channelRef.current.track(presenceData);
   }, [enablePresence]);
 
@@ -155,9 +162,17 @@ export function useEnhancedRealTime(
     }
   }, [connectionHealth.isConnected, connectionHealth.reconnectAttempts, maxReconnectAttempts, setupChannel]);
 
+  // Connection status indicators
+  const isUnstable = useMemo(() => 
+    connectionHealth.reconnectAttempts > 2 || 
+    (connectionHealth.latency && connectionHealth.latency > 2000),
+    [connectionHealth.reconnectAttempts, connectionHealth.latency]
+  );
+
   return {
     channel: channelRef.current,
     connectionHealth,
+    isUnstable,
     broadcastTyping,
     updatePresence,
     reconnect: setupChannel
