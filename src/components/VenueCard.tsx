@@ -46,7 +46,7 @@ export const VenueCard = ({
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-medium text-sm truncate">{venue.name}</h4>
+            <h4 className="font-medium text-sm truncate">{venue.name || "Unnamed Venue"}</h4>
             <div 
               className="relative"
               onMouseEnter={() => setShowMatchDetails(true)}
@@ -67,11 +67,11 @@ export const VenueCard = ({
             </div>
           </div>
 
-          {venue.description && (
+          {venue.description ? (
             <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
               {venue.description}
             </p>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">

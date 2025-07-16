@@ -62,7 +62,7 @@ export const VenueSuggestionList = ({
         <span className="text-xs text-muted-foreground">({suggestions.length} found)</span>
       </div>
       
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+      <div className="space-y-2 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-hide">
         {suggestions.map((suggestion, index) => (
           <VenueCard
             key={suggestion.venue.id || index}

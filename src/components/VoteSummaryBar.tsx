@@ -1,4 +1,5 @@
-import { Vote, Users, TrendingUp } from "lucide-react";
+import { Vote, Users, TrendingUp, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface VoteData {
   love: number;
@@ -45,7 +46,8 @@ export const VoteSummaryBar = ({
   const consensus = getConsensusLevel();
 
   return (
-    <div className={`bg-card border border-border rounded-lg p-3 ${className}`}>
+    <TooltipProvider>
+      <div className={`bg-card border border-border rounded-lg p-3 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Vote className="w-4 h-4 text-muted-foreground" />
@@ -71,7 +73,7 @@ export const VoteSummaryBar = ({
               <span className="text-xs w-6">{config.emoji}</span>
               <div className="flex-1 bg-secondary/20 rounded-full h-2 relative overflow-hidden">
                 <div
-                  className={`h-full ${config.color} transition-all duration-300`}
+                  className={`h-full ${config.color} transition-all duration-500 ease-out animate-scale-in`}
                   style={{ width: `${percentage}%` }}
                 />
               </div>
@@ -88,7 +90,21 @@ export const VoteSummaryBar = ({
         <span className={`text-xs font-medium ${consensus.color}`}>
           {consensus.level.charAt(0).toUpperCase() + consensus.level.slice(1)}
         </span>
+        <Tooltip>
+          <TooltipTrigger>
+            <HelpCircle className="w-3 h-3 text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">
+              {votes.veto > 0 ? "Someone vetoed this stop" :
+               consensus.level === 'positive' ? "More positive than negative votes with 50%+ participation" :
+               consensus.level === 'negative' ? "More negative than positive votes" :
+               "Mixed or insufficient votes"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
+    </TooltipProvider>
   );
 };

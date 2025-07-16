@@ -1,7 +1,8 @@
-import { Calendar, Clock, MapPin, Users, DollarSign, Tag } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, DollarSign, Tag, Share, Download, Play } from "lucide-react";
 import { UserAvatarGroup } from "./UserAvatarGroup";
 import { PlanStatusTag } from "./PlanStatusTag";
 import { formatTime } from "@/lib/timeUtils";
+import { Button } from "@/components/ui/button";
 
 interface PlanStop {
   id: string;
@@ -30,6 +31,9 @@ interface PlanSummaryProps {
   };
   stops: PlanStop[];
   participants: PlanParticipant[];
+  currentStopIndex?: number; // For execution state
+  onShare?: () => void;
+  onExport?: () => void;
   className?: string;
 }
 
@@ -37,6 +41,9 @@ export const PlanSummary = ({
   plan,
   stops,
   participants,
+  currentStopIndex,
+  onShare,
+  onExport,
   className = ""
 }: PlanSummaryProps) => {
   const formatDate = (dateString: string) => {
@@ -79,7 +86,12 @@ export const PlanSummary = ({
       <div className="p-4 border-b border-border">
         <div className="flex items-start justify-between mb-2">
           <h2 className="text-lg font-semibold">{plan.title}</h2>
-          <PlanStatusTag status={plan.status as any} />
+          <div className="flex items-center gap-2">
+            <PlanStatusTag status={plan.status as any} />
+            {plan.status === 'executing' && (
+              <Play className="w-4 h-4 text-green-400 animate-pulse" />
+            )}
+          </div>
         </div>
         
         {plan.description && (
@@ -129,6 +141,23 @@ export const PlanSummary = ({
             </div>
           </div>
         )}
+        {/* Action buttons for finalized plans */}
+        {(plan.status === 'finalized' || plan.status === 'executing') && (
+          <div className="flex items-center gap-2">
+            {onShare && (
+              <Button variant="outline" size="sm" onClick={onShare}>
+                <Share className="w-4 h-4 mr-1" />
+                Share
+              </Button>
+            )}
+            {onExport && (
+              <Button variant="outline" size="sm" onClick={onExport}>
+                <Download className="w-4 h-4 mr-1" />
+                Export
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Participants */}
@@ -145,9 +174,16 @@ export const PlanSummary = ({
         
         <div className="space-y-3">
           {stops.map((stop, index) => (
-            <div key={stop.id} className="flex gap-3">
+            <div 
+              key={stop.id} 
+              className={`flex gap-3 ${
+                currentStopIndex === index ? 'bg-primary/5 -mx-2 px-2 py-1 rounded' : ''
+              }`}
+            >
               <div className="flex flex-col items-center">
-                <div className="w-2 h-2 rounded-full bg-primary" />
+                <div className={`w-2 h-2 rounded-full ${
+                  currentStopIndex === index ? 'bg-primary animate-pulse' : 'bg-primary'
+                }`} />
                 {index < stops.length - 1 && (
                   <div className="w-0.5 h-6 bg-border mt-1" />
                 )}
@@ -155,7 +191,16 @@ export const PlanSummary = ({
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-medium">{stop.title}</h4>
+                  <h4 className={`text-sm font-medium ${
+                    currentStopIndex === index ? 'text-primary' : ''
+                  }`}>
+                    {stop.title}
+                    {currentStopIndex === index && (
+                      <span className="ml-2 text-xs bg-primary/20 text-primary px-1 rounded">
+                        Current
+                      </span>
+                    )}
+                  </h4>
                   {stop.start_time && (
                     <span className="text-xs text-muted-foreground">
                       {formatTime(stop.start_time)}

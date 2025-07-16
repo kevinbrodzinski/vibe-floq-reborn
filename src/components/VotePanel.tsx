@@ -1,7 +1,8 @@
-import { Vote } from "lucide-react";
+import { Vote, Check } from "lucide-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { usePlanVote } from "@/hooks/usePlanVote";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useState, useEffect } from "react";
 
 interface VotePanelProps {
   planId: string;
@@ -20,11 +21,21 @@ const voteOptions = [
 export const VotePanel = ({ planId, stopId, className = "" }: VotePanelProps) => {
   const session = useSession();
   const user = session?.user;
-  const { mutate: submitVote, isPending } = usePlanVote();
+  const { mutate: submitVote, isPending, isSuccess } = usePlanVote();
+  const [lastVoted, setLastVoted] = useState<string | null>(null);
+
+  // Reset visual feedback after successful vote
+  useEffect(() => {
+    if (isSuccess && lastVoted) {
+      const timer = setTimeout(() => setLastVoted(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, lastVoted]);
 
   const handleVote = (voteType: typeof voteOptions[number]['type']) => {
     if (!user) return;
     
+    setLastVoted(voteType);
     submitVote({
       plan_id: planId,
       stop_id: stopId,
@@ -68,15 +79,22 @@ export const VotePanel = ({ planId, stopId, className = "" }: VotePanelProps) =>
             }}
             disabled={isPending}
             className={`
-              px-3 py-1 rounded-full text-xs font-medium transition-all duration-300
+              px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 relative
               bg-secondary/40 text-secondary-foreground hover:bg-secondary/60
               disabled:opacity-50 disabled:cursor-not-allowed
               ${selectedIndex === index ? 'ring-2 ring-primary/50' : ''}
+              ${lastVoted === option.type ? 'bg-primary/20 glow-primary' : ''}
             `}
             role="radio"
-            aria-label={`Vote ${option.label}`}
+            aria-label={`Vote ${option.label} for this stop`}
+            aria-pressed={lastVoted === option.type}
           >
-            {option.emoji}
+            <span className="relative">
+              {option.emoji}
+              {lastVoted === option.type && isSuccess && (
+                <Check className="w-3 h-3 absolute -top-1 -right-1 text-green-400 animate-scale-in" />
+              )}
+            </span>
           </button>
         ))}
       </div>
