@@ -51,7 +51,7 @@ export const FieldOverlay = memo(({
       </div>
 
       {/* Status Region - Top left under header */}
-      <div className="absolute top-28 left-4 z-20 pointer-events-auto min-h-[44px]">
+      <div className="absolute top-28 left-4 z-50 pointer-events-auto min-h-[44px]">
         <div className="bg-card/90 backdrop-blur-sm border border-border/30 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
             <div className={`w-2 h-2 rounded-full ${isLocationReady ? 'bg-green-500' : 'bg-red-500'}`} />
