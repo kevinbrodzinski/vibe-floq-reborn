@@ -5,6 +5,10 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
+import { useHapticFeedback } from '@/hooks/useHapticFeedback'
+import { ConflictOverlay } from './ConflictOverlay'
+import { toastSuccess, toastError } from '@/lib/toast'
+import { timeToMinutes, formatTimeFromMinutes } from '@/lib/time'
 import { useStopResize } from '@/hooks/useStopResize'
 import { useStopSelection } from '@/hooks/useStopSelection'
 import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
@@ -37,8 +41,11 @@ export function TimelineGrid({
   isDragOperationPending = false
 }: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [showConflictOverlay, setShowConflictOverlay] = useState(false)
+  const [conflictData, setConflictData] = useState<any>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
+  const { socialHaptics } = useHapticFeedback()
 
   // Stop selection
   const {
@@ -112,6 +119,9 @@ export function TimelineGrid({
       if (oldIndex !== -1 && newIndex !== -1) {
         const newStops = arrayMove(stops, oldIndex, newIndex)
         
+        // Haptic feedback for successful reorder
+        socialHaptics.gestureConfirm()
+        
         // Update stop order in backend
         syncChanges({
           plan_id: planId,
@@ -125,6 +135,8 @@ export function TimelineGrid({
             }
           }
         })
+        
+        toastSuccess('Schedule updated')
       }
     }
     
@@ -132,6 +144,30 @@ export function TimelineGrid({
   }
 
   const handleAddStop = (timeSlot: string) => {
+    // Haptic feedback for stop creation
+    socialHaptics.gestureConfirm()
+    
+    // Check for time conflicts
+    const newStopStart = timeToMinutes(timeSlot)
+    const newStopEnd = newStopStart + 60 // 60 minutes default
+    
+    const hasConflict = stops.some(stop => {
+      const stopStart = timeToMinutes(stop.startTime || stop.start_time || '')
+      const stopEnd = stopStart + (stop.duration_minutes || 60)
+      return (newStopStart < stopEnd && newStopEnd > stopStart)
+    })
+    
+    if (hasConflict) {
+      setConflictData({
+        type: 'time_overlap',
+        message: 'This time slot overlaps with an existing stop.',
+        suggestion: 'Try a different time or adjust the duration of nearby stops.'
+      })
+      setShowConflictOverlay(true)
+      socialHaptics.vibeMatch() // Different haptic for conflict
+      return
+    }
+    
     syncChanges({
       plan_id: planId,
       changes: {
@@ -144,6 +180,8 @@ export function TimelineGrid({
         }
       }
     })
+    
+    toastSuccess('Stop added')
   }
 
   // Bulk operations
@@ -325,6 +363,23 @@ export function TimelineGrid({
         onBulkMove={handleBulkMove}
         onBulkReschedule={handleBulkReschedule}
       />
+
+      {/* Conflict Resolution Overlay */}
+      <ConflictOverlay
+        isVisible={showConflictOverlay}
+        conflictType={conflictData?.type || 'time_overlap'}
+        message={conflictData?.message || ''}
+        suggestion={conflictData?.suggestion}
+        onResolve={() => {
+          setShowConflictOverlay(false)
+          // Auto-resolve logic could go here
+          toastSuccess('Conflict resolved')
+        }}
+        onDismiss={() => {
+          setShowConflictOverlay(false)
+          toastError('Conflict dismissed')
+        }}
+      />
     </div>
   )
 }
@@ -411,10 +466,5 @@ function AddStopTrigger({ onAdd }: { onAdd: () => void }) {
 }
 
 function formatHour(hour: number): string {
-  const date = new Date()
-  date.setHours(hour, 0, 0, 0)
-  return date.toLocaleTimeString([], { 
-    hour: 'numeric', 
-    hour12: true 
-  })
+  return formatTimeFromMinutes(hour * 60)
 }

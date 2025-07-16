@@ -60,12 +60,16 @@ export const CollaborativePlanningScreen = () => {
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
 
+  // Get haptic feedback hook
+  const { socialHaptics: hapticFeedback } = useHapticFeedback()
+
   // Template functions
   const handleLoadTemplate = (templateStops: any[]) => {
-    // Generate new IDs and add to current plan
+    // Generate new IDs using uuid and add to current plan
+    const { v4: uuidv4 } = require('uuid')
     const newStops = templateStops.map((stop, index) => ({
       ...stop,
-      id: `stop-${Date.now()}-${index}`,
+      id: uuidv4(),
       participants: [],
       created_by: 'current-user'
     }))
@@ -77,14 +81,16 @@ export const CollaborativePlanningScreen = () => {
 
   // Define functions first
   const handleExecutePlan = async () => {
-    socialHaptics.vibeMatch();
+    hapticFeedback.vibeMatch();
     await updatePlanMode('executing');
     showOverlay('check-in', 'Plan execution started!');
   };
 
   const handleStopAdd = (timeSlot: string) => {
-    socialHaptics.gestureConfirm();
+    hapticFeedback.gestureConfirm();
+    const { v4: uuidv4 } = require('uuid')
     const newStop = {
+      id: uuidv4(),
       title: "New Stop",
       venue: "TBD",
       description: "Add details",
@@ -210,13 +216,13 @@ export const CollaborativePlanningScreen = () => {
     }
   };
 
-  const { socialHaptics } = useHapticFeedback();
+  // Use the already declared hapticFeedback instead of duplicating
 
   const { controls: { startListening } } = useAdvancedGestures({
     onGesture: (gesture) => {
       switch (gesture.type) {
         case 'shake':
-          socialHaptics.shakeActivated();
+          hapticFeedback.shakeActivated();
           // Add random venue suggestion on shake
           break;
         case 'swipe-left':
@@ -226,7 +232,7 @@ export const CollaborativePlanningScreen = () => {
           if (!showChat) setShowChat(true);
           break;
         case 'long-press':
-          socialHaptics.longPressActivated();
+          hapticFeedback.longPressActivated();
           // Show context menu for long press
           break;
       }
@@ -239,7 +245,7 @@ export const CollaborativePlanningScreen = () => {
   });
 
   const handleVenueSelect = (venue: any) => {
-    socialHaptics.gestureConfirm();
+    hapticFeedback.gestureConfirm();
     const newStop = {
       title: `${venue.type} at ${venue.name}`,
       venue: venue.name,

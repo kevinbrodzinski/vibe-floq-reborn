@@ -51,7 +51,7 @@ export const useAutoSaveDrafts = ({ planId, debounceMs = 2000, maxRetries = 3 }:
           user_id: user.id,
           draft_data: data,
           version: data.metadata.version,
-          saved_at: new Date().toISOString()
+          last_saved_at: new Date().toISOString()
         })
 
       if (error) throw error
@@ -117,10 +117,10 @@ export const useAutoSaveDrafts = ({ planId, debounceMs = 2000, maxRetries = 3 }:
       if (user) {
         const { data, error } = await supabase
           .from('plan_drafts')
-          .select('draft_data, version, saved_at')
+          .select('draft_data, version, last_saved_at')
           .eq('plan_id', planId)
           .eq('user_id', user.id)
-          .order('saved_at', { ascending: false })
+          .order('last_saved_at', { ascending: false })
           .limit(1)
           .single()
 
