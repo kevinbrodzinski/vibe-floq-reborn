@@ -5,7 +5,7 @@ import {
   TimelineDot,
   TimelineConnector,
   TimelineContent
-} from "@mui/lab";
+} from "@/components/ui/timeline";
 import { useParams, Link } from "react-router-dom";
 import { useAfterglowDetail } from "@/lib/afterglow-helpers";
 import { format } from "date-fns";
@@ -61,7 +61,7 @@ export default function AfterglowDetailPage() {
       </header>
 
       {/* Timeline */}
-      <Timeline position="right">
+      <Timeline>
         {moments.map((m, i) => (
           <TimelineItem key={m.id}>
             <TimelineSeparator>
