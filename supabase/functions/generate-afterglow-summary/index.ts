@@ -6,6 +6,9 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// Move supabase client to file level to avoid recreating on every request
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -49,8 +52,7 @@ serve(async (req) => {
       throw new Error('Afterglow ID is required');
     }
 
-    // Create Supabase client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Supabase client is now at file level
 
     // Fetch afterglow data with moments
     const { data: afterglow, error: fetchError } = await supabase
@@ -137,11 +139,13 @@ Write a compelling one-sentence summary that captures the essence of this day in
     }
 
     const data = await response.json();
-    const generatedSummary = data.choices[0]?.message?.content?.trim();
-
-    if (!generatedSummary) {
-      throw new Error('Failed to generate summary');
+    const choice = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!choice) {
+      throw new Error('OpenAI returned no text');
     }
+    
+    const generatedSummary = choice;
 
     // Update afterglow with AI summary
     const { error: updateError } = await supabase

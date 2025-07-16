@@ -97,8 +97,8 @@ export function useRealtimeAfterglowData(date: string) {
       .subscribe()
 
     return () => {
-      void supabase.removeChannel(afterglowChannel)
-      void supabase.removeChannel(progressChannel)
+      afterglowChannel && void supabase.removeChannel(afterglowChannel)
+      progressChannel && void supabase.removeChannel(progressChannel)
     }
   }, [user?.id, date, toast])
 
@@ -135,7 +135,7 @@ export function useRealtimeAfterglowData(date: string) {
       .subscribe()
 
     return () => {
-      void supabase.removeChannel(momentsChannel)
+      momentsChannel && void supabase.removeChannel(momentsChannel)
     }
   }, [afterglow?.id, toast])
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,9 @@ interface AISummaryChipProps {
 
 export function AISummaryChip({ summary, isGenerating, onGenerate }: AISummaryChipProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Prevent memory leak - cleanup state on unmount
+  useEffect(() => () => setIsExpanded(false), []);
 
   if (!summary && !isGenerating) {
     return (
@@ -22,6 +25,7 @@ export function AISummaryChip({ summary, isGenerating, onGenerate }: AISummaryCh
         variant="outline"
         size="sm"
         onClick={onGenerate}
+        disabled={isGenerating}
         className="mb-6 mx-auto flex items-center gap-2 bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20 hover:from-primary/20 hover:to-secondary/20 transition-all duration-300"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
