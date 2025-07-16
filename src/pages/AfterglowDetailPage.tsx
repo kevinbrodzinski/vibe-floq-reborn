@@ -1,83 +1,30 @@
-import React, { useState, memo, useMemo } from 'react';
-import {
-  Timeline,
-  TimelineItem,
-  TimelineSeparator,
-  TimelineDot,
-  TimelineConnector,
-  TimelineContent
-} from "@/components/ui/timeline";
+import React, { useState, memo, useMemo, useRef } from 'react';
+import { Timeline } from "@/components/ui/timeline";
 import { useParams, Link } from "react-router-dom";
 import { useAfterglowDetail } from "@/lib/afterglow-helpers";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/Chip";
 import { useTogglePinned } from "@/hooks/useOptimisticMutations";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { 
   Share2, 
   Pin, 
   PinOff, 
-  MapPin, 
-  Sparkles,
   AlertCircle
 } from "lucide-react";
 import { LazyShareModal } from '@/components/LazyShareModal';
-import { getMomentIcon, getColorFromHex, formatMomentType } from '@/constants/moments';
+import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
+import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
 
-// Memoized moment card for performance
-const MomentCard = memo(({ moment, isLast }: { moment: any; isLast: boolean }) => {
-  const color = useMemo(() => getColorFromHex(moment.color), [moment.color])
-  const IconComponent = useMemo(() => getMomentIcon(moment.moment_type), [moment.moment_type])
-  const formattedType = useMemo(() => formatMomentType(moment.moment_type), [moment.moment_type])
-
-  return (
-    <TimelineItem>
-      <TimelineSeparator>
-        <TimelineDot color={moment.color ?? "#6b7280"} />
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      
-      <TimelineContent className="ml-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground w-16 font-mono">
-            {format(new Date(moment.timestamp), 'p')}
-          </span>
-          
-          <Chip color={color} icon={<IconComponent className="h-3 w-3" />}>
-            {formattedType}
-          </Chip>
-          
-          {moment.metadata?.venue_name && (
-            <Chip key="venue" color="blue" icon={<MapPin className="h-3 w-3" />}>
-              {moment.metadata.venue_name}
-            </Chip>
-          )}
-          
-          {moment.metadata?.vibe && (
-            <Chip key="vibe" color="emerald" icon={<Sparkles className="h-3 w-3" />}>
-              {moment.metadata.vibe}
-            </Chip>
-          )}
-        </div>
-
-        <div className="pb-6">
-          <h3 className="font-medium text-foreground">{moment.title}</h3>
-          {moment.description && (
-            <p className="text-sm text-muted-foreground mt-1">{moment.description}</p>
-          )}
-        </div>
-      </TimelineContent>
-    </TimelineItem>
-  )
-})
-
-MomentCard.displayName = 'MomentCard'
+// This component is now replaced by ParallaxMoment
 
 export default function AfterglowDetailPage() {
   const { afterglowId } = useParams<{ afterglowId: string }>();
   const [shareOpen, setShareOpen] = useState(false);
   const { mutate: togglePinned } = useTogglePinned();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReduced = usePrefersReducedMotion();
   
   if (!afterglowId) {
     return (
@@ -149,9 +96,15 @@ export default function AfterglowDetailPage() {
   const { afterglow, moments } = data;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div ref={containerRef} className="container mx-auto px-4 py-8 max-w-4xl relative">
+      {/* Generative Background */}
+      <GenerativeBackdrop 
+        dominantVibe={afterglow.dominant_vibe || 'chill'}
+        className="rounded-2xl"
+      />
+      
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 relative z-10">
         <div className="flex-1">
           <h1 className="text-3xl font-bold mb-2">
             {format(new Date(afterglow.date), "EEEE, MMMM d, yyyy")}
@@ -208,20 +161,22 @@ export default function AfterglowDetailPage() {
 
       {/* Timeline */}
       {moments.length > 0 ? (
-        <div className="mb-8">
+        <div className="mb-8 relative z-10">
           <h2 className="text-xl font-semibold mb-6">Your Journey</h2>
           <Timeline>
             {moments.map((moment, index) => (
-              <MomentCard 
+              <ParallaxMoment
                 key={moment.id || index} 
                 moment={moment} 
+                index={index}
                 isLast={index === moments.length - 1}
+                containerRef={containerRef}
               />
             ))}
           </Timeline>
         </div>
       ) : (
-        <div className="text-center py-12">
+        <div className="text-center py-12 relative z-10">
           <h3 className="text-lg font-medium text-muted-foreground mb-2">No moments recorded</h3>
           <p className="text-sm text-muted-foreground">This was a quiet day without tracked activities.</p>
         </div>
@@ -235,7 +190,7 @@ export default function AfterglowDetailPage() {
       />
 
       {/* Navigation */}
-      <div className="pt-8 border-t">
+      <div className="pt-8 border-t relative z-10">
         <Link 
           to="/archive" 
           className="inline-flex items-center text-sm text-primary hover:underline transition-colors"
