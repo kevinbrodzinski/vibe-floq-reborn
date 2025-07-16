@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export interface UserPreferences {
   user_id: string;
@@ -42,14 +42,14 @@ export function useUserPreferences() {
  */
 export function getVibeColor(vibe: string): string {
   const vibeColors: Record<string, string> = {
-    chill: '#cfe8f5',
-    energetic: '#fef08a', 
-    romantic: '#fce7f3',
-    wild: '#e9d5ff',
-    cozy: '#fed7d7',
-    deep: '#ccfbf1',
+    chill: 'hsl(var(--chart-2))',
+    energetic: 'hsl(var(--chart-3))',
+    romantic: 'hsl(var(--chart-5))',
+    wild: 'hsl(var(--chart-4))',
+    cozy: 'hsl(var(--chart-1))',
+    deep: 'hsl(var(--chart-6))',
   };
-  return vibeColors[vibe] || '#e5e7eb';
+  return vibeColors[vibe] || 'hsl(var(--muted-foreground))';
 }
 
 /**
@@ -57,6 +57,7 @@ export function getVibeColor(vibe: string): string {
  */
 export function useUpdateUserPreferences() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (updates: Partial<UserPreferences>) => {

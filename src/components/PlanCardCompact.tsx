@@ -33,7 +33,10 @@ export const PlanCardCompact: React.FC<PlanCardCompactProps> = ({ plan }) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div 
+      className="space-y-2" 
+      aria-label={`Plan: ${plan.title}${plan.floq ? ` in ${plan.floq.title || plan.floq.name}` : ''}`}
+    >
       {/* Plan Title and Floq */}
       <div className="flex items-center justify-between">
         <h4 className="font-medium text-sm truncate">{plan.title}</h4>

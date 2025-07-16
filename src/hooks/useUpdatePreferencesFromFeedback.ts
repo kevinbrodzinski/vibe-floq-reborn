@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export interface UpdatePreferencesInput {
   vibe: string;
@@ -12,6 +12,7 @@ export interface UpdatePreferencesInput {
  */
 export function useUpdatePreferencesFromFeedback() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ vibe, moment }: UpdatePreferencesInput) => {

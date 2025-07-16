@@ -6,10 +6,6 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useGlobalUnreadCount } from '@/hooks/useUnreadCounts';
 import { useFaviconBadge } from '@/hooks/useFaviconBadge';
 import { AnimatedBadge } from '@/components/ui/animated-badge';
-import { InviteNotificationBadge } from '@/components/InviteNotificationBadge';
-import { InvitesDrawer } from '@/components/InvitesDrawer';
-import { useState } from 'react';
-import { Bell } from 'lucide-react';
 
 const TABS: { id: string; label: string; Icon: any }[] = [
   { id: 'field', label: 'Field', Icon: LayoutGrid },
@@ -23,25 +19,13 @@ const TABS: { id: string; label: string; Icon: any }[] = [
 export const FloqNavigation = () => {
   const { navigationFeedback } = useHapticFeedback();
   const { totalUnread } = useGlobalUnreadCount();
-  const [showInvites, setShowInvites] = useState(false);
   
   // Update favicon when unread count changes
   useFaviconBadge(totalUnread);
 
   return (
-    <>
-      <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30" style={{ zIndex: Z.navigation }}>
-        <div className="flex justify-around items-center py-2 px-2">
-          
-          {/* Invites Bell Icon */}
-          <button
-            onClick={() => setShowInvites(true)}
-            className="absolute top-2 right-4 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 relative"
-            aria-label="View invitations"
-          >
-            <Bell className="w-4 h-4" />
-            <InviteNotificationBadge />
-          </button>
+    <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30" style={{ zIndex: Z.navigation }}>
+      <div className="flex justify-around items-center py-2 px-2">
         {TABS.map(({ id, label, Icon }) => (
           <NavLink
             key={id}
@@ -73,12 +57,5 @@ export const FloqNavigation = () => {
         ))}
         </div>
       </nav>
-
-      {/* Invites Drawer */}
-      <InvitesDrawer 
-        isOpen={showInvites}
-        onClose={() => setShowInvites(false)}
-      />
-    </>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +37,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -77,7 +77,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
     } catch (error) {
       console.error('Error fetching invitations:', error);
     }
-  };
+  }, []);
 
   const grouped = useMemo(() => {
     const groups = new Map<string, PlanInvitation[]>();
@@ -94,7 +94,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
     return groups;
   }, [invitations, groupBy]);
 
-  const respondToInvitation = async (inviteId: string, planId: string, accept: boolean) => {
+  const respondToInvitation = useCallback(async (inviteId: string, planId: string, accept: boolean) => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -113,17 +113,26 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
       if (inviteError) throw inviteError;
 
       if (accept) {
-        // Add user to plan participants
-        await supabase
+        // Add user to plan participants with conflict handling
+        const { error: participantError } = await supabase
           .from('plan_participants')
           .insert({
             plan_id: planId,
             user_id: user.id,
             invite_type: 'invitation',
-          });
+          })
+          .select()
+          .single();
 
-        // Navigate to plan
-        navigate(`/plan/${planId}`);
+        // Handle duplicate participant gracefully
+        if (participantError && !participantError.message?.includes('duplicate')) {
+          throw participantError;
+        }
+
+        // Navigate to plan with delay for better UX
+        setTimeout(() => {
+          navigate(`/plan/${planId}`);
+        }, 1000);
       } else {
         // Log decline for preferences learning
         await supabase.rpc('log_invite_decline', {
@@ -150,11 +159,11 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast, navigate]);
 
   useEffect(() => {
     fetchInvitations();
-  }, []);
+  }, [fetchInvitations]);
 
   return {
     invitations,

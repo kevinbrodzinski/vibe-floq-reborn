@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, Settings, Play, Users, MessageCircle } from "lucide-react";
+import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
 import { useCollaborativeState } from "@/hooks/useCollaborativeState";
@@ -230,6 +231,7 @@ export const CollaborativePlanningScreen = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            <PlanInviteButton />
             <SharePlanButton 
               planId={plan.id}
               planTitle={plan.title}
