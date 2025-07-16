@@ -28,6 +28,7 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
   const queryClient = useQueryClient();
   const channelsRef = useRef<any[]>([]);
   const { toast } = useToast();
+  const lastToastRef = useRef<Record<string, number>>({});
 
   const flashVoteIndicator = (stopId: string) => {
     // Visual feedback for vote casting
@@ -95,12 +96,27 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
 
     channel.on('broadcast', { event: 'stop_updated' }, ({ payload }) => {
       options.onStopUpdate?.(payload)
-      toast({ title: `${payload.data.action === 'add' ? 'Stop added' : 'Stop updated'}` })
+      
+      // Throttle toasts to prevent spam
+      const toastKey = `stop-${payload.data?.stop?.id || 'unknown'}`
+      if (!lastToastRef.current[toastKey] || Date.now() - lastToastRef.current[toastKey] > 1500) {
+        toast({ title: `${payload.data?.action === 'add' ? 'Stop added' : 'Stop updated'}` })
+        lastToastRef.current[toastKey] = Date.now()
+      }
     })
 
     channel.on('broadcast', { event: 'vote_cast' }, ({ payload }) => {
       options.onVote?.(payload)
       flashVoteIndicator(payload.stopId)
+      
+      // Throttle vote toasts
+      const toastKey = `vote-${payload.stopId}`
+      if (!lastToastRef.current[toastKey] || Date.now() - lastToastRef.current[toastKey] > 1500) {
+        const username = payload.username || 'Someone'
+        const voteIcon = payload.voteType === 'up' ? '👍' : '👎'
+        toast({ title: `${username} voted ${voteIcon}` })
+        lastToastRef.current[toastKey] = Date.now()
+      }
     })
 
     // Subscribe to plan participants changes

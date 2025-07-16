@@ -20,7 +20,7 @@ interface SyncPayload {
 export function usePlanSync(planId?: string) {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (params: any) => {
       // Legacy edge function call
       const { data, error } = await supabase.functions.invoke('sync-plan-changes', {
@@ -56,4 +56,10 @@ export function usePlanSync(planId?: string) {
       console.error('Plan sync failed:', error)
     }
   })
+
+  return {
+    mutate: mutation.mutate,
+    mutateAsync: mutation.mutateAsync,
+    ...mutation
+  }
 }

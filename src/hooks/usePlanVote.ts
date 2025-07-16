@@ -58,7 +58,12 @@ export function usePlanVote(planId?: string) {
         channel.send({
           type: 'broadcast',
           event: 'vote_cast',
-          payload: { stopId: params.stop_id, voteType: params.vote_type }
+          payload: { 
+            stopId: params.stop_id, 
+            voteType: params.vote_type,
+            userId: user.user.id,
+            username: user.user.user_metadata?.username || user.user.email?.split('@')[0]
+          }
         })
       }
 
