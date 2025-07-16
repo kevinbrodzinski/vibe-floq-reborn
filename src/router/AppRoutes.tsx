@@ -19,6 +19,8 @@ import Archive from '@/pages/Archive';
 import AfterglowDetailPage from '@/pages/AfterglowDetailPage';
 import { RoleGuard } from '@/components/RoleGuard';
 import Invites from '@/pages/Invites';
+import { PlansHub } from '@/components/plans/PlansHub';
+import { NewPlanWizard } from '@/pages/NewPlanWizard';
 
 export const AppRoutes = () => (
   <Routes>
@@ -38,6 +40,8 @@ export const AppRoutes = () => (
     <Route path="/afterglow" element={<AfterglowScreen />} />
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />
+    <Route path="/plans" element={<PlansHub />} />
+    <Route path="/plan/new" element={<NewPlanWizard />} />
     <Route path="/plan" element={<CollaborativePlanningScreen />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
     <Route path="/invites" element={<Invites />} />
