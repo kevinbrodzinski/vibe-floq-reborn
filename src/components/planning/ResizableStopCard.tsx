@@ -22,6 +22,8 @@ import { useLongPress } from '@/hooks/useLongPress'
 import { useDeleteStop } from '@/hooks/useDeleteStop'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
+import { VoteActivityOverlay } from '@/components/plans/VoteActivityOverlay'
+import { useVoteActivityTracker } from '@/hooks/useVoteActivityTracker'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -78,6 +80,7 @@ export function ResizableStopCard({
   const { recordNovaSnap } = useNovaSnap()
   const { canEditPlan } = usePlanStatusValidation()
   const { mutate: deleteStop } = useDeleteStop()
+  const { voteOverlays } = useVoteActivityTracker()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -236,6 +239,11 @@ export function ResizableStopCard({
         {snapSuggestion && !isConflicting && (
           <StopOverlayHint type="snap" message="✨ Snapped to AI suggestion" />
         )}
+        
+        {/* Vote activity overlay */}
+        <VoteActivityOverlay 
+          activity={voteOverlays[stop.id] || null}
+        />
       </AnimatePresence>
 
       {/* Collaboration Indicators */}

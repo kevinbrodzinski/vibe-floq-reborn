@@ -38,7 +38,7 @@ export function useCollaborativeState(fallbackPlanId?: string) {
   // Hooks
   const planSync = usePlanSync()
   const presence = usePresence(planId || '')
-  const { 
+const { 
     activeParticipants, 
     connectionStatus
   } = usePlanRealTimeSync(planId || '', {
@@ -52,6 +52,29 @@ export function useCollaborativeState(fallbackPlanId?: string) {
         user: payload.new?.created_by || 'Unknown',
         details: `Stop "${payload.new?.title}" was updated`
       }])
+    },
+    onVote: (payload) => {
+      const { stopId, voteType, userId, username } = payload
+      if (!stopId || !voteType) return
+
+      // Add vote activity to timeline
+      setActivities(prev => [
+        ...prev,
+        {
+          id: `vote-${Date.now()}`,
+          type: 'vote_cast',
+          timestamp: new Date().toISOString(),
+          stopId: stopId,
+          user: userId,
+          username: username || 'Someone',
+          vote: voteType,
+          details: `${username || 'Someone'} voted ${voteType === 'up' ? '👍' : '👎'}`
+        }
+      ])
+
+      // Invalidate vote queries for real-time updates
+      queryClient.invalidateQueries({ queryKey: ['plan-votes', planId] })
+      queryClient.invalidateQueries({ queryKey: ['stop-votes', stopId] })
     },
     onParticipantJoin: (participant) => {
       setActivities(prev => [...prev, {
