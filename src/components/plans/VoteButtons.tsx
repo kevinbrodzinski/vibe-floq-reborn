@@ -62,6 +62,8 @@ export function VoteButtons({
         size={buttonSize}
         onClick={() => handleVote('up')}
         disabled={isPending}
+        aria-label="Vote up"
+        title="Vote up"
         className={cn(
           'gap-1 transition-colors',
           currentVote === 'up' && 'bg-green-500 hover:bg-green-600 text-white'
@@ -82,6 +84,8 @@ export function VoteButtons({
         size={buttonSize}
         onClick={() => handleVote('down')}
         disabled={isPending}
+        aria-label="Vote down"
+        title="Vote down"
         className={cn(
           'gap-1 transition-colors',
           currentVote === 'down' && 'bg-red-500 hover:bg-red-600 text-white'

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Users, Clock, Archive } from 'lucide-react'
+import { Plus, Calendar, Users, Clock, Archive, Play, Flag, Pencil, CheckCircle } from 'lucide-react'
 import { useUserPlans } from '@/hooks/useUserPlans'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -35,37 +35,45 @@ export function PlansHub() {
     )
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'executing': return 'bg-green-500/10 text-green-600 border-green-500/20'
-      case 'finalized': return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+      case 'active': return 'bg-green-500/10 text-green-600 border-green-500/20'
       case 'draft': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-      case 'completed': return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
-      case 'archived': return 'bg-red-500/10 text-red-600 border-red-500/20'
+      case 'closed': return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+      case 'cancelled': return 'bg-red-500/10 text-red-600 border-red-500/20'
       default: return 'bg-muted text-muted-foreground'
     }
-  }
+  }, [])
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
-      case 'executing': return <Clock className="w-4 h-4" />
-      case 'finalized': return <Calendar className="w-4 h-4" />
-      case 'draft': return <Calendar className="w-4 h-4" />
-      case 'completed': return <Archive className="w-4 h-4" />
+      case 'active': return <Play className="w-4 h-4" />
+      case 'draft': return <Pencil className="w-4 h-4" />
+      case 'closed': return <CheckCircle className="w-4 h-4" />
+      case 'cancelled': return <Archive className="w-4 h-4" />
       default: return <Calendar className="w-4 h-4" />
     }
-  }
+  }, [])
 
-  const sectionsToShow = [
-    { key: 'executing', title: 'In Progress', plans: plansByStatus.executing },
-    { key: 'finalized', title: 'Finalized', plans: plansByStatus.finalized },
-    { key: 'draft', title: 'Draft', plans: plansByStatus.draft },
-    { key: 'completed', title: 'Completed', plans: plansByStatus.completed },
-  ]
+  const sectionsToShow = useMemo(() => {
+    const sections = [
+      { key: 'active', title: 'Active', plans: plansByStatus.active },
+      { key: 'draft', title: 'Draft', plans: plansByStatus.draft },
+      { key: 'closed', title: 'Completed', plans: plansByStatus.closed },
+    ]
 
-  if (showArchived && plansByStatus.archived) {
-    sectionsToShow.push({ key: 'archived', title: 'Archived', plans: plansByStatus.archived })
-  }
+    if (showArchived && plansByStatus.cancelled) {
+      sections.push({ key: 'cancelled', title: 'Cancelled', plans: plansByStatus.cancelled })
+    }
+
+    return sections
+  }, [plansByStatus, showArchived])
+
+  const computedStats = useMemo(() => {
+    const activeTotal = stats.draft + stats.active
+    const total = Object.values(stats).reduce((a, b) => a + b, 0)
+    return { ...stats, activeTotal, total }
+  }, [stats])
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -88,8 +96,8 @@ export function PlansHub() {
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-green-600" />
               <div>
-                <p className="text-sm font-medium">In Progress</p>
-                <p className="text-2xl font-bold">{stats.executing}</p>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-2xl font-bold">{stats.active}</p>
               </div>
             </div>
           </CardContent>
@@ -100,8 +108,8 @@ export function PlansHub() {
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-blue-600" />
               <div>
-                <p className="text-sm font-medium">Active</p>
-                <p className="text-2xl font-bold">{stats.finalized + stats.draft}</p>
+                <p className="text-sm font-medium">Draft</p>
+                <p className="text-2xl font-bold">{stats.draft}</p>
               </div>
             </div>
           </CardContent>
@@ -113,7 +121,7 @@ export function PlansHub() {
               <Archive className="w-4 h-4 text-gray-600" />
               <div>
                 <p className="text-sm font-medium">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
+                <p className="text-2xl font-bold">{stats.closed}</p>
               </div>
             </div>
           </CardContent>
@@ -125,9 +133,7 @@ export function PlansHub() {
               <Users className="w-4 h-4 text-purple-600" />
               <div>
                 <p className="text-sm font-medium">Total</p>
-                <p className="text-2xl font-bold">
-                  {stats.executing + stats.finalized + stats.draft + stats.completed}
-                </p>
+                <p className="text-2xl font-bold">{computedStats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -158,7 +164,8 @@ export function PlansHub() {
                             <h3 className="font-semibold text-lg">{plan.title}</h3>
                             <Badge 
                               variant="outline" 
-                              className={cn("text-xs", getStatusColor(plan.status))}
+                              className={cn("text-xs border", getStatusColor(plan.status))}
+                              aria-label={plan.status}
                             >
                               <div className="flex items-center gap-1">
                                 {getStatusIcon(plan.status)}
@@ -202,8 +209,8 @@ export function PlansHub() {
         </div>
       ))}
 
-      {/* Show Archived Toggle */}
-      {stats.archived > 0 && (
+      {/* Show Cancelled Toggle */}
+      {stats.cancelled > 0 && (
         <div className="flex justify-center">
           <Button 
             variant="ghost" 
@@ -211,7 +218,7 @@ export function PlansHub() {
             className="gap-2"
           >
             <Archive className="w-4 h-4" />
-            {showArchived ? 'Hide' : 'Show'} Archived Plans ({stats.archived})
+            {showArchived ? 'Hide' : 'Show'} Cancelled Plans ({stats.cancelled})
           </Button>
         </div>
       )}
