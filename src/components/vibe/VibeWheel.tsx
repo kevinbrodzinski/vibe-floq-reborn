@@ -153,30 +153,30 @@ export const VibeWheel = memo(() => {
         className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
         style={{ pointerEvents: 'none' }}
       >
-        <div className="text-center relative">
-          {/* Glow background behind vibe label */}
+        <div className="relative flex flex-col items-center justify-center text-center">
+          {/* Glow background */}
           <div
-            className="absolute w-[140px] h-[140px] rounded-full blur-2xl opacity-30 left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              backgroundColor: currentColor,
-            }}
+            className="absolute w-[120px] h-[120px] rounded-full blur-2xl opacity-30"
+            style={{ backgroundColor: currentColor }}
           />
-          
-          {/* Vibe label with glow */}
-          <span 
-            className="relative z-10 text-2xl font-bold capitalize text-white mb-1 block"
-            style={{ fontSize: 24, fontWeight: '700', color: '#fff' }}
-          >
+
+          {/* Vibe label */}
+          <div className="relative z-10 text-3xl font-bold capitalize text-white">
             {current ?? 'SELECT'}
-          </span>
-          
+          </div>
+
+          {/* Description */}
           {current && (
-            <p 
-              className="relative z-10 text-sm text-white/70 font-medium max-w-40 text-center"
-              style={{ fontSize: 12, color: '#ccc', textAlign: 'center', maxWidth: 160 }}
-            >
+            <p className="relative z-10 text-sm text-white/70 font-medium mt-1 max-w-[160px] text-center">
               {VIBE_DESCRIPTIONS[current]}
             </p>
+          )}
+
+          {/* Confidence percentage */}
+          {strength > 0 && (
+            <div className="relative z-10 text-[10px] text-white/60 mt-1 font-light">
+              Confidence: {Math.round(strength * 100)}%
+            </div>
           )}
         </div>
       </div>
