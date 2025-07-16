@@ -102,15 +102,7 @@ export type Database = {
           timestamp?: string
           title?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_afterglow_moments_daily"
-            columns: ["daily_afterglow_id"]
-            isOneToOne: false
-            referencedRelation: "daily_afterglow"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       daily_afterglow: {
         Row: {
@@ -125,7 +117,6 @@ export type Database = {
           moments: Json | null
           peak_vibe_time: string | null
           regenerated_at: string | null
-          share_token: string | null
           social_intensity: number | null
           summary_text: string | null
           total_floqs: number | null
@@ -145,7 +136,6 @@ export type Database = {
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
-          share_token?: string | null
           social_intensity?: number | null
           summary_text?: string | null
           total_floqs?: number | null
@@ -165,7 +155,6 @@ export type Database = {
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
-          share_token?: string | null
           social_intensity?: number | null
           summary_text?: string | null
           total_floqs?: number | null
