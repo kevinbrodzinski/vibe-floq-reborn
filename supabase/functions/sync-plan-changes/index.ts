@@ -1,45 +1,17 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface SyncPlanChangesRequest {
-  plan_id: string;
-  changes: {
-    type: 'reorder_stops' | 'update_stop' | 'presence_update';
-    data: any;
-  };
-}
-
-interface ReorderStopsData {
-  stop_order: string[]; // Array of stop IDs in new order
-}
-
-interface UpdateStopData {
-  stop_id: string;
-  updates: {
-    title?: string;
-    description?: string;
-    start_time?: string;
-    end_time?: string;
-    estimated_cost_per_person?: number;
-  };
-}
-
-interface PresenceUpdateData {
-  user_id: string;
-  cursor_position?: { x: number; y: number };
-  editing_field?: string;
-  last_seen: string;
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { 
+  SyncPlanChangesRequest, 
+  ReorderStopsData, 
+  UpdateStopData, 
+  PresenceUpdateData 
+} from '../_shared/types.ts'
 
 export default serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -70,7 +42,7 @@ export default serve(async (req) => {
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError || !user) {
+    if (!user || authError) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -181,13 +153,14 @@ export default serve(async (req) => {
         const { user_id, cursor_position, editing_field, last_seen }: PresenceUpdateData = changes.data;
         
         // For presence updates, we'll use Supabase realtime broadcasting
-        // This doesn't require database storage, just real-time sync
+        // TODO: In the future, this could broadcast to `plan:<id>` channel for live presence
+        // channel.broadcast('presence_update', { user_id, cursor_position, editing_field, last_seen })
         result.message = 'Presence update processed';
         result.data = {
           user_id,
           cursor_position,
           editing_field,
-          last_seen,
+          last_seen: new Date().toISOString(),
           plan_id
         };
         break;

@@ -1,21 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface SuggestVenuesRequest {
-  plan_id: string;
-  budget_range?: { min: number; max: number };
-  radius_km?: number;
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { SuggestVenuesRequest } from '../_shared/types.ts'
 
 export default serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -46,7 +37,7 @@ export default serve(async (req) => {
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError || !user) {
+    if (!user || authError) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -109,13 +100,14 @@ export default serve(async (req) => {
       );
     }
 
-    // TODO: Enhance with AI-powered suggestions based on:
+    // TODO: Enhance with Nova AI-powered suggestions based on:
     // - Plan vibe tags
     // - Existing stops
     // - Group preferences
     // - Time of day
     // - Budget constraints
     // - Friend presence at venues
+    // - Call: nova.generateVenueSuggestions(planContext)
 
     const suggestions = (venues || []).map((venue, index) => ({
       venue,

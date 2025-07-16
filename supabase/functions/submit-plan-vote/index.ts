@@ -1,23 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface SubmitVoteRequest {
-  plan_id: string;
-  stop_id: string;
-  vote_type: 'love' | 'like' | 'neutral' | 'dislike' | 'veto';
-  emoji_reaction?: string;
-  comment?: string;
-}
+import { corsHeaders } from '../_shared/cors.ts'
+import { SubmitVoteRequest } from '../_shared/types.ts'
 
 export default serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -48,7 +37,7 @@ export default serve(async (req) => {
     // Get the current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (authError || !user) {
+    if (!user || authError) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
