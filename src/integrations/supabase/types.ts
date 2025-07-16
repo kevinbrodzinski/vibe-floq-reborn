@@ -1405,6 +1405,54 @@ export type Database = {
           },
         ]
       }
+      plan_check_ins: {
+        Row: {
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string
+          id: string
+          location: unknown | null
+          plan_id: string
+          stop_id: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          location?: unknown | null
+          plan_id: string
+          stop_id: string
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          id?: string
+          location?: unknown | null
+          plan_id?: string
+          stop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_check_ins_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_check_ins_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_comments: {
         Row: {
           content: string
