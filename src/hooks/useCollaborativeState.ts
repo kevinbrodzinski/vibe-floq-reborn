@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { usePlanSync } from './usePlanSync'
+import { usePlanRealTimeSync } from './usePlanRealTimeSync'
 
 // Mock data for when no plan ID is provided
 const MOCK_PLAN = {
@@ -44,6 +46,49 @@ const MOCK_PLAN = {
 export function useCollaborativeState(fallbackPlanId?: string) {
   const { planId: routePlanId } = useParams()
   const planId = routePlanId || fallbackPlanId
+  const queryClient = useQueryClient()
+  
+  // State for optimistic updates
+  const [optimisticStops, setOptimisticStops] = useState<any[]>([])
+  const [activities, setActivities] = useState<any[]>([])
+  
+  // Real-time sync and plan sync hooks
+  const planSync = usePlanSync()
+  const { 
+    activeParticipants, 
+    connectionStatus,
+    broadcastTyping 
+  } = usePlanRealTimeSync(planId || '', {
+    onStopUpdate: (payload) => {
+      // Invalidate and refetch on external stop changes
+      queryClient.invalidateQueries({ queryKey: ['floq-plan', planId] })
+      setActivities(prev => [...prev, {
+        id: `activity-${Date.now()}`,
+        type: 'stop_updated',
+        timestamp: new Date().toISOString(),
+        user: payload.new?.created_by || 'Unknown',
+        details: `Stop "${payload.new?.title}" was updated`
+      }])
+    },
+    onParticipantJoin: (participant) => {
+      setActivities(prev => [...prev, {
+        id: `activity-${Date.now()}`,
+        type: 'participant_joined',
+        timestamp: new Date().toISOString(),
+        user: participant.user_id,
+        details: 'joined the plan'
+      }])
+    },
+    onParticipantLeave: (participant) => {
+      setActivities(prev => [...prev, {
+        id: `activity-${Date.now()}`,
+        type: 'participant_left',
+        timestamp: new Date().toISOString(),
+        user: participant.user_id,
+        details: 'left the plan'
+      }])
+    }
+  })
   
   // Fetch real plan data when planId is provided
   const { data: planData, isLoading } = useQuery({
@@ -71,7 +116,7 @@ export function useCollaborativeState(fallbackPlanId?: string) {
       if (error) throw error
       
       // Transform to expected format
-      return {
+      const transformedData = {
         id: data.id,
         title: data.title,
         date: data.planned_at,
@@ -94,33 +139,142 @@ export function useCollaborativeState(fallbackPlanId?: string) {
           status: p.rsvp_status || 'pending'
         }))
       }
+      
+      // Update optimistic stops when real data loads
+      setOptimisticStops(transformedData.stops)
+      return transformedData
     },
     enabled: !!planId
   })
 
-  const plan = planData || MOCK_PLAN
-  const [activities, setActivities] = useState<any[]>([])
+  // Merge optimistic updates with real data
+  const plan = planData ? {
+    ...planData,
+    stops: optimisticStops.length > 0 ? optimisticStops : planData.stops
+  } : MOCK_PLAN
 
-  const addStop = useCallback((newStop: any) => {
-    // In real implementation, this would call the sync hook
-    console.log('Adding stop:', newStop)
-  }, [])
+  const addStop = useCallback(async (newStop: any) => {
+    if (!planId) return
+    
+    const tempId = `temp-${Date.now()}`
+    const optimisticStop = {
+      id: tempId,
+      ...newStop,
+      status: 'pending' as const
+    }
+    
+    // Optimistic update
+    setOptimisticStops(prev => [...prev, optimisticStop])
+    
+    try {
+      await planSync.mutateAsync({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: {
+            action: 'add',
+            stop: newStop
+          }
+        }
+      })
+    } catch (error) {
+      // Rollback on error
+      setOptimisticStops(prev => prev.filter(s => s.id !== tempId))
+      console.error('Failed to add stop:', error)
+    }
+  }, [planId, planSync])
 
-  const removeStop = useCallback((stopId: string) => {
-    console.log('Removing stop:', stopId)
-  }, [])
+  const removeStop = useCallback(async (stopId: string) => {
+    if (!planId) return
+    
+    // Optimistic update
+    const originalStops = optimisticStops
+    setOptimisticStops(prev => prev.filter(s => s.id !== stopId))
+    
+    try {
+      await planSync.mutateAsync({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: {
+            action: 'remove',
+            stopId
+          }
+        }
+      })
+    } catch (error) {
+      // Rollback on error
+      setOptimisticStops(originalStops)
+      console.error('Failed to remove stop:', error)
+    }
+  }, [planId, planSync, optimisticStops])
 
-  const reorderStops = useCallback((startIndex: number, endIndex: number) => {
-    console.log('Reordering stops:', startIndex, endIndex)
-  }, [])
+  const reorderStops = useCallback(async (startIndex: number, endIndex: number) => {
+    if (!planId) return
+    
+    // Optimistic update
+    const originalStops = [...optimisticStops]
+    const newStops = [...optimisticStops]
+    const [removed] = newStops.splice(startIndex, 1)
+    newStops.splice(endIndex, 0, removed)
+    setOptimisticStops(newStops)
+    
+    try {
+      await planSync.mutateAsync({
+        plan_id: planId,
+        changes: {
+          type: 'reorder_stops',
+          data: {
+            stops: newStops.map((stop, index) => ({
+              id: stop.id,
+              stop_order: index
+            }))
+          }
+        }
+      })
+    } catch (error) {
+      // Rollback on error
+      setOptimisticStops(originalStops)
+      console.error('Failed to reorder stops:', error)
+    }
+  }, [planId, planSync, optimisticStops])
 
-  const voteOnStop = useCallback((stopId: string, vote: string) => {
-    console.log('Voting on stop:', stopId, vote)
-  }, [])
+  const voteOnStop = useCallback(async (stopId: string, vote: string) => {
+    if (!planId) return
+    
+    try {
+      await planSync.mutateAsync({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: {
+            action: 'vote',
+            stopId,
+            vote
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Failed to vote on stop:', error)
+    }
+  }, [planId, planSync])
 
-  const updateParticipantStatus = useCallback((participantId: string, status: string) => {
-    console.log('Updating participant status:', participantId, status)
-  }, [])
+  const updateParticipantStatus = useCallback(async (participantId: string, status: string) => {
+    try {
+      await planSync.mutateAsync({
+        plan_id: planId || '',
+        changes: {
+          type: 'presence_update',
+          data: {
+            participantId,
+            status
+          }
+        }
+      })
+    } catch (error) {
+      console.error('Failed to update participant status:', error)
+    }
+  }, [planId, planSync])
 
   return {
     plan,
@@ -130,6 +284,11 @@ export function useCollaborativeState(fallbackPlanId?: string) {
     removeStop,
     reorderStops,
     voteOnStop,
-    updateParticipantStatus
+    updateParticipantStatus,
+    // Real-time collaboration features
+    activeParticipants,
+    connectionStatus,
+    broadcastTyping,
+    isOptimistic: planSync.isPending
   }
 }

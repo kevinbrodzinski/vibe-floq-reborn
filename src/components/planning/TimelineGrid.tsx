@@ -2,9 +2,11 @@ import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { Plus } from 'lucide-react'
+import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
+import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface Stop {
@@ -20,9 +22,19 @@ interface TimelineGridProps {
   planId: string
   startTime?: string
   endTime?: string
+  activeParticipants?: any[]
+  connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
+  isOptimistic?: boolean
 }
 
-export function TimelineGrid({ planId, startTime = '18:00', endTime = '00:00' }: TimelineGridProps) {
+export function TimelineGrid({ 
+  planId, 
+  startTime = '18:00', 
+  endTime = '00:00',
+  activeParticipants = [],
+  connectionStatus = 'disconnected',
+  isOptimistic = false
+}: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
@@ -100,51 +112,83 @@ export function TimelineGrid({ planId, startTime = '18:00', endTime = '00:00' }:
   }
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <div className="space-y-3">
-        {timeBlocks.map((block) => {
-          const stopsAtTime = stops.filter(stop => 
-            stop.start_time?.startsWith(block.time.substring(0, 2))
-          )
-
-          return (
-            <TimeSlot
-              key={block.time}
-              timeBlock={block}
-              stops={stopsAtTime}
-              onAddStop={handleAddStop}
-            />
-          )
-        })}
+    <div className="space-y-4">
+      {/* Collaboration Header */}
+      <div className="flex items-center justify-between p-3 bg-card/50 rounded-lg border">
+        <PresenceIndicator 
+          participants={activeParticipants}
+          connectionStatus={connectionStatus}
+        />
+        
+        <div className="flex items-center gap-2">
+          {isOptimistic && (
+            <Badge variant="secondary" className="animate-pulse">
+              <Wifi className="w-3 h-3 mr-1" />
+              Syncing...
+            </Badge>
+          )}
+          
+          {connectionStatus === 'error' && (
+            <Badge variant="destructive">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              Connection Error
+            </Badge>
+          )}
+        </div>
       </div>
-      
-      <DragOverlay>
-        {activeId ? (
-          <StopCard 
-            stop={stops.find(s => s.id === activeId)!}
-            isDragging
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+
+      <DndContext onDragEnd={handleDragEnd}>
+        <div className="space-y-3">
+          {timeBlocks.map((block) => {
+            const stopsAtTime = stops.filter(stop => 
+              stop.start_time?.startsWith(block.time.substring(0, 2))
+            )
+
+            return (
+              <TimeSlot
+                key={block.time}
+                timeBlock={block}
+                stops={stopsAtTime}
+                onAddStop={handleAddStop}
+                isOptimistic={isOptimistic}
+              />
+            )
+          })}
+        </div>
+        
+        <DragOverlay>
+          {activeId ? (
+            <StopCard 
+              stop={stops.find(s => s.id === activeId)!}
+              isDragging
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
   )
 }
 
 function TimeSlot({ 
   timeBlock, 
   stops, 
-  onAddStop 
+  onAddStop,
+  isOptimistic 
 }: { 
   timeBlock: any
   stops: Stop[]
-  onAddStop: (time: string) => void 
+  onAddStop: (time: string) => void
+  isOptimistic?: boolean
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
   return (
     <div 
       ref={setNodeRef}
-      className="flex items-center gap-4 min-h-[80px] p-4 rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm"
+      className={cn(
+        "flex items-center gap-4 min-h-[80px] p-4 rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm transition-all",
+        isOptimistic && "opacity-70 bg-yellow-50/50 border-yellow-200"
+      )}
     >
       <div className="w-16 text-sm font-medium text-muted-foreground">
         {timeBlock.label}
