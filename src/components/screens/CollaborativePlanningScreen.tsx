@@ -330,7 +330,7 @@ export const CollaborativePlanningScreen = () => {
             <PlanStatusActions 
               planId={plan.id}
               currentStatus={plan.status || 'draft'}
-              isCreator={plan.created_by === 'current-user'} // This would come from auth
+              isCreator={plan.createdBy === 'current-user'} // This would come from auth
             />
             
             <PlanInviteButton />

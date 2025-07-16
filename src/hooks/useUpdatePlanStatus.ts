@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 
-type PlanStatus = 'draft' | 'active' | 'closed' | 'cancelled'
+type PlanStatus = 'draft' | 'finalized' | 'executing' | 'completed' | 'cancelled'
 
 interface UpdatePlanStatusParams {
   planId: string
@@ -21,8 +21,7 @@ export function useUpdatePlanStatus() {
         .from('floq_plans')
         .update({ 
           status,
-          updated_at: new Date().toISOString(),
-          ...(status === 'active' && { execution_started_at: new Date().toISOString() })
+          ...(status === 'executing' && { execution_started_at: new Date().toISOString() })
         })
         .eq('id', planId)
 
@@ -38,17 +37,18 @@ export function useUpdatePlanStatus() {
       queryClient.invalidateQueries({ queryKey: ['plan-activities', planId] })
 
       // Haptic feedback for status transitions
-      if (status === 'active') {
+      if (status === 'executing') {
         contextualHaptics.confirmation()
-      } else if (status === 'closed') {
+      } else if (status === 'completed') {
         heavy() // Strong celebration haptic for completion
       }
 
       // Success toast
       const statusMessages = {
         draft: 'Plan saved as draft',
-        active: 'Plan execution started! 🚀',
-        closed: 'Plan completed! 🎉',
+        finalized: 'Plan finalized! 📋',
+        executing: 'Plan execution started! 🚀',
+        completed: 'Plan completed! 🎉',
         cancelled: 'Plan cancelled'
       }
 

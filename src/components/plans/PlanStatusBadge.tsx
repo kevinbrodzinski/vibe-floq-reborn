@@ -17,11 +17,17 @@ export function PlanStatusBadge({
 }: PlanStatusBadgeProps) {
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'executing':
         return {
           color: 'bg-green-500/10 text-green-600 border-green-500/20',
           icon: Play,
-          label: 'Active'
+          label: 'Executing'
+        }
+      case 'finalized':
+        return {
+          color: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+          icon: CheckCircle,
+          label: 'Finalized'
         }
       case 'draft':
         return {
@@ -29,7 +35,7 @@ export function PlanStatusBadge({
           icon: Pencil,
           label: 'Draft'
         }
-      case 'closed':
+      case 'completed':
         return {
           color: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
           icon: CheckCircle,

@@ -36,8 +36,8 @@ export interface Plan {
   date: string
   stops: PlanStop[]
   participants: PlanParticipant[]
-  status?: 'draft' | 'active' | 'closed' | 'cancelled'
-  created_by?: string
+  status?: 'draft' | 'finalized' | 'executing' | 'completed' | 'cancelled'
+  createdBy?: string
 }
 
 // AI Suggestion Types

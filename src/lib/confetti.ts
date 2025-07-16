@@ -1,16 +1,18 @@
 // Simple confetti effect using CSS animations
 export function triggerConfetti(duration: number = 3000) {
+  // Guard for non-browser environments
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  
   const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#ffa726', '#66bb6a', '#ab47bc']
   
   for (let i = 0; i < 50; i++) {
     createConfettiPiece(colors[Math.floor(Math.random() * colors.length)])
   }
   
-  // Clean up after animation
+  // Clean up after animation with debounced cleanup
   setTimeout(() => {
-    document.querySelectorAll('.confetti-piece').forEach(piece => {
-      piece.remove()
-    })
+    const pieces = document.querySelectorAll('.confetti-piece')
+    pieces.forEach(piece => piece.remove())
   }, duration)
 }
 
@@ -35,7 +37,7 @@ function createConfettiPiece(color: string) {
 }
 
 // Add CSS animation if not already present
-if (!document.querySelector('#confetti-styles')) {
+if (typeof document !== 'undefined' && !document.querySelector('#confetti-styles')) {
   const style = document.createElement('style')
   style.id = 'confetti-styles'
   style.textContent = `

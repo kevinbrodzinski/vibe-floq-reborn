@@ -19,11 +19,11 @@ export function PlanStatusActions({
 }: PlanStatusActionsProps) {
   const { mutate: updateStatus, isPending } = useUpdatePlanStatus()
 
-  const handleStatusTransition = (newStatus: 'active' | 'closed') => {
+  const handleStatusTransition = (newStatus: 'executing' | 'completed') => {
     updateStatus({ planId, status: newStatus })
     
     // Trigger confetti for completion
-    if (newStatus === 'closed') {
+    if (newStatus === 'completed') {
       setTimeout(() => triggerConfetti(4000), 500)
     }
   }
@@ -37,10 +37,23 @@ export function PlanStatusActions({
       case 'draft':
         return null // Draft -> finalized is handled by existing finalize flow
       
-      case 'active':
+      case 'finalized':
         return (
           <Button
-            onClick={() => handleStatusTransition('closed')}
+            onClick={() => handleStatusTransition('executing')}
+            disabled={isPending}
+            className={cn('gap-2', className)}
+            variant="default"
+          >
+            <Play className="w-4 h-4" />
+            Start Execution
+          </Button>
+        )
+      
+      case 'executing':
+        return (
+          <Button
+            onClick={() => handleStatusTransition('completed')}
             disabled={isPending}
             className={cn('gap-2', className)}
             variant="default"
@@ -50,7 +63,7 @@ export function PlanStatusActions({
           </Button>
         )
       
-      case 'closed':
+      case 'completed':
       case 'cancelled':
         return null // No actions for completed/cancelled plans
       
