@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
 import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
@@ -39,7 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
 import { toastError } from '@/lib/toast';
 import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import * as Collapsible from '@radix-ui/react-collapsible';
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
@@ -239,6 +239,23 @@ export const CollaborativePlanningScreen = () => {
     },
     [] // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  const handleAcceptSuggestion = async (s: any) => {
+    const newStop = {
+      title: s.title,
+      venue: s.venue ?? 'TBD',
+      description: `AI suggested: ${s.reasons?.[0]?.description ?? ''}`,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      location: s.location ?? 'TBD',
+      vibeMatch: s.vibeMatch,
+      status: 'suggested' as const,
+      color: 'hsl(280 70% 60%)'
+    };
+
+    await addStop(newStop);
+    showOverlay('stop-action', 'AI suggestion added!');
+  };
 
   // Enhanced RSVP handler with persistence
   const handleRSVPChange = async (status: typeof currentUserRSVP) => {
@@ -456,33 +473,28 @@ export const CollaborativePlanningScreen = () => {
 
         {/* Nova AI Suggestions - Moved from sidebar to main flow */}
         {showNovaSuggestions && (
-          <Collapsible 
-            open={isNovaSuggestionsExpanded} 
+          <Collapsible.Root
+            open={isNovaSuggestionsExpanded}
             onOpenChange={setIsNovaSuggestionsExpanded}
-            className="mb-6"
+            className="mb-4"
           >
-            <CollapsibleTrigger className="w-full">
-              <div className="bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30 hover:border-border/50 transition-all duration-300 cursor-pointer">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
-                      <span className="text-primary-foreground text-sm font-bold">AI</span>
-                    </div>
-                    <div className="text-left">
-                      <h3 className="font-semibold text-foreground">Nova AI Suggestions</h3>
-                      <p className="text-sm text-muted-foreground">Smart recommendations for your timeline</p>
-                    </div>
-                  </div>
-                  {isNovaSuggestionsExpanded ? (
-                    <ChevronUp className="w-5 h-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-2">
+            <Collapsible.Trigger asChild>
+              <button className="w-full flex items-center justify-between rounded-xl
+                                 bg-card/70 px-4 py-3 hover:bg-card/60 transition">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                  <span className="font-medium">Nova AI Suggestions</span>
+                </span>
+                {isNovaSuggestionsExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+            </Collapsible.Trigger>
+
+            <Collapsible.Content className="pt-3">
+              {isNovaSuggestionsExpanded && (
                 <NovaSuggestions
                   planId={plan.id}
                   existingStops={plan.stops}
@@ -493,28 +505,12 @@ export const CollaborativePlanningScreen = () => {
                     vibes: ['energetic', 'social'],
                     interests: ['dining', 'nightlife']
                   }}
-                  onAcceptSuggestion={async (suggestion) => {
-                    const newStop = {
-                      title: suggestion.title,
-                      venue: suggestion.venue || 'TBD',
-                      description: `AI suggested: ${suggestion.reasons[0]?.description || ''}`,
-                      startTime: suggestion.startTime,
-                      endTime: suggestion.endTime,
-                      location: suggestion.location || 'TBD',
-                      vibeMatch: suggestion.vibeMatch,
-                      status: 'suggested' as const,
-                      color: "hsl(280 70% 60%)"
-                    };
-                    
-                    // Await the stop addition before showing overlay
-                    await addStop(newStop);
-                    showOverlay('stop-action', 'AI suggestion added!');
-                  }}
+                  onAcceptSuggestion={handleAcceptSuggestion}
                   onDismiss={() => setShowNovaSuggestions(false)}
                 />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+              )}
+            </Collapsible.Content>
+          </Collapsible.Root>
         )}
 
         {/* Voting Threshold Meter - Only show for finalized+ plans */}
