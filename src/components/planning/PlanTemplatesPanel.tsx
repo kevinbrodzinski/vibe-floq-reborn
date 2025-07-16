@@ -47,16 +47,17 @@ export function PlanTemplatesPanel({
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-4 w-full max-w-full overflow-hidden", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="font-semibold text-foreground">Plan Templates</h3>
         
         <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto text-sm">
               <Save className="w-4 h-4" />
-              Save Current Plan
+              <span className="hidden sm:inline">Save Current Plan</span>
+              <span className="sm:hidden">Save Plan</span>
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -95,7 +96,7 @@ export function PlanTemplatesPanel({
       </div>
 
       {/* Templates Grid */}
-      <div className="grid gap-3">
+      <div className="grid gap-3 w-full max-w-full">
         <AnimatePresence>
           {templates.map((template) => (
             <motion.div
@@ -104,7 +105,7 @@ export function PlanTemplatesPanel({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className={cn(
-                "p-3 border rounded-xl cursor-pointer transition-all",
+                "p-3 border rounded-xl cursor-pointer transition-all w-full max-w-full overflow-hidden",
                 selectedTemplate === template.id
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50 hover:bg-card/50"
@@ -114,22 +115,22 @@ export function PlanTemplatesPanel({
               )}
             >
               <div className="space-y-2">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-medium text-sm">{template.name}</h4>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-medium text-sm truncate">{template.name}</h4>
                     {template.description && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground line-clamp-2">
                         {template.description}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                     <Star className="w-3 h-3" />
                     {template.usageCount}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {Math.round(totalDuration(template) / 60)}h
@@ -155,14 +156,14 @@ export function PlanTemplatesPanel({
                     exit={{ opacity: 0, height: 0 }}
                     className="pt-2 border-t border-border/50"
                   >
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleLoadTemplate(template)
                         }}
-                        className="gap-1 flex-1"
+                        className="gap-1 flex-1 text-sm w-full sm:w-auto"
                       >
                         <Download className="w-3 h-3" />
                         Load Template
@@ -174,9 +175,10 @@ export function PlanTemplatesPanel({
                           e.stopPropagation()
                           deleteTemplate(template.id)
                         }}
-                        className="gap-1"
+                        className="gap-1 w-full sm:w-auto"
                       >
                         <Trash2 className="w-3 h-3" />
+                        <span className="sm:hidden">Delete</span>
                       </Button>
                     </div>
                   </motion.div>

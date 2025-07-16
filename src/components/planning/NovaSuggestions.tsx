@@ -190,19 +190,19 @@ export function NovaSuggestions({
   }
 
   return (
-    <div className={`bg-card/90 backdrop-blur-xl rounded-2xl p-6 border border-border/30 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center">
+    <div className={`bg-card/90 backdrop-blur-xl rounded-2xl p-4 sm:p-6 border border-border/30 w-full max-w-full overflow-hidden ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-8 h-8 bg-gradient-primary rounded-xl flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-foreground">Nova AI Suggestions</h3>
-            <p className="text-sm text-muted-foreground">Smart recommendations for your timeline</p>
+            <p className="text-sm text-muted-foreground hidden sm:block">Smart recommendations for your timeline</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={generateSuggestions}
             className="p-2 hover:bg-muted/50 rounded-xl transition-colors"
@@ -219,11 +219,11 @@ export function NovaSuggestions({
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {suggestions.map((suggestion) => (
           <div
             key={suggestion.id}
-            className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
+            className={`p-3 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer w-full max-w-full overflow-hidden ${
               selectedSuggestion === suggestion.id
                 ? 'border-primary bg-primary/5 shadow-sm'
                 : 'border-border/30 hover:border-border/50 hover:bg-muted/20'
@@ -232,22 +232,34 @@ export function NovaSuggestions({
               selectedSuggestion === suggestion.id ? null : suggestion.id
             )}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-foreground">{suggestion.title}</span>
-                  <div className={`text-xs px-2 py-1 rounded-full bg-primary/10 ${getConfidenceColor(suggestion.aiConfidence)}`}>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                  <span className="font-medium text-foreground truncate">{suggestion.title}</span>
+                  <div className={`text-xs px-2 py-1 rounded-full bg-primary/10 ${getConfidenceColor(suggestion.aiConfidence)} w-fit`}>
                     {suggestion.aiConfidence}% confidence
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {suggestion.startTime} - {suggestion.endTime}
-                  {suggestion.location && ` • ${suggestion.location}`}
-                  {suggestion.estimatedCost && ` • $${suggestion.estimatedCost}/person`}
+                  <div className="flex flex-wrap gap-1">
+                    <span>{suggestion.startTime} - {suggestion.endTime}</span>
+                    {suggestion.location && (
+                      <>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="block sm:inline">{suggestion.location}</span>
+                      </>
+                    )}
+                    {suggestion.estimatedCost && (
+                      <>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="block sm:inline">${suggestion.estimatedCost}/person</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              <div className="text-right">
+              <div className="text-left sm:text-right flex-shrink-0">
                 <div className="text-sm font-medium text-primary">
                   {suggestion.vibeMatch}% vibe match
                 </div>
@@ -278,7 +290,7 @@ export function NovaSuggestions({
                     e.stopPropagation()
                     onAcceptSuggestion(suggestion)
                   }}
-                  className="w-full bg-gradient-primary text-primary-foreground py-2 px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform"
+                  className="w-full bg-gradient-primary text-primary-foreground py-2 px-3 sm:px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform text-sm sm:text-base"
                 >
                   Add to Timeline
                 </button>

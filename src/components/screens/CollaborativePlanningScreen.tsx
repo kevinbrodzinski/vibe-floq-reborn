@@ -310,7 +310,7 @@ export const CollaborativePlanningScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-field pb-24">
+    <div className="min-h-screen bg-gradient-field pb-24 sm:pb-6">
       {/* Execution Overlay */}
       <ExecutionOverlay
         isVisible={showExecutionOverlay}
@@ -332,11 +332,11 @@ export const CollaborativePlanningScreen = () => {
       <SocialPulseOverlay isPlanning={planMode === 'planning'} currentPlan={plan} />
 
       {/* Header */}
-      <div className="p-6 pt-16">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+      <div className="p-4 sm:p-6 pt-16">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent truncate">
                 {plan.title}
               </h1>
               <PlanStatusBadge 
@@ -344,19 +344,19 @@ export const CollaborativePlanningScreen = () => {
                 size="default"
               />
             </div>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
               <span>{plan.date}</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <PlanPresenceIndicator
                 participants={plan.participants}
                 isConnected={isConnected}
               />
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Status transition buttons - prominent for major actions */}
             <PlanStatusActions 
               planId={plan.id}
@@ -364,7 +364,7 @@ export const CollaborativePlanningScreen = () => {
               isCreator={plan.createdBy === 'current-user'} // This would come from auth
               hasStops={plan.stops.length > 0}
               hasParticipants={plan.participants.length > 0}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm px-3 py-2"
             />
             
             <PlanInviteButton />
@@ -381,17 +381,17 @@ export const CollaborativePlanningScreen = () => {
               }`}
               title="Toggle chat"
             >
-              <MessageCircle size={20} />
+              <MessageCircle size={18} className="sm:w-5 sm:h-5" />
             </button>
             <button 
               onClick={() => setShowKeyboardHelp(true)}
-              className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
+              className="hidden sm:flex p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
               title="Keyboard shortcuts (?)"
             >
               <HelpCircle size={20} className="text-muted-foreground" />
             </button>
             <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
-              <Settings size={20} className="text-muted-foreground" />
+              <Settings size={18} className="sm:w-5 sm:h-5 text-muted-foreground" />
             </button>
           </div>
         </div>
@@ -441,9 +441,9 @@ export const CollaborativePlanningScreen = () => {
         )}
 
         {planMode === 'planning' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Timeline Editor & Summary */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Timeline Overlap Validator */}
               <TimelineOverlapValidator 
                 stops={plan.stops}
