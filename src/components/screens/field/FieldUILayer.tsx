@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import { FieldHeader } from "./FieldHeader";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
@@ -125,8 +126,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
         </motion.div>
       )}
 
-      {/* Field Overlay - hidden in full mode */}
-      {!isFull && (
+      {/* Field Overlay - hidden in full mode and on vibe screen */}
+      {!isFull && useLocation().pathname !== '/vibe' && (
         <motion.div
           className="absolute inset-0 top-12"
           style={{ zIndex: Z.overlay }}
