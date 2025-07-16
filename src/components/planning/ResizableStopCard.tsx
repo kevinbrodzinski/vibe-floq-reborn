@@ -85,8 +85,9 @@ export function ResizableStopCard({
   }
 
   const handleDoubleClick = () => {
-    // Check if plan can be edited before allowing editing
-    if (!canEditPlan((planStatus || 'draft') as any)) {
+    // Check if plan can be edited before allowing editing - normalize status with fallback
+    const normalizedStatus = (planStatus || 'draft') as any
+    if (!canEditPlan(normalizedStatus)) {
       return
     }
     
@@ -97,8 +98,9 @@ export function ResizableStopCard({
   const handleResizeStart = (e: React.MouseEvent) => {
     e.stopPropagation()
     
-    // Check if plan can be edited before allowing resize
-    if (!canEditPlan((planStatus || 'draft') as any)) {
+    // Check if plan can be edited before allowing resize - normalize status with fallback
+    const normalizedStatus = (planStatus || 'draft') as any
+    if (!canEditPlan(normalizedStatus)) {
       return
     }
     

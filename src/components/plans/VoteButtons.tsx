@@ -56,7 +56,8 @@ export function VoteButtons({
   const buttonSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'default'
 
   // Don't show if user not authenticated or voting not allowed for this plan status
-  if (!session?.user || !canVoteOnStops((planStatus || 'draft') as any)) {
+  const normalizedStatus = (planStatus || 'draft') as any
+  if (!session?.user || !canVoteOnStops(normalizedStatus)) {
     return null
   }
 

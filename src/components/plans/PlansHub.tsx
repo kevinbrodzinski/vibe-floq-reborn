@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Calendar, Users, Clock, Archive, Play, Flag, Pencil, CheckCircle } from 'lucide-react'
+import { Plus, Calendar, Users, Clock, Archive } from 'lucide-react'
 import { useUserPlans } from '@/hooks/useUserPlans'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
+import { getStatusBadgeProps } from '@/lib/planStatusConfig'
 
 export function PlansHub() {
   const navigate = useNavigate()
@@ -36,31 +37,12 @@ export function PlansHub() {
   }
 
   const getStatusColor = useCallback((status: string) => {
-    switch (status) {
-      case 'draft': return 'bg-muted/50 text-muted-foreground border-muted'
-      case 'finalized': return 'bg-success/10 text-success border-success/30'
-      case 'executing': return 'bg-gradient-primary text-primary-foreground border-primary glow-primary'
-      case 'completed': return 'bg-muted text-muted-foreground border-muted'
-      case 'cancelled': return 'bg-destructive/10 text-destructive border-destructive/30'
-      // Legacy status mappings for backward compatibility
-      case 'active': return 'bg-gradient-primary text-primary-foreground border-primary glow-primary'
-      case 'closed': return 'bg-muted text-muted-foreground border-muted'
-      default: return 'bg-muted text-muted-foreground'
-    }
+    return getStatusBadgeProps(status).className
   }, [])
 
   const getStatusIcon = useCallback((status: string) => {
-    switch (status) {
-      case 'draft': return <Pencil className="w-4 h-4" />
-      case 'finalized': return <Flag className="w-4 h-4" />
-      case 'executing': return <Play className="w-4 h-4" />
-      case 'completed': return <CheckCircle className="w-4 h-4" />
-      case 'cancelled': return <Archive className="w-4 h-4" />
-      // Legacy status mappings for backward compatibility
-      case 'active': return <Play className="w-4 h-4" />
-      case 'closed': return <CheckCircle className="w-4 h-4" />
-      default: return <Calendar className="w-4 h-4" />
-    }
+    const IconComponent = getStatusBadgeProps(status).icon
+    return <IconComponent className="w-4 h-4" />
   }, [])
 
   const sectionsToShow = useMemo(() => {

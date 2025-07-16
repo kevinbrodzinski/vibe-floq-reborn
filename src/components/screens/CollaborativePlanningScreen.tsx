@@ -93,8 +93,9 @@ export const CollaborativePlanningScreen = () => {
   };
 
   const handleStopAdd = (timeSlot: string) => {
-    // Check if plan can be edited
-    if (!canEditPlan(plan.status || 'draft')) {
+    // Check if plan can be edited - normalize status with fallback
+    const normalizedStatus = (plan.status || 'draft') as any
+    if (!canEditPlan(normalizedStatus)) {
       showOverlay('stop-action', 'Plan cannot be edited in current status');
       return;
     }
@@ -118,8 +119,9 @@ export const CollaborativePlanningScreen = () => {
   };
 
   const handleStopReorder = async (stopId: string, newIndex: number) => {
-    // Check if plan can be edited
-    if (!canEditPlan(plan.status || 'draft')) {
+    // Check if plan can be edited - normalize status with fallback
+    const normalizedStatus = (plan.status || 'draft') as any
+    if (!canEditPlan(normalizedStatus)) {
       showOverlay('stop-action', 'Plan cannot be edited in current status');
       return;
     }
@@ -263,8 +265,9 @@ export const CollaborativePlanningScreen = () => {
   });
 
   const handleVenueSelect = (venue: any) => {
-    // Check if plan can be edited
-    if (!canEditPlan(plan.status || 'draft')) {
+    // Check if plan can be edited - normalize status with fallback
+    const normalizedStatus = (plan.status || 'draft') as any
+    if (!canEditPlan(normalizedStatus)) {
       showOverlay('stop-action', 'Plan cannot be edited in current status');
       return;
     }
@@ -422,7 +425,7 @@ export const CollaborativePlanningScreen = () => {
         />
 
         {/* Voting Threshold Meter - Only show for finalized+ plans */}
-        {canVoteOnStops(plan.status || 'draft') && (
+        {canVoteOnStops((plan.status || 'draft') as any) && (
           <VotingThresholdMeter
             totalParticipants={activeParticipants.length || plan.participants.length}
             votedParticipants={Math.floor((activeParticipants.length || plan.participants.length) * 0.7)} // Mock 70% participation
