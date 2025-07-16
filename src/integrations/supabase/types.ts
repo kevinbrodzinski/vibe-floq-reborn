@@ -5465,7 +5465,14 @@ export type Database = {
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       invitation_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
-      plan_status_enum: "draft" | "active" | "closed" | "cancelled"
+      plan_status_enum:
+        | "draft"
+        | "active"
+        | "closed"
+        | "cancelled"
+        | "finalized"
+        | "executing"
+        | "completed"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -5677,7 +5684,15 @@ export const Constants = {
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       invitation_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
-      plan_status_enum: ["draft", "active", "closed", "cancelled"],
+      plan_status_enum: [
+        "draft",
+        "active",
+        "closed",
+        "cancelled",
+        "finalized",
+        "executing",
+        "completed",
+      ],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
