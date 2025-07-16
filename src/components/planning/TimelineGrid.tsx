@@ -16,6 +16,10 @@ import { generateTimeSuggestions, snapToSuggestedSlot } from '@/utils/stopTimeUt
 import { useStopResize } from '@/hooks/useStopResize'
 import { useStopSelection } from '@/hooks/useStopSelection'
 import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
+import { LiveCursors } from '@/components/collaboration/LiveCursors'
+import { useAutoScroll } from '@/hooks/useAutoScroll'
+import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
+import { useAudioFeedback } from '@/hooks/useAudioFeedback'
 import { ResizableStopCard } from './ResizableStopCard'
 import { BulkActionsToolbar } from './BulkActionsToolbar'
 import { Badge } from '@/components/ui/badge'
@@ -53,6 +57,9 @@ export function TimelineGrid({
   const { conflicts, hasConflicts, isStopConflicting } = useStopConflictChecker(stops)
   const { withErrorHandling } = useErrorBoundary()
   const { isOnline, canRetry, retryConnection } = useNetworkRecovery()
+  const { setContainer } = useAutoScroll({ enabled: true })
+  const { timelineHaptics } = useAdvancedHaptics()
+  const { timelineAudio } = useAudioFeedback()
 
   // Stop selection
   const {
@@ -126,8 +133,9 @@ export function TimelineGrid({
       if (oldIndex !== -1 && newIndex !== -1) {
         const newStops = arrayMove(stops, oldIndex, newIndex)
         
-        // Haptic feedback for successful reorder
-        socialHaptics.gestureConfirm()
+        // Enhanced haptic and audio feedback
+        timelineHaptics.stopDragEnd()
+        timelineAudio.stopDrop()
         
         // Update stop order in backend
         syncChanges({
@@ -151,8 +159,9 @@ export function TimelineGrid({
   }
 
   const handleAddStop = withErrorHandling((timeSlot: string) => {
-    // Haptic feedback for stop creation
-    socialHaptics.gestureConfirm()
+    // Enhanced feedback for stop creation
+    timelineHaptics.stopCreate()
+    timelineAudio.stopCreate()
     
     // Generate AI suggestions for optimal timing
     const suggestions = generateTimeSuggestions(planId, stops)
@@ -175,7 +184,8 @@ export function TimelineGrid({
         suggestion: suggestedSlot?.reason || 'Try a different time or adjust the duration of nearby stops.'
       })
       setShowConflictOverlay(true)
-      socialHaptics.vibeMatch() // Different haptic for conflict
+      timelineHaptics.stopConflict()
+      timelineAudio.stopConflict()
       return
     }
     
@@ -306,7 +316,9 @@ export function TimelineGrid({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={setContainer}>
+      {/* Live Cursors for real-time collaboration */}
+      <LiveCursors planId={planId} enabled={connectionStatus === 'connected'} />
         {/* Collaboration Header with aria-live for accessibility */}
         <div 
           className="flex items-center justify-between p-3 bg-card/50 rounded-lg border"
@@ -380,6 +392,7 @@ export function TimelineGrid({
                 getStopColor={getStopColor}
                 isStopConflicting={isStopConflicting}
                 allStops={stops}
+                planId={planId}
               />
             )
           })}
@@ -451,7 +464,8 @@ function TimeSlot({
   isOptimistic?: boolean
   getStopColor?: (stop: PlanStop) => string
   isStopConflicting: (stopId: string) => boolean
-  allStops: PlanStop[]
+ allStops: PlanStop[]
+ planId: string
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -474,6 +488,7 @@ function TimeSlot({
               <ResizableStopCard 
                 key={stop.id} 
                 stop={stop}
+                planId={planId}
                 isSelected={selectedStops.has(stop.id)}
                 isResizing={resizingStop === stop.id}
                 hasConflict={isStopConflicting(stop.id)}

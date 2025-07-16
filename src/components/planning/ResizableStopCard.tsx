@@ -8,10 +8,15 @@ import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
 import { ConflictGlow } from './ConflictGlow'
 import { SnapSuggestionOverlay } from './SnapSuggestionOverlay'
 import { StopTooltip } from './StopTooltip'
+import { StopEditingIndicators } from '@/components/collaboration/StopEditingIndicators'
+import { useStopEditingPresence } from '@/hooks/useStopEditingPresence'
+import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
+import { useAudioFeedback } from '@/hooks/useAudioFeedback'
 import type { PlanStop } from '@/types/plan'
 
 interface ResizableStopCardProps {
   stop: PlanStop
+  planId?: string
   isSelected?: boolean
   isResizing?: boolean
   isDragOver?: boolean
@@ -35,6 +40,7 @@ interface ResizableStopCardProps {
 
 export function ResizableStopCard({
   stop,
+  planId,
   isSelected = false,
   isResizing = false,
   isDragOver = false,
@@ -56,6 +62,9 @@ export function ResizableStopCard({
   const cardRef = useRef<HTMLDivElement>(null)
   const { isStopConflicting, getConflictForStop } = useStopConflictChecker(allStops)
   const updatePosition = useUpdateStopPosition()
+  const { startEditing, stopEditing } = useStopEditingPresence({ planId: planId || '', enabled: !!planId })
+  const { timelineHaptics } = useAdvancedHaptics()
+  const { timelineAudio } = useAudioFeedback()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -66,16 +75,21 @@ export function ResizableStopCard({
       return // Don't select when starting resize
     }
     
+    timelineHaptics.stopDragStart()
     onSelect?.(stop.id, e.metaKey || e.ctrlKey, e.shiftKey)
   }
 
   const handleDoubleClick = () => {
+    startEditing(stop.id, 'editing')
     onEdit?.()
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.stopPropagation()
     setIsDragging(true)
+    timelineHaptics.stopResize()
+    timelineAudio.stopResize()
+    startEditing(stop.id, 'resizing')
     onStartResize?.(stop.id, stop, e.clientY)
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -86,6 +100,9 @@ export function ResizableStopCard({
     const handleMouseUp = (e: MouseEvent) => {
       setIsDragging(false)
       setPreviewDuration(null)
+      timelineHaptics.stopDragEnd()
+      timelineAudio.stopDrop()
+      stopEditing(stop.id)
       onEndResize?.(e.clientY)
       
       document.removeEventListener('mousemove', handleMouseMove)
@@ -140,6 +157,14 @@ export function ResizableStopCard({
           duration={duration}
         />
       </AnimatePresence>
+
+      {/* Collaboration Indicators */}
+      {planId && (
+        <StopEditingIndicators 
+          planId={planId} 
+          stopId={stop.id} 
+        />
+      )}
       {/* Conflict indicator */}
       {isConflicting && (
         <motion.div
