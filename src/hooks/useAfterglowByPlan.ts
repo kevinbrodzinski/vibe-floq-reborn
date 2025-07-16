@@ -19,5 +19,6 @@ export function useAfterglowByPlan(planId: string) {
       return data
     },
     enabled: !!planId,
+    refetchInterval: 30000, // Refetch every 30s for real-time afterglow submissions
   })
 }

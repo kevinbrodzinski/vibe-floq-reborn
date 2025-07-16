@@ -1,6 +1,7 @@
 import { MapPin, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCheckInStatus, useCheckInToggle } from '@/hooks/useCheckInStatus';
+import { useCheckInStatus } from '@/hooks/useCheckInStatus';
+import { useCheckInToggle } from '@/hooks/useCheckInToggle';
 
 interface CheckInButtonProps {
   planId: string;

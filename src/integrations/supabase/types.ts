@@ -1410,6 +1410,8 @@ export type Database = {
           checked_in_at: string
           checked_out_at: string | null
           created_at: string
+          device_id: string | null
+          geo_hash: string | null
           id: string
           location: unknown | null
           plan_id: string
@@ -1420,6 +1422,8 @@ export type Database = {
           checked_in_at?: string
           checked_out_at?: string | null
           created_at?: string
+          device_id?: string | null
+          geo_hash?: string | null
           id?: string
           location?: unknown | null
           plan_id: string
@@ -1430,6 +1434,8 @@ export type Database = {
           checked_in_at?: string
           checked_out_at?: string | null
           created_at?: string
+          device_id?: string | null
+          geo_hash?: string | null
           id?: string
           location?: unknown | null
           plan_id?: string

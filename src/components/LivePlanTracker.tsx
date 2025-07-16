@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatTime, formatTimeRange } from "@/lib/timeUtils";
 import { CheckInButton } from "./CheckInButton";
-import { usePlanCheckIns } from '@/hooks/useCheckInStatus';
+import { usePlanCheckIns } from '@/hooks/usePlanCheckIns';
 
 interface PlanStop {
   id: string;
