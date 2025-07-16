@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
@@ -266,9 +266,9 @@ export const CollaborativePlanningScreen = () => {
   });
 
   // Start gesture listening on mount
-  useState(() => {
+  useEffect(() => {
     startListening();
-  });
+  }, [startListening]);
 
   const handleVenueSelect = (venue: any) => {
     // Check if plan can be edited - normalize status with fallback
@@ -518,10 +518,10 @@ export const CollaborativePlanningScreen = () => {
               
             </div>
 
-            {/* Right Column - Venue Library & Chat */}
-            <div className="space-y-6">
-              {/* Venue Search */}
-              <div className="bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30">
+            {/* Right Column - Mobile-optimized */}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Venue Search - Hidden on mobile */}
+              <div className="hidden md:block bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30">
                 <div className="relative mb-4">
                   <input
                     type="text"
