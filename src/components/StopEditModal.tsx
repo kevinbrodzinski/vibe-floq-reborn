@@ -24,6 +24,11 @@ export const StopEditModal = ({ stop, onClose, onSave }: StopEditModalProps) => 
   const [address, setAddress] = useState(stop.address || '');
 
   const handleSave = () => {
+    // Validate time range
+    if (startTime && endTime && startTime >= endTime) {
+      return; // Could show toast error here
+    }
+
     onSave({
       title: title.trim() || 'Untitled Stop',
       description: description.trim() || null,
@@ -33,7 +38,19 @@ export const StopEditModal = ({ stop, onClose, onSave }: StopEditModalProps) => 
     });
   };
 
-  const isValid = title.trim().length > 0;
+  // Handle escape key
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
+  useState(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
+
+  const isValid = title.trim().length > 0 && (!startTime || !endTime || startTime < endTime);
 
   return (
     <Dialog open onOpenChange={() => onClose()}>

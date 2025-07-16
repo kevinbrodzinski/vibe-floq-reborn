@@ -7,9 +7,11 @@ interface StartPlanButtonProps {
   floqId: string;
   onPlanCreated: (planData: PlanWizardData) => void;
   disabled?: boolean;
+  isLoading?: boolean;
+  variant?: 'default' | 'outline' | 'ghost';
 }
 
-export const StartPlanButton = ({ floqId, onPlanCreated, disabled }: StartPlanButtonProps) => {
+export const StartPlanButton = ({ floqId, onPlanCreated, disabled, isLoading, variant = 'default' }: StartPlanButtonProps) => {
   const [showWizard, setShowWizard] = useState(false);
 
   const handlePlanComplete = (planData: PlanWizardData) => {
@@ -21,12 +23,13 @@ export const StartPlanButton = ({ floqId, onPlanCreated, disabled }: StartPlanBu
     <>
       <Button
         onClick={() => setShowWizard(true)}
-        disabled={disabled}
+        disabled={disabled || isLoading}
         className="w-full"
+        variant={variant}
         size="lg"
       >
         <Plus className="w-5 h-5 mr-2" />
-        Start Planning
+        {isLoading ? 'Creating...' : 'Start Planning'}
       </Button>
 
       <NewPlanWizard

@@ -22,6 +22,7 @@ type WizardStep = 'details' | 'invites' | 'complete';
 
 export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWizardProps) => {
   const [currentStep, setCurrentStep] = useState<WizardStep>('details');
+  const [isCreating, setIsCreating] = useState(false);
   const [planDetails, setPlanDetails] = useState<PlanDetails | null>(null);
   const [invitedParticipants, setInvitedParticipants] = useState<string[]>([]);
 
@@ -39,20 +40,25 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
     setCurrentStep('invites');
   };
 
-  const handleInvitesComplete = (participants: string[]) => {
+  const handleInvitesComplete = async (participants: string[]) => {
     setInvitedParticipants(participants);
-    setCurrentStep('complete');
+    setIsCreating(true);
     
-    // Complete the wizard
-    if (planDetails) {
-      onComplete({
-        details: planDetails,
-        invitedParticipants: participants
-      });
+    try {
+      if (planDetails) {
+        await onComplete({
+          details: planDetails,
+          invitedParticipants: participants
+        });
+        setCurrentStep('complete');
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleClose = () => {
+    if (isCreating) return; // Prevent closing during creation
     setCurrentStep('details');
     setPlanDetails(null);
     setInvitedParticipants([]);

@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { vibeOptions } from '@/lib/vibeConstants';
 
 interface PlanDetailsFormProps {
   onSubmit: (details: PlanDetails) => void;
@@ -35,15 +36,6 @@ export const PlanDetailsForm = ({ onSubmit, onCancel, initialData }: PlanDetails
   const [maxParticipants, setMaxParticipants] = useState(initialData?.maxParticipants || 8);
   const [vibe, setVibe] = useState(initialData?.vibe || 'social');
   const [budget, setBudget] = useState(initialData?.budget || '');
-
-  const vibeOptions = [
-    { value: 'chill', label: 'Chill', emoji: '😌' },
-    { value: 'social', label: 'Social', emoji: '🎉' },
-    { value: 'adventure', label: 'Adventure', emoji: '🚀' },
-    { value: 'culture', label: 'Culture', emoji: '🎭' },
-    { value: 'food', label: 'Food', emoji: '🍽️' },
-    { value: 'nightlife', label: 'Nightlife', emoji: '🌙' }
-  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +65,7 @@ export const PlanDetailsForm = ({ onSubmit, onCancel, initialData }: PlanDetails
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What's the plan?"
+          aria-label="Plan title"
           autoFocus
         />
       </div>

@@ -36,11 +36,13 @@ export const TimelineEditor = ({
   ];
 
   const handleDragStart = (e: React.DragEvent, stop: PlanStop) => {
+    if (!isEditable) return;
     setDraggedStop(stop.id);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (!isEditable) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverIndex(index);
@@ -153,6 +155,7 @@ export const TimelineEditor = ({
                 <div className="flex-1">
                   {stopAtTime ? (
                     <StopCard
+                      key={stopAtTime.id}
                       stop={stopAtTime}
                       isSelected={selectedStopId === stopAtTime.id}
                       isDragOver={dragOverIndex === index}
