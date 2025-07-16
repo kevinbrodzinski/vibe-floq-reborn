@@ -23,6 +23,7 @@ interface PlanStats {
   executing: number
   completed: number
   cancelled: number
+  archived: number
 }
 
 interface PlansGrouped {
@@ -64,6 +65,7 @@ export function useUserPlans() {
     executing: 0,
     completed: 0,
     cancelled: 0,
+    archived: 0,
   }
 
   if (data) {

@@ -47,7 +47,7 @@ export function PlanStatusBadge({
       aria-label={`Plan status: ${config.label}`}
     >
       <div className="flex items-center gap-1">
-        {showIcon && config.icon && (
+        {showIcon && Icon && (
           <Icon className={cn('inline', iconSizes[size])} />
         )}
         <span>{config.label}</span>

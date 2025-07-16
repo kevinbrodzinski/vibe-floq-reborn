@@ -114,7 +114,9 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
     cancellation: () => triggerHaptic('warning'),
     validation: () => triggerHaptic('error'),
     loading: () => triggerHaptic('light'),
-    complete: () => triggerHaptic('impact')
+    complete: () => triggerHaptic('impact'),
+    planCompletion: () => triggerHaptic('heavy'),
+    planExecutionStart: () => triggerHaptic('impact')
   }
 
   return {

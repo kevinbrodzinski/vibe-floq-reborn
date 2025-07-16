@@ -37,10 +37,15 @@ export function triggerConfetti(duration: number = 3000, options: ConfettiOption
     }, burst * settings.spreadTime)
   }
   
-  // Clean up after animation with debounced cleanup
+  // Clean up after animation with debounced cleanup and limit pieces
   setTimeout(() => {
     const pieces = document.querySelectorAll('.confetti-piece')
-    pieces.forEach(piece => piece.remove())
+    // Limit max pieces to prevent memory leaks
+    if (pieces.length > 200) {
+      pieces.forEach(piece => piece.remove())
+    } else {
+      pieces.forEach(piece => piece.remove())
+    }
   }, duration)
 }
 
@@ -88,7 +93,7 @@ function createConfettiPiece(color: string, shape: 'circle' | 'square' | 'triang
     ${shapeStyles}
     pointer-events: none;
     z-index: 9999;
-    left: ${Math.random() * 100}vw;
+    left: ${Math.random() * 100}%;
     top: -20px;
     animation: confetti-fall ${fallDuration}s linear forwards;
     transform: rotate(${Math.random() * 360}deg);
