@@ -55,6 +55,7 @@ export const CollaborativePlanningScreen = () => {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isDragOperationPending, setIsDragOperationPending] = useState(false);
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
+  const [overlayTimeoutId, setOverlayTimeoutId] = useState<NodeJS.Timeout | null>(null);
   
   const {
     plan,
@@ -218,11 +219,23 @@ export const CollaborativePlanningScreen = () => {
     }
   });
 
-  // Overlay feedback helper
-  const showOverlay = (action: typeof overlayAction, feedback: string) => {
+  // Overlay feedback helper with auto-dismiss
+  const showOverlay = (action: typeof overlayAction, feedback: string, ms = 2500) => {
     setOverlayAction(action);
     setOverlayFeedback(feedback);
     setShowExecutionOverlay(true);
+    
+    // Clear any existing timeout to prevent stacking
+    if (overlayTimeoutId) {
+      clearTimeout(overlayTimeoutId);
+    }
+    
+    // Auto-dismiss after specified time
+    const newTimeoutId = setTimeout(() => {
+      setShowExecutionOverlay(false);
+      setOverlayTimeoutId(null);
+    }, ms);
+    setOverlayTimeoutId(newTimeoutId);
   };
 
   // Enhanced RSVP handler with persistence
@@ -269,6 +282,15 @@ export const CollaborativePlanningScreen = () => {
   useEffect(() => {
     startListening();
   }, [startListening]);
+
+  // Cleanup overlay timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (overlayTimeoutId) {
+        clearTimeout(overlayTimeoutId);
+      }
+    };
+  }, [overlayTimeoutId]);
 
   const handleVenueSelect = (venue: any) => {
     // Check if plan can be edited - normalize status with fallback

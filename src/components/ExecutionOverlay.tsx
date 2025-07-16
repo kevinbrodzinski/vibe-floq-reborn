@@ -79,20 +79,18 @@ export const ExecutionOverlay = ({
             <motion.div
               initial={{ scale: 0.8, rotate: -10 }}
               animate={{ 
-                scale: phase === 'feedback' ? [1, 1.2, 1] : 1,
-                rotate: phase === 'feedback' ? [0, 10, -10, 0] : 0
+                scale: phase === 'feedback' ? 1.2 : 1,
+                rotate: phase === 'feedback' ? 10 : 0
               }}
               transition={{ 
-                type: "spring",
-                stiffness: 400,
-                damping: 25,
-                duration: 0.6 
+                duration: 0.4,
+                ease: "easeInOut"
               }}
               className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-primary flex items-center justify-center ${actionColors[action]} shadow-lg`}
             >
               <motion.div
                 animate={{ 
-                  scale: phase === 'feedback' ? [1, 1.1, 1] : 1,
+                  scale: phase === 'feedback' ? 1.1 : 1,
                 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
@@ -114,7 +112,7 @@ export const ExecutionOverlay = ({
                   <motion.div
                     key={i}
                     animate={{ 
-                      scale: phase === 'feedback' ? [1, 1.5, 1] : 1 
+                      scale: phase === 'feedback' ? 1.5 : 1 
                     }}
                     transition={{ 
                       delay: i * 0.1,
