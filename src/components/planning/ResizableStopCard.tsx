@@ -14,6 +14,7 @@ import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 import { useAudioFeedback } from '@/hooks/useAudioFeedback'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { VoteButtons } from '@/components/plans/VoteButtons'
+import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -65,6 +66,7 @@ export function ResizableStopCard({
   const { timelineHaptics } = useAdvancedHaptics()
   const { timelineAudio } = useAudioFeedback()
   const { recordNovaSnap } = useNovaSnap()
+  const { canEditPlan } = usePlanStatusValidation()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -83,12 +85,23 @@ export function ResizableStopCard({
   }
 
   const handleDoubleClick = () => {
+    // Check if plan can be edited before allowing editing
+    if (!canEditPlan((planStatus || 'draft') as any)) {
+      return
+    }
+    
     startEditing(stop.id, 'editing')
     onEdit?.()
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.stopPropagation()
+    
+    // Check if plan can be edited before allowing resize
+    if (!canEditPlan((planStatus || 'draft') as any)) {
+      return
+    }
+    
     setIsDragging(true)
     timelineHaptics.stopResize()
     timelineAudio.stopResize()
@@ -264,6 +277,7 @@ export function ResizableStopCard({
           <VoteButtons 
             planId={planId}
             stopId={stop.id}
+            planStatus={planStatus}
             size="sm"
             showCounts={true}
             className="mt-2"

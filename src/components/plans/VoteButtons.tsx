@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useSession } from '@supabase/auth-helpers-react'
+import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
 
 interface VoteButtonsProps {
   planId: string
   stopId: string
+  planStatus?: string
   className?: string
   size?: 'sm' | 'md' | 'lg'
   showCounts?: boolean
@@ -17,6 +19,7 @@ interface VoteButtonsProps {
 export function VoteButtons({ 
   planId, 
   stopId, 
+  planStatus,
   className, 
   size = 'sm',
   showCounts = true 
@@ -25,6 +28,7 @@ export function VoteButtons({
   const { data: votes = [] } = useStopVotes(stopId)
   const { mutate: vote, isPending } = usePlanVote()
   const [optimisticVote, setOptimisticVote] = useState<'up' | 'down' | null>(null)
+  const { canVoteOnStops } = usePlanStatusValidation()
 
   // Find user's existing vote
   const userVote = session?.user 
@@ -51,8 +55,9 @@ export function VoteButtons({
   const currentVote = optimisticVote || userVote
   const buttonSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'default'
 
-  if (!session?.user) {
-    return null // Don't show vote buttons if not authenticated
+  // Don't show if user not authenticated or voting not allowed for this plan status
+  if (!session?.user || !canVoteOnStops((planStatus || 'draft') as any)) {
+    return null
   }
 
   return (

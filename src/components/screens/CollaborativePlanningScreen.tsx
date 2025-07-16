@@ -118,6 +118,12 @@ export const CollaborativePlanningScreen = () => {
   };
 
   const handleStopReorder = async (stopId: string, newIndex: number) => {
+    // Check if plan can be edited
+    if (!canEditPlan(plan.status || 'draft')) {
+      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      return;
+    }
+
     setIsDragOperationPending(true);
     try {
       const stopIndex = plan.stops.findIndex(s => s.id === stopId);

@@ -37,20 +37,28 @@ export function PlansHub() {
 
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500/10 text-green-600 border-green-500/20'
-      case 'draft': return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-      case 'closed': return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
-      case 'cancelled': return 'bg-red-500/10 text-red-600 border-red-500/20'
+      case 'draft': return 'bg-muted/50 text-muted-foreground border-muted'
+      case 'finalized': return 'bg-success/10 text-success border-success/30'
+      case 'executing': return 'bg-gradient-primary text-primary-foreground border-primary glow-primary'
+      case 'completed': return 'bg-muted text-muted-foreground border-muted'
+      case 'cancelled': return 'bg-destructive/10 text-destructive border-destructive/30'
+      // Legacy status mappings for backward compatibility
+      case 'active': return 'bg-gradient-primary text-primary-foreground border-primary glow-primary'
+      case 'closed': return 'bg-muted text-muted-foreground border-muted'
       default: return 'bg-muted text-muted-foreground'
     }
   }, [])
 
   const getStatusIcon = useCallback((status: string) => {
     switch (status) {
-      case 'active': return <Play className="w-4 h-4" />
       case 'draft': return <Pencil className="w-4 h-4" />
-      case 'closed': return <CheckCircle className="w-4 h-4" />
+      case 'finalized': return <Flag className="w-4 h-4" />
+      case 'executing': return <Play className="w-4 h-4" />
+      case 'completed': return <CheckCircle className="w-4 h-4" />
       case 'cancelled': return <Archive className="w-4 h-4" />
+      // Legacy status mappings for backward compatibility
+      case 'active': return <Play className="w-4 h-4" />
+      case 'closed': return <CheckCircle className="w-4 h-4" />
       default: return <Calendar className="w-4 h-4" />
     }
   }, [])
