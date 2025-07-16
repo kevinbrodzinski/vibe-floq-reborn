@@ -872,6 +872,8 @@ export type Database = {
       }
       floq_plans: {
         Row: {
+          budget_per_person: number | null
+          collaboration_status: string | null
           created_at: string | null
           creator_id: string
           description: string | null
@@ -883,9 +885,13 @@ export type Database = {
           planned_at: string
           status: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
+          total_budget: number | null
           updated_at: string | null
+          vibe_tags: string[] | null
         }
         Insert: {
+          budget_per_person?: number | null
+          collaboration_status?: string | null
           created_at?: string | null
           creator_id: string
           description?: string | null
@@ -897,9 +903,13 @@ export type Database = {
           planned_at: string
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
+          total_budget?: number | null
           updated_at?: string | null
+          vibe_tags?: string[] | null
         }
         Update: {
+          budget_per_person?: number | null
+          collaboration_status?: string | null
           created_at?: string | null
           creator_id?: string
           description?: string | null
@@ -911,7 +921,9 @@ export type Database = {
           planned_at?: string
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title?: string
+          total_budget?: number | null
           updated_at?: string | null
+          vibe_tags?: string[] | null
         }
         Relationships: [
           {
@@ -1302,6 +1314,47 @@ export type Database = {
           },
         ]
       }
+      plan_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_activities_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_afterglow: {
         Row: {
           created_at: string | null
@@ -1352,20 +1405,137 @@ export type Database = {
           },
         ]
       }
-      plan_participants: {
+      plan_comments: {
         Row: {
-          joined_at: string | null
+          content: string
+          created_at: string | null
+          id: string
+          mentioned_users: string[] | null
           plan_id: string
+          reply_to_id: string | null
+          stop_id: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          joined_at?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          mentioned_users?: string[] | null
           plan_id: string
+          reply_to_id?: string | null
+          stop_id?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          mentioned_users?: string[] | null
+          plan_id?: string
+          reply_to_id?: string | null
+          stop_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comments_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "plan_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_comments_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_invitations: {
+        Row: {
+          expires_at: string | null
+          id: string
+          invitation_type: string | null
+          invited_at: string | null
+          invitee_email: string | null
+          invitee_user_id: string | null
+          inviter_id: string
+          plan_id: string
+          responded_at: string | null
+          status: string | null
+          token: string | null
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          invitation_type?: string | null
+          invited_at?: string | null
+          invitee_email?: string | null
+          invitee_user_id?: string | null
+          inviter_id: string
+          plan_id: string
+          responded_at?: string | null
+          status?: string | null
+          token?: string | null
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          invitation_type?: string | null
+          invited_at?: string | null
+          invitee_email?: string | null
+          invitee_user_id?: string | null
+          inviter_id?: string
+          plan_id?: string
+          responded_at?: string | null
+          status?: string | null
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_invitations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_participants: {
+        Row: {
+          invite_type: string | null
+          joined_at: string | null
+          plan_id: string
+          reminded_at: string | null
+          rsvp_status: string | null
+          user_id: string
+        }
+        Insert: {
+          invite_type?: string | null
+          joined_at?: string | null
+          plan_id: string
+          reminded_at?: string | null
+          rsvp_status?: string | null
+          user_id: string
+        }
+        Update: {
+          invite_type?: string | null
           joined_at?: string | null
           plan_id?: string
+          reminded_at?: string | null
+          rsvp_status?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1374,6 +1544,126 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_stops: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          end_time: string | null
+          estimated_cost_per_person: number | null
+          id: string
+          location: unknown | null
+          plan_id: string
+          start_time: string | null
+          stop_order: number
+          stop_type: string | null
+          title: string
+          updated_at: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          end_time?: string | null
+          estimated_cost_per_person?: number | null
+          id?: string
+          location?: unknown | null
+          plan_id: string
+          start_time?: string | null
+          stop_order: number
+          stop_type?: string | null
+          title: string
+          updated_at?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          end_time?: string | null
+          estimated_cost_per_person?: number | null
+          id?: string
+          location?: unknown | null
+          plan_id?: string
+          start_time?: string | null
+          stop_order?: number
+          stop_type?: string | null
+          title?: string
+          updated_at?: string | null
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_stops_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_stops_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_votes: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          emoji_reaction: string | null
+          id: string
+          plan_id: string
+          stop_id: string
+          updated_at: string | null
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          emoji_reaction?: string | null
+          id?: string
+          plan_id: string
+          stop_id: string
+          updated_at?: string | null
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          emoji_reaction?: string | null
+          id?: string
+          plan_id?: string
+          stop_id?: string
+          updated_at?: string | null
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_votes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_votes_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
             referencedColumns: ["id"]
           },
         ]
@@ -4771,6 +5061,10 @@ export type Database = {
           _venue_id?: string
           _visibility?: string
         }
+        Returns: boolean
+      }
+      user_has_plan_access: {
+        Args: { p_plan_id: string }
         Returns: boolean
       }
       user_is_floq_participant: {
