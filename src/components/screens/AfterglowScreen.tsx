@@ -8,6 +8,7 @@ import { useAfterglowData } from "@/hooks/useAfterglowData";
 import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
 import { AfterglowGenerationProgress } from "@/components/AfterglowGenerationProgress";
 import { getVibeDisplayName } from "@/utils/afterglowHelpers";
+import { useTogglePinned } from "@/hooks/useOptimisticMutations";
 
 interface NightEvent {
   id: string;
@@ -27,7 +28,8 @@ export const AfterglowScreen = () => {
   
   // Get today's date for afterglow data
   const today = new Date().toISOString().split('T')[0];
-  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow, togglePin, getShareUrl } = useAfterglowData(today);
+  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(today);
+  const { mutate: togglePinned } = useTogglePinned();
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -304,18 +306,26 @@ export const AfterglowScreen = () => {
                 index={index}
                 isFirst={index === 0}
                 onShare={() => {
-                  const shareUrl = getShareUrl()
-                  if (shareUrl && navigator.share) {
+                  // Create a share URL for this specific moment
+                  const shareUrl = `${window.location.origin}/afterglow/${afterglow.date}`
+                  if (navigator.share) {
                     navigator.share({
                       title: 'My Afterglow',
                       text: afterglow.summary_text,
                       url: shareUrl
                     })
-                  } else if (shareUrl) {
+                  } else {
                     navigator.clipboard.writeText(shareUrl)
                   }
                 }}
-                onSave={() => togglePin()}
+                onSave={() => {
+                  if (afterglow?.id) {
+                    togglePinned({ 
+                      id: afterglow.id, 
+                      pinned: !afterglow.is_pinned 
+                    })
+                  }
+                }}
               />
             ))}
           </div>

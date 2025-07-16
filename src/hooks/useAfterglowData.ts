@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { useRealtimeAfterglowData } from './useRealtimeAfterglowData'
 import { useRealtimeAfterglowHistory } from './useRealtimeAfterglowHistory'
+import { useTogglePinned } from './useOptimisticMutations'
 
 export interface AfterglowMoment {
   timestamp: string
@@ -109,24 +110,15 @@ export function useAfterglowData(date: string) {
     }
   }
 
-  const togglePin = async () => {
+  const togglePin = async (): Promise<void> => {
     if (!user || !afterglow) return
 
-    try {
-      const { error: updateError } = await supabase
-        .from('daily_afterglow')
-        .update({ is_pinned: !afterglow.is_pinned })
-        .eq('id', afterglow.id)
-
-      if (updateError) {
-        throw updateError
-      }
-
-      setAfterglow(prev => prev ? { ...prev, is_pinned: !prev.is_pinned } : null)
-    } catch (err) {
-      console.error('Error toggling pin:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update pin status')
-    }
+    // Use optimistic mutation instead
+    const { mutate } = useTogglePinned()
+    mutate({ 
+      id: afterglow.id, 
+      pinned: !afterglow.is_pinned 
+    })
   }
 
   const getShareUrl = () => {
