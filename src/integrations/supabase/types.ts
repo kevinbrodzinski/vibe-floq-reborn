@@ -2901,6 +2901,19 @@ export type Database = {
         Args: { _friend: string }
         Returns: Json
       }
+      add_plan_stop_with_order: {
+        Args: {
+          p_plan_id: string
+          p_title: string
+          p_description?: string
+          p_start_time?: string
+          p_end_time?: string
+          p_duration_minutes?: number
+          p_venue_id?: string
+          p_estimated_cost?: number
+        }
+        Returns: string
+      }
       addauth: {
         Args: { "": string }
         Returns: boolean
