@@ -1,36 +1,41 @@
 import { Vote } from "lucide-react";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
-
-interface PlanStop {
-  id: string;
-  votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[];
-}
+import { usePlanVote } from "@/hooks/usePlanVote";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface VotePanelProps {
-  stop: PlanStop;
-  onVote: (voteType: 'yes' | 'no' | 'maybe') => void;
-  currentUserId: string;
+  planId: string;
+  stopId: string;
   className?: string;
 }
 
 const voteOptions = [
-  { type: 'yes' as const, emoji: '👍', color: 'text-green-400', label: 'Yes' },
-  { type: 'maybe' as const, emoji: '🤷', color: 'text-yellow-400', label: 'Maybe' },
-  { type: 'no' as const, emoji: '👎', color: 'text-red-400', label: 'No' }
+  { type: 'love' as const, emoji: '❤️', color: 'text-red-400', label: 'Love' },
+  { type: 'like' as const, emoji: '👍', color: 'text-green-400', label: 'Like' },
+  { type: 'neutral' as const, emoji: '🤷', color: 'text-yellow-400', label: 'Neutral' },
+  { type: 'dislike' as const, emoji: '👎', color: 'text-orange-400', label: 'Dislike' },
+  { type: 'veto' as const, emoji: '❌', color: 'text-red-600', label: 'Veto' }
 ];
 
-export const VotePanel = ({ stop, onVote, currentUserId, className = "" }: VotePanelProps) => {
-  const getVoteCount = (voteType: 'yes' | 'no' | 'maybe') => {
-    return stop.votes.filter(v => v.vote === voteType).length;
-  };
+export const VotePanel = ({ planId, stopId, className = "" }: VotePanelProps) => {
+  const session = useSession();
+  const user = session?.user;
+  const { mutate: submitVote, isPending } = usePlanVote();
 
-  const getUserVote = () => {
-    return stop.votes.find(v => v.userId === currentUserId)?.vote;
+  const handleVote = (voteType: typeof voteOptions[number]['type']) => {
+    if (!user) return;
+    
+    submitVote({
+      plan_id: planId,
+      stop_id: stopId,
+      vote_type: voteType,
+      emoji_reaction: voteOptions.find(v => v.type === voteType)?.emoji
+    });
   };
 
   const { selectedIndex, handleKeyDown } = useKeyboardNavigation({
     itemCount: voteOptions.length,
-    onSelect: (index) => onVote(voteOptions[index].type),
+    onSelect: (index) => handleVote(voteOptions[index].type),
     loop: true
   });
 
@@ -49,11 +54,7 @@ export const VotePanel = ({ stop, onVote, currentUserId, className = "" }: VoteP
         </div>
         
         <div className="flex items-center space-x-2 text-sm">
-          {voteOptions.map((option) => (
-            <span key={option.type} className={option.color}>
-              {option.emoji} {getVoteCount(option.type)}
-            </span>
-          ))}
+          <span className="text-muted-foreground">Cast your vote</span>
         </div>
       </div>
       
@@ -63,18 +64,16 @@ export const VotePanel = ({ stop, onVote, currentUserId, className = "" }: VoteP
             key={option.type}
             onClick={(e) => {
               e.stopPropagation();
-              onVote(option.type);
+              handleVote(option.type);
             }}
+            disabled={isPending}
             className={`
               px-3 py-1 rounded-full text-xs font-medium transition-all duration-300
-              ${getUserVote() === option.type
-                ? 'bg-primary text-primary-foreground glow-primary'
-                : 'bg-secondary/40 text-secondary-foreground hover:bg-secondary/60'
-              }
+              bg-secondary/40 text-secondary-foreground hover:bg-secondary/60
+              disabled:opacity-50 disabled:cursor-not-allowed
               ${selectedIndex === index ? 'ring-2 ring-primary/50' : ''}
             `}
             role="radio"
-            aria-checked={getUserVote() === option.type}
             aria-label={`Vote ${option.label}`}
           >
             {option.emoji}

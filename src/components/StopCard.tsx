@@ -5,6 +5,7 @@ import { StopCardActions } from "./StopCardActions";
 
 interface PlanStop {
   id: string;
+  plan_id?: string;
   title: string;
   venue: string;
   description: string;
@@ -87,9 +88,8 @@ export const StopCard = ({
       {isSelected && (
         <div className="mt-4 pt-4 border-t border-border/30">
           <VotePanel
-            stop={stop}
-            onVote={onVote}
-            currentUserId="you"
+            planId={stop.plan_id || ""}
+            stopId={stop.id}
           />
         </div>
       )}

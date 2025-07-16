@@ -11,3 +11,12 @@ export const formatTimeRange = (startTime: string, endTime: string) => {
     return `${startTime} - ${endTime}`;
   }
 };
+
+export const formatTime = (timeString: string) => {
+  const date = new Date(timeString);
+  return date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+};
