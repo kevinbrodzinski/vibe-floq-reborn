@@ -2062,6 +2062,42 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          checkin_streak: number | null
+          created_at: string | null
+          favorite_locations: string[] | null
+          feedback_sentiment: Json | null
+          preferred_vibe: string | null
+          updated_at: string | null
+          user_id: string
+          vibe_color: string | null
+          vibe_strength: number | null
+        }
+        Insert: {
+          checkin_streak?: number | null
+          created_at?: string | null
+          favorite_locations?: string[] | null
+          feedback_sentiment?: Json | null
+          preferred_vibe?: string | null
+          updated_at?: string | null
+          user_id: string
+          vibe_color?: string | null
+          vibe_strength?: number | null
+        }
+        Update: {
+          checkin_streak?: number | null
+          created_at?: string | null
+          favorite_locations?: string[] | null
+          feedback_sentiment?: Json | null
+          preferred_vibe?: string | null
+          updated_at?: string | null
+          user_id?: string
+          vibe_color?: string | null
+          vibe_strength?: number | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           available_until: string | null
@@ -3522,6 +3558,15 @@ export type Database = {
           display_name: string
           avatar_url: string
           requested_at: string
+        }[]
+      }
+      get_plan_summary: {
+        Args: { p_plan_id: string }
+        Returns: {
+          plan_id: string
+          summary: string
+          summary_mode: string
+          created_at: string
         }[]
       }
       get_profile_stats: {
@@ -5155,6 +5200,10 @@ export type Database = {
       }
       update_user_activity_tracking: {
         Args: { p_floq_id: string; p_section?: string }
+        Returns: undefined
+      }
+      update_user_preferences_from_feedback: {
+        Args: { p_user_id: string; p_vibe: string; p_moment: string }
         Returns: undefined
       }
       update_username: {
