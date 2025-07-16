@@ -10,6 +10,7 @@ import { StopCardBase } from './StopCardBase'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { PlanStop } from '@/types/plan'
+import { TimelineGridSkeleton, DragOperationSkeleton } from './TimelineGridSkeleton'
 
 // Using PlanStop directly instead of duplicate interface
 
@@ -20,6 +21,7 @@ interface TimelineGridProps {
   activeParticipants?: any[]
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
   isOptimistic?: boolean
+  isDragOperationPending?: boolean
 }
 
 export function TimelineGrid({ 
@@ -28,7 +30,8 @@ export function TimelineGrid({
   endTime = '00:00',
   activeParticipants = [],
   connectionStatus = 'disconnected',
-  isOptimistic = false
+  isOptimistic = false,
+  isDragOperationPending = false
 }: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
@@ -116,12 +119,16 @@ export function TimelineGrid({
   }
 
   if (isLoading) {
+    return <TimelineGridSkeleton timeSlots={6} />
+  }
+
+  // Show drag operation loading overlay
+  if (isDragOperationPending) {
     return (
-      <div className="space-y-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-20 bg-muted/50 rounded-xl animate-pulse" />
-        ))}
-      </div>
+      <>
+        <TimelineGridSkeleton timeSlots={6} className="opacity-50" />
+        <DragOperationSkeleton />
+      </>
     )
   }
 

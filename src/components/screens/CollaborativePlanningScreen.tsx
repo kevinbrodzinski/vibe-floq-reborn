@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Search, Settings, Play, Users, MessageCircle } from "lucide-react";
+import { Search, Settings, Play, Users, MessageCircle, HelpCircle } from "lucide-react";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
+import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
 import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
@@ -42,6 +45,9 @@ export const CollaborativePlanningScreen = () => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSummaryEditModal, setShowSummaryEditModal] = useState(false);
   const [showNovaSuggestions, setShowNovaSuggestions] = useState(true);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isDragOperationPending, setIsDragOperationPending] = useState(false);
+  const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
   
   const {
     plan,
@@ -52,6 +58,72 @@ export const CollaborativePlanningScreen = () => {
     voteOnStop,
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
+
+  // Define functions first
+  const handleExecutePlan = async () => {
+    socialHaptics.vibeMatch();
+    await updatePlanMode('executing');
+    showOverlay('check-in', 'Plan execution started!');
+  };
+
+  const handleStopAdd = (timeSlot: string) => {
+    socialHaptics.gestureConfirm();
+    const newStop = {
+      title: "New Stop",
+      venue: "TBD",
+      description: "Add details",
+      startTime: timeSlot,
+      endTime: "22:00", // Default 2 hour duration
+      location: "TBD",
+      vibeMatch: 50,
+      status: 'suggested' as const,
+      color: "hsl(200 70% 60%)"
+    };
+    addStop(newStop);
+    showOverlay('stop-action', 'Stop created!');
+  };
+
+  const handleStopReorder = async (stopId: string, newIndex: number) => {
+    setIsDragOperationPending(true);
+    try {
+      const stopIndex = plan.stops.findIndex(s => s.id === stopId);
+      
+      if (stopIndex !== -1) {
+        await reorderStops(stopIndex, newIndex);
+      }
+      
+      showOverlay('stop-action', 'Timeline updated');
+    } finally {
+      setIsDragOperationPending(false);
+    }
+  };
+
+  const handleStopSelect = (stopId: string) => {
+    setSelectedStopIds(prev => 
+      prev.includes(stopId) 
+        ? prev.filter(id => id !== stopId)
+        : [...prev, stopId]
+    );
+  };
+
+  // Keyboard shortcuts
+  const { shortcuts } = useKeyboardShortcuts({
+    onAddStop: () => handleStopAdd("20:00"),
+    onDeleteStop: () => {
+      if (selectedStopIds.length > 0) {
+        selectedStopIds.forEach(stopId => removeStop(stopId));
+        setSelectedStopIds([]);
+      }
+    },
+    onExecutePlan: handleExecutePlan,
+    onToggleChat: () => setShowChat(!showChat),
+    onToggleSettings: () => console.log('Settings toggled'),
+    onSavePlan: () => console.log('Plan saved'),
+    onUndoAction: () => console.log('Undo'),
+    onRedoAction: () => console.log('Redo'),
+    onSearch: () => (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus(),
+    onHelp: () => setShowKeyboardHelp(true)
+  });
 
   // Mock collaboration state for now
   const collaborationParticipants = plan.participants;
@@ -167,28 +239,6 @@ export const CollaborativePlanningScreen = () => {
     showOverlay('stop-action', 'Stop added!');
   };
 
-  const handleStopAdd = (timeSlot: string) => {
-    socialHaptics.gestureConfirm();
-    const newStop = {
-      title: "New Stop",
-      venue: "TBD",
-      description: "Add details",
-      startTime: timeSlot,
-      endTime: "22:00", // Default 2 hour duration
-      location: "TBD",
-      vibeMatch: 50,
-      status: 'suggested' as const,
-      color: "hsl(200 70% 60%)"
-    };
-    addStop(newStop);
-    showOverlay('stop-action', 'Stop created!');
-  };
-
-  const handleExecutePlan = async () => {
-    socialHaptics.vibeMatch();
-    await updatePlanMode('executing');
-    showOverlay('check-in', 'Plan execution started!');
-  };
 
   const handleSendChatMessage = (content: string, type = 'message') => {
     // In a real app, this would send to Supabase
@@ -215,6 +265,13 @@ export const CollaborativePlanningScreen = () => {
       />
 
       {/* Chat will be integrated with existing PlanningChat */}
+
+      {/* Keyboard Shortcut Help */}
+      <KeyboardShortcutHelp
+        shortcuts={shortcuts}
+        isVisible={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
+      />
 
       {/* Social Pulse Overlay */}
       <SocialPulseOverlay isPlanning={planMode === 'planning'} currentPlan={plan} />
@@ -253,6 +310,13 @@ export const CollaborativePlanningScreen = () => {
               }`}
             >
               <MessageCircle size={20} />
+            </button>
+            <button 
+              onClick={() => setShowKeyboardHelp(true)}
+              className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300"
+              title="Keyboard shortcuts (?)"
+            >
+              <HelpCircle size={20} className="text-muted-foreground" />
             </button>
             <button className="p-2 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30 hover:bg-card/80 transition-all duration-300">
               <Settings size={20} className="text-muted-foreground" />
@@ -316,13 +380,17 @@ export const CollaborativePlanningScreen = () => {
                 }}
               />
               
-              <TimelineGrid
+              <MobileTimelineGrid
                 planId={plan.id}
                 startTime="18:00"
                 endTime="23:59"
                 activeParticipants={collaborationParticipants}
                 connectionStatus={connectionStatus}
                 isOptimistic={isOptimistic}
+                isDragOperationPending={isDragOperationPending}
+                onStopReorder={handleStopReorder}
+                onStopSelect={handleStopSelect}
+                selectedStopIds={selectedStopIds}
               />
 
               {/* Plan Summary Card - Finalized Mode */}
