@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Sparkles, Clock, MapPin, Users, TrendingUp, X, RefreshCw } from 'lucide-react'
 import { PlanStop } from '@/types/plan'
 
@@ -50,101 +50,115 @@ export function NovaSuggestions({
   const [suggestions, setSuggestions] = useState<TimeSlotSuggestion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const timeoutRef = useRef<NodeJS.Timeout>()
 
-  // Generate AI-powered suggestions
+  // Stable callback – only recreated when planId or refreshKey changes
   const generateSuggestions = useCallback(async () => {
     setIsLoading(true)
     
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    
     // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Mock AI suggestions based on existing stops and preferences
-    const mockSuggestions: TimeSlotSuggestion[] = [
-      {
-        id: 'nova-1',
-        startTime: '18:30',
-        endTime: '20:00',
-        title: 'Aperitivo at Catch LA',
-        venue: 'Catch LA',
-        location: 'West Hollywood',
-        reasons: [
-          {
-            type: 'optimal_timing',
-            confidence: 95,
-            description: 'Perfect timing for sunset views and happy hour pricing'
-          },
-          {
-            type: 'travel_efficiency', 
-            confidence: 88,
-            description: '12 minutes from your previous stop with optimal traffic flow'
-          },
-          {
-            type: 'crowd_patterns',
-            confidence: 92,
-            description: 'Low crowd density at this time - 73% booking availability'
-          }
-        ],
-        aiConfidence: 91,
-        estimatedCost: 35,
-        vibeMatch: 94,
-        category: 'dining'
-      },
-      {
-        id: 'nova-2',
-        startTime: '20:30',
-        endTime: '22:00',
-        title: 'Live Jazz at The Dresden',
-        venue: 'The Dresden',
-        location: 'Los Feliz',
-        reasons: [
-          {
-            type: 'popularity',
-            confidence: 89,
-            description: 'Trending 23% above average for your group demographics'
-          },
-          {
-            type: 'optimal_timing',
-            confidence: 96,
-            description: 'Live performance starts at 9 PM - ideal arrival window'
-          }
-        ],
-        aiConfidence: 87,
-        estimatedCost: 28,
-        vibeMatch: 89,
-        category: 'entertainment'
-      },
-      {
-        id: 'nova-3',
-        startTime: '22:30',
-        endTime: '00:30',
-        title: 'Late Night Bites at Night + Market',
-        venue: 'Night + Market',
-        location: 'Sunset Strip',
-        reasons: [
-          {
-            type: 'travel_efficiency',
-            confidence: 94,
-            description: 'Optimal route continuation - 8 min drive from Dresden'
-          },
-          {
-            type: 'crowd_patterns',
-            confidence: 85,
-            description: 'Kitchen stays open until 1 AM - avoid restaurant closing rush'
-          }
-        ],
-        aiConfidence: 89,
-        estimatedCost: 42,
-        vibeMatch: 86,
-        category: 'dining'
-      }
-    ]
-    
-    setSuggestions(mockSuggestions)
-    setIsLoading(false)
-  }, [existingStops, preferences, timeRange, participants])
+    timeoutRef.current = setTimeout(() => {
+      // Mock AI suggestions based on existing stops and preferences
+      const mockSuggestions: TimeSlotSuggestion[] = [
+        {
+          id: 'nova-1',
+          startTime: '18:30',
+          endTime: '20:00',
+          title: 'Aperitivo at Catch LA',
+          venue: 'Catch LA',
+          location: 'West Hollywood',
+          reasons: [
+            {
+              type: 'optimal_timing',
+              confidence: 95,
+              description: 'Perfect timing for sunset views and happy hour pricing'
+            },
+            {
+              type: 'travel_efficiency', 
+              confidence: 88,
+              description: '12 minutes from your previous stop with optimal traffic flow'
+            },
+            {
+              type: 'crowd_patterns',
+              confidence: 92,
+              description: 'Low crowd density at this time - 73% booking availability'
+            }
+          ],
+          aiConfidence: 91,
+          estimatedCost: 35,
+          vibeMatch: 94,
+          category: 'dining'
+        },
+        {
+          id: 'nova-2',
+          startTime: '20:30',
+          endTime: '22:00',
+          title: 'Live Jazz at The Dresden',
+          venue: 'The Dresden',
+          location: 'Los Feliz',
+          reasons: [
+            {
+              type: 'popularity',
+              confidence: 89,
+              description: 'Trending 23% above average for your group demographics'
+            },
+            {
+              type: 'optimal_timing',
+              confidence: 96,
+              description: 'Live performance starts at 9 PM - ideal arrival window'
+            }
+          ],
+          aiConfidence: 87,
+          estimatedCost: 28,
+          vibeMatch: 89,
+          category: 'entertainment'
+        },
+        {
+          id: 'nova-3',
+          startTime: '22:30',
+          endTime: '00:30',
+          title: 'Late Night Bites at Night + Market',
+          venue: 'Night + Market',
+          location: 'Sunset Strip',
+          reasons: [
+            {
+              type: 'travel_efficiency',
+              confidence: 94,
+              description: 'Optimal route continuation - 8 min drive from Dresden'
+            },
+            {
+              type: 'crowd_patterns',
+              confidence: 85,
+              description: 'Kitchen stays open until 1 AM - avoid restaurant closing rush'
+            }
+          ],
+          aiConfidence: 89,
+          estimatedCost: 42,
+          vibeMatch: 86,
+          category: 'dining'
+        }
+      ]
+      
+      setSuggestions(mockSuggestions)
+      setIsLoading(false)
+    }, 1500)
+  }, [planId, refreshKey])
 
+  // Only run on mount + manual refresh
   useEffect(() => {
     generateSuggestions()
+    // Cleanup: cancel pending timeout if unmounted
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
   }, [generateSuggestions])
 
   const getReasonIcon = (type: SuggestionReason['type']) => {
@@ -204,7 +218,7 @@ export function NovaSuggestions({
         
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
-            onClick={generateSuggestions}
+            onClick={() => setRefreshKey(k => k + 1)}
             className="p-2 hover:bg-muted/50 rounded-xl transition-colors"
             title="Refresh suggestions"
           >
