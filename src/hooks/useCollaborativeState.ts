@@ -18,7 +18,7 @@ const MOCK_PLAN: Plan = {
   date: "2024-07-16",
   status: "draft",
   creator_id: "current-user",
-  stops: process.env.NODE_ENV === 'development' ? [] : [], // Remove demo stops
+  stops: [], // Remove demo stops
   participants: [
     { id: "user-1", name: "Alex", avatar: "", status: "confirmed" },
     { id: "user-2", name: "Jamie", avatar: "", status: "pending" },

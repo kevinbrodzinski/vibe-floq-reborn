@@ -208,17 +208,25 @@ export function TimelineGrid({
     toastSuccess(suggestedSlot ? 'Stop added with AI suggestion' : 'Stop added')
   })
 
+  // Handle delete stop with optimistic updates
+  const handleDeleteStop = withErrorHandling(async (stopId: string) => {
+    try {
+      await syncChanges({
+        plan_id: planId,
+        changes: { type: 'delete_stop', data: { id: stopId } }
+      })
+      
+      socialHaptics.gestureConfirm()
+      toastSuccess('Stop deleted')
+    } catch (error) {
+      toastError('Failed to delete stop', 'Please try again')
+    }
+  })
+
   // Bulk operations
   const handleBulkDelete = () => {
     bulkDelete(stops, (stopId) => {
-      // Use update_stop with deleted flag or handle deletion differently
-      syncChanges({
-        plan_id: planId,
-        changes: {
-          type: 'update_stop',
-          data: { id: stopId, deleted: true }
-        }
-      })
+      handleDeleteStop(stopId)
     })
   }
 
@@ -388,6 +396,7 @@ export function TimelineGrid({
                 onStartResize={startResize}
                 onResize={handleResize}
                 onEndResize={endResize}
+                onDeleteStop={handleDeleteStop}
                 isOptimistic={isOptimistic}
                 getStopColor={getStopColor}
                 isStopConflicting={isStopConflicting}
@@ -447,6 +456,7 @@ function TimeSlot({
   onStartResize,
   onResize,
   onEndResize,
+  onDeleteStop,
   isOptimistic,
   getStopColor,
   isStopConflicting,
@@ -462,6 +472,7 @@ function TimeSlot({
   onStartResize: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize: (clientY: number) => number | undefined
   onEndResize: (clientY: number) => void
+  onDeleteStop: (stopId: string) => void
   isOptimistic?: boolean
   getStopColor?: (stop: PlanStop) => string
   isStopConflicting: (stopId: string) => boolean
@@ -486,21 +497,22 @@ function TimeSlot({
         {stops.length > 0 ? (
           <div className="space-y-2">
             {stops.map(stop => (
-              <ResizableStopCard 
-                key={stop.id} 
-                stop={stop}
-                planId={planId}
-                isSelected={selectedStops.has(stop.id)}
-                isResizing={resizingStop === stop.id}
-                hasConflict={isStopConflicting(stop.id)}
-                suggested={(stop as any).suggested}
-                allStops={allStops}
-                onSelect={onSelectStop}
-                onStartResize={onStartResize}
-                onResize={onResize}
-                onEndResize={onEndResize}
-                className={getStopColor?.(stop) ? `border-[${getStopColor(stop)}] bg-[${getStopColor(stop)}]/10` : undefined}
-              />
+               <ResizableStopCard 
+                 key={stop.id} 
+                 stop={stop}
+                 planId={planId}
+                 isSelected={selectedStops.has(stop.id)}
+                 isResizing={resizingStop === stop.id}
+                 hasConflict={isStopConflicting(stop.id)}
+                 suggested={(stop as any).suggested}
+                 allStops={allStops}
+                 onSelect={onSelectStop}
+                 onStartResize={onStartResize}
+                 onResize={onResize}
+                 onEndResize={onEndResize}
+                 onRemove={() => onDeleteStop(stop.id)}
+                 className={getStopColor?.(stop) ? `border-[${getStopColor(stop)}] bg-[${getStopColor(stop)}]/10` : undefined}
+               />
             ))}
           </div>
         ) : (

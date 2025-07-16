@@ -335,9 +335,9 @@ export function NovaSuggestions({
                 </div>
                 
                 <button
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation()
-                    onAcceptSuggestion(suggestion)
+                    await onAcceptSuggestion(suggestion)
                   }}
                   className="w-full bg-gradient-primary text-primary-foreground py-2 px-3 sm:px-4 rounded-xl font-medium hover:scale-[1.02] transition-transform text-sm sm:text-base"
                 >
