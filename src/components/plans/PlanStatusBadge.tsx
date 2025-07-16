@@ -37,10 +37,11 @@ export function PlanStatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        'border font-medium transition-all duration-200',
+        'border font-medium transition-all duration-500 transform',
         config.className,
         sizeClasses[size],
         withAnimation && 'animate-pulse transition-all duration-300',
+        'hover:scale-105', // Smooth hover animation
         className
       )}
       aria-label={`Plan status: ${config.label}`}

@@ -38,6 +38,7 @@ import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
 import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
 import { toastError } from '@/lib/toast';
+import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
@@ -87,12 +88,6 @@ export const CollaborativePlanningScreen = () => {
     })
   }
 
-  // Define functions first
-  const handleExecutePlan = async () => {
-    hapticFeedback.vibeMatch();
-    await updatePlanMode('executing');
-    showOverlay('check-in', 'Plan execution started!');
-  };
 
   const handleStopAdd = (timeSlot: string) => {
     // Check if plan can be edited - normalize status with fallback
@@ -159,7 +154,7 @@ export const CollaborativePlanningScreen = () => {
         setSelectedStopIds([]);
       }
     },
-    onExecutePlan: handleExecutePlan,
+    onExecutePlan: () => {}, // Handled by PlanStatusActions now
     onToggleChat: () => setShowChat(!showChat),
     onToggleSettings: () => console.log('Settings toggled'),
     onSavePlan: () => console.log('Plan saved'),
@@ -180,6 +175,15 @@ export const CollaborativePlanningScreen = () => {
 
   // Real-time presence tracking
   const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id);
+
+  // Auto-progression for plan completion
+  usePlanAutoProgression({
+    planId: plan.id,
+    planStatus: plan.status || 'draft',
+    stops: plan.stops,
+    isCreator: plan.createdBy === 'current-user',
+    enabled: true
+  });
 
   // Real-time sync hook for live collaboration
   const { isConnected, participantCount, planMode: syncedPlanMode, activeParticipants, updatePlanMode } = usePlanRealTimeSync(plan.id, {
@@ -512,18 +516,6 @@ export const CollaborativePlanningScreen = () => {
                 />
               )}
               
-              {/* Execute Plan Button */}
-              {plan.stops.length > 0 && (
-                <div className="text-center">
-                  <button
-                    onClick={handleExecutePlan}
-                    className="bg-gradient-primary text-primary-foreground px-8 py-4 rounded-3xl font-semibold text-lg transition-all duration-300 hover:scale-105 glow-primary flex items-center space-x-2 mx-auto"
-                  >
-                    <Play className="w-5 h-5" />
-                    <span>Execute Plan</span>
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Right Column - Venue Library & Chat */}
