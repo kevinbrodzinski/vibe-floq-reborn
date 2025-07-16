@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
-import { celebrationEffects } from '@/lib/confetti'
+import { celebrationEffects } from '@/lib/celebration'
 import { useFinalizePlan } from '@/hooks/useFinalizePlan'
 
 type PlanStatus = 'draft' | 'finalized' | 'executing' | 'completed' | 'cancelled'
