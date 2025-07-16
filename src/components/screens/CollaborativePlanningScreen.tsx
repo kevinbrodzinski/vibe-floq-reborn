@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
@@ -55,7 +55,7 @@ export const CollaborativePlanningScreen = () => {
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [isDragOperationPending, setIsDragOperationPending] = useState(false);
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
-  const [overlayTimeoutId, setOverlayTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const overlayTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const {
     plan,
@@ -220,23 +220,23 @@ export const CollaborativePlanningScreen = () => {
   });
 
   // Overlay feedback helper with auto-dismiss
-  const showOverlay = (action: typeof overlayAction, feedback: string, ms = 2500) => {
-    setOverlayAction(action);
-    setOverlayFeedback(feedback);
-    setShowExecutionOverlay(true);
-    
-    // Clear any existing timeout to prevent stacking
-    if (overlayTimeoutId) {
-      clearTimeout(overlayTimeoutId);
-    }
-    
-    // Auto-dismiss after specified time
-    const newTimeoutId = setTimeout(() => {
-      setShowExecutionOverlay(false);
-      setOverlayTimeoutId(null);
-    }, ms);
-    setOverlayTimeoutId(newTimeoutId);
-  };
+  const showOverlay = useCallback(
+    (action: typeof overlayAction, feedback: string, ms = 2500) => {
+      setOverlayAction(action);
+      setOverlayFeedback(feedback);
+      setShowExecutionOverlay(true);
+      
+      if (overlayTimeoutId.current) {
+        clearTimeout(overlayTimeoutId.current);
+      }
+      
+      overlayTimeoutId.current = setTimeout(() => {
+        setShowExecutionOverlay(false);
+        overlayTimeoutId.current = null;
+      }, ms);
+    },
+    []
+  );
 
   // Enhanced RSVP handler with persistence
   const handleRSVPChange = async (status: typeof currentUserRSVP) => {
@@ -286,11 +286,11 @@ export const CollaborativePlanningScreen = () => {
   // Cleanup overlay timeout on unmount
   useEffect(() => {
     return () => {
-      if (overlayTimeoutId) {
-        clearTimeout(overlayTimeoutId);
+      if (overlayTimeoutId.current) {
+        clearTimeout(overlayTimeoutId.current);
       }
     };
-  }, [overlayTimeoutId]);
+  }, []);
 
   const handleVenueSelect = (venue: any) => {
     // Check if plan can be edited - normalize status with fallback
