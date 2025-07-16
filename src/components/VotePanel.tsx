@@ -36,10 +36,14 @@ export const VotePanel = ({ planId, stopId, className = "" }: VotePanelProps) =>
     if (!user) return;
     
     setLastVoted(voteType);
+    
+    // Map complex vote types to simple up/down for compatibility
+    const mappedVoteType = ['love', 'like'].includes(voteType) ? 'up' : 'down'
+    
     submitVote({
       plan_id: planId,
       stop_id: stopId,
-      vote_type: voteType,
+      vote_type: mappedVoteType,
       emoji_reaction: voteOptions.find(v => v.type === voteType)?.emoji
     });
   };
