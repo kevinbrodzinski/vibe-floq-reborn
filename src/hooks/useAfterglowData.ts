@@ -32,6 +32,8 @@ export interface DailyAfterglowData {
   is_pinned: boolean
   created_at: string
   regenerated_at?: string
+  ai_summary?: string
+  ai_summary_generated_at?: string
 }
 
 export function useAfterglowData(date: string) {

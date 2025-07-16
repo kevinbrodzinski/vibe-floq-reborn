@@ -80,6 +80,20 @@ export function useRealtimeAfterglowData(date: string) {
           }
         }
       )
+      .on(
+        'broadcast',
+        { event: 'ai_summary_generated' },
+        (payload) => {
+          console.log('AI summary generated:', payload)
+          
+          // Update the afterglow with the new AI summary
+          setAfterglow(prev => prev ? {
+            ...prev,
+            ai_summary: payload.payload.ai_summary,
+            ai_summary_generated_at: new Date().toISOString()
+          } : prev)
+        }
+      )
       .subscribe()
 
     return () => {

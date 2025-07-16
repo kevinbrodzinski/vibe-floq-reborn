@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.get_hotspots]
 verify_jwt = true
+
+[functions.generate-afterglow-summary]
+verify_jwt = true

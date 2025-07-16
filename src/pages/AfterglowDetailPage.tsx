@@ -16,6 +16,8 @@ import {
 import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
+import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
+import { useAISummary } from '@/hooks/useAISummary';
 
 // This component is now replaced by ParallaxMoment
 
@@ -25,6 +27,7 @@ export default function AfterglowDetailPage() {
   const { mutate: togglePinned } = useTogglePinned();
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReduced = usePrefersReducedMotion();
+  const { generateSummary, isGenerating: isGeneratingSummary } = useAISummary();
   
   if (!afterglowId) {
     return (
@@ -47,6 +50,11 @@ export default function AfterglowDetailPage() {
       id: data.afterglow.id, 
       pinned: !data.afterglow.is_pinned 
     })
+  }
+
+  const handleGenerateSummary = async () => {
+    if (!data?.afterglow) return
+    await generateSummary(data.afterglow.id)
   }
 
   if (isLoading) {
@@ -128,6 +136,13 @@ export default function AfterglowDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* AI Summary */}
+      <AISummaryChip
+        summary={afterglow.ai_summary}
+        isGenerating={isGeneratingSummary}
+        onGenerate={handleGenerateSummary}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

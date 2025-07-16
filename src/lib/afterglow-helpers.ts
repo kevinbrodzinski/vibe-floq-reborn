@@ -27,6 +27,8 @@ export interface AfterglowDetail {
     is_pinned: boolean;
     created_at: string;
     peak_vibe_time?: string;
+    ai_summary?: string;
+    ai_summary_generated_at?: string;
   };
   moments: AfterglowMoment[];
 }
