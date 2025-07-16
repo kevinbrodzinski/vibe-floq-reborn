@@ -1,8 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { z } from 'zod';
 
 export type SummaryMode = 'finalized' | 'afterglow';
+
+// Zod schema for validation
+const PlanSummarySchema = z.object({
+  id: z.string(),
+  plan_id: z.string(),
+  mode: z.enum(['finalized', 'afterglow']),
+  summary: z.string(),
+  generated_at: z.string(),
+  created_at: z.string(),
+});
 
 export interface PlanSummary {
   id: string;
@@ -24,7 +35,8 @@ export function usePlanSummaries(planId: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PlanSummary[];
+      // Validate data shape before return
+      return z.array(PlanSummarySchema).parse(data);
     },
     enabled: !!planId,
   });
@@ -42,7 +54,8 @@ export function usePlanSummary(planId: string, mode: SummaryMode) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as PlanSummary | null;
+      // Validate data shape if it exists
+      return data ? PlanSummarySchema.parse(data) : null;
     },
     enabled: !!planId && !!mode,
   });
@@ -60,8 +73,13 @@ export function useGeneratePlanSummary() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, { planId }) => {
+    onSuccess: (_, { planId, mode }) => {
+      // Optimistic update to show immediate feedback
+      queryClient.setQueryData(['plan-summary', planId, mode], (old: PlanSummary | null) => 
+        old ? { ...old, generated_at: new Date().toISOString() } : null
+      );
       queryClient.invalidateQueries({ queryKey: ['plan-summaries', planId] });
+      queryClient.invalidateQueries({ queryKey: ['plan-summary', planId, mode] });
       toast({
         title: 'Summary Generated',
         description: 'Your plan summary has been created successfully!',
@@ -103,8 +121,13 @@ export function useUpdatePlanSummary() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, { planId }) => {
+    onSuccess: (result, { planId, mode, summary }) => {
+      // Optimistic update for immediate feedback
+      queryClient.setQueryData(['plan-summary', planId, mode], (old: PlanSummary | null) => 
+        old ? { ...old, summary, generated_at: new Date().toISOString() } : null
+      );
       queryClient.invalidateQueries({ queryKey: ['plan-summaries', planId] });
+      queryClient.invalidateQueries({ queryKey: ['plan-summary', planId, mode] });
       toast({
         title: 'Summary Updated',
         description: 'Your changes have been saved!',

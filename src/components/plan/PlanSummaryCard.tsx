@@ -61,10 +61,15 @@ export function PlanSummaryCard({
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-2" />
-                Generate Summary
+                {error ? 'Retry Generate' : 'Generate Summary'}
               </>
             )}
           </Button>
+          {error && (
+            <p className="text-xs text-destructive mt-2">
+              Generation failed. Please try again.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -102,7 +107,10 @@ export function PlanSummaryCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="text-sm leading-relaxed whitespace-pre-line">
+        <CardContent 
+          className="text-sm leading-relaxed whitespace-pre-line" 
+          aria-live="polite"
+        >
           {summary.summary}
         </CardContent>
       </Card>

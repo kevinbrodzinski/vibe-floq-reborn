@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -18,10 +18,28 @@ export function PlanSummaryEditModal({
   onClose 
 }: PlanSummaryEditModalProps) {
   const [value, setValue] = useState(summary);
+  const [hasChanged, setHasChanged] = useState(false);
   const updateSummary = useUpdatePlanSummary();
 
+  // Track changes
+  useEffect(() => {
+    setHasChanged(value.trim() !== summary.trim());
+  }, [value, summary]);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const handleSave = async () => {
-    if (value.trim()) {
+    if (value.trim() && hasChanged) {
       await updateSummary.mutateAsync({
         planId,
         mode,
@@ -55,7 +73,8 @@ export function PlanSummaryEditModal({
             </Button>
             <Button 
               onClick={handleSave}
-              disabled={updateSummary.isPending || !value.trim()}
+              disabled={updateSummary.isPending || !value.trim() || !hasChanged}
+              title={!hasChanged ? "No changes to save" : undefined}
             >
               {updateSummary.isPending ? 'Saving...' : 'Save'}
             </Button>
