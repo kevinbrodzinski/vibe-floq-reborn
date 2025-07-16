@@ -67,7 +67,7 @@ export function StopCardBase({
             {stop.hasConflict && (
               <AlertTriangle 
                 className="w-4 h-4 text-destructive" 
-                title="Time conflict with another stop"
+                aria-label="Time conflict with another stop"
               />
             )}
           </div>
