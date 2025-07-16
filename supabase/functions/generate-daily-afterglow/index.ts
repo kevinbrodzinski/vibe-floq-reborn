@@ -97,20 +97,36 @@ Deno.serve(async (req) => {
   }
 })
 
-async function sendProgressUpdate(supabase: any, userId: string, step: string, progress: number, message?: string) {
+// Cache per-user progress channels across function invocations
+const progressChannels = new Map<string, any>()
+
+function getProgressChannel(supabase: any, userId: string) {
+  if (!progressChannels.has(userId)) {
+    const ch = supabase.channel(`progress-${userId}`)
+    progressChannels.set(userId, ch)
+    // Subscribe once
+    ch.subscribe()
+  }
+  return progressChannels.get(userId)!
+}
+
+async function sendProgressUpdate(userId: string, step: string, progress: number, message?: string): Promise<void> {
   try {
-    await supabase
-      .channel(`progress-${userId}`)
-      .send({
-        type: 'broadcast',
-        event: 'afterglow_progress',
-        payload: {
-          step,
-          progress,
-          status: progress >= 100 ? 'completed' : 'in_progress',
-          message
-        }
-      })
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+    
+    await getProgressChannel(supabase, userId).send({
+      type: 'broadcast',
+      event: 'afterglow_progress',
+      payload: {
+        step,
+        progress,
+        status: progress >= 100 ? 'completed' : 'in_progress',
+        message
+      }
+    })
   } catch (error) {
     console.error('Failed to send progress update:', error)
   }
@@ -127,7 +143,7 @@ async function generateAfterglowForUser(
   const endOfDay = `${date}T23:59:59`
 
   // Send initial progress
-  await sendProgressUpdate(supabase, userId, 'Collecting Data', 10, 'Gathering your day\'s activities...')
+  await sendProgressUpdate(userId, 'Collecting Data', 10, 'Gathering your day\'s activities...')
 
   // 1. Get vibe state changes throughout the day
   const { data: vibeStates } = await supabase
@@ -138,7 +154,7 @@ async function generateAfterglowForUser(
     .lte('started_at', endOfDay)
     .order('started_at')
 
-  await sendProgressUpdate(supabase, userId, 'Collecting Data', 25, 'Found your vibe changes...')
+  await sendProgressUpdate(userId, 'Collecting Data', 25, 'Found your vibe changes...')
 
   // 2. Get venue presence data
   const { data: venuePresence } = await supabase
@@ -149,7 +165,7 @@ async function generateAfterglowForUser(
     .lte('checked_in_at', endOfDay)
     .order('checked_in_at')
 
-  await sendProgressUpdate(supabase, userId, 'Collecting Data', 40, 'Analyzing venue visits...')
+  await sendProgressUpdate(userId, 'Collecting Data', 40, 'Analyzing venue visits...')
 
   // 3. Get floq participation
   const { data: floqParticipation } = await supabase
@@ -177,10 +193,10 @@ async function generateAfterglowForUser(
     .gte('detected_at', startOfDay)
     .lte('detected_at', endOfDay)
 
-  await sendProgressUpdate(supabase, userId, 'Social Connections', 60, 'Calculating crossed paths...')
+  await sendProgressUpdate(userId, 'Social Connections', 60, 'Calculating crossed paths...')
 
   // 6. Process data into moments and metrics
-  await sendProgressUpdate(supabase, userId, 'Generating Moments', 75, 'Creating your story...')
+  await sendProgressUpdate(userId, 'Generating Moments', 75, 'Creating your story...')
   
   const moments: AfterglowMoment[] = []
   const vibePath: string[] = []
@@ -300,7 +316,7 @@ async function generateAfterglowForUser(
   // Sort moments by timestamp
   moments.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
-  await sendProgressUpdate(supabase, userId, 'Finalizing', 90, 'Saving your afterglow...')
+  await sendProgressUpdate(userId, 'Finalizing', 90, 'Saving your afterglow...')
 
   const afterglowData: DailyAfterglowData = {
     user_id: userId,
@@ -336,7 +352,7 @@ async function generateAfterglowForUser(
     throw error
   }
 
-  await sendProgressUpdate(supabase, userId, 'Complete', 100, 'Your afterglow is ready!')
+  await sendProgressUpdate(userId, 'Complete', 100, 'Your afterglow is ready!')
   
   console.log(`Generated afterglow for ${userId} on ${date}: ${moments.length} moments, ${energyScore} energy`)
   return afterglowData

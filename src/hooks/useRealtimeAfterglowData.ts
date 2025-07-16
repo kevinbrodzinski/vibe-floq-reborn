@@ -23,75 +23,34 @@ export function useRealtimeAfterglowData(date: string) {
 
     // Subscribe to daily_afterglow changes
     const afterglowChannel = supabase
-      .channel(`afterglow-${date}-${user.id}`)
+      .channel(`afterglow-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'daily_afterglow',
-          filter: `user_id=eq.${user.id},date=eq.${date}`
+          filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New afterglow created:', payload)
+          if (payload.new?.date !== date) return // Secondary filter for date
+          
+          console.log('Afterglow changed:', payload)
           setAfterglow(payload.new as DailyAfterglowData)
           setIsGenerating(false)
           setGenerationProgress(null)
           
-          toast({
-            title: "Afterglow Ready! ✨",
-            description: "Your daily afterglow has been generated and is ready to view.",
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'daily_afterglow',
-          filter: `user_id=eq.${user.id},date=eq.${date}`
-        },
-        (payload) => {
-          console.log('Afterglow updated:', payload)
-          setAfterglow(payload.new as DailyAfterglowData)
-          
-          // If regenerated_at was updated, show notification
-          if (payload.new.regenerated_at !== payload.old.regenerated_at) {
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "Afterglow Ready! ✨",
+              description: "Your daily afterglow has been generated and is ready to view.",
+            })
+          } else if (payload.eventType === 'UPDATE' && payload.new.regenerated_at !== payload.old?.regenerated_at) {
             toast({
               title: "Afterglow Updated! 🔄",
               description: "Your afterglow has been refreshed with new data.",
             })
           }
-        }
-      )
-      .subscribe()
-
-    // Subscribe to afterglow_moments changes
-    const momentsChannel = supabase
-      .channel(`moments-${date}-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'afterglow_moments',
-          filter: `daily_afterglow_id=eq.${afterglow?.id}`
-        },
-        (payload) => {
-          console.log('New moment added:', payload)
-          setAfterglow(prev => {
-            if (!prev) return prev
-            return {
-              ...prev,
-              moments: [...(prev.moments || []), payload.new as AfterglowMoment]
-            }
-          })
-          
-          toast({
-            title: "New Moment Added! 🎭",
-            description: `${payload.new.title} has been added to your afterglow.`,
-          })
         }
       )
       .subscribe()
@@ -115,7 +74,7 @@ export function useRealtimeAfterglowData(date: string) {
             setGenerationProgress(null)
             toast({
               title: "Generation Failed",
-              description: progress.message || "Failed to generate afterglow. Please try again.",
+              description: String(progress.message || "Failed to generate afterglow. Please try again."),
               variant: "destructive"
             })
           }
@@ -124,13 +83,49 @@ export function useRealtimeAfterglowData(date: string) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(afterglowChannel)
-      supabase.removeChannel(momentsChannel) 
-      supabase.removeChannel(progressChannel)
+      void supabase.removeChannel(afterglowChannel)
+      void supabase.removeChannel(progressChannel)
     }
-  }, [user?.id, date, afterglow?.id, toast])
+  }, [user?.id, date, toast])
 
-  const startGeneration = () => {
+  // Separate effect for moments subscription that depends on afterglow.id
+  useEffect(() => {
+    if (!afterglow?.id) return
+
+    const momentsChannel = supabase
+      .channel(`moments-${afterglow.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'afterglow_moments',
+          filter: `daily_afterglow_id=eq.${afterglow.id}`
+        },
+        (payload) => {
+          console.log('New moment added:', payload)
+          setAfterglow(prev => {
+            if (!prev) return prev
+            return {
+              ...prev,
+              moments: [...(prev.moments || []), payload.new as AfterglowMoment]
+            }
+          })
+          
+          toast({
+            title: "New Moment Added! 🎭",
+            description: String(payload.new.title) + " has been added to your afterglow.",
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(momentsChannel)
+    }
+  }, [afterglow?.id, toast])
+
+  const startGeneration = (): void => {
     setIsGenerating(true)
     setGenerationProgress({
       step: 'Initializing',

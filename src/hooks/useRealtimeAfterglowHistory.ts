@@ -65,11 +65,12 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
           setHistory(prev => {
             // Insert new item and maintain sort order
             const newHistory = [newAfterglow, ...prev.filter(item => item.id !== newAfterglow.id)]
-            return newHistory.slice(0, limit) // Maintain limit
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            return newHistory.slice(0, limit) // Maintain limit after sorting
           })
           
           // Show notification for newly completed afterglows
-          const today = new Date().toISOString().split('T')[0]
+          const today = new Date().toLocaleDateString('en-CA') // Use consistent date format
           if (newAfterglow.date === today) {
             toast({
               title: "Today's Afterglow Complete! 🌟",
@@ -90,17 +91,18 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
           console.log('Afterglow updated in history:', payload)
           const updatedAfterglow = payload.new as DailyAfterglowData
           
-          setHistory(prev => 
-            prev.map(item => 
+          setHistory(prev => {
+            const updated = prev.map(item => 
               item.id === updatedAfterglow.id ? updatedAfterglow : item
-            )
-          )
+            ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            return updated.slice(0, limit) // Maintain limit after update
+          })
         }
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      void supabase.removeChannel(channel)
     }
   }, [user?.id, limit, toast])
 

@@ -43,11 +43,11 @@ export function useAfterglowData(date: string) {
     afterglow, 
     setAfterglow, 
     generationProgress, 
-    isGenerating: realtimeIsGenerating,
+    isGenerating,
     startGeneration
   } = useRealtimeAfterglowData(date)
   
-  const [isGenerating, setIsGenerating] = useState(false)
+  
 
   const fetchAfterglow = async () => {
     if (!user) return
@@ -82,7 +82,7 @@ export function useAfterglowData(date: string) {
     // Don't regenerate if data exists and force is false
     if (afterglow && !force) return
 
-    setIsGenerating(true)
+    
     setError(null)
     startGeneration() // Start real-time progress tracking
 
@@ -105,7 +105,7 @@ export function useAfterglowData(date: string) {
     } catch (err) {
       console.error('Error generating afterglow:', err)
       setError(err instanceof Error ? err.message : 'Failed to generate afterglow')
-      setIsGenerating(false)
+      
     }
   }
 
@@ -159,7 +159,7 @@ export function useAfterglowData(date: string) {
   return {
     afterglow,
     isLoading,
-    isGenerating: isGenerating || realtimeIsGenerating,
+    isGenerating,
     generationProgress,
     error,
     generateAfterglow,
