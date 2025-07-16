@@ -62,14 +62,21 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
           // Track current user's presence
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            await channel.track({
-              user_id: user.id,
-              username: 'Current User', // Would come from profile
-              display_name: 'Current User',
-              avatar_url: '',
-              activity: 'timeline',
-              check_in_status: 'offline'
-            });
+          // Get user profile data
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, display_name, avatar_url')
+            .eq('id', user.id)
+            .single();
+
+          await channel.track({
+            user_id: user.id,
+            username: profile?.username || 'Anonymous',
+            display_name: profile?.display_name || profile?.username || 'Anonymous',
+            avatar_url: profile?.avatar_url || '',
+            activity: 'timeline',
+            check_in_status: 'offline'
+          });
           }
         }
       });

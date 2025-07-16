@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UsePlanRealTimeSyncOptions {
   onParticipantJoin?: (participant: any) => void;
@@ -17,9 +18,67 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
   const [participantCount, setParticipantCount] = useState(0);
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
   const [activeParticipants, setActiveParticipants] = useState<any[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
+  
+  const queryClient = useQueryClient();
+  const channelsRef = useRef<any[]>([]);
+
+  // Enhanced cleanup and connection management
+  const cleanupChannels = useCallback(() => {
+    channelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    channelsRef.current = [];
+  }, []);
+
+  // Optimized data fetching with caching
+  const fetchParticipantCount = useCallback(async () => {
+    try {
+      const { count } = await supabase
+        .from('plan_participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('plan_id', planId);
+      
+      setParticipantCount(count || 0);
+      
+      // Invalidate related queries for real-time updates
+      queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
+    } catch (error) {
+      console.error('Failed to fetch participant count:', error);
+    }
+  }, [planId, queryClient]);
+
+  const fetchActiveParticipants = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('plan_participants')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('plan_id', planId);
+      
+      setActiveParticipants(data || []);
+      
+      // Cache for performance
+      queryClient.setQueryData(['plan-participants', planId], data);
+    } catch (error) {
+      console.error('Failed to fetch active participants:', error);
+    }
+  }, [planId, queryClient]);
 
   useEffect(() => {
     if (!planId) return;
+
+    setConnectionStatus('connecting');
+    
+    // Clean up existing channels
+    cleanupChannels();
 
     // Subscribe to plan participants changes
     const participantsChannel = supabase
@@ -45,6 +104,7 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
       )
       .subscribe((status) => {
         setIsConnected(status === 'SUBSCRIBED');
+        setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
       });
 
     // Subscribe to plan votes changes
@@ -116,44 +176,26 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
       )
       .subscribe();
 
+    // Store channels for cleanup
+    channelsRef.current = [participantsChannel, votesChannel, stopsChannel, chatChannel, rsvpChannel];
+
     // Initial data fetch
     fetchParticipantCount();
     fetchActiveParticipants();
 
-    async function fetchParticipantCount() {
-      const { count } = await supabase
-        .from('plan_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('plan_id', planId);
-      
-      setParticipantCount(count || 0);
-    }
-
-    async function fetchActiveParticipants() {
-      const { data } = await supabase
-        .from('plan_participants')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('plan_id', planId);
-      
-      setActiveParticipants(data || []);
-    }
+    // Connection error handling
+    const handleConnectionError = () => {
+      setConnectionStatus('error');
+      setTimeout(() => {
+        setConnectionStatus('connecting');
+        // Could implement retry logic here
+      }, 5000);
+    };
 
     return () => {
-      supabase.removeChannel(participantsChannel);
-      supabase.removeChannel(votesChannel);
-      supabase.removeChannel(stopsChannel);
-      supabase.removeChannel(chatChannel);
-      supabase.removeChannel(rsvpChannel);
+      cleanupChannels();
     };
-  }, [planId, options]);
+  }, [planId, options, fetchParticipantCount, fetchActiveParticipants, cleanupChannels]);
 
   // Function to update plan mode
   const updatePlanMode = async (newMode: 'planning' | 'executing') => {
@@ -186,7 +228,10 @@ export function usePlanRealTimeSync(planId: string, options: UsePlanRealTimeSync
     participantCount,
     planMode,
     activeParticipants,
+    connectionStatus,
     updatePlanMode,
     broadcastTyping,
+    fetchParticipantCount,
+    fetchActiveParticipants,
   };
 }

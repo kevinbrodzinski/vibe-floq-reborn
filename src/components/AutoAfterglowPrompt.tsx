@@ -3,6 +3,7 @@ import { Sparkles, Clock, ArrowRight, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { TimeProgressBar } from "@/components/ExecutionFeedbackUtils";
 
 interface AutoAfterglowPromptProps {
   planId: string;
@@ -77,14 +78,14 @@ export const AutoAfterglowPrompt = ({
             </p>
           </div>
 
-          {/* Countdown */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span>Auto-starting in {countdown}s</span>
-            </div>
-            <Progress value={progress} className="h-1" />
-          </div>
+           {/* Countdown */}
+           <div className="space-y-2">
+             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+               <Clock className="w-4 h-4" />
+               <span>Auto-starting in {countdown}s</span>
+             </div>
+             <TimeProgressBar progress={progress} label="Afterglow starting..." />
+           </div>
 
           {/* Actions */}
           <div className="space-y-3">

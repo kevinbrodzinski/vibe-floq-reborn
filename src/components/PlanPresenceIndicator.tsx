@@ -1,109 +1,75 @@
-import { useState, useEffect } from 'react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Wifi } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Wifi, WifiOff } from 'lucide-react';
 
 interface Participant {
   id: string;
   name: string;
-  avatar: string;
-  status: 'online' | 'idle' | 'offline';
-  lastActivity: number;
+  username?: string;
+  avatar_url?: string;
+  isOnline?: boolean;
 }
 
 interface PlanPresenceIndicatorProps {
   participants: Participant[];
-  isConnected: boolean;
+  isConnected?: boolean;
+  maxVisible?: number;
   className?: string;
 }
 
-export const PlanPresenceIndicator = ({
-  participants,
-  isConnected,
-  className = ""
-}: PlanPresenceIndicatorProps) => {
-  const [visibleParticipants, setVisibleParticipants] = useState<Participant[]>([]);
-  const maxVisible = 4;
-  
-  const onlineParticipants = participants.filter(p => p.status === 'online');
-  const totalOnline = onlineParticipants.length;
-  const overflow = Math.max(0, totalOnline - maxVisible);
-
-  useEffect(() => {
-    // Show most recently active participants first
-    const sorted = onlineParticipants
-      .sort((a, b) => b.lastActivity - a.lastActivity)
-      .slice(0, maxVisible);
-    setVisibleParticipants(sorted);
-  }, [participants]);
-
-  if (totalOnline === 0) {
-    return (
-      <div className={`flex items-center space-x-2 text-muted-foreground ${className}`}>
-        <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-red-400'}`} />
-        <span className="text-sm">Waiting for participants...</span>
-      </div>
-    );
-  }
+export function PlanPresenceIndicator({ 
+  participants, 
+  isConnected = false, 
+  maxVisible = 5,
+  className = '' 
+}: PlanPresenceIndicatorProps) {
+  const visibleParticipants = participants.slice(0, maxVisible);
+  const extraCount = participants.length - visibleParticipants.length;
+  const onlineCount = participants.filter(p => p.isOnline).length;
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      {/* Connection status */}
-      <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-red-400'}`} />
-      
-      {/* Live avatars */}
-      <div className="flex items-center -space-x-2">
-        <AnimatePresence>
-          {visibleParticipants.map((participant, index) => (
-            <motion.div
-              key={participant.id}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="relative"
-            >
-              <Avatar className="w-8 h-8 border-2 border-background ring-2 ring-green-400/50">
-                <AvatarImage src={participant.avatar} alt={participant.name} />
-                <AvatarFallback className="text-xs">
-                  {participant.name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              
-              {/* Online indicator */}
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ 
-                  duration: 2, 
-                  repeat: Infinity,
-                  ease: "easeInOut" 
-                }}
-                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-background"
-              />
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        
-        {/* Overflow indicator */}
-        {overflow > 0 && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="flex items-center justify-center w-8 h-8 bg-muted text-muted-foreground rounded-full border-2 border-background text-xs font-medium"
-          >
-            +{overflow}
-          </motion.div>
+      {/* Connection Status */}
+      <div className="flex items-center space-x-1">
+        {isConnected ? (
+          <Wifi className="h-3 w-3 text-green-500" />
+        ) : (
+          <WifiOff className="h-3 w-3 text-red-500" />
         )}
+        <span className="text-xs text-muted-foreground">
+          {onlineCount}/{participants.length} online
+        </span>
       </div>
 
-      {/* Count and status */}
-      <div className="flex items-center space-x-1 text-sm">
-        <Users className="w-4 h-4 text-muted-foreground" />
-        <span className="text-foreground font-medium">{totalOnline}</span>
-        <span className="text-muted-foreground">
-          {totalOnline === 1 ? 'person' : 'people'} planning
-        </span>
+      {/* Avatar Group */}
+      <div className="flex items-center space-x-[-0.5rem]">
+        {visibleParticipants.map((participant, index) => (
+          <div key={participant.id} className="relative" style={{ zIndex: maxVisible - index }}>
+            <Avatar className="h-6 w-6 border-2 border-background">
+              {participant.avatar_url ? (
+                <AvatarImage src={participant.avatar_url} alt={participant.name} />
+              ) : (
+                <AvatarFallback className="text-xs">
+                  {participant.name?.charAt(0)?.toUpperCase() || 
+                   participant.username?.charAt(0)?.toUpperCase() || 
+                   '?'}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            {/* Online status indicator */}
+            {participant.isOnline && (
+              <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 bg-green-500 border border-background rounded-full" />
+            )}
+          </div>
+        ))}
+        
+        {/* Extra count badge */}
+        {extraCount > 0 && (
+          <Badge variant="secondary" className="h-6 w-6 p-0 text-xs flex items-center justify-center ml-1">
+            +{extraCount}
+          </Badge>
+        )}
       </div>
     </div>
   );
-};
+}

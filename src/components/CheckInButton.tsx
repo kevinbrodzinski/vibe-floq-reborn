@@ -2,6 +2,8 @@ import { MapPin, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCheckInStatus } from '@/hooks/useCheckInStatus';
 import { useCheckInToggle } from '@/hooks/useCheckInToggle';
+import { LoadingOverlay } from '@/components/ExecutionFeedbackUtils';
+import { useState } from 'react';
 
 interface CheckInButtonProps {
   planId: string;
@@ -22,6 +24,7 @@ export const CheckInButton = ({
 }: CheckInButtonProps) => {
   const { data: checkInStatus } = useCheckInStatus(planId, stopId)
   const checkInToggle = useCheckInToggle()
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
   
   const checkedIn = !!checkInStatus
   const isLoading = checkInToggle.isPending
@@ -35,6 +38,10 @@ export const CheckInButton = ({
         stopId,
         isCheckedIn: checkedIn
       })
+      
+      // Show success feedback
+      setShowSuccessOverlay(true)
+      setTimeout(() => setShowSuccessOverlay(false), 1500)
       
       onCheckInChange?.(!checkedIn)
     } catch (error) {
@@ -91,14 +98,24 @@ export const CheckInButton = ({
   };
 
   return (
-    <Button
-      variant={getButtonVariant()}
-      size={size}
-      onClick={handleCheckIn}
-      disabled={isLoading}
-      className={`${getButtonClasses()} ${className}`}
-    >
-      {getButtonContent()}
-    </Button>
+    <div className="relative">
+      <Button
+        variant={getButtonVariant()}
+        size={size}
+        onClick={handleCheckIn}
+        disabled={isLoading}
+        className={`${getButtonClasses()} ${className}`}
+      >
+        {getButtonContent()}
+      </Button>
+      
+      {/* Loading Overlay */}
+      {isLoading && (
+        <LoadingOverlay 
+          label={checkedIn ? 'Checking out...' : 'Checking in...'} 
+          variant="minimal" 
+        />
+      )}
+    </div>
   );
 };
