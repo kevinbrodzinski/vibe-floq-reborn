@@ -5,8 +5,11 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
+import { useStopResize } from '@/hooks/useStopResize'
+import { useStopSelection } from '@/hooks/useStopSelection'
 import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
-import { StopCardBase } from './StopCardBase'
+import { ResizableStopCard } from './ResizableStopCard'
+import { BulkActionsToolbar } from './BulkActionsToolbar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import type { PlanStop } from '@/types/plan'
@@ -36,6 +39,31 @@ export function TimelineGrid({
   const [activeId, setActiveId] = useState<string | null>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
+
+  // Stop selection
+  const {
+    selectedStops,
+    toggleSelection,
+    selectRange,
+    clearSelection,
+    bulkDelete,
+    bulkMove,
+    bulkDuplicate,
+    hasSelection
+  } = useStopSelection()
+
+  // Stop resizing
+  const { resizingStop, startResize, handleResize, endResize } = useStopResize({
+    onUpdateDuration: (stopId: string, duration: number) => {
+      syncChanges({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: { id: stopId, duration_minutes: duration }
+        }
+      })
+    }
+  })
 
   // Generate time blocks based on window with safety guards
   const timeBlocks = useMemo(() => {
@@ -118,6 +146,78 @@ export function TimelineGrid({
     })
   }
 
+  // Bulk operations
+  const handleBulkDelete = () => {
+    bulkDelete(stops, (stopId) => {
+      // Use update_stop with deleted flag or handle deletion differently
+      syncChanges({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: { id: stopId, deleted: true }
+        }
+      })
+    })
+  }
+
+  const handleBulkDuplicate = () => {
+    bulkDuplicate((stopId) => {
+      const originalStop = stops.find(s => s.id === stopId)
+      if (originalStop) {
+        syncChanges({
+          plan_id: planId,
+          changes: {
+            type: 'update_stop',
+            data: {
+              ...originalStop,
+              title: `${originalStop.title} (Copy)`,
+              stop_order: stops.length
+            }
+          }
+        })
+      }
+    })
+  }
+
+  const handleBulkMove = () => {
+    // For now, just move to next hour
+    const nextHour = new Date()
+    nextHour.setHours(nextHour.getHours() + 1)
+    const timeString = nextHour.toTimeString().slice(0, 5)
+    
+    bulkMove(timeString, (stopId, newTime) => {
+      syncChanges({
+        plan_id: planId,
+        changes: {
+          type: 'update_stop',
+          data: { id: stopId, start_time: newTime }
+        }
+      })
+    })
+  }
+
+  const handleBulkReschedule = () => {
+    // Simple reschedule - add 30 minutes to each
+    selectedStops.forEach(stopId => {
+      const stop = stops.find(s => s.id === stopId)
+      if (stop?.start_time) {
+        const [hours, minutes] = stop.start_time.split(':').map(Number)
+        const newTime = new Date()
+        newTime.setHours(hours, minutes + 30)
+        const timeString = newTime.toTimeString().slice(0, 5)
+        
+        syncChanges({
+          plan_id: planId,
+          changes: {
+            type: 'update_stop',
+            data: { id: stopId, start_time: timeString }
+          }
+        })
+      }
+    })
+    clearSelection()
+  }
+
   if (isLoading) {
     return <TimelineGridSkeleton timeSlots={6} />
   }
@@ -193,7 +293,13 @@ export function TimelineGrid({
                 key={block.time}
                 timeBlock={block}
                 stops={stopsAtTime}
+                selectedStops={selectedStops}
+                resizingStop={resizingStop}
                 onAddStop={handleAddStop}
+                onSelectStop={toggleSelection}
+                onStartResize={startResize}
+                onResize={handleResize}
+                onEndResize={endResize}
                 isOptimistic={isOptimistic}
                 getStopColor={getStopColor}
               />
@@ -203,13 +309,22 @@ export function TimelineGrid({
         
         <DragOverlay>
           {activeId ? (
-            <StopCard 
+            <ResizableStopCard 
               stop={stops.find(s => s.id === activeId)!}
-              isDragging
             />
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Bulk Actions Toolbar */}
+      <BulkActionsToolbar
+        selectedCount={selectedStops.size}
+        onClearSelection={clearSelection}
+        onBulkDelete={handleBulkDelete}
+        onBulkDuplicate={handleBulkDuplicate}
+        onBulkMove={handleBulkMove}
+        onBulkReschedule={handleBulkReschedule}
+      />
     </div>
   )
 }
@@ -217,13 +332,25 @@ export function TimelineGrid({
 function TimeSlot({ 
   timeBlock, 
   stops, 
+  selectedStops,
+  resizingStop,
   onAddStop,
+  onSelectStop,
+  onStartResize,
+  onResize,
+  onEndResize,
   isOptimistic,
   getStopColor
 }: { 
   timeBlock: any
   stops: PlanStop[]
+  selectedStops: Set<string>
+  resizingStop: string | null
   onAddStop: (time: string) => void
+  onSelectStop: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
+  onStartResize: (stopId: string, stop: PlanStop, clientY: number) => void
+  onResize: (clientY: number) => number | undefined
+  onEndResize: (clientY: number) => void
   isOptimistic?: boolean
   getStopColor?: (stop: PlanStop) => string
 }) {
@@ -245,10 +372,16 @@ function TimeSlot({
         {stops.length > 0 ? (
           <div className="space-y-2">
             {stops.map(stop => (
-              <StopCard 
+              <ResizableStopCard 
                 key={stop.id} 
-                stop={stop} 
-                color={getStopColor?.(stop)}
+                stop={stop}
+                isSelected={selectedStops.has(stop.id)}
+                isResizing={resizingStop === stop.id}
+                onSelect={onSelectStop}
+                onStartResize={onStartResize}
+                onResize={onResize}
+                onEndResize={onEndResize}
+                className={getStopColor?.(stop) ? `border-[${getStopColor(stop)}] bg-[${getStopColor(stop)}]/10` : undefined}
               />
             ))}
           </div>
@@ -262,35 +395,6 @@ function TimeSlot({
   )
 }
 
-function StopCard({ 
-  stop, 
-  isDragging = false,
-  color 
-}: { 
-  stop: PlanStop; 
-  isDragging?: boolean;
-  color?: string;
-}) {
-  return (
-    <motion.div
-      initial={{ scale: 0.95, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      style={color ? { '--stop-color': color } as any : undefined}
-      className={cn(
-        "transition-all duration-300",
-        isDragging && "animate-pulse"
-      )}
-    >
-      <StopCardBase 
-        stop={stop}
-        isDragging={isDragging}
-        draggable={true}
-        className={color ? 'border-[var(--stop-color)] bg-[var(--stop-color)]/10' : undefined}
-      />
-    </motion.div>
-  )
-}
 
 function AddStopTrigger({ onAdd }: { onAdd: () => void }) {
   return (

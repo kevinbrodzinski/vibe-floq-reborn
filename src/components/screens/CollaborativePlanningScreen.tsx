@@ -15,6 +15,7 @@ import { TimelineGrid } from "@/components/planning/TimelineGrid";
 import { PlanningChat } from "@/components/PlanningChat";
 import { NovaSuggestions } from "@/components/planning/NovaSuggestions";
 import { TimelineOverlapValidator } from "@/components/planning/TimelineOverlapValidator";
+import { PlanTemplatesPanel } from "@/components/planning/PlanTemplatesPanel";
 import { SocialPulseOverlay } from "@/components/SocialPulseOverlay";
 import { PlanExecutionTracker } from "@/components/PlanExecutionTracker";
 import { VotingThresholdMeter } from "@/components/VotingThresholdMeter";
@@ -58,6 +59,21 @@ export const CollaborativePlanningScreen = () => {
     voteOnStop,
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
+
+  // Template functions
+  const handleLoadTemplate = (templateStops: any[]) => {
+    // Generate new IDs and add to current plan
+    const newStops = templateStops.map((stop, index) => ({
+      ...stop,
+      id: `stop-${Date.now()}-${index}`,
+      participants: [],
+      created_by: 'current-user'
+    }))
+    
+    newStops.forEach(stop => {
+      addStop(stop)
+    })
+  }
 
   // Define functions first
   const handleExecutePlan = async () => {
@@ -477,6 +493,13 @@ export const CollaborativePlanningScreen = () => {
                   searchQuery={venueSearchQuery}
                 />
               </div>
+
+              {/* Plan Templates */}
+              <PlanTemplatesPanel
+                currentPlan={plan}
+                onLoadTemplate={handleLoadTemplate}
+                className="mb-4"
+              />
 
               {/* Nova AI Suggestions */}
               {showNovaSuggestions && (
