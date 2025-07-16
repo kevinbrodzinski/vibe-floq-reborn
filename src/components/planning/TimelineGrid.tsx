@@ -6,9 +6,13 @@ import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
 import { useHapticFeedback } from '@/hooks/useHapticFeedback'
+import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
+import { useErrorBoundary } from '@/hooks/useErrorBoundary'
+import { useNetworkRecovery } from '@/hooks/useNetworkRecovery'
 import { ConflictOverlay } from './ConflictOverlay'
 import { toastSuccess, toastError } from '@/lib/toast'
 import { timeToMinutes, formatTimeFromMinutes } from '@/lib/time'
+import { generateTimeSuggestions, snapToSuggestedSlot } from '@/utils/stopTimeUtils'
 import { useStopResize } from '@/hooks/useStopResize'
 import { useStopSelection } from '@/hooks/useStopSelection'
 import { PresenceIndicator } from '@/components/collaboration/PresenceIndicator'
@@ -46,6 +50,9 @@ export function TimelineGrid({
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
   const { socialHaptics } = useHapticFeedback()
+  const { conflicts, hasConflicts, isStopConflicting } = useStopConflictChecker(stops)
+  const { withErrorHandling } = useErrorBoundary()
+  const { isOnline, canRetry, retryConnection } = useNetworkRecovery()
 
   // Stop selection
   const {
@@ -143,9 +150,13 @@ export function TimelineGrid({
     setActiveId(null)
   }
 
-  const handleAddStop = (timeSlot: string) => {
+  const handleAddStop = withErrorHandling((timeSlot: string) => {
     // Haptic feedback for stop creation
     socialHaptics.gestureConfirm()
+    
+    // Generate AI suggestions for optimal timing
+    const suggestions = generateTimeSuggestions(planId, stops)
+    const suggestedSlot = suggestions.find(s => s.startTime === timeSlot)
     
     // Check for time conflicts
     const newStopStart = timeToMinutes(timeSlot)
@@ -161,28 +172,31 @@ export function TimelineGrid({
       setConflictData({
         type: 'time_overlap',
         message: 'This time slot overlaps with an existing stop.',
-        suggestion: 'Try a different time or adjust the duration of nearby stops.'
+        suggestion: suggestedSlot?.reason || 'Try a different time or adjust the duration of nearby stops.'
       })
       setShowConflictOverlay(true)
       socialHaptics.vibeMatch() // Different haptic for conflict
       return
     }
     
+    const newStopData = {
+      title: 'New Stop',
+      start_time: timeSlot,
+      duration_minutes: suggestedSlot ? 60 : 60, // Use AI suggestion or default
+      stop_order: stops.length,
+      suggested: !!suggestedSlot
+    }
+    
     syncChanges({
       plan_id: planId,
       changes: {
         type: 'update_stop',
-        data: {
-          title: 'New Stop',
-          start_time: timeSlot,
-          duration_minutes: 60,
-          stop_order: stops.length
-        }
+        data: newStopData
       }
     })
     
-    toastSuccess('Stop added')
-  }
+    toastSuccess(suggestedSlot ? 'Stop added with AI suggestion' : 'Stop added')
+  })
 
   // Bulk operations
   const handleBulkDelete = () => {
@@ -293,33 +307,57 @@ export function TimelineGrid({
 
   return (
     <div className="space-y-4">
-      {/* Collaboration Header with aria-live for accessibility */}
-      <div 
-        className="flex items-center justify-between p-3 bg-card/50 rounded-lg border"
-        aria-live="polite"
-        aria-label="Collaboration status"
-      >
-        <PresenceIndicator 
-          participants={activeParticipants}
-          connectionStatus={connectionStatus}
-        />
-        
-        <div className="flex items-center gap-2">
-          {isOptimistic && (
-            <Badge variant="secondary" className="animate-pulse">
-              <Wifi className="w-3 h-3 mr-1" />
-              Syncing...
-            </Badge>
-          )}
+        {/* Collaboration Header with aria-live for accessibility */}
+        <div 
+          className="flex items-center justify-between p-3 bg-card/50 rounded-lg border"
+          aria-live="polite"
+          aria-label="Collaboration status"
+        >
+          <PresenceIndicator 
+            participants={activeParticipants}
+            connectionStatus={connectionStatus}
+          />
           
-          {connectionStatus === 'error' && (
-            <Badge variant="destructive">
-              <AlertTriangle className="w-3 h-3 mr-1" />
-              Connection Error
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Conflict indicator */}
+            {hasConflicts && (
+              <Badge variant="destructive">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                {conflicts.length} Conflict{conflicts.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+            
+            {/* Network status */}
+            {!isOnline && (
+              <Badge variant="outline" className="border-orange-500 text-orange-700">
+                <WifiOff className="w-3 h-3 mr-1" />
+                Offline
+                {canRetry && (
+                  <button
+                    onClick={retryConnection}
+                    className="ml-2 text-xs underline hover:no-underline"
+                  >
+                    Retry
+                  </button>
+                )}
+              </Badge>
+            )}
+            
+            {isOptimistic && (
+              <Badge variant="secondary" className="animate-pulse">
+                <Wifi className="w-3 h-3 mr-1" />
+                Syncing...
+              </Badge>
+            )}
+            
+            {connectionStatus === 'error' && (
+              <Badge variant="destructive">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Connection Error
+              </Badge>
+            )}
+          </div>
         </div>
-      </div>
 
       <DndContext onDragEnd={handleDragEnd}>
         <div className="space-y-3">
@@ -340,6 +378,8 @@ export function TimelineGrid({
                 onEndResize={endResize}
                 isOptimistic={isOptimistic}
                 getStopColor={getStopColor}
+                isStopConflicting={isStopConflicting}
+                allStops={stops}
               />
             )
           })}
@@ -395,7 +435,9 @@ function TimeSlot({
   onResize,
   onEndResize,
   isOptimistic,
-  getStopColor
+  getStopColor,
+  isStopConflicting,
+  allStops
 }: { 
   timeBlock: any
   stops: PlanStop[]
@@ -408,6 +450,8 @@ function TimeSlot({
   onEndResize: (clientY: number) => void
   isOptimistic?: boolean
   getStopColor?: (stop: PlanStop) => string
+  isStopConflicting: (stopId: string) => boolean
+  allStops: PlanStop[]
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -432,6 +476,9 @@ function TimeSlot({
                 stop={stop}
                 isSelected={selectedStops.has(stop.id)}
                 isResizing={resizingStop === stop.id}
+                hasConflict={isStopConflicting(stop.id)}
+                suggested={(stop as any).suggested}
+                allStops={allStops}
                 onSelect={onSelectStop}
                 onStartResize={onStartResize}
                 onResize={onResize}

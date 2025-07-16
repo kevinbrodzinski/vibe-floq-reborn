@@ -1,17 +1,26 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { GripVertical, Clock } from 'lucide-react'
+import { GripVertical, Clock, AlertTriangle, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
+import { useUpdateStopPosition } from '@/hooks/useUpdateStopPosition'
+import { formatTimeFromMinutes, timeToMinutes } from '@/lib/time'
 import type { PlanStop } from '@/types/plan'
 
 interface ResizableStopCardProps {
   stop: PlanStop
   isSelected?: boolean
   isResizing?: boolean
+  isDragOver?: boolean
+  hasConflict?: boolean
+  suggested?: boolean
+  allStops?: PlanStop[]
   onSelect?: (stopId: string, isMultiSelect?: boolean, isRangeSelect?: boolean) => void
   onStartResize?: (stopId: string, stop: PlanStop, clientY: number) => void
   onResize?: (clientY: number) => number | undefined
   onEndResize?: (clientY: number) => void
+  onEdit?: () => void
+  onRemove?: () => void
   className?: string
 }
 
@@ -19,24 +28,37 @@ export function ResizableStopCard({
   stop,
   isSelected = false,
   isResizing = false,
+  isDragOver = false,
+  hasConflict = false,
+  suggested = false,
+  allStops = [],
   onSelect,
   onStartResize,
   onResize,
   onEndResize,
+  onEdit,
+  onRemove,
   className
 }: ResizableStopCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [previewDuration, setPreviewDuration] = useState<number | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const { isStopConflicting } = useStopConflictChecker(allStops)
+  const updatePosition = useUpdateStopPosition()
+
+  const isConflicting = hasConflict || isStopConflicting(stop.id)
+  const duration = stop.duration_minutes || 60
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as Element).closest('.resize-handle')) {
       return // Don't select when starting resize
     }
     
-    const isMultiSelect = e.ctrlKey || e.metaKey
-    const isRangeSelect = e.shiftKey
-    onSelect?.(stop.id, isMultiSelect, isRangeSelect)
+    onSelect?.(stop.id, e.metaKey || e.ctrlKey, e.shiftKey)
+  }
+
+  const handleDoubleClick = () => {
+    onEdit?.()
   }
 
   const handleResizeStart = (e: React.MouseEvent) => {
@@ -62,73 +84,126 @@ export function ResizableStopCard({
     document.addEventListener('mouseup', handleMouseUp)
   }
 
-  const duration = previewDuration || stop.duration_minutes || 60
-  const cardHeight = Math.max(80, (duration / 60) * 80) // 80px per hour
-
   return (
     <motion.div
       ref={cardRef}
+      layout
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
       className={cn(
-        "relative rounded-xl border transition-all duration-200 select-none",
-        isSelected 
-          ? "border-primary bg-primary/10 ring-2 ring-primary/50" 
-          : "border-border bg-card hover:border-primary/50",
-        isDragging && "ring-2 ring-accent",
+        'relative bg-card/90 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 cursor-grab select-none',
+        'hover:scale-[1.02] hover:shadow-lg',
+        isSelected && 'ring-2 ring-primary shadow-primary/25',
+        isDragOver && 'ring-2 ring-accent',
+        isConflicting && 'border-destructive bg-destructive/10',
+        suggested && 'ring-2 ring-yellow-400 bg-yellow-50/50',
+        isResizing && 'cursor-row-resize',
         className
       )}
-      style={{ height: `${cardHeight}px` }}
-      onMouseDown={handleMouseDown}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      layout
+      style={{ 
+        borderLeftColor: stop.color || 'hsl(var(--primary))', 
+        borderLeftWidth: '4px',
+        minHeight: `${Math.max(duration * 1.2, 60)}px` // Dynamic height based on duration
+      }}
+      role="listitem"
+      aria-label={`Stop: ${stop.title}`}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
+      {/* Conflict indicator */}
+      {isConflicting && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute top-2 right-2 text-destructive"
+        >
+          <AlertTriangle className="w-4 h-4" />
+        </motion.div>
+      )}
+
+      {/* Suggestion indicator */}
+      {suggested && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute top-2 right-2 text-yellow-500"
+        >
+          <Sparkles className="w-4 h-4" />
+        </motion.div>
+      )}
+
       {/* Main content */}
-      <div className="p-3 h-full flex flex-col">
-        <div className="flex items-start gap-2 flex-1">
-          <div className="flex-1 min-w-0">
-            <h4 className={cn(
-              "font-medium text-sm truncate",
-              isSelected ? "text-primary" : "text-foreground"
-            )}>
-              {stop.title}
-            </h4>
-            {stop.venue && (
-              <p className="text-xs text-muted-foreground truncate">
-                {stop.venue}
-              </p>
-            )}
-          </div>
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground truncate text-lg">
+            {stop.title}
+          </h3>
           
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          {stop.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {stop.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
-            <span>{duration}m</span>
+            <span>
+              {stop.start_time} - {stop.end_time || formatTimeFromMinutes(timeToMinutes(stop.start_time || '') + duration)}
+            </span>
+            <span className="px-2 py-1 bg-muted rounded">
+              {duration}min
+            </span>
           </div>
         </div>
 
+        {/* Drag handle */}
+        <div 
+          className="resize-handle cursor-grab hover:cursor-grabbing ml-2 p-1 rounded hover:bg-muted/50"
+          onMouseDown={handleResizeStart}
+        >
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        </div>
+      </div>
+
+      {/* Status indicators */}
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center gap-2">
+          {stop.status && (
+            <span className={cn(
+              'px-2 py-1 text-xs font-medium rounded-full',
+              stop.status === 'confirmed' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+              stop.status === 'suggested' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+              stop.status === 'pending' && 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+            )}>
+              {stop.status}
+            </span>
+          )}
+          
+          {isConflicting && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-destructive/10 text-destructive">
+              Conflict
+            </span>
+          )}
+          
+          {suggested && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+              Suggested
+            </span>
+          )}
+        </div>
+
         {/* Duration preview during resize */}
-        {isDragging && previewDuration && (
-          <div className="mt-2 text-xs text-accent font-medium">
-            Adjusting to {previewDuration} minutes
-          </div>
+        {previewDuration && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="text-xs font-medium text-primary"
+          >
+            {previewDuration}min
+          </motion.span>
         )}
       </div>
-
-      {/* Resize handle */}
-      <div
-        className={cn(
-          "resize-handle absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize",
-          "flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity",
-          "bg-gradient-to-t from-primary/20 to-transparent"
-        )}
-        onMouseDown={handleResizeStart}
-      >
-        <GripVertical className="w-3 h-3 text-primary" />
-      </div>
-
-      {/* Selection indicator */}
-      {isSelected && (
-        <div className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-      )}
     </motion.div>
   )
 }
