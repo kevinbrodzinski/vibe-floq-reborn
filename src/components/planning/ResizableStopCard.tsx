@@ -13,11 +13,13 @@ import { useStopEditingPresence } from '@/hooks/useStopEditingPresence'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 import { useAudioFeedback } from '@/hooks/useAudioFeedback'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
+import { VoteButtons } from '@/components/plans/VoteButtons'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
   stop: PlanStop
   planId?: string
+  planStatus?: string
   isSelected?: boolean
   isResizing?: boolean
   isDragOver?: boolean
@@ -37,6 +39,7 @@ interface ResizableStopCardProps {
 export function ResizableStopCard({
   stop,
   planId,
+  planStatus,
   isSelected = false,
   isResizing = false,
   isDragOver = false,
@@ -66,6 +69,9 @@ export function ResizableStopCard({
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
   const duration = stop.duration_minutes || 60
+  
+  // Show voting only for finalized+ plans and when planId is available
+  const showVoting = planId && planStatus && !['draft'].includes(planStatus)
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget || (e.target as Element).closest('.resize-handle')) {
@@ -252,6 +258,17 @@ export function ResizableStopCard({
             </span>
           )}
         </div>
+
+        {/* Voting buttons for finalized+ plans */}
+        {showVoting && (
+          <VoteButtons 
+            planId={planId}
+            stopId={stop.id}
+            size="sm"
+            showCounts={true}
+            className="mt-2"
+          />
+        )}
 
         {/* Duration preview during resize */}
         {previewDuration && (

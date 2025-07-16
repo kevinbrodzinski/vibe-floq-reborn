@@ -28,6 +28,8 @@ import { SummaryReviewPanel } from "@/components/SummaryReviewPanel";
 import { PlanChatSidebar } from "@/components/PlanChatSidebar";
 import { PlanSummaryCard } from "@/components/plan/PlanSummaryCard";
 import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
+import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
+import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
 import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
@@ -302,10 +304,16 @@ export const CollaborativePlanningScreen = () => {
       <div className="p-6 pt-16">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              {plan.title}
-            </h1>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                {plan.title}
+              </h1>
+              <PlanStatusBadge 
+                status={plan.status || 'draft'} 
+                size="default"
+              />
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <span>{plan.date}</span>
               <span>•</span>
               <PlanPresenceIndicator
@@ -318,6 +326,13 @@ export const CollaborativePlanningScreen = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            {/* Status action buttons */}
+            <PlanStatusActions 
+              planId={plan.id}
+              currentStatus={plan.status || 'draft'}
+              isCreator={plan.created_by === 'current-user'} // This would come from auth
+            />
+            
             <PlanInviteButton />
             <SharePlanButton 
               planId={plan.id}
