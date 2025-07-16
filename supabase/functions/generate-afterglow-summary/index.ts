@@ -11,10 +11,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Robust broadcast helper for realtime
+async function broadcast(
+  supabase: any,
+  channelName: string,
+  event: string,
+  payload: Record<string, unknown>,
+) {
+  const channel = supabase.channel(channelName);
+
+  await new Promise<void>((res, rej) => {
+    channel.subscribe((status: string) => {
+      if (status === 'SUBSCRIBED') res();
+      else if (status === 'CHANNEL_ERROR') rej(new Error('Channel subscription failed'));
+    });
+  });
+
+  await channel.send({ type: 'broadcast', event, payload });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: { ...corsHeaders, 'Access-Control-Max-Age': '86400' } 
+    });
   }
 
   try {
@@ -87,7 +108,9 @@ Moments: ${contextData.moments_count} (${contextData.moment_types})
 
 Write a compelling one-sentence summary that captures the essence of this day in a warm, personalized tone. Focus on the vibe and energy rather than just listing activities. Keep it under 100 characters.`;
 
-    // Call OpenAI API
+    // Call OpenAI API with error guard
+    const model = Deno.env.get('OPENAI_MODEL') ?? 'gpt-4o-mini';
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -95,7 +118,7 @@ Write a compelling one-sentence summary that captures the essence of this day in
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model,
         messages: [
           { 
             role: 'system', 
@@ -109,7 +132,8 @@ Write a compelling one-sentence summary that captures the essence of this day in
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errTxt = await response.text();
+      throw new Error(`OpenAI: ${response.status} ${errTxt}`);
     }
 
     const data = await response.json();
@@ -133,16 +157,11 @@ Write a compelling one-sentence summary that captures the essence of this day in
       // Return summary even if saving fails
     }
 
-    // Broadcast summary via realtime
-    await supabase.channel(`afterglow-progress-${afterglow.user_id}`)
-      .send({
-        type: 'broadcast',
-        event: 'ai_summary_generated',
-        payload: {
-          afterglow_id,
-          ai_summary: generatedSummary
-        }
-      });
+    // Broadcast summary via realtime with consistent channel naming
+    await broadcast(supabase, `progress-${afterglow.user_id}`, 'ai_summary_generated', {
+      afterglow_id,
+      ai_summary: generatedSummary
+    });
 
     return new Response(JSON.stringify({ 
       ai_summary: generatedSummary,
