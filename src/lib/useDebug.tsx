@@ -13,13 +13,25 @@ const DebugCtx = createContext<Ctx>([false, () => {}]);
 
 export const DebugProvider = ({ children }: { children: ReactNode }) => {
   const prod = import.meta.env.MODE === 'production';
-  const [debug, setDebug] = useState<boolean>(
-    () => !prod && localStorage.getItem('showDebug') === 'true',
-  );
+  
+  // Safer initialization of debug state
+  const [debug, setDebug] = useState<boolean>(() => {
+    try {
+      return !prod && typeof localStorage !== 'undefined' && localStorage.getItem('showDebug') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   /* persist */
   useEffect(() => {
-    localStorage.setItem('showDebug', String(debug));
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('showDebug', String(debug));
+      }
+    } catch {
+      // localStorage not available or blocked
+    }
   }, [debug]);
 
   /* ⌥+D shortcut (dev only) */
