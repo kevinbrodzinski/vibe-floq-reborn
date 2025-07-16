@@ -39,7 +39,7 @@ export function SnapSuggestionOverlay({ show, suggestion }: SnapSuggestionOverla
         className="absolute -top-8 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap"
       >
         <Sparkles className="w-3 h-3 inline mr-1" />
-        {suggestion.reason || `Suggested: ${suggestion.startTime} - ${suggestion.endTime}`}
+        🪄 Suggested by Nova: {suggestion.reason || `${suggestion.startTime} - ${suggestion.endTime}`}
       </motion.div>
     </motion.div>
   )

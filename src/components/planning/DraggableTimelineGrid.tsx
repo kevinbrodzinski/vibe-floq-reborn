@@ -18,6 +18,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Plus, Clock } from 'lucide-react'
+import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
+import { useNovaSnap } from '@/hooks/useNovaSnap'
+import { useToast } from '@/hooks/use-toast'
 import { DraggableStopCard } from './DraggableStopCard'
 import { AddStopModal } from './AddStopModal'
 import { usePlanStops } from '@/hooks/usePlanStops'
@@ -40,6 +43,15 @@ export function DraggableTimelineGrid({
   
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const updateStop = useUpdatePlanStop()
+  const { toast } = useToast()
+  const { recordNovaSnap } = useNovaSnap()
+  
+  // Nova suggestion for invalid drags
+  const novaSuggestion = useSmartTimeSuggestion({
+    planStartTime: startTime,
+    planEndTime: endTime,
+    existingStops: stops,
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -143,11 +155,35 @@ export function DraggableTimelineGrid({
     setActiveId(null)
     
     const { active, over } = event
+    const activeStop = stops.find(stop => stop.id === active.id)
     
-    if (!over) return
+    if (!over) {
+      // Invalid drag - fallback to Nova suggestion
+      if (activeStop && novaSuggestion && novaSuggestion !== activeStop.start_time) {
+        toast({
+          title: "🪄 Nova Suggestion",
+          description: `Try ${novaSuggestion} for better timing?`,
+          action: (
+            <button
+              className="text-sm underline"
+              onClick={() => {
+                updateStop.mutate({
+                  id: activeStop.id,
+                  plan_id: planId,
+                  start_time: novaSuggestion,
+                })
+                recordNovaSnap(planId, activeStop.id, 0.8)
+              }}
+            >
+              Apply
+            </button>
+          )
+        })
+      }
+      return
+    }
 
     // Handle reordering within the same time slot
-    const activeStop = stops.find(stop => stop.id === active.id)
     const overStop = stops.find(stop => stop.id === over.id)
     
     if (activeStop && overStop && activeStop.id !== overStop.id) {

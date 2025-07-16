@@ -12,6 +12,7 @@ import { StopEditingIndicators } from '@/components/collaboration/StopEditingInd
 import { useStopEditingPresence } from '@/hooks/useStopEditingPresence'
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics'
 import { useAudioFeedback } from '@/hooks/useAudioFeedback'
+import { useNovaSnap } from '@/hooks/useNovaSnap'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -60,6 +61,7 @@ export function ResizableStopCard({
   const { startEditing, stopEditing } = useStopEditingPresence({ planId: planId || '', enabled: !!planId })
   const { timelineHaptics } = useAdvancedHaptics()
   const { timelineAudio } = useAudioFeedback()
+  const { recordNovaSnap } = useNovaSnap()
 
   const isConflicting = hasConflict || isStopConflicting(stop.id)
   const conflictInfo = getConflictForStop(stop.id)
@@ -94,6 +96,13 @@ export function ResizableStopCard({
 
     const handleMouseUp = (e: MouseEvent) => {
       setIsDragging(false)
+      
+      // Check if we're applying a snap suggestion for Nova tracking
+      if (snapSuggestion && previewDuration && planId) {
+        const confidenceScore = snapSuggestion.confidence || 0.8
+        recordNovaSnap(planId, stop.id, confidenceScore)
+      }
+      
       setPreviewDuration(null)
       timelineHaptics.stopDragEnd()
       timelineAudio.stopDrop()
