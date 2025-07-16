@@ -1,22 +1,28 @@
 import { useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
-import * as Haptics from 'expo-haptics';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 export const useHaptic = () => {
   const triggerHaptic = useCallback(async (type: 'light' | 'medium' | 'heavy' = 'light') => {
+    // Only trigger haptics on native platforms
     if (Capacitor.isNativePlatform()) {
       try {
+        let impactStyle: ImpactStyle;
         switch (type) {
           case 'light':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            impactStyle = ImpactStyle.Light;
             break;
           case 'medium':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            impactStyle = ImpactStyle.Medium;
             break;
           case 'heavy':
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            impactStyle = ImpactStyle.Heavy;
             break;
+          default:
+            impactStyle = ImpactStyle.Light;
         }
+        
+        await Haptics.impact({ style: impactStyle });
       } catch (error) {
         // Haptics not available on this device
         console.debug('Haptics not available:', error);
