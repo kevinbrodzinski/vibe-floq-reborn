@@ -17,17 +17,19 @@ interface PlanSummary {
   stops_count: number
 }
 
-interface PlanStats extends Record<PlanStatus, number> {
+interface PlanStats {
   draft: number
-  active: number
-  closed: number
+  finalized: number
+  executing: number
+  completed: number
   cancelled: number
 }
 
-interface PlansGrouped extends Record<PlanStatus, PlanSummary[]> {
+interface PlansGrouped {
   draft: PlanSummary[]
-  active: PlanSummary[]
-  closed: PlanSummary[]
+  finalized: PlanSummary[]
+  executing: PlanSummary[]
+  completed: PlanSummary[]
   cancelled: PlanSummary[]
 }
 
@@ -50,24 +52,26 @@ export function useUserPlans() {
   // Group plans by status
   const plansByStatus: PlansGrouped = {
     draft: [],
-    active: [],
-    closed: [],
+    finalized: [],
+    executing: [],
+    completed: [],
     cancelled: [],
   }
 
   const stats: PlanStats = {
     draft: 0,
-    active: 0,
-    closed: 0,
+    finalized: 0,
+    executing: 0,
+    completed: 0,
     cancelled: 0,
   }
 
   if (data) {
     data.forEach((plan) => {
       const status = plan.status || 'draft'
-      if (plansByStatus[status as PlanStatus]) {
-        plansByStatus[status as PlanStatus].push(plan)
-        stats[status as PlanStatus]++
+      if (status in plansByStatus) {
+        plansByStatus[status as keyof PlansGrouped].push(plan)
+        stats[status as keyof PlanStats]++
       } else {
         console.warn(`Unknown plan status: ${status}`)
       }

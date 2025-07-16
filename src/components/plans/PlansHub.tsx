@@ -56,10 +56,13 @@ export function PlansHub() {
   }, [])
 
   const sectionsToShow = useMemo(() => {
+    // Combine finalized and executing as "active"
+    const activePlans = [...plansByStatus.finalized, ...plansByStatus.executing]
+    
     const sections = [
-      { key: 'active', title: 'Active', plans: plansByStatus.active },
+      { key: 'active', title: 'Active', plans: activePlans },
       { key: 'draft', title: 'Draft', plans: plansByStatus.draft },
-      { key: 'closed', title: 'Completed', plans: plansByStatus.closed },
+      { key: 'completed', title: 'Completed', plans: plansByStatus.completed },
     ]
 
     if (showArchived && plansByStatus.cancelled) {
@@ -70,9 +73,10 @@ export function PlansHub() {
   }, [plansByStatus, showArchived])
 
   const computedStats = useMemo(() => {
-    const activeTotal = stats.draft + stats.active
+    const active = stats.finalized + stats.executing
+    const activeTotal = stats.draft + active
     const total = Object.values(stats).reduce((a, b) => a + b, 0)
-    return { ...stats, activeTotal, total }
+    return { ...stats, active, activeTotal, total }
   }, [stats])
 
   return (
@@ -97,7 +101,7 @@ export function PlansHub() {
               <Clock className="w-4 h-4 text-green-600" />
               <div>
                 <p className="text-sm font-medium">Active</p>
-                <p className="text-2xl font-bold">{stats.active}</p>
+                <p className="text-2xl font-bold">{computedStats.active}</p>
               </div>
             </div>
           </CardContent>
@@ -121,7 +125,7 @@ export function PlansHub() {
               <Archive className="w-4 h-4 text-gray-600" />
               <div>
                 <p className="text-sm font-medium">Completed</p>
-                <p className="text-2xl font-bold">{stats.closed}</p>
+                <p className="text-2xl font-bold">{stats.completed}</p>
               </div>
             </div>
           </CardContent>
