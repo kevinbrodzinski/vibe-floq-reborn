@@ -7,6 +7,7 @@ import { PulseScreen } from '@/components/screens/PulseScreen';
 import { VibeScreen } from '@/components/screens/VibeScreen';
 import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
+import FloqPlanExecutionScreen from '@/pages/FloqPlanExecutionScreen';
 import { LegacyRedirect } from '@/components/LegacyRedirect';
 import { UserProfileByUsername } from '@/components/UserProfileByUsername';
 import Profile from '@/pages/Profile';
@@ -30,6 +31,7 @@ export const AppRoutes = () => (
       </RoleGuard>
     } />
     <Route path="/floqs/:floqId/plans/new" element={<NewPlan />} />
+    <Route path="/floqs/:floqId/plans/:planId/execute" element={<FloqPlanExecutionScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
     <Route path="/afterglow" element={<AfterglowScreen />} />

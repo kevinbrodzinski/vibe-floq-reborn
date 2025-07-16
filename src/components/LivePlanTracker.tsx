@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatTime, formatTimeRange } from "@/lib/timeUtils";
 import { CheckInButton } from "./CheckInButton";
+import { usePlanCheckIns } from '@/hooks/useCheckInStatus';
 
 interface PlanStop {
   id: string;
@@ -42,19 +43,23 @@ export const LivePlanTracker = ({
 }: LivePlanTrackerProps) => {
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [progress, setProgress] = useState(0);
+  const { data: checkIns = [] } = usePlanCheckIns(planId)
 
   const currentStop = useMemo(() => stops[currentStopIndex], [stops, currentStopIndex]);
   const nextStop = stops[currentStopIndex + 1];
   const isLastStop = currentStopIndex === stops.length - 1;
   
-  const { checkedInParticipants, checkedInCount, totalCount } = useMemo(() => {
-    const checkedIn = participants.filter(p => p.checked_in_at);
+  const { checkedInCount, totalCount } = useMemo(() => {
+    if (!currentStop) return { checkedInCount: 0, totalCount: participants.length }
+    
+    // Get check-ins for current stop
+    const currentStopCheckIns = checkIns.filter(checkIn => checkIn.stop_id === currentStop.id)
+    
     return {
-      checkedInParticipants: checkedIn,
-      checkedInCount: checkedIn.length,
+      checkedInCount: currentStopCheckIns.length,
       totalCount: participants.length
     };
-  }, [participants]);
+  }, [participants, checkIns, currentStop]);
 
   // Calculate time remaining and progress
   useEffect(() => {
@@ -181,7 +186,10 @@ export const LivePlanTracker = ({
 
         <div className="flex flex-wrap gap-2">
           {participants.map((participant) => {
-            const isCheckedIn = !!participant.checked_in_at;
+            // Check if participant is checked in to current stop
+            const isCheckedIn = currentStop && checkIns.some(
+              checkIn => checkIn.stop_id === currentStop.id && checkIn.user_id === participant.id
+            );
             
             return (
               <div
