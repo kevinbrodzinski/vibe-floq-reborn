@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
 import { CrossedPathsCard } from "@/components/CrossedPathsCard";
+import { useAfterglowData } from "@/hooks/useAfterglowData";
 
 interface NightEvent {
   id: string;
@@ -20,6 +21,10 @@ interface NightEvent {
 export const AfterglowScreen = () => {
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
+  
+  // Get today's date for afterglow data
+  const today = new Date().toISOString().split('T')[0];
+  const { afterglow, isLoading: afterglowLoading, isGenerating, error: afterglowError, generateAfterglow } = useAfterglowData(today);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -74,12 +79,12 @@ export const AfterglowScreen = () => {
   const timelineRef = useRef<HTMLDivElement>(null);
   
   const energySummary = {
-    totalStops: 8,
-    peopleCrossed: crossedPathsCount, // Dynamic count from crossed paths
-    floqsJoined: 4,
-    mostFeltVibe: "flowing",
-    vibeIntensity: 87,
-    connectionsMade: 3
+    totalStops: afterglow?.total_venues || 0,
+    peopleCrossed: crossedPathsCount,
+    floqsJoined: afterglow?.total_floqs || 0,
+    mostFeltVibe: afterglow?.dominant_vibe || "chill",
+    vibeIntensity: afterglow?.energy_score || 0,
+    connectionsMade: afterglow?.crossed_paths_count || 0
   };
   
   const emotionalStates = [
@@ -250,70 +255,87 @@ export const AfterglowScreen = () => {
           />
         </svg>
 
-        <div className="space-y-8">
-          {nightEvents.map((event, index) => (
-            <div key={event.id} className="relative flex items-start space-x-6">
-              {/* Timeline dot */}
-              <div 
-                className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
-                style={{
-                  backgroundColor: getTimelineColor(index),
-                  boxShadow: `0 0 30px ${getTimelineColor(index)}40`
-                }}
-              ></div>
+        {/* Loading state */}
+        {afterglowLoading || isGenerating ? (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-muted-foreground">
+              {isGenerating ? "Generating your afterglow..." : "Loading afterglow data..."}
+            </p>
+          </div>
+        ) : afterglowError ? (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Failed to load afterglow data</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => generateAfterglow(true)}
+                className="ml-3"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : afterglow?.moments?.length ? (
+          <div className="space-y-8">
+            {afterglow.moments.map((moment, index) => (
+              <div key={moment.timestamp} className="relative flex items-start space-x-6">
+                {/* Timeline dot */}
+                <div 
+                  className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
+                  style={{
+                    backgroundColor: moment.color.startsWith('#') ? moment.color : getTimelineColor(index),
+                    boxShadow: `0 0 30px ${moment.color.startsWith('#') ? moment.color : getTimelineColor(index)}40`
+                  }}
+                ></div>
 
-              {/* Event card */}
-              <div className="flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02]">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-muted-foreground text-sm font-medium">{event.time}</span>
-                    {getEventTypeIcon(event.type)}
+                {/* Event card */}
+                <div className="flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02]">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-muted-foreground text-sm font-medium">
+                        {new Date(moment.timestamp).toLocaleTimeString('en-US', { 
+                          hour: 'numeric', 
+                          minute: '2-digit', 
+                          hour12: true 
+                        })}
+                      </span>
+                      {getEventTypeIcon(moment.moment_type)}
+                    </div>
+                    
+                    {index === 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-secondary">
+                          <Mail className="w-3 h-3 mr-1" />
+                          Share
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-active">
+                          <Heart className="w-3 h-3 mr-1" />
+                          Save
+                        </Button>
+                      </div>
+                    )}
                   </div>
+
+                  <h3 className="text-lg font-bold mb-2 text-foreground">{moment.title}</h3>
                   
-                  {event.id === "1" && (
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-secondary">
-                      <Mail className="w-3 h-3 mr-1" />
-                      Send Thank You
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-active">
-                      <Heart className="w-3 h-3 mr-1" />
-                      Save Moment
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs transition-smooth hover:glow-active">
-                      <BookOpen className="w-3 h-3 mr-1" />
-                      Reflect
-                    </Button>
-                  </div>
+                  {moment.description && (
+                    <p className="text-sm text-muted-foreground mb-3">{moment.description}</p>
                   )}
                 </div>
-
-                <h3 className="text-lg font-bold mb-2 text-foreground">{event.title}</h3>
-                
-                {event.description && (
-                  <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
-                )}
-
-                {event.participants && (
-                  <div className="flex items-center space-x-3">
-                    <div className="flex -space-x-2">
-                      {event.participants.map((participant, idx) => (
-                        <div 
-                          key={idx} 
-                          className="w-8 h-8 rounded-full gradient-secondary border-2 border-background shadow-lg transition-smooth hover:scale-110"
-                          title={participant}
-                        ></div>
-                      ))}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      with {event.participants.join(", ")}
-                    </span>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p className="text-lg mb-2">No moments captured today</p>
+            <p className="text-sm">Start exploring to create your afterglow!</p>
+          </div>
+        )}
       </div>
 
       {/* Interactive Emotional Ribbon */}
