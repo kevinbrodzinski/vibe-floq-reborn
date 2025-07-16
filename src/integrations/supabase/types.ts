@@ -68,6 +68,113 @@ export type Database = {
         }
         Relationships: []
       }
+      afterglow_moments: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          daily_afterglow_id: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
+          timestamp: string
+          title: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          daily_afterglow_id: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
+          timestamp: string
+          title: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          daily_afterglow_id?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          moment_type?: Database["public"]["Enums"]["afterglow_moment_type"]
+          timestamp?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_afterglow_moments_daily"
+            columns: ["daily_afterglow_id"]
+            isOneToOne: false
+            referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_afterglow: {
+        Row: {
+          created_at: string | null
+          crossed_paths_count: number | null
+          date: string
+          dominant_vibe: string | null
+          emotion_journey: Json | null
+          energy_score: number | null
+          id: string
+          is_pinned: boolean | null
+          moments: Json | null
+          peak_vibe_time: string | null
+          regenerated_at: string | null
+          share_token: string | null
+          social_intensity: number | null
+          summary_text: string | null
+          total_floqs: number | null
+          total_venues: number | null
+          user_id: string
+          vibe_path: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          crossed_paths_count?: number | null
+          date: string
+          dominant_vibe?: string | null
+          emotion_journey?: Json | null
+          energy_score?: number | null
+          id?: string
+          is_pinned?: boolean | null
+          moments?: Json | null
+          peak_vibe_time?: string | null
+          regenerated_at?: string | null
+          share_token?: string | null
+          social_intensity?: number | null
+          summary_text?: string | null
+          total_floqs?: number | null
+          total_venues?: number | null
+          user_id: string
+          vibe_path?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          crossed_paths_count?: number | null
+          date?: string
+          dominant_vibe?: string | null
+          emotion_journey?: Json | null
+          energy_score?: number | null
+          id?: string
+          is_pinned?: boolean | null
+          moments?: Json | null
+          peak_vibe_time?: string | null
+          regenerated_at?: string | null
+          share_token?: string | null
+          social_intensity?: number | null
+          summary_text?: string | null
+          total_floqs?: number | null
+          total_venues?: number | null
+          user_id?: string
+          vibe_path?: string[] | null
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
@@ -348,6 +455,68 @@ export type Database = {
             columns: ["user_b_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floq_afterglow: {
+        Row: {
+          chat_highlights: Json | null
+          created_at: string | null
+          date: string | null
+          duration_minutes: number | null
+          floq_id: string
+          id: string
+          join_time: string | null
+          leave_time: string | null
+          location_name: string | null
+          peak_moment_text: string | null
+          people_seen: string[] | null
+          user_id: string
+          vibe_at_join: string | null
+          vibe_at_leave: string | null
+          vibe_changes: Json | null
+        }
+        Insert: {
+          chat_highlights?: Json | null
+          created_at?: string | null
+          date?: string | null
+          duration_minutes?: number | null
+          floq_id: string
+          id?: string
+          join_time?: string | null
+          leave_time?: string | null
+          location_name?: string | null
+          peak_moment_text?: string | null
+          people_seen?: string[] | null
+          user_id: string
+          vibe_at_join?: string | null
+          vibe_at_leave?: string | null
+          vibe_changes?: Json | null
+        }
+        Update: {
+          chat_highlights?: Json | null
+          created_at?: string | null
+          date?: string | null
+          duration_minutes?: number | null
+          floq_id?: string
+          id?: string
+          join_time?: string | null
+          leave_time?: string | null
+          location_name?: string | null
+          peak_moment_text?: string | null
+          people_seen?: string[] | null
+          user_id?: string
+          vibe_at_join?: string | null
+          vibe_at_leave?: string | null
+          vibe_changes?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_floq_afterglow_floq"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
         ]
@@ -996,6 +1165,56 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_afterglow: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          ending_sentiment: string | null
+          group_energy_peak: string | null
+          group_vibe_arc: Json | null
+          id: string
+          my_contribution: string | null
+          plan_id: string
+          shared_moments: Json | null
+          user_id: string
+          would_repeat_score: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          ending_sentiment?: string | null
+          group_energy_peak?: string | null
+          group_vibe_arc?: Json | null
+          id?: string
+          my_contribution?: string | null
+          plan_id: string
+          shared_moments?: Json | null
+          user_id: string
+          would_repeat_score?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          ending_sentiment?: string | null
+          group_energy_peak?: string | null
+          group_vibe_arc?: Json | null
+          id?: string
+          my_contribution?: string | null
+          plan_id?: string
+          shared_moments?: Json | null
+          user_id?: string
+          would_repeat_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_plan_afterglow_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -4393,6 +4612,18 @@ export type Database = {
         | "milestone"
         | "special"
       activity_visibility_enum: "public" | "members_only"
+      afterglow_moment_type:
+        | "floq_joined"
+        | "floq_left"
+        | "vibe_change"
+        | "location_arrived"
+        | "location_left"
+        | "crossed_paths"
+        | "plan_started"
+        | "plan_ended"
+        | "peak_energy"
+        | "social_boost"
+        | "solo_moment"
       cluster_type_enum:
         | "nightlife"
         | "cafe"
@@ -4589,6 +4820,19 @@ export const Constants = {
         "special",
       ],
       activity_visibility_enum: ["public", "members_only"],
+      afterglow_moment_type: [
+        "floq_joined",
+        "floq_left",
+        "vibe_change",
+        "location_arrived",
+        "location_left",
+        "crossed_paths",
+        "plan_started",
+        "plan_ended",
+        "peak_energy",
+        "social_boost",
+        "solo_moment",
+      ],
       cluster_type_enum: [
         "nightlife",
         "cafe",
