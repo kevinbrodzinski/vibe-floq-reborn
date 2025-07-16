@@ -450,7 +450,8 @@ function TimeSlot({
   isOptimistic,
   getStopColor,
   isStopConflicting,
-  allStops
+  allStops,
+  planId
 }: { 
   timeBlock: any
   stops: PlanStop[]
@@ -464,8 +465,8 @@ function TimeSlot({
   isOptimistic?: boolean
   getStopColor?: (stop: PlanStop) => string
   isStopConflicting: (stopId: string) => boolean
- allStops: PlanStop[]
- planId: string
+  allStops: PlanStop[]
+  planId: string
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
