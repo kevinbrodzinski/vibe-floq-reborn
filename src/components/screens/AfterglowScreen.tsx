@@ -65,13 +65,21 @@ export const AfterglowScreen = () => {
   ]);
 
   const getEventTypeIcon = (type: string) => {
-    const iconClasses = "w-5 h-5 text-muted-foreground";
     switch(type) {
-      case "venue": return <div className={`w-5 h-5 rounded-full bg-accent/20 border border-accent/40`} />;
-      case "floq": return <div className={`w-5 h-5 rounded-full bg-primary/20 border border-primary/40`} />;
-      case "social": return <div className={`w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40`} />;
-      case "personal": return <div className={`w-5 h-5 rounded-full bg-muted/20 border border-muted/40`} />;
-      default: return <div className={`w-2 h-2 rounded-full bg-foreground/20`} />;
+      case "venue_checkin": 
+      case "venue": 
+        return <div className={`w-5 h-5 rounded-full bg-accent/20 border border-accent/40`} />;
+      case "floq_join":
+      case "floq": 
+        return <div className={`w-5 h-5 rounded-full bg-primary/20 border border-primary/40`} />;
+      case "plan_start":
+      case "social": 
+        return <div className={`w-5 h-5 rounded-full bg-secondary/20 border border-secondary/40`} />;
+      case "vibe_change":
+      case "personal": 
+        return <div className={`w-5 h-5 rounded-full bg-muted/20 border border-muted/40`} />;
+      default: 
+        return <div className={`w-2 h-2 rounded-full bg-foreground/20`} />;
     }
   };
 

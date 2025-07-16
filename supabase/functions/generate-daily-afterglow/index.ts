@@ -50,11 +50,12 @@ Deno.serve(async (req) => {
       yesterday.setDate(yesterday.getDate() - 1)
       const targetDate = yesterday.toISOString().split('T')[0]
 
-      const { data: activeUsers } = await supabase
-        .from('user_vibe_states')
-        .select('user_id')
-        .gte('started_at', `${targetDate}T00:00:00`)
-        .lt('started_at', `${targetDate}T23:59:59`)
+    const { data: activeUsers } = await supabase
+      .from('user_vibe_states')
+      .select('user_id')
+      .gte('started_at', `${targetDate}T00:00:00`)
+      .lt('started_at', `${targetDate}T23:59:59`)
+      .distinct()
 
       if (activeUsers) {
         const results = await Promise.allSettled(
@@ -142,14 +143,22 @@ async function generateAfterglowForUser(
     .lte('joined_at', endOfDay)
     .order('joined_at')
 
-  // 5. Process data into moments and metrics
+  // 5. Get crossed paths data
+  const { data: crossedPaths } = await supabase
+    .from('user_proximity_events')
+    .select('other_user_id')
+    .eq('user_id', userId)
+    .gte('detected_at', startOfDay)
+    .lte('detected_at', endOfDay)
+
+  // 6. Process data into moments and metrics
   const moments: AfterglowMoment[] = []
   const vibePath: string[] = []
   const emotionJourney: any[] = []
   
-  let totalVenues = new Set()
-  let totalFloqs = new Set()
-  let crossedPathsCount = 0
+  let totalVenues = new Set<string>()
+  let totalFloqs = new Set<string>()
+  let crossedPathsCount = crossedPaths ? new Set(crossedPaths.map(cp => cp.other_user_id)).size : 0
   let energyScore = 0
   let socialIntensity = 0
 
@@ -160,7 +169,7 @@ async function generateAfterglowForUser(
       emotionJourney.push({
         timestamp: state.started_at,
         vibe: state.vibe_tag,
-        intensity: Math.random() * 100 // TODO: Calculate based on actual data
+        intensity: Math.min(100, (index + 1) * 15 + (totalFloqs.size * 10)) // Based on progression and social activity
       })
 
       moments.push({
@@ -181,7 +190,7 @@ async function generateAfterglowForUser(
       
       moments.push({
         timestamp: visit.checked_in_at,
-        moment_type: 'location_arrived',
+        moment_type: 'venue_checkin',
         title: `Arrived at ${visit.venues?.name || 'venue'}`,
         description: `Checked in feeling ${visit.vibe}`,
         color: getVibeColor(visit.vibe),
@@ -198,7 +207,7 @@ async function generateAfterglowForUser(
       
       moments.push({
         timestamp: participation.joined_at,
-        moment_type: 'floq_joined',
+        moment_type: 'floq_join',
         title: `Joined ${participation.floqs?.title || 'floq'}`,
         description: `Connected with the ${participation.floqs?.primary_vibe} energy`,
         color: getVibeColor(participation.floqs?.primary_vibe),
@@ -214,10 +223,10 @@ async function generateAfterglowForUser(
       
       moments.push({
         timestamp: participation.joined_at,
-        moment_type: 'plan_started',
+        moment_type: 'plan_start',
         title: `Started ${participation.floq_plans?.title || 'plan'}`,
         description: 'Joined a planned gathering',
-        color: 'primary',
+        color: getVibeColor('social'),
         metadata: { plan_id: participation.plan_id }
       })
     })
@@ -278,7 +287,7 @@ async function generateAfterglowForUser(
   }
 
   // Upsert into database
-  const { error } = await supabase
+  const { data: upsertResult, error } = await supabase
     .from('daily_afterglow')
     .upsert({
       ...afterglowData,
@@ -286,6 +295,8 @@ async function generateAfterglowForUser(
     }, {
       onConflict: 'user_id,date'
     })
+    .select('id')
+    .single()
 
   if (error) {
     console.error('Error upserting afterglow:', error)
@@ -306,7 +317,7 @@ function getVibeColor(vibe?: string): string {
     'adventurous': '#fd79a8',
     'contemplative': '#a29bfe'
   }
-  return vibeColors[vibe || ''] || 'primary'
+  return vibeColors[vibe || ''] || '#6b7280'
 }
 
 function generateSummaryText(metrics: {
