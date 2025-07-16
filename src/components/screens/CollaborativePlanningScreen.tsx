@@ -30,6 +30,7 @@ import { PlanSummaryCard } from "@/components/plan/PlanSummaryCard";
 import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
+import { usePlanStatusValidation } from "@/hooks/usePlanStatusValidation";
 import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
@@ -62,6 +63,9 @@ export const CollaborativePlanningScreen = () => {
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
 
+  // Status validation for edit guards
+  const { canEditPlan, canVoteOnStops } = usePlanStatusValidation()
+
   // Get haptic feedback hook
   const { socialHaptics: hapticFeedback } = useHapticFeedback()
 
@@ -89,6 +93,12 @@ export const CollaborativePlanningScreen = () => {
   };
 
   const handleStopAdd = (timeSlot: string) => {
+    // Check if plan can be edited
+    if (!canEditPlan(plan.status || 'draft')) {
+      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      return;
+    }
+
     hapticFeedback.gestureConfirm();
     const { v4: uuidv4 } = require('uuid')
     const newStop = {
@@ -247,6 +257,12 @@ export const CollaborativePlanningScreen = () => {
   });
 
   const handleVenueSelect = (venue: any) => {
+    // Check if plan can be edited
+    if (!canEditPlan(plan.status || 'draft')) {
+      showOverlay('stop-action', 'Plan cannot be edited in current status');
+      return;
+    }
+
     hapticFeedback.gestureConfirm();
     const newStop = {
       title: `${venue.type} at ${venue.name}`,
@@ -331,6 +347,8 @@ export const CollaborativePlanningScreen = () => {
               planId={plan.id}
               currentStatus={plan.status || 'draft'}
               isCreator={plan.createdBy === 'current-user'} // This would come from auth
+              hasStops={plan.stops.length > 0}
+              hasParticipants={plan.participants.length > 0}
             />
             
             <PlanInviteButton />
