@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import debounce from 'lodash.debounce';
 import { useAutoSaveDrafts } from './useAutoSaveDrafts';
 
 export interface PlanStop {
@@ -154,19 +156,21 @@ export const useCollaborativeState = (planId: string) => {
   const [draggedStop, setDraggedStop] = useState<PlanStop | null>(null);
   const syncTimerRef = useRef<NodeJS.Timeout>();
 
-  // Mock real-time sync
-  const syncChanges = useCallback(() => {
-    setPlan(prev => ({
-      ...prev,
-      version: prev.version + 1,
-      lastUpdated: Date.now()
-    }));
-  }, []);
+  // Debounced sync to prevent spam from drag operations
+  const debouncedSync = useRef(
+    debounce(() => {
+      setPlan(prev => ({
+        ...prev,
+        version: prev.version + 1,
+        lastUpdated: Date.now()
+      }));
+    }, 300)
+  ).current;
 
   const addStop = useCallback((stop: Omit<PlanStop, 'id' | 'createdBy' | 'participants' | 'votes'>) => {
     const newStop: PlanStop = {
       ...stop,
-      id: `stop-${Date.now()}`,
+      id: uuidv4(), // Use UUID instead of Date.now()
       createdBy: "you",
       participants: ["you"],
       votes: [{ userId: "you", vote: "yes" }]
@@ -193,8 +197,8 @@ export const useCollaborativeState = (planId: string) => {
       description: `You added ${newStop.title}`
     }]);
 
-    syncChanges();
-  }, [syncChanges, autoSave]);
+    debouncedSync();
+  }, [debouncedSync, autoSave]);
 
   const removeStop = useCallback((stopId: string) => {
     const stop = plan.stops.find(s => s.id === stopId);
@@ -221,8 +225,8 @@ export const useCollaborativeState = (planId: string) => {
       description: `You removed ${stop.title}`
     }]);
 
-    syncChanges();
-  }, [plan.stops, syncChanges, autoSave]);
+    debouncedSync();
+  }, [plan.stops, debouncedSync, autoSave]);
 
   const reorderStops = useCallback((newOrder: PlanStop[]) => {
     setPlan(prev => {
@@ -237,8 +241,8 @@ export const useCollaborativeState = (planId: string) => {
       return updated;
     });
 
-    syncChanges();
-  }, [syncChanges, autoSave]);
+    debouncedSync();
+  }, [debouncedSync, autoSave]);
 
   const voteOnStop = useCallback((stopId: string, vote: 'yes' | 'no' | 'maybe') => {
     setPlan(prev => ({
@@ -265,8 +269,8 @@ export const useCollaborativeState = (planId: string) => {
       description: `You voted ${vote} on this stop`
     }]);
 
-    syncChanges();
-  }, [syncChanges]);
+    debouncedSync();
+  }, [debouncedSync]);
 
   const updateParticipantStatus = useCallback((userId: string, updates: Partial<PlanParticipant>) => {
     setPlan(prev => ({

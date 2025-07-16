@@ -2,15 +2,16 @@
 export interface PlanStop {
   id: string
   title: string
-  venue: string
+  venue?: string
   description?: string
   startTime: string
-  endTime?: string
+  endTime: string
   location?: string
   vibeMatch?: number
   status: 'confirmed' | 'suggested' | 'pending'
   color: string
   duration_minutes?: number
+  durationMinutes?: number // For backwards compatibility
   stop_order?: number
   created_by?: string
   start_time?: string

@@ -153,6 +153,7 @@ export function NovaSuggestions({
       case 'travel_efficiency': return <MapPin className="w-3 h-3" />
       case 'crowd_patterns': return <Users className="w-3 h-3" />
       case 'popularity': return <TrendingUp className="w-3 h-3" />
+      case 'weather': return <Sparkles className="w-3 h-3" />
       default: return <Sparkles className="w-3 h-3" />
     }
   }
