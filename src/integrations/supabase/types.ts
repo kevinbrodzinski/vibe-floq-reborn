@@ -1557,6 +1557,7 @@ export type Database = {
       }
       plan_invitations: {
         Row: {
+          archived: boolean | null
           expires_at: string | null
           id: string
           invitation_type: string | null
@@ -1570,6 +1571,7 @@ export type Database = {
           token: string | null
         }
         Insert: {
+          archived?: boolean | null
           expires_at?: string | null
           id?: string
           invitation_type?: string | null
@@ -1583,6 +1585,7 @@ export type Database = {
           token?: string | null
         }
         Update: {
+          archived?: boolean | null
           expires_at?: string | null
           id?: string
           invitation_type?: string | null
@@ -2066,6 +2069,7 @@ export type Database = {
         Row: {
           checkin_streak: number | null
           created_at: string | null
+          declined_plan_types: Json | null
           favorite_locations: string[] | null
           feedback_sentiment: Json | null
           preferred_vibe: string | null
@@ -2077,6 +2081,7 @@ export type Database = {
         Insert: {
           checkin_streak?: number | null
           created_at?: string | null
+          declined_plan_types?: Json | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
           preferred_vibe?: string | null
@@ -2088,6 +2093,7 @@ export type Database = {
         Update: {
           checkin_streak?: number | null
           created_at?: string | null
+          declined_plan_types?: Json | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
           preferred_vibe?: string | null
@@ -3699,6 +3705,10 @@ export type Database = {
       leave_floq: {
         Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
+      }
+      log_invite_decline: {
+        Args: { p_user_id: string; p_plan_id: string }
+        Returns: undefined
       }
       longtransactionsenabled: {
         Args: Record<PropertyKey, never>
