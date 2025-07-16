@@ -9,11 +9,18 @@ import { TimelineEditor } from "@/components/TimelineEditor";
 import { PlanningChat } from "@/components/PlanningChat";
 import { SocialPulseOverlay } from "@/components/SocialPulseOverlay";
 import { PlanExecutionTracker } from "@/components/PlanExecutionTracker";
+import { VotingThresholdMeter } from "@/components/VotingThresholdMeter";
+import { TiebreakerSuggestions } from "@/components/TiebreakerSuggestions";
+import { RSVPCard } from "@/components/RSVPCard";
+import { SharePlanButton } from "@/components/SharePlanButton";
+import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
 
 export const CollaborativePlanningScreen = () => {
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
   const [showChat, setShowChat] = useState(false);
   const [venueSearchQuery, setVenueSearchQuery] = useState("");
+  const [showTiebreaker, setShowTiebreaker] = useState(false);
+  const [currentUserRSVP, setCurrentUserRSVP] = useState<'attending' | 'maybe' | 'not_attending' | 'pending'>('pending');
   
   const {
     plan,
@@ -24,6 +31,19 @@ export const CollaborativePlanningScreen = () => {
     voteOnStop,
     updateParticipantStatus
   } = useCollaborativeState("plan-1");
+
+  // Real-time sync hook for live collaboration
+  const { isConnected, participantCount } = usePlanRealTimeSync(plan.id, {
+    onParticipantJoin: (participant) => {
+      console.log('Participant joined:', participant);
+    },
+    onVoteUpdate: (voteData) => {
+      console.log('Vote update:', voteData);
+    },
+    onStopUpdate: (stopData) => {
+      console.log('Stop update:', stopData);
+    }
+  });
 
   const { socialHaptics } = useHapticFeedback();
 
@@ -115,6 +135,12 @@ export const CollaborativePlanningScreen = () => {
           </div>
           
           <div className="flex items-center space-x-2">
+            <SharePlanButton 
+              planId={plan.id}
+              planTitle={plan.title}
+              variant="ghost"
+              size="sm"
+            />
             <button 
               onClick={() => setShowChat(!showChat)}
               className={`p-2 rounded-xl transition-all duration-300 ${
@@ -135,6 +161,26 @@ export const CollaborativePlanningScreen = () => {
           onParticipantUpdate={updateParticipantStatus}
         />
 
+        {/* RSVP Card */}
+        <RSVPCard
+          planId={plan.id}
+          planTitle={plan.title}
+          planDate={plan.date}
+          currentUserRSVP={currentUserRSVP}
+          attendeeCount={3} // Mock data - would come from real RSVP data
+          maybeCount={1} // Mock data - would come from real RSVP data
+          onRSVPChange={setCurrentUserRSVP}
+          className="mb-6"
+        />
+
+        {/* Voting Threshold Meter */}
+        <VotingThresholdMeter
+          totalParticipants={plan.participants.length}
+          votedParticipants={Math.floor(plan.participants.length * 0.7)} // Mock 70% participation
+          threshold={60}
+          className="mb-6"
+        />
+
         {planMode === 'planning' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Timeline Editor */}
@@ -143,6 +189,19 @@ export const CollaborativePlanningScreen = () => {
                 planId={plan.id}
                 isEditable={true}
               />
+
+              {/* Tiebreaker Suggestions */}
+              {showTiebreaker && (
+                <TiebreakerSuggestions
+                  stopId="current-stop"
+                  tiedOptions={["Option A", "Option B"]}
+                  onSelectRecommendation={(rec) => {
+                    console.log('AI recommends:', rec);
+                    setShowTiebreaker(false);
+                  }}
+                  className="mb-6"
+                />
+              )}
               
               {/* Execute Plan Button */}
               {plan.stops.length > 0 && (
