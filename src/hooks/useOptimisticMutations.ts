@@ -2,11 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 
+type PinnedMutationContext = {
+  previousAfterglow: unknown
+  previousHistory: unknown
+  id: string
+}
+
 export const useTogglePinned = () => {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<boolean, Error, {id: string; pinned: boolean}, PinnedMutationContext>({
     mutationFn: async ({ id, pinned }: { id: string; pinned: boolean }) => {
       const { error } = await supabase
         .from('daily_afterglow')
@@ -32,12 +38,12 @@ export const useTogglePinned = () => {
         old ? { ...old, is_pinned: pinned } : old
       )
       
-      // Optimistically update history list
-      queryClient.setQueryData(['afterglow-history'], (old: any) =>
-        old ? old.map((item: any) => 
-          item.id === id ? { ...item, is_pinned: pinned } : item
-        ) : old
-      )
+    // Optimistically update history list
+    queryClient.setQueryData(['afterglow-history'], (old: any) =>
+      old ? old.map((item: any) => 
+        item.id === id ? { ...item, is_pinned: pinned } : item
+      ) : old
+    )
       
       return { previousAfterglow, previousHistory, id }
     },
@@ -73,11 +79,17 @@ export const useTogglePinned = () => {
   })
 }
 
+type FavoriteMutationContext = {
+  previousAfterglow: unknown
+  previousFavorites: unknown
+  afterglowId: string
+}
+
 export const useToggleFavorite = () => {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<boolean, Error, {afterglowId: string; isFavorite: boolean; userId: string}, FavoriteMutationContext>({
     mutationFn: async ({ afterglowId, isFavorite, userId }: { 
       afterglowId: string 
       isFavorite: boolean

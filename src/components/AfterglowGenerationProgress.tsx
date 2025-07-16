@@ -33,6 +33,14 @@ const getStepIcon = (step: string) => {
 
 export function AfterglowGenerationProgress({ progress }: AfterglowGenerationProgressProps) {
   const { step, progress: progressValue, status, message } = progress
+  
+  const getStatusColor = () => {
+    switch (status) {
+      case 'completed': return 'bg-green-500'
+      case 'error': return 'bg-red-500'
+      default: return 'bg-primary'
+    }
+  }
 
   return (
     <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 glow-secondary">
@@ -52,7 +60,7 @@ export function AfterglowGenerationProgress({ progress }: AfterglowGenerationPro
 
       <div className="space-y-3">
         <Progress 
-          value={progressValue} 
+          value={typeof progressValue === 'number' ? progressValue : 0} 
           className="h-2"
         />
         
@@ -61,7 +69,7 @@ export function AfterglowGenerationProgress({ progress }: AfterglowGenerationPro
             {message || `${step}...`}
           </span>
           <span className="text-primary font-medium">
-            {Math.round(progressValue)}%
+            {Math.round(typeof progressValue === 'number' ? progressValue : 0)}%
           </span>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import {
   Timeline,
   TimelineItem,
@@ -19,43 +19,17 @@ import {
   Pin, 
   PinOff, 
   MapPin, 
-  Users, 
-  Music, 
-  CalendarCheck,
   Sparkles,
-  Eye,
-  Loader,
   AlertCircle
 } from "lucide-react";
 import { LazyShareModal } from '@/components/LazyShareModal';
+import { getMomentIcon, getColorFromHex, formatMomentType } from '@/constants/moments';
 
 // Memoized moment card for performance
 const MomentCard = memo(({ moment, isLast }: { moment: any; isLast: boolean }) => {
-  const momentIcon = (type: string) => {
-    switch (type) {
-      case 'venue_checkin': return <MapPin className="h-3 w-3" />
-      case 'floq_join': return <Users className="h-3 w-3" />
-      case 'plan_start': return <CalendarCheck className="h-3 w-3" />
-      case 'music': return <Music className="h-3 w-3" />
-      case 'vibe_change': return <Sparkles className="h-3 w-3" />
-      default: return <Eye className="h-3 w-3" />
-    }
-  }
-
-  const getColorFromHex = (hex?: string) => {
-    if (!hex) return 'slate'
-    // Convert hex to a tailwind-friendly color name
-    const colorMap: Record<string, string> = {
-      '#ff6b6b': 'red',
-      '#4ecdc4': 'teal', 
-      '#45b7d1': 'blue',
-      '#96ceb4': 'green',
-      '#ffeaa7': 'yellow',
-      '#fd79a8': 'pink',
-      '#a29bfe': 'purple'
-    }
-    return colorMap[hex] || 'slate'
-  }
+  const color = useMemo(() => getColorFromHex(moment.color), [moment.color])
+  const IconComponent = useMemo(() => getMomentIcon(moment.moment_type), [moment.moment_type])
+  const formattedType = useMemo(() => formatMomentType(moment.moment_type), [moment.moment_type])
 
   return (
     <TimelineItem>
@@ -70,18 +44,18 @@ const MomentCard = memo(({ moment, isLast }: { moment: any; isLast: boolean }) =
             {format(new Date(moment.timestamp), 'p')}
           </span>
           
-          <Chip color={getColorFromHex(moment.color)} icon={momentIcon(moment.moment_type)}>
-            {moment.moment_type.replace('_', ' ')}
+          <Chip color={color} icon={<IconComponent className="h-3 w-3" />}>
+            {formattedType}
           </Chip>
           
           {moment.metadata?.venue_name && (
-            <Chip color="blue" icon={<MapPin className="h-3 w-3" />}>
+            <Chip key="venue" color="blue" icon={<MapPin className="h-3 w-3" />}>
               {moment.metadata.venue_name}
             </Chip>
           )}
           
           {moment.metadata?.vibe && (
-            <Chip color="emerald" icon={<Sparkles className="h-3 w-3" />}>
+            <Chip key="vibe" color="emerald" icon={<Sparkles className="h-3 w-3" />}>
               {moment.metadata.vibe}
             </Chip>
           )}
