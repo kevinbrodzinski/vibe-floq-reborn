@@ -877,12 +877,15 @@ export type Database = {
           created_at: string | null
           creator_id: string
           description: string | null
+          duration_hours: number | null
           end_at: string | null
+          end_time: string | null
           floq_id: string
           id: string
           location: unknown | null
           max_participants: number | null
           planned_at: string
+          start_time: string | null
           status: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
           total_budget: number | null
@@ -895,12 +898,15 @@ export type Database = {
           created_at?: string | null
           creator_id: string
           description?: string | null
+          duration_hours?: number | null
           end_at?: string | null
+          end_time?: string | null
           floq_id: string
           id?: string
           location?: unknown | null
           max_participants?: number | null
           planned_at: string
+          start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
           total_budget?: number | null
@@ -913,12 +919,15 @@ export type Database = {
           created_at?: string | null
           creator_id?: string
           description?: string | null
+          duration_hours?: number | null
           end_at?: string | null
+          end_time?: string | null
           floq_id?: string
           id?: string
           location?: unknown | null
           max_participants?: number | null
           planned_at?: string
+          start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title?: string
           total_budget?: number | null
@@ -5260,6 +5269,10 @@ export type Database = {
       username_available: {
         Args: { check_username: string } | { u: string }
         Returns: boolean
+      }
+      validate_stop_times: {
+        Args: { p_plan_id: string }
+        Returns: undefined
       }
       venue_details: {
         Args: { v_id: string }
