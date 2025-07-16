@@ -192,12 +192,11 @@ export function CollectionPicker({
                       key={color}
                       type="radio"
                       name="collection-color"
-                      className={`w-6 h-6 rounded-full border-2 cursor-pointer ${
-                        newCollection.color === color ? 'border-foreground' : 'border-border'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      onChange={() => setNewCollection(prev => ({ ...prev, color }))}
+                      value={color}
                       checked={newCollection.color === color}
+                      onChange={() => setNewCollection(prev => ({ ...prev, color }))}
+                      className="h-6 w-6 cursor-pointer appearance-none rounded-full border-2"
+                      style={{ backgroundColor: color, borderColor: color }}
                     />
                   ))}
                 </div>

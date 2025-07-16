@@ -209,11 +209,10 @@ export interface Collection {
   id: string;
   name: string;
   description?: string;
-  color?: string;
-  created_at?: string;
-  updated_at?: string;
-  user_id: string;
-  itemCount?: number;
+  color: string;
+  created_at: string;
+  updated_at: string;
+  itemCount: number;
 }
 
 export const createCollection = async (name: string, description?: string, color = '#3b82f6') => {
@@ -237,7 +236,6 @@ export const getCollections = async (): Promise<Collection[]> => {
       color,
       created_at,
       updated_at,
-      user_id,
       afterglow_collection_items(count)
     `)
     .order('updated_at', { ascending: false });
@@ -245,10 +243,15 @@ export const getCollections = async (): Promise<Collection[]> => {
   if (error) throw error;
   
   // Transform the data to include itemCount
-  const collections = data?.map(collection => ({
-    ...collection,
-    itemCount: collection.afterglow_collection_items?.[0]?.count || 0
-  })) || [];
+  const collections = data?.map((c) => ({
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    color: c.color,
+    created_at: c.created_at,
+    updated_at: c.updated_at,
+    itemCount: c.afterglow_collection_items?.[0]?.count ?? 0
+  })) ?? [];
   
   return collections;
 };

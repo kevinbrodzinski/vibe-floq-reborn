@@ -69,6 +69,11 @@ export default function Archive() {
     enabled: hasSearched
   });
 
+  const { data: collections, isLoading: collectionsLoading } = useQuery({
+    queryKey: ['collections'],
+    queryFn: getCollections,
+  });
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['archive-stats'],
     queryFn: getArchiveStats
@@ -77,11 +82,6 @@ export default function Archive() {
   const { data: favorites, isLoading: favoritesLoading } = useQuery({
     queryKey: ['favorites'],
     queryFn: getFavorites
-  });
-
-  const { data: collections, isLoading: collectionsLoading } = useQuery({
-    queryKey: ['collections'],
-    queryFn: getCollections
   });
 
   // Mutations
