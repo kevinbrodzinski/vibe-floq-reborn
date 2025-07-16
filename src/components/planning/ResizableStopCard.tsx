@@ -42,6 +42,7 @@ interface ResizableStopCardProps {
   onEdit?: () => void
   onRemove?: () => void
   className?: string
+  style?: React.CSSProperties
 }
 
 export function ResizableStopCard({
@@ -61,7 +62,8 @@ export function ResizableStopCard({
   onEndResize,
   onEdit,
   onRemove,
-  className
+  className,
+  style
 }: ResizableStopCardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [previewDuration, setPreviewDuration] = useState<number | null>(null)
@@ -203,7 +205,8 @@ export function ResizableStopCard({
       style={{ 
         borderLeftColor: stop.color || 'hsl(var(--primary))', 
         borderLeftWidth: '4px',
-        minHeight: `${Math.max(duration * 1.2, 60)}px` // Dynamic height based on duration
+        minHeight: `${Math.max(duration * 1.2, 60)}px`, // Dynamic height based on duration
+        ...style
       }}
       role="listitem"
       aria-label={`Stop: ${stop.title}`}

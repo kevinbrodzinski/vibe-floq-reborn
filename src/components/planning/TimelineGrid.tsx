@@ -193,7 +193,7 @@ export function TimelineGrid({
       title: 'New Stop',
       start_time: timeSlot,
       duration_minutes: suggestedSlot ? 60 : 60, // Use AI suggestion or default
-      stop_order: stops.length,
+      stop_order: (Math.max(...stops.map(s => s.stop_order || 0), 0)) + 1,
       suggested: !!suggestedSlot
     }
     
@@ -241,7 +241,7 @@ export function TimelineGrid({
             data: {
               ...originalStop,
               title: `${originalStop.title} (Copy)`,
-              stop_order: stops.length
+              stop_order: (Math.max(...stops.map(s => s.stop_order || 0), 0)) + 1
             }
           }
         })
@@ -511,7 +511,10 @@ function TimeSlot({
                  onResize={onResize}
                  onEndResize={onEndResize}
                  onRemove={() => onDeleteStop(stop.id)}
-                 className={getStopColor?.(stop) ? `border-[${getStopColor(stop)}] bg-[${getStopColor(stop)}]/10` : undefined}
+                  style={getStopColor?.(stop) ? { 
+                    borderColor: getStopColor(stop), 
+                    backgroundColor: `${getStopColor(stop)}10` 
+                  } : undefined}
                />
             ))}
           </div>

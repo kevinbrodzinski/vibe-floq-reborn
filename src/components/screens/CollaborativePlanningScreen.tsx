@@ -235,7 +235,7 @@ export const CollaborativePlanningScreen = () => {
         overlayTimeoutRef.current = null;
       }, ms);
     },
-    []
+    [setOverlayAction, setOverlayFeedback, setShowExecutionOverlay, overlayTimeoutRef]
   );
 
   // Enhanced RSVP handler with persistence
