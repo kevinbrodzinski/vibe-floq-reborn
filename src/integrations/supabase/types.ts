@@ -1972,6 +1972,60 @@ export type Database = {
         }
         Relationships: []
       }
+      snap_suggestion_logs: {
+        Row: {
+          confidence: number | null
+          id: string
+          original_time: string
+          plan_id: string
+          reason: string | null
+          snapped_time: string
+          source: string
+          stop_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          id?: string
+          original_time: string
+          plan_id: string
+          reason?: string | null
+          snapped_time: string
+          source?: string
+          stop_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          id?: string
+          original_time?: string
+          plan_id?: string
+          reason?: string | null
+          snapped_time?: string
+          source?: string
+          stop_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snap_suggestion_logs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snap_suggestion_logs_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null
@@ -2156,6 +2210,7 @@ export type Database = {
           declined_plan_types: Json | null
           favorite_locations: string[] | null
           feedback_sentiment: Json | null
+          prefer_smart_suggestions: boolean
           preferred_vibe: string | null
           updated_at: string | null
           user_id: string
@@ -2168,6 +2223,7 @@ export type Database = {
           declined_plan_types?: Json | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
+          prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
           updated_at?: string | null
           user_id: string
@@ -2180,6 +2236,7 @@ export type Database = {
           declined_plan_types?: Json | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
+          prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
           updated_at?: string | null
           user_id?: string
