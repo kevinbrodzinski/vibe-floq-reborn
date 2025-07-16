@@ -16,6 +16,7 @@ import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { VoteButtons } from '@/components/plans/VoteButtons'
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation'
 import { getSafeStatus } from '@/lib/planStatusConfig'
+import { StopOverlayHint } from './StopOverlayHint'
 import type { PlanStop, SnapSuggestion } from '@/types/plan'
 
 interface ResizableStopCardProps {
@@ -122,7 +123,9 @@ export function ResizableStopCard({
       // Check if we're applying a snap suggestion for Nova tracking
       if (snapSuggestion && previewDuration && planId) {
         const confidenceScore = snapSuggestion.confidence || 0.8
-        recordNovaSnap(planId, stop.id, confidenceScore)
+        const originalTime = stop.start_time || ''
+        const snappedTime = snapSuggestion.startTime || ''
+        recordNovaSnap(planId, stop.id, confidenceScore, originalTime, snappedTime)
       }
       
       setPreviewDuration(null)
@@ -184,6 +187,12 @@ export function ResizableStopCard({
           isVisible={showTooltip && !isDragging}
           duration={duration}
         />
+        {isConflicting && (
+          <StopOverlayHint type="conflict" message="Time conflict detected" />
+        )}
+        {snapSuggestion && !isConflicting && (
+          <StopOverlayHint type="snap" message="✨ Snapped to AI suggestion" />
+        )}
       </AnimatePresence>
 
       {/* Collaboration Indicators */}

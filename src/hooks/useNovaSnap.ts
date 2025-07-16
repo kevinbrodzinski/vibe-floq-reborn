@@ -1,15 +1,29 @@
 import { useUserPreferences, useUpdateUserPreferences } from '@/hooks/useUserPreferences'
+import { useLogSnapSuggestion } from '@/hooks/useLogSnapSuggestion'
 import { useCallback } from 'react'
 
 export function useNovaSnap() {
   const { data: prefs } = useUserPreferences()
   const { mutate: updatePrefs } = useUpdateUserPreferences()
+  const { logSnapSuggestion } = useLogSnapSuggestion()
 
-  const preferSmartSuggestions = prefs?.feedback_sentiment?.prefer_suggestions ?? true
+  const preferSmartSuggestions = prefs?.prefer_smart_suggestions ?? true
 
-  const recordNovaSnap = useCallback((planId: string, stopId: string, matchStrength: number) => {
+  const recordNovaSnap = useCallback(async (planId: string, stopId: string, matchStrength: number, originalTime?: string, snappedTime?: string) => {
+    // Log to the new snap_suggestion_logs table
+    if (originalTime && snappedTime) {
+      await logSnapSuggestion({
+        planId,
+        stopId,
+        originalTime,
+        snappedTime,
+        confidence: matchStrength * 100, // Convert to percentage
+        reason: 'nova_suggestion'
+      })
+    }
+
+    // Also update user preferences for backward compatibility
     const currentFeedback = prefs?.feedback_sentiment || {}
-    
     updatePrefs({
       feedback_sentiment: {
         ...currentFeedback,
@@ -21,18 +35,13 @@ export function useNovaSnap() {
         },
       },
     })
-  }, [prefs, updatePrefs])
+  }, [prefs, updatePrefs, logSnapSuggestion])
 
   const toggleSmartSuggestions = useCallback(() => {
-    const currentFeedback = prefs?.feedback_sentiment || {}
-    
     updatePrefs({
-      feedback_sentiment: {
-        ...currentFeedback,
-        prefer_suggestions: !preferSmartSuggestions,
-      },
+      prefer_smart_suggestions: !preferSmartSuggestions,
     })
-  }, [prefs, updatePrefs, preferSmartSuggestions])
+  }, [updatePrefs, preferSmartSuggestions])
 
   return {
     preferSmartSuggestions,

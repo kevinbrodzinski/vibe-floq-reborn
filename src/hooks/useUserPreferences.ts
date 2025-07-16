@@ -10,6 +10,7 @@ export interface UserPreferences {
   checkin_streak: number;
   favorite_locations: string[];
   feedback_sentiment: Record<string, any>;
+  prefer_smart_suggestions: boolean;
   created_at: string;
   updated_at: string;
 }
