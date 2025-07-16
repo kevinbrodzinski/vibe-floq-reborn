@@ -1,5 +1,17 @@
 import domToImage from 'dom-to-image-more';
 
+/** Convert dataURL to Blob without network fetch */
+function dataUrlToBlob(url: string): Blob {
+  const byteString = atob(url.split(',')[1]);
+  const mime = url.split(',')[0].match(/:(.*?);/)![1];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: mime });
+}
+
 /**
  * Renders a DOM node into a PNG Blob that can be downloaded or shared.
  * @param node HTMLElement to capture (must be in the document)
@@ -8,26 +20,32 @@ import domToImage from 'dom-to-image-more';
 export async function captureNodeToPng(node: HTMLElement): Promise<Blob> {
   const dataUrl = await domToImage.toPng(node, {
     cacheBust: true,
-    quality: 1,
     pixelRatio: window.devicePixelRatio || 2,
     bgcolor: '#0f172a', // tailwind slate-900 (fallback)
   });
-  const res = await fetch(dataUrl);
-  return await res.blob();
+  
+  return dataUrlToBlob(dataUrl);
 }
 
-/** Native share if supported – falls back to download */
+/** Safer share util with proper fallback and cleanup */
 export async function shareOrDownload(blob: Blob, filename = 'afterglow.png') {
-  const file = new File([blob], filename, { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+  const file = new File([blob], filename, { type: blob.type });
 
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ files: [file], text: 'My Afterglow ✨' });
-  } else {
-    const url = URL.createObjectURL(blob);
+  try {
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], text: 'My Afterglow ✨' });
+    } else {
+      throw new Error('Web-Share unavailable');
+    }
+  } catch {
+    // fallback download
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
+  } finally {
+    // always cleanup
     URL.revokeObjectURL(url);
   }
 }

@@ -4,12 +4,21 @@ import { format } from 'date-fns';
 
 interface Props { data: AfterglowDetail['afterglow']; template: 'minimal' | 'gradient' }
 
+// Template types for enumeration
+export const TEMPLATES = ['minimal', 'gradient'] as const;
+export type TemplateType = typeof TEMPLATES[number];
+
+// Hoist className to avoid re-creating on every render
+const containerBase = 'w-[1080px] h-[1350px] flex flex-col items-center justify-center text-white p-20';
+
 export const ShareCard = React.forwardRef<HTMLDivElement, Props>(
   ({ data, template }, ref) => {
     const Base = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
       <div
         ref={ref}
-        className={`w-[1080px] h-[1350px] flex flex-col items-center justify-center text-white p-20 ${className}`}
+        className={`${containerBase} ${className}`}
+        role="img"
+        aria-label="Shareable Afterglow card"
       >
         {children}
       </div>
@@ -20,7 +29,7 @@ export const ShareCard = React.forwardRef<HTMLDivElement, Props>(
       case 'gradient':
         return (
           <Base className="bg-gradient-to-br from-emerald-500 via-sky-500 to-purple-600 font-semibold">
-            <h1 className="text-6xl mb-10">✨ Afterglow ✨</h1>
+            <h2 className="text-6xl mb-10">✨ Afterglow ✨</h2>
             <p className="text-4xl mb-4">{format(new Date(data.date), 'PPP')}</p>
 
             <div className="flex gap-8 text-5xl my-8">
