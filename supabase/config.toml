@@ -35,3 +35,18 @@ verify_jwt = true
 
 [functions.render-og-card]
 verify_jwt = false
+
+[functions.submit-plan-vote]
+verify_jwt = true
+
+[functions.suggest-venues]
+verify_jwt = true
+
+[functions.finalize-plan]
+verify_jwt = true
+
+[functions.invite-external-friends]
+verify_jwt = true
+
+[functions.sync-plan-changes]
+verify_jwt = true
