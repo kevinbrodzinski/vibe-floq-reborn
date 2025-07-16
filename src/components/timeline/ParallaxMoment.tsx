@@ -18,8 +18,9 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
   const prefersReduced = usePrefersReducedMotion();
   const { triggerHaptic } = useHaptic();
   
+  // Guard against null containerRef to avoid Framer warnings
   const { scrollYProgress } = useScroll({
-    target: containerRef,
+    target: containerRef?.current ? containerRef : undefined,
     offset: ["start end", "end start"]
   });
 
@@ -41,7 +42,10 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
   const formattedType = formatMomentType(moment.moment_type);
 
   const handleMomentClick = () => {
-    triggerHaptic('light');
+    // Only trigger haptics on native platforms
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      triggerHaptic('light');
+    }
   };
 
   if (prefersReduced) {

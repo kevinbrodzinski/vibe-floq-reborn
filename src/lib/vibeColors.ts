@@ -1,7 +1,9 @@
 import tinycolor from 'tinycolor2';
 
+type VibePalette = Record<string, string[]>;
+
 export const getVibeColorPalette = (dominantVibe: string, baseColor?: string) => {
-  const vibeColors: Record<string, string[]> = {
+  const vibeColors: VibePalette = {
     energetic: ['#ff6b6b', '#ff8787', '#ffa8a8'],
     chill: ['#51cf66', '#69db7c', '#8ce99a'],
     focused: ['#339af0', '#74c0fc', '#a5d8ff'],
@@ -29,7 +31,8 @@ export const getVibeColorPalette = (dominantVibe: string, baseColor?: string) =>
 export const generateCanvasGradient = (
   canvas: HTMLCanvasElement,
   colors: string[],
-  time: number = 0
+  time: number = 0,
+  animate: boolean = true
 ) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -37,31 +40,24 @@ export const generateCanvasGradient = (
   const width = canvas.width;
   const height = canvas.height;
 
-  // Create animated gradient
-  const gradient = ctx.createLinearGradient(
-    Math.sin(time * 0.001) * width,
-    Math.cos(time * 0.001) * height,
-    width,
-    height
-  );
+  // Reset transform to avoid accumulation on resize
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  // Create gradient (animated or static)
+  const gradient = animate 
+    ? ctx.createLinearGradient(
+        Math.sin(time * 0.001) * width,
+        Math.cos(time * 0.001) * height,
+        width,
+        height
+      )
+    : ctx.createLinearGradient(0, 0, width, height);
 
   colors.forEach((color, index) => {
     gradient.addColorStop(index / (colors.length - 1), color);
   });
 
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-
-  // Add subtle noise/texture
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const noise = (Math.random() - 0.5) * 10;
-    data[i] += noise;     // R
-    data[i + 1] += noise; // G
-    data[i + 2] += noise; // B
-  }
-
-  ctx.putImageData(imageData, 0, 0);
+  ctx.fillRect(0, 0, width / window.devicePixelRatio, height / window.devicePixelRatio);
 };
