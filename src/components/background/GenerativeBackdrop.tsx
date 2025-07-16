@@ -40,19 +40,28 @@ export const GenerativeBackdrop: React.FC<GenerativeBackdropProps> = ({
     // Set canvas size with proper scaling
     const updateSize = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       canvas.style.width = rect.width + 'px';
       canvas.style.height = rect.height + 'px';
+      
+      // Reset transform matrix to avoid accumulation on resize
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     };
 
     updateSize();
     window.addEventListener('resize', updateSize);
 
-    // Animation loop (only if shouldAnimate is true)
+    // Animation loop with noise throttling for performance
     if (shouldAnimate) {
+      let lastNoiseTime = 0;
       const animate = (time: number) => {
-        generateCanvasGradient(canvas, colors, time, true);
+        // Throttle noise generation to improve performance on mobile
+        const shouldAddNoise = time - lastNoiseTime > 1000; // Every 1 second
+        generateCanvasGradient(canvas, colors, time, shouldAddNoise);
+        if (shouldAddNoise) lastNoiseTime = time;
         animationRef.current = requestAnimationFrame(animate);
       };
       animationRef.current = requestAnimationFrame(animate);
@@ -76,7 +85,7 @@ export const GenerativeBackdrop: React.FC<GenerativeBackdropProps> = ({
         className={`absolute inset-0 opacity-20 ${className}`}
         style={{ width: '100%', height: '100%' }}
       />
-      {/* Fallback gradient for when canvas fails */}
+      {/* Fallback gradient for when canvas fails - now applied */}
       <div
         className={`absolute inset-0 opacity-20 ${className}`}
         style={{
