@@ -1,9 +1,14 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+// NATIVE-ONLY ENTRY
+// This entry point is used for iOS/Android builds via Capacitor
+// DO NOT import this in web code - use src/main.web.tsx instead
+
+import 'react-native-get-random-values';
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
 import { DebugProvider } from '@/lib/useDebug';
-import { ErrorBoundary } from '@/components/system/ErrorBoundary'
+import { ErrorBoundary } from '@/components/system/ErrorBoundary';
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
