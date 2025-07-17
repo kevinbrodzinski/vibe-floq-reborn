@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, Share2, Download } from 'lucide-react';
+import { Copy, Share2, Download, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { ShareCard, TEMPLATES, TemplateType } from './CardTemplates';
 import { AfterglowDetail } from '@/lib/afterglow-helpers';
 import { captureNodeToPng, shareOrDownload } from '@/lib/share/generateShareImage';
@@ -22,6 +23,7 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
   const [template, setTemplate] = useState<TemplateType>('gradient');
   const previewRef = useRef<HTMLDivElement>(null);
   const [processing, setProcessing] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const { toast } = useToast();
   const { data: shareLink, isMutating: creatingLink, trigger: createShareLink } = useShareLink(afterglow.id);
 
@@ -129,6 +131,14 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
                       <Copy className="w-4 h-4 mr-2" />
                       Copy
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setQrOpen(true)}
+                    >
+                      <QrCode className="w-4 h-4 mr-2" />
+                      QR
+                    </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Anyone with this link can view your afterglow
@@ -181,6 +191,31 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="flex flex-col items-center gap-4 max-w-sm">
+          <DialogHeader>Share via QR Code</DialogHeader>
+          {shareLink && (
+            <>
+              <a 
+                href={shareLink.url} 
+                download={`afterglow-${afterglow.date}.png`}
+                className="block"
+              >
+                <QRCodeSVG 
+                  value={shareLink.url} 
+                  size={224}
+                  className="border rounded-lg"
+                />
+              </a>
+              <p className="text-xs text-muted-foreground text-center break-all px-4">
+                {shareLink.url}
+              </p>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

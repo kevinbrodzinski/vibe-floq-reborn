@@ -22,7 +22,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   const navigate = useNavigate();
   const { data: p, isLoading, isError } = useProfile(userId);
   const statusMap = useFriendsPresence();
-  const online = statusMap[userId] === 'online';
+  const online = statusMap[userId]?.status === 'online';
   const [dmOpen, setDmOpen] = useState(false);
   
   // Get current user ID for unread counts
@@ -85,7 +85,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
             size={32}
             className="h-8 w-8"
           />
-          {online && (
+          {online && statusMap[userId]?.visible !== false && (
             <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
           )}
           {unreadCount > 0 && (
