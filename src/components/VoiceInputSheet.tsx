@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 interface VoiceInputSheetProps {
   open: boolean
@@ -26,6 +27,10 @@ export function VoiceInputSheet({
 }: VoiceInputSheetProps) {
   const { state, transcript, start, stop } = useVoiceToStop(planId, planDate)
 
+  const isListening = state === 'listening'
+  const isParsing = state === 'parsing' || state === 'creating'
+  const isError = state === 'error'
+
   // Auto-start when sheet opens
   useEffect(() => {
     if (open && state === 'idle') {
@@ -33,22 +38,18 @@ export function VoiceInputSheet({
     }
   }, [open, state, start])
 
-  // Auto-close when stop is successfully created
+  // Auto-close when stop is successfully created (but not on error)
   useEffect(() => {
-    if (state === 'idle' && transcript && open) {
+    if (state === 'idle' && transcript && open && !isError) {
       // Add small delay before closing to show success
       setTimeout(() => onOpenChange(false), 1000)
     }
-  }, [state, transcript, open, onOpenChange])
+  }, [state, transcript, open, onOpenChange, isError])
 
   const handleClose = () => {
     stop()
     onOpenChange(false)
   }
-
-  const isListening = state === 'listening'
-  const isParsing = state === 'parsing' || state === 'creating'
-  const isError = state === 'error'
 
   const getStatusText = () => {
     switch (state) {
@@ -81,8 +82,11 @@ export function VoiceInputSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[400px]">
-        <SheetHeader className="flex flex-row items-center justify-between space-y-0">
+        <VisuallyHidden>
           <SheetTitle>Voice Input</SheetTitle>
+        </VisuallyHidden>
+        <SheetHeader className="flex flex-row items-center justify-between space-y-0">
+          <h2 className="text-lg font-semibold">Voice Input</h2>
           <Button variant="ghost" size="sm" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>

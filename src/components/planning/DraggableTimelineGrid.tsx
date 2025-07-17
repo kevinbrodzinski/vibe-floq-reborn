@@ -344,7 +344,10 @@ export function DraggableTimelineGrid({
           size="lg"
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
           onMouseDown={() => setVoiceOpen(true)}
-          onTouchStart={() => setVoiceOpen(true)}
+          onTouchStart={(e) => {
+            e.preventDefault() // Prevent iOS Safari context menu
+            setVoiceOpen(true)
+          }}
         >
           <Mic className="h-5 w-5" />
         </Button>

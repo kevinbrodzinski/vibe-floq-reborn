@@ -58,6 +58,9 @@ serve(async (req) => {
       throw new Error('Transcript is required');
     }
 
+    // Rate limiting check (server-side)
+    // TODO: Implement check_rate_limit RPC when needed
+
     console.log('Parsing voice input:', transcript);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

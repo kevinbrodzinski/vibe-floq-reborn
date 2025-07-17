@@ -37,8 +37,19 @@ type Listener = (transcript: string, isFinal: boolean) => void
 let webRecognizer: any = null
 
 const startWebRecognition = (onResult: Listener, onErr: (e: any) => void) => {
+  // SSR guard
+  if (typeof window === 'undefined') {
+    return onErr('SpeechRecognition not available on server')
+  }
+  
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition
   if (!SR) return onErr('SpeechRecognition not supported')
+  
+  // Clean up any existing recognizer
+  if (webRecognizer) {
+    webRecognizer.abort()
+    webRecognizer = null
+  }
   
   webRecognizer = new SR()
   webRecognizer.lang = 'en-US'
@@ -148,9 +159,31 @@ export function useVoiceToStop(planId: string, planDate: string) {
   return { state, transcript, start, stop }
 }
 
-// Simple regex fallback for common patterns using chrono-node
+// Parse using chrono-node first, then regex fallback
 function regexParse(text: string, planDate: string): ParsedStop | null {
-  // Try to find patterns like "add [venue] at [time]"
+  const baseDate = new Date(planDate)
+  
+  // Try chrono-node first for better time parsing
+  const chronoDate = chrono.parseDate(text, baseDate)
+  if (chronoDate) {
+    // Extract title by removing time-related phrases
+    const title = text
+      .replace(/\b(?:at|from|to|until)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '')
+      .replace(/\b(?:add|go to|visit|meet at)\b/gi, '')
+      .trim()
+    
+    if (title) {
+      const startTime = `${chronoDate.getHours().toString().padStart(2, '0')}:${chronoDate.getMinutes().toString().padStart(2, '0')}`
+      return {
+        title: title.trim(),
+        startTime,
+        endTime: undefined,
+        venue: title.trim(),
+      }
+    }
+  }
+
+  // Fallback to regex patterns for more complex cases
   const patterns = [
     /(?:add|go to|visit|meet at)\s+(.+?)\s+(?:at|from)\s+(.+?)(?:\s+to\s+(.+?))?$/i,
     /(.+?)\s+at\s+(.+?)(?:\s+to\s+(.+?))?$/i,
@@ -164,17 +197,12 @@ function regexParse(text: string, planDate: string): ParsedStop | null {
     let title: string, timeStr: string, endTimeStr: string | undefined
 
     if (match.length === 4) {
-      // Pattern with venue, start time, end time
       [, title, timeStr, endTimeStr] = match
     } else {
-      // Fallback to simpler extraction
       continue
     }
 
-    // Use chrono to parse the time
-    const baseDate = new Date(planDate)
     const parsedStart = chrono.parseDate(timeStr, baseDate)
-    
     if (!parsedStart) continue
 
     const startTime = `${parsedStart.getHours().toString().padStart(2, '0')}:${parsedStart.getMinutes().toString().padStart(2, '0')}`
