@@ -93,6 +93,7 @@
     "react-dom": "^18.3.1",
     "react-fast-compare": "^3.2.2",
     "react-hook-form": "^7.53.0",
+    "react-hotkeys-hook": "^5.1.0",
     "react-map-gl": "^8.0.4",
     "react-native-gesture-handler": "^2.27.1",
     "react-native-reanimated": "^3.18.0",

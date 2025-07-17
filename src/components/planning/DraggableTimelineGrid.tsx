@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import {
   DndContext,
   DragEndEvent,
@@ -47,6 +48,16 @@ export function DraggableTimelineGrid({
   const updateStop = useUpdatePlanStop()
   const { toast } = useToast()
   const { recordNovaSnap } = useNovaSnap()
+  
+  // Keyboard shortcut for voice input - Shift+M
+  useHotkeys('shift+m', () => {
+    console.log('⌨️ Hotkey fired: Shift+M')
+    setVoiceOpen(prev => !prev)
+  }, {
+    preventDefault: true,
+    enableOnFormTags: false, // Don't fire when typing in forms
+    description: 'Toggle voice input sheet'
+  })
   
   // Nova suggestion for invalid drags
   const novaSuggestion = useSmartTimeSuggestion({
