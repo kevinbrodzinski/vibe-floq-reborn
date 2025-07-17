@@ -59,7 +59,34 @@ serve(async (req) => {
     }
 
     // Rate limiting check (server-side)
-    // TODO: Implement check_rate_limit RPC when needed
+    const authHeader = req.headers.get('authorization')
+    if (authHeader) {
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+          { auth: { persistSession: false } }
+        )
+        
+        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
+        if (user) {
+          const { data: rl } = await supabase.rpc('check_rate_limit', {
+            user_id: user.id,
+            action: 'voice_stop'
+          })
+          if (!rl?.ok) {
+            return new Response('Rate limited', { 
+              status: 429, 
+              headers: corsHeaders 
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('Rate limit check failed:', err)
+        // Continue anyway - don't block on rate limit failures
+      }
+    }
 
     console.log('Parsing voice input:', transcript);
 

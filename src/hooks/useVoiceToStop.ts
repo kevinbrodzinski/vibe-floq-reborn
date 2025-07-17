@@ -100,6 +100,10 @@ export function useVoiceToStop(planId: string, planDate: string) {
   }, [state])
 
   const stop = useCallback(() => {
+    // Platform-specific cleanup for parity
+    if (typeof window !== 'undefined') {
+      webRecognizer?.stop()
+    }
     stopFuncRef.current?.()
     setState('idle')
   }, [])
