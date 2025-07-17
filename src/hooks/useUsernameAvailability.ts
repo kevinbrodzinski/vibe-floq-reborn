@@ -1,17 +1,26 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
 // src/hooks/useUsernameAvailability.ts
-export const useUsernameAvailability = (username: string) =>
-  useQuery({
-    enabled : !!username?.trim(),
-    queryKey: ['username-available', username.toLowerCase().trim()],
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useDebounce } from '@/lib/hooks/useDebounce'   // ⬅️ you likely already have this
+
+export function useUsernameAvailability(raw: string) {
+  // normalise once
+  const candidate = raw.trim().toLowerCase()
+
+  // ❶ debounce keystrokes (400 ms)
+  const debounced = useDebounce(candidate, 400)
+
+  return useQuery({
+    queryKey: ['username_available', debounced],   // ❷ stable cache key
+    enabled : debounced.length >= 3,               // ❸ skip very short strings
+    staleTime: 15_000,
+
     queryFn : async () => {
       const { data, error } = await supabase.rpc('username_available', {
-        p_username: username.trim().toLowerCase(),   //  ← same arg name!
-      });
-      if (error) throw error;
-      return data as boolean;
+        p_username: debounced,                     // ❹ param name matches SQL
+      })
+      if (error) throw error
+      return data as boolean                       // true → available
     },
-    staleTime: 15_000,
-  });
+  })
+}
