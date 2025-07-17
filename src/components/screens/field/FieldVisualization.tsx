@@ -85,14 +85,18 @@ export const FieldVisualization = ({
   onConstellationGesture,
   onAvatarInteraction
 }: FieldVisualizationProps) => {
-  // Phase 1C Fix: Optimized avatar preloader dependencies
+  // Pre-load friends' avatars - stable memo deps
   const friendAvatars = useMemo(
-    () => friends.map(f => f.avatar_url), 
+    () => friends.map(f => f.avatar_url),
     [friends]
   );
-  useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
+  
+  // Guard for empty arrays to skip unnecessary preload call
+  if (friendAvatars.length > 0) {
+    useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
+  }
 
-  // Move clusters useMemo to top level to follow Rules of Hooks
+  // Cluster people (skip in constellation mode) - moved to top level to follow Rules of Hooks
   const clusters = useMemo(() => {
     if (constellationMode) return [];
     return Object.values(groupByPosition(people));
