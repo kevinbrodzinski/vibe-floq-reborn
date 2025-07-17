@@ -28,7 +28,7 @@ interface AfterglowScreenProps {
   date?: string;
 }
 
-export const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
+const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -428,13 +428,17 @@ export const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
 
-      {/* Modals */}
+      {/* Calendar and Insights Modals */}
       <AfterglowCalendarDialog open={calendarOpen} onOpenChange={setCalendarOpen} />
-      <AfterglowInsightsModal 
-        open={insightsOpen} 
-        onOpenChange={setInsightsOpen} 
-        afterglowId={afterglow?.id}
-      />
+      {afterglow?.id && (
+        <AfterglowInsightsModal 
+          open={insightsOpen} 
+          onOpenChange={setInsightsOpen} 
+          afterglowId={afterglow.id} 
+        />
+      )}
     </div>
   );
 };
+
+export default AfterglowScreen;

@@ -1,6 +1,8 @@
+import { lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getTodayString } from '@/utils/date';
-import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
+
+const AfterglowScreen = lazy(() => import('@/components/screens/AfterglowScreen'));
 
 export default function AfterglowRoutes() {
   const [params] = useSearchParams();
