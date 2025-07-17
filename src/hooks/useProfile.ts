@@ -1,16 +1,63 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '@/hooks/useProfileCache';
-import { OFFLINE_MODE } from '@/lib/constants';
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useSession } from './useSession'
+import { OFFLINE_MODE } from '@/lib/constants'
 
-// Re-export the consolidated Profile type for backward compatibility
-export type { Profile };
+export interface Profile {
+  id: string
+  email?: string
+  username: string
+  display_name: string
+  full_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  avatar_url: string | null
+  bio?: string | null
+  custom_status?: string | null
+  interests?: string[] | null
+  created_at: string
+}
 
+// New hook for current user's profile
+export function useCurrentUserProfile() {
+  const session = useSession()
+  const queryClient = useQueryClient()
+
+  return useQuery({
+    enabled: !!session?.user,
+    queryKey : ['profile', session?.user.id],
+    queryFn  : async (): Promise<Profile> => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session!.user.id)
+        .single()
+
+      if (error && error.code === 'PGRST116') {        // "No rows"
+        // attempt one retry: maybe trigger hasn't fired yet (cold edge function)
+        await new Promise(r => setTimeout(r, 1500))
+        return queryClient.fetchQuery({
+          queryKey: ['profile', session!.user.id],
+          queryFn: () => supabase.from('profiles').select('*').eq('id', session!.user.id).single().then(({ data, error }) => {
+            if (error) throw error
+            return data as Profile
+          })
+        })
+      }
+
+      if (error) throw error
+      return data as Profile
+    },
+  })
+}
+
+// Keep the original useProfile signature for backward compatibility
 export const useProfile = (userId: string | undefined) => {
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
       id: userId || 'mock-id',
+      email: 'mock@example.com',
       username: 'mock_user',
       display_name: 'Mock User',
       avatar_url: null,
@@ -57,6 +104,7 @@ export const useProfileByUsername = (username: string | undefined) => {
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
       id: 'mock-id-' + username,
+      email: 'mock@example.com',
       username: username || 'mock_user',
       display_name: username || 'Mock User',
       avatar_url: null,

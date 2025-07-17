@@ -1,9 +1,7 @@
-import { useAuth } from '@/providers/AuthProvider';
-import { useProfile } from '@/hooks/useProfile';
+import { useCurrentUserProfile } from '@/hooks/useProfile';
 
 export function useCurrentProfile() {
-  const { user } = useAuth();
-  const profileQuery = useProfile(user?.id);
+  const profileQuery = useCurrentUserProfile();
 
   return {
     profile: profileQuery.data,
