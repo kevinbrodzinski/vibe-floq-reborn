@@ -21,6 +21,7 @@ import { RoleGuard } from '@/components/RoleGuard';
 import Invites from '@/pages/Invites';
 import { PlansHub } from '@/components/plans/PlansHub';
 import { NewPlanWizard } from '@/pages/NewPlanWizard';
+import FloqPlan from '@/pages/FloqPlan';
 
 export const AppRoutes = () => (
   <Routes>
@@ -34,6 +35,7 @@ export const AppRoutes = () => (
       </RoleGuard>
     } />
     <Route path="/floqs/:floqId/plans/new" element={<NewPlan />} />
+    <Route path="/floqs/:floqId/plan" element={<FloqPlan />} />
     <Route path="/floqs/:floqId/plans/:planId/execute" element={<FloqPlanExecutionScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
