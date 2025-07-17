@@ -1,4 +1,4 @@
-import { Profile } from '@/hooks/useProfileCache';
+import { Profile } from '@/types/profile';
 import { cn } from '@/lib/utils';
 
 interface UserTagProps {

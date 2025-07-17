@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Profile } from '@/hooks/useProfileCache';
+import type { Profile } from '@/types/profile';
 
 export function useMentionSearch(query: string, enabled = true) {
   const result = useQuery({

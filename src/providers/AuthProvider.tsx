@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { useQueryClient } from '@tanstack/react-query';
-import slugify from 'slugify';
+import { useCurrentUserProfile } from '@/hooks/useProfile';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -37,52 +39,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-
-        // Only handle profile creation for authenticated users
-        if (!session?.user) return;
-
-        const user = session.user;
-        
-        // Check if profile already exists
-        const { data: existing, error: selErr } = await supabase
-          .from("profiles")
-          .select("id, username")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (selErr) {
-          console.error("[Auth] profile lookup failed", selErr);
-          return;
-        }
-
-        // Only create if profile doesn't exist
-        if (existing) {
-          // ✅ profile already exists – do nothing
-          return;
-        }
-
-        // Generate a safe username once
-        const base = slugify(user.email?.split("@")[0] ?? "user", {
-          lower: true,
-          strict: true,
-        });
-        // Append 4-char hash to avoid collisions
-        const username = `${base}_${user.id.slice(0, 4)}`;
-
-        const { data, error: insErr } = await supabase.from("profiles").insert({
-          id: user.id,
-          display_name: user.user_metadata?.full_name ?? base,
-          avatar_url: user.user_metadata?.avatar_url ?? null,
-          username,
-        }).select().single();
-
-        if (insErr) {
-          console.error("[Auth] profile insert failed", insErr);
-        } else if (data) {
-          // Cache the new profile
-          queryClient.setQueryData(['profile', user.id], data);
-          console.log("[Auth] Profile created successfully", { username: data.username });
-        }
       }
     );
 
@@ -98,7 +54,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, session, loading }}>
+      <ProfileErrorHandler />
       {children}
     </AuthContext.Provider>
   );
+};
+
+const ProfileErrorHandler = () => {
+  const { data: profile, error } = useCurrentUserProfile();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Profile load failed',
+        description: error.message,
+      });
+    }
+  }, [error, toast]);
+
+  return null;
 };

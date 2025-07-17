@@ -22,13 +22,6 @@ export interface WalkableFloq {
   starts_at: string;
 }
 
-export interface UserProfile {
-  id: string;
-  display_name?: string;
-  username?: string;
-  avatar_url?: string;
-  created_at: string;
-}
 
 export interface PresenceData {
   user_id: string;

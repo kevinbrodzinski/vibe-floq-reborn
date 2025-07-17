@@ -2,21 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useSession } from './useSession'
 import { OFFLINE_MODE } from '@/lib/constants'
-
-export interface Profile {
-  id: string
-  email?: string
-  username: string
-  display_name: string
-  full_name?: string | null
-  first_name?: string | null
-  last_name?: string | null
-  avatar_url: string | null
-  bio?: string | null
-  custom_status?: string | null
-  interests?: string[] | null
-  created_at: string
-}
+import { Profile } from '@/types/profile'
 
 // New hook for current user's profile
 export function useCurrentUserProfile() {
@@ -61,7 +47,6 @@ export const useProfile = (userId: string | undefined) => {
       username: 'mock_user',
       display_name: 'Mock User',
       avatar_url: null,
-      created_at: new Date().toISOString(),
     };
 
     return {
@@ -108,7 +93,6 @@ export const useProfileByUsername = (username: string | undefined) => {
       username: username || 'mock_user',
       display_name: username || 'Mock User',
       avatar_url: null,
-      created_at: new Date().toISOString(),
     };
 
     return {
