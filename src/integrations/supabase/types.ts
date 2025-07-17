@@ -3088,6 +3088,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      cleanup_old_vibes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_vibes_logs: {
         Args: Record<PropertyKey, never>
         Returns: undefined
