@@ -2621,6 +2621,27 @@ export type Database = {
           },
         ]
       }
+      weekly_ai_suggestions: {
+        Row: {
+          created_at: string | null
+          json: Json | null
+          user_id: string
+          week_ending: string
+        }
+        Insert: {
+          created_at?: string | null
+          json?: Json | null
+          user_id: string
+          week_ending: string
+        }
+        Update: {
+          created_at?: string | null
+          json?: Json | null
+          user_id?: string
+          week_ending?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       achievement_system_metrics: {
