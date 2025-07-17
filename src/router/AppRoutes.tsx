@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { FieldScreen } from '@/components/screens/FieldScreen';
 import { FlocksHome } from '@/components/FlocksHome';
 import FloqDetail from '@/pages/FloqDetail';
@@ -23,7 +24,10 @@ import { PlansHub } from '@/components/plans/PlansHub';
 import { NewPlanWizard } from '@/pages/NewPlanWizard';
 import FloqPlan from '@/pages/FloqPlan';
 
-export const AppRoutes = () => (
+export const AppRoutes = () => {
+  const exploreBeta = useFeatureFlag('EXPLORE');
+  
+  return (
   <Routes>
     <Route path="/" element={<FieldScreen />} />
     <Route path="/field" element={<LegacyRedirect />} />
@@ -39,7 +43,9 @@ export const AppRoutes = () => (
     <Route path="/floqs/:floqId/plans/:planId/execute" element={<FloqPlanExecutionScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
-    <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
+    {exploreBeta && (
+      <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
+    )}
     <Route path="/afterglow" element={<AfterglowScreen />} />
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />
@@ -55,4 +61,5 @@ export const AppRoutes = () => (
     <Route path="/settings" element={<Settings />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
-);
+  );
+};

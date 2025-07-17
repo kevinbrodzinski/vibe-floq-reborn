@@ -53,8 +53,6 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   };
 
   const handleShowRoute = () => {
-    if (!venue || !banner) return;
-    
     // Analytics: Route CTA clicked (production ready)
     
     // Feature not yet implemented - show notification

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, MapPin, Users, Calendar, Activity } from 'lucide-react';
 import { formatTimeFromNow } from '@/lib/dateUtils';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 
 interface FloqInfoTabProps {
@@ -11,6 +12,7 @@ interface FloqInfoTabProps {
 }
 
 export const FloqInfoTab: React.FC<FloqInfoTabProps> = ({ floqDetails }) => {
+  const exploreBeta = useFeatureFlag('EXPLORE');
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Basic Info */}
@@ -69,18 +71,20 @@ export const FloqInfoTab: React.FC<FloqInfoTabProps> = ({ floqDetails }) => {
             </div>
           )}
           
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="flex items-center gap-2 text-sm h-auto p-0 justify-start text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              // Map view feature coming soon
-              console.log('Map view feature coming soon');
-            }}
-          >
-            <MapPin className="h-4 w-4" />
-            <span>📍 View on map</span>
-          </Button>
+          {exploreBeta && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-2 text-sm h-auto p-0 justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                // Map view feature coming soon
+                console.log('Map view feature coming soon');
+              }}
+            >
+              <MapPin className="h-4 w-4" />
+              <span>📍 View on map</span>
+            </Button>
+          )}
           
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />

@@ -1,4 +1,2 @@
-export const useFeatureFlag = (flagName: string): boolean => {
-  const envKey = `VITE_FLAG_${flagName.toUpperCase()}`;
-  return import.meta.env[envKey] === 'true' || false;
-};
+export const useFeatureFlag = (key: string) =>
+  (import.meta.env[`VITE_FLAG_${key.toUpperCase()}`] ?? 'false') === 'true';
