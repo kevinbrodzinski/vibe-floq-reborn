@@ -6,12 +6,13 @@ import { updateVibeDetectionPreference } from '@/lib/sync/updateVibeDetectionPre
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 
 export function useSyncedVibeDetection() {
-  const { data: user } = useCurrentUser()
+  const userQuery = useCurrentUser()            // ✅ keep the TanStack object
+  const user      = userQuery.data              //   (undefined until resolved)
   const { autoMode, setAutoMode } = useVibeDetection()
 
   // Pull preference from Supabase on mount
   useEffect(() => {
-    if (!user?.id) return
+    if (!user) return        // the query is still loading or unauthenticated
 
     const fetchPreference = async () => {
       const { data, error } = await supabase
@@ -37,7 +38,7 @@ export function useSyncedVibeDetection() {
   const debouncedAutoMode = useDebouncedValue(autoMode, 1000)
 
   useEffect(() => {
-    if (!user?.id) return
+    if (!user) return
     updateVibeDetectionPreference(user.id, debouncedAutoMode)
   }, [debouncedAutoMode, user?.id])
 }

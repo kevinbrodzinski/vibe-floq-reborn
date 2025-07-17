@@ -4,11 +4,14 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { DebugProvider } from '@/lib/useDebug';
+import { ErrorBoundary } from '@/components/system/ErrorBoundary'
 
 createRoot(document.getElementById("root")!).render(
-  <DebugProvider>
-    <App />
-  </DebugProvider>
+  <ErrorBoundary>
+    <DebugProvider>
+      <App />
+    </DebugProvider>
+  </ErrorBoundary>
 );
 
 // Initialize performance monitoring after React is loaded
