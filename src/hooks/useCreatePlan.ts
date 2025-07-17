@@ -6,7 +6,7 @@ import { parse, format } from 'date-fns'
 
 /**  '6:00 PM'  ->  '18:00'  |  '12:00 AM' -> '00:00' */
 function toSqlTime(label: string) {
-  const dt = parse(label, 'h:mm a', new Date())
+  const dt = parse(label, 'h:mm a', new Date(2000, 0, 1))
   return format(dt, 'HH:mm')
 }
 
@@ -46,7 +46,7 @@ export function useCreatePlan() {
 
       // Calculate planned_at from start time (today + start time)
       const today = new Date()
-      const startTimeParsed = parse(payload.start, 'h:mm a', new Date())
+      const startTimeParsed = parse(payload.start, 'h:mm a', new Date(2000, 0, 1))
       const planned_at = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startTimeParsed.getHours(), startTimeParsed.getMinutes())
 
       // Create the plan
