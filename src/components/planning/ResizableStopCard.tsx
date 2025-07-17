@@ -90,6 +90,9 @@ export function ResizableStopCard({
   
   // Show voting for all plans when planId is available (enabling interactive mode)
   const showVoting = planId && planStatus
+  
+  // Debug log to help troubleshoot
+  console.log('🔍 ResizableStopCard Debug:', { planId, planStatus, showVoting, stopId: stop.id })
 
   // Enhanced click handler - single tap to edit if no modifiers
   const handleClick = (e: React.MouseEvent) => {

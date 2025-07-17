@@ -536,6 +536,7 @@ export const CollaborativePlanningScreen = () => {
               
               <MobileTimelineGrid
                 planId={plan.id}
+                planStatus={plan.status}
                 startTime="18:00"
                 endTime="23:59"
                 activeParticipants={collaborationParticipants}

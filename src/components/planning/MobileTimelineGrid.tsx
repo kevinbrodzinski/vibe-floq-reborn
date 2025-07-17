@@ -9,6 +9,7 @@ import type { PlanStop } from '@/types/plan'
 
 interface MobileTimelineGridProps {
   planId: string
+  planStatus?: string
   startTime?: string
   endTime?: string
   activeParticipants?: any[]
@@ -23,6 +24,7 @@ interface MobileTimelineGridProps {
 
 export function MobileTimelineGrid({
   planId,
+  planStatus,
   startTime,
   endTime, 
   activeParticipants,
@@ -42,6 +44,7 @@ export function MobileTimelineGrid({
     return (
       <TimelineGrid 
         planId={planId}
+        planStatus={planStatus}
         startTime={startTime}
         endTime={endTime}
         activeParticipants={activeParticipants}

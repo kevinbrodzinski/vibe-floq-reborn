@@ -31,6 +31,7 @@ import { TimelineGridSkeleton, DragOperationSkeleton } from './TimelineGridSkele
 
 interface TimelineGridProps {
   planId: string
+  planStatus?: string
   startTime?: string
   endTime?: string
   activeParticipants?: any[]
@@ -42,6 +43,7 @@ interface TimelineGridProps {
 
 export function TimelineGrid({ 
   planId, 
+  planStatus,
   startTime = '18:00', 
   endTime = '00:00',
   activeParticipants = [],
@@ -414,6 +416,7 @@ export function TimelineGrid({
                 isStopConflicting={isStopConflicting}
                 allStops={stops}
                 planId={planId}
+                planStatus={planStatus}
                 recentVotes={recentVotes}
               />
             )
@@ -475,6 +478,7 @@ function TimeSlot({
   isStopConflicting,
   allStops,
   planId,
+  planStatus,
   recentVotes
 }: { 
   timeBlock: any
@@ -492,6 +496,7 @@ function TimeSlot({
   isStopConflicting: (stopId: string) => boolean
   allStops: PlanStop[]
   planId: string
+  planStatus?: string
   recentVotes?: any[]
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
@@ -511,23 +516,24 @@ function TimeSlot({
       <div className="flex-1">
         {stops.length > 0 ? (
           <div className="space-y-2">
-            {stops.map(stop => (
-               <ResizableStopCard 
-                  key={stop.id} 
-                  stop={stop}
-                  planId={planId}
-                  isSelected={selectedStops.has(stop.id)}
-                  isResizing={resizingStop === stop.id}
-                  hasConflict={isStopConflicting(stop.id)}
-                  suggested={(stop as any).suggested}
-                  allStops={allStops}
-                  recentVotes={recentVotes}
-                  onSelect={onSelectStop}
-                  onStartResize={onStartResize}
-                  onResize={onResize}
-                  onEndResize={onEndResize}
-                  onRemove={() => onDeleteStop(stop.id)}
-                   style={getStopColor?.(stop) ? { 
+             {stops.map(stop => (
+                <ResizableStopCard 
+                   key={stop.id} 
+                   stop={stop}
+                   planId={planId}
+                   planStatus={planStatus}
+                   isSelected={selectedStops.has(stop.id)}
+                   isResizing={resizingStop === stop.id}
+                   hasConflict={isStopConflicting(stop.id)}
+                   suggested={(stop as any).suggested}
+                   allStops={allStops}
+                   recentVotes={recentVotes}
+                   onSelect={onSelectStop}
+                   onStartResize={onStartResize}
+                   onResize={onResize}
+                   onEndResize={onEndResize}
+                   onRemove={() => onDeleteStop(stop.id)}
+                    style={getStopColor?.(stop) ? {
                      borderColor: getStopColor(stop), 
                      backgroundColor: `${getStopColor(stop)}10` 
                    } : undefined}
