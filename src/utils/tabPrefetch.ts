@@ -23,7 +23,7 @@ export const prefetchTab = (tab: FloqTab) => {
       import('@/components/screens/AfterglowScreen').catch(() => {});
       break;
     case 'plan':
-      import('@/components/screens/CollaborativePlanningScreen').catch(() => {});
+      import('@/components/plans/PlansHub').catch(() => {});
       break;
   }
   
