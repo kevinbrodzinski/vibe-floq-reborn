@@ -74,7 +74,7 @@ export const FloqInfoTab: React.FC<FloqInfoTabProps> = ({ floqDetails }) => {
             size="sm" 
             className="flex items-center gap-2 text-sm h-auto p-0 justify-start text-muted-foreground hover:text-foreground"
             onClick={() => {
-              // Feature not yet implemented
+              // Map view feature coming soon
               console.log('Map view feature coming soon');
             }}
           >
