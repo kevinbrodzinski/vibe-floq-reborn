@@ -3,6 +3,7 @@ import { MapPin, X, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFloqSuggestions, type FloqSuggestion } from "@/hooks/useFloqSuggestions";
 import { toast } from "@/hooks/use-toast";
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 interface SuggestionsToastProps {
   geo?: { lat: number; lng: number };
@@ -17,36 +18,9 @@ export function SuggestionsToast({
   minimumConfidence = 0.7,
   cooldownMinutes = 15 
 }: SuggestionsToastProps) {
-  const [dismissedFloqs, setDismissedFloqs] = useState<Set<string>>(new Set());
-  const [lastShownTime, setLastShownTime] = useState<number>(0);
+  const [dismissedFloqs, setDismissedFloqs] = useLocalStorage<string[]>('suggestions_dismissed_floqs', []);
+  const [lastShownTime, setLastShownTime] = useLocalStorage<number>('suggestions_last_shown_time', 0);
 
-  // Load persisted state on mount
-  useEffect(() => {
-    try {
-      const dismissedData = localStorage.getItem('suggestions_dismissed_floqs');
-      const lastShownData = localStorage.getItem('suggestions_last_shown_time');
-      
-      if (dismissedData) {
-        setDismissedFloqs(new Set(JSON.parse(dismissedData)));
-      }
-      if (lastShownData) {
-        setLastShownTime(parseInt(lastShownData, 10));
-      }
-    } catch (error) {
-      console.warn('Failed to load suggestions persistence data:', error);
-    }
-  }, []);
-
-  // Persist state changes
-  useEffect(() => {
-    localStorage.setItem('suggestions_dismissed_floqs', JSON.stringify(Array.from(dismissedFloqs)));
-  }, [dismissedFloqs]);
-
-  useEffect(() => {
-    if (lastShownTime > 0) {
-      localStorage.setItem('suggestions_last_shown_time', lastShownTime.toString());
-    }
-  }, [lastShownTime]);
   
   const { data: suggestions = [] } = useFloqSuggestions({ 
     geo, 
@@ -71,7 +45,7 @@ export function SuggestionsToast({
     // Find high-confidence suggestion that hasn't been dismissed
     const highConfidenceSuggestion = suggestions.find(
       s => s.confidence_score >= minimumConfidence && 
-           !dismissedFloqs.has(s.floq_id)
+           !dismissedFloqs.includes(s.floq_id)
     );
 
     if (!highConfidenceSuggestion) return;
@@ -131,7 +105,7 @@ export function SuggestionsToast({
                 });
               }
               
-              setDismissedFloqs(prev => new Set([...prev, highConfidenceSuggestion.floq_id]));
+              setDismissedFloqs(prev => [...prev, highConfidenceSuggestion.floq_id]);
               dismiss();
             }}
             className="text-xs"
