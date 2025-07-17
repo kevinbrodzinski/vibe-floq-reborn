@@ -796,6 +796,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          delivery_state: string | null
           emoji: string | null
           floq_id: string
           id: string
@@ -805,6 +806,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          delivery_state?: string | null
           emoji?: string | null
           floq_id: string
           id?: string
@@ -814,6 +816,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          delivery_state?: string | null
           emoji?: string | null
           floq_id?: string
           id?: string
