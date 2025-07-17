@@ -8,11 +8,11 @@ const PREVIEW_HMR_HOST = process.env.VITE_HMR_HOST;
 const DISABLE_HMR = process.env.VITE_DEV_SOCKET === 'false';
 const IS_HOSTED_PREVIEW = process.env.NODE_ENV === 'production' || process.env.NEXT_PUBLIC_HOSTED_PREVIEW === 'true';
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, command }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: mode === 'production' ? false : PREVIEW_HMR_HOST
+    hmr: command === 'build' ? false : PREVIEW_HMR_HOST
       ? {
           protocol: 'wss',
           host: PREVIEW_HMR_HOST,
