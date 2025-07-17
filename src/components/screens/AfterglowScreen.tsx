@@ -9,6 +9,8 @@ import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
 import { AfterglowGenerationProgress } from "@/components/AfterglowGenerationProgress";
 import { getVibeDisplayName } from "@/utils/afterglowHelpers";
 import { useTogglePinned } from "@/hooks/useOptimisticMutations";
+import AfterglowCalendarDialog from "@/components/afterglow/AfterglowCalendarDialog";
+import AfterglowInsightsModal from "@/components/afterglow/AfterglowInsightsModal";
 
 interface NightEvent {
   id: string;
@@ -22,13 +24,19 @@ interface NightEvent {
   icon: string;
 }
 
-export const AfterglowScreen = () => {
+interface AfterglowScreenProps {
+  date?: string;
+}
+
+export const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   
-  // Get today's date for afterglow data
-  const today = new Date().toISOString().split('T')[0];
-  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(today);
+  // Use provided date or default to today
+  const currentDate = date || new Date().toISOString().split('T')[0];
+  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(currentDate);
   const { mutate: togglePinned } = useTogglePinned();
   
   const [nightEvents] = useState<NightEvent[]>([
@@ -149,10 +157,20 @@ export const AfterglowScreen = () => {
       <div className="flex justify-between items-center p-6 pt-16">
         <h1 className="text-4xl font-light glow-primary">afterglow</h1>
         <div className="flex space-x-4">
-          <Button variant="ghost" size="icon" className="hover:glow-secondary">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hover:glow-secondary"
+            onClick={() => setCalendarOpen(true)}
+          >
             <Calendar className="h-6 w-6" />
           </Button>
-          <Button variant="ghost" size="icon" className="hover:glow-secondary">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="hover:glow-secondary"
+            onClick={() => setInsightsOpen(true)}
+          >
             <Brain className="h-6 w-6" />
           </Button>
         </div>
@@ -409,6 +427,14 @@ export const AfterglowScreen = () => {
 
       {/* Bottom Navigation Spacer */}
       <div className="h-24"></div>
+
+      {/* Modals */}
+      <AfterglowCalendarDialog open={calendarOpen} onOpenChange={setCalendarOpen} />
+      <AfterglowInsightsModal 
+        open={insightsOpen} 
+        onOpenChange={setInsightsOpen} 
+        afterglowId={afterglow?.id}
+      />
     </div>
   );
 };

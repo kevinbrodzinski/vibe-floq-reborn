@@ -6,7 +6,7 @@ import FloqDetail from '@/pages/FloqDetail';
 import FloqManage from '@/pages/FloqManage';
 import { PulseScreen } from '@/components/screens/PulseScreen';
 import { VibeScreen } from '@/components/screens/VibeScreen';
-import { AfterglowScreen } from '@/components/screens/AfterglowScreen';
+import AfterglowRoutes from '@/routes/AfterglowRoutes';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
 import FloqPlanExecutionScreen from '@/pages/FloqPlanExecutionScreen';
 import { LegacyRedirect } from '@/components/LegacyRedirect';
@@ -46,7 +46,7 @@ export const AppRoutes = () => {
     {exploreBeta && (
       <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
     )}
-    <Route path="/afterglow" element={<AfterglowScreen />} />
+    <Route path="/afterglow" element={<AfterglowRoutes />} />
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
