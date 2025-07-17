@@ -14,9 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import FloqDetails from "./pages/FloqDetails";
-import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
 
@@ -61,23 +58,23 @@ const App = () => {
         <VibeRealtime />
         <BannerProvider>
           <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            
-            <Routes>
-              {/* Public shared afterglow route */}
-              <Route path="/a/:slug" element={<SharedAfterglow />} />
-              {/* Main app routes (field, floqs, etc.) are handled inside Index */}
-              <Route path="/*" element={<Index />} />
-              <Route path="/settings/profile" element={<Settings />} />
-            </Routes>
-            {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
-            <EnvironmentDebugPanel 
-              isOpen={isDebugPanelOpen} 
-              onClose={() => setIsDebugPanelOpen(false)} 
-            />
-          </BrowserRouter>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public shared afterglow route */}
+                <Route path="/a/:slug" element={<SharedAfterglow />} />
+                {/* Settings route */}
+                <Route path="/settings/profile" element={<Settings />} />
+                {/* Main app routes (field, floqs, etc.) are handled inside Index */}
+                <Route path="/*" element={<Index />} />
+              </Routes>
+              {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
+              <EnvironmentDebugPanel 
+                isOpen={isDebugPanelOpen} 
+                onClose={() => setIsDebugPanelOpen(false)} 
+              />
+            </BrowserRouter>
           </TooltipProvider>
         </BannerProvider>
       </AuthProvider>
