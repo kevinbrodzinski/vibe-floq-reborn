@@ -31,23 +31,31 @@ pnpm preview:web      # Preview web production build
 
 ### Native Development
 ```bash
-pnpm sync:ios         # Sync to iOS platform
+pnpm sync:ios         # Sync to iOS platform  
 pnpm open:ios         # Open in Xcode
-pnpm build:ios        # Build iOS app
+TARGET=native pnpm build:ios  # Build iOS app with native target
 pnpm clean:ios        # Clean iOS artifacts
 ```
 
+**Important**: Always use `TARGET=native` for iOS builds to disable HMR and ensure proper native bundling.
+
 ## Platform Detection
 
-Use the platform helpers instead of direct Capacitor calls:
+Use the platform helpers for better performance:
 
 ```typescript
-import { isNative, isWeb } from '@/lib/platform';
+import { isNative, IS_NATIVE } from '@/lib/platform';
 
-if (isNative()) {
-  // Native-specific code
+// ✅ Use constant for better tree-shaking
+if (IS_NATIVE) {
+  // Native-specific code (dead code eliminated on web)
 } else {
-  // Web-specific code
+  // Web-specific code (dead code eliminated on native)
+}
+
+// ✅ Or use function for dynamic checks
+if (isNative()) {
+  // When you need runtime detection
 }
 ```
 
@@ -74,6 +82,17 @@ if (isNative()) {
   storage = localStorage;
 }
 ```
+
+## Final Pre-TestFlight Checklist
+
+⚠️ **Critical**: Since `tsconfig.json` is read-only, manually verify TypeScript recognizes `@entry` alias in your editor.
+
+1. **Web sanity check**: `npm run dev` → browser loads without errors
+2. **Web production**: `npm run build:web && npm run preview:web` → static preview works  
+3. **Native build**: `TARGET=native npm run build:ios` → no React Native resolution errors
+4. **iOS sync**: `npx cap sync ios` after every build (copies fresh Vite bundle)
+5. **Simulator test**: `npx cap open ios` → app boots and shows React UI
+6. **Archive & upload**: TestFlight processing complete
 
 ## CI/CD
 
