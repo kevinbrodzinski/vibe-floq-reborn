@@ -217,13 +217,44 @@ export const VibeScreen = () => {
     }
   }, [learningData.patterns]);
 
-  // Toggle auto mode with permissions
+  // Enhanced toggle auto mode with Supabase sync and logging
   const handleToggleAutoMode = useCallback(async () => {
     if (!autoMode) {
       await requestPermissions();
     }
+    
+    const newAutoMode = !autoMode;
     toggleAutoMode();
-  }, [autoMode, requestPermissions, toggleAutoMode]);
+    
+    // Log the toggle event (optional)
+    if (user) {
+      try {
+        await supabase.from('user_action_log').insert({
+          action: newAutoMode ? 'vibe_detection_enabled' : 'vibe_detection_disabled'
+        });
+      } catch (error) {
+        console.warn('Failed to log vibe detection toggle:', error);
+      }
+    }
+    
+    // Sync to Supabase for cross-device persistence (deferred)
+    if (user) {
+      setTimeout(async () => {
+        try {
+          await supabase
+            .from('user_preferences')
+            .upsert({ 
+              user_id: user.id, 
+              vibe_detection_enabled: newAutoMode 
+            }, { 
+              onConflict: 'user_id' 
+            });
+        } catch (error) {
+          console.warn('Failed to sync vibe detection preference:', error);
+        }
+      }, 0);
+    }
+  }, [autoMode, requestPermissions, toggleAutoMode, user]);
 
   const handleDragStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     setIsDragging(true);

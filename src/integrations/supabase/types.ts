@@ -2224,6 +2224,7 @@ export type Database = {
           updated_at: string | null
           user_id: string
           vibe_color: string | null
+          vibe_detection_enabled: boolean | null
           vibe_strength: number | null
         }
         Insert: {
@@ -2237,6 +2238,7 @@ export type Database = {
           updated_at?: string | null
           user_id: string
           vibe_color?: string | null
+          vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
         }
         Update: {
@@ -2250,6 +2252,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           vibe_color?: string | null
+          vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
         }
         Relationships: []
