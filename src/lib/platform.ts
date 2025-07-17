@@ -16,8 +16,12 @@ export const isNative = (): boolean => {
 
 export const isWeb = (): boolean => !isNative();
 
+// Constant for better tree-shaking in React Strict mode
+export const IS_NATIVE = isNative();
+
 export const platform = {
   isNative,
   isWeb,
+  IS_NATIVE,
   getPlatform: () => isNative() ? 'native' : 'web'
 };

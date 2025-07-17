@@ -12,13 +12,15 @@ export default defineConfig(({ mode, command }) => ({
   server: {
     host: "::",
     port: 8080,
-    hmr: command === 'build' ? false : PREVIEW_HMR_HOST
-      ? {
-          protocol: 'wss',
-          host: PREVIEW_HMR_HOST,
-          port: 443,
-        }
-      : true,
+    hmr: process.env.TARGET === 'native' ? false : (
+      command === 'build' ? false : PREVIEW_HMR_HOST
+        ? {
+            protocol: 'wss',
+            host: PREVIEW_HMR_HOST,
+            port: 443,
+          }
+        : true
+    ),
   },
   plugins: [
     react(),
