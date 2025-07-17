@@ -88,8 +88,8 @@ export function ResizableStopCard({
   const conflictInfo = getConflictForStop(stop.id)
   const duration = stop.duration_minutes || 60
   
-  // Show voting for all plans when planId is available (enabling interactive mode)
-  const showVoting = planId && planStatus
+  // Show voting for all plan statuses when planId is available (enabling interactive mode)
+  const showVoting = Boolean(planId && planStatus)
   
   // Debug log to help troubleshoot
   console.log('🔍 ResizableStopCard Debug:', { planId, planStatus, showVoting, stopId: stop.id })

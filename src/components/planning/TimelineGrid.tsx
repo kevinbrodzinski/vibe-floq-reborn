@@ -31,7 +31,7 @@ import { TimelineGridSkeleton, DragOperationSkeleton } from './TimelineGridSkele
 
 interface TimelineGridProps {
   planId: string
-  planStatus?: string
+  planStatus: string
   startTime?: string
   endTime?: string
   activeParticipants?: any[]

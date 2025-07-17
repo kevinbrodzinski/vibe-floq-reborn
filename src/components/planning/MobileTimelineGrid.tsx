@@ -9,7 +9,7 @@ import type { PlanStop } from '@/types/plan'
 
 interface MobileTimelineGridProps {
   planId: string
-  planStatus?: string
+  planStatus: string
   startTime?: string
   endTime?: string
   activeParticipants?: any[]
