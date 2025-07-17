@@ -5435,7 +5435,7 @@ export type Database = {
         Returns: boolean
       }
       username_available: {
-        Args: { check_username: string } | { u: string }
+        Args: { p_username: string } | { u: string }
         Returns: boolean
       }
       validate_stop_times: {
