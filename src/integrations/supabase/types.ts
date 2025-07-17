@@ -5355,16 +5355,13 @@ export type Database = {
         Returns: number
       }
       suggest_friends: {
-        Args: { p_uid?: string; limit_n?: number }
+        Args: { p_user_id: string; p_limit?: number }
         Returns: {
-          user_id: string
+          id: string
           username: string
           display_name: string
           avatar_url: string
-          compatibility_score: number
-          mutual_friends_count: number
-          crossed_paths_count: number
-          shared_interests: string[]
+          shared_tags: number
         }[]
       }
       text: {
