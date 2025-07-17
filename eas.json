@@ -5,7 +5,10 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "buildConfiguration": "Debug"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -15,9 +18,22 @@
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
         "buildConfiguration": "Release",
         "autoIncrement": true
+      },
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "placeholder-app-store-connect-id",
+        "appleTeamId": "your-team-id"
       }
     }
   },
