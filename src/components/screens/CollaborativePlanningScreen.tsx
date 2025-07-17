@@ -546,7 +546,7 @@ export const CollaborativePlanningScreen = () => {
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
                 selectedStopIds={selectedStopIds}
-                recentVotes={recentVotes}
+                
               />
 
               {/* Plan Summary Card - Finalized Mode */}

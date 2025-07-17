@@ -51,7 +51,7 @@ export function MobileTimelineGrid({
         connectionStatus={connectionStatus}
         isOptimistic={isOptimistic}
         isDragOperationPending={isDragOperationPending}
-        recentVotes={recentVotes}
+        
       />
     )
   }
@@ -122,7 +122,6 @@ function MobileCompactTimeline({
 }) {
   return (
     <div className="space-y-2 pb-safe-area-inset-bottom">
-      {/* Empty state for mobile compact view */}
       <button
         className="flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-muted/40 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
       >
@@ -155,7 +154,6 @@ function MobileExpandedTimeline({
 }) {
   return (
     <div className="space-y-4 pb-safe-area-inset-bottom">
-      {/* Empty state for mobile expanded view */}
       <div className="text-center py-8 space-y-4">
         <div className="text-4xl">📍</div>
         <h3 className="text-lg font-semibold text-foreground">

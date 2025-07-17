@@ -38,7 +38,6 @@ interface TimelineGridProps {
   connectionStatus?: 'connecting' | 'connected' | 'disconnected' | 'error'
   isOptimistic?: boolean
   isDragOperationPending?: boolean
-  recentVotes?: any[]
 }
 
 export function TimelineGrid({ 
@@ -49,8 +48,7 @@ export function TimelineGrid({
   activeParticipants = [],
   connectionStatus = 'disconnected',
   isOptimistic = false,
-  isDragOperationPending = false,
-  recentVotes = []
+  isDragOperationPending = false
 }: TimelineGridProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [showConflictOverlay, setShowConflictOverlay] = useState(false)
@@ -417,7 +415,6 @@ export function TimelineGrid({
                 allStops={stops}
                 planId={planId}
                 planStatus={planStatus}
-                recentVotes={recentVotes}
               />
             )
           })}
@@ -479,7 +476,6 @@ function TimeSlot({
   allStops,
   planId,
   planStatus,
-  recentVotes
 }: { 
   timeBlock: any
   stops: PlanStop[]
@@ -496,8 +492,7 @@ function TimeSlot({
   isStopConflicting: (stopId: string) => boolean
   allStops: PlanStop[]
   planId: string
-  planStatus?: string
-  recentVotes?: any[]
+  planStatus: string
 }) {
   const { setNodeRef } = useDroppable({ id: timeBlock.time })
 
@@ -527,7 +522,7 @@ function TimeSlot({
                    hasConflict={isStopConflicting(stop.id)}
                    suggested={(stop as any).suggested}
                    allStops={allStops}
-                   recentVotes={recentVotes}
+                   
                    onSelect={onSelectStop}
                    onStartResize={onStartResize}
                    onResize={onResize}
