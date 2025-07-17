@@ -21,7 +21,16 @@ interface Props {
 }
 
 const vibeOptions = [
-  'chill', 'energetic', 'romantic', 'wild', 'cozy', 'deep', 'social', 'adventure'
+  { label: 'Chill', value: 'chill' },
+  { label: 'Hype', value: 'hype' },
+  { label: 'Curious', value: 'curious' },
+  { label: 'Social', value: 'social' },
+  { label: 'Solo', value: 'solo' },
+  { label: 'Romantic', value: 'romantic' },
+  { label: 'Weird', value: 'weird' },
+  { label: 'Down', value: 'down' },
+  { label: 'Flowing', value: 'flowing' },
+  { label: 'Open', value: 'open' },
 ]
 
 export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
@@ -80,14 +89,14 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
           Vibe
         </Label>
         <div className="flex flex-wrap gap-2">
-          {vibeOptions.map((vibe) => (
+          {vibeOptions.map((option) => (
             <Badge
-              key={vibe}
-              variant={details.vibe_tag === vibe ? "default" : "outline"}
-              className="cursor-pointer px-3 py-1 capitalize"
-              onClick={() => handleVibeToggle(vibe)}
+              key={option.value}
+              variant={details.vibe_tag === option.value ? "default" : "outline"}
+              className="cursor-pointer px-3 py-1"
+              onClick={() => handleVibeToggle(option.value)}
             >
-              {vibe}
+              {option.label}
             </Badge>
           ))}
         </div>
