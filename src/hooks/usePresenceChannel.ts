@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentVibe } from '@/lib/store/useVibe';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -11,12 +11,11 @@ export const usePresenceChannel = () => {
   const { visibility } = useVibe();
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (!vibe || !location || !user?.id) return;
+  // Memoize gh5 to ensure stable value across effects
+  const gh5 = useMemo(() => location?.geohash?.slice(0, 5), [location?.geohash]);
 
-    // Calculate geohash-5 for presence channel
-    const gh5 = location.geohash?.substring(0, 5);
-    if (!gh5) return;
+  useEffect(() => {
+    if (!vibe || !gh5 || !user?.id) return;
 
     const channelName = `vibe-${vibe}-${gh5}`;
     const ch = supabase.channel(channelName, { 
@@ -47,14 +46,11 @@ export const usePresenceChannel = () => {
     return () => {
       ch.unsubscribe();
     };
-  }, [vibe, location?.geohash?.substring(0, 5), user?.id]);
+  }, [vibe, gh5, user?.id]);
 
   // Separate effect for visibility updates
   useEffect(() => {
-    if (!vibe || !location || !user?.id) return;
-
-    const gh5 = location.geohash?.substring(0, 5);
-    if (!gh5) return;
+    if (!vibe || !gh5 || !user?.id) return;
 
     const channelName = `vibe-${vibe}-${gh5}`;
     
@@ -63,13 +59,7 @@ export const usePresenceChannel = () => {
     const existingChannel = channels.find(ch => ch.topic === channelName);
     
     if (existingChannel && existingChannel.state === 'joined') {
-      existingChannel.track({
-        userId: user.id,
-        name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
-        avatar: user.user_metadata?.avatar_url,
-        online_at: new Date().toISOString(),
-        vibe,
-        gh5,
+      existingChannel.update({
         visible: visibility !== 'off'
       });
     }
