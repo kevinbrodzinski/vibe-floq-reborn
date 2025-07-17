@@ -429,8 +429,10 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       <div className="h-24"></div>
 
       {/* Calendar and Insights Modals */}
-      <AfterglowCalendarDialog open={calendarOpen} onOpenChange={setCalendarOpen} />
-      {afterglow?.id && (
+      {calendarOpen && (
+        <AfterglowCalendarDialog open={calendarOpen} onOpenChange={setCalendarOpen} />
+      )}
+      {insightsOpen && afterglow?.id && (
         <AfterglowInsightsModal 
           open={insightsOpen} 
           onOpenChange={setInsightsOpen} 

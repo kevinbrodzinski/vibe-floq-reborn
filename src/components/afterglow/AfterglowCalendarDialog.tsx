@@ -11,7 +11,7 @@ export type AfterglowCalendarDialogProps = {
 };
 
 export default function AfterglowCalendarDialog({ open, onOpenChange }: AfterglowCalendarDialogProps) {
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const { data, isLoading } = useRecentAfterglows();
 
@@ -20,7 +20,7 @@ export default function AfterglowCalendarDialog({ open, onOpenChange }: Afterglo
     
     const newParams = new URLSearchParams(params);
     newParams.set('date', d.toISOString().slice(0, 10));
-    nav({ search: newParams.toString() });
+    navigate({ search: newParams.toString() });
     onOpenChange(false);
   };
 
