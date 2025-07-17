@@ -17,12 +17,32 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   const { updateUsername, isUpdatingUsername } = useUsername();
   const [localValue, setLocalValue] = useState('');
   
-  const {
-    isChecking: isCheckingAvailability,
-    isAvailable,
-    validationMessage,
-    validationState
-  } = useUsernameAvailability(localValue);
+  const { data: isAvailable, isLoading: isCheckingAvailability, error } = useUsernameAvailability(localValue);
+  
+  const getValidationMessage = () => {
+    if (!localValue.trim()) return 'Enter a username to check availability';
+    if (localValue.length < 3) return 'Username must be at least 3 characters';
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(localValue)) {
+      return 'Use only letters, numbers, and underscores (3-32 characters)';
+    }
+    if (isCheckingAvailability) return 'Checking availability...';
+    if (error) return 'Failed to check username availability';
+    if (isAvailable === true) return `@${localValue.toLowerCase()} is available!`;
+    if (isAvailable === false) return 'Username is already taken';
+    return '';
+  };
+
+  const getValidationState = (): 'idle' | 'checking' | 'available' | 'taken' | 'invalid' => {
+    if (!localValue.trim() || localValue.length < 3) return 'idle';
+    if (!/^[a-zA-Z0-9_]{3,32}$/.test(localValue)) return 'invalid';
+    if (isCheckingAvailability) return 'checking';
+    if (error || isAvailable === false) return 'taken';
+    if (isAvailable === true) return 'available';
+    return 'idle';
+  };
+
+  const validationMessage = getValidationMessage();
+  const validationState = getValidationState();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
