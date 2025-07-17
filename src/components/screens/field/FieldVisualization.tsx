@@ -91,6 +91,12 @@ export const FieldVisualization = ({
     [friends]
   );
   useAvatarPreloader(friendAvatars, mini ? [32] : [32, 64]);
+
+  // Move clusters useMemo to top level to follow Rules of Hooks
+  const clusters = useMemo(() => {
+    if (constellationMode) return [];
+    return Object.values(groupByPosition(people));
+  }, [people, constellationMode]);
   
   // Phase 1B Fix: Analytics de-dupe with persistent seenRef
   const seenRef = useRef<Set<string>>(new Set());
@@ -211,11 +217,7 @@ export const FieldVisualization = ({
           )}
 
           {/* People on the field with collision detection (when not in constellation mode) */}
-          {!constellationMode && (() => {
-            /* ---- Phase 2: Collision handling with memoization ---- */
-            const clusters = useMemo(() => Object.values(groupByPosition(people)), [people]);
-            
-            return clusters.map(cluster => {
+          {!constellationMode && clusters.map(cluster => {
               if (cluster.length === 0) return null;
 
               // Calculate canvas pixel coords from percentage coordinates
@@ -402,8 +404,7 @@ export const FieldVisualization = ({
                   </div>
                 </div>
               );
-            });
-          })()}
+            })}
 
           {/* Floq Events - Enhanced with FloqOrb for walkable floqs */}
           {floqEvents.map((event, index) => {
