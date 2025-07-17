@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import { useSession } from '@/hooks/useSession'
+import { parse, format } from 'date-fns'
 
 interface CreatePlanPayload {
   title: string
@@ -37,10 +38,20 @@ export function useCreatePlan() {
 
       if (floqError) throw floqError
 
+      // Convert AM/PM time format to 24-hour format for database
+      const startTime24h = format(
+        parse(payload.start, 'h:mm a', new Date()),
+        'HH:mm'
+      )
+      const endTime24h = format(
+        parse(payload.end, 'h:mm a', new Date()),
+        'HH:mm'
+      )
+
       // Calculate planned_at from start time (today + start time)
       const today = new Date()
-      const [hours, minutes] = payload.start.split(':').map(Number)
-      const planned_at = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes)
+      const startTimeParsed = parse(payload.start, 'h:mm a', new Date())
+      const planned_at = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startTimeParsed.getHours(), startTimeParsed.getMinutes())
 
       // Create the plan
       const { data: planData, error: planError } = await supabase
@@ -49,11 +60,11 @@ export function useCreatePlan() {
           floq_id: floqData.id,
           title: payload.title,
           description: payload.description,
-          vibe_tag: payload.vibe_tag?.toLowerCase().trim() ?? 'adventure',
+          vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
           planned_at: planned_at.toISOString(),
-          start_time: payload.start,
-          end_time: payload.end,
-          duration_hours: payload.duration_hours,
+          start_time: startTime24h,        // HH:MM (TIME column)
+          end_time: endTime24h,
+          // duration_hours is generated in Postgres – don't send it
           creator_id: session.user.id,
           status: 'draft'
         })
