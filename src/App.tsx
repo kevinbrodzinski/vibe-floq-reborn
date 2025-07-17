@@ -36,6 +36,9 @@ const App = () => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'floq_messages' },
         (payload) => {
+          // Only handle INSERT events to avoid crashes on DELETE where payload.new is null
+          if (payload.eventType !== 'INSERT') return
+          
           queryClient.setQueryData(['floq-msgs', payload.new.floq_id], (d: any) => {
             if (!d) return d
             // avoid dupes

@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/x/sift@0.6.0/mod.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
 
-const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = Deno.env.toObject()
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = Deno.env.toObject()
 
 serve(async (req) => {
   // ---------- 1. pre-flight ----------
@@ -12,7 +12,7 @@ serve(async (req) => {
   const jwt = req.headers.get('Authorization')?.replace('Bearer ', '')
   if (!jwt) return resp(401, 'missing bearer')
 
-  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
   })
 
@@ -21,7 +21,7 @@ serve(async (req) => {
 
   // ---------- 3. payload ----------
   const { floq_id, body } = await req.json()
-  if (!floq_id || !body) return resp(400, 'floq_id & body required')
+  if (!floq_id || !body || !body.trim().length) return resp(400, 'floq_id & body required')
 
   // ---------- 4. membership check ----------
   const { count } = await supabase
@@ -30,7 +30,7 @@ serve(async (req) => {
     .eq('floq_id', floq_id)
     .eq('user_id', user.id)
 
-  if (!count) return resp(403, 'not a member')
+  if ((count ?? 0) === 0) return resp(403, 'not a member')
 
   // ---------- 5. insert ----------
   const { data, error } = await supabase
@@ -44,8 +44,11 @@ serve(async (req) => {
 })
 
 function cors() {
-  return { 'Access-Control-Allow-Origin': '*',
-           'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' }
+  return { 
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }
 }
 function resp(status: number, msg: string) {
   return new Response(JSON.stringify({ error: msg }), { status, headers: cors() })

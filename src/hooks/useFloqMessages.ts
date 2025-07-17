@@ -11,7 +11,7 @@ export function useFloqMessages(floqId: string) {
           if (error) throw error
           return data as any[]
         }),
-    getNextPageParam: (last) => last?.at(-1)?.created_at ?? undefined,
+    getNextPageParam: (last) => last?.length === 20 ? last.at(-1)?.created_at : undefined,
     staleTime: 60_000,
     initialPageParam: null,
   })
@@ -25,7 +25,10 @@ export function useSendFloqMessage(floqId: string) {
     onSuccess: ({ data }) =>
       qc.setQueryData(['floq-msgs', floqId], (d: any) => {
         if (!d) return d
-        d.pages[0].unshift(data)
+        // Check for duplicates before unshifting
+        if (!d.pages[0].some((r: any) => r.id === data.id)) {
+          d.pages[0].unshift(data)
+        }
         return { ...d }
       }),
   })
