@@ -158,7 +158,7 @@ export const useVibe = create<VibeState>()(
       },
     })),
     { 
-      name: '@vibe',
+      name: '@vibe-v2',
       version: 1,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({ vibe: s.vibe, visibility: s.visibility, updatedAt: s.updatedAt }),

@@ -55,7 +55,7 @@ export const VibeSummaryCard = memo(({
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-muted-foreground">
           Vibe {visibility === 'friends' && (
-            <span className="text-xs italic text-muted-foreground">friends only</span>
+            <span className="ml-1 text-xs italic text-muted-foreground">(friends only)</span>
           )}
         </span>
         <motion.button

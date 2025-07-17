@@ -24,16 +24,18 @@ export function useSyncedVisibility() {
   /* 2️⃣ push local change */
   useEffect(() => {
     if (!user?.id) return;
-    supabase
-      .from('vibes_now')
-      .upsert(
-        { 
-          user_id: user.id, 
-          visibility,
-          updated_at: new Date().toISOString()
-        }, 
-        { onConflict: 'user_id' }
-      );
+    (async () => {
+      await supabase
+        .from('vibes_now')
+        .upsert(
+          { 
+            user_id: user.id, 
+            visibility,
+            updated_at: new Date().toISOString()
+          }, 
+          { onConflict: 'user_id' }
+        );
+    })();
   }, [user?.id, visibility]);
 
   /* 3️⃣ listen for remote change */
@@ -46,7 +48,12 @@ export function useSyncedVisibility() {
         { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
         ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
+        () => setVisibility('public'), // Reset to default when row is deleted
+      )
       .subscribe();
     return () => channel.unsubscribe();
-  }, [user?.id, setVisibility]);
+  }, [user?.id]);
 }
