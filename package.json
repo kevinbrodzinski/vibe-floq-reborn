@@ -65,6 +65,7 @@
     "@types/uuid": "^10.0.0",
     "@types/yargs": "^17.0.33",
     "@use-gesture/react": "^10.3.1",
+    "chrono-node": "^2.8.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

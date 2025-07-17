@@ -17,12 +17,13 @@ import {
 } from '@dnd-kit/sortable'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Plus, Clock } from 'lucide-react'
+import { Plus, Clock, Mic } from 'lucide-react'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { useToast } from '@/hooks/use-toast'
 import { DraggableStopCard } from './DraggableStopCard'
 import { AddStopModal } from './AddStopModal'
+import { VoiceInputSheet } from '@/components/VoiceInputSheet'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUpdatePlanStop } from '@/hooks/useUpdatePlanStop'
 
@@ -40,6 +41,7 @@ export function DraggableTimelineGrid({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: string, end: string } | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [voiceOpen, setVoiceOpen] = useState(false)
   
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const updateStop = useUpdatePlanStop()
@@ -335,6 +337,24 @@ export function DraggableTimelineGrid({
           planId={planId}
           defaultStartTime={selectedTimeSlot?.start}
           defaultEndTime={selectedTimeSlot?.end}
+        />
+
+        {/* Voice Input Floating Action Button */}
+        <Button
+          size="lg"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          onMouseDown={() => setVoiceOpen(true)}
+          onTouchStart={() => setVoiceOpen(true)}
+        >
+          <Mic className="h-5 w-5" />
+        </Button>
+
+        {/* Voice Input Sheet */}
+        <VoiceInputSheet
+          open={voiceOpen}
+          onOpenChange={setVoiceOpen}
+          planId={planId}
+          planDate={new Date().toISOString().split('T')[0]} // You may want to pass the actual plan date
         />
       </div>
     </DndContext>
