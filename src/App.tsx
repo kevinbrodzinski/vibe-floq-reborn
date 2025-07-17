@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,7 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
+import { supabase } from "@/integrations/supabase/client";
 
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
@@ -25,6 +27,30 @@ const App = () => {
   
   // Auto-join presence channels for all users
   usePresenceChannel();
+
+  // Realtime subscription for floq messages
+  useEffect(() => {
+    const channel = supabase
+      .channel('floq_messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'floq_messages' },
+        (payload) => {
+          queryClient.setQueryData(['floq-msgs', payload.new.floq_id], (d: any) => {
+            if (!d) return d
+            // avoid dupes
+            if (d.pages[0].some((m: any) => m.id === payload.new.id)) return d
+            d.pages[0].unshift(payload.new)
+            return { ...d }
+          })
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel);
+    }
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
