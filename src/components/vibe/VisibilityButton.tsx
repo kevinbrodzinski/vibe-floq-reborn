@@ -27,8 +27,8 @@ export function VisibilityButton() {
         visibility === 'public'
           ? 'Visible to everyone'
           : visibility === 'friends'
-          ? 'Visible to friends only'
-          : 'Hidden'
+          ? 'Visible to friends'
+          : 'Hidden from all'
       }
     >
       <Icon className="w-5 h-5" />

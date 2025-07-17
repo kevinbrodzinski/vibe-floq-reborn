@@ -25,16 +25,23 @@ export function useSyncedVisibility() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      await supabase
-        .from('vibes_now')
-        .upsert(
-          { 
-            user_id: user.id, 
-            visibility,
-            updated_at: new Date().toISOString()
-          }, 
-          { onConflict: 'user_id' }
-        );
+      try {
+        await supabase
+          .from('vibes_now')
+          .upsert(
+            { 
+              user_id: user.id, 
+              visibility,
+              updated_at: new Date().toISOString()
+            }, 
+            { 
+              onConflict: 'user_id',
+              count: 'exact' // Don't return full row to save bandwidth
+            }
+          );
+      } catch (error) {
+        console.warn('Failed to sync visibility to database:', error);
+      }
     })();
   }, [user?.id, visibility]);
 
@@ -43,6 +50,11 @@ export function useSyncedVisibility() {
     if (!user?.id) return;
     const channel = supabase
       .channel(`vibe-visibility-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
+        ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
+      )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
