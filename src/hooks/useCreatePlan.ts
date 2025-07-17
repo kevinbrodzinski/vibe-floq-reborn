@@ -23,7 +23,7 @@ export function useCreatePlan() {
         .insert({
           title: payload.title,
           description: payload.description,
-          primary_vibe: payload.vibe_tag || 'chill',
+          primary_vibe: payload.vibe_tag?.toLowerCase().trim() || 'chill',
           visibility: 'private',
           location: 'POINT(0 0)', // Default location
           flock_type: 'momentary'
@@ -45,7 +45,7 @@ export function useCreatePlan() {
           floq_id: floqData.id,
           title: payload.title,
           description: payload.description,
-          vibe_tag: payload.vibe_tag,
+          vibe_tag: payload.vibe_tag?.toLowerCase().trim() ?? 'adventure',
           planned_at: planned_at.toISOString(),
           start_time: payload.start,
           end_time: payload.end,
