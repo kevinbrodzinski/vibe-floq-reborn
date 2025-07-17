@@ -1,7 +1,7 @@
 // src/hooks/useUsernameAvailability.ts
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { useDebounce } from '@/lib/hooks/useDebounce'   // ⬅️ you likely already have this
+import { useDebounce } from '@/hooks/useDebounce'
 
 export function useUsernameAvailability(raw: string) {
   // normalise once
