@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { useSession } from '@/hooks/useSession'
 
 interface CreatePlanPayload {
   title: string
@@ -14,9 +15,11 @@ interface CreatePlanPayload {
 
 export function useCreatePlan() {
   const queryClient = useQueryClient()
+  const session = useSession()
 
   return useMutation({
     mutationFn: async (payload: CreatePlanPayload): Promise<string> => {
+      if (!session?.user) throw new Error('not-signed-in')
       // First create a temporary floq to attach the plan to
       const { data: floqData, error: floqError } = await supabase
         .from('floqs')
@@ -26,7 +29,8 @@ export function useCreatePlan() {
           primary_vibe: payload.vibe_tag?.toLowerCase().trim() || 'chill',
           visibility: 'private',
           location: 'POINT(0 0)', // Default location
-          flock_type: 'momentary'
+          flock_type: 'momentary',
+          creator_id: session.user.id
         })
         .select('id')
         .single()
@@ -50,6 +54,7 @@ export function useCreatePlan() {
           start_time: payload.start,
           end_time: payload.end,
           duration_hours: payload.duration_hours,
+          creator_id: session.user.id,
           status: 'draft'
         })
         .select('id')
