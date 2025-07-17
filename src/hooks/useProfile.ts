@@ -15,7 +15,7 @@ export function useCurrentUserProfile() {
     queryFn  : async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, display_name, avatar_url')
         .eq('id', session!.user.id)
         .single()
 
@@ -24,7 +24,7 @@ export function useCurrentUserProfile() {
         await new Promise(r => setTimeout(r, 1500))
         return queryClient.fetchQuery({
           queryKey: ['profile', session!.user.id],
-          queryFn: () => supabase.from('profiles').select('*').eq('id', session!.user.id).single().then(({ data, error }) => {
+          queryFn: () => supabase.from('profiles').select('id, username, display_name, avatar_url').eq('id', session!.user.id).single().then(({ data, error }) => {
             if (error) throw error
             return data as Profile
           })
@@ -43,7 +43,6 @@ export const useProfile = (userId: string | undefined) => {
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
       id: userId || 'mock-id',
-      email: 'mock@example.com',
       username: 'mock_user',
       display_name: 'Mock User',
       avatar_url: null,
@@ -65,7 +64,7 @@ export const useProfile = (userId: string | undefined) => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, display_name, avatar_url')
         .eq('id', userId)
         .maybeSingle();
 
@@ -89,7 +88,6 @@ export const useProfileByUsername = (username: string | undefined) => {
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
       id: 'mock-id-' + username,
-      email: 'mock@example.com',
       username: username || 'mock_user',
       display_name: username || 'Mock User',
       avatar_url: null,
@@ -111,7 +109,7 @@ export const useProfileByUsername = (username: string | undefined) => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, display_name, avatar_url')
         .eq('username', username)
         .maybeSingle();
 

@@ -21,7 +21,7 @@ export function useUsername() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, display_name, avatar_url')
         .eq('id', user.id)
         .single();
 

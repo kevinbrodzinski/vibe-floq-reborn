@@ -35,7 +35,6 @@ export function useProfile(userId: string) {
     
     const mockProfile: Profile = {
       id: userId,
-      email: 'mock@example.com',
       username: usernames[index],
       display_name: names[index],
       avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
@@ -60,7 +59,7 @@ export function useProfile(userId: string) {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, username, display_name, avatar_url')
+        .select('id, username, display_name, avatar_url')
         .eq('id', userId)
         .maybeSingle();
 
