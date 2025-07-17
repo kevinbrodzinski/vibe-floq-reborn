@@ -56,7 +56,6 @@ export function useCreatePlan() {
           planned_at: startIso,
           start_time: startIso,
           end_time: endIso,
-          duration_hours: differenceInMinutes(new Date(endIso), new Date(startIso)) / 60,
           creator_id: session.user.id,
           status: 'draft'
         })
