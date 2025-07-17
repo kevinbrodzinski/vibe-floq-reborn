@@ -88,8 +88,8 @@ export function ResizableStopCard({
   const conflictInfo = getConflictForStop(stop.id)
   const duration = stop.duration_minutes || 60
   
-  // Show voting only for finalized+ plans and when planId is available
-  const showVoting = planId && planStatus && !['draft'].includes(planStatus)
+  // Show voting for all plans when planId is available (enabling interactive mode)
+  const showVoting = planId && planStatus
 
   // Enhanced click handler - single tap to edit if no modifiers
   const handleClick = (e: React.MouseEvent) => {
