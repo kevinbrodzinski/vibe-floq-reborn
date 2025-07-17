@@ -65,8 +65,8 @@ BEGIN
        ) THEN
       PERFORM cron.schedule(
         'vibes-now-cleanup',
-        '0 * * * *',
-        $cron$SELECT public.cleanup_old_vibes();$cron$
+        '0 * * * *',                       -- every hour
+        $$SELECT cleanup_old_vibes();$$
       );
     END IF;
   END IF;
