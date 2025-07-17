@@ -31,9 +31,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "YOUR_APPLE_ID_EMAIL",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "kevin.brodzinski@outlook.com",
+        "ascAppId": "6748774829",
+        "appleTeamId": "9C7VN2PKAK"
       }
     }
   },
