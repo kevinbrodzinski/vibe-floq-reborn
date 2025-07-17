@@ -13,17 +13,34 @@ interface ConnectionInsightsProps {
 }
 
 export function ConnectionInsights({ userId }: ConnectionInsightsProps) {
-  const { data: suggestions = [], isLoading } = useFriendSuggestions(userId, 6);
+  const { data: suggestions = [], isLoading } = useFriendSuggestions(6);
   const { sendRequest, isSending } = useFriendRequests();
   const { toast } = useToast();
 
   const handleSendRequest = (suggestion: FriendSuggestion) => {
-    sendRequest(suggestion.user_id);
+    sendRequest(suggestion.id);
   };
 
-  const getCompatibilityColor = (score: number) => {
-    if (score >= 0.7) return "text-green-500";
-    if (score >= 0.4) return "text-yellow-500";
+  if (!suggestions.length && !isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Connection Insights
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center text-muted-foreground">
+          <p className="text-lg font-medium">No suggestions yet</p>
+          <p className="text-sm">Add interests to discover friends</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const getCompatibilityColor = (sharedTags: number) => {
+    if (sharedTags >= 3) return "text-green-500";
+    if (sharedTags >= 1) return "text-yellow-500";
     return "text-gray-500";
   };
 
@@ -88,7 +105,7 @@ export function ConnectionInsights({ userId }: ConnectionInsightsProps) {
         <div className="space-y-4">
           {suggestions.map((suggestion) => (
             <div
-              key={suggestion.user_id}
+              key={suggestion.id}
               className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
             >
               <div className="flex items-center space-x-3">
@@ -103,44 +120,34 @@ export function ConnectionInsights({ userId }: ConnectionInsightsProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <UsernameLink username={suggestion.username} className="font-medium" />
-                    <span className={`text-sm font-medium ${getCompatibilityColor(suggestion.compatibility_score)}`}>
-                      {Math.round(suggestion.compatibility_score * 100)}%
-                    </span>
+                      {suggestion.shared_tags > 0 && (
+                        <span className={`text-sm font-medium ${getCompatibilityColor(suggestion.shared_tags)}`}>
+                          {suggestion.shared_tags} shared
+                        </span>
+                      )}
                   </div>
                   
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    {suggestion.mutual_friends_count > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {suggestion.mutual_friends_count} mutual
-                      </span>
-                    )}
-                    
-                    {suggestion.crossed_paths_count > 0 && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {suggestion.crossed_paths_count} crossings
-                      </span>
-                    )}
-                    
-                    {suggestion.shared_interests.length > 0 && (
+                    {/* @ts-ignore - interests from profile */}
+                    {suggestion.interests && suggestion.interests.length > 0 && (
                       <span className="flex items-center gap-1">
                         <Heart className="h-3 w-3" />
-                        {suggestion.shared_interests.length} interests
+                        {suggestion.interests.length} interests
                       </span>
                     )}
                   </div>
                   
-                  {suggestion.shared_interests.length > 0 && (
+                  {/* @ts-ignore - interests from profile */}
+                  {suggestion.interests && suggestion.interests.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {suggestion.shared_interests.slice(0, 3).map((interest) => (
+                      {suggestion.interests.slice(0, 3).map((interest) => (
                         <Badge key={interest} variant="outline" className="text-xs px-1 py-0">
                           {interest}
                         </Badge>
                       ))}
-                      {suggestion.shared_interests.length > 3 && (
+                      {suggestion.interests.length > 3 && (
                         <span className="text-xs text-muted-foreground">
-                          +{suggestion.shared_interests.length - 3} more
+                          +{suggestion.interests.length - 3} more
                         </span>
                       )}
                     </div>

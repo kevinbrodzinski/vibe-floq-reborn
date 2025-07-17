@@ -1,30 +1,28 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useSession } from '@/hooks/useSession'
+import type { Profile } from '@/types/profile'
 
-export interface FriendSuggestion {
-  user_id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  compatibility_score: number;
-  mutual_friends_count: number;
-  crossed_paths_count: number;
-  shared_interests: string[];
-}
+// Extended type for friend suggestions that includes shared_tags from the database function
+export type FriendSuggestion = Profile & {
+  shared_tags: number;
+};
 
-export function useFriendSuggestions(userId?: string, limit = 6) {
+export function useFriendSuggestions(limit = 10) {
+  const session = useSession()
   return useQuery({
-    queryKey: ['friend-suggestions', userId, limit],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('suggest_friends', {
-        p_uid: userId,
-        limit_n: limit
-      });
+    enabled : !!session?.user,
+    queryKey: ['friend-suggestions', session?.user.id, limit],
+    queryFn : async (): Promise<FriendSuggestion[]> => {
+      const { data, error } = await supabase
+        .rpc('suggest_friends', {
+          p_user_id: session!.user.id,
+          p_limit  : limit,
+        })
 
-      if (error) throw error;
-      return data as FriendSuggestion[];
+      if (error) throw error
+      return data as FriendSuggestion[]
     },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    staleTime: 5 * 60 * 1000,
+  })
 }
