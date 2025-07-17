@@ -2,13 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import { useSession } from '@/hooks/useSession'
-import { parse, format } from 'date-fns'
+import { differenceInMinutes } from 'date-fns'
+import { to24h } from '@/utils/parseLocalTime'
 
-/**  '6:00 PM'  ->  '18:00'  |  '12:00 AM' -> '00:00' */
-function toSqlTime(label: string) {
-  const dt = parse(label, 'h:mm a', new Date(2000, 0, 1))
-  return format(dt, 'HH:mm')
-}
 
 interface CreatePlanPayload {
   title: string
@@ -44,10 +40,10 @@ export function useCreatePlan() {
 
       if (floqError) throw floqError
 
-      // Calculate planned_at from start time (today + start time)
-      const today = new Date()
-      const startTimeParsed = parse(payload.start, 'h:mm a', new Date(2000, 0, 1))
-      const planned_at = new Date(today.getFullYear(), today.getMonth(), today.getDate(), startTimeParsed.getHours(), startTimeParsed.getMinutes())
+      // Convert 12-hour time to ISO strings
+      const today        = new Date().toISOString().slice(0, 10);          // "2025-07-16"
+      const startIso     = new Date(`${today}T${to24h(payload.start)}:00`).toISOString();
+      const endIso       = new Date(`${today}T${to24h(payload.end)}:00`).toISOString();
 
       // Create the plan
       const { data: planData, error: planError } = await supabase
@@ -57,10 +53,10 @@ export function useCreatePlan() {
           title: payload.title,
           description: payload.description,
           vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
-          planned_at: planned_at.toISOString(),
-          start_time: toSqlTime(payload.start),   // '18:00'
-          end_time: toSqlTime(payload.end),       // '00:00'
-          // duration_hours is generated in Postgres – don't send it
+          planned_at: startIso,
+          start_time: startIso,
+          end_time: endIso,
+          duration_hours: differenceInMinutes(new Date(endIso), new Date(startIso)) / 60,
           creator_id: session.user.id,
           status: 'draft'
         })
