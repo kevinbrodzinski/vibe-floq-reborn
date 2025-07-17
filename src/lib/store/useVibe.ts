@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { VibeEnum } from '@/constants/vibes';
@@ -153,7 +152,7 @@ export const useVibe = create<VibeState>()(
     { 
       name: '@vibe',
       version: 1,
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => localStorage),
       partialize: ({ vibe, updatedAt }) => ({ vibe, updatedAt }),
       migrate: (persisted, version) => {
         if (version < 1) {

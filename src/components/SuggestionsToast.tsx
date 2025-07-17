@@ -3,7 +3,6 @@ import { MapPin, X, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFloqSuggestions, type FloqSuggestion } from "@/hooks/useFloqSuggestions";
 import { toast } from "@/hooks/use-toast";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SuggestionsToastProps {
   geo?: { lat: number; lng: number };
@@ -23,35 +22,29 @@ export function SuggestionsToast({
 
   // Load persisted state on mount
   useEffect(() => {
-    const loadPersistedState = async () => {
-      try {
-        const [dismissedData, lastShownData] = await Promise.all([
-          AsyncStorage.getItem('suggestions_dismissed_floqs'),
-          AsyncStorage.getItem('suggestions_last_shown_time')
-        ]);
-        
-        if (dismissedData) {
-          setDismissedFloqs(new Set(JSON.parse(dismissedData)));
-        }
-        if (lastShownData) {
-          setLastShownTime(parseInt(lastShownData, 10));
-        }
-      } catch (error) {
-        console.warn('Failed to load suggestions persistence data:', error);
+    try {
+      const dismissedData = localStorage.getItem('suggestions_dismissed_floqs');
+      const lastShownData = localStorage.getItem('suggestions_last_shown_time');
+      
+      if (dismissedData) {
+        setDismissedFloqs(new Set(JSON.parse(dismissedData)));
       }
-    };
-    
-    loadPersistedState();
+      if (lastShownData) {
+        setLastShownTime(parseInt(lastShownData, 10));
+      }
+    } catch (error) {
+      console.warn('Failed to load suggestions persistence data:', error);
+    }
   }, []);
 
   // Persist state changes
   useEffect(() => {
-    AsyncStorage.setItem('suggestions_dismissed_floqs', JSON.stringify(Array.from(dismissedFloqs)));
+    localStorage.setItem('suggestions_dismissed_floqs', JSON.stringify(Array.from(dismissedFloqs)));
   }, [dismissedFloqs]);
 
   useEffect(() => {
     if (lastShownTime > 0) {
-      AsyncStorage.setItem('suggestions_last_shown_time', lastShownTime.toString());
+      localStorage.setItem('suggestions_last_shown_time', lastShownTime.toString());
     }
   }, [lastShownTime]);
   
