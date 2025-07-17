@@ -3198,6 +3198,18 @@ export type Database = {
         Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
         Returns: Json
       }
+      fetch_floq_messages: {
+        Args: { p_floq: string; p_before?: string; p_limit?: number }
+        Returns: {
+          id: string
+          floq_id: string
+          sender_id: string
+          body: string
+          emoji: string
+          created_at: string
+          status: string
+        }[]
+      }
       find_or_create_dm: {
         Args: { a: string; b: string; p_use_demo?: boolean }
         Returns: string
