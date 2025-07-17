@@ -29,8 +29,8 @@ export function useProfile(userId: string) {
   
   if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
     // Return mock profile with deterministic but varied data
-    const names = ['Mock User', 'Test User', 'Demo User', 'Sample User'];
-    const usernames = ['mock_user', 'test_user', 'demo_user', 'sample_user'];
+    const names = ['Alex Chen', 'Jordan Smith', 'Casey Williams', 'Morgan Davis'];
+    const usernames = ['alex_chen', 'jordan_smith', 'casey_williams', 'morgan_davis'];
     const index = Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length;
     
     const mockProfile: Profile = {
