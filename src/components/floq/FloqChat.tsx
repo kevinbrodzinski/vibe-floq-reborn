@@ -272,11 +272,9 @@ export const FloqChat: React.FC<FloqChatProps> = ({
             ))}
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No messages yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Start the conversation!
-            </p>
+          <div className="flex flex-col items-center py-12 text-muted">
+            <span className="text-4xl">👋</span>
+            <p className="mt-2">Be the first to say hi</p>
           </div>
         ) : (
           <>

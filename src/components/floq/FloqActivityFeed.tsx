@@ -274,15 +274,9 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
   if (activities.length === 0) {
     return (
       <Card className={cn("p-4", className)}>
-        <div className="text-center py-8">
-          <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-          <h3 className="font-semibold mb-2">No Activity Yet</h3>
-          <p className="text-sm text-muted-foreground mb-2">
-            Be the first to join or send a message!
-          </p>
-          <div className="text-xs text-muted-foreground">
-            Activity like joins, messages, and vibes will appear here
-          </div>
+        <div className="flex flex-col items-center py-12 text-muted">
+          <span className="text-4xl">🎯</span>
+          <p className="mt-2">No activity yet</p>
         </div>
       </Card>
     );

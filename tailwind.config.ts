@@ -191,6 +191,11 @@ export default {
 			}
 		}
 	},
-	safelist: gradientSafelist,
+	safelist: [
+		...gradientSafelist,
+		'text-muted',
+		'text-center',
+		'py-12',
+	],
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;

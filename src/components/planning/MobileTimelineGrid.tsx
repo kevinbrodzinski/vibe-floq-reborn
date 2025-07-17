@@ -154,20 +154,14 @@ function MobileExpandedTimeline({
 }) {
   return (
     <div className="space-y-4 pb-safe-area-inset-bottom">
-      <div className="text-center py-8 space-y-4">
-        <div className="text-4xl">📍</div>
-        <h3 className="text-lg font-semibold text-foreground">
-          Ready to plan?
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          Add stops to create your timeline
-        </p>
+      <div className="flex flex-col items-center py-12 text-muted">
+        <span className="text-4xl">📍</span>
+        <p className="mt-2">No stops yet</p>
         <motion.button
           whileTap={{ scale: 0.95 }}
-          className="w-full h-16 border-2 border-dashed border-muted-foreground/30 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+          className="btn-primary mt-4 px-4 py-2"
         >
-          <Plus size={20} />
-          <span>Add First Stop</span>
+          Add your first stop
         </motion.button>
       </div>
     </div>

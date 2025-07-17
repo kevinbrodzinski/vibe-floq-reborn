@@ -1,176 +1,193 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+interface VoiceToStopRequest {
+  audio: string; // base64 encoded audio
+  planContext?: string;
+}
 
-const functionSchema = {
-  name: 'create_stop',
-  description: 'Extract plan stop information from voice input',
-  parameters: {
-    type: 'object',
-    properties: {
-      title: { 
-        type: 'string', 
-        description: 'Short venue or activity name (e.g., "Coffee shop", "Museum", "Lunch at Mario\'s")' 
-      },
-      startTime: {
-        type: 'string',
-        pattern: '^\\d{2}:\\d{2}$',
-        description: 'Start time in 24-hour format HH:MM (e.g., "14:30" for 2:30pm)'
-      },
-      endTime: {
-        type: 'string',
-        pattern: '^\\d{2}:\\d{2}$',
-        description: 'Optional end time in 24-hour format HH:MM'
-      },
-      venue: { 
-        type: 'string',
-        description: 'Venue or location name if mentioned'
-      },
-      description: {
-        type: 'string',
-        description: 'Any additional details mentioned'
-      }
-    },
-    required: ['title', 'startTime'],
-  },
-} as const
+interface VoiceToStopResponse {
+  success: boolean;
+  suggestion?: {
+    title: string;
+    description?: string;
+    estimatedDuration?: number;
+    estimatedCost?: number;
+  };
+  error?: string;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const { transcript, planDate } = await req.json();
-
-    if (!transcript) {
-      throw new Error('Transcript is required');
-    }
-
-    // Rate limiting check (server-side)
-    const authHeader = req.headers.get('authorization')
-    if (authHeader) {
-      try {
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-          { auth: { persistSession: false } }
-        )
-        
-        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
-        if (user) {
-          // Set proper role context for audit trail consistency
-          await supabase.rpc('set_config', {
-            setting_name: 'jwt.claims.sub',
-            setting_value: user.id
-          }).catch(() => {}) // Non-critical if fails
-          
-          const { data: rl } = await supabase.rpc('check_rate_limit', {
-            user_id: user.id,
-            action: 'voice_stop'
-          })
-          if (!rl?.ok) {
-            return new Response('Rate limited', { 
-              status: 429, 
-              headers: corsHeaders 
-            })
-          }
-        }
-      } catch (err) {
-        console.warn('Rate limit check failed:', err)
-        // Continue anyway - don't block on rate limit failures
-      }
-    }
-
-    console.log('Parsing voice input:', transcript);
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.2,
-        messages: [
-          {
-            role: 'system',
-            content: `You are a voice assistant for a social planning app. Extract plan stop information from user voice input.
-
-The plan date is ${planDate}. When users mention times:
-- Convert to 24-hour format (e.g., "2pm" → "14:00", "9am" → "09:00")
-- If no AM/PM specified, use context (e.g., "breakfast at 9" → "09:00", "dinner at 7" → "19:00")
-- Default duration is 1 hour if no end time mentioned
-
-Common patterns:
-- "Add [venue] at [time]"
-- "Go to [place] at [time]"
-- "Visit [location] from [start] to [end]"
-- "[Activity] at [time]"
-
-Be liberal in interpretation but conservative in assumptions.`,
-          },
-          { role: 'user', content: transcript }
-        ],
-        tools: [{ type: 'function', function: functionSchema }],
-        tool_choice: { type: 'function', function: { name: 'create_stop' } },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const { audio, planContext = '' }: VoiceToStopRequest = await req.json()
     
-    if (!toolCall) {
-      throw new Error('No function call returned from OpenAI');
+    if (!audio) {
+      throw new Error('No audio data provided')
     }
 
-    const args = JSON.parse(toolCall.function.arguments);
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured')
+    }
 
-    const parsed = {
-      title: args.title,
-      startTime: args.startTime,
-      endTime: args.endTime,
-      venue: args.venue,
-      description: args.description,
-    };
+    // Create AbortController for 5s timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    console.log('Parsed result:', parsed);
+    try {
+      // Step 1: Convert audio to text using Whisper
+      const audioBuffer = Uint8Array.from(atob(audio), c => c.charCodeAt(0))
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/webm' })
+      
+      const transcriptionFormData = new FormData()
+      transcriptionFormData.append('file', audioBlob, 'audio.webm')
+      transcriptionFormData.append('model', 'whisper-1')
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      parsed,
-      originalTranscript: transcript 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+        },
+        body: transcriptionFormData,
+        signal: controller.signal,
+      })
+
+      if (!transcriptionResponse.ok) {
+        throw new Error(`Transcription failed: ${await transcriptionResponse.text()}`)
+      }
+
+      const transcriptionResult = await transcriptionResponse.json()
+      const transcribedText = transcriptionResult.text
+
+      if (!transcribedText || transcribedText.trim().length === 0) {
+        throw new Error('No speech detected in audio')
+      }
+
+      // Step 2: Parse the transcribed text into a structured stop suggestion
+      const parseResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a helpful assistant that converts voice input into structured plan stops. 
+              
+Parse the user's voice input and extract:
+- title: A concise, actionable title for the stop
+- description: Optional additional details 
+- estimatedDuration: Duration in minutes (optional)
+- estimatedCost: Estimated cost per person in dollars (optional)
+
+Context about the current plan: ${planContext}
+
+Respond with valid JSON in this format:
+{
+  "title": "Stop title",
+  "description": "Optional description", 
+  "estimatedDuration": 60,
+  "estimatedCost": 25
+}
+
+If the input doesn't seem like a valid plan stop, respond with:
+{"error": "Could not parse a valid plan stop from the input"}`
+            },
+            {
+              role: 'user',
+              content: transcribedText
+            }
+          ],
+          temperature: 0.3,
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!parseResponse.ok) {
+        throw new Error(`OpenAI parsing failed: ${await parseResponse.text()}`)
+      }
+
+      const parseResult = await parseResponse.json()
+      const parsedContent = parseResult.choices[0].message.content
+
+      try {
+        const suggestion = JSON.parse(parsedContent)
+        
+        if (suggestion.error) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: suggestion.error 
+            } as VoiceToStopResponse),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 400 
+            }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            suggestion: {
+              title: suggestion.title,
+              description: suggestion.description,
+              estimatedDuration: suggestion.estimatedDuration,
+              estimatedCost: suggestion.estimatedCost,
+            }
+          } as VoiceToStopResponse),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+
+      } catch (jsonError) {
+        console.error('Failed to parse OpenAI response as JSON:', parsedContent)
+        throw new Error('Invalid response format from AI')
+      }
+
+    } catch (error) {
+      clearTimeout(timeoutId)
+      
+      if (error.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Request timed out - please try again' 
+          } as VoiceToStopResponse),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 504 
+          }
+        )
+      }
+      throw error
+    }
 
   } catch (error) {
-    console.error('Error in parse-voice-to-stop function:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in parse-voice-to-stop function:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'An unexpected error occurred' 
+      } as VoiceToStopResponse),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
-});
+})
