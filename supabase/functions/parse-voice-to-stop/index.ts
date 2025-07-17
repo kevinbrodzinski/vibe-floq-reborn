@@ -71,6 +71,12 @@ serve(async (req) => {
         
         const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''))
         if (user) {
+          // Set proper role context for audit trail consistency
+          await supabase.rpc('set_config', {
+            setting_name: 'jwt.claims.sub',
+            setting_value: user.id
+          }).catch(() => {}) // Non-critical if fails
+          
           const { data: rl } = await supabase.rpc('check_rate_limit', {
             user_id: user.id,
             action: 'voice_stop'

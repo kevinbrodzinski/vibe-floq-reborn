@@ -99,10 +99,16 @@ export function useVoiceToStop(planId: string, planDate: string) {
     }
   }, [state])
 
-  const stop = useCallback(() => {
+  const stop = useCallback(async () => {
     // Platform-specific cleanup for parity
     if (typeof window !== 'undefined') {
       webRecognizer?.stop()
+    } else {
+      // RN cleanup with proper stop before destroy
+      try {
+        await (window as any).rnVoice?.stop?.()
+      } catch {}
+      await (window as any).rnVoice?.destroy?.()
     }
     stopFuncRef.current?.()
     setState('idle')
