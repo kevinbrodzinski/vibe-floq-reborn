@@ -1,4 +1,3 @@
-import 'react-native-get-random-values' // Web Crypto polyfill
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
