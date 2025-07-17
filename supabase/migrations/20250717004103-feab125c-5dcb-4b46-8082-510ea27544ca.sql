@@ -1,54 +1,70 @@
--- 2025-07-16 - Case-insensitive USERNAME uniqueness
--- ================================================
+-- 2025-07-16   Case-insensitive unique usernames
+-- ============================================
 
-BEGIN;
+------------------------------------------------
+-- 0. Ensure CITEXT is available (outside txn)
+------------------------------------------------
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM   pg_extension
+    WHERE  extname = 'citext'
+  ) THEN
+    CREATE EXTENSION citext;
+  END IF;
+END$$;
 
--- 1. (optional) Install citext for future convenience
---    (you can skip this if you don't plan to cast to CITEXT later)
-CREATE EXTENSION IF NOT EXISTS citext;
-
--- 2. Drop the old unique constraint, if it exists
+------------------------------------------------
+-- 1. Drop legacy constraint if it exists
+------------------------------------------------
 ALTER TABLE profiles
   DROP CONSTRAINT IF EXISTS profiles_username_key;
 
--- 3-A. Detect any duplicates that would block the new index
---     (same username ignoring case)
+------------------------------------------------
+-- 2. Find duplicates (same username, diff case)
+------------------------------------------------
 WITH dupes AS (
-  SELECT lower(username) AS uname, MIN(id) AS keeper_id
+  SELECT DISTINCT ON (lower(username))
+         ctid, id, username
   FROM   profiles
-  GROUP  BY 1
-  HAVING COUNT(*) > 1
+  ORDER  BY lower(username), created_at  -- keeps the earliest row
 )
 SELECT p.*
 FROM   profiles p
-JOIN   dupes   d ON lower(p.username) = d.uname
-WHERE  p.id <> d.keeper_id;
+JOIN   dupes   d       ON lower(p.username) = lower(d.username)
+WHERE  p.ctid <> d.ctid;   -- rows that would collide
+-- ↳ Review this list; if empty you're good.
+--   If not, decide which rows to rename / merge.
 
--- ⚠️  If the query above returns rows,
---     decide which one(s) to rename or delete, then continue.
-
--- 3-B. (optional) Example auto-fix: append "_dup" to extras
---      so the new index can be created without manual edits.
-WITH numbered AS (
-  SELECT id,
-         row_number() OVER (PARTITION BY lower(username) ORDER BY id) AS rn
+------------------------------------------------
+-- 3. Auto-rename extras (append _dupN)
+------------------------------------------------
+WITH ranked AS (
+  SELECT ctid,
+         row_number() OVER (PARTITION BY lower(username) ORDER BY created_at) AS rn
   FROM   profiles
 )
 UPDATE profiles p
-SET    username = username || '_dup' || rn
-FROM   numbered n
-WHERE  p.id = n.id
-  AND  n.rn > 1;
+SET    username = concat(username, '_dup', ranked.rn)
+FROM   ranked
+WHERE  p.ctid = ranked.ctid
+  AND  ranked.rn > 1;
 
--- 4. Create a case-insensitive unique index (CONCURRENTLY to avoid a lock)
+------------------------------------------------
+-- 4. Create case-insensitive UNIQUE INDEX
+------------------------------------------------
 CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS
-  uniq_profiles_username_lower
-  ON profiles (lower(username));
+  uniq_profiles_username_lc
+  ON profiles (lower(username))
+  WHERE username IS NOT NULL;
 
--- 5. Enforce NOT NULL / NOT EMPTY at the DB level
+------------------------------------------------
+-- 5. Enforce NOT NULL & non-empty usernames
+------------------------------------------------
 ALTER TABLE profiles
   ALTER COLUMN username SET NOT NULL,
-  ADD    CONSTRAINT username_not_empty
-         CHECK (char_length(trim(username)) > 0);
+  ADD CONSTRAINT username_not_empty
+      CHECK (char_length(trim(username)) > 0);
 
-COMMIT;
+-- (No COMMIT needed – Supabase runs each file in its own txn)
