@@ -2757,19 +2757,6 @@ export type Database = {
           },
         ]
       }
-      v_friends_with_profile: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          display_name: string | null
-          friend_id: string | null
-          friend_since: string | null
-          friendship_created_at: string | null
-          friendship_id: string | null
-          username: string | null
-        }
-        Relationships: []
-      }
       vibe_cluster_momentum: {
         Row: {
           centroid: unknown | null
