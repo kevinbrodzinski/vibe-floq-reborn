@@ -16,6 +16,7 @@ import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
+import { useVibeDetection } from '@/store/useVibeDetection';
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
 import { VibeWheel } from "@/components/vibe/VibeWheel";
@@ -36,7 +37,7 @@ export const VibeScreen = () => {
   const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [elapsed, setElapsed] = useState<string>('—');
-  const [autoMode, setAutoMode] = useState(false);
+  const { autoMode, toggleAutoMode } = useVibeDetection();
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
@@ -104,13 +105,13 @@ export const VibeScreen = () => {
     await setSelectedVibe(vibe);
     // Turn off auto mode when manually selecting
     if (autoMode) {
-      setAutoMode(false);
+      toggleAutoMode();
     }
     // Brief haptic feedback simulation
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
-  }, [autoMode, setSelectedVibe]);
+  }, [autoMode, setSelectedVibe, toggleAutoMode]);
 
   // Auto-apply detected vibe with adaptive threshold
   const applyDetectedVibe = useCallback(async () => {
@@ -216,13 +217,13 @@ export const VibeScreen = () => {
     }
   }, [learningData.patterns]);
 
-  // Toggle auto mode
-  const toggleAutoMode = useCallback(async () => {
+  // Toggle auto mode with permissions
+  const handleToggleAutoMode = useCallback(async () => {
     if (!autoMode) {
       await requestPermissions();
     }
-    setAutoMode(!autoMode);
-  }, [autoMode, requestPermissions]);
+    toggleAutoMode();
+  }, [autoMode, requestPermissions, toggleAutoMode]);
 
   const handleDragStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     setIsDragging(true);
@@ -332,12 +333,13 @@ export const VibeScreen = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggleAutoMode}
+          onClick={handleToggleAutoMode}
           className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
             autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
           }`}
         >
-          {autoMode ? <Zap className="w-5 h-5" /> : <ZapOff className="w-5 h-5" />}
+          {autoMode ? <Zap className="mr-2" /> : <ZapOff className="mr-2" />}
+          {autoMode ? 'Auto Vibe On' : 'Auto Vibe Off'}
         </Button>
         <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
         <Button
