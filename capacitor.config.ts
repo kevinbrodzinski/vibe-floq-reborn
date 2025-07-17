@@ -8,6 +8,16 @@ const config: CapacitorConfig = {
     url: process.env.TARGET === 'native' ? undefined : 'https://11986cc9-7473-4e33-83dd-acd244d83d3e.lovableproject.com?forceHideBadge=true',
     cleartext: true
   },
+  ios: {
+    entitlements: {
+      'aps-environment': 'production',
+      'com.apple.developer.location.push': true,
+      'UIBackgroundModes': [
+        'location',
+        'remote-notification'
+      ]
+    }
+  },
   android: {
     minSdkVersion: 24
   },
