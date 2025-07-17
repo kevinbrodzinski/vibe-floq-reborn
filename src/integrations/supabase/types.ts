@@ -1871,6 +1871,7 @@ export type Database = {
           created_at: string | null
           custom_status: string | null
           display_name: string
+          email: string | null
           first_name: string | null
           full_name: string | null
           id: string
@@ -1885,6 +1886,7 @@ export type Database = {
           created_at?: string | null
           custom_status?: string | null
           display_name: string
+          email?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
@@ -1899,6 +1901,7 @@ export type Database = {
           created_at?: string | null
           custom_status?: string | null
           display_name?: string
+          email?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
