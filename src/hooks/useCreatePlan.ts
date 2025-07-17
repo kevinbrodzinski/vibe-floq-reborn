@@ -2,8 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import { useSession } from '@/hooks/useSession'
-import { differenceInMinutes } from 'date-fns'
+import { format } from 'date-fns'
+import { parse } from 'date-fns/fp'
 import { to24h } from '@/utils/parseLocalTime'
+
+/** Convert ISO to hh:mm:ss for Postgres TIME columns */
+const isoToPgTime = (iso: string) => iso.slice(11, 19)  // '2025-07-17T07:00:00.000Z' -> '07:00:00'
 
 
 interface CreatePlanPayload {
@@ -41,9 +45,9 @@ export function useCreatePlan() {
       if (floqError) throw floqError
 
       // Convert 12-hour time to ISO strings
-      const today        = new Date().toISOString().slice(0, 10);          // "2025-07-16"
-      const startIso     = new Date(`${today}T${to24h(payload.start)}:00`).toISOString();
-      const endIso       = new Date(`${today}T${to24h(payload.end)}:00`).toISOString();
+      const today = new Date().toISOString().slice(0, 10)          // "2025-07-16"
+      const startISO = new Date(`${today}T${to24h(payload.start)}:00Z`).toISOString()
+      const endISO = new Date(`${today}T${to24h(payload.end)}:00Z`).toISOString()
 
       // Create the plan
       const { data: planData, error: planError } = await supabase
@@ -53,9 +57,9 @@ export function useCreatePlan() {
           title: payload.title,
           description: payload.description,
           vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
-          planned_at: startIso,
-          start_time: startIso,
-          end_time: endIso,
+          planned_at: startISO,
+          start_time: isoToPgTime(startISO),   // '07:00:00'
+          end_time: isoToPgTime(endISO),       // '13:00:00'
           creator_id: session.user.id,
           status: 'draft'
         })
