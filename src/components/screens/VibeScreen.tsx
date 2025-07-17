@@ -340,7 +340,9 @@ export const VibeScreen = () => {
           {autoMode ? 'Auto Vibe On' : 'Auto Vibe Off'}
         </Button>
         <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
-        <VisibilityButton />
+        <div className="flex items-center gap-2">
+          <VisibilityButton />
+        </div>
       </div>
 
       {/* Magical Vibe Wheel with Physics */}

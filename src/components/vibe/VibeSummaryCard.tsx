@@ -54,7 +54,9 @@ export const VibeSummaryCard = memo(({
       {/* Vibe Section */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-muted-foreground">
-          Vibe {visibility === 'friends' && <span className="opacity-60">(friends only)</span>}
+          Vibe {visibility === 'friends' && (
+            <span className="text-xs italic text-muted-foreground">friends only</span>
+          )}
         </span>
         <motion.button
           onClick={onOpenVibeSelector}

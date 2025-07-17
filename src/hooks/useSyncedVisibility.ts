@@ -4,52 +4,49 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 
 export function useSyncedVisibility() {
-  const { user } = useAuth();
-  const visibility = useVibe((s) => s.visibility);
-  const setVisibility = useVibe((s) => s.setVisibility);
+  const query = useAuth();
+  const user = query.user;
+  const { visibility, setVisibility } = useVibe();
 
-  /* ➊ initial fetch */
+  /* 1️⃣ initial fetch */
   useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data, error } = await supabase
-        .from('vibes_now')
-        .select('visibility')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (!error && data?.visibility) {
-        setVisibility(data.visibility as 'public' | 'friends' | 'off');
-      }
-    })();
-  }, [user, setVisibility]);
+    if (!user?.id) return;
+    supabase
+      .from('vibes_now')
+      .select('visibility')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.visibility) setVisibility(data.visibility as any);
+      });
+  }, [user?.id, setVisibility]);
 
-  /* ➋ propagate local changes to DB */
+  /* 2️⃣ push local change */
   useEffect(() => {
-    if (!user) return;
-    const upsert = async () => {
-      await supabase
-        .from('vibes_now')
-        .upsert({ user_id: user.id, visibility }, { onConflict: 'user_id' });
-    };
-    upsert();
-  }, [user, visibility]);
+    if (!user?.id) return;
+    supabase
+      .from('vibes_now')
+      .upsert(
+        { 
+          user_id: user.id, 
+          visibility,
+          updated_at: new Date().toISOString()
+        }, 
+        { onConflict: 'user_id' }
+      );
+  }, [user?.id, visibility]);
 
-  /* ➌ listen for remote changes */
+  /* 3️⃣ listen for remote change */
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     const channel = supabase
       .channel(`vibe-visibility-${user.id}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          if (payload.new.visibility) {
-            setVisibility(payload.new.visibility as 'public' | 'friends' | 'off');
-          }
-        },
+        ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
       .subscribe();
-
-    return () => void supabase.removeChannel(channel);
-  }, [user, setVisibility]);
+    return () => channel.unsubscribe();
+  }, [user?.id, setVisibility]);
 }

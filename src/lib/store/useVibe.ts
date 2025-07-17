@@ -161,7 +161,7 @@ export const useVibe = create<VibeState>()(
       name: '@vibe',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ vibe, visibility, updatedAt }) => ({ vibe, visibility, updatedAt }),
+      partialize: (s) => ({ vibe: s.vibe, visibility: s.visibility, updatedAt: s.updatedAt }),
       migrate: (persisted, version) => {
         if (version < 1) {
           // add migration steps here later
