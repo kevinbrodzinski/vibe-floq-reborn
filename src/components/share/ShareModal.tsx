@@ -198,7 +198,7 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
         <DialogContent className="flex flex-col items-center gap-4 max-w-sm">
           <DialogHeader>Share via QR Code</DialogHeader>
-          {shareLink && (
+          {shareLink ? (
             <>
               <a 
                 href={shareLink.url} 
@@ -215,6 +215,10 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
                 {shareLink.url}
               </p>
             </>
+          ) : (
+            <div className="flex items-center justify-center p-8">
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            </div>
           )}
         </DialogContent>
       </Dialog>

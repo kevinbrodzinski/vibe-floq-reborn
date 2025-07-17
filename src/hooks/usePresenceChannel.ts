@@ -38,14 +38,14 @@ export const usePresenceChannel = () => {
             online_at: new Date().toISOString(),
             vibe,
             gh5,
-            visible: visibility !== 'off'  // NEW: respect visibility
+            visible: visibility !== 'off'
           });
         }
       });
 
     // Clean-up on vibe / location change
     return () => {
-      supabase.removeChannel(ch);
+      ch.unsubscribe();
     };
   }, [vibe, location?.geohash, visibility, user]);
 };

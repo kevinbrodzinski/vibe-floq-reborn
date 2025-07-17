@@ -31,8 +31,7 @@ export function useSyncedVisibility() {
           .upsert(
             { 
               user_id: user.id, 
-              visibility,
-              updated_at: new Date().toISOString()
+              visibility
             }, 
             { 
               onConflict: 'user_id',
