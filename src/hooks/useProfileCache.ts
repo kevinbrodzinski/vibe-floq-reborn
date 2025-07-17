@@ -11,10 +11,10 @@ export function useProfileCache() {
     users.forEach(user => {
       queryClient.setQueryData(['profile', user.id], {
         id: user.id,
-        email: user.email || user.display_name + '@example.com',
         username: user.username,
         display_name: user.display_name,
         avatar_url: user.avatar_url,
+        created_at: user.created_at,
       });
     });
   };
