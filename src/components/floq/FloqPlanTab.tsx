@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Plus, Mic } from 'lucide-react'
 import { useActiveFloqPlan } from '@/hooks/useActiveFloqPlan'
+import { useFloqDetails } from '@/hooks/useFloqDetails'
 import { PlanHeader } from './PlanHeader'
 import { MobileTimelineGrid } from '@/components/planning/MobileTimelineGrid'
 import { Loader2 } from 'lucide-react'
@@ -11,45 +12,24 @@ import type { Database } from '@/integrations/supabase/types'
 
 type Floq = Database['public']['Tables']['floqs']['Row']
 
-// Mock floq data - in real implementation, this would come from useFloq hook
-const mockFloq: Floq = {
-  id: 'mock-floq-id',
-  title: 'Test Floq',
-  name: 'Test Floq',
-  description: null,
-  primary_vibe: 'chill',
-  vibe_tag: 'chill',
-  type: 'auto',
-  flock_type: 'momentary',
-  starts_at: new Date().toISOString(),
-  ends_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString(),
-  creator_id: 'mock-creator-id',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  deleted_at: null,
-  expires_at: null,
-  flock_tags: [],
-  location: null,
-  max_participants: 20,
-  radius_m: 100,
-  geo: null,
-  visibility: 'public',
-  walkable_zone: null,
-  catchment_area: null,
-  activity_score: 1,
-  last_activity_at: new Date().toISOString(),
-  auto_created: false,
-  recurrence_pattern: null,
-  parent_flock_id: null,
-  pinned_note: null
-}
 
 export function FloqPlanTab() {
   const { floqId } = useParams<{ floqId: string }>()
+  const { data: floq } = useFloqDetails(floqId)
   const { data: plan, isLoading } = useActiveFloqPlan(floqId)
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  if (isLoading || !plan) {
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current)
+      }
+    }
+  }, [])
+
+  if (isLoading || !plan || !floq) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader2 className="animate-spin text-muted-foreground" size={24} />
@@ -59,7 +39,7 @@ export function FloqPlanTab() {
 
   return (
     <div className="flex flex-col h-full relative">
-      <PlanHeader floq={mockFloq} plan={plan} />
+      <PlanHeader floq={floq} plan={plan} />
 
       <Tabs defaultValue="timeline" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-3 border-b border-border/20">
@@ -103,14 +83,20 @@ export function FloqPlanTab() {
         <Button
           size="icon"
           className="rounded-full h-14 w-14 shadow-lg"
-          onMouseDown={(e) => {
-            // Simple long press detection for web
-            const timer = setTimeout(() => setVoiceOpen(true), 500)
-            const handleMouseUp = () => {
-              clearTimeout(timer)
-              document.removeEventListener('mouseup', handleMouseUp)
+          onPointerDown={() => {
+            longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)
+          }}
+          onPointerUp={() => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current)
+              longPressTimerRef.current = null
             }
-            document.addEventListener('mouseup', handleMouseUp)
+          }}
+          onPointerLeave={() => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current)
+              longPressTimerRef.current = null
+            }
           }}
           onClick={() => {
             // Handle regular click - open add stop modal

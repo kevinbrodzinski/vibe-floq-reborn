@@ -77,7 +77,7 @@ export function useFloqDetails(
       });
 
       if (error) {
-        console.error("Floq details error:", error);
+        console.error('[useFloqDetails] Floq details error:', error);
         throw error;
       }
 

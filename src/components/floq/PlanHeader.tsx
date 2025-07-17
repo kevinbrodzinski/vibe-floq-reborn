@@ -4,12 +4,12 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useNavigate } from 'react-router-dom'
 import type { Database } from '@/integrations/supabase/types'
+import type { FloqDetails } from '@/hooks/useFloqDetails'
 
-type Floq = Database['public']['Tables']['floqs']['Row']
 type Plan = Database['public']['Tables']['floq_plans']['Row']
 
 interface Props {
-  floq: Floq
+  floq: FloqDetails
   plan: Plan
 }
 
