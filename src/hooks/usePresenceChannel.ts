@@ -12,7 +12,7 @@ export const usePresenceChannel = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (!vibe || !location || !user) return;
+    if (!vibe || !location || !user?.id) return;
 
     // Calculate geohash-5 for presence channel
     const gh5 = location.geohash?.substring(0, 5);
@@ -47,5 +47,31 @@ export const usePresenceChannel = () => {
     return () => {
       ch.unsubscribe();
     };
-  }, [vibe, location?.geohash, visibility, user]);
+  }, [vibe, location?.geohash?.substring(0, 5), user?.id]);
+
+  // Separate effect for visibility updates
+  useEffect(() => {
+    if (!vibe || !location || !user?.id) return;
+
+    const gh5 = location.geohash?.substring(0, 5);
+    if (!gh5) return;
+
+    const channelName = `vibe-${vibe}-${gh5}`;
+    
+    // Get existing channel and update visibility
+    const channels = supabase.getChannels();
+    const existingChannel = channels.find(ch => ch.topic === channelName);
+    
+    if (existingChannel && existingChannel.state === 'joined') {
+      existingChannel.track({
+        userId: user.id,
+        name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
+        avatar: user.user_metadata?.avatar_url,
+        online_at: new Date().toISOString(),
+        vibe,
+        gh5,
+        visible: visibility !== 'off'
+      });
+    }
+  }, [visibility]);
 };

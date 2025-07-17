@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Copy, Share2, Download, QrCode } from 'lucide-react';
+import { Copy, Share2, Download, QrCode, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ShareCard, TEMPLATES, TemplateType } from './CardTemplates';
 import { AfterglowDetail } from '@/lib/afterglow-helpers';
@@ -217,6 +217,7 @@ export default function ShareModal({ open, onOpenChange, afterglow }: Props) {
             </>
           ) : (
             <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
               <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
           )}
