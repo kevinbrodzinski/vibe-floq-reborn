@@ -800,6 +800,7 @@ export type Database = {
           floq_id: string
           id: string
           sender_id: string
+          status: string | null
         }
         Insert: {
           body?: string | null
@@ -808,6 +809,7 @@ export type Database = {
           floq_id: string
           id?: string
           sender_id: string
+          status?: string | null
         }
         Update: {
           body?: string | null
@@ -816,6 +818,7 @@ export type Database = {
           floq_id?: string
           id?: string
           sender_id?: string
+          status?: string | null
         }
         Relationships: [
           {
