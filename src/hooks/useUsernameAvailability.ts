@@ -7,7 +7,7 @@ export const useUsernameAvailability = (username: string) => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const debouncedUsername = useDebounce(username.trim(), 300);
+  const debouncedUsername = useDebounce(username.trim().toLowerCase(), 300);
 
   const checkAvailability = useCallback(async (usernameToCheck: string) => {
     if (!usernameToCheck || usernameToCheck.length < 3) {
@@ -96,6 +96,6 @@ export const useUsernameAvailability = (username: string) => {
     error,
     validationMessage: getValidationMessage(),
     validationState: getValidationState(),
-    recheckAvailability: () => checkAvailability(username.trim())
+    recheckAvailability: () => checkAvailability(username.trim().toLowerCase())
   };
 };
