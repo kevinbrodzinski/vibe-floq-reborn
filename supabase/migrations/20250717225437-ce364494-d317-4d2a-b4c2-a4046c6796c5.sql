@@ -1,28 +1,44 @@
 /* ──────────────────────────────────────────────────────────────
-  1.  Safety-first: make sure the required column exists
-      (older databases may not have expires_at yet)
+  0.  Ensure the optional extension schema is present
 ──────────────────────────────────────────────────────────────── */
-ALTER TABLE public.vibes_now
-    ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+CREATE SCHEMA IF NOT EXISTS extensions;
 
 /* ──────────────────────────────────────────────────────────────
-  2.  Performance: covering index for single-row look-ups
+  1.  Add expires_at column (safe / idempotent)
 ──────────────────────────────────────────────────────────────── */
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_vibes_now_user_id
-    ON public.vibes_now (user_id);
+ALTER TABLE public.vibes_now
+  ADD COLUMN IF NOT EXISTS expires_at timestamptz;
+
+/* ──────────────────────────────────────────────────────────────
+  2.  Performance index on user_id
+      – Use CONCURRENTLY only when we're *not* inside a transaction
+──────────────────────────────────────────────────────────────── */
+DO $$
+BEGIN
+  IF current_setting('in_transaction') = 'on' THEN
+    -- Most migration wrappers open a transaction around the whole file
+    -- so we create a plain index (still idempotent).
+    EXECUTE '
+      CREATE INDEX IF NOT EXISTS idx_vibes_now_user_id
+      ON public.vibes_now (user_id)';
+  ELSE
+    EXECUTE '
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_vibes_now_user_id
+      ON public.vibes_now (user_id)';
+  END IF;
+END$$;
 
 /* ──────────────────────────────────────────────────────────────
   3.  House-keeping function
-      – removes rows whose expires_at is > 24 h old
 ──────────────────────────────────────────────────────────────── */
 CREATE OR REPLACE FUNCTION public.cleanup_old_vibes()
 RETURNS void
 LANGUAGE plpgsql
-SECURITY DEFINER                          -- runs with object owner rights
-SET search_path = public, extensions      -- deterministic search_path
+SECURITY DEFINER
+SET search_path = public, extensions
 AS $$
 BEGIN
-  -- "leaky-bucket" delete: cap at 1 000 rows / call
+  -- delete at most 1 000 stale rows per call
   DELETE FROM public.vibes_now
   WHERE expires_at < (now() - interval '24 hours')
   LIMIT 1000;
@@ -30,19 +46,28 @@ END;
 $$;
 
 /* ──────────────────────────────────────────────────────────────
-  4.  Invoke the cleanup once per hour via pg_cron
-      (skip if pg_cron extension isn't installed)
+  4.  Schedule the job (only if pg_cron is installed)
 ──────────────────────────────────────────────────────────────── */
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM cron.job WHERE jobname = 'vibes-now-cleanup'
-  ) THEN
-    PERFORM cron.schedule(
-      'vibes-now-cleanup',
-      '0 * * * *',          -- every hour, at minute 0
-      $$CALL public.cleanup_old_vibes();$$
-    );
+  -- pg_cron creates schema "cron" and table cron.job
+  IF EXISTS (
+        SELECT 1
+        FROM   information_schema.tables
+        WHERE  table_schema = 'cron'
+        AND    table_name   = 'job'
+     ) THEN
+    -- create the job once (idempotent)
+    IF NOT EXISTS (
+          SELECT 1
+          FROM   cron.job
+          WHERE  jobname = 'vibes-now-cleanup'
+       ) THEN
+      PERFORM cron.schedule(
+        'vibes-now-cleanup',
+        '0 * * * *',                       -- every hour
+        $$SELECT public.cleanup_old_vibes();$$
+      );
+    END IF;
   END IF;
-END
-$$;
+END$$;
