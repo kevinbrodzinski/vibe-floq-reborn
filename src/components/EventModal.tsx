@@ -7,6 +7,7 @@ import { PlaceBanner } from '@/hooks/usePlaceBanners';
 import { VenueDetails, useVenueDetails } from '@/hooks/useVenueDetails';
 import { vibeEmoji } from '@/utils/vibe';
 import { useBannerContext } from '@/providers/BannerProvider';
+import { useToast } from '@/hooks/use-toast';
 
 interface EventModalProps {
   banner: PlaceBanner | null;
@@ -17,6 +18,7 @@ interface EventModalProps {
 export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
   const { dismissBanner } = useBannerContext();
   const { data: venue, isLoading } = useVenueDetails(banner?.venue_id || null);
+  const { toast } = useToast();
 
   // Track banner view analytics
   useEffect(() => {
@@ -55,7 +57,11 @@ export const EventModal = ({ banner, open, onOpenChange }: EventModalProps) => {
     
     // Analytics: Route CTA clicked (production ready)
     
-    // TODO: Open Pulse AI map route
+    // Feature not yet implemented - show notification
+    toast({
+      title: "Coming Soon",
+      description: "Route navigation feature is currently in development.",
+    });
     handleClose();
   };
 

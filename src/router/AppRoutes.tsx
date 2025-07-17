@@ -39,6 +39,7 @@ export const AppRoutes = () => (
     <Route path="/floqs/:floqId/plans/:planId/execute" element={<FloqPlanExecutionScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
+    <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
     <Route path="/afterglow" element={<AfterglowScreen />} />
     <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
     <Route path="/archive" element={<Archive />} />

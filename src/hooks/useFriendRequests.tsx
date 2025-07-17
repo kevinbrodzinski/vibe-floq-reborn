@@ -6,7 +6,7 @@ export const useFriendRequests = () => {
 
   const sendFriendRequest = useCallback(async (userId: string) => {
     try {
-      // TODO: Implement actual friend request logic with Supabase
+      // Note: Full implementation requires friend request table setup
       console.log('Sending friend request to:', userId);
       
       toast({

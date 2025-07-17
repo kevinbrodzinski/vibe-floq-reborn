@@ -6,7 +6,7 @@ export const useVenueJoin = () => {
 
   const checkInToVenue = useCallback(async (venueId: string) => {
     try {
-      // TODO: Implement actual venue check-in logic with Supabase
+      // Note: Full implementation requires venue presence system integration
       console.log('Checking in to venue:', venueId);
       
       toast({

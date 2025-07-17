@@ -6,7 +6,7 @@ export const useFloqJoin = () => {
 
   const joinFloq = useCallback(async (floqId: string) => {
     try {
-      // TODO: Implement actual floq join logic with Supabase
+      // Note: Full implementation requires floq participant management
       console.log('Joining floq:', floqId);
       
       toast({

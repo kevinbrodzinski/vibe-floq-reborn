@@ -1,5 +1,6 @@
 import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 import { VIBE_COLORS, type VibeEnum } from "@/constants/vibes";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
@@ -53,11 +54,12 @@ export const VibeSummaryCard = memo(({
     <div className="bg-background/60 backdrop-blur-sm border border-border/20 rounded-lg p-3">
       {/* Vibe Section */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">
-          Vibe {visibility === 'friends' && (
-            <span className="ml-1 text-xs italic text-muted-foreground">(friends only)</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Vibe</span>
+          {visibility === 'friends' && (
+            <Badge variant="secondary" className="text-xs">Friends only</Badge>
           )}
-        </span>
+        </div>
         <motion.button
           onClick={onOpenVibeSelector}
           className="relative px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105"

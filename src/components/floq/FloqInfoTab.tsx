@@ -74,8 +74,8 @@ export const FloqInfoTab: React.FC<FloqInfoTabProps> = ({ floqDetails }) => {
             size="sm" 
             className="flex items-center gap-2 text-sm h-auto p-0 justify-start text-muted-foreground hover:text-foreground"
             onClick={() => {
-              // TODO: Open map view
-              console.log('Open map for floq location');
+              // Feature not yet implemented
+              console.log('Map view feature coming soon');
             }}
           >
             <MapPin className="h-4 w-4" />

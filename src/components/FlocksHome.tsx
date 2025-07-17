@@ -136,11 +136,11 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
   // Memoized handlers for FloqCard actions
   const handleBoost = useCallback((floqId: string) => {
-    // TODO: Implement boost logic
+    // Boost functionality handled by BoostButton component
     console.log('Boosting floq:', floqId);
   }, []);
   const handleLeave = useCallback((floqId: string) => {
-    // TODO: Implement leave logic  
+    // Leave functionality handled by floq management components
     console.log('Leaving floq:', floqId);
   }, []);
   const handleFloqPress = (floqId: string) => {
