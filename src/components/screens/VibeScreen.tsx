@@ -17,6 +17,7 @@ import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/utils/vibe";
 import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
 import { useVibeDetection } from '@/store/useVibeDetection';
+import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
 import { VibeWheel } from "@/components/vibe/VibeWheel";
@@ -38,6 +39,9 @@ export const VibeScreen = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [elapsed, setElapsed] = useState<string>('—');
   const { autoMode, toggleAutoMode } = useVibeDetection();
+  
+  // Sync vibe detection preference across devices
+  useSyncedVibeDetection();
   const [showFeedback, setShowFeedback] = useState(false);
   const [isLearning, setIsLearning] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
