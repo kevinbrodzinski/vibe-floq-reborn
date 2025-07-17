@@ -15,27 +15,7 @@ export function PlansHub() {
   const { plansByStatus, stats, isLoading } = useUserPlans()
   const [showArchived, setShowArchived] = useState(false)
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-28" />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-20" />
-          ))}
-        </div>
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
+  // ————— All hooks ALWAYS run, even while loading —————
   const getStatusColor = useCallback((status: string) => {
     return getStatusBadgeProps(status).className
   }, [])
@@ -68,6 +48,28 @@ export function PlansHub() {
     const total = Object.values(stats).reduce((a, b) => a + b, 0)
     return { ...stats, active, activeTotal, total }
   }, [stats])
+
+  // ————— Early return AFTER all hooks —————
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
+        </div>
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
