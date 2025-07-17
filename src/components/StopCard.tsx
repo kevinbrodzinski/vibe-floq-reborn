@@ -2,7 +2,7 @@ import { VotePanel } from "./VotePanel";
 import { StopCardHeader } from "./StopCardHeader";
 import { StopCardMeta } from "./StopCardMeta";
 import { StopCardActions } from "./StopCardActions";
-import { getStopGradient } from "@/lib/utils/getStopGradient";
+import { getGradientClasses } from "@/lib/utils/getGradientClasses";
 import { StopKind, VibeTag } from "@/lib/theme/stopColours";
 
 interface PlanStop {
@@ -49,7 +49,7 @@ export const StopCard = ({
   draggable = true,
   className = ""
 }: StopCardProps) => {
-  const gradient = getStopGradient(stop.kind, stop.vibe_tag);
+  const gradient = getGradientClasses(stop.kind, stop.vibe_tag);
 
   return (
     <div
@@ -58,8 +58,8 @@ export const StopCard = ({
       onClick={onSelect}
       className={`
         gradient-border ${gradient} p-4 backdrop-blur-xl bg-card/75 
-        cursor-grab transition-all duration-300 hover:scale-[1.02]
-        ${isSelected ? 'ring-2 ring-primary scale-[1.03]' : ''}
+        cursor-grab transition-all duration-300 hover:-translate-y-0.5
+        ${isSelected ? 'ring-2 ring-primary -translate-y-1' : ''}
         ${isDragOver ? 'ring-2 ring-accent' : ''}
         ${className}
       `}

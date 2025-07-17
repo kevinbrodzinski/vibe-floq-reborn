@@ -126,7 +126,7 @@ All colors MUST be HSL.
   .gradient-border {
     position: relative;
     border-radius: theme(borderRadius.2xl);
-    overflow: hidden;
+    overflow: visible; /* Allow glow to extend beyond bounds */
 
     /* BORDER (sharp 1 px) */
     &::before {
@@ -144,7 +144,7 @@ All colors MUST be HSL.
       pointer-events: none;
     }
 
-    /* GLOW (soft, blurred) */
+    /* GLOW (soft, blurred) - with reduced motion support */
     &::after {
       content: '';
       position: absolute;
@@ -154,6 +154,19 @@ All colors MUST be HSL.
       filter: blur(12px) saturate(1.2);
       opacity: .55;
       pointer-events: none;
+    }
+
+    /* Reduced motion: disable glow blur */
+    @media (prefers-reduced-motion: reduce) {
+      &::after {
+        filter: none;
+        opacity: 0.2;
+      }
+    }
+
+    /* Hover animation with reduced motion support */
+    @media (prefers-reduced-motion: no-preference) {
+      transition: transform 0.3s ease-out;
     }
   }
 }
