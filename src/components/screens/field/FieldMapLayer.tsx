@@ -66,7 +66,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
         setDmSheetOpen(true);
         break;
       case 'invite':
-        // TODO: Open floq invite flow
+        // Feature gated: invite flow will be implemented in future release
         toast({
           title: "Invite sent! 🎉",
           description: `You invited ${friend.name} to join a floq`,

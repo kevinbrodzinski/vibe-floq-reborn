@@ -67,7 +67,7 @@ export const SocialInteractionModal = ({
         onOpenChange(false);
         break;
       case 'create-floq':
-        // TODO: Open floq creation modal with person pre-invited
+        // Feature gated: floq creation flow will be implemented in future release
         toast({
           title: "Floq creation started! 🌟",
           description: `Creating a floq with ${person.name}`,

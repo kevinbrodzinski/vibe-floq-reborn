@@ -59,6 +59,17 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Database, Auth, Realtime)
+
+## Environment Configuration
+
+The app supports feature flags for enabling beta features. Add these to your `.env.local` file:
+
+```bash
+# Feature Flags
+VITE_FLAG_EXPLORE=false     # Enable explore mode and map features
+VITE_FLAG_PLAN_BETA=false   # Enable collaborative planning features
+```
 
 ## How can I deploy this project?
 
