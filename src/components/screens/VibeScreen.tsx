@@ -21,6 +21,8 @@ import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
 import { VibeWheel } from "@/components/vibe/VibeWheel";
+import { useSyncedVisibility } from "@/hooks/useSyncedVisibility";
+import { VisibilityButton } from "@/components/vibe/VisibilityButton";
 
 type VibeState = VibeEnum;
 type VisibilityState = "public" | "friends" | "off";
@@ -32,10 +34,11 @@ interface VibeInfo {
 }
 
 export const VibeScreen = () => {
+  useSyncedVisibility(); // Sync visibility across app and devices
+  
   const { user } = useAuth();
-  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated, clearVibe } = useVibe();
+  const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated, clearVibe, visibility } = useVibe();
   const currentVibeRow = useCurrentVibeRow();
-  const [visibility, setVisibility] = useState<VisibilityState>("public");
   const [isDragging, setIsDragging] = useState(false);
   const [elapsed, setElapsed] = useState<string>('—');
   const { autoMode, toggleAutoMode } = useVibeDetection();
@@ -284,41 +287,7 @@ export const VibeScreen = () => {
     }
   };
 
-  const updateVisibility = useCallback(async (newVisibility: VisibilityState) => {
-    if (!user) {
-      console.error('No user authenticated for visibility update');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('vibes_now')
-        .update({ visibility: newVisibility })
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Failed to update visibility:', error);
-      }
-    } catch (err) {
-      console.error('Visibility update error:', err);
-    }
-  }, [user]);
-
-  const cycleVisibility = useCallback(() => {
-    setVisibility(prev => {
-      const newVisibility = (() => {
-        switch (prev) {
-          case "public": return "friends";
-          case "friends": return "off";
-          case "off": return "public";
-          default: return "public";
-        }
-      })();
-      
-      updateVisibility(newVisibility);
-      return newVisibility;
-    });
-  }, [updateVisibility]);
+  // Remove the local visibility management - now handled by useSyncedVisibility
 
   const handleApplySuggestion = useCallback(async (suggestion: any) => {
     await handleVibeSelect(suggestion.vibe as VibeState);
@@ -347,13 +316,7 @@ export const VibeScreen = () => {
     await clearVibe();
   }, [clearVibe]);
 
-  const getVisibilityIcon = () => {
-    switch (visibility) {
-      case "public": return <Eye className="w-5 h-5" />;
-      case "friends": return <Users className="w-5 h-5" />;
-      case "off": return <EyeOff className="w-5 h-5" />;
-    }
-  };
+  // Remove getVisibilityIcon - now handled by VisibilityButton component
 
   // Show loading skeleton while hydrating from AsyncStorage
   if (!hydrated) return <FullScreenSpinner />;
@@ -377,16 +340,7 @@ export const VibeScreen = () => {
           {autoMode ? 'Auto Vibe On' : 'Auto Vibe Off'}
         </Button>
         <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={cycleVisibility}
-          className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
-            visibility === "off" ? "opacity-30 grayscale" : "text-foreground"
-          }`}
-        >
-          {getVisibilityIcon()}
-        </Button>
+        <VisibilityButton />
       </div>
 
       {/* Magical Vibe Wheel with Physics */}

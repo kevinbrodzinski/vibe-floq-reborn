@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { VIBE_COLORS, type VibeEnum } from "@/constants/vibes";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
+import { useVibe } from "@/lib/store/useVibe";
 
 interface VibeSummaryCardProps {
   currentVibe: Vibe;
@@ -24,6 +25,7 @@ export const VibeSummaryCard = memo(({
   error = null
 }: VibeSummaryCardProps) => {
   const [shouldPulse, setShouldPulse] = useState(false);
+  const visibility = useVibe((s) => s.visibility);
 
   // Trigger pulse animation when vibe changes
   useEffect(() => {
@@ -36,11 +38,24 @@ export const VibeSummaryCard = memo(({
 
   const vibeColor = currentVibe ? VIBE_COLORS[currentVibe as VibeEnum] : 'hsl(var(--muted))';
 
+  // Hide vibe display when visibility is 'off'
+  if (visibility === 'off') {
+    return (
+      <div className="bg-background/60 backdrop-blur-sm border border-border/20 rounded-lg p-3">
+        <div className="flex items-center justify-center py-2">
+          <span className="text-xs text-muted-foreground opacity-60">Vibe hidden</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background/60 backdrop-blur-sm border border-border/20 rounded-lg p-3">
       {/* Vibe Section */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted-foreground">Vibe</span>
+        <span className="text-xs text-muted-foreground">
+          Vibe {visibility === 'friends' && <span className="opacity-60">(friends only)</span>}
+        </span>
         <motion.button
           onClick={onOpenVibeSelector}
           className="relative px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105"

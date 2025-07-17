@@ -7,11 +7,13 @@ import type { VibeEnum } from '@/constants/vibes';
 
 type VibeState = {
   vibe: VibeEnum | null;
+  visibility: 'public' | 'friends' | 'off';
   updatedAt: string | null;
   isUpdating: boolean;
   hydrated: boolean;
   currentRow: any | null; // Store the full vibe row with started_at
   setVibe: (v: VibeEnum) => Promise<void>;
+  setVisibility: (v: 'public' | 'friends' | 'off') => void;  
   clearVibe: () => Promise<void>;
   syncFromRemote: (v: string, ts: string) => void;
   setCurrentRow: (row: any) => void;
@@ -25,6 +27,7 @@ export const useVibe = create<VibeState>()(
   persist(
     immer((set, get) => ({
       vibe: null,
+      visibility: 'public' as const,
       updatedAt: null,
       isUpdating: false,
       hydrated: false,
@@ -95,6 +98,11 @@ export const useVibe = create<VibeState>()(
         }
       },
 
+      /** set visibility */
+      setVisibility: (visibility) => {
+        set((s) => { s.visibility = visibility; });
+      },
+
       /** clear vibe functionality */
       clearVibe: async () => {
         try {
@@ -153,7 +161,7 @@ export const useVibe = create<VibeState>()(
       name: '@vibe',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ vibe, updatedAt }) => ({ vibe, updatedAt }),
+      partialize: ({ vibe, visibility, updatedAt }) => ({ vibe, visibility, updatedAt }),
       migrate: (persisted, version) => {
         if (version < 1) {
           // add migration steps here later
