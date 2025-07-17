@@ -2,6 +2,8 @@ import { VotePanel } from "./VotePanel";
 import { StopCardHeader } from "./StopCardHeader";
 import { StopCardMeta } from "./StopCardMeta";
 import { StopCardActions } from "./StopCardActions";
+import { getStopGradient } from "@/lib/utils/getStopGradient";
+import { StopKind, VibeTag } from "@/lib/theme/stopColours";
 
 interface PlanStop {
   id: string;
@@ -18,6 +20,8 @@ interface PlanStop {
   votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[];
   createdBy: string;
   color: string;
+  kind: StopKind;
+  vibe_tag?: VibeTag;
 }
 
 interface StopCardProps {
@@ -45,19 +49,20 @@ export const StopCard = ({
   draggable = true,
   className = ""
 }: StopCardProps) => {
+  const gradient = getStopGradient(stop.kind, stop.vibe_tag);
+
   return (
     <div
       draggable
       onDragStart={onDragStart}
       onClick={onSelect}
       className={`
-        bg-card/90 backdrop-blur-xl rounded-2xl p-4 border border-border/30 
-        cursor-grab transition-all duration-300 hover:scale-[1.02] hover:glow-secondary
-        ${isSelected ? 'ring-2 ring-primary glow-primary' : ''}
+        gradient-border ${gradient} p-4 backdrop-blur-xl bg-card/75 
+        cursor-grab transition-all duration-300 hover:scale-[1.02]
+        ${isSelected ? 'ring-2 ring-primary scale-[1.03]' : ''}
         ${isDragOver ? 'ring-2 ring-accent' : ''}
         ${className}
       `}
-      style={{ borderLeftColor: stop.color, borderLeftWidth: '4px' }}
       role="listitem"
       aria-label={`Stop: ${stop.title}`}
     >

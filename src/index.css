@@ -120,7 +120,43 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+}
+
+@layer components {
+  .gradient-border {
+    position: relative;
+    border-radius: theme(borderRadius.2xl);
+    overflow: hidden;
+
+    /* BORDER (sharp 1 px) */
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      border-radius: inherit;
+      background: inherit;
+      -webkit-mask: 
+        linear-gradient(#000 0 0) content-box, 
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+              mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* GLOW (soft, blurred) */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: inherit;
+      filter: blur(12px) saturate(1.2);
+      opacity: .55;
+      pointer-events: none;
+    }
   }
+}
 
   /* Safari iOS disabled fieldset icon fix */
   select[disabled] svg {

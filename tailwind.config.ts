@@ -1,5 +1,17 @@
 import type { Config } from "tailwindcss";
 
+// Safelist gradient classes for stop cards
+const gradientSafelist = [
+  'from-[#6B7CFF]', 'to-[#48C3FF]',
+  'from-[#00FFD1]', 'to-[#6687FF]',
+  'from-[#FF8D1A]', 'to-[#FF593D]',
+  'from-[#FF68F0]', 'to-[#8E61FF]',
+  'from-[#FF39C9]', 'to-[#FF7F3F]',
+  'from-[#FF6666]', 'to-[#FF9999]',
+  'from-[#1DD35F]', 'to-[#38BDF8]',
+  'bg-gradient-to-br'
+];
+
 export default {
 	darkMode: ["class"],
 	content: [
@@ -179,5 +191,6 @@ export default {
 			}
 		}
 	},
+	safelist: gradientSafelist,
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;
