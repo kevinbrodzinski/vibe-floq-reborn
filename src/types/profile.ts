@@ -3,6 +3,7 @@ export type Profile = {
   username: string
   display_name: string
   avatar_url: string | null
+  email?: string | null
   full_name?: string | null
   bio?: string | null
   interests?: string[] | null

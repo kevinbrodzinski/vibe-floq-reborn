@@ -11,7 +11,7 @@ export function useCurrentUserProfile() {
 
   return useQuery({
     enabled: !!session?.user,
-    queryKey : ['profile', session?.user.id],
+    queryKey : ['profile:v2', session?.user.id],
     queryFn  : async (): Promise<Profile> => {
       const { data, error } = await supabase
         .from('profiles')
@@ -23,7 +23,7 @@ export function useCurrentUserProfile() {
         // attempt one retry: maybe trigger hasn't fired yet (cold edge function)
         await new Promise(r => setTimeout(r, 1500))
         return queryClient.fetchQuery({
-          queryKey: ['profile', session!.user.id],
+          queryKey: ['profile:v2', session!.user.id],
           queryFn: () => supabase.from('profiles').select('id, username, display_name, avatar_url').eq('id', session!.user.id).single().then(({ data, error }) => {
             if (error) throw error
             return data as Profile
@@ -58,7 +58,7 @@ export const useProfile = (userId: string | undefined) => {
   }
 
   return useQuery({
-    queryKey: ['profile', userId],
+    queryKey: ['profile:v2', userId],
     queryFn: async (): Promise<Profile> => {
       if (!userId) throw new Error('User ID is required');
       

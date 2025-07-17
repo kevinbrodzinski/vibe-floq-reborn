@@ -9,7 +9,7 @@ export function useProfileCache() {
 
   const primeProfiles = (users: SearchedUser[]) => {
     users.forEach(user => {
-      queryClient.setQueryData(['profile', user.id], {
+      queryClient.setQueryData(['profile:v2', user.id], {
         id: user.id,
         username: user.username,
         display_name: user.display_name,
@@ -51,7 +51,7 @@ export function useProfile(userId: string) {
 
   // Live mode - implement real profile fetching using React Query
   return useQuery({
-    queryKey: ['profile', userId],
+    queryKey: ['profile:v2', userId],
     queryFn: async (): Promise<Profile> => {
       if (import.meta.env.DEV) {
         console.log(`🔍 [PROFILE] Fetching profile for user: ${userId}`);
