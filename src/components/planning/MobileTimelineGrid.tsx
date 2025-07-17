@@ -122,31 +122,13 @@ function MobileCompactTimeline({
 }) {
   return (
     <div className="space-y-2 pb-safe-area-inset-bottom">
-      {/* Would integrate with actual stops data */}
-      {[1, 2, 3].map((_, i) => (
-        <motion.div
-          key={i}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            "bg-card rounded-xl p-4 border transition-all",
-            selectedStopIds.includes(`stop-${i}`) && "ring-2 ring-primary bg-primary/5"
-          )}
-          onClick={() => onStopSelect?.(`stop-${i}`)}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">{i + 1}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">Sample Stop {i + 1}</div>
-              <div className="text-sm text-muted-foreground">7:00 PM - 8:30 PM</div>
-            </div>
-            <div className="text-xs bg-muted rounded px-2 py-1">
-              90m
-            </div>
-          </div>
-        </motion.div>
-      ))}
+      {/* Empty state for mobile compact view */}
+      <button
+        className="flex flex-col items-center justify-center h-32 rounded-2xl border-2 border-dashed border-muted/40 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+      >
+        <Plus className="w-5 h-5 mb-1" />
+        <span className="text-sm">Add your first stop</span>
+      </button>
     </div>
   )
 }
@@ -171,68 +153,25 @@ function MobileExpandedTimeline({
   draggedStopId: string | null
   setDraggedStopId: (id: string | null) => void
 }) {
-  const handleDragEnd = (info: PanInfo, stopId: string) => {
-    const dragDistance = Math.abs(info.offset.y)
-    
-    if (dragDistance > 60) {
-      // Calculate new position based on drag distance
-      const newIndex = Math.floor(dragDistance / 80)
-      onStopReorder?.(stopId, newIndex)
-    }
-    
-    setDraggedStopId(null)
-  }
-
   return (
     <div className="space-y-4 pb-safe-area-inset-bottom">
-      {/* Time blocks for mobile */}
-      {[18, 19, 20, 21, 22, 23].map((hour) => (
-        <div key={hour} className="space-y-2">
-          <div className="text-sm font-medium text-muted-foreground px-2">
-            {hour}:00
-          </div>
-          
-          {/* Sample stop for this hour */}
-          <motion.div
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={0.2}
-            onDragStart={() => setDraggedStopId(`stop-${hour}`)}
-            onDragEnd={(_, info) => handleDragEnd(info, `stop-${hour}`)}
-            whileDrag={{ 
-              scale: 1.05, 
-              zIndex: 10,
-              boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
-            }}
-            className={cn(
-              "bg-card rounded-xl p-4 border-2 border-border/30 transition-all cursor-grab active:cursor-grabbing",
-              selectedStopIds.includes(`stop-${hour}`) && "ring-2 ring-primary",
-              draggedStopId === `stop-${hour}` && "border-primary bg-primary/5"
-            )}
-            onClick={() => onStopSelect?.(`stop-${hour}`)}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-sm font-bold text-white">{hour - 17}</span>
-              </div>
-              <div className="flex-1">
-                <div className="font-medium">Stop at {hour}:00</div>
-                <div className="text-sm text-muted-foreground">Sample venue</div>
-              </div>
-              <GripVertical size={16} className="text-muted-foreground" />
-            </div>
-          </motion.div>
-        </div>
-      ))}
-      
-      {/* Add stop button */}
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        className="w-full h-16 border-2 border-dashed border-muted-foreground/30 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
-      >
-        <Plus size={20} />
-        <span>Add Stop</span>
-      </motion.button>
+      {/* Empty state for mobile expanded view */}
+      <div className="text-center py-8 space-y-4">
+        <div className="text-4xl">📍</div>
+        <h3 className="text-lg font-semibold text-foreground">
+          Ready to plan?
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Add stops to create your timeline
+        </p>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          className="w-full h-16 border-2 border-dashed border-muted-foreground/30 rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-primary"
+        >
+          <Plus size={20} />
+          <span>Add First Stop</span>
+        </motion.button>
+      </div>
     </div>
   )
 }
