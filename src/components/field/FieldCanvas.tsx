@@ -16,10 +16,15 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   const appRef = useRef<PIXI.Application | null>(null);
   const rippleContainer = useRef<PIXI.Container | null>(null);
   const tickerRef = useRef<PIXI.Ticker | null>(null);
+  const animateRef = useRef<(() => void) | null>(null);
+  const isCleaningUpRef = useRef(false);
   const [ripples, setRipples] = useState<RippleEffect[]>([]);
 
   // Handle ripple creation from queue
   const handleRipple = (tileId: string, delta: number) => {
+    // Guard against operations during cleanup
+    if (isCleaningUpRef.current) return;
+    
     onRipple?.(tileId, delta);
     
     // Guard against null references
@@ -44,6 +49,9 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Reset cleanup flag
+    isCleaningUpRef.current = false;
+
     // v8 deprecation-note: use Application.init → but `new Application()` still works
     const app = new PIXI.Application({
       view: canvasRef.current,
@@ -62,14 +70,17 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     
     rippleContainer.current = rc;
 
-    // Animation loop
+    // Animation loop with proper ref storage
     const animate = () => {
+      // Guard against operations during cleanup
+      if (isCleaningUpRef.current) return;
+      
       setRipples(prev => {
         const active = prev.filter(ripple => {
           const isActive = ripple.update();
           if (!isActive) {
-            // Guard against null references
-            if (rippleContainer.current) {
+            // Guard against null references and cleanup state
+            if (rippleContainer.current && !isCleaningUpRef.current) {
               rippleContainer.current.removeChild(ripple.sprite);
             }
             ripple.destroy();
@@ -80,27 +91,42 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       });
     };
 
+    // Store animate function in ref for cleanup
+    animateRef.current = animate;
+
     // v8: ticker is optional → fall back to PIXI.Ticker.shared
     const ticker = (app as any).ticker ?? PIXI.Ticker.shared;
+    tickerRef.current = ticker;
     ticker.add(animate);
     
     // ----------  WINDOW RESIZE  ----------
     const handleResize = () => {
-      if (!appRef.current) return;              // ← guard after unmount
+      if (!appRef.current || isCleaningUpRef.current) return;              // ← guard after unmount
       appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener('resize', handleResize);
 
     return () => {
+      // Set cleanup flag immediately
+      isCleaningUpRef.current = true;
+      
+      // Clear ripples state to prevent stale animations
+      setRipples([]);
+      
       // 0️⃣ remove PIXI's global resize hook **before** the canvas disappears
       (window as any).removeEventListener?.('resize', (app as any)._resize);
-      // 1. stop the animation loop (v8 may not have app.ticker)
-      ticker.remove(animate);
+      
+      // 1. stop the animation loop using stored refs
+      if (tickerRef.current && animateRef.current) {
+        tickerRef.current.remove(animateRef.current);
+      }
 
       // 2. just empty the display-list, don't mutate the array in-place
       //    This leaves PIXI with an intact (but length-0) children array,
       //    so its own `Application.destroy()` loop never sees `undefined`.
-      app.stage.removeChildren();      // <-- no individual destroy calls
+      if (app?.stage) {
+        app.stage.removeChildren();      // <-- no individual destroy calls
+      }
 
       // 3. destroy the app itself (idempotent guard)
       if (!(app as any)._destroyed) {
@@ -113,11 +139,16 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
       appRef.current = null;
       rippleContainer.current = null;
+      tickerRef.current = null;
+      animateRef.current = null;
     };
   }, []);
 
   // Render people as dots
   useEffect(() => {
+    // Guard against operations during cleanup
+    if (isCleaningUpRef.current) return;
+    
     const app = appRef.current;
     if (!app?.stage || !people.length) return;
 
@@ -132,6 +163,9 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
     // Add new people sprites
     people.forEach(person => {
+      // Guard against operations during cleanup
+      if (isCleaningUpRef.current) return;
+      
       const dot = new PIXI.Graphics();
       dot.beginFill(parseInt(person.color.replace('#', ''), 16));
       dot.drawCircle(0, 0, 4);
