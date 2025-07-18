@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,6 +48,7 @@ export function AfterglowCard({
     () => format(new Date(afterglow.date), "EEEE, MMM do yyyy"),
     [afterglow.date]
   );
+
   const getVibeColor = (vibe: string) => {
     const colors: Record<string, string> = {
       chill: 'bg-blue-100 text-blue-800',
@@ -74,51 +76,52 @@ export function AfterglowCard({
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
       <CardContent className="p-4 space-y-4">
         {/* Sleek Date Header */}
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-foreground tracking-tight">
-            afterglow
-          </h3>
-          <p className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in">
-            {formattedDate}
-          </p>
-          <p className="text-xs text-muted-foreground/60">
-            On this day
-          </p>
-        </div>
-        
-        {/* Header Actions */}
-        <div className="flex items-center justify-between">
+        <header className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-foreground tracking-tight">
+              afterglow
+            </h3>
+            <time
+              dateTime={afterglow.date}
+              className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in"
+            >
+              {formattedDate}
+            </time>
+            <p className="text-xs text-muted-foreground/60">
+              On this day
+            </p>
+          </div>
+          
           <div className="flex items-center gap-2">
             {afterglow.is_pinned && (
               <Pin className="w-4 h-4 text-primary" />
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onViewDetails(afterglow.id)}>
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onFavorite(afterglow.id)}>
+                  <Heart className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-current text-red-500' : ''}`} />
+                  {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddToCollection(afterglow.id)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add to Collection
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                  <Share className="w-4 h-4 mr-2" />
+                  Share
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewDetails(afterglow.id)}>
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onFavorite(afterglow.id)}>
-                <Heart className={`w-4 h-4 mr-2 ${isFavorited ? 'fill-current text-red-500' : ''}`} />
-                {isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAddToCollection(afterglow.id)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add to Collection
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShareOpen(true)}>
-                <Share className="w-4 h-4 mr-2" />
-                Share
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        </header>
 
         {/* Share Modal */}
         {shareOpen && afterglowDetail && (
