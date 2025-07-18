@@ -1,8 +1,10 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
+import { z } from 'zod';
 
 export interface MyFloq {
   id: string;
@@ -24,6 +26,32 @@ interface CountRow {
   floq_id: string;
   count: string;
 }
+
+// Zod schemas for runtime validation
+const FloqSchema = z.object({
+  id: z.string(),
+  title: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  primary_vibe: z.string(),
+  creator_id: z.string().nullable().optional(),
+  starts_at: z.string().nullable().optional(),
+  ends_at: z.string().nullable().optional(),
+  last_activity_at: z.string().nullable().optional(),
+  created_at: z.string().nullable().optional(),
+  deleted_at: z.string().nullable().optional(),
+});
+
+const ParticipantRowSchema = z.object({
+  floq_id: z.string(),
+  role: z.string(),
+  joined_at: z.string(),
+  floqs: FloqSchema.nullable(),
+});
+
+const CountRowSchema = z.object({
+  floq_id: z.string(),
+  count: z.string(),
+});
 
 // Extract the query function for better organization
 const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
@@ -89,78 +117,73 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
   // Combine and normalize results
   const allFloqs: MyFloq[] = [];
 
-  // Add participated floqs
-  participatedResult.data?.forEach(row => {
-    const floq = row.floqs;
-    // Debug log to check for undefined IDs
-    if (!floq?.id) {
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Participated floq missing ID:', { row, floq });
+  // Add participated floqs with validation
+  if (participatedResult.data) {
+    for (const row of participatedResult.data) {
+      const parsed = ParticipantRowSchema.safeParse(row);
+      if (!parsed.success) {
+        if (import.meta.env.DEV) {
+          console.warn('❌ Invalid participant row:', parsed.error);
+        }
+        continue;
       }
-      return;
-    }
 
-    // Filter out deleted floqs
-    if (floq.deleted_at) {
-      return;
-    }
-
-    // Filter out expired floqs
-    if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
-      return;
-    }
-
-    allFloqs.push({
-      id: floq.id,
-      title: floq.title || floq.name || 'Untitled',
-      name: floq.name,
-      primary_vibe: floq.primary_vibe,
-      participant_count: 0, // Will be filled below
-      role: row.role,
-      joined_at: row.joined_at,
-      last_activity_at: floq.last_activity_at || floq.starts_at,
-      starts_at: floq.starts_at,
-      ends_at: floq.ends_at,
-      creator_id: floq.creator_id,
-      is_creator: false,
-    });
-  });
-
-  // Add created floqs
-  createdResult.data?.forEach(floq => {
-    // Debug log to check for undefined IDs
-    if (!floq?.id) {
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Created floq missing ID:', floq);
+      const { floqs: floq, role, joined_at } = parsed.data;
+      
+      if (!floq || floq.deleted_at || (floq.ends_at && new Date(floq.ends_at) <= new Date())) {
+        continue;
       }
-      return;
-    }
 
-    // Filter out deleted floqs
-    if (floq.deleted_at) {
-      return;
+      allFloqs.push({
+        id: floq.id,
+        title: floq.title || floq.name || 'Untitled',
+        name: floq.name || undefined,
+        primary_vibe: floq.primary_vibe as Vibe,
+        participant_count: 0, // Will be filled below
+        role,
+        joined_at,
+        last_activity_at: floq.last_activity_at || floq.starts_at || joined_at,
+        starts_at: floq.starts_at || undefined,
+        ends_at: floq.ends_at || undefined,
+        creator_id: floq.creator_id || undefined,
+        is_creator: false,
+      });
     }
+  }
 
-    // Filter out expired floqs
-    if (floq.ends_at && new Date(floq.ends_at) <= new Date()) {
-      return;
+  // Add created floqs with validation
+  if (createdResult.data) {
+    for (const raw of createdResult.data) {
+      const parsed = FloqSchema.safeParse(raw);
+      if (!parsed.success) {
+        if (import.meta.env.DEV) {
+          console.warn('❌ Invalid created floq:', parsed.error);
+        }
+        continue;
+      }
+
+      const floq = parsed.data;
+      
+      if (floq.deleted_at || (floq.ends_at && new Date(floq.ends_at) <= new Date())) {
+        continue;
+      }
+
+      allFloqs.push({
+        id: floq.id,
+        title: floq.title || floq.name || 'Untitled',
+        name: floq.name || undefined,
+        primary_vibe: floq.primary_vibe as Vibe,
+        participant_count: 0, // Will be filled below
+        role: 'creator',
+        joined_at: floq.created_at || floq.starts_at || new Date().toISOString(),
+        last_activity_at: floq.last_activity_at || floq.starts_at || floq.created_at || '',
+        starts_at: floq.starts_at || undefined,
+        ends_at: floq.ends_at || undefined,
+        creator_id: floq.creator_id || undefined,
+        is_creator: true,
+      });
     }
-
-    allFloqs.push({
-      id: floq.id,
-      title: floq.title || floq.name || 'Untitled',
-      name: floq.name,
-      primary_vibe: floq.primary_vibe,
-      participant_count: 0, // Will be filled below
-      role: 'creator',
-      joined_at: floq.created_at || floq.starts_at,
-      last_activity_at: floq.last_activity_at || floq.starts_at,
-      starts_at: floq.starts_at,
-      ends_at: floq.ends_at,
-      creator_id: floq.creator_id,
-      is_creator: true,
-    });
-  });
+  }
 
   if (allFloqs.length === 0) {
     console.info('✅ No active floqs found');
@@ -180,8 +203,17 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       if (import.meta.env.DEV) {
         console.warn('⚠️ Error fetching participant counts:', error);
       }
-    } else {
-      participantCounts = data || [];
+    } else if (data) {
+      // Validate and transform the count data
+      const validCounts = (data as unknown[])
+        .map((row) => CountRowSchema.safeParse(row))
+        .filter((res): res is { success: true; data: z.infer<typeof CountRowSchema> } => res.success)
+        .map(res => ({
+          floq_id: res.data.floq_id,
+          participant_count: parseInt(res.data.count, 10) || 0
+        }));
+      
+      participantCounts = validCounts;
     }
   } catch (error) {
     if (import.meta.env.DEV) {
@@ -206,7 +238,6 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
   console.info(`✅ Returning ${result.length} my floqs`);
   return result;
 };
-
 
 export const useMyFlocks = () => {
   const { session } = useAuth();
