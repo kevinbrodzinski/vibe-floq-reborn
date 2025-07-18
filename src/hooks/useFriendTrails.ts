@@ -21,8 +21,8 @@ export default function useFriendTrails(friendIds: string[]) {
   useEffect(() => {
     if (!friendIds.length) return;
 
-    const realtime = (supabase as any).realtime;       // v1 compat
-    const channel = realtime.channel(`vibes_now_trails_${Date.now()}`)
+    const channel = supabase
+      .channel(`vibes_now_trails_${Date.now()}`)
       .on(
         'postgres_changes',
         {
