@@ -5624,6 +5624,10 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_presence: {
+        Args: { p_lat: number; p_lng: number; p_vibe?: string }
+        Returns: undefined
+      }
       upsert_venue_presence_smart: {
         Args: {
           _venue_id: string
