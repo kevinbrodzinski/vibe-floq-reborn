@@ -29,23 +29,31 @@ export const useFieldTiles = () => {
   const enabled = settings?.field_enabled ?? false;
 
   return useQuery({
-    queryKey: ['fieldTiles', tileIds.join('|')],
+    queryKey: ['fieldTiles', tileIds.sort().join('|')],
     queryFn: async (): Promise<FieldTile[]> => {
-      console.time('get_field_tiles');
-      console.log(`🔄 Fetching ${tileIds.length} field tiles:`, tileIds);
+      if (process.env.NODE_ENV === 'development') {
+        console.time('get_field_tiles');
+        console.log(`🔄 Fetching ${tileIds.length} field tiles:`, tileIds);
+      }
       
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
         body: { tile_ids: tileIds },
       });
 
-      console.timeEnd('get_field_tiles');
+      if (process.env.NODE_ENV === 'development') {
+        console.timeEnd('get_field_tiles');
+      }
 
       if (error) {
-        console.error('❌ Failed to fetch field tiles:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('❌ Failed to fetch field tiles:', error);
+        }
         throw error;
       }
 
-      console.log(`✅ Retrieved ${data?.tiles?.length || 0} field tiles`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Retrieved ${data?.tiles?.length || 0} field tiles`);
+      }
       return data?.tiles || [];
     },
     refetchInterval: 5000, // 5 second refresh

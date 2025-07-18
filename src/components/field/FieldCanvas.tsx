@@ -10,10 +10,12 @@ export function FieldCanvas() {
 
   // Performance monitoring
   useEffect(() => {
-    console.time('FieldCanvas:render');
-    return () => {
-      console.timeEnd('FieldCanvas:render');
-    };
+    if (process.env.NODE_ENV === 'development') {
+      console.time('FieldCanvas:render');
+      return () => {
+        console.timeEnd('FieldCanvas:render');
+      };
+    }
   }, [tiles]);
 
   // Convert tiles to screen coordinates

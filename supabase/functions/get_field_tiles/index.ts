@@ -1,12 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+serve(async (req, ctx) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,38 +29,54 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     console.log(`Fetching tiles for ${tile_ids.length} tile IDs`);
 
-    // Query field_tiles table
-    let query = supabase
-      .from('field_tiles')
-      .select('*')
-      .in('tile_id', tile_ids);
+    // KV pass-through with TTL
+    const miss: string[] = [];
+    const hits = await Promise.all(
+      tile_ids.map(async id => {
+        const cached = await ctx.kv.get(`ft:${id}`);
+        if (cached) return JSON.parse(cached);
+        miss.push(id);
+        return null;
+      })
+    );
 
-    // Add since filter if provided
-    if (since) {
-      query = query.gt('updated_at', since);
+    let rows: any[] = [];
+    if (miss.length) {
+      let query = ctx.db
+        .from('field_tiles')
+        .select('*')
+        .in('tile_id', miss);
+
+      // Add since filter if provided
+      if (since) {
+        query = query.gt('updated_at', since);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Database error:', error);
+        return new Response(error.message, { 
+          status: 500,
+          headers: corsHeaders
+        });
+      }
+
+      rows = data || [];
+      
+      // Cache with 2 second TTL
+      await Promise.all(
+        rows.map(r => ctx.kv.set(`ft:${r.tile_id}`, JSON.stringify(r), { ex: 2 }))
+      );
     }
 
-    const { data: tiles, error } = await query;
-
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(error.message, { 
-        status: 500,
-        headers: corsHeaders
-      });
-    }
-
-    console.log(`Returning ${tiles?.length || 0} tiles`);
+    const allTiles = [...hits.filter(Boolean), ...rows];
+    console.log(`Returning ${allTiles.length} tiles`);
 
     return new Response(
-      JSON.stringify({ tiles: tiles || [] }),
+      JSON.stringify({ tiles: allTiles }),
       { 
         headers: { 
           ...corsHeaders,
