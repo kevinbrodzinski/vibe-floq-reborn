@@ -85,7 +85,7 @@ export default function WeeklyTrendsTab() {
     <div className="space-y-6">
       {/* Streak indicator (if applicable) */}
       {streakData.hasVisualStreak && (
-        <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg border border-amber-200 dark:border-amber-800 animate-fade-in">
+        <div className="p-4 bg-gradient-to-r from-orange-50/60 to-amber-50/60 dark:from-orange-950/20 dark:to-amber-950/20 rounded-lg border-2 border-orange-200 dark:border-orange-800 shadow-lg shadow-orange-200/50 dark:shadow-orange-900/30 animate-fade-in">
           <div className="flex items-center gap-2 mb-2">
             <Crown className="w-5 h-5 text-amber-600 animate-pulse" />
             <span className="font-medium text-amber-800 dark:text-amber-200">
@@ -184,7 +184,7 @@ export default function WeeklyTrendsTab() {
               className="flex items-center gap-2 text-xs"
               title={
                 cooldown && !cooldown.canRegenerate 
-                  ? `Please wait ${cooldown.hoursLeft} more hour${cooldown.hoursLeft > 1 ? 's' : ''} before regenerating`
+                  ? `Wait ${cooldown.hoursLeft}h before regenerating`
                   : undefined
               }
             >
@@ -204,9 +204,13 @@ export default function WeeklyTrendsTab() {
             <div className="text-sm whitespace-pre-line">
               {aiSuggestion.suggestion.text}
             </div>
-            <div className="text-xs text-muted-foreground">
-              Based on Energy: {aiSuggestion.suggestion.energy_score}% • Social: {aiSuggestion.suggestion.social_score}%
-              {aiSuggestion.source === 'cache' && ' • Cached'}
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <span>Based on Energy: {aiSuggestion.suggestion.energy_score}% • Social: {aiSuggestion.suggestion.social_score}%</span>
+              {aiSuggestion.source === 'cache' && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-secondary text-secondary-foreground text-xs">
+                  Cached
+                </span>
+              )}
             </div>
           </div>
         ) : (

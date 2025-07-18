@@ -52,7 +52,7 @@ serve(async (req) => {
     const { forceRefresh = false } = await req.json().catch(() => ({}));
     const today = new Date();
     const sunday = new Date(today);
-    sunday.setDate(sunday.getDate() + (7 - sunday.getDay()) % 7);  // next Sunday
+    sunday.setDate(sunday.getDate() - sunday.getDay());  // previous Sunday
     const weekKey = sunday.toISOString().slice(0, 10);  // YYYY-MM-DD
 
     console.log(`Generating weekly AI suggestion for user ${user.id}, week ending ${weekKey}, forceRefresh: ${forceRefresh}`);
@@ -82,6 +82,14 @@ serve(async (req) => {
           });
         }
       }
+
+      // Update cooldown timestamp immediately
+      await supabase
+        .from("weekly_ai_suggestion_cooldowns")
+        .upsert({
+          user_id: user.id,
+          last_regenerated_at: new Date().toISOString(),
+        });
     }
 
     // ─── 4. Check cache ─────────────────────────────────────────────────────
@@ -97,7 +105,14 @@ serve(async (req) => {
         console.error('Cache lookup error:', error);
       } else if (data?.json) {
         console.log('Returning cached suggestion');
-        return new Response(JSON.stringify({ source: "cache", suggestion: data.json }), {
+        return new Response(JSON.stringify({ 
+          source: "cache", 
+          suggestion: {
+            text: data.json?.text || data.json,
+            energy_score: data.json?.energy_score || 50,
+            social_score: data.json?.social_score || 50
+          }
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -195,15 +210,7 @@ serve(async (req) => {
       // Still return the suggestion even if caching fails
     }
 
-    // ─── 7. Update cooldown if this was a regeneration ──────────────────────
-    if (forceRefresh) {
-      await supabase
-        .from("weekly_ai_suggestion_cooldowns")
-        .upsert({
-          user_id: user.id,
-          last_regenerated_at: new Date().toISOString(),
-        });
-    }
+    // ─── 7. Cooldown already updated above ─────────────────────────────────
 
     console.log('Generated new AI suggestion successfully');
     return new Response(JSON.stringify({ source: "openai", suggestion: payload }), {

@@ -11,7 +11,7 @@ ALTER TABLE public.weekly_ai_suggestions
     ADD CONSTRAINT IF NOT EXISTS weekly_ai_suggestions_sunday_check
     CHECK (
       -- date_trunc('week', d) → Monday; +6 → Sunday
-      week_ending = (date_trunc('week', week_ending)::date + 6)
+      week_ending = (date_trunc('week', week_ending::date)::date + 6)
     );
 
 /* recent-60-day helper index (plain, not concurrently → works inside txn) */

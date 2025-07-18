@@ -12,7 +12,9 @@ export const useStreakDetection = (): StreakData => {
   const { data: weeklyData } = useWeeklyTrends();
 
   return useMemo(() => {
-    if (!weeklyData || weeklyData.length < 2) {
+    // Only analyze last 8 weeks for performance
+    const recentWeeks = weeklyData?.slice(-8) || [];
+    if (recentWeeks.length < 2) {
       return {
         energyStreak: 0,
         socialStreak: 0,
@@ -26,8 +28,8 @@ export const useStreakDetection = (): StreakData => {
     let bothStreak = 0;
 
     // Count consecutive improving weeks (starting from most recent)
-    for (let i = weeklyData.length - 1; i >= 0; i--) {
-      const week = weeklyData[i];
+    for (let i = recentWeeks.length - 1; i >= 0; i--) {
+      const week = recentWeeks[i];
       
       if (week.energy_trend === 'improving') {
         energyStreak++;
