@@ -83,7 +83,7 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale }: AfterglowCardPr
       </div>
 
       {/* Conditional Action Button */}
-      {!isToday && (
+      {!isToday && onRefresh && (
         <Button 
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
           onClick={onRefresh}
@@ -92,7 +92,7 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale }: AfterglowCardPr
           Revisit this day
         </Button>
       )}
-      {isToday && (
+      {isToday && onRefresh && (
         <Button 
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
           onClick={onRefresh}

@@ -205,9 +205,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       <div className="flex justify-between items-start p-6 pt-16">
         <div className="space-y-1">
           <h1 className="text-4xl font-light glow-primary">afterglow</h1>
-          <p className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in">
-            {formattedDate}
-          </p>
         </div>
         <div className="flex space-x-4">
           <Button 
