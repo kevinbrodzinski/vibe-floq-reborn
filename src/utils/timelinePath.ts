@@ -12,7 +12,7 @@ export function buildTimelinePath(
   width = 48,
   heightUnit = 80
 ): string {
-  const kAmplitude = width * 0.55; // Scale amplitude with width
+  const kAmplitude = width * 0.55; // Local constant - scale amplitude with width
   const cps: TimelineControlPoint[] = moments.map((m, i) => {
     const y = i * heightUnit;
     const intensity = (m.vibe_intensity ?? 0.5);

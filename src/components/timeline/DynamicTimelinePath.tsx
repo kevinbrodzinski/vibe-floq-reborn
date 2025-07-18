@@ -8,9 +8,14 @@ interface DynamicTimelinePathProps {
   /** outer scrolling container (usually the main page ref) */
   containerRef: React.RefObject<HTMLElement>;
   /** afterglow moments */
-  moments: { vibe_intensity?: number; color?: string; heightVariance?: number }[];
+  moments: { vibe_intensity?: number; color?: string }[];
   /** timeline rendering mode - 'math' for uniform cards, 'geometry' for variable heights */
   mode?: 'math' | 'geometry';
+}
+
+// Helper function to determine if geometry mode is needed
+function needsGeometry(moments: any[]): boolean {
+  return moments.length > 50; // Use geometry for large feeds
 }
 
 /**
@@ -25,8 +30,13 @@ export const DynamicTimelinePath = ({
   const uniqueId = useId();
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Guard: ensure container exists before setting up scroll
-  if (!containerRef.current && typeof window !== 'undefined') {
+  // Lazy hydrate after first frame to avoid blocking first paint
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Early bail for empty moments or during hydration
+  if (!isHydrated || (mode === 'math' && moments.length === 0)) {
     return null;
   }
 
@@ -41,17 +51,16 @@ export const DynamicTimelinePath = ({
   });
 
   const mathData = useMemo(() => {
-    if (mode !== 'math' || moments.length === 0) return { pathString: '', totalHeight: 0 };
+    if (mode !== 'math' || moments.length === 0) return { pathString: '', totalHeight: 0, isReady: false };
     
     const pathString = buildTimelinePath(moments);
     const totalHeight = moments.length * 80 + 60;
-    return { pathString, totalHeight };
+    return { pathString, totalHeight, isReady: pathString.length > 0 };
   }, [moments, mode]);
 
-  const { pathString, totalHeight } = mode === 'geometry' ? geometryData : mathData;
-  const isReady = mode === 'geometry' ? geometryData.isReady : pathString.length > 0;
+  const { pathString, totalHeight, isReady } = mode === 'geometry' ? geometryData : mathData;
 
-  // Lazy hydrate after first frame to avoid blocking first paint
+  // Lazy hydration gate
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setIsHydrated(true);
