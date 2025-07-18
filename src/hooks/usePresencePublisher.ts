@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { useCurrentVibe } from '@/lib/store/useVibe'
-import { ngeohash } from 'ngeohash'
+import ngeohash from 'ngeohash'
 
 export const usePresencePublisher = (isActive: boolean) => {
   const { user } = useAuth()
