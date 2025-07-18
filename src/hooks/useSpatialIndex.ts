@@ -1,5 +1,5 @@
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import RBush from 'rbush';
 
 export interface SpatialItem {
@@ -8,7 +8,11 @@ export interface SpatialItem {
   y: number;
   width: number;
   height: number;
-  sprite?: any; // PIXI sprite reference
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  sprite: any; // PIXI sprite reference
 }
 
 export interface BoundingBox {
@@ -18,36 +22,32 @@ export interface BoundingBox {
   maxY: number;
 }
 
+interface BoundsQuery extends BoundingBox {
+  dummy?: never;
+}
+
 export function useSpatialIndex<T extends SpatialItem>(items: T[]) {
-  const index = useMemo(() => {
-    const tree = new RBush<T & BoundingBox>();
-    
-    const indexItems = items.map(item => ({
-      ...item,
-      minX: item.x - item.width / 2,
-      minY: item.y - item.height / 2,
-      maxX: item.x + item.width / 2,
-      maxY: item.y + item.height / 2,
-    }));
-    
-    if (indexItems.length > 0) {
-      tree.load(indexItems);
+  const treeRef = useRef<RBush<T>>(new RBush<T>());
+  
+  useEffect(() => {
+    const tree = treeRef.current;
+    tree.clear();
+    if (items.length > 0) {
+      tree.load(items);
     }
-    
-    return tree;
   }, [items]);
 
-  const searchViewport = (bounds: BoundingBox): (T & BoundingBox)[] => {
-    return index.search(bounds);
+  const searchViewport = (bounds: BoundsQuery): T[] => {
+    return treeRef.current.search(bounds as any);
   };
 
-  const getAllItems = (): (T & BoundingBox)[] => {
-    return index.all();
+  const getAllItems = (): T[] => {
+    return treeRef.current.all();
   };
 
   return {
     searchViewport,
     getAllItems,
-    tree: index,
+    tree: treeRef.current,
   };
 }

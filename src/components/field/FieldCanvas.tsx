@@ -39,13 +39,14 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   // Viewport bounds for culling
   const viewportBounds = useViewportBounds(canvasRef);
 
-  // Sprite tracking
-  const [personSprites, setPersonSprites] = useState<PersonSprite[]>([]);
-  const [rippleSprites, setRippleSprites] = useState<RippleSprite[]>([]);
+  // Sprite tracking with refs for performance
+  const personSpritesRef = useRef<PersonSprite[]>([]);
+  const rippleSpritesRef = useRef<RippleSprite[]>([]);
+  const [, forceRender] = useState({});
 
   // Spatial indexes
-  const peopleSpatialIndex = useSpatialIndex(personSprites);
-  const rippleSpatialIndex = useSpatialIndex(rippleSprites);
+  const peopleSpatialIndex = useSpatialIndex(personSpritesRef.current);
+  const rippleSpatialIndex = useSpatialIndex(rippleSpritesRef.current);
 
   // Handle ripple creation from queue
   const handleRipple = (tileId: string, delta: number) => {
@@ -62,18 +63,23 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     const ripple = new RippleEffect(x, y, 20, delta > 0 ? 0x00ff00 : 0xff0000);
     rippleContainer.current.addChild(ripple.sprite);
     
+    const width = 40, height = 40;
     const rippleSprite: RippleSprite = {
       id: `ripple-${Date.now()}-${Math.random()}`,
       x,
       y,
-      width: 40,
-      height: 40,
+      width,
+      height,
+      minX: x - width / 2,
+      minY: y - height / 2,
+      maxX: x + width / 2,
+      maxY: y + height / 2,
       ripple,
       isVisible: true,
       sprite: ripple.sprite,
     };
     
-    setRippleSprites(prev => [...prev, rippleSprite]);
+    rippleSpritesRef.current = [...rippleSpritesRef.current, rippleSprite];
   };
 
   useRippleQueue(tileIds, handleRipple);
@@ -120,38 +126,41 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
       const allPeople = peopleSpatialIndex.getAllItems();
       
-      // Show visible people, hide others
+      // O(1) lookup optimization
+      const visibleIds = new Set(visiblePeople.map(p => p.id));
       allPeople.forEach(personSprite => {
-        const isVisible = visiblePeople.includes(personSprite);
-        personSprite.graphics.renderable = isVisible;
+        personSprite.graphics.renderable = visibleIds.has(personSprite.id);
       });
 
       // Viewport culling and animation for ripples
-      setRippleSprites(prev => {
-        const visibleRipples = rippleSpatialIndex.searchViewport({
-          minX: viewportBounds.minX - 100,
-          minY: viewportBounds.minY - 100,
-          maxX: viewportBounds.maxX + 100,
-          maxY: viewportBounds.maxY + 100,
-        });
-
-        return prev.filter(rippleSprite => {
-          const isInViewport = visibleRipples.some(r => r.id === rippleSprite.id);
-          
-          // Only update animation if visible
-          const isActive = isInViewport ? rippleSprite.ripple.update() : true;
-          rippleSprite.ripple.sprite.renderable = isInViewport;
-          
-          if (!isActive) {
-            if (rippleContainer.current && !isCleaningUpRef.current) {
-              rippleContainer.current.removeChild(rippleSprite.ripple.sprite);
-            }
-            rippleSprite.ripple.destroy();
-          }
-          
-          return isActive;
-        });
+      const currentRipples = rippleSpritesRef.current;
+      const visibleRipples = rippleSpatialIndex.searchViewport({
+        minX: viewportBounds.minX - 100,
+        minY: viewportBounds.minY - 100,
+        maxX: viewportBounds.maxX + 100,
+        maxY: viewportBounds.maxY + 100,
       });
+
+      const visibleRippleIds = new Set(visibleRipples.map(r => r.id));
+      
+      const activeRipples = currentRipples.filter(rippleSprite => {
+        const isInViewport = visibleRippleIds.has(rippleSprite.id);
+        
+        // Only update animation if visible
+        const isActive = isInViewport ? rippleSprite.ripple.update() : true;
+        rippleSprite.ripple.sprite.renderable = isInViewport;
+        
+        if (!isActive) {
+          if (rippleContainer.current && !isCleaningUpRef.current) {
+            rippleContainer.current.removeChild(rippleSprite.ripple.sprite);
+          }
+          rippleSprite.ripple.destroy();
+        }
+        
+        return isActive;
+      });
+      
+      rippleSpritesRef.current = activeRipples;
     };
 
     animateRef.current = animate;
@@ -168,8 +177,8 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
     return () => {
       isCleaningUpRef.current = true;
-      setPersonSprites([]);
-      setRippleSprites([]);
+      personSpritesRef.current = [];
+      rippleSpritesRef.current = [];
       
       // Stop animation loop
       if (tickerRef.current && animateRef.current) {
@@ -213,7 +222,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       const y = (person.y / 100) * app.screen.height;
       
       // Try to reuse existing sprite for this person
-      const existingSprite = personSprites.find(ps => ps.person.id === person.id);
+      const existingSprite = personSpritesRef.current.find(ps => ps.person.id === person.id);
       let graphics: PIXI.Graphics;
       
       if (existingSprite && existingSprite.lastUpdateId < currentUpdateId) {
@@ -233,28 +242,34 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       graphics.y = y;
       graphics.name = 'person';
 
+      const width = 8, height = 8;
       return {
         id: person.id,
         x,
         y,
-        width: 8,
-        height: 8,
+        width,
+        height,
+        minX: x - width / 2,
+        minY: y - height / 2,
+        maxX: x + width / 2,
+        maxY: y + height / 2,
         person,
         graphics,
         lastUpdateId: currentUpdateId,
+        sprite: graphics,
       };
     });
 
     // Release unused sprites back to pool
-    personSprites.forEach(oldSprite => {
+    personSpritesRef.current.forEach(oldSprite => {
       if (oldSprite.lastUpdateId < currentUpdateId) {
         container.removeChild(oldSprite.graphics);
         pool.release(oldSprite.graphics);
       }
     });
 
-    setPersonSprites(newPersonSprites);
-  }, [people]); // Removed personSprites dependency to fix infinite loop
+    personSpritesRef.current = newPersonSprites;
+  }, [people]);
 
   return (
     <canvas 

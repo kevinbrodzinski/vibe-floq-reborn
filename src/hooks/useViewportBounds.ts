@@ -10,7 +10,7 @@ export interface ViewportBounds {
   height: number;
 }
 
-export function useViewportBounds(canvasRef: React.RefObject<HTMLCanvasElement>) {
+export function useViewportBounds(canvasRef: React.RefObject<HTMLCanvasElement>): ViewportBounds {
   const [bounds, setBounds] = useState<ViewportBounds>({
     minX: 0,
     minY: 0,
@@ -21,6 +21,7 @@ export function useViewportBounds(canvasRef: React.RefObject<HTMLCanvasElement>)
   });
   
   const animationFrameRef = useRef<number>();
+  const lastBoundsRef = useRef<ViewportBounds>(bounds);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -39,16 +40,31 @@ export function useViewportBounds(canvasRef: React.RefObject<HTMLCanvasElement>)
         height: rect.height,
       };
 
-      setBounds(newBounds);
+      // Only update state if bounds actually changed
+      const lastBounds = lastBoundsRef.current;
+      if (
+        newBounds.width !== lastBounds.width ||
+        newBounds.height !== lastBounds.height ||
+        newBounds.maxX !== lastBounds.maxX ||
+        newBounds.maxY !== lastBounds.maxY
+      ) {
+        lastBoundsRef.current = newBounds;
+        setBounds(newBounds);
+      }
+
       animationFrameRef.current = requestAnimationFrame(updateBounds);
     };
 
     // Start the update loop
     updateBounds();
 
-    // Also update on resize
+    // Debounced resize handler
+    let resizeTimeout: NodeJS.Timeout;
     const handleResize = () => {
-      updateBounds();
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        updateBounds();
+      }, 250);
     };
     window.addEventListener('resize', handleResize);
 
@@ -56,6 +72,7 @@ export function useViewportBounds(canvasRef: React.RefObject<HTMLCanvasElement>)
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      clearTimeout(resizeTimeout);
       window.removeEventListener('resize', handleResize);
     };
   }, [canvasRef]);

@@ -3,7 +3,7 @@ import * as PIXI from 'pixi.js';
 
 export class GraphicsPool {
   private pool: PIXI.Graphics[] = [];
-  private active: Set<PIXI.Graphics> = new Set();
+  private active: Set<PIXI.Graphics> = new Set<PIXI.Graphics>();
   private maxPoolSize: number;
 
   constructor(initialSize = 50, maxSize = 200) {
@@ -43,8 +43,8 @@ export class GraphicsPool {
     if (this.pool.length < this.maxPoolSize) {
       this.pool.push(graphics);
     } else {
-      // Destroy excess graphics to prevent memory leaks
-      graphics.destroy();
+      // Destroy excess graphics to prevent memory leaks with proper cleanup
+      graphics.destroy({ children: true });
     }
   }
 
