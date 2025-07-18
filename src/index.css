@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Silence ResizeObserver loop limit exceeded warnings */
+html, body {
+  overflow-anchor: none;
+}
+
 /* Enhanced focus ring system - WCAG 2.1 compliant */
 body:not(.using-keyboard) *:focus {
   outline: none;     /* hides default focus when using pointer */

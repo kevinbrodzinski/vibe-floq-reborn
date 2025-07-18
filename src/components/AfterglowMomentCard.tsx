@@ -12,7 +12,7 @@ import { openMomentDrawer } from '@/state/momentDrawer'
 import { startTransition } from 'react'
 import { Link } from 'react-router-dom'
 
-interface AfterglowMomentCardProps {
+interface AfterglowMomentCardProps extends React.HTMLAttributes<HTMLDivElement> {
   moment: AfterglowMoment
   index: number
   isFirst?: boolean

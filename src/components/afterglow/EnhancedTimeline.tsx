@@ -53,8 +53,8 @@ export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
           jump(Math.round(pct * (moments.length - 1)));
         }}
         moments={moments.map(m => ({
-          title: m.title,
-          color: m.color ?? 'hsl(var(--primary))',
+          title: m.title || 'Moment',
+          color: m.color || 'hsl(var(--primary))',
         }))}
       />
     </div>
