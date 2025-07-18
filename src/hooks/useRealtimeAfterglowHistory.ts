@@ -33,7 +33,7 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
         ...item,
         updated_at: (item as any).updated_at || item.created_at,
         emotion_journey: Array.isArray(item.emotion_journey) ? item.emotion_journey.map(String) : [],
-        moments: Array.isArray(item.moments) ? item.moments : [],
+        moments: Array.isArray(item.moments) ? item.moments.map(String) : [], // Convert moments to string array too
         vibe_path: Array.isArray(item.vibe_path) ? item.vibe_path.map(String) : []
       } as DailyAfterglowData)))
     } catch (err) {

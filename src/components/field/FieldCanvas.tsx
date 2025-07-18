@@ -38,8 +38,18 @@ const hslToHex = (hsl: { h: number; s: number; l: number }): number => {
 };
 
 export default function FieldCanvas() {
-  const noise = useMemo(() => createNoise3D(() => Math.random()), []);
-  const { data: tiles = [] } = useFieldTiles();
+  const noise = useMemo(() => createNoise3D(), []);
+  const { viewport } = useMapViewport();
+  
+  // Calculate bounds from viewport
+  const bounds = useMemo(() => ({
+    minLat: viewport.center[0] - 0.01,
+    maxLat: viewport.center[0] + 0.01,
+    minLng: viewport.center[1] - 0.01,
+    maxLng: viewport.center[1] + 0.01
+  }), [viewport.center]);
+  
+  const { data: tiles = [] } = useFieldTiles(bounds);
   const qc = useQueryClient();
   const [shouldUsePIXI, setShouldUsePIXI] = useState(false);
   
@@ -47,7 +57,7 @@ export default function FieldCanvas() {
   const cachedTiles = qc.getQueryData(['fieldTilesCache']) as any[] || tiles;
   const activeTiles = cachedTiles.length > 0 ? cachedTiles : tiles;
   
-  const { viewport } = useMapViewport();
+  // viewport is now accessed above
   const { settings } = useUserSettings();
   const { friends = [] } = useFriends();
   const canvasRef = useRef<HTMLCanvasElement>(null);

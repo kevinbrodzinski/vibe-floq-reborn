@@ -11,6 +11,7 @@ interface CollaborativeState {
   isLoading: boolean;
   removeStop: (id: string) => Promise<void>;
   reorderStops: (from: number, to: number) => Promise<void>;
+  addStop: (stop: PlanStop) => void;
 }
 
 export function useCollaborativeState(planId: string): CollaborativeState {
@@ -18,6 +19,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
   const session = useSession()
   const queryClient = useQueryClient()
 
+  // Simple hook that just returns data - no complex collaborative features for now
   const { data: planStops = [], isLoading } = useQuery({
     queryKey: ['plan-stops', planId],
     queryFn: async () => {
@@ -157,13 +159,19 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     stops: allStops
   };
 
-  const removeStop = async (id: string) => {}
-  const reorderStops = async (from: number, to: number) => {}
+  const removeStop = async (id: string) => {
+    deleteStop(id)
+  }
+  
+  const reorderStops = async (from: number, to: number) => {
+    // TODO: Implement reordering
+  }
 
   return {
     stops: allStops,
     isLoading,
     removeStop,
     reorderStops,
+    addStop: (stop: PlanStop) => addStop(stop), // Expose addStop
   }
 }

@@ -15,10 +15,12 @@ interface FieldTile {
   properties: Record<string, any>
 }
 
-export function useFieldTiles(bounds: TileBounds) {
+export function useFieldTiles(bounds?: TileBounds) {
   return useQuery({
     queryKey: ['field-tiles', bounds],
     queryFn: async () => {
+      if (!bounds) return []
+      
       const { data, error } = await supabase.functions.invoke('get-field-tiles', {
         body: {
           min_lat: bounds.minLat,
@@ -32,7 +34,7 @@ export function useFieldTiles(bounds: TileBounds) {
       if (error) throw error
       return data as FieldTile[]
     },
-    enabled: !!(bounds.minLat && bounds.maxLat && bounds.minLng && bounds.maxLng),
+    enabled: !!(bounds?.minLat && bounds?.maxLat && bounds?.minLng && bounds?.maxLng),
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // 1 minute
   })

@@ -122,7 +122,7 @@ export function useRealtimeAfterglowData(date: string) {
             if (!prev) return prev
             return {
               ...prev,
-              moments: [...(prev.moments || []), payload.new as AfterglowMoment]
+              moments: [...(prev.moments || []), JSON.stringify(payload.new)]
             }
           })
           

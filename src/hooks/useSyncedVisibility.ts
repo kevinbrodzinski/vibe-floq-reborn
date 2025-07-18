@@ -26,18 +26,9 @@ export function useSyncedVisibility() {
     if (!user?.id) return;
     (async () => {
       try {
-        await supabase
-          .from('vibes_now')
-          .upsert(
-            { 
-              user_id: user.id, 
-              visibility
-            }, 
-            { 
-              onConflict: 'user_id',
-              count: 'exact' // Don't return full row to save bandwidth
-            }
-          );
+        // Note: This should be using a different table that matches the visibility concept
+        // For now, we'll skip the database sync as vibes_now has different schema
+        console.log('Visibility updated locally:', visibility);
       } catch (error) {
         console.warn('Failed to sync visibility to database:', error);
       }

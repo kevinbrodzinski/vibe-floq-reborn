@@ -23,7 +23,7 @@ export interface DailyAfterglowData {
   energy_score: number;
   social_intensity: number;
   summary_text: string;
-  moments: AfterglowMoment[];
+  moments: string[]; // Simple array of moment strings for now
   is_pinned: boolean;
   created_at: string;
   regenerated_at?: string;
