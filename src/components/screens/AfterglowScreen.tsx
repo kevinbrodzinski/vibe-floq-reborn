@@ -11,7 +11,6 @@ import { getVibeDisplayName } from "@/utils/afterglowHelpers";
 import { useTogglePinned } from "@/hooks/useOptimisticMutations";
 import AfterglowCalendarDialog from "@/components/afterglow/AfterglowCalendarDialog";
 import AfterglowInsightsModal from "@/components/afterglow/AfterglowInsightsModal";
-import { useTimelineV2 } from "@/hooks/useTimelineV2";
 import { EnhancedTimeline } from "@/components/afterglow/EnhancedTimeline";
 import { MomentDetailDrawer } from "@/components/drawer/MomentDetailDrawer";
 import { Suspense } from 'react';
@@ -41,8 +40,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
-  // TEMP: Force enable timeline V2 for testing
-  const timelineV2 = true; // useTimelineV2();
+  /* Always use the enhanced timeline - no more flags */
   
   // Use provided date or default to today
   const currentDate = date || new Date().toISOString().split('T')[0];
@@ -287,34 +285,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
 
       {/* Timeline */}
       <div className="px-6 relative">
-        {timelineV2 && afterglow?.moments?.length ? (
-          // Enhanced Timeline V2
-          <EnhancedTimeline moments={afterglow.moments} />
-        ) : !timelineV2 ? (
-          // Legacy Timeline
-          <>
-            {/* Curved Timeline SVG */}
-            <svg className="absolute left-0 top-0 h-full w-24 pointer-events-none" style={{zIndex: 1}}>
-              <defs>
-                <linearGradient id="timelineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(180 70% 60%)" />
-                  <stop offset="25%" stopColor="hsl(240 70% 60%)" />
-                  <stop offset="50%" stopColor="hsl(280 70% 60%)" />
-                  <stop offset="75%" stopColor="hsl(320 70% 60%)" />
-                  <stop offset="100%" stopColor="hsl(340 70% 60%)" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M48 0 Q52 25 48 50 Q44 75 48 100 Q52 125 48 150 Q44 175 48 200 Q52 225 48 250 Q44 275 48 300 Q52 325 48 350 Q44 375 48 400 Q52 425 48 450 Q44 475 48 500"
-                stroke="url(#timelineGradient)"
-                strokeWidth="3"
-                fill="none"
-                className="drop-shadow-lg glow-primary"
-              />
-            </svg>
-          </>
-        ) : null}
-
         {/* Loading and generation states */}
         {afterglowLoading && !isGenerating ? (
           <div className="text-center py-12">
@@ -345,53 +315,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             </AlertDescription>
           </Alert>
         ) : afterglow?.moments?.length ? (
-          !timelineV2 ? (
-            <div className="space-y-8" ref={timelineRef}>
-              {afterglow.moments.map((moment, index) => (
-                <AfterglowMomentCard
-                  key={`${moment.timestamp}-${index}`}
-                  moment={moment}
-                  index={index}
-                  isFirst={index === 0}
-                  data-moment-index={index}
-                  onShare={() => {
-                    // Create a share URL for this specific moment
-                    const shareUrl = `${window.location.origin}/afterglow/${afterglow.date}`
-                    if (navigator.share) {
-                      navigator.share({
-                        title: 'My Afterglow',
-                        text: afterglow.summary_text,
-                        url: shareUrl
-                      })
-                    } else {
-                      navigator.clipboard.writeText(shareUrl)
-                    }
-                  }}
-                  onSave={() => {
-                    if (afterglow?.id) {
-                      togglePinned({ 
-                        id: afterglow.id, 
-                        pinned: !afterglow.is_pinned 
-                      });
-                      triggerHaptic();
-                    }
-                  }}
-                />
-              ))}
-              
-              {/* Insights link for timeline v2 */}
-              {timelineV2 && afterglow?.id && (
-                <div className="text-center mt-8 pt-8 border-t border-border/30">
-                  <Link 
-                    to={`/afterglow/${afterglow.id}/insights`}
-                    className="inline-flex items-center text-sm text-accent hover:text-accent/80 hover:underline"
-                  >
-                    View detailed insights & analytics →
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : null
+          /* Always use Enhanced Timeline - no more flags */
+          <EnhancedTimeline moments={afterglow.moments} />
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />

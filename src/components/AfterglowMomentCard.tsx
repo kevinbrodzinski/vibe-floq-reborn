@@ -7,7 +7,6 @@ import { useState } from 'react'
 import { PeopleEncountersModal } from '@/components/modals/PeopleEncountersModal'
 import { LocationChip } from '@/components/location/LocationChip'
 import { usePeopleData } from '@/hooks/usePeopleData'
-import { useTimelineV2 } from '@/hooks/useTimelineV2'
 import { openMomentDrawer } from '@/state/momentDrawer'
 import { startTransition } from 'react'
 import { Link } from 'react-router-dom'
@@ -29,7 +28,7 @@ export function AfterglowMomentCard({
 }: AfterglowMomentCardProps) {
   const [isPeopleModalOpen, setIsPeopleModalOpen] = useState(false)
   const { getPeopleInMoment } = usePeopleData()
-  const timelineV2 = useTimelineV2()
+  /* Always interactive - no more feature flags */
   const getEventTypeIcon = (type: string) => {
     switch(type) {
       case "venue_checkin": 
@@ -61,13 +60,11 @@ export function AfterglowMomentCard({
 
   return (
     <div 
-      className={`relative flex items-start space-x-6 ${timelineV2 ? 'cursor-pointer' : ''}`}
+      className="relative flex items-start space-x-6 cursor-pointer"
       data-moment-index={index}
       onClick={() => {
-        if (timelineV2) {
-          /* let React handle suspense concurrently */
-          startTransition(() => openMomentDrawer(moment));
-        }
+        /* Always open drawer - enhanced timeline is now the default */
+        startTransition(() => openMomentDrawer(moment));
       }}
     >
       {/* Timeline dot */}
@@ -206,14 +203,12 @@ export function AfterglowMomentCard({
           </div>
         )}
 
-        {/* Insights deep-link for power users */}
-        {timelineV2 && (
-          <div className="mt-2 pt-2 border-t border-border/20">
-            <span className="text-xs text-muted-foreground">
-              Click for details, or view insights →
-            </span>
-          </div>
-        )}
+        {/* Always show insights hint - enhanced timeline is now the default */}
+        <div className="mt-2 pt-2 border-t border-border/20">
+          <span className="text-xs text-muted-foreground">
+            Click for details, or view insights →
+          </span>
+        </div>
       </div>
     </div>
   )
