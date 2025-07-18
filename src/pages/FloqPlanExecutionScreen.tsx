@@ -94,9 +94,15 @@ export default function FloqPlanExecutionScreen() {
           {/* Live Tracker */}
           <LivePlanTracker
             planId={planId}
-            stops={stops}
+            stops={stops.map(stop => ({ ...stop, stop_order: stop.stop_order ?? 0 }))}
             currentStopIndex={currentStopIndex}
-            participants={participants}
+            participants={participants.map(p => ({
+              id: p.user_id,
+              username: p.user_id, // Fallback since profile data is not available
+              display_name: p.user_id, // Fallback since profile data is not available
+              avatar_url: undefined,
+              checked_in_at: undefined
+            }))}
             onStopAdvance={() => {
               if (currentStopIndex < stops.length - 1) {
                 advanceToNextStop()
@@ -152,7 +158,23 @@ export default function FloqPlanExecutionScreen() {
 
           {/* Summary Card */}
           {shouldShowSummary && afterglow && (
-            <AfterglowSummaryCard afterglow={afterglow} />
+            <AfterglowSummaryCard afterglow={{
+              id: afterglow.id,
+              plan_title: stops[0]?.title || 'Your Experience',
+              date: afterglow.date || new Date().toISOString().split('T')[0],
+              overall_rating: afterglow.would_repeat_score || 3,
+              energy_level: 3,
+              social_connection: 3,
+              would_repeat_score: afterglow.would_repeat_score || 3,
+              overall_vibe: afterglow.ending_sentiment || 'positive',
+              moments: {
+                best: afterglow.group_energy_peak || 'Great moments together',
+                quote: 'A memorable experience'
+              },
+              participants: [],
+              group_chemistry: 3,
+              final_thoughts: afterglow.ending_sentiment || 'A wonderful time'
+            }} />
           )}
 
           {/* Plan Feedback Display */}
@@ -162,7 +184,20 @@ export default function FloqPlanExecutionScreen() {
 
           {/* Share View */}
           {shouldShowShare && afterglow && (
-            <AfterglowShareView afterglow={afterglow} />
+            <AfterglowShareView afterglow={{
+              id: afterglow.id,
+              plan_title: stops[0]?.title || 'Your Experience',
+              date: afterglow.date || new Date().toISOString().split('T')[0],
+              overall_rating: afterglow.would_repeat_score || 3,
+              energy_level: 3,
+              overall_vibe: afterglow.ending_sentiment || 'positive',
+              moments: {
+                best: afterglow.group_energy_peak || 'Great moments together',
+                quote: afterglow.my_contribution || 'A memorable experience'
+              },
+              participants: [],
+              group_chemistry: 3
+            }} />
           )}
 
           {/* Development Controls (TODO: Remove in production) */}
