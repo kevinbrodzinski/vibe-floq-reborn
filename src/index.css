@@ -7,6 +7,11 @@ html, body {
   overflow-anchor: none;
 }
 
+/* Smooth scroll behavior for timeline navigation */
+[data-moment-index] {
+  scroll-margin-top: 6rem;
+}
+
 /* Enhanced focus ring system - WCAG 2.1 compliant */
 body:not(.using-keyboard) *:focus {
   outline: none;     /* hides default focus when using pointer */

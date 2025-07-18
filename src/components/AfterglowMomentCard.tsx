@@ -1,4 +1,4 @@
-import { AfterglowMoment } from '@/hooks/useAfterglowData'
+import type { AfterglowMoment } from '@/types/afterglow'
 import { formatMomentTime, getMomentTypeIcon } from '@/utils/afterglowHelpers'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

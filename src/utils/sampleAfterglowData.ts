@@ -1,8 +1,9 @@
-import { AfterglowMoment } from '@/hooks/useAfterglowData'
+import type { AfterglowMoment } from '@/types/afterglow'
 
 // Sample data for testing the enhanced moment components
 export const sampleMomentsWithMetadata: AfterglowMoment[] = [
   {
+    id: 'moment-1',
     timestamp: '2025-01-18T08:30:00Z',
     moment_type: 'venue_checkin',
     title: 'Morning Coffee at Blue Bottle',
@@ -36,6 +37,7 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
     }
   },
   {
+    id: 'moment-2',
     timestamp: '2025-01-18T10:15:00Z',
     moment_type: 'floq_join',
     title: 'Joined Morning Hike Group',
@@ -81,6 +83,7 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
     }
   },
   {
+    id: 'moment-3',
     timestamp: '2025-01-18T14:30:00Z',
     moment_type: 'venue_checkin',
     title: 'Lunch at Local Bistro',
@@ -120,6 +123,7 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
     }
   },
   {
+    id: 'moment-4',
     timestamp: '2025-01-18T18:00:00Z',
     moment_type: 'personal',
     title: 'Evening Walk Home',

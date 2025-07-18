@@ -4,12 +4,8 @@
 
 // ResizeObserver polyfill for SSR
 if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
-  // @ts-ignore
-  window.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  };
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  (window as any).ResizeObserver = require('resize-observer-polyfill').default;
 }
 
 import React from 'react'

@@ -7,7 +7,7 @@ import { TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, Timeli
 import { Chip } from '@/components/ui/Chip';
 import { getMomentIcon, getColorFromHex, formatMomentType } from '@/constants/moments';
 import { format } from 'date-fns';
-import { AfterglowMoment } from '@/lib/afterglow-helpers';
+import type { AfterglowMoment } from '@/types/afterglow';
 
 interface ParallaxMomentProps {
   moment: AfterglowMoment;

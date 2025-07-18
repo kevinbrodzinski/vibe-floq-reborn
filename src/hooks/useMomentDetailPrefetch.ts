@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { AfterglowMoment } from '@/lib/afterglow-helpers';
+import type { AfterglowMoment } from '@/types/afterglow';
 import useSWR from 'swr';
 
 interface RelatedMomentsResponse {

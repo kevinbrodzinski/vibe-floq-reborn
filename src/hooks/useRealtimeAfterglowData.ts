@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
-import { DailyAfterglowData, AfterglowMoment } from './useAfterglowData'
+import type { DailyAfterglowData, AfterglowMoment } from '@/types/afterglow'
 import { useToast } from '@/hooks/use-toast'
 
 interface GenerationProgress {

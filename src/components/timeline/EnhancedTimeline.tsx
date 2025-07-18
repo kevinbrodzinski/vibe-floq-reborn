@@ -3,7 +3,7 @@ import { useMotionValue } from 'framer-motion';
 import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
 import { TimelineScrubber } from '@/components/timeline/TimelineScrubber';
 import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
-import type { AfterglowMoment } from '@/hooks/useAfterglowData';
+import type { AfterglowMoment } from '@/types/afterglow';
 
 interface EnhancedTimelineProps {
   moments: AfterglowMoment[];

@@ -5,36 +5,8 @@ import { useRealtimeAfterglowData } from './useRealtimeAfterglowData'
 import { useRealtimeAfterglowHistory } from './useRealtimeAfterglowHistory'
 import { useTogglePinned } from './useOptimisticMutations'
 
-export interface AfterglowMoment {
-  timestamp: string
-  moment_type: string
-  title: string
-  description?: string
-  color: string
-  metadata: Record<string, any>
-}
+import type { AfterglowMoment, DailyAfterglowData } from '@/types/afterglow'
 
-export interface DailyAfterglowData {
-  id: string
-  user_id: string
-  date: string
-  vibe_path: string[]
-  emotion_journey: any[]
-  peak_vibe_time?: string
-  dominant_vibe?: string
-  total_venues: number
-  total_floqs: number
-  crossed_paths_count: number
-  energy_score: number
-  social_intensity: number
-  summary_text: string
-  moments: AfterglowMoment[]
-  is_pinned: boolean
-  created_at: string
-  regenerated_at?: string
-  ai_summary?: string
-  ai_summary_generated_at?: string
-}
 
 export function useAfterglowData(date: string) {
   const { user } = useAuth()

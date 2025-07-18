@@ -2,15 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
 /* ---------- Types ---------- */
-export interface AfterglowMoment {
-  id: string;
-  timestamp: string;
-  moment_type: string;
-  title: string;
-  description?: string;
-  color?: string;
-  metadata?: Record<string, any>;
-}
+import type { AfterglowMoment } from '@/types/afterglow';
 
 export interface AfterglowDetail {
   afterglow: {

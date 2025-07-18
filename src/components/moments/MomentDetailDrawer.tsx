@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { AfterglowMoment } from '@/lib/afterglow-helpers';
+import type { AfterglowMoment } from '@/types/afterglow';
 import { getMomentIcon, getColorFromHex, formatMomentType } from '@/constants/moments';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';

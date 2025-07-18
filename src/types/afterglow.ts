@@ -1,11 +1,12 @@
 export interface AfterglowMoment {
   id?: string;
   timestamp: string;
-  moment_type: string;
   title: string;
   description?: string;
   color: string;
+  moment_type: string;
   metadata: Record<string, any>;
+  daily_afterglow_id?: string;
 }
 
 export interface DailyAfterglowData {

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AfterglowMoment } from '@/hooks/useAfterglowData';
+import type { AfterglowMoment } from '@/types/afterglow';
 
 interface MomentDrawerState {
   open: boolean;
