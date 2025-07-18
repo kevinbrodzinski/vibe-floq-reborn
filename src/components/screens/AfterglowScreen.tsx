@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles, Users, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { ParticleField } from '@/components/visual/ParticleField';
 import { useAmbientBackground } from '@/hooks/useAmbientBackground';
 import { triggerHaptic } from '@/utils/haptics';
 import { sampleMomentsWithMetadata } from '@/utils/sampleAfterglowData';
+import { Database } from '@/integrations/supabase/types';
 
 interface NightEvent {
   id: string;
@@ -39,6 +41,11 @@ interface AfterglowScreenProps {
 }
 
 const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
+  const [searchParams] = useSearchParams();
+  const selectedDateFromUrl = searchParams.get('date');
+  
+  // Use URL date parameter, then prop, then default to today
+  const currentDate = selectedDateFromUrl || date || new Date().toISOString().split('T')[0];
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
 
   // Temporary error handler to get real stack trace
@@ -65,8 +72,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const [insightsOpen, setInsightsOpen] = useState(false);
   /* Always use the enhanced timeline - no more flags */
   
-  // Use provided date or default to today
-  const currentDate = date || new Date().toISOString().split('T')[0];
   const { afterglow, loading: afterglowLoading, isGenerating, generationProgress, isStale, refresh } = useRealtimeAfterglowData(currentDate);
   
   const formattedDate = useMemo(
@@ -203,9 +208,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
           <p className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in">
             {formattedDate}
           </p>
-          <p className="text-xs text-muted-foreground/60">
-            On this day
-          </p>
         </div>
         <div className="flex space-x-4">
           <Button 
@@ -227,15 +229,9 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
         </div>
       </div>
 
-      {/* New Afterglow Card */}
+      {/* Always show Afterglow Card */}
       <div className="px-6 mb-8">
-        {afterglow ? (
-          <AfterglowCard 
-            afterglow={afterglow as any} 
-            onRefresh={refresh}
-            isStale={isStale}
-          />
-        ) : afterglowLoading ? (
+        {afterglowLoading ? (
           <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 animate-pulse">
             <div className="h-8 bg-muted/30 rounded mb-4"></div>
             <div className="grid grid-cols-2 gap-6 mb-6">
@@ -247,17 +243,33 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             <div className="h-12 bg-muted/30 rounded"></div>
           </div>
         ) : (
-          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 text-center">
-            <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-medium mb-2">No Afterglow Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Your afterglow will appear here once you start exploring and creating memories.
-            </p>
-            <Button onClick={refresh} className="bg-gradient-to-r from-primary to-primary/80">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Afterglow
-            </Button>
-          </div>
+          <AfterglowCard 
+            afterglow={afterglow || {
+              id: '',
+              user_id: '',
+              date: currentDate,
+              energy_score: 0,
+              social_intensity: 0,
+              total_venues: 0,
+              total_floqs: 0,
+              crossed_paths_count: 0,
+              dominant_vibe: null,
+              ai_summary: null,
+              ai_summary_generated_at: null,
+              created_at: new Date().toISOString(),
+              is_stale: false,
+              is_public: null,
+              is_pinned: null,
+              regenerated_at: null,
+              peak_vibe_time: null,
+              summary_text: null,
+              vibe_path: null,
+              emotion_journey: null,
+              moments: null
+            } as Database['public']['Tables']['daily_afterglow']['Row']}
+            onRefresh={refresh}
+            isStale={isStale}
+          />
         )}
       </div>
 
@@ -347,7 +359,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               Generate Timeline
             </Button>
           </div>
-        ) : afterglow?.moments?.length ? (
+        ) : afterglow?.moments && Array.isArray(afterglow.moments) && afterglow.moments.length ? (
           /* Always use Enhanced Timeline - no more flags */
           <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 3)} />
         ) : (

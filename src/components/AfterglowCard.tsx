@@ -13,36 +13,31 @@ interface AfterglowCardProps {
 
 export const AfterglowCard = ({ afterglow, onRefresh, isStale }: AfterglowCardProps) => {
   const localDate = new Date(afterglow.date + 'T00:00:00');
+  const isToday = new Date(afterglow.date).toDateString() === new Date().toDateString();
   
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  // Provide fallback vibe estimation for zero-data guard
+  const hasRealData = 
+    (afterglow.total_venues || 0) > 0 ||
+    (afterglow.crossed_paths_count || 0) > 0 ||
+    (afterglow.total_floqs || 0) > 0;
+
+  const vibeIntensity = hasRealData
+    ? afterglow.energy_score || 0
+    : Math.round(Math.random() * 10) + 5; // 5-15% pleasant baseline
+
+  const dominantVibe = hasRealData
+    ? afterglow.dominant_vibe
+    : 'chill'; // default fallback vibe
 
   return (
     <Card className="bg-gradient-to-b from-background/95 to-muted/50 p-6 backdrop-blur-sm border-border/50">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">
-            {formatDate(localDate)}
-          </h2>
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            On this day
-          </p>
+      {/* Header with status indicator only */}
+      {isStale && (
+        <div className="flex items-center justify-end gap-2 text-amber-500 text-xs mb-6">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          Updating...
         </div>
-        {isStale && (
-          <div className="flex items-center gap-2 text-amber-500 text-xs">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            Updating...
-          </div>
-        )}
-      </div>
+      )}
 
       {/* AI Summary */}
       {afterglow.ai_summary && (
@@ -76,25 +71,36 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale }: AfterglowCardPr
         />
         <div className="col-span-2 flex flex-col items-center p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
           <span className="text-3xl font-semibold text-primary">
-            {afterglow.energy_score || 0}%
+            {vibeIntensity}%
           </span>
           <span className="text-sm text-muted-foreground">peak vibe intensity</span>
-          {afterglow.dominant_vibe && (
+          {dominantVibe && (
             <span className="text-sm capitalize text-primary/80 mt-1">
-              {afterglow.dominant_vibe}
+              {dominantVibe}
             </span>
           )}
         </div>
       </div>
 
-      {/* Action Button */}
-      <Button 
-        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-        onClick={onRefresh}
-      >
-        <Sparkles className="w-4 h-4 mr-2" />
-        Revisit this day
-      </Button>
+      {/* Conditional Action Button */}
+      {!isToday && (
+        <Button 
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          onClick={onRefresh}
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          Revisit this day
+        </Button>
+      )}
+      {isToday && (
+        <Button 
+          className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          onClick={onRefresh}
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          Refresh
+        </Button>
+      )}
 
       {/* Crossed Paths Section */}
       {afterglow.crossed_paths_count > 0 && (
