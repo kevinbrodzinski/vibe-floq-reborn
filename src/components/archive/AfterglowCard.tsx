@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,11 @@ export function AfterglowCard({
 }: AfterglowCardProps) {
   const [shareOpen, setShareOpen] = useState(false);
   const { data: afterglowDetail } = useAfterglowDetail(afterglow.id);
+  
+  const formattedDate = useMemo(
+    () => format(new Date(afterglow.date), "EEEE, MMM do yyyy"),
+    [afterglow.date]
+  );
   const getVibeColor = (vibe: string) => {
     const colors: Record<string, string> = {
       chill: 'bg-blue-100 text-blue-800',
@@ -68,13 +73,22 @@ export function AfterglowCard({
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer">
       <CardContent className="p-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-start justify-between">
+        {/* Sleek Date Header */}
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-foreground tracking-tight">
+            afterglow
+          </h3>
+          <p className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in">
+            {formattedDate}
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            On this day
+          </p>
+        </div>
+        
+        {/* Header Actions */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-            <span className="font-medium">
-              {format(new Date(afterglow.date), 'MMM d, yyyy')}
-            </span>
             {afterglow.is_pinned && (
               <Pin className="w-4 h-4 text-primary" />
             )}
