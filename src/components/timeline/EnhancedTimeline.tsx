@@ -42,7 +42,7 @@ export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
         moments={moments}
       />
       <TimelineScrubber
-        progress={progress}
+        progress={progress.get()}
         onSeek={(pct) => {
           const index = Math.round(pct * (moments.length - 1));
           const el = document.querySelector(`[data-moment-index='${index}']`);

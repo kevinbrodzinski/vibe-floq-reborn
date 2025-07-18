@@ -3,17 +3,16 @@ import {
   useMotionValue,
   useTransform,
   animate,
-  MotionValue,
 } from 'framer-motion';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface TimelineScrubberProps {
-  /** current scroll progress 0‒1 (from useScroll) */
-  progress: MotionValue<number>;
-  /** jump handler supplied by useTimelineNavigation */
+  /** `scrollProgress` from 0 → 1 (comes from useTimelineProgress) */
+  progress: number;
+  /** callback receives pct 0 → 1 when knob / track clicked */
   onSeek: (pct: number) => void;
-  /** colors (used for gradient dots) – optional */
+  /** optional coloured dots under the track */
   moments?: { title: string; color: string }[];
 }
 
@@ -26,65 +25,68 @@ export function TimelineScrubber({
   const trackRef = useRef<HTMLDivElement>(null);
   const [trackW, setTrackW] = useState(0);
 
-  // ResizeObserver ⇒ keep track width fresh
+  /* watch width */
   useLayoutEffect(() => {
     if (!trackRef.current) return;
-    const ro = new ResizeObserver(([entry]) =>
-      setTrackW(entry.contentRect.width),
-    );
+    const ro = new ResizeObserver(([e]) => setTrackW(e.contentRect.width));
     ro.observe(trackRef.current);
     setTrackW(trackRef.current.offsetWidth);
     return () => ro.disconnect();
   }, []);
 
-  // knob x-motion linked to scroll progress
-  const x = useTransform(progress, (v) => v * trackW);
-
-  // click / drag handling
-  const dragX = useMotionValue(0);
-  function commitDrag() {
-    const pct = dragX.get() / trackW;
-    onSeek(Math.max(0, Math.min(1, pct)));
-  }
-
-  // spring knob when user scrolls (only if not dragging)
+  /* knob motion value */
+  const dragX = useMotionValue(progress * trackW);
+  /* when scroll updates (not dragging) spring knob */
   useEffect(() => {
-    const controls = animate(dragX, x, { type: 'spring', stiffness: 300 });
+    if (prefersReduced) return;
+    const controls = animate(dragX, progress * trackW, {
+      type: 'spring',
+      stiffness: 350,
+      damping: 40,
+    });
     return () => controls.stop();
-  }, [x, dragX]);
+  }, [progress, trackW, prefersReduced]);
+
+  /* commit knob position → onSeek */
+  const commit = () => {
+    const pct = Math.max(0, Math.min(1, dragX.get() / trackW));
+    onSeek(pct);
+  };
 
   return (
-    <div
-      ref={trackRef}
-      className="relative mx-auto mt-4 h-2 w-11/12 rounded-full bg-muted"
-      aria-label="Timeline scrubber"
-      role="slider"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(progress.get() * 100)}
-    >
+    <div className="relative mx-auto mt-4 w-full max-w-md select-none">
+      {/* track */}
+      <div
+        ref={trackRef}
+        className="h-1 w-full rounded-full bg-muted/40"
+        onClick={e => {
+          const rect = trackRef.current!.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          onSeek(pct);
+          if (!prefersReduced) dragX.set(pct * rect.width);
+        }}
+      />
+
       {/* knob */}
       <motion.div
         drag="x"
         dragConstraints={trackRef}
         style={{ x: dragX }}
-        onDragEnd={commitDrag}
-        onClick={(e) => {
-          const rect = trackRef.current?.getBoundingClientRect();
-          if (!rect) return;
-          const pct = (e.clientX - rect.left) / rect.width;
-          onSeek(pct);
-          if (!prefersReduced) dragX.set(pct * rect.width);
-        }}
-        className="absolute -top-2 h-6 w-6 rounded-full border-2 border-card bg-primary shadow-lg"
+        dragMomentum={false}
+        onDragEnd={commit}
+        className="absolute -top-2 h-5 w-5 cursor-pointer rounded-full border-2 border-card bg-primary shadow-lg"
       />
-      {/* optional dot markers */}
+
+      {/* coloured dots */}
       {moments.length > 1 &&
         moments.map((m, i) => (
           <span
-            key={i}
-            style={{ left: `${(i / (moments.length - 1)) * 100}%` }}
-            className="absolute top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/40"
+            key={m.title + i}
+            className="pointer-events-none absolute top-1/2 h-1 w-1 -translate-y-1/2 rounded-full"
+            style={{
+              left: `${(i / (moments.length - 1)) * 100}%`,
+              background: m.color,
+            }}
           />
         ))}
     </div>

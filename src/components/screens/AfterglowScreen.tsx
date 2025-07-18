@@ -12,8 +12,8 @@ import { useTogglePinned } from "@/hooks/useOptimisticMutations";
 import AfterglowCalendarDialog from "@/components/afterglow/AfterglowCalendarDialog";
 import AfterglowInsightsModal from "@/components/afterglow/AfterglowInsightsModal";
 import { useTimelineV2 } from "@/hooks/useTimelineV2";
-import { EnhancedTimeline } from "@/components/timeline/EnhancedTimeline";
-import { MomentDetailDrawer } from "@/components/MomentDetailDrawer";
+import { EnhancedTimeline } from "@/components/afterglow/EnhancedTimeline";
+import { MomentDetailDrawer } from "@/components/drawer/MomentDetailDrawer";
 import { Link } from "react-router-dom";
 
 interface NightEvent {
@@ -329,50 +329,52 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             </AlertDescription>
           </Alert>
         ) : afterglow?.moments?.length ? (
-          <div className="space-y-8" ref={timelineRef}>
-            {afterglow.moments.map((moment, index) => (
-              <AfterglowMomentCard
-                key={`${moment.timestamp}-${index}`}
-                moment={moment}
-                index={index}
-                isFirst={index === 0}
-                data-moment-index={index}
-                onShare={() => {
-                  // Create a share URL for this specific moment
-                  const shareUrl = `${window.location.origin}/afterglow/${afterglow.date}`
-                  if (navigator.share) {
-                    navigator.share({
-                      title: 'My Afterglow',
-                      text: afterglow.summary_text,
-                      url: shareUrl
-                    })
-                  } else {
-                    navigator.clipboard.writeText(shareUrl)
-                  }
-                }}
-                onSave={() => {
-                  if (afterglow?.id) {
-                    togglePinned({ 
-                      id: afterglow.id, 
-                      pinned: !afterglow.is_pinned 
-                    })
-                  }
-                }}
-              />
-            ))}
-            
-            {/* Insights link for timeline v2 */}
-            {timelineV2 && afterglow?.id && (
-              <div className="text-center mt-8 pt-8 border-t border-border/30">
-                <Link 
-                  to={`/afterglow/${afterglow.id}/insights`}
-                  className="inline-flex items-center text-sm text-accent hover:text-accent/80 hover:underline"
-                >
-                  View detailed insights & analytics →
-                </Link>
-              </div>
-            )}
-          </div>
+          !timelineV2 ? (
+            <div className="space-y-8" ref={timelineRef}>
+              {afterglow.moments.map((moment, index) => (
+                <AfterglowMomentCard
+                  key={`${moment.timestamp}-${index}`}
+                  moment={moment}
+                  index={index}
+                  isFirst={index === 0}
+                  data-moment-index={index}
+                  onShare={() => {
+                    // Create a share URL for this specific moment
+                    const shareUrl = `${window.location.origin}/afterglow/${afterglow.date}`
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'My Afterglow',
+                        text: afterglow.summary_text,
+                        url: shareUrl
+                      })
+                    } else {
+                      navigator.clipboard.writeText(shareUrl)
+                    }
+                  }}
+                  onSave={() => {
+                    if (afterglow?.id) {
+                      togglePinned({ 
+                        id: afterglow.id, 
+                        pinned: !afterglow.is_pinned 
+                      })
+                    }
+                  }}
+                />
+              ))}
+              
+              {/* Insights link for timeline v2 */}
+              {timelineV2 && afterglow?.id && (
+                <div className="text-center mt-8 pt-8 border-t border-border/30">
+                  <Link 
+                    to={`/afterglow/${afterglow.id}/insights`}
+                    className="inline-flex items-center text-sm text-accent hover:text-accent/80 hover:underline"
+                  >
+                    View detailed insights & analytics →
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : null
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />

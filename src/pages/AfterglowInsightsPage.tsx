@@ -348,7 +348,7 @@ export default function AfterglowDetailPage() {
       {moments.length > 0 && (
         <div className="mt-6">
           <TimelineScrubber
-            progress={useMotionValue(currentIdx / Math.max(1, moments.length - 1))}
+            progress={currentIdx / Math.max(1, moments.length - 1)}
             onSeek={(pct) => {
               const i = Math.round(pct * (moments.length - 1));
               setCurrentIdx(i);
