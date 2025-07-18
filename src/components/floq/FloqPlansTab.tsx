@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Plus } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { useFloqPlans } from '@/hooks/useFloqPlans';
-import { useSession } from '@supabase/auth-helpers-react';
+import { useIsFloqHost } from '@/hooks/useIsFloqHost';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FloqPlansTabProps {
@@ -15,7 +15,6 @@ interface FloqPlansTabProps {
 
 export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
   const navigate = useNavigate();
-  const session = useSession();
   const [quickIdeas, setQuickIdeas] = useState(false);
 
   const startTemplate = (templateName: string) => {
@@ -25,22 +24,17 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
 
   const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
 
-  // Simple host detection using creator_id comparison
-  const isHost = useMemo(
-    () => floqDetails?.creator_id === session?.user.id,
-    [floqDetails?.creator_id, session?.user.id]
-  );
+  const isHost = useIsFloqHost(floqDetails)
 
   // Debug logging to confirm the fix works
   useEffect(() => {
     console.log('🔍 FloqPlansTab host detection:', {
       floqId: floqDetails?.id,
-      userId: session?.user.id,
       creatorId: floqDetails?.creator_id,
       isCreator: floqDetails?.is_creator,
       isHost: isHost
     });
-  }, [floqDetails?.id, floqDetails?.creator_id, floqDetails?.is_creator, session?.user.id, isHost]);
+  }, [floqDetails?.id, floqDetails?.creator_id, floqDetails?.is_creator, isHost]);
 
   if (isLoading) {
     return (

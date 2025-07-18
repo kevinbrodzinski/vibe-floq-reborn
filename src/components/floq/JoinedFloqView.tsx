@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, MapPin, Users, UserMinus, Zap, X, Trash2, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import { useCallback } from 'react';
 import { useUnreadCounts, useFloqTabBadges } from '@/hooks/useUnreadCounts';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { useRealtimeUnreadUpdates } from '@/hooks/useRealtimeUnreadUpdates';
+import { useIsFloqHost } from '@/hooks/useIsFloqHost';
 
 interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
@@ -63,11 +64,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   };
   const { mutateAsync: deleteFloq, isPending: isDeleting } = useDeleteFloq();
 
-  // Bulletproof host detection
-  const isHost = useMemo(() => 
-    floqDetails?.creator_id === session?.user.id, 
-    [floqDetails?.creator_id, session?.user.id]
-  );
+  const isHost = useIsFloqHost(floqDetails)
 
   // Check manage permissions (future-proofed for roles)
   const canManage = useMemo(() => 
