@@ -25,29 +25,17 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
 
   const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
 
-  // Bulletproof host detection - same logic as JoinedFloqView
-  const isHost = useMemo(() => 
-    floqDetails?.creator_id === session?.user.id || floqDetails?.is_creator, 
-    [floqDetails?.creator_id, floqDetails?.is_creator, session?.user.id]
-  );
+  // Simplified host detection using only the hook's computed is_creator flag
+  const isHost = floqDetails?.is_creator;
 
-  // Zero-in debug logging as suggested by user
+  // Debug logging to confirm the fix works
   useEffect(() => {
-    if (!floqDetails?.id) return;
-    
-    Promise.all([
-      supabase.auth.getUser(),
-      supabase.from('floqs').select('id, creator_id').eq('id', floqDetails.id).single()
-    ]).then(([sess, row]) => {
-      console.log('🧩 Host debug from FloqPlansTab:', {
-        sessionUser: sess.data.user?.id,
-        creatorIdRow: row.data?.creator_id,
-        creatorIdDetails: floqDetails.creator_id,
-        isCreatorFlag: floqDetails.is_creator,
-        isHostCalculated: isHost,
-        sessionExists: !!session,
-        error: row.error
-      });
+    console.log('🔍 FloqPlansTab host detection:', {
+      floqId: floqDetails?.id,
+      userId: session?.user.id,
+      creatorId: floqDetails?.creator_id,
+      isCreator: floqDetails?.is_creator,
+      isHost: isHost
     });
   }, [floqDetails?.id, floqDetails?.creator_id, floqDetails?.is_creator, session?.user.id, isHost]);
 
