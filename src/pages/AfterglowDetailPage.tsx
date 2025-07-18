@@ -30,6 +30,8 @@ import { useScrollContext } from '@/hooks/useScrollContext';
 import ParticleCanvas from '@/components/visual/ParticleCanvas';
 import AmbientBackground from '@/components/visual/AmbientBackground';
 import { useHaptics } from '@/hooks/useHaptics';
+import SkipLink from '@/components/accessibility/SkipLink';
+import { useFocusVisible } from '@/hooks/useFocusVisible';
 
 // This component is now replaced by ParallaxMoment
 
@@ -41,6 +43,9 @@ export default function AfterglowDetailPage() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const { mutate: togglePinned } = useTogglePinned();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Enable smart focus styles once per app
+  useFocusVisible();
   const prefersReduced = usePrefersReducedMotion();
   const { generateSummary, isGenerating: isGeneratingSummary } = useAISummary();
   
@@ -194,11 +199,14 @@ export default function AfterglowDetailPage() {
 
   return (
     <>
+      {/* accessibility first */}
+      <SkipLink />
+
       {/* Visual Effects */}
       <AmbientBackground color={activeColor} />
       <ParticleCanvas />
 
-      <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
+      <div id="main-content" className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
       {/* Timeline Progress Bar */}
       {moments.length > 0 && (
         <TimelineProgressBar
@@ -341,18 +349,21 @@ export default function AfterglowDetailPage() {
         afterglow={afterglow}
       />
 
-      {/* Timeline Scrubber */}
+      {/* Enhanced Timeline Scrubber */}
       {moments.length > 0 && (
-        <TimelineScrubber
-          count={moments.length}
-          current={currentIdx}
-          onJump={(i) => {
-            setCurrentIdx(i);
-            document
-              .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)
-              ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-        />
+        <div className="mt-6">
+          <TimelineScrubber
+            count={moments.length}
+            current={currentIdx}
+            onJump={(i) => {
+              setCurrentIdx(i);
+              document
+                .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            moments={moments.map(m => ({ title: m.title, color: m.color }))}
+          />
+        </div>
       )}
 
       {/* Navigation */}
