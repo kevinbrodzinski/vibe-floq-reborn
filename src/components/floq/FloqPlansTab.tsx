@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { useFloqPlans } from '@/hooks/useFloqPlans';
 
 interface FloqPlansTabProps {
   floqDetails: FloqDetails;
@@ -19,9 +20,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
     navigate(`/floqs/${floqDetails.id}/plans/new?template=${encodeURIComponent(templateName)}`);
   };
 
-  // Mock plans data - replace with actual useFloqPlans hook when implemented
-  const plans: any[] = [];
-  const isLoading = false;
+  const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
 
   if (isLoading) {
     return (
@@ -97,7 +96,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
       <div className="flex items-center justify-between">
         <h3 className="font-semibold flex items-center gap-2">
           <Calendar className="h-4 w-4" />
-          Plans & Events
+          Plans
         </h3>
       </div>
 

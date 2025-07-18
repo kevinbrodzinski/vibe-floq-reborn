@@ -14,10 +14,13 @@ interface CreatePlanPayload {
   title: string
   description?: string
   vibe_tag?: string
-  start: string
-  end: string
-  duration_hours: number
-  invitedUserIds: string[]
+  start?: string
+  end?: string
+  plannedAt?: string
+  endAt?: string
+  duration_hours?: number
+  invitedUserIds?: string[]
+  floqId?: string
 }
 
 export function useCreatePlan() {
@@ -28,85 +31,111 @@ export function useCreatePlan() {
     mutationFn: async (payload: CreatePlanPayload) => {
       if (!session?.user) throw new Error('not-signed-in')
       
-      // Map vibe_tag to valid enum value
-      const validVibes = ['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open'] as const
-      const primaryVibe = validVibes.includes(payload.vibe_tag?.toLowerCase() as any) 
-        ? payload.vibe_tag.toLowerCase() as typeof validVibes[number]
-        : 'chill'
+      if (payload.floqId) {
+        // Plan inside existing floq
+        const plannedAtISO = payload.plannedAt || new Date().toISOString()
+        const endAtISO = payload.endAt
+        
+        const { data: planData, error: planError } = await supabase
+          .from('floq_plans')
+          .insert({
+            floq_id: payload.floqId,
+            title: payload.title,
+            description: payload.description,
+            planned_at: plannedAtISO,
+            end_at: endAtISO,
+            creator_id: session.user.id,
+            status: 'draft'
+          })
+          .select('id')
+          .single()
 
-      // First create a temporary floq to attach the plan to
-      const { data: floqData, error: floqError } = await supabase
-        .from('floqs')
-        .insert({
-          title: payload.title,
-          description: payload.description,
-          primary_vibe: primaryVibe,
-          visibility: 'private',
-          location: 'POINT(0 0)', // Default location
-          flock_type: 'momentary',
-          creator_id: session.user.id
-        })
-        .select('id')
-        .single()
+        if (planError) throw planError
+        return planData
+      } else {
+        // Legacy standalone plan flow - create temporary floq
+        const validVibes = ['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open'] as const
+        const primaryVibe = validVibes.includes(payload.vibe_tag?.toLowerCase() as any) 
+          ? payload.vibe_tag.toLowerCase() as typeof validVibes[number]
+          : 'chill'
 
-      if (floqError) throw floqError
+        // First create a temporary floq to attach the plan to
+        const { data: floqData, error: floqError } = await supabase
+          .from('floqs')
+          .insert({
+            title: payload.title,
+            description: payload.description,
+            primary_vibe: primaryVibe,
+            visibility: 'private',
+            location: 'POINT(0 0)', // Default location
+            flock_type: 'momentary',
+            creator_id: session.user.id
+          })
+          .select('id')
+          .single()
 
-      // Convert 12-hour time to ISO strings
-      const today = new Date().toISOString().slice(0, 10)
-      const startISO = new Date(`${today}T${to24h(payload.start)}:00Z`).toISOString()
-      const endISO = new Date(`${today}T${to24h(payload.end)}:00Z`).toISOString()
+        if (floqError) throw floqError
 
-      // Create the plan
-      const { data: planData, error: planError } = await supabase
-        .from('floq_plans')
-        .insert({
-          floq_id: floqData.id,
-          title: payload.title,
-          description: payload.description,
-          vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
-          planned_at: startISO,
-          start_time: isoToPgTime(startISO),
-          end_time: isoToPgTime(endISO),
-          creator_id: session.user.id,
-          status: 'draft'
-        })
-        .select('id')
-        .single()
+        // Convert 12-hour time to ISO strings
+        const today = new Date().toISOString().slice(0, 10)
+        const startISO = new Date(`${today}T${to24h(payload.start!)}:00Z`).toISOString()
+        const endISO = new Date(`${today}T${to24h(payload.end!)}:00Z`).toISOString()
 
-      if (planError) throw planError
+        // Create the plan
+        const { data: planData, error: planError } = await supabase
+          .from('floq_plans')
+          .insert({
+            floq_id: floqData.id,
+            title: payload.title,
+            description: payload.description,
+            vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
+            planned_at: startISO,
+            start_time: isoToPgTime(startISO),
+            end_time: isoToPgTime(endISO),
+            creator_id: session.user.id,
+            status: 'draft'
+          })
+          .select('id')
+          .single()
 
-      // Add current user as plan participant
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (!user?.id) throw new Error('User not authenticated')
-      
-      const { error: participantError } = await supabase
-        .from('plan_participants')
-        .insert({
-          plan_id: planData.id,
-          user_id: user.id
-        })
+        if (planError) throw planError
 
-      if (participantError) throw participantError
+        // Add current user as plan participant
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (!user?.id) throw new Error('User not authenticated')
+        
+        const { error: participantError } = await supabase
+          .from('plan_participants')
+          .insert({
+            plan_id: planData.id,
+            user_id: user.id
+          })
 
-      // Send invitations if there are any
-      if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
-        const { error: inviteError } = await supabase.rpc('invite_friends', {
-          p_plan_id: planData.id,
-          p_user_ids: payload.invitedUserIds
-        })
+        if (participantError) throw participantError
 
-        if (inviteError) {
-          console.error('Failed to send invitations:', inviteError)
-          // Don't throw here - plan was created successfully, just invites failed
-          toast.error('Plan created but failed to send some invitations')
+        // Send invitations if there are any
+        if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
+          const { error: inviteError } = await supabase.rpc('invite_friends', {
+            p_plan_id: planData.id,
+            p_user_ids: payload.invitedUserIds
+          })
+
+          if (inviteError) {
+            console.error('Failed to send invitations:', inviteError)
+            // Don't throw here - plan was created successfully, just invites failed
+            toast.error('Plan created but failed to send some invitations')
+          }
         }
-      }
 
-      return planData
+        return planData
+      }
     },
-    onSuccess: (planData) => {
+    onSuccess: (planData, variables) => {
       toast.success('Plan created successfully!')
       queryClient.invalidateQueries({ queryKey: ['user-plans'] })
+      if (variables.floqId) {
+        queryClient.invalidateQueries({ queryKey: ['floq-plans', variables.floqId] })
+      }
     },
     onError: (error) => {
       console.error('Failed to create plan:', error)
