@@ -267,18 +267,20 @@ export function MomentDetailModal({
                           {hasKnownConnections && (
                             <div className="space-y-3">
                               <h4 className="text-sm font-medium text-muted-foreground">Known Connections</h4>
-                              <div className="grid gap-3">
-                                {peopleData.encountered_users.map((user) => (
-                                  <div key={user.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                      {user.display_name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="font-medium">{user.display_name}</div>
-                                      <div className="text-sm text-muted-foreground">@{user.username}</div>
-                                    </div>
-                                  </div>
-                                ))}
+                               <div className="grid gap-3">
+                                 {peopleData.encountered_users.map((user, index) => (
+                                   <div key={user.user_id || index} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                       <Users className="w-4 h-4" />
+                                     </div>
+                                     <div className="flex-1">
+                                       <div className="font-medium">User {user.user_id}</div>
+                                       <div className="text-sm text-muted-foreground">
+                                         Strength: {user.interaction_strength} • Duration: {user.shared_duration}
+                                       </div>
+                                     </div>
+                                   </div>
+                                 ))}
                               </div>
                             </div>
                           )}

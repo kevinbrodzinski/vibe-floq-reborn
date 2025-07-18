@@ -90,7 +90,7 @@ export function MomentRelatedDays({ moment }: MomentRelatedDaysProps) {
           )
         `)
         .eq('daily_afterglow.user_id', user.id)
-        .neq('id', moment.id) // Exclude current moment
+        .neq('timestamp', moment.timestamp) // Exclude current moment
         .limit(10)
 
       if (error) throw error

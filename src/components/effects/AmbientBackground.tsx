@@ -85,8 +85,7 @@ export function AmbientBackground({
       },
         transition: {
           duration: 20 / speed,
-          repeat: Infinity,
-          ease: [0.4, 0, 0.6, 1]
+          repeat: Infinity
         }
     }
 
