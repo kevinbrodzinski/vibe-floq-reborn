@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NewPlanWizard } from '@/pages/NewPlanWizard'
-import { FloqsList } from '@/components/floqs/FloqsList'
-import { MyFloqs } from '@/components/floqs/MyFloqs'
+import { useActiveFloqs } from '@/hooks/useActiveFloqs'
+import { useMyFlocks } from '@/hooks/useMyFlocks'
 
 export function FlocksHome() {
   const [showNewPlan, setShowNewPlan] = useState(false)
+  const { data: activeFloqs = [], isLoading } = useActiveFloqs({ limit: 10 })
+  const { data: myFloqs = [] } = useMyFlocks()
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,12 +33,39 @@ export function FlocksHome() {
         </div>
 
         {/* My Floqs Section */}
-        <MyFloqs />
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">My Floqs</h2>
+          {myFloqs.length === 0 ? (
+            <p className="text-muted-foreground">You haven't joined any floqs yet.</p>
+          ) : (
+            <div className="grid gap-3">
+              {myFloqs.slice(0, 3).map((floq) => (
+                <div key={floq.id} className="p-3 border rounded-lg">
+                  <h3 className="font-medium">{floq.title}</h3>
+                  <p className="text-sm text-muted-foreground capitalize">{floq.primary_vibe}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Discover Floqs Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Discover Floqs</h2>
-          <FloqsList />
+          {isLoading ? (
+            <p className="text-muted-foreground">Loading...</p>
+          ) : activeFloqs.length === 0 ? (
+            <p className="text-muted-foreground">No active floqs right now.</p>
+          ) : (
+            <div className="grid gap-3">
+              {activeFloqs.slice(0, 5).map((floq) => (
+                <div key={floq.id} className="p-3 border rounded-lg">
+                  <h3 className="font-medium">{floq.title}</h3>
+                  <p className="text-sm text-muted-foreground capitalize">{floq.vibe_tag}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
