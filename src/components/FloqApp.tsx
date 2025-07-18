@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { FloqNavigation } from "./FloqNavigation";
 import { TimeSyncProvider } from "./TimeSyncProvider";
 import { CommandPaletteSheet } from "./CommandPaletteSheet";
@@ -7,6 +7,7 @@ import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useFloqUI } from "@/contexts/FloqUIContext";
 
 import { Button } from "./ui/button";
 
@@ -62,6 +63,9 @@ export const FloqApp = () => {
             
             <FloqNavigation />
             
+            {/* Create Floq FAB - Fixed positioned at top level */}
+            <CreateFloqFAB />
+            
             {/* Command Palette */}
             <CommandPaletteSheet 
               open={commandPaletteOpen} 
@@ -71,5 +75,20 @@ export const FloqApp = () => {
         </FloqUIProvider>
       </TimeSyncProvider>
     </ErrorBoundary>
+  );
+};
+
+// Create Floq FAB Component
+const CreateFloqFAB = () => {
+  const { setShowCreateSheet } = useFloqUI();
+  
+  return (
+    <button
+      onClick={() => setShowCreateSheet(true)}
+      className="fixed bottom-24 right-4 z-50 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium"
+    >
+      <Plus size={20} />
+      Create Floq
+    </button>
   );
 };
