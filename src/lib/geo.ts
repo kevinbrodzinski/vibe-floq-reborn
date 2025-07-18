@@ -1,6 +1,6 @@
 import { encode, decode } from 'ngeohash';
 
-export const stepForZoom = (z: number) => 0.03 / 2 ** Math.max(0, z - 10);
+export const stepForZoom = (z: number) => 0.03 / 2 ** Math.max(0, Math.max(3, z) - 10);
 
 export function tilesForViewport(
   nw: [number, number], se: [number, number], zoom: number, p = 5

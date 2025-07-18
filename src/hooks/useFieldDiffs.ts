@@ -11,6 +11,9 @@ export function useFieldDiffs(tileIds: string[]) {
     // Subscribe to postgres_changes for field_tiles table
     const channel = supabase
       .channel('field_tiles_changes')
+      .on('presence', { event: 'sync' }, () => {
+        // No-op to silence presence handler warning
+      })
       .on(
         'postgres_changes',
         {
@@ -27,11 +30,15 @@ export function useFieldDiffs(tileIds: string[]) {
           const updateTileData = (old: any[] = []) => {
             const m = new Map(old.map(t => [t.tile_id, t]));
             
+            // Set tile first to avoid missing new keys before diff updates
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              m.set(payload.new.tile_id, payload.new);
+            }
+            
             switch (payload.eventType) {
               case 'INSERT':
               case 'UPDATE':
-                m.set(payload.new.tile_id, payload.new);
-                break;
+                break; // Already handled above
               case 'DELETE':
                 m.delete(payload.old.tile_id);
                 break;

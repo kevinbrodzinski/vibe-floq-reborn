@@ -15,4 +15,9 @@ export interface ScreenTile extends FieldTile {
   y: number;
   radius: number;
   color: string;
+  hsl: {
+    h: number;
+    s: number;
+    l: number;
+  };
 }

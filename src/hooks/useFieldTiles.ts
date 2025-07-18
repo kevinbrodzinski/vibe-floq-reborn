@@ -24,7 +24,8 @@ export const useFieldTiles = () => {
     queryKey: ['fieldTiles', tileIds.join('|')],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
-        body: { tile_ids: tileIds }
+        body: { tile_ids: tileIds },
+        options: { mode: 'no-cors' }
       });
       if (error) throw error;
       return data.tiles;
@@ -39,6 +40,7 @@ export const useFieldTiles = () => {
     if (query.data) {
       qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[]) => {
         const m = new Map((old || []).map((t: any) => [t.tile_id, t]));
+        // Set tiles first to avoid missing new keys before diff updates
         query.data.forEach((t: any) => m.set(t.tile_id, t));
         return [...m.values()];
       });
