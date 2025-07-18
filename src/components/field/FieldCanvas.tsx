@@ -82,31 +82,27 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
     // v8: ticker is optional → fall back to PIXI.Ticker.shared
     const ticker = (app as any).ticker ?? PIXI.Ticker.shared;
-    ticker?.add?.(animate);
+    ticker.add(animate);
     
-    // keep a ref so we can remove it in cleanup
-    tickerRef.current = ticker;
+    // ----------  WINDOW RESIZE  ----------
+    const handleResize = () => {
+      if (!appRef.current) return;              // ← guard after unmount
+      appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      if (!appRef.current) return; // already cleaned up
+      // 1. stop the animation loop (v8 may not have app.ticker)
+      ticker.remove(animate);
 
-      // 1. remove the animate callback first (prevents async races)
-      if (tickerRef.current) {
-        tickerRef.current?.remove?.(animate);
-        tickerRef.current = null;
-      }
-      
-      // 2. safely destroy display objects that actually expose .destroy
-      appRef.current.stage.children.forEach((child) => {
-        if (child && typeof (child as any).destroy === 'function') {
-          (child as any).destroy();
-        }
-      });
+      // 2. destroy stage children – clone first to avoid holes
+      [...app.stage.children].forEach(child => (child as any)?.destroy?.());
 
-      // 3. finally destroy the application itself (PIXI v6–v8 compatible)
-      if (typeof (appRef.current as any).destroy === 'function') {
-        (appRef.current as any).destroy({ children: true, texture: true, baseTexture: true });
-      }
+      // 3. destroy the app itself
+      app.destroy(true);
+
+      // 4. detach listeners
+      window.removeEventListener('resize', handleResize);
 
       appRef.current = null;
       rippleContainer.current = null;
@@ -140,17 +136,6 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     });
   }, [people]);
 
-  // Handle window resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (appRef.current) {
-        appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
     <canvas 
