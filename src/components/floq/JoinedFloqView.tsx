@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Activity, Calendar, Users, MapPin, Clock, LogOut, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
-import type { LiveFloqScore } from '@/hooks/useLiveFloqScore';
+import type { useLiveFloqScore } from '@/hooks/useLiveFloqScore';
 import { FloqChat } from './FloqChat';
 import { FloqPlansTab } from './FloqPlansTab';
 import { useFloqPlans } from '@/hooks/useFloqPlans';
@@ -16,7 +16,7 @@ interface JoinedFloqViewProps {
   floqDetails: FloqDetails;
   onLeave: () => void;
   isLeaving: boolean;
-  liveScore?: LiveFloqScore;
+  liveScore?: ReturnType<typeof useLiveFloqScore>['data'];
   onEndFloq?: () => void;
   isEndingFloq?: boolean;
 }
@@ -101,9 +101,9 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           {liveScore && (
             <div className="flex items-center gap-2 text-sm">
               <Zap className="h-4 w-4 text-yellow-500" />
-              <span>Energy: {liveScore.energy_score}/100</span>
+              <span>Activity: {liveScore.activity_score}/100</span>
               <span className="text-muted-foreground">•</span>
-              <span>Vibe: {liveScore.vibe_intensity}/100</span>
+              <span>Participants: {liveScore.participant_count}</span>
             </div>
           )}
 
@@ -141,7 +141,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
         </TabsList>
 
         <TabsContent value="chat" className="mt-6">
-          <FloqChat floqId={floqDetails.id} />
+          <FloqChat floqId={floqDetails.id} isOpen={true} onClose={() => {}} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">

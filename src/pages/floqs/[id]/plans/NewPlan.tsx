@@ -48,10 +48,11 @@ const NewPlan = () => {
       await createPlan({
         title: formData.title,
         description: formData.description || undefined,
-        planned_at: formData.planned_at,
-        end_at: formData.end_at || undefined,
-        max_participants: formData.max_participants ? parseInt(formData.max_participants) : undefined,
-        floq_id: floqId,
+        vibe_tag: 'chill',
+        start: formData.planned_at.split('T')[1] || '12:00',
+        end: formData.end_at ? formData.end_at.split('T')[1] : '16:00',
+        duration_hours: 4,
+        invitedUserIds: []
       });
 
       toast({
