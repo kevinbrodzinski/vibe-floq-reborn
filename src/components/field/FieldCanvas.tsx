@@ -82,26 +82,32 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
     // v8: ticker is optional → fall back to PIXI.Ticker.shared
     const ticker = (app as any).ticker ?? PIXI.Ticker.shared;
-    ticker.add(animate);
+    ticker?.add?.(animate);
     
     // keep a ref so we can remove it in cleanup
     tickerRef.current = ticker;
 
     return () => {
-      // Remove ticker callback first
+      if (!appRef.current) return; // already cleaned up
+
+      // 1. remove the animate callback first (prevents async races)
       if (tickerRef.current) {
-        tickerRef.current.remove(animate);
+        tickerRef.current?.remove?.(animate);
         tickerRef.current = null;
       }
       
-      if (appRef.current) {
-        // only remove sprite children – skip ripple containers
-        appRef.current.stage.children
-          .filter(c => c instanceof PIXI.Sprite)
-          .forEach(c => (c as any)?.destroy?.());
+      // 2. safely destroy display objects that actually expose .destroy
+      appRef.current.stage.children.forEach((child) => {
+        if (child && typeof (child as any).destroy === 'function') {
+          (child as any).destroy();
+        }
+      });
 
-        appRef.current.destroy(true);
+      // 3. finally destroy the application itself (PIXI v6–v8 compatible)
+      if (typeof (appRef.current as any).destroy === 'function') {
+        (appRef.current as any).destroy({ children: true, texture: true, baseTexture: true });
       }
+
       appRef.current = null;
       rippleContainer.current = null;
     };
