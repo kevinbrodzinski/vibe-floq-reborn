@@ -1,180 +1,129 @@
-import { useEffect, useCallback, useRef } from 'react'
-import { PlanStop } from '@/types/plan'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-
-interface AutoSaveOptions {
-  planId: string
-  debounceMs?: number
-  maxRetries?: number
-}
+import { useSession } from './useSession'
 
 interface DraftData {
-  stops: PlanStop[]
-  metadata: {
-    lastSaved: number
-    version: number
-    isLocal: boolean
-  }
+  stops: any[]
+  metadata: Record<string, any>
 }
 
-export const useAutoSaveDrafts = ({ planId, debounceMs = 2000, maxRetries = 3 }: AutoSaveOptions) => {
-  const saveTimeoutRef = useRef<NodeJS.Timeout>()
-  const retryCountRef = useRef(0)
-  const lastSavedVersionRef = useRef(0)
-  
-  const STORAGE_KEY = `plan_draft_${planId}`
+export function useAutoSaveDrafts(planId: string) {
+  const [currentVersion, setCurrentVersion] = useState(0)
+  const session = useSession()
+  const currentUser = session?.user
 
-  // Save draft to localStorage as backup
-  const saveToLocal = useCallback((data: DraftData) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        ...data,
-        metadata: { ...data.metadata, isLocal: true }
-      }))
-    } catch (error) {
-      console.warn('Failed to save draft locally:', error)
+  // Debounced save function
+  useEffect(() => {
+    if (!planId || !currentUser) return
+
+    let timeoutId: NodeJS.Timeout
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Refetch draft when tab becomes visible
+        console.log('Tab became visible, refetching draft...')
+        // queryClient.refetchQueries(['plan-draft', planId]);
+      }
     }
-  }, [STORAGE_KEY])
 
-  // Save draft to Supabase
-  const saveToRemote = useCallback(async (data: DraftData) => {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearTimeout(timeoutId)
+    }
+  }, [planId, currentUser])
+
+  const saveDraft = useCallback(async (draftData: DraftData) => {
+    if (!planId || !currentUser) {
+      console.warn('Plan ID or user not available, skipping save.')
+      return
+    }
+
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return false
-
-      // In a real implementation, this would save to a drafts table
-      // For now, we'll use localStorage as the primary storage
       const { error } = await supabase
         .from('plan_drafts')
         .upsert({
           plan_id: planId,
-          user_id: user.id,
-          draft_data: data,
-          version: data.metadata.version,
-          last_saved_at: new Date().toISOString()
+          user_id: currentUser.id,
+          draft_data: draftData as any, // Cast to satisfy JSON type
+          last_saved_at: new Date().toISOString(),
+          version: currentVersion + 1,
         })
 
-      if (error) throw error
-      return true
+      if (error) {
+        console.error('Draft save failed:', error)
+        throw error
+      }
+
+      setCurrentVersion(prev => prev + 1)
+      console.log('Draft saved successfully.')
     } catch (error) {
-      console.error('Failed to save draft remotely:', error)
-      return false
+      console.error('Error during draft save:', error)
     }
-  }, [planId])
+  }, [planId, currentUser, currentVersion])
 
-  // Auto-save function with retry logic
-  const autoSave = useCallback(async (stops: PlanStop[], forceImmediate = false) => {
-    const currentVersion = lastSavedVersionRef.current + 1
-    const draftData: DraftData = {
-      stops,
-      metadata: {
-        lastSaved: Date.now(),
-        version: currentVersion,
-        isLocal: false
-      }
+  const loadDraft = useCallback(async () => {
+    if (!planId || !currentUser) {
+      console.warn('Plan ID or user not available, cannot load draft.')
+      return null
     }
 
-    // Clear existing timeout if not forcing immediate save
-    if (!forceImmediate && saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-
-    const performSave = async () => {
-      try {
-        // Always save locally first for immediate backup
-        saveToLocal(draftData)
-        
-        // Try remote save with retry logic
-        const remoteSuccess = await saveToRemote(draftData)
-        
-        if (remoteSuccess) {
-          lastSavedVersionRef.current = currentVersion
-          retryCountRef.current = 0
-        } else if (retryCountRef.current < maxRetries) {
-          retryCountRef.current++
-          // Retry after exponential backoff
-          setTimeout(() => autoSave(stops, true), Math.pow(2, retryCountRef.current) * 1000)
-        }
-      } catch (error) {
-        console.error('Auto-save failed:', error)
-        // Ensure local backup exists even if remote fails
-        saveToLocal(draftData)
-      }
-    }
-
-    if (forceImmediate) {
-      await performSave()
-    } else {
-      saveTimeoutRef.current = setTimeout(performSave, debounceMs)
-    }
-  }, [saveToLocal, saveToRemote, debounceMs, maxRetries])
-
-  // Load existing draft
-  const loadDraft = useCallback(async (): Promise<DraftData | null> => {
     try {
-      // Try remote first
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data, error } = await supabase
-          .from('plan_drafts')
-          .select('draft_data, version, last_saved_at')
-          .eq('plan_id', planId)
-          .eq('user_id', user.id)
-          .order('last_saved_at', { ascending: false })
-          .limit(1)
-          .single()
+      const { data } = await supabase
+        .from('plan_drafts')
+        .select('*')
+        .eq('plan_id', planId)
+        .eq('user_id', currentUser.id)
+        .order('last_saved_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-        if (!error && data) {
-          lastSavedVersionRef.current = data.version
-          return data.draft_data as DraftData
+      if (data?.draft_data) {
+        // Safely parse the JSON data
+        try {
+          return typeof data.draft_data === 'object' ? data.draft_data as DraftData : JSON.parse(data.draft_data as string)
+        } catch {
+          return null
         }
       }
-
-      // Fallback to local storage
-      const localData = localStorage.getItem(STORAGE_KEY)
-      if (localData) {
-        const parsed = JSON.parse(localData) as DraftData
-        lastSavedVersionRef.current = parsed.metadata.version
-        return parsed
-      }
+      return null
     } catch (error) {
-      console.warn('Failed to load draft:', error)
+      console.error('Error loading draft:', error)
+      return null
     }
-    
-    return null
-  }, [planId, STORAGE_KEY])
+  }, [planId, currentUser])
 
-  // Clear draft when plan is finalized
-  const clearDraft = useCallback(async () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase
-          .from('plan_drafts')
-          .delete()
-          .eq('plan_id', planId)
-          .eq('user_id', user.id)
-      }
-    } catch (error) {
-      console.warn('Failed to clear draft:', error)
-    }
-  }, [planId, STORAGE_KEY])
+  const { data: existingDraft } = useQuery({
+    queryKey: ['plan-draft', planId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('plan_drafts')
+        .select('*')
+        .eq('plan_id', planId)
+        .eq('user_id', currentUser?.id)
+        .order('last_saved_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
+      if (data?.draft_data) {
+        // Safely parse the JSON data
+        try {
+          return typeof data.draft_data === 'object' ? data.draft_data as DraftData : JSON.parse(data.draft_data as string)
+        } catch {
+          return null
+        }
       }
-    }
-  }, [])
+      return null
+    },
+    enabled: !!planId && !!currentUser,
+  })
 
   return {
-    autoSave,
+    saveDraft,
     loadDraft,
-    clearDraft,
-    isAutoSaving: !!saveTimeoutRef.current
+    existingDraft,
+    currentVersion,
   }
 }

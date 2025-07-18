@@ -1,7 +1,8 @@
+
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import type { Database } from '@/integrations/supabase/types'
-import { transformPlanStop, type PlanStopRow } from '@/types/plan'
+import { mapPlanStopFromDb } from '@/types/mappers'
+import type { PlanStopRow } from '@/types/database'
 
 export function usePlanStops(plan_id: string) {
   return useQuery({
@@ -22,7 +23,7 @@ export function usePlanStops(plan_id: string) {
         throw error
       }
       
-      return (data || []).map(transformPlanStop)
+      return (data || []).map(mapPlanStopFromDb)
     },
     enabled: !!plan_id,
   })

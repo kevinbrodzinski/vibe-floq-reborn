@@ -1,141 +1,69 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { useAuth } from '@/providers/AuthProvider'
-import { useRealtimeAfterglowData } from './useRealtimeAfterglowData'
-import { useRealtimeAfterglowHistory } from './useRealtimeAfterglowHistory'
-import { useTogglePinned } from './useOptimisticMutations'
 
-import type { AfterglowMoment, DailyAfterglowData } from '@/types/afterglow'
-
-
-export function useAfterglowData(date: string) {
-  const { user } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  
-  // Use real-time hook for live updates
-  const { 
-    afterglow, 
-    setAfterglow, 
-    generationProgress, 
-    isGenerating,
-    startGeneration
-  } = useRealtimeAfterglowData(date)
-  
-  
-
-  const fetchAfterglow = async () => {
-    if (!user) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { data, error: fetchError } = await supabase
-        .from('daily_afterglow')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', date)
-        .maybeSingle()
-
-      if (fetchError) {
-        throw fetchError
-      }
-
-      setAfterglow(data)
-    } catch (err) {
-      console.error('Error fetching afterglow:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch afterglow')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const generateAfterglow = async (force: boolean = false) => {
-    if (!user) return
-
-    // Don't regenerate if data exists and force is false
-    if (afterglow && !force) return
-
-    
-    setError(null)
-    startGeneration() // Start real-time progress tracking
-
-    try {
-      const { data, error: generateError } = await supabase.functions.invoke(
-        'generate-daily-afterglow',
-        {
-          body: {
-            user_id: user.id,
-            date: date
-          }
-        }
-      )
-
-      if (generateError) {
-        throw generateError
-      }
-
-      // Real-time hook will handle the update automatically
-    } catch (err) {
-      console.error('Error generating afterglow:', err)
-      setError(err instanceof Error ? err.message : 'Failed to generate afterglow')
-      
-    }
-  }
-
-  const togglePin = async (): Promise<void> => {
-    if (!user || !afterglow) return
-
-    // Use optimistic mutation instead
-    const { mutate } = useTogglePinned()
-    mutate({ 
-      id: afterglow.id, 
-      pinned: !afterglow.is_pinned 
-    })
-  }
-
-  const getShareUrl = () => {
-    if (!afterglow) return null
-    return `${window.location.origin}/afterglow?date=${afterglow.date}&user=${afterglow.user_id}`
-  }
-
-  // Fetch data when user or date changes
-  useEffect(() => {
-    if (user && date) {
-      fetchAfterglow()
-    }
-  }, [user?.id, date])
-
-  // Auto-generate if no data exists for today
-  useEffect(() => {
-    if (user && date && afterglow === null && !isLoading && !isGenerating) {
-      const today = new Date().toISOString().split('T')[0]
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayStr = yesterday.toISOString().split('T')[0]
-
-      // Only auto-generate for today or yesterday
-      if (date === today || date === yesterdayStr) {
-        generateAfterglow()
-      }
-    }
-  }, [user?.id, date, afterglow, isLoading, isGenerating])
-
-  return {
-    afterglow,
-    isLoading,
-    isGenerating,
-    generationProgress,
-    error,
-    generateAfterglow,
-    togglePin,
-    getShareUrl,
-    refetch: fetchAfterglow
-  }
+export interface DailyAfterglowData {
+  id: string
+  date: string
+  user_id: string
+  energy_score: number
+  social_intensity: number
+  dominant_vibe: string
+  summary_text: string
+  emotion_journey: string[]
+  moments: any[]
+  vibe_path: string[]
+  created_at: string
+  updated_at: string
+  total_venues: number
+  total_floqs: number
+  crossed_paths_count: number
+  is_pinned: boolean
 }
 
-export function useAfterglowHistory(limit: number = 10) {
-  // Use the real-time hook for live updates
-  return useRealtimeAfterglowHistory(limit)
+export function useAfterglowData(date?: string) {
+  const [afterglowData, setAfterglowData] = useState<DailyAfterglowData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!date) return
+
+    const fetchAfterglowData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const { data, error: fetchError } = await supabase
+          .from('daily_afterglow')
+          .select('*')
+          .eq('date', date)
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .maybeSingle()
+
+        if (fetchError) throw fetchError
+
+        if (data) {
+          // Properly map the database row to our domain type
+          const mappedData: DailyAfterglowData = {
+            ...data,
+            emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey : [],
+            moments: Array.isArray(data.moments) ? data.moments : [],
+            vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path : []
+          }
+          setAfterglowData(mappedData)
+        } else {
+          setAfterglowData(null)
+        }
+      } catch (err) {
+        console.error('Error fetching afterglow data:', err)
+        setError(err instanceof Error ? err.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchAfterglowData()
+  }, [date])
+
+  return { afterglowData, isLoading, error }
 }

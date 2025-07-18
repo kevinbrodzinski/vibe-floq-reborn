@@ -1,60 +1,43 @@
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 
-export function useFieldDiffs(tileIds: string[]) {
-  const qc = useQueryClient();
+interface FieldChange {
+  tile_id: string
+  old_data: any
+  new_data: any
+  timestamp: number
+}
+
+export function useFieldDiffs() {
+  const [fieldChanges, setFieldChanges] = useState<FieldChange[]>([])
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    if (!tileIds.length) return;
-
-    // Subscribe to postgres_changes for field_tiles table
     const channel = supabase
-      .channel('field_tiles_changes')
-      .on('presence', { event: 'sync' }, () => {
-        // No-op to silence presence handler warning
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'field_tiles',
-        },
-        (payload) => {
-          // Filter client-side to only handle tiles in current viewport
-          const tileId = payload.new?.tile_id || payload.old?.tile_id;
-          if (!tileIds.includes(tileId)) return;
-
-          // Update both fieldTilesCache and current fieldTiles query
-          const updateTileData = (old: any[] = []) => {
-            const m = new Map(old.map(t => [t.tile_id, t]));
-            
-            // Set tile first to avoid missing new keys before diff updates
-            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-              m.set(payload.new.tile_id, payload.new);
-            }
-            
-            switch (payload.eventType) {
-              case 'INSERT':
-              case 'UPDATE':
-                break; // Already handled above
-              case 'DELETE':
-                m.delete(payload.old.tile_id);
-                break;
-            }
-            
-            return [...m.values()];
-          };
-
-          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, updateTileData);
-          qc.setQueriesData({ queryKey: ['fieldTiles'] }, updateTileData);
+      .channel('field-changes')
+      .on('broadcast', { event: 'field_updated' }, (payload) => {
+        const data = payload.payload
+        
+        // Safely access properties with type checking
+        if (data && typeof data === 'object' && 'tile_id' in data) {
+          const change: FieldChange = {
+            tile_id: data.tile_id as string,
+            old_data: 'old_data' in data ? data.old_data as any : {},
+            new_data: 'new_data' in data ? data.new_data as any : {},
+            timestamp: Date.now()
+          }
+          
+          setFieldChanges(prev => [...prev.slice(-49), change]) // Keep last 50
         }
-      )
-      .subscribe();
+      })
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED')
+      })
 
     return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [tileIds.join('|')]);
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  return { fieldChanges, isConnected }
 }

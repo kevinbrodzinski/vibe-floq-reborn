@@ -16,7 +16,11 @@ export const useDeleteFloq = () => {
       return data;
     },
     onSuccess: (data, floqId) => {
-      if (data.success) {
+      // Safely parse the response
+      const result = typeof data === 'object' && data !== null ? data : {};
+      const success = 'success' in result ? result.success : false;
+      
+      if (success) {
         // Remove detail cache first, then clean lists
         queryClient.removeQueries({ queryKey: ['floq-details', floqId] });
         queryClient.invalidateQueries({ queryKey: ['my-floqs'] });
@@ -28,7 +32,8 @@ export const useDeleteFloq = () => {
           description: 'The floq has been permanently deleted.',
         });
       } else {
-        throw new Error(data.error || 'Failed to delete floq');
+        const errorMsg = 'error' in result ? result.error : 'Failed to delete floq';
+        throw new Error(typeof errorMsg === 'string' ? errorMsg : 'Failed to delete floq');
       }
     },
     onError: (error: any) => {

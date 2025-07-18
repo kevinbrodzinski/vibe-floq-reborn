@@ -38,12 +38,16 @@ export const useFloqJoin = () => {
       return data;
     },
     onSuccess: (data, variables) => {
+      // Safely extract participant_count
+      const result = typeof data === 'object' && data !== null ? data : {};
+      const participantCount = 'participant_count' in result ? result.participant_count : 0;
+      
       // Optimistically update the floqs list
       queryClient.setQueryData(['active-floqs'], (old: any[]) => {
         if (!old) return old;
         return old.map(floq => 
           floq.id === variables.floqId 
-            ? { ...floq, participant_count: data.participant_count }
+            ? { ...floq, participant_count: participantCount }
             : floq
         );
       });
@@ -92,12 +96,16 @@ export const useFloqJoin = () => {
       return data;
     },
     onSuccess: (data, variables) => {
+      // Safely extract participant_count
+      const result = typeof data === 'object' && data !== null ? data : {};
+      const participantCount = 'participant_count' in result ? result.participant_count : 0;
+      
       // Optimistically update the floqs list
       queryClient.setQueryData(['active-floqs'], (old: any[]) => {
         if (!old) return old;
         return old.map(floq => 
           floq.id === variables.floqId 
-            ? { ...floq, participant_count: data.participant_count }
+            ? { ...floq, participant_count: participantCount }
             : floq
         );
       });

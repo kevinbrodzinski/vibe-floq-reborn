@@ -86,15 +86,27 @@ export function useFloqDetails(
       const floqData = fullDetails[0];
       const currentUserId = userId || user?.id;
       
-      // Map participants from the full details
-      const participants: FloqParticipant[] = floqData.participants?.map((p: any) => ({
+      // Safely parse participants array
+      const participantsData = Array.isArray(floqData.participants) ? floqData.participants : [];
+      const participants: FloqParticipant[] = participantsData.map((p: any) => ({
         user_id: p.user_id,
         username: p.username,
         display_name: p.display_name,
         avatar_url: p.avatar_url,
         role: p.role,
         joined_at: p.joined_at,
-      })) || [];
+      }));
+
+      // Safely parse pending invites
+      const pendingInvitesData = Array.isArray(floqData.pending_invites) ? floqData.pending_invites : [];
+      const pendingInvites: PendingInvitation[] = pendingInvitesData.map((invite: any) => ({
+        invitee_id: invite.invitee_id,
+        invitee_username: invite.invitee_username,
+        invitee_display_name: invite.invitee_display_name,
+        status: invite.status,
+        sent_at: invite.sent_at,
+        id: invite.id,
+      }));
 
       const userParticipant = participants.find(p => p.user_id === currentUserId);
       const isJoined = !!userParticipant;
@@ -119,12 +131,12 @@ export function useFloqDetails(
         participant_count: floqData.participant_count,
         starts_at: floqData.starts_at,
         ends_at: floqData.ends_at,
-        created_at: floqData.starts_at, // Using starts_at as created_at fallback
+        created_at: floqData.starts_at,
         visibility: floqData.visibility,
-        pinned_note: floqData.pinned_note,
-        location: { lat: 0, lng: 0 }, // Will be enhanced when needed
+        pinned_note: typeof floqData.pinned_note === 'string' ? floqData.pinned_note : null,
+        location: { lat: 0, lng: 0 },
         participants,
-        pending_invites: floqData.pending_invites || [],
+        pending_invites: pendingInvites,
         is_joined: isJoined,
         is_creator: isCreator,
         user_role: userParticipant?.role,

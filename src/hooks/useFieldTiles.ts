@@ -1,51 +1,39 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { tilesForViewport } from '@/lib/geo';
-import { useMapViewport } from '@/hooks/useMapViewport';
-import { useUserSettings } from '@/hooks/useUserSettings';
-import { useFieldDiffs } from '@/hooks/useFieldDiffs';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
 
-export const useFieldTiles = () => {
-  const { viewport } = useMapViewport();
-  const [west, south, east, north] = viewport.bounds;      // mapbox format
-  const nw: [number, number] = [north, west];
-  const se: [number, number] = [south, east];
-  const tileIds = tilesForViewport(nw, se, viewport.zoom).sort(); // stable
+interface TileBounds {
+  minLat: number
+  maxLat: number
+  minLng: number
+  maxLng: number
+  precision?: number
+}
 
-  const { settings } = useUserSettings();
-  const enabled = settings?.field_enabled ?? false;
-  const qc = useQueryClient();
+interface FieldTile {
+  id: string
+  geo: string
+  properties: Record<string, any>
+}
 
-  // Subscribe to realtime diffs
-  useFieldDiffs(enabled ? tileIds : []);
-
-  const query = useQuery({
-    queryKey: ['fieldTiles', tileIds.join('|')],
+export function useFieldTiles(bounds: TileBounds) {
+  return useQuery({
+    queryKey: ['field-tiles', bounds],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('get_field_tiles', {
-        body: { tile_ids: tileIds },
-        options: { mode: 'no-cors' }
-      });
-      if (error) throw error;
-      return data.tiles;
+      const { data, error } = await supabase.functions.invoke('get-field-tiles', {
+        body: {
+          min_lat: bounds.minLat,
+          max_lat: bounds.maxLat,
+          min_lng: bounds.minLng,
+          max_lng: bounds.maxLng,
+          precision: bounds.precision || 6
+        }
+      })
+
+      if (error) throw error
+      return data as FieldTile[]
     },
-    refetchInterval: enabled ? 5000 : false,
-    staleTime: 4000,
-    enabled,
-  });
-
-  // Prime cache when data changes
-  useEffect(() => {
-    if (query.data) {
-      qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[]) => {
-        const m = new Map((old || []).map((t: any) => [t.tile_id, t]));
-        // Set tiles first to avoid missing new keys before diff updates
-        query.data.forEach((t: any) => m.set(t.tile_id, t));
-        return [...m.values()];
-      });
-    }
-  }, [query.data, qc]);
-
-  return query;
-};
+    enabled: !!(bounds.minLat && bounds.maxLat && bounds.minLng && bounds.maxLng),
+    staleTime: 30_000, // 30 seconds
+    refetchInterval: 60_000, // 1 minute
+  })
+}

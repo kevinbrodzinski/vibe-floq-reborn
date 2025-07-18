@@ -1,40 +1,45 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import type { FloqMessageRow } from '@/types/database'
 
 export function useFloqMessages(floqId: string) {
   return useInfiniteQuery({
-    queryKey: ['floq-msgs', floqId],
-    queryFn: ({ pageParam }) =>
-      supabase
-        .rpc('fetch_floq_messages', { p_floq: floqId, p_before: pageParam ?? null })
-        .then(({ data, error }) => {
-          if (error) throw error
-          return (data as Array<{
-            id: string;
-            body: string;
-            created_at: string;
-            sender_id: string;
-          }>) || []
-        }),
-    getNextPageParam: (last) => last?.length === 20 ? last.at(-1)?.created_at : undefined,
-    staleTime: 60_000,
-    initialPageParam: null,
-  })
-}
+    queryKey: ['floq-messages', floqId],
+    queryFn: async ({ pageParam = 0 }) => {
+      const limit = 20
+      const offset = pageParam * limit
 
-export function useSendFloqMessage(floqId: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: string) =>
-      supabase.functions.invoke('post-floq-message', { body: { floq_id: floqId, body } }),
-    onSuccess: ({ data }) =>
-      qc.setQueryData(['floq-msgs', floqId], (d: any) => {
-        if (!d) return d
-        // Check for duplicates before unshifting
-        if (!d.pages[0].some((r: any) => r.id === data.id)) {
-          d.pages[0].unshift(data)
-        }
-        return { ...d }
-      }),
+      const { data, error } = await supabase
+        .from('floq_messages')
+        .select(`
+          id,
+          body,
+          emoji,
+          created_at,
+          sender_id,
+          profiles!inner(username, display_name, avatar_url)
+        `)
+        .eq('floq_id', floqId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+        .returns<FloqMessageRow[]>()
+
+      if (error) throw error
+
+      // Map to expected format
+      return (data || []).map(msg => ({
+        id: msg.id,
+        body: msg.body || '',
+        created_at: msg.created_at,
+        sender_id: msg.sender_id,
+        profiles: msg.profiles
+      }))
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 20 ? allPages.length : undefined
+    },
+    enabled: !!floqId,
   })
 }

@@ -27,13 +27,20 @@ export function useCreatePlan() {
   return useMutation({
     mutationFn: async (payload: CreatePlanPayload): Promise<string> => {
       if (!session?.user) throw new Error('not-signed-in')
+      
+      // Map vibe_tag to valid enum value
+      const validVibes = ['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open'] as const
+      const primaryVibe = validVibes.includes(payload.vibe_tag?.toLowerCase() as any) 
+        ? payload.vibe_tag.toLowerCase() as typeof validVibes[number]
+        : 'chill'
+
       // First create a temporary floq to attach the plan to
       const { data: floqData, error: floqError } = await supabase
         .from('floqs')
         .insert({
           title: payload.title,
           description: payload.description,
-          primary_vibe: payload.vibe_tag?.toLowerCase().trim() || 'chill',
+          primary_vibe: primaryVibe,
           visibility: 'private',
           location: 'POINT(0 0)', // Default location
           flock_type: 'momentary',
@@ -45,7 +52,7 @@ export function useCreatePlan() {
       if (floqError) throw floqError
 
       // Convert 12-hour time to ISO strings
-      const today = new Date().toISOString().slice(0, 10)          // "2025-07-16"
+      const today = new Date().toISOString().slice(0, 10)
       const startISO = new Date(`${today}T${to24h(payload.start)}:00Z`).toISOString()
       const endISO = new Date(`${today}T${to24h(payload.end)}:00Z`).toISOString()
 
@@ -58,8 +65,8 @@ export function useCreatePlan() {
           description: payload.description,
           vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',
           planned_at: startISO,
-          start_time: isoToPgTime(startISO),   // '07:00:00'
-          end_time: isoToPgTime(endISO),       // '13:00:00'
+          start_time: isoToPgTime(startISO),
+          end_time: isoToPgTime(endISO),
           creator_id: session.user.id,
           status: 'draft'
         })

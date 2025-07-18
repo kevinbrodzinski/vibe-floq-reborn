@@ -33,7 +33,7 @@ export interface PlanStop {
   estimated_cost_per_person?: number
 }
 
-// Utility function to transform database row to domain object
+// Enhanced utility function to transform database row to domain object
 export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
   const duration = dbStop.start_time && dbStop.end_time 
     ? Math.round((new Date(`1970-01-01T${dbStop.end_time}`).getTime() - new Date(`1970-01-01T${dbStop.start_time}`).getTime()) / (1000 * 60))
@@ -48,19 +48,19 @@ export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
     startTime: dbStop.start_time || '',
     endTime: dbStop.end_time || '',
     location: dbStop.address || '',
-    vibeMatch: 0.8, // Default value
-    status: 'confirmed' as const, // Default status
-    color: '#3B82F6', // Default color
+    vibeMatch: 0.8,
+    status: 'confirmed' as const,
+    color: '#3B82F6',
     duration_minutes: duration,
     durationMinutes: duration,
     stop_order: dbStop.stop_order,
     created_by: dbStop.created_by,
-    createdBy: dbStop.created_by,
+    createdBy: dbStop.created_by || '',
     start_time: dbStop.start_time || '',
     end_time: dbStop.end_time || '',
-    participants: [], // Default empty array
-    votes: [], // Default empty array
-    kind: 'restaurant', // Default kind
+    participants: [],
+    votes: [],
+    kind: 'restaurant' as any,
     vibe_tag: undefined,
     address: dbStop.address || undefined,
     estimated_cost_per_person: dbStop.estimated_cost_per_person || undefined,
