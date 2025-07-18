@@ -9,19 +9,21 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 export interface PlanStopUi {
   id: string
   title: string
-  venue: string // flat string for grids
+  venue: { id: string; name: string; address?: string } // venue coerced into an object for map / tracker components
   description?: string
   start_time: string
   end_time: string
+  stop_order: number // now required everywhere in UI
+  address?: string // Add address for compatibility
   duration_minutes?: number
   estimated_cost_per_person?: number
 }
 
-export interface PlanStop extends PlanStopUi {
+export interface PlanStop {
   id: string
   plan_id?: string
   title: string
-  venue: string
+  venue: { id: string; name: string; address?: string } // Updated to match PlanStopUi
   description: string
   startTime: string
   endTime: string
@@ -54,7 +56,7 @@ export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
     id: dbStop.id,
     plan_id: dbStop.plan_id,
     title: dbStop.title,
-    venue: dbStop.venue?.name || '',
+    venue: { id: 'venue-unknown', name: dbStop.venue?.name || 'Unknown Venue' },
     description: dbStop.description || '',
     startTime: dbStop.start_time || '',
     endTime: dbStop.end_time || '',

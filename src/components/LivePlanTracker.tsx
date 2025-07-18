@@ -7,20 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatTime, formatTimeRange } from "@/lib/timeUtils";
 import { CheckInButton } from "./CheckInButton";
 import { usePlanCheckIns } from '@/hooks/usePlanCheckIns';
+import type { PlanStopUi } from '@/types/plan';
 
-interface PlanStop {
-  id: string;
-  title: string;
-  description?: string;
-  start_time?: string;
-  end_time?: string;
-  address?: string;
-  stop_order: number;
-}
 
 interface LivePlanTrackerProps {
   planId: string;
-  stops: PlanStop[];
+  stops: PlanStopUi[];
   currentStopIndex?: number;
   participants: Array<{
     id: string;

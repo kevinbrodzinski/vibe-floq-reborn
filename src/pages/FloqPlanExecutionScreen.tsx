@@ -18,6 +18,28 @@ import { PlanFeedbackDisplay } from '@/components/plan/PlanFeedbackDisplay'
 import { usePlanFeedback } from '@/hooks/usePlanFeedback'
 import { useAutoPromptReview } from '@/hooks/useAutoPromptReview'
 import { useUpdatePreferencesFromFeedback } from '@/hooks/useUpdatePreferencesFromFeedback'
+import type { PlanStop, PlanStopUi } from '@/types/plan'
+// import type { AfterglowData } from '@/types/afterglow'
+
+// ──────────────────────────────────────────────────────────────────────────
+// helpers
+// ──────────────────────────────────────────────────────────────────────────
+
+const toUi = (stop: PlanStop): PlanStopUi => ({
+  // fall-back values make TS happy and the UI resilient
+  id: stop.id,
+  title: stop.title,
+  description: stop.description,
+  start_time: stop.start_time,
+  end_time: stop.end_time,
+  stop_order: stop.stop_order ?? 0,
+  venue: typeof stop.venue === 'string'
+    ? { id: 'venue-unknown', name: stop.venue }
+    : stop.venue ?? { id: 'venue-unknown', name: '' },
+  address: stop.address || stop.location,
+  duration_minutes: stop.duration_minutes,
+  estimated_cost_per_person: stop.estimated_cost_per_person,
+})
 
 export default function FloqPlanExecutionScreen() {
   const { planId } = useParams<{ floqId: string; planId: string }>()
@@ -44,6 +66,17 @@ export default function FloqPlanExecutionScreen() {
     submitReflection,
     snoozeAfterglow,
   } = usePlanExecutionState(planId)
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // live execution tracker
+  // ──────────────────────────────────────────────────────────────────────────
+  const trackerParticipants = participants.map(p => ({
+    id           : p.user_id,
+    username     : p.user_id, // Fallback since profile data is not available
+    display_name : p.user_id, // Fallback since profile data is not available
+    avatar_url   : undefined,
+    checked_in_at: undefined,
+  }))
 
   const [showReviewModal, setShowReviewModal] = useState(false)
   const updatePreferences = useUpdatePreferencesFromFeedback()
@@ -94,15 +127,9 @@ export default function FloqPlanExecutionScreen() {
           {/* Live Tracker */}
           <LivePlanTracker
             planId={planId}
-            stops={stops.map(stop => ({ ...stop, stop_order: stop.stop_order ?? 0 }))}
+            stops={stops.map(toUi)}
             currentStopIndex={currentStopIndex}
-            participants={participants.map(p => ({
-              id: p.user_id,
-              username: p.user_id, // Fallback since profile data is not available
-              display_name: p.user_id, // Fallback since profile data is not available
-              avatar_url: undefined,
-              checked_in_at: undefined
-            }))}
+            participants={trackerParticipants}
             onStopAdvance={() => {
               if (currentStopIndex < stops.length - 1) {
                 advanceToNextStop()
@@ -158,23 +185,7 @@ export default function FloqPlanExecutionScreen() {
 
           {/* Summary Card */}
           {shouldShowSummary && afterglow && (
-            <AfterglowSummaryCard afterglow={{
-              id: afterglow.id,
-              plan_title: stops[0]?.title || 'Your Experience',
-              date: afterglow.date || new Date().toISOString().split('T')[0],
-              overall_rating: afterglow.would_repeat_score || 3,
-              energy_level: 3,
-              social_connection: 3,
-              would_repeat_score: afterglow.would_repeat_score || 3,
-              overall_vibe: afterglow.ending_sentiment || 'positive',
-              moments: {
-                best: afterglow.group_energy_peak || 'Great moments together',
-                quote: 'A memorable experience'
-              },
-              participants: [],
-              group_chemistry: 3,
-              final_thoughts: afterglow.ending_sentiment || 'A wonderful time'
-            }} />
+            <AfterglowSummaryCard afterglow={afterglow as any} />
           )}
 
           {/* Plan Feedback Display */}
@@ -184,20 +195,7 @@ export default function FloqPlanExecutionScreen() {
 
           {/* Share View */}
           {shouldShowShare && afterglow && (
-            <AfterglowShareView afterglow={{
-              id: afterglow.id,
-              plan_title: stops[0]?.title || 'Your Experience',
-              date: afterglow.date || new Date().toISOString().split('T')[0],
-              overall_rating: afterglow.would_repeat_score || 3,
-              energy_level: 3,
-              overall_vibe: afterglow.ending_sentiment || 'positive',
-              moments: {
-                best: afterglow.group_energy_peak || 'Great moments together',
-                quote: afterglow.my_contribution || 'A memorable experience'
-              },
-              participants: [],
-              group_chemistry: 3
-            }} />
+            <AfterglowShareView afterglow={afterglow as any} />
           )}
 
           {/* Development Controls (TODO: Remove in production) */}
