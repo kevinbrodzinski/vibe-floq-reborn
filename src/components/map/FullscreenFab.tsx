@@ -1,3 +1,4 @@
+
 import { Maximize2, Minimize2, List } from 'lucide-react'
 import { useFullscreenMap } from '@/store/useFullscreenMap'
 
@@ -9,12 +10,12 @@ export const FullscreenFab = () => {
   const NextIcon = isFull ? Minimize2 : Maximize2
 
   return (
-    <>
+    <div className="fixed-fab-container">
       {/* main full-screen FAB */}
       <button
         aria-label={isFull ? 'Exit full-screen map' : 'Enter full-screen map'}
         onClick={toggleFull}
-        className="fixed-fab bg-primary text-primary-foreground hover:bg-primary/90"
+        className="fixed-fab bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
       >
         <NextIcon className="h-5 w-5" />
       </button>
@@ -25,10 +26,10 @@ export const FullscreenFab = () => {
         onClick={toggleList}
         className="fixed-fab fixed-fab--secondary
                    bg-background/80 backdrop-blur ring-1 ring-border
-                   hover:bg-background/60"
+                   hover:bg-background/60 shadow-lg"
       >
         <List className="h-5 w-5" />
       </button>
-    </>
+    </div>
   )
 }
