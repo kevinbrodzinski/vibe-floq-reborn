@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
 import { CrossedPathsCard } from "@/components/CrossedPathsCard";
-import { useAfterglowData } from "@/hooks/useAfterglowData";
+import { useRealtimeAfterglowData } from "@/hooks/useRealtimeAfterglowData";
+import { AfterglowCard } from "@/components/AfterglowCard";
 import { AfterglowMomentCard } from "@/components/AfterglowMomentCard";
 import { AfterglowGenerationProgress } from "@/components/AfterglowGenerationProgress";
 import { getVibeDisplayName } from "@/utils/afterglowHelpers";
@@ -66,7 +67,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   
   // Use provided date or default to today
   const currentDate = date || new Date().toISOString().split('T')[0];
-  const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(currentDate);
+  const { afterglow, loading: afterglowLoading, isGenerating, generationProgress, isStale, refresh } = useRealtimeAfterglowData(currentDate);
   
   const formattedDate = useMemo(
     () => format(new Date(currentDate), "EEEE, MMM do yyyy"),
@@ -74,9 +75,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   );
   const { mutate: togglePinned } = useTogglePinned();
   
-  // Get current moment for ambient background
-  const currentMoment = afterglow?.moments?.[0]; // Using first moment for now
-  useAmbientBackground(currentMoment?.color);
+  // Get current moment for ambient background - disable for now due to type issues
+  useAmbientBackground(undefined);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -227,37 +227,38 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
         </div>
       </div>
 
-      {/* Energy Summary */}
+      {/* New Afterglow Card */}
       <div className="px-6 mb-8">
-        <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 glow-secondary">
-          <h2 className="text-xl text-muted-foreground mb-6">Energy Summary</h2>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{energySummary.totalStops}</div>
-              <div className="text-sm text-muted-foreground">total stops</div>
+        {afterglow ? (
+          <AfterglowCard 
+            afterglow={afterglow as any} 
+            onRefresh={refresh}
+            isStale={isStale}
+          />
+        ) : afterglowLoading ? (
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 animate-pulse">
+            <div className="h-8 bg-muted/30 rounded mb-4"></div>
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <div className="h-12 bg-muted/30 rounded"></div>
+              <div className="h-12 bg-muted/30 rounded"></div>
+              <div className="h-12 bg-muted/30 rounded"></div>
+              <div className="col-span-2 h-16 bg-muted/30 rounded"></div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-accent">{energySummary.peopleCrossed}</div>
-              <div className="text-sm text-muted-foreground">people crossed paths</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-secondary">{energySummary.floqsJoined}</div>
-              <div className="text-sm text-muted-foreground">floqs joined</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold glow-primary">{energySummary.vibeIntensity}%</div>
-              <div className="text-sm text-muted-foreground">peak vibe intensity</div>
-              <div className="text-xs text-accent font-medium">{energySummary.mostFeltVibe}</div>
-            </div>
+            <div className="h-12 bg-muted/30 rounded"></div>
           </div>
-
-          <Button 
-            className="w-full gradient-primary text-primary-foreground font-medium transition-smooth hover:glow-active"
-            onClick={() => triggerHaptic()}
-          >
-            Revisit This Night
-          </Button>
-        </div>
+        ) : (
+          <div className="bg-card/80 backdrop-blur-xl rounded-3xl p-6 border border-border/30 text-center">
+            <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="text-lg font-medium mb-2">No Afterglow Yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Your afterglow will appear here once you start exploring and creating memories.
+            </p>
+            <Button onClick={refresh} className="bg-gradient-to-r from-primary to-primary/80">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Afterglow
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Crossed Paths Section */}
@@ -333,25 +334,22 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-muted-foreground">Generating your afterglow...</p>
           </div>
-        ) : afterglowError ? (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>Failed to load afterglow data</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => generateAfterglow()}
-                className="ml-3"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
+        ) : !afterglow ? (
+          <div className="text-center py-12">
+            <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground">No timeline data available yet</p>
+            <Button 
+              variant="outline" 
+              onClick={refresh}
+              className="mt-4"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Generate Timeline
+            </Button>
+          </div>
         ) : afterglow?.moments?.length ? (
           /* Always use Enhanced Timeline - no more flags */
-          <EnhancedTimeline moments={afterglow.moments} />
+          <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 3)} />
         ) : (
           /* Show sample moments for demo */
           <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 2)} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import type { DailyAfterglowData, AfterglowMoment } from '@/types/afterglow'
@@ -149,11 +149,53 @@ export function useRealtimeAfterglowData(date: string) {
     })
   }
 
+  // On-demand refresh function
+  const refresh = useCallback(async () => {
+    if (!user) return;
+
+    console.log('Manually refreshing afterglow...');
+    setIsGenerating(true);
+    
+    try {
+      const { data: result, error } = await supabase.functions.invoke('generate-daily-afterglow', {
+        body: { user_id: user.id, date, force_regenerate: true }
+      });
+
+      if (error) {
+        console.error('Error generating afterglow:', error);
+        toast({
+          title: "Generation Failed",
+          description: "Failed to generate afterglow. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        console.log('Afterglow generation triggered:', result);
+        toast({
+          title: "Regenerating...",
+          description: "Your afterglow is being refreshed with the latest data."
+        });
+      }
+    } catch (error) {
+      console.error('Failed to trigger afterglow generation:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [user?.id, date, toast]);
+
+  // Check if data is stale
+  const isStale = (afterglow as any)?.is_stale || false;
+
   return {
     afterglow,
     setAfterglow,
     generationProgress,
     isGenerating,
-    startGeneration
+    startGeneration,
+    refresh,
+    isStale,
+    loading: isGenerating && !afterglow
   }
 }
