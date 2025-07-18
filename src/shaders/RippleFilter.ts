@@ -5,6 +5,7 @@ export class RippleEffect {
   public sprite: PIXI.Sprite;
   public startTime: number;
   public maxSize: number;
+  private _destroyed = false;
   
   constructor(x: number, y: number, size: number, color = 0xffffff) {
     this.sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
@@ -34,6 +35,9 @@ export class RippleEffect {
   }
 
   destroy() {
-    this.sprite.destroy();
+    if (this._destroyed) return;        // bail on 2nd call
+    this._destroyed = true;
+
+    this.sprite?.destroy();             // optional chain in case it's already null
   }
 }

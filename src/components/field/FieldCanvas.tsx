@@ -121,12 +121,10 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
         tickerRef.current.remove(animateRef.current);
       }
 
-      // 2. just empty the display-list, don't mutate the array in-place
+      // 2. just empty the display-list using PIXI's built-in helper
       //    This leaves PIXI with an intact (but length-0) children array,
       //    so its own `Application.destroy()` loop never sees `undefined`.
-      if (app?.stage) {
-        app.stage.removeChildren();      // <-- no individual destroy calls
-      }
+      app?.stage.removeChildren();      // one-liner, does the null checks for us
 
       // 3. destroy the app itself (idempotent guard)
       if (!(app as any)._destroyed) {
@@ -152,14 +150,15 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     const app = appRef.current;
     if (!app?.stage || !people.length) return;
 
-    // Safe clear existing people sprites - clone children array first
-    [...app.stage.children].forEach(child => {
-      if (child.name === 'person') {
-        // guard - only destroy objects that expose destroy()
-        (child as any)?.destroy?.();
-        app.stage.removeChild(child);
+    // Remove existing people sprites with defensive loop
+    for (const obj of [...app.stage.children]) {
+      // guard: skip falsy or already-destroyed references
+      if (!obj || (obj as any)._destroyed) continue;
+      if (obj.name === 'person') {
+        (obj as any).destroy?.();          // optional-chaining is *not* enough if obj === undefined
+        app.stage.removeChild(obj);
       }
-    });
+    }
 
     // Add new people sprites
     people.forEach(person => {
