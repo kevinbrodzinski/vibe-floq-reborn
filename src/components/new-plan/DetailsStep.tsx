@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
+import { VibePill } from '@/components/floq/VibePill'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Users, Tag, X } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
@@ -108,14 +108,15 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
         </Label>
         <div className="flex flex-wrap gap-2">
           {vibeOptions.map((option) => (
-            <Badge
+            <div
               key={option.value}
-              variant={details.vibe_tag === option.value ? "default" : "outline"}
-              className="cursor-pointer px-3 py-1"
+              className={`cursor-pointer transition-all duration-200 hover:scale-105 ${
+                details.vibe_tag === option.value ? 'ring-2 ring-primary ring-offset-2' : 'opacity-70 hover:opacity-100'
+              }`}
               onClick={() => handleVibeToggle(option.value)}
             >
-              {option.label}
-            </Badge>
+              <VibePill vibe={option.value as any} />
+            </div>
           ))}
         </div>
         <p className="text-sm text-muted-foreground">

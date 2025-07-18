@@ -25,7 +25,7 @@ export function useCreatePlan() {
   const session = useSession()
 
   return useMutation({
-    mutationFn: async (payload: CreatePlanPayload): Promise<string> => {
+    mutationFn: async (payload: CreatePlanPayload) => {
       if (!session?.user) throw new Error('not-signed-in')
       
       // Map vibe_tag to valid enum value
@@ -102,9 +102,9 @@ export function useCreatePlan() {
         }
       }
 
-      return planData.id
+      return planData
     },
-    onSuccess: (planId) => {
+    onSuccess: (planData) => {
       toast.success('Plan created successfully!')
       queryClient.invalidateQueries({ queryKey: ['user-plans'] })
     },

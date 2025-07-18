@@ -27,7 +27,7 @@ export function usePlanInviteListener() {
           toast.success('You were invited to a plan!', {
             action: {
               label: 'View Plan',
-              onClick: () => navigate(`/floqs/plans/${planId}`),
+              onClick: () => navigate(`/plan/${planId}`),
             },
             duration: 5000,
           })
@@ -36,7 +36,7 @@ export function usePlanInviteListener() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe()
     }
   }, [user, navigate])
 }

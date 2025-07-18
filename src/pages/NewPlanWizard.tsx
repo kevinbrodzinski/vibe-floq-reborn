@@ -73,8 +73,8 @@ export function NewPlanWizard() {
         duration_hours: durationHours
       }
       
-      const planId = await createPlan(planData)
-      navigate(`/plan/${planId}`, { replace: true })
+      const planData_result = await createPlan(planData)
+      navigate(`/plan/${planData_result.id}`, { replace: true })
     } catch (error) {
       console.error('Failed to create plan:', error)
     }

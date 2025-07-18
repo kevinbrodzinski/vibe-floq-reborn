@@ -7,6 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Helper function for CORS responses
+const respondWithCors = (data: any, status = 200) => {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders }
+  })
+}
+
 interface PlanInviteRequest {
   plan_id: string
   user_id: string
@@ -61,10 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!profile?.push_token) {
       console.log('No push token found for user, skipping push notification')
-      return new Response(JSON.stringify({ ok: true, skipped: 'no_push_token' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      })
+      return respondWithCors({ ok: true, skipped: 'no_push_token' })
     }
 
     // Prepare push notification message
@@ -93,24 +98,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Push notification sent successfully:', tickets.flat())
 
-    return new Response(JSON.stringify({ 
+    return respondWithCors({ 
       ok: true, 
       tickets: tickets.flat(),
       message: 'Push notification sent successfully'
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
     })
 
   } catch (error: any) {
     console.error('Error in send-plan-invite function:', error)
-    return new Response(JSON.stringify({ 
+    return respondWithCors({ 
       error: error.message,
       details: 'Failed to send plan invite notification'
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
-    })
+    }, 500)
   }
 }
 
