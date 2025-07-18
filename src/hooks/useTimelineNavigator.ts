@@ -15,7 +15,7 @@ export function useTimelineNavigator(opts: NavigatorOptions) {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [opts.container]);
 
-  // Enable keyboard and touch navigation
+  // Enable keyboard and touch navigation (single source of truth)
   useTimelineNavigation({
     total: opts.total,
     current: currentMomentIndex,

@@ -174,9 +174,13 @@ export default function AfterglowDetailPage() {
   const timelineProgress = useTimelineProgress(containerRef, moments);
   const scrollContext = useScrollContext(containerRef, moments, timelineProgress.currentMomentIndex);
 
-  // Update current index when scroll progress changes
+  // Update current index when scroll progress changes (throttled)
+  const rafRef = useRef<number>();
   React.useEffect(() => {
-    setCurrentIdx(timelineProgress.currentMomentIndex);
+    cancelAnimationFrame(rafRef.current!);
+    rafRef.current = requestAnimationFrame(() => {
+      setCurrentIdx(timelineProgress.currentMomentIndex);
+    });
   }, [timelineProgress.currentMomentIndex]);
 
   // Visual effects
@@ -185,17 +189,7 @@ export default function AfterglowDetailPage() {
   // Haptic tick each time user jumps to another moment
   useHaptics({ enabled: true, pattern: 6 }, [currentIdx]);
 
-  // Timeline navigation helpers
-  useTimelineNavigation({
-    total: moments.length,
-    current: currentIdx,
-    onJump: (i) => {
-      setCurrentIdx(i);
-      document
-        .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    },
-  });
+  // Navigation is handled by useTimelineNavigator hook - no duplicate listeners needed
 
   return (
     <>

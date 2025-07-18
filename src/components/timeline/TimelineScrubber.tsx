@@ -91,6 +91,10 @@ export default function TimelineScrubber({ count, current, onJump, moments }: Pr
           dragConstraints={{ top: 0, bottom: 0 }}
           dragControls={controls}
           dragElastic={0}
+          role="slider"
+          aria-valuenow={current}
+          aria-valuemin={0}
+          aria-valuemax={count - 1}
           onDrag={(e, info) => {
             const rect = (e.target as HTMLElement).parentElement!.getBoundingClientRect();
             const relY = info.point.y - rect.top;

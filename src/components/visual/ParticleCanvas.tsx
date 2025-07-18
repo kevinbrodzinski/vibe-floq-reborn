@@ -18,7 +18,7 @@ export default function ParticleCanvas() {
   const prefersReduced = usePrefersReducedMotion();
 
   /* ------------------------------------------------------------------ *
-   * Animation loop
+   * Animation loop with proper cleanup
    * ------------------------------------------------------------------ */
   useEffect(() => {
     if (prefersReduced) return;                     // skip for a11y
@@ -27,6 +27,7 @@ export default function ParticleCanvas() {
     const ctx = canvas.getContext('2d')!;
     let w = canvas.width  = window.innerWidth;
     let h = canvas.height = window.innerHeight;
+    let rafId: number;
 
     const particles: Particle[] = Array.from({ length: PARTICLE_COUNT }, () => ({
       x: Math.random() * w,
@@ -61,7 +62,7 @@ export default function ParticleCanvas() {
         ctx.fill();
       });
 
-      requestAnimationFrame(draw);
+      rafId = requestAnimationFrame(draw);
     };
 
     draw();
@@ -71,7 +72,11 @@ export default function ParticleCanvas() {
       h = canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', resize);
+    };
   }, [prefersReduced]);
 
   /* ------------------------------------------------------------------ */

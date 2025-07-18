@@ -18,9 +18,8 @@ export function useHaptics(opts: Options, deps: unknown[] = []) {
   const { pattern = 8, enabled = true } = opts;
 
   useEffect(() => {
-    if (!enabled) return;
-    if (typeof window === 'undefined') return; // SSR guard
-    if (!navigator.vibrate) return;                       // browser support
+    // Hook must be called unconditionally - move guards inside
+    if (!enabled || typeof window === 'undefined' || !navigator.vibrate) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     navigator.vibrate(pattern);

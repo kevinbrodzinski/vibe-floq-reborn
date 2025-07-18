@@ -18,11 +18,13 @@ const fetchRelatedMoments = async (momentId: string): Promise<RelatedMomentsResp
 /**
  * Hook for prefetching moment details on hover
  */
-export function useMomentDetailPrefetch() {
+export function useMomentDetailPrefetch(): (moment: AfterglowMoment) => void {
   const prefetchMomentDetails = useCallback((moment: AfterglowMoment) => {
-    // Prefetch related moments when user hovers over a moment
-    return useSWR(
-      moment?.id ? `related-moments-${moment.id}` : null,
+    if (!moment?.id) return;
+    
+    // Prefetch related moments with proper template literal
+    useSWR(
+      `related-moments?momentId=${moment.id}`,
       () => fetchRelatedMoments(moment.id),
       {
         revalidateOnFocus: false,
@@ -31,5 +33,5 @@ export function useMomentDetailPrefetch() {
     );
   }, []);
 
-  return { prefetchMomentDetails };
+  return prefetchMomentDetails;
 }

@@ -30,7 +30,7 @@ const ParallaxMoment = memo(({
 }: ParallaxMomentProps) => {
   const prefersReduced = usePrefersReducedMotion();
   const { triggerHaptic } = useHaptic();
-  const { prefetchMomentDetails } = useMomentDetailPrefetch();
+  const prefetchMomentDetails = useMomentDetailPrefetch();
   
   // Guard against null containerRef to avoid Framer warnings
   const { scrollYProgress } = useScroll({

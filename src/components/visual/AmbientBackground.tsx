@@ -11,8 +11,12 @@ interface Props {
  * – Renders a full-screen `<motion.div>` behind everything else.
  */
 export default function AmbientBackground({ color }: Props) {
-  // convert hex → HSL fallback (naïve)
+  // Memoized color cache to avoid DOM operations on every render
+  const hslCache = useMemo(() => new Map<string, string>(), []);
+  
   const hslColor = useMemo(() => {
+    if (hslCache.has(color)) return hslCache.get(color)!;
+    
     const el = document.createElement('div');
     el.style.color = color;
     document.body.appendChild(el);
@@ -35,10 +39,12 @@ export default function AmbientBackground({ color }: Props) {
         case b: h = 60 * ((r - g) / d + 4);   break;
       }
     }
-    return `hsl(${h.toFixed(0)}deg ${ (s * 100).toFixed(0)}% ${(l * 100).toFixed(0)}%)`;
-  }, [color]);
+    const result = `hsl(${h.toFixed(0)}deg ${ (s * 100).toFixed(0)}% ${(l * 100).toFixed(0)}%)`;
+    hslCache.set(color, result);
+    return result;
+  }, [color, hslCache]);
 
-  // spring the opacity (visible only when color ≠ transparent)
+  // Spring the opacity (visible only when color ≠ transparent)
   const progress = useSpring(0, { stiffness: 120, damping: 20 });
   const bg = useTransform(progress, [0, 1], ['transparent', hslColor]);
 
