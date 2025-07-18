@@ -9,7 +9,7 @@ interface GenerationProgress {
 }
 
 interface AfterglowGenerationProgressProps {
-  progress: GenerationProgress
+  progress: GenerationProgress | null
 }
 
 const getStepIcon = (step: string) => {
@@ -32,6 +32,10 @@ const getStepIcon = (step: string) => {
 }
 
 export function AfterglowGenerationProgress({ progress }: AfterglowGenerationProgressProps) {
+  if (!progress) {
+    return null; // Don't render anything if progress is null
+  }
+  
   const { step, progress: progressValue, status, message } = progress
   
   const getStatusColor = () => {
