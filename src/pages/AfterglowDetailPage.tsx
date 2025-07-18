@@ -16,10 +16,12 @@ import {
 import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
 import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
+import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
 import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
 import { useAISummary } from '@/hooks/useAISummary';
 import { useTimelineProgress } from '@/hooks/useTimelineProgress';
+import { useScrollContext } from '@/hooks/useScrollContext';
 
 // This component is now replaced by ParallaxMoment
 
@@ -107,6 +109,7 @@ export default function AfterglowDetailPage() {
   
   // Timeline progress hook
   const timelineProgress = useTimelineProgress(containerRef, moments);
+  const scrollContext = useScrollContext(containerRef, moments, timelineProgress.currentMomentIndex);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
@@ -116,6 +119,17 @@ export default function AfterglowDetailPage() {
           scrollProgress={timelineProgress.scrollProgress}
           currentMomentIndex={timelineProgress.currentMomentIndex}
           moments={moments}
+        />
+      )}
+
+      {/* Scroll Context Bar */}
+      {moments.length > 0 && (
+        <ScrollContextBar
+          currentMoment={scrollContext.currentMoment}
+          scrollVelocity={scrollContext.scrollVelocity}
+          scrollDirection={scrollContext.scrollDirection}
+          momentProgress={scrollContext.momentProgress}
+          transitionProgress={scrollContext.transitionProgress}
         />
       )}
       
