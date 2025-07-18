@@ -12,6 +12,7 @@ import { useInviteToFloq } from '@/hooks/useInviteToFloq';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserSearch } from '@/hooks/useUserSearch';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { cn } from '@/lib/utils';
 import { VariantProps } from "class-variance-authority";
@@ -48,31 +49,40 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
 
   // Fetch friends list
   const { data: friends = [], isLoading } = useQuery({
-    queryKey: ['friends', user?.id],
-    enabled: !!user && isOpen,
+    queryKey: ['friends', 'all-dirs', isOpen],
+    enabled: isOpen,
     queryFn: async (): Promise<Friend[]> => {
-      if (!user) return [];
+      const {
+        data: { user: me },
+      } = await supabase.auth.getUser();
+      if (!me?.id) return [];
 
-      const { data, error } = await supabase
+      // 1️⃣ friends where I am user_a
+      const { data: fwd } = await supabase
         .from('friends')
         .select(`
-          user_b,
-          profiles!friends_user_b_fkey (
-            username,
-            display_name,
-            avatar_url
-          )
+          user_b    as friend_id,
+          profiles!friends_user_b_fkey ( username, display_name, avatar_url )
         `)
-        .eq('user_a', user.id);
+        .eq('user_a', me.id);
 
-      if (error) throw error;
+      // 2️⃣ friends where I am user_b
+      const { data: rev } = await supabase
+        .from('friends')
+        .select(`
+          user_a    as friend_id,
+          profiles!friends_user_a_fkey ( username, display_name, avatar_url )
+        `)
+        .eq('user_b', me.id);
 
-      return data?.map(f => ({
-        friend_id: f.user_b,
-        username: (f.profiles as any)?.username || '',
-        display_name: (f.profiles as any)?.display_name || '',
-        avatar_url: (f.profiles as any)?.avatar_url || undefined,
-      })) || [];
+      const rows = [...(fwd ?? []), ...(rev ?? [])];
+
+      return rows.map((r: any) => ({
+        friend_id: r.friend_id,
+        username:  r.profiles?.username ?? '',
+        display_name: r.profiles?.display_name ?? '',
+        avatar_url:  r.profiles?.avatar_url ?? undefined,
+      }));
     },
   });
 
@@ -81,6 +91,18 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
     friend.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     friend.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // server-side user search (≥3 chars) — merge, dedupe
+  const { data: searchResults = [], isLoading: searchLoading } =
+    useUserSearch(searchQuery, isOpen);
+
+  const mergedResults =
+    searchQuery.length >= 3
+      ? [
+          ...filteredFriends,
+          ...searchResults.filter(u => !filteredFriends.some(f => f.friend_id === u.id)),
+        ]
+      : filteredFriends;
 
   const handleFriendToggle = (friendId: string) => {
     const newSelected = new Set(selectedFriends);
@@ -215,7 +237,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
             
             {/* Friends list */}
             <div className="max-h-60 overflow-y-auto space-y-2" tabIndex={0}>
-              {isLoading ? (
+              {isLoading || searchLoading ? (
                 <div className="space-y-2">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex items-center gap-3 p-3">
@@ -228,15 +250,27 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
                     </div>
                   ))}
                 </div>
-              ) : filteredFriends.length === 0 ? (
+              ) : mergedResults.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    {searchQuery ? 'No friends found' : 'No friends to invite'}
+                    {searchQuery.length >= 3 ? 'No users found' : 'No friends to invite'}
                   </p>
                 </div>
               ) : (
-                filteredFriends.map((friend) => (
-                  <FriendCard key={friend.friend_id} friend={friend} />
+                mergedResults.map((usr: any) => (
+                  <FriendCard
+                    key={usr.friend_id ?? usr.id}
+                    friend={
+                      'friend_id' in usr
+                        ? (usr as Friend)
+                        : {
+                            friend_id: usr.id,
+                            username: usr.username,
+                            display_name: usr.display_name ?? usr.full_name ?? 'Unknown',
+                            avatar_url: usr.avatar_url,
+                          }
+                    }
+                  />
                 ))
               )}
             </div>
