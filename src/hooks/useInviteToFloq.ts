@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,21 +15,21 @@ interface InviteToFloqReturn {
 }
 
 export function useInviteToFloq(): InviteToFloqReturn {
-  const session = useSession();
-  const user = session?.user;
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const mutation = useMutation<
-    // Return type
     { message?: string } | null,
-    // Error type
     Error,
-    // Variables type
     InviteToFloqParams
   >({
     mutationFn: async ({ floqId, inviteeIds }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      // ⚠️ Get the freshest session *inside* the mutation
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user?.id) throw new Error('Not authenticated');
       if (!floqId || inviteeIds.length === 0)
         throw new Error('No invitees selected');
 
@@ -49,13 +48,8 @@ export function useInviteToFloq(): InviteToFloqReturn {
     },
 
     onSuccess: (data, { floqId }) => {
-      // Refresh any cached queries that rely on invites or floq details
-      queryClient.invalidateQueries({
-        queryKey: ['pending-invites', user?.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['floq-details', floqId],
-      });
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
+      queryClient.invalidateQueries({ queryKey: ['floq-details', floqId] });
 
       toast({
         title: 'Invitations sent',
