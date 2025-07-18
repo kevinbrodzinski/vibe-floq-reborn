@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 // Safelist gradient classes for stop cards
@@ -31,10 +30,6 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				sans: ['Space Grotesk', 'system-ui', 'sans-serif'],
-				'space-grotesk': ['Space Grotesk', 'system-ui', 'sans-serif'],
-			},
 			spacing: {
 				'mobile-action': '3rem', // 48px minimum touch target
 				'mobile-gap': '1rem',
@@ -120,9 +115,7 @@ export default {
 				'gradient-vibe': 'var(--gradient-vibe)'
 			},
 			boxShadow: {
-				glass: '0 0 0 0.5px rgb(255 255 255 / 0.1) inset, 0 0 24px rgb(255 255 255 / 0.06)',
-				'neon-glow': '0 0 20px rgba(167, 139, 250, 0.3), 0 0 40px rgba(167, 139, 250, 0.1)',
-				'inner-glow': 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)'
+				glass: '0 0 0 0.5px rgb(255 255 255 / 0.1) inset, 0 0 24px rgb(255 255 255 / 0.06)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -187,14 +180,6 @@ export default {
 						transform: 'scale(2.4)',
 						opacity: '0'
 					}
-				},
-				'glow-pulse': {
-					'0%, 100%': {
-						textShadow: '0 0 10px rgba(183, 155, 255, 0.5)'
-					},
-					'50%': {
-						textShadow: '0 0 20px rgba(183, 155, 255, 0.8), 0 0 30px rgba(183, 155, 255, 0.4)'
-					}
 				}
 			},
 			animation: {
@@ -203,8 +188,7 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 2s ease-in-out infinite alternate',
 				'float': 'float 3s ease-in-out infinite',
-				'ripple': 'ripple 2s infinite',
-				'glow-pulse': 'glow-pulse 2s ease-in-out infinite'
+				'ripple': 'ripple 2s infinite'
 			}
 		}
 	},
