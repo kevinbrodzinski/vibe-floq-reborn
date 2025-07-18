@@ -106,7 +106,7 @@ export default function AfterglowDetailPage() {
     );
   }
 
-  const { afterglow, moments } = data;
+  const { afterglow, moments = [] } = data; // Safe default for moments
   
   // Timeline progress hook
   const timelineProgress = useTimelineProgress(containerRef, moments);
@@ -211,7 +211,11 @@ export default function AfterglowDetailPage() {
           <h2 className="text-xl font-semibold mb-6">Your Journey</h2>
           <div className="relative">
             {/* 📈 Dynamic squiggly spine (Phase-3) */}
-            <DynamicTimelinePath containerRef={containerRef} moments={moments} />
+            <DynamicTimelinePath 
+              containerRef={containerRef} 
+              moments={moments}
+              mode={moments.length > 50 ? 'geometry' : 'math'} // Use geometry for large feeds
+            />
             <Timeline>
               {moments.map((moment, index) => (
                 <ParallaxMoment
