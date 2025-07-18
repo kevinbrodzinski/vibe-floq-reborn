@@ -10,6 +10,8 @@ import { useFieldLocation } from "@/components/field/contexts/FieldLocationConte
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
+import { useFieldGestures } from "@/hooks/useFieldGestures";
+import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldLayoutProps {
@@ -20,6 +22,8 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gestureHandlers = useFieldGestures(canvasRef);
   
   // Get shake detection functions for motion permission banner
   const { requestMotionPermission, isMotionAvailable } = useShakeDetection({
@@ -83,11 +87,14 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         />
         
         {/* Base Map Layer - z-0 */}
-        <FieldMapLayer 
-          data={data} 
-          people={people} 
-          onRipple={handleRipple} 
-        />
+        <div {...gestureHandlers}>
+          <FieldMapLayer 
+            data={data} 
+            people={people} 
+            onRipple={handleRipple}
+            canvasRef={canvasRef}
+          />
+        </div>
         
         {/* UI Content Layer - z-10 to z-30 */}
         <FieldUILayer data={data} />

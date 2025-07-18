@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { calculateBounds, type Viewport } from '@/utils/geoConversion';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
@@ -10,6 +10,8 @@ export interface MapViewportControls {
   zoomOut: () => void;
   zoomToFit: (points: [number, number][]) => void;
   centerOnUser: () => void;
+  resetZoom: () => void;
+  inertiaZoom?: (delta?: number, velocity?: number) => void;
 }
 
 /**
@@ -29,7 +31,7 @@ export function useMapViewport(
   }, [initialCenter, userLat, userLng]);
 
   const [center, setCenter] = useState<[number, number]>(defaultCenter);
-  const [zoom, setZoomState] = useState<number>(initialZoom);
+  const [zoom, setZoom] = useState<number>(initialZoom);
 
   // Calculate viewport bounds whenever center or zoom changes
   const viewport: Viewport = useMemo(() => ({
@@ -39,17 +41,47 @@ export function useMapViewport(
   }), [center, zoom]);
 
   // Zoom controls with bounds checking
-  const setZoom = useCallback((newZoom: number) => {
-    setZoomState(Math.max(1, Math.min(10, newZoom)));
+  const setZoomValue = useCallback((newZoom: number) => {
+    setZoom(Math.max(1, Math.min(10, newZoom)));
   }, []);
 
   const zoomIn = useCallback(() => {
-    setZoom(zoom + 1);
-  }, [zoom, setZoom]);
+    setZoomValue(zoom + 1);
+  }, [zoom, setZoomValue]);
 
   const zoomOut = useCallback(() => {
-    setZoom(zoom - 1);
-  }, [zoom, setZoom]);
+    setZoomValue(zoom - 1);
+  }, [zoom, setZoomValue]);
+
+  const resetZoom = useCallback(() => {
+    setZoomValue(5); // Default zoom level
+  }, [setZoomValue]);
+
+  // Inertia zoom with momentum
+  const inertiaRef = useRef<number>();
+  const inertiaZoom = useCallback((delta = 0, velocity = 0) => {
+    if (velocity) {
+      cancelAnimationFrame(inertiaRef.current!);
+      const step = () => {
+        if (Math.abs(velocity) < 0.01) return;
+        setZoomValue(zoom + velocity * 0.016); // 60 fps -> dt≈16 ms
+        velocity *= 0.9;
+        inertiaRef.current = requestAnimationFrame(step);
+      };
+      step();
+    } else {
+      setZoomValue(zoom + delta);
+    }
+  }, [zoom, setZoomValue]);
+
+  // Cleanup inertia on unmount
+  useEffect(() => {
+    return () => {
+      if (inertiaRef.current) {
+        cancelAnimationFrame(inertiaRef.current);
+      }
+    };
+  }, []);
 
   // Pan to specific coordinates
   const panTo = useCallback((lat: number, lng: number) => {
@@ -98,16 +130,18 @@ export function useMapViewport(
     const newZoom = Math.max(1, Math.min(10, 5 - Math.log2(requiredScale * 1.2))); // 1.2 padding
     
     setCenter(newCenter);
-    setZoom(newZoom);
-  }, [setZoom]);
+    setZoomValue(newZoom);
+  }, [setZoomValue]);
 
   return {
     viewport,
-    setZoom,
+    setZoom: setZoomValue,
     panTo,
     zoomIn,
     zoomOut,
     zoomToFit,
     centerOnUser,
+    resetZoom,
+    inertiaZoom,
   };
 }

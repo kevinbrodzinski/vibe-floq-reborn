@@ -1,6 +1,5 @@
 
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
-import * as PIXI from 'pixi.js';
 import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
@@ -9,6 +8,8 @@ import { tileIdToScreenCoords, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor, type Vibe } from '@/utils/vibeToHSL';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
+import { forwardRef } from 'react';
+import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -23,14 +24,16 @@ interface FieldCanvasProps {
   onRipple?: (x: number, y: number) => void;
 }
 
-export const FieldCanvas: React.FC<FieldCanvasProps> = ({
+export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   people = [],
   tileIds = [],
   fieldTiles = [],
   viewportGeo,
   onRipple
-}) => {
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
+  const { light } = useAdvancedHaptics();
   const appRef = useRef<Application | null>(null);
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
@@ -56,13 +59,13 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
 
   // Initialize PIXI app
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!actualRef.current) return;
 
     const app = new Application();
     appRef.current = app;
 
     app.init({
-      canvas: canvasRef.current,
+      canvas: actualRef.current,
       width: window.innerWidth,
       height: window.innerHeight,
       backgroundColor: 0x000000,
@@ -93,14 +96,13 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
 
   // Handle canvas clicks for ripples
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
-    if (!onRipple) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (rect) {
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      onRipple(x, y);
-    }
-  }, [onRipple]);
+    if (!onRipple || !actualRef.current) return;
+    const rect = actualRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    onRipple(x, y);
+    light(); // Add haptic feedback for ripples
+  }, [onRipple, actualRef, light]);
 
   // Animation loop
   useEffect(() => {
@@ -199,7 +201,7 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
 
   return (
     <canvas 
-      ref={canvasRef}
+      ref={actualRef}
       onClick={handleCanvasClick}
       style={{ 
         width: '100%', 
@@ -208,4 +210,4 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
       }}
     />
   );
-};
+});
