@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
 import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles, Users, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -39,7 +38,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const currentDate = date || new Date().toISOString().split('T')[0];
   const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(currentDate);
   const { mutate: togglePinned } = useTogglePinned();
-  const navigate = useNavigate();
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -266,19 +264,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
         </div>
       </div>
 
-      {/* View Details Button */}
-      {afterglow && (
-        <div className="px-6 mb-4 flex justify-end">
-          <Button
-            size="sm"
-            onClick={() => navigate(`/afterglow/${afterglow.id}`)}
-            className="text-sm"
-          >
-            View enhanced details →
-          </Button>
-        </div>
-      )}
-
       {/* Timeline */}
       <div className="px-6 relative">
         {/* Curved Timeline SVG */}
@@ -338,7 +323,6 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
                 moment={moment}
                 index={index}
                 isFirst={index === 0}
-                onClick={() => navigate(`/afterglow/${afterglow.id}?m=${index}`)}
                 onShare={() => {
                   // Create a share URL for this specific moment
                   const shareUrl = `${window.location.origin}/afterglow/${afterglow.date}`

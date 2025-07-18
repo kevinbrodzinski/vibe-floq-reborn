@@ -14,7 +14,6 @@ interface AfterglowMomentCardProps {
   isFirst?: boolean
   onShare?: () => void
   onSave?: () => void
-  onClick?: () => void
 }
 
 export function AfterglowMomentCard({ 
@@ -22,8 +21,7 @@ export function AfterglowMomentCard({
   index, 
   isFirst = false, 
   onShare, 
-  onSave,
-  onClick 
+  onSave 
 }: AfterglowMomentCardProps) {
   const [isPeopleModalOpen, setIsPeopleModalOpen] = useState(false)
   const { getPeopleInMoment } = usePeopleData()
@@ -68,10 +66,7 @@ export function AfterglowMomentCard({
       />
 
       {/* Event card */}
-      <div 
-        className={`flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02] ${onClick ? 'cursor-pointer' : ''}`}
-        onClick={onClick}
-      >
+      <div className="flex-1 bg-card/80 backdrop-blur-xl rounded-3xl p-5 border border-border/40 transition-smooth hover:glow-secondary hover:scale-[1.02]">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center space-x-3">
             <span className="text-muted-foreground text-sm font-medium">
