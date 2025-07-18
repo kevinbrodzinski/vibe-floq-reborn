@@ -121,8 +121,8 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     const app = appRef.current;
     if (!app?.stage || !people.length) return;
 
-    // Safe clear existing people sprites
-    app.stage.children.forEach(child => {
+    // Safe clear existing people sprites - clone children array first
+    [...app.stage.children].forEach(child => {
       if (child.name === 'person') {
         // guard - only destroy objects that expose destroy()
         (child as any)?.destroy?.();
