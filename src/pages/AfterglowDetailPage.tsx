@@ -19,6 +19,7 @@ import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
 import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
 import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
+import { needsGeometry } from '@/components/timeline/helpers';
 import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
 import { useAISummary } from '@/hooks/useAISummary';
 import { useTimelineProgress } from '@/hooks/useTimelineProgress';
@@ -214,7 +215,7 @@ export default function AfterglowDetailPage() {
             <DynamicTimelinePath 
               containerRef={containerRef} 
               moments={moments}
-              mode={moments.length > 50 ? 'geometry' : 'math'} // Use geometry for large feeds
+              mode={needsGeometry(moments) ? 'geometry' : 'math'}
             />
             <Timeline>
               {moments.map((moment, index) => (

@@ -3,6 +3,7 @@ import { useMemo, useId, useEffect, useState } from 'react';
 import { useRobustTimelineGeometry } from '@/hooks/useRobustTimelineGeometry';
 import { buildTimelinePath } from '@/utils/timelinePath';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { needsGeometry, getAverageCardHeight } from './helpers';
 
 interface DynamicTimelinePathProps {
   /** outer scrolling container (usually the main page ref) */
@@ -11,11 +12,6 @@ interface DynamicTimelinePathProps {
   moments: { vibe_intensity?: number; color?: string }[];
   /** timeline rendering mode - 'math' for uniform cards, 'geometry' for variable heights */
   mode?: 'math' | 'geometry';
-}
-
-// Helper function to determine if geometry mode is needed
-function needsGeometry(moments: any[]): boolean {
-  return moments.length > 50; // Use geometry for large feeds
 }
 
 /**
@@ -30,18 +26,18 @@ export const DynamicTimelinePath = ({
   const uniqueId = useId();
   const [isHydrated, setIsHydrated] = useState(false);
 
+  // Always call hooks - conditional returns only after all hooks
+  const { scrollYProgress } = useScroll({ target: containerRef });
+  const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
   // Lazy hydrate after first frame to avoid blocking first paint
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // Early bail for empty moments or during hydration
-  if (!isHydrated || (mode === 'math' && moments.length === 0)) {
-    return null;
-  }
-
-  const { scrollYProgress } = useScroll({ target: containerRef });
-  const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  // Get actual container dimensions for accurate path generation
+  const spineWidth = containerRef.current?.offsetWidth ?? 48;
+  const avgCardHeight = getAverageCardHeight(containerRef);
 
   // Hybrid approach: use geometry for variable heights, math for uniform
   const geometryData = useRobustTimelineGeometry({
@@ -51,32 +47,27 @@ export const DynamicTimelinePath = ({
   });
 
   const mathData = useMemo(() => {
-    if (mode !== 'math' || moments.length === 0) return { pathString: '', totalHeight: 0, isReady: false };
+    if (mode !== 'math' || moments.length === 0) return { pathString: '', isReady: false };
     
-    const pathString = buildTimelinePath(moments);
-    const totalHeight = moments.length * 80 + 60;
-    return { pathString, totalHeight, isReady: pathString.length > 0 };
-  }, [moments, mode]);
+    const pathString = buildTimelinePath(moments, Math.min(spineWidth, 48), avgCardHeight);
+    return { pathString, isReady: pathString.length > 0 };
+  }, [moments, mode, spineWidth, avgCardHeight]);
 
-  const { pathString, totalHeight, isReady } = mode === 'geometry' ? geometryData : mathData;
+  const { pathString, isReady } = mode === 'geometry' ? geometryData : mathData;
+  const svgHeight = mode === 'geometry' ? geometryData.totalHeight : moments.length * avgCardHeight + 60;
 
-  // Lazy hydration gate
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      setIsHydrated(true);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  if (moments.length === 0 || !isHydrated || !isReady) return null;
+  // Early bail for empty moments or during hydration - AFTER all hooks
+  if (!isHydrated || moments.length === 0 || !isReady || !pathString) {
+    return null;
+  }
 
   const gradientId = `tl-gradient-${uniqueId}`;
 
   return (
     <svg
       className={prefersReduced ? "absolute left-6 top-0 w-12" : "pointer-events-auto absolute left-6 top-0 w-12 cursor-pointer"}
-      height={totalHeight}
-      viewBox={`0 0 48 ${totalHeight}`}
+      height={svgHeight}
+      viewBox={`0 0 48 ${svgHeight}`}
       preserveAspectRatio="xMidYMin meet"
       aria-hidden="true"
     >
@@ -87,12 +78,10 @@ export const DynamicTimelinePath = ({
         fill="none"
         strokeLinecap="round"
         className={prefersReduced ? "" : "hover:stroke-8 transition-all duration-200"}
-        {...(!prefersReduced && {
-          style: { pathLength },
-          initial: { pathLength: 0 },
-          animate: { pathLength: 1 },
-          transition: { duration: 0.5, ease: "easeOut" }
-        })}
+        style={prefersReduced ? {} : { pathLength }}
+        initial={prefersReduced ? {} : { pathLength: 0 }}
+        animate={prefersReduced ? {} : { pathLength: 1 }}
+        transition={prefersReduced ? {} : { duration: 0.5 }}
       />
       {/* Linear-gradient driven by first/last moment colors (fallback theme-safe) */}
       <defs>
