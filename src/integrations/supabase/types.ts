@@ -519,6 +519,30 @@ export type Database = {
         }
         Relationships: []
       }
+      field_tiles: {
+        Row: {
+          active_floq_ids: string[]
+          avg_vibe: Json
+          crowd_count: number
+          tile_id: string
+          updated_at: string
+        }
+        Insert: {
+          active_floq_ids?: string[]
+          avg_vibe?: Json
+          crowd_count?: number
+          tile_id: string
+          updated_at?: string
+        }
+        Update: {
+          active_floq_ids?: string[]
+          avg_vibe?: Json
+          crowd_count?: number
+          tile_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flock_auto_suggestions: {
         Row: {
           confidence_score: number | null
@@ -2350,6 +2374,7 @@ export type Database = {
         Row: {
           available_until: string | null
           created_at: string
+          field_enabled: boolean
           notification_preferences: Json | null
           preferred_welcome_template:
             | Database["public"]["Enums"]["welcome_template_enum"]
@@ -2362,6 +2387,7 @@ export type Database = {
         Insert: {
           available_until?: string | null
           created_at?: string
+          field_enabled?: boolean
           notification_preferences?: Json | null
           preferred_welcome_template?:
             | Database["public"]["Enums"]["welcome_template_enum"]
@@ -2374,6 +2400,7 @@ export type Database = {
         Update: {
           available_until?: string | null
           created_at?: string
+          field_enabled?: boolean
           notification_preferences?: Json | null
           preferred_welcome_template?:
             | Database["public"]["Enums"]["welcome_template_enum"]
@@ -2662,6 +2689,7 @@ export type Database = {
           expires_at: string | null
           geo: unknown | null
           geohash6: string | null
+          gh5: string | null
           location: unknown
           updated_at: string | null
           user_id: string
@@ -2674,6 +2702,7 @@ export type Database = {
           expires_at?: string | null
           geo?: unknown | null
           geohash6?: string | null
+          gh5?: string | null
           location: unknown
           updated_at?: string | null
           user_id: string
@@ -2686,6 +2715,7 @@ export type Database = {
           expires_at?: string | null
           geo?: unknown | null
           geohash6?: string | null
+          gh5?: string | null
           location?: unknown
           updated_at?: string | null
           user_id?: string
@@ -4259,6 +4289,7 @@ export type Database = {
           expires_at: string | null
           geo: unknown | null
           geohash6: string | null
+          gh5: string | null
           location: unknown
           updated_at: string | null
           user_id: string
@@ -4276,6 +4307,10 @@ export type Database = {
         Returns: undefined
       }
       publish_presence_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_field_tiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
