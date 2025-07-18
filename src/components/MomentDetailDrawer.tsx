@@ -39,9 +39,9 @@ export function MomentDetailDrawer() {
                   showDistance={!!moment.metadata.location.distance_from_previous}
                   interactive={!!moment.metadata.location.coordinates}
                   onClick={() => {
-                    if (moment.metadata.location.coordinates) {
-                      const [lng, lat] = moment.metadata.location.coordinates
-                      window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank', 'noopener,noreferrer')
+                    if (moment.metadata.location?.coordinates) {
+                      const [lng, lat] = moment.metadata.location.coordinates;
+                      window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank', 'noopener,noreferrer');
                     }
                   }}
                 />

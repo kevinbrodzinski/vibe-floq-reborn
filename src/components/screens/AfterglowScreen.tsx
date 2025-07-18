@@ -271,14 +271,10 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
 
       {/* Timeline */}
       <div className="px-6 relative">
-        {timelineV2 ? (
+        {timelineV2 && afterglow?.moments?.length ? (
           // Enhanced Timeline V2
-          <>
-            {afterglow?.moments?.length ? (
-              <EnhancedTimeline moments={afterglow.moments} />
-            ) : null}
-          </>
-        ) : (
+          <EnhancedTimeline moments={afterglow.moments} />
+        ) : !timelineV2 ? (
           // Legacy Timeline
           <>
             {/* Curved Timeline SVG */}

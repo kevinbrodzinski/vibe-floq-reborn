@@ -11,13 +11,18 @@ interface EnhancedTimelineProps {
 export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   
-  // Add keyboard and touch navigation
+  // Add keyboard and touch navigation with proper current index
   useTimelineNavigation({ 
     total: moments.length,
-    current: 0, // This would be calculated based on current scroll position
+    current: 0, // TODO: Wire to useTimelineProgress().currentMomentIndex
     onJump: (index) => {
+      if (typeof document === 'undefined') return;
       const el = document.querySelector(`[data-moment-index='${index}']`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (el) el.scrollIntoView({ 
+        behavior: prefersReduced ? 'auto' : 'smooth', 
+        block: 'center' 
+      });
     }
   });
 
