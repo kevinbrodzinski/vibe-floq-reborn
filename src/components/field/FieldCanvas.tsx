@@ -29,9 +29,12 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     const y = Math.random() * (appRef.current.screen.height || 600);
     
     const ripple = new RippleEffect(x, y, 20, delta > 0 ? 0x00ff00 : 0xff0000);
-    rippleContainer.current.addChild(ripple.sprite);
     
-    setRipples(prev => [...prev, ripple]);
+    // Make sure the container exists first
+    if (rippleContainer.current) {
+      rippleContainer.current.addChild(ripple.sprite);
+      setRipples(prev => [...prev, ripple]);
+    }
   };
 
   useRippleQueue(tileIds, handleRipple);
@@ -40,40 +43,59 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const app = new PIXI.Application({
-      view: canvasRef.current,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: 0x000000,
-      backgroundAlpha: 0,
-    });
+    const initApp = async () => {
+      if (!appRef.current) {
+        /* PIXI v6/7 */
+        if (typeof (PIXI.Application as any).init !== 'function') {
+          appRef.current = new PIXI.Application({
+            view: canvasRef.current!,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000,
+            backgroundAlpha: 0,
+          });
+        } else {
+          /* PIXI v8 */
+          appRef.current = await (PIXI.Application as any).init({
+            view: canvasRef.current!,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000,
+            backgroundAlpha: 0,
+          });
+        }
+      }
 
-    appRef.current = app;
+      const app = appRef.current;
 
-    // Create ripple container
-    const container = new PIXI.Container();
-    rippleContainer.current = container;
-    app.stage.addChild(container);
+      // Create ripple container
+      if (!rippleContainer.current) {
+        rippleContainer.current = new PIXI.Container();
+        app.stage.addChild(rippleContainer.current);
+      }
 
-    // Animation loop
-    const animate = () => {
-      setRipples(prev => {
-        const active = prev.filter(ripple => {
-          const isActive = ripple.update();
-          if (!isActive) {
-            // Guard against null references
-            if (rippleContainer.current) {
-              rippleContainer.current.removeChild(ripple.sprite);
+      // Animation loop
+      const animate = () => {
+        setRipples(prev => {
+          const active = prev.filter(ripple => {
+            const isActive = ripple.update();
+            if (!isActive) {
+              // Guard against null references
+              if (rippleContainer.current) {
+                rippleContainer.current.removeChild(ripple.sprite);
+              }
+              ripple.destroy();
             }
-            ripple.destroy();
-          }
-          return isActive;
+            return isActive;
+          });
+          return active;
         });
-        return active;
-      });
+      };
+
+      app.ticker.add(animate);
     };
 
-    app.ticker.add(animate);
+    initApp();
 
     // Cleanup with defensive guards
     return () => {
@@ -87,13 +109,19 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
   // Render people as dots
   useEffect(() => {
-    if (!appRef.current?.stage || !people.length) return;
+    const app = appRef.current;
+    if (!app?.stage || !people.length) return;
 
-    // Clear existing people sprites
-    const peopleSprites = appRef.current.stage.children.filter(
-      child => child.name === 'person'
-    );
-    peopleSprites.forEach(sprite => appRef.current!.stage.removeChild(sprite));
+    // Safe clear existing people sprites
+    app.stage.children.forEach(child => {
+      if (child.name === 'person') {
+        // child.destroy exists only on Sprite / Graphics etc.
+        if ('destroy' in child && typeof (child as any).destroy === 'function') {
+          (child as any).destroy(true);
+        }
+        app.stage.removeChild(child);
+      }
+    });
 
     // Add new people sprites
     people.forEach(person => {
@@ -101,10 +129,10 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       dot.beginFill(parseInt(person.color.replace('#', ''), 16));
       dot.drawCircle(0, 0, 4);
       dot.endFill();
-      dot.x = (person.x / 100) * appRef.current!.screen.width;
-      dot.y = (person.y / 100) * appRef.current!.screen.height;
+      dot.x = (person.x / 100) * app.screen.width;
+      dot.y = (person.y / 100) * app.screen.height;
       dot.name = 'person';
-      appRef.current!.stage.addChild(dot);
+      app.stage.addChild(dot);
     });
   }, [people]);
 
