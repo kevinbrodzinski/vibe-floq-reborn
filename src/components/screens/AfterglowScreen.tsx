@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Calendar, Brain, Mail, RotateCcw, Heart, BookOpen, Sparkles, Users, ChevronRight, AlertCircle, RefreshCw } from "lucide-react";
+import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
@@ -66,6 +67,11 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   // Use provided date or default to today
   const currentDate = date || new Date().toISOString().split('T')[0];
   const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(currentDate);
+  
+  const formattedDate = useMemo(
+    () => format(new Date(currentDate), "EEEE, MMM do yyyy"),
+    [currentDate]
+  );
   const { mutate: togglePinned } = useTogglePinned();
   
   // Get current moment for ambient background
@@ -191,8 +197,16 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       
       <div className="min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center p-6 pt-16">
-        <h1 className="text-4xl font-light glow-primary">afterglow</h1>
+      <div className="flex justify-between items-start p-6 pt-16">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-light glow-primary">afterglow</h1>
+          <p className="text-sm font-medium tracking-wider text-muted-foreground opacity-0 animate-fade-in">
+            {formattedDate}
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            On this day
+          </p>
+        </div>
         <div className="flex space-x-4">
           <Button 
             variant="ghost" 
