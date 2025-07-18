@@ -41,6 +41,9 @@ begin
 end;
 $$;
 
+-- pg_cron will execute as its own role; grant execute explicitly
+grant execute on function public.call_weekly_ai_suggestion(uuid) to cron;
+
 -- Unschedule any existing pre-warm job
 SELECT cron.unschedule(jobid)
 FROM cron.job
