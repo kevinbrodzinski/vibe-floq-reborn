@@ -1,54 +1,12 @@
-
-import React, { useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useCreatePlan } from '@/hooks/useCreatePlan';
 
 const NewPlan = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const template = searchParams.get('template');
-  const createPlan = useCreatePlan();
-
-  const [formData, setFormData] = useState({
-    title: template ? decodeURIComponent(template) : '',
-    description: '',
-    plannedAt: '',
-    endAt: '',
-  });
-
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCreating(true);
-
-    try {
-      await createPlan.mutateAsync({
-        title: formData.title,
-        description: formData.description || undefined,
-        plannedAt: formData.plannedAt,
-        endAt: formData.endAt || undefined,
-        floqId, // ← pass to hook!
-      });
-      
-      navigate(`/floqs/${floqId}?tab=plans`);
-    } catch (error) {
-      console.error('Failed to create plan:', error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -58,7 +16,7 @@ const NewPlan = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(`/floqs/${floqId}?tab=plans`)}
+            onClick={() => navigate(`/floqs/${floqId}`)}
             className="h-8 w-8 p-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -66,70 +24,20 @@ const NewPlan = () => {
           <h1 className="text-lg font-semibold">Create Plan</h1>
         </div>
 
-        {/* Form */}
+        {/* Content */}
         <Card className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Plan Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter plan title..."
-                required
-              />
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-2xl">📅</span>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="What's the plan?"
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plannedAt">Date & Time</Label>
-              <Input
-                id="plannedAt"
-                type="datetime-local"
-                value={formData.plannedAt}
-                onChange={(e) => handleInputChange('plannedAt', e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="endAt">End Time (Optional)</Label>
-              <Input
-                id="endAt"
-                type="datetime-local"
-                value={formData.endAt}
-                onChange={(e) => handleInputChange('endAt', e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => navigate(`/floqs/${floqId}?tab=plans`)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={isCreating || !formData.title || !formData.plannedAt}
-              >
-                {isCreating ? 'Creating...' : 'Create Plan'}
-              </Button>
-            </div>
-          </form>
+            <h2 className="text-xl font-semibold mb-2">Plan Creation</h2>
+            <p className="text-muted-foreground mb-4">
+              Plan coordination tools are coming soon!
+            </p>
+            <p className="text-sm text-muted-foreground">
+              This feature will allow hosts to create and coordinate activities and future meetups with their floq members.
+            </p>
+          </div>
         </Card>
       </div>
     </div>

@@ -71,96 +71,48 @@ export function useFloqDetails(
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
 
-      // Use direct table query instead of RPC to ensure auth context is preserved
-      const { data: floqData, error } = await supabase
-        .from('floqs')
-        .select(`
-          id,
-          title,
-          description,
-          primary_vibe,
-          creator_id,
-          starts_at,
-          ends_at,
-          visibility,
-          pinned_note
-        `)
-        .eq('id', floqId)
-        .single();
+      // Use the database function for complete details
+      const { data: fullDetails, error } = await supabase.rpc('get_floq_full_details', {
+        p_floq_id: floqId
+      });
 
       if (error) {
-        console.error('[useFloqDetails] Floq query error:', error);
+        console.error('[useFloqDetails] Floq details error:', error);
         throw error;
       }
 
-      if (!floqData) return null;
+      if (!fullDetails || fullDetails.length === 0) return null;
 
-      // Get participants separately
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('floq_participants')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles!inner(
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('floq_id', floqId);
-
-      if (participantsError) {
-        console.error('[useFloqDetails] Participants query error:', participantsError);
-        throw participantsError;
-      }
-
-      // Get pending invitations for creators/admins
+      const floqData = fullDetails[0];
       const currentUserId = userId || user?.id;
-      let pendingInvites: PendingInvitation[] = [];
       
-      const userParticipant = participantsData?.find(p => p.user_id === currentUserId);
-      const isCreatorOrAdmin = floqData.creator_id === currentUserId || 
-                              userParticipant?.role === 'co-admin';
-
-      if (isCreatorOrAdmin) {
-        const { data: invitesData } = await supabase
-          .from('floq_invitations')
-          .select(`
-            invitee_id,
-            status,
-            created_at,
-            profiles!inner(
-              username,
-              display_name
-            )
-          `)
-          .eq('floq_id', floqId)
-          .eq('status', 'pending');
-
-        pendingInvites = (invitesData || []).map((invite: any) => ({
-          invitee_id: invite.invitee_id,
-          invitee_username: invite.profiles?.username,
-          invitee_display_name: invite.profiles?.display_name,
-          status: invite.status,
-          sent_at: invite.created_at,
-        }));
-      }
-
-      // Transform participants data
-      const participants: FloqParticipant[] = (participantsData || []).map((p: any) => ({
+      // Safely parse participants array
+      const participantsData = Array.isArray(floqData.participants) ? floqData.participants : [];
+      const participants: FloqParticipant[] = participantsData.map((p: any) => ({
         user_id: p.user_id,
-        username: p.profiles?.username,
-        display_name: p.profiles?.display_name,
-        avatar_url: p.profiles?.avatar_url,
+        username: p.username,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url,
         role: p.role,
         joined_at: p.joined_at,
       }));
 
+      // Safely parse pending invites
+      const pendingInvitesData = Array.isArray(floqData.pending_invites) ? floqData.pending_invites : [];
+      const pendingInvites: PendingInvitation[] = pendingInvitesData.map((invite: any) => ({
+        invitee_id: invite.invitee_id,
+        invitee_username: invite.invitee_username,
+        invitee_display_name: invite.invitee_display_name,
+        status: invite.status,
+        sent_at: invite.sent_at,
+        id: invite.id,
+      }));
+
+      const userParticipant = participants.find(p => p.user_id === currentUserId);
       const isJoined = !!userParticipant;
       const isCreator = floqData.creator_id === currentUserId;
 
-      console.log('🔍 Floq details debug (fixed):', {
+      console.log('🔍 Floq details debug:', {
         floqId,
         userId: currentUserId,
         creatorId: floqData.creator_id,
@@ -176,12 +128,12 @@ export function useFloqDetails(
         description: floqData.description,
         primary_vibe: floqData.primary_vibe,
         creator_id: floqData.creator_id,
-        participant_count: participants.length,
+        participant_count: floqData.participant_count,
         starts_at: floqData.starts_at,
         ends_at: floqData.ends_at,
         created_at: floqData.starts_at,
         visibility: floqData.visibility,
-        pinned_note: floqData.pinned_note,
+        pinned_note: typeof (floqData as any).pinned_note === 'string' ? (floqData as any).pinned_note : null,
         location: { lat: 0, lng: 0 },
         participants,
         pending_invites: pendingInvites,
