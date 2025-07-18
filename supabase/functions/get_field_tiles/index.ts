@@ -5,8 +5,8 @@ import { corsHeaders } from '../_shared/cors.ts';
 const TTL = 2; // seconds
 
 serve(async (req, ctx) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    // CORS pre-flight
     return new Response('ok', { headers: corsHeaders });
   }
 
