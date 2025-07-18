@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Listens for crowd-count surges on the supplied tile IDs
@@ -9,7 +9,6 @@ export default function useRippleQueue(
   tileIds: string[],
   push: (tileId: string, delta: number) => void,
 ) {
-  const supabase = useSupabaseClient();
 
   useEffect(() => {
     if (!tileIds.length) return;
