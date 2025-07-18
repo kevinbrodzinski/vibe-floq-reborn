@@ -6,7 +6,7 @@ export function useRippleQueue(tileIds: string[], push: (tileId: string, delta: 
     if (!tileIds.length) return;
 
     const ch = supabase
-      .channel('field_tiles_ripple')
+      .channel(`field_tiles_ripple_${Date.now()}_${Math.random().toString(36)}`)
       .on(
         'postgres_changes',
         {

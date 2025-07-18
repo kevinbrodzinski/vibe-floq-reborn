@@ -2396,6 +2396,8 @@ export type Database = {
           available_until: string | null
           created_at: string
           field_enabled: boolean
+          field_ripples: boolean | null
+          field_trails: boolean | null
           notification_preferences: Json | null
           preferred_welcome_template:
             | Database["public"]["Enums"]["welcome_template_enum"]
@@ -2409,6 +2411,8 @@ export type Database = {
           available_until?: string | null
           created_at?: string
           field_enabled?: boolean
+          field_ripples?: boolean | null
+          field_trails?: boolean | null
           notification_preferences?: Json | null
           preferred_welcome_template?:
             | Database["public"]["Enums"]["welcome_template_enum"]
@@ -2422,6 +2426,8 @@ export type Database = {
           available_until?: string | null
           created_at?: string
           field_enabled?: boolean
+          field_ripples?: boolean | null
+          field_trails?: boolean | null
           notification_preferences?: Json | null
           preferred_welcome_template?:
             | Database["public"]["Enums"]["welcome_template_enum"]

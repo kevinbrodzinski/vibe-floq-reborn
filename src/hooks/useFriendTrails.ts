@@ -15,7 +15,7 @@ export function useFriendTrails(friendIds: string[]) {
     if (!friendIds.length) return;
 
     const ch = supabase
-      .channel('vibes_now_trails')
+      .channel(`vibes_now_trails_${Date.now()}_${Math.random().toString(36)}`)
       .on(
         'postgres_changes',
         {

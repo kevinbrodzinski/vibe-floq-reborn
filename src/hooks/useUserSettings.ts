@@ -27,6 +27,8 @@ export interface UserSettings {
   preferred_welcome_template?: 'casual-hangout' | 'professional-meetup' | 'event-based' | 'study-group' | 'creative-collab' | 'support-group';
   available_until?: string | null;
   field_enabled: boolean;
+  field_ripples?: boolean;
+  field_trails?: boolean;
   created_at: string;
   updated_at: string;
 }

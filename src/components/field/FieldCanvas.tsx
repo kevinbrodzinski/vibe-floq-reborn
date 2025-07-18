@@ -175,7 +175,7 @@ export default function FieldCanvas() {
       });
       
       // update ripples
-      if ((settings as any)?.field_ripples !== false) {
+      if (settings?.field_ripples !== false) {
         ripples.current = ripples.current.filter(ripple => {
           const shouldContinue = ripple.update();
           if (!shouldContinue) {
@@ -191,7 +191,7 @@ export default function FieldCanvas() {
     return () => {
       app.ticker.remove(ticker);
     };
-  }, [shouldUsePIXI, (settings as any)?.field_ripples]);
+  }, [shouldUsePIXI, settings?.field_ripples]);
 
   /** render tiles */
   useEffect(() => {
@@ -220,7 +220,7 @@ export default function FieldCanvas() {
     });
     
     // Draw friend trails
-    if ((settings as any)?.field_trails !== false && trailGraphics.current) {
+    if (settings?.field_trails !== false && trailGraphics.current) {
       trailGraphics.current.clear();
       trailGraphics.current.lineStyle(2, 0xffffff, 0.7);
       
