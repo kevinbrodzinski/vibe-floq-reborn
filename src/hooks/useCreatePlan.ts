@@ -18,7 +18,7 @@ interface CreatePlanPayload {
   end?: string
   plannedAt?: string
   endAt?: string
-  duration_hours?: number
+  maxParticipants?: number
   invitedUserIds?: string[]
   floqId?: string
 }
@@ -32,26 +32,22 @@ export function useCreatePlan() {
       if (!session?.user) throw new Error('not-signed-in')
       
       if (payload.floqId) {
-        // Plan inside existing floq
-        const plannedAtISO = payload.plannedAt || new Date().toISOString()
-        const endAtISO = payload.endAt
-        
-        const { data: planData, error: planError } = await supabase
-          .from('floq_plans')
+        // ✅ insert directly into floq_plans
+        const { error, data } = await supabase
+          .from("floq_plans")
           .insert({
             floq_id: payload.floqId,
             title: payload.title,
             description: payload.description,
-            planned_at: plannedAtISO,
-            end_at: endAtISO,
+            planned_at: payload.plannedAt,
+            end_at: payload.endAt,
+            max_participants: payload.maxParticipants,
             creator_id: session.user.id,
-            status: 'draft'
           })
-          .select('id')
-          .single()
-
-        if (planError) throw planError
-        return planData
+          .select()
+          .single();
+        if (error) throw error;
+        return data; // return full row
       } else {
         // Legacy standalone plan flow - create temporary floq
         const validVibes = ['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open'] as const

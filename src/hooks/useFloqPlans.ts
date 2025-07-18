@@ -1,55 +1,59 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
-import { useEffect } from 'react'
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-export function useFloqPlans(floqId: string) {
-  const queryClient = useQueryClient()
+export interface FloqPlanRow {
+  id: string;
+  floq_id: string;
+  title: string;
+  planned_at: string;
+  end_at?: string;
+  description?: string;
+  max_participants?: number;
+  created_at: string;
+}
+
+export function useFloqPlans(floqId: string | undefined) {
+  const qc = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['floq-plans', floqId],
-    queryFn: async () => {
-      if (!floqId) return []
-      
-      const { data, error } = await supabase
-        .from('floq_plans')
-        .select(`
-          *,
-          plan_participants(count)
-        `)
-        .eq('floq_id', floqId)
-        .order('planned_at', { ascending: true })
-
-      if (error) throw error
-      return data || []
-    },
+    queryKey: ["floq-plans", floqId],
     enabled: !!floqId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("floq_plans")
+        .select("*")
+        .eq("floq_id", floqId)
+        .order("planned_at", { ascending: true });
 
-  // Subscribe to real-time updates
+      if (error) throw error;
+      return data as FloqPlanRow[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // realtime → invalidate
   useEffect(() => {
-    if (!floqId) return
+    if (!floqId) return;
 
     const channel = supabase
-      .channel(`floq-plans-${floqId}`)
+      .channel(`floq_plans:${floqId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'floq_plans',
+          event: "*",
+          schema: "public",
+          table: "floq_plans",
           filter: `floq_id=eq.${floqId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['floq-plans', floqId] })
-        }
+        () => qc.invalidateQueries({ queryKey: ["floq-plans", floqId] })
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [floqId, queryClient])
+      supabase.removeChannel(channel);
+    };
+  }, [floqId, qc]);
 
-  return query
+  return query;
 }

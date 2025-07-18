@@ -7,15 +7,17 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useCreatePlan } from '@/hooks/useCreatePlan';
 
 const NewPlan = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const template = searchParams.get('template');
+  const createPlan = useCreatePlan();
 
   const [formData, setFormData] = useState({
-    title: template || '',
+    title: template ? decodeURIComponent(template) : '',
     description: '',
     plannedAt: '',
     endAt: '',
@@ -28,13 +30,15 @@ const NewPlan = () => {
     setIsCreating(true);
 
     try {
-      // TODO: Implement actual plan creation with useCreatePlan hook
-      console.log('Creating plan:', { ...formData, floqId });
+      await createPlan.mutateAsync({
+        title: formData.title,
+        description: formData.description || undefined,
+        plannedAt: formData.plannedAt,
+        endAt: formData.endAt || undefined,
+        floqId, // ← pass to hook!
+      });
       
-      // For now, just navigate back
-      setTimeout(() => {
-        navigate(`/floqs/${floqId}?tab=plans`);
-      }, 1000);
+      navigate(`/floqs/${floqId}?tab=plans`);
     } catch (error) {
       console.error('Failed to create plan:', error);
     } finally {

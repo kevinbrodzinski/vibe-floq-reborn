@@ -73,7 +73,11 @@ export function NewPlanWizard() {
         duration_hours: durationHours
       }
       
-      const planData_result = await createPlan(planData)
+      // Map to CreatePlanPayload format for legacy flow
+      const planData_result = await createPlan({
+        ...planData,
+        plannedAt: planData.start, // Legacy flow uses start/end times
+      })
       navigate(`/plan/${planData_result.id}`, { replace: true })
     } catch (error) {
       console.error('Failed to create plan:', error)
