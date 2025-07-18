@@ -1,14 +1,13 @@
-
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Users, Tag, X } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
 import { useFriends } from '@/hooks/useFriends'
-import { VibePill } from '@/components/floq/VibePill'
 
 interface PlanDetails {
   title: string
@@ -109,18 +108,14 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
         </Label>
         <div className="flex flex-wrap gap-2">
           {vibeOptions.map((option) => (
-            <div
+            <Badge
               key={option.value}
-              className={`cursor-pointer transition-all duration-200 ${
-                details.vibe_tag === option.value ? 'scale-105' : 'hover:scale-105 opacity-70'
-              }`}
+              variant={details.vibe_tag === option.value ? "default" : "outline"}
+              className="cursor-pointer px-3 py-1"
               onClick={() => handleVibeToggle(option.value)}
             >
-              <VibePill 
-                vibe={option.value as any}
-                className={details.vibe_tag === option.value ? '' : 'opacity-70'}
-              />
-            </div>
+              {option.label}
+            </Badge>
           ))}
         </div>
         <p className="text-sm text-muted-foreground">
