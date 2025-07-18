@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface TrailPoint {
   lat: number;
@@ -13,7 +13,6 @@ export interface TrailPoint {
  * @returns Map<friendId, TrailPoint[]>
  */
 export default function useFriendTrails(friendIds: string[]) {
-  const supabase = useSupabaseClient();
   const buffer = useRef<Map<string, TrailPoint[]>>(new Map());
   // dummy state to force re-renders when buffer mutates
   const [, force] = useState(0);
