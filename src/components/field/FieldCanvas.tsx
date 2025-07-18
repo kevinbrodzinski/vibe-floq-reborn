@@ -12,7 +12,7 @@ interface FieldCanvasProps {
 }
 
 export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const rippleContainer = useRef<PIXI.Container | null>(null);
   const tickerRef = useRef<PIXI.Ticker | null>(null);
@@ -23,7 +23,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   // Handle ripple creation from queue
   const handleRipple = (tileId: string, delta: number) => {
     // Guard against operations during cleanup
-    if (isCleaningUpRef.current) return;
+    if (isCleaningUpRef.current || !canvasRef.current) return;
     
     onRipple?.(tileId, delta);
     
@@ -73,7 +73,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     // Animation loop with proper ref storage
     const animate = () => {
       // Guard against operations during cleanup
-      if (isCleaningUpRef.current) return;
+      if (isCleaningUpRef.current || !canvasRef.current) return;
       
       setRipples(prev => {
         const active = prev.filter(ripple => {
@@ -101,7 +101,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     
     // ----------  WINDOW RESIZE  ----------
     const handleResize = () => {
-      if (!appRef.current || isCleaningUpRef.current) return;              // ← guard after unmount
+      if (!appRef.current || isCleaningUpRef.current || !canvasRef.current) return;
       appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener('resize', handleResize);
@@ -113,39 +113,43 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       // Clear ripples state to prevent stale animations
       setRipples([]);
       
-      // 0️⃣ remove PIXI's global resize hook **before** the canvas disappears
-      (window as any).removeEventListener?.('resize', (app as any)._resize);
-      
-      // 1. stop the animation loop using stored refs
+      // 1. Stop the animation loop using stored refs
       if (tickerRef.current && animateRef.current) {
         tickerRef.current.remove(animateRef.current);
       }
 
-      // 2. just empty the display-list using PIXI's built-in helper
-      //    This leaves PIXI with an intact (but length-0) children array,
-      //    so its own `Application.destroy()` loop never sees `undefined`.
-      app?.stage.removeChildren();      // one-liner, does the null checks for us
-
-      // 3. destroy the app itself (idempotent guard)
-      if (!(app as any)._destroyed) {
-        (app as any)._destroyed = true;   // mark so we don't run twice
-        app.destroy(false);               // false = don't destroy children (we already did that)
+      // 2. Clean up our custom objects only
+      if (app?.stage) {
+        // Clean up people dots
+        for (const obj of [...app.stage.children]) {
+          if (!obj || (obj as any)._destroyed) continue;
+          if (obj.name === 'person') {
+            (obj as any)._destroyed = true;
+            (obj as any).destroy?.();
+            app.stage.removeChild(obj);
+          }
+        }
+        
+        // Clean up ripple containers
+        app.stage.removeChildren();
       }
 
-      // 4. detach listeners
+      // 3. Remove event listeners
       window.removeEventListener('resize', handleResize);
 
+      // 4. Clear refs - let PIXI handle its own destruction when canvas is removed from DOM
       appRef.current = null;
       rippleContainer.current = null;
       tickerRef.current = null;
       animateRef.current = null;
+      canvasRef.current = null;
     };
   }, []);
 
   // Render people as dots
   useEffect(() => {
     // Guard against operations during cleanup
-    if (isCleaningUpRef.current) return;
+    if (isCleaningUpRef.current || !canvasRef.current) return;
     
     const app = appRef.current;
     if (!app?.stage || !people.length) return;
@@ -165,7 +169,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     // Add new people sprites
     people.forEach(person => {
       // Guard against operations during cleanup
-      if (isCleaningUpRef.current) return;
+      if (isCleaningUpRef.current || !canvasRef.current) return;
       
       const dot = new PIXI.Graphics();
       dot.beginFill(parseInt(person.color.replace('#', ''), 16));
@@ -177,7 +181,6 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       app.stage.addChild(dot);
     });
   }, [people]);
-
 
   return (
     <canvas 
