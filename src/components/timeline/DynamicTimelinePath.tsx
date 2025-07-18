@@ -1,48 +1,79 @@
 import { useScroll, useTransform, motion } from 'framer-motion';
-import { useMemo, RefObject } from 'react';
-import { buildTimelinePath } from '@/utils/buildTimelinePath';
+import { RefObject, useEffect, useState } from 'react';
+import { useTimelineGeometry } from '@/hooks/useTimelineGeometry';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface DynamicTimelinePathProps {
   containerRef: RefObject<HTMLElement>;
   moments: any[];
+  enabled?: boolean; // Feature flag for A/B testing
 }
 
-export const DynamicTimelinePath = ({ containerRef, moments }: DynamicTimelinePathProps) => {
+export const DynamicTimelinePath = ({ 
+  containerRef, 
+  moments, 
+  enabled = true 
+}: DynamicTimelinePathProps) => {
   const { scrollYProgress } = useScroll({ target: containerRef });
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
   const prefersReduced = usePrefersReducedMotion();
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  const d = useMemo(() => buildTimelinePath(moments), [moments]);
+  const { 
+    pathString, 
+    gradientStops, 
+    totalHeight 
+  } = useTimelineGeometry({ 
+    containerRef, 
+    moments, 
+    enabled: enabled && isHydrated 
+  });
 
-  if (moments.length === 0) return null;
+  // Lazy hydrate after first frame to avoid blocking first paint
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setIsHydrated(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  if (!enabled || !isHydrated || moments.length === 0 || !pathString) {
+    return null;
+  }
 
   return (
     <svg
       aria-hidden="true"
-      width={16}
-      height={moments.length * 120}
-      className="absolute left-2 top-0 select-none pointer-events-none z-10"
+      width={60}
+      height={totalHeight}
+      className="absolute left-0 top-0 select-none pointer-events-none z-10 overflow-visible"
+      style={{ minHeight: totalHeight }}
     >
       <defs>
         <linearGradient id="vibeGradient" x1="0" y1="0" x2="0" y2="100%">
-          {moments.map((m, i) => (
+          {gradientStops.map((stop, index) => (
             <stop
-              key={i}
-              offset={`${(i / Math.max(1, moments.length - 1)) * 100}%`}
-              stopColor={m.vibe_palette?.[0] ?? 'hsl(var(--primary))'}
+              key={index}
+              offset={`${stop.offset}%`}
+              stopColor={stop.color}
             />
           ))}
         </linearGradient>
       </defs>
       <motion.path
-        d={d}
+        d={pathString}
         strokeWidth={4}
         stroke="url(#vibeGradient)"
         fill="none"
         strokeLinecap="round"
+        strokeLinejoin="round"
         strokeDasharray="1 1"
-        {...(!prefersReduced && { style: { pathLength } })}
+        {...(!prefersReduced && { 
+          style: { pathLength },
+          initial: { pathLength: 0 },
+          animate: { pathLength: 1 },
+          transition: { duration: 0.5, ease: "easeOut" }
+        })}
       />
     </svg>
   );
