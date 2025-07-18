@@ -1,9 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, respondWithCors } from '../_shared/cors.ts'
 
 interface BoostRequest {
   floq_id: string;
@@ -31,10 +28,7 @@ Deno.serve(async (req) => {
 
     const { data: { user }, error: authError } = await authSupabase.auth.getUser()
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return respondWithCors({ error: 'Unauthorized' }, 401)
     }
 
     // Use service role key for database operations (bypasses RLS)
@@ -47,10 +41,7 @@ Deno.serve(async (req) => {
     const { floq_id, action, boost_type = 'vibe' }: BoostRequest = await req.json()
 
     if (!floq_id || !action) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: floq_id, action' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return respondWithCors({ error: 'Missing required fields: floq_id, action' }, 400)
     }
 
     console.log(`${action} boost for floq ${floq_id} by user ${user.id}`)
@@ -64,10 +55,7 @@ Deno.serve(async (req) => {
         .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString())
 
       if (count! >= 60) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded: maximum 60 boosts per hour' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return respondWithCors({ error: 'Rate limit exceeded: maximum 60 boosts per hour' }, 429)
       }
 
       // Add boost
@@ -84,16 +72,10 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error('Boost error:', error)
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return respondWithCors({ error: error.message }, 400)
       }
 
-      return new Response(
-        JSON.stringify({ success: true, boost: data }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return respondWithCors({ success: true, boost: data })
     } else if (action === 'unboost') {
       // Remove boost
       const { error } = await supabase
@@ -103,28 +85,16 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error('Unboost error:', error)
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return respondWithCors({ error: error.message }, 400)
       }
 
-      return new Response(
-        JSON.stringify({ success: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return respondWithCors({ success: true })
     }
 
-    return new Response(
-      JSON.stringify({ error: 'Invalid action' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return respondWithCors({ error: 'Invalid action' }, 400)
 
   } catch (error) {
     console.error('Function error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return respondWithCors({ error: 'Internal server error' }, 500)
   }
 })
