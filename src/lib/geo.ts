@@ -55,6 +55,22 @@ export function viewportToTileIds(
 }
 
 /**
+ * Map tile_id to screen coordinates for ripple effects
+ */
+export function tileIdToScreenCoords(
+  tileId: string,
+  viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number },
+  screenSize: { width: number; height: number }
+): { x: number; y: number } {
+  const { latitude, longitude } = decode(tileId);
+  
+  const x = ((longitude - viewport.minLng) / (viewport.maxLng - viewport.minLng)) * screenSize.width;
+  const y = ((latitude - viewport.minLat) / (viewport.maxLat - viewport.minLat)) * screenSize.height;
+  
+  return { x, y };
+}
+
+/**
  * Calculate radius based on crowd count
  */
 export function crowdCountToRadius(count: number): number {

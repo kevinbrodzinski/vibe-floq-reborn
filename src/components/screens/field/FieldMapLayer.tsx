@@ -18,6 +18,8 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import FieldCanvas from "@/components/field/FieldCanvas";
+import useRippleQueue from "@/hooks/useRippleQueue";
+import { tileIdToScreenCoords } from "@/lib/geo";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldMapLayerProps {
@@ -27,7 +29,7 @@ interface FieldMapLayerProps {
 export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
   const { people } = useFieldSocial();
-  const { floqEvents, walkableFloqs } = data;
+  const { floqEvents, walkableFloqs, tileIds, viewport } = data;
   const { settings } = useUserSettings();
   
   // Phase 2: Social interaction state
@@ -178,6 +180,23 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
     }
   }, [people, socialHaptics, toast]);
 
+  
+  // Ripple effect handler
+  const handleRipple = useCallback((tileId: string, delta: number) => {
+    if (!viewport) return;
+    
+    const coords = tileIdToScreenCoords(tileId, viewport, {
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+    
+    console.log('Ripple at tile:', tileId, 'coords:', coords, 'delta:', delta);
+    // The actual ripple creation is handled in FieldCanvas
+  }, [viewport]);
+
+  // Connect ripple queue to real-time tile updates
+  useRippleQueue(tileIds, handleRipple);
+
   // Phase 2: Handle floq joining
   const handleFloqJoin = useCallback((floqId: string) => {
     socialHaptics.floqJoined();
@@ -226,7 +245,11 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
               onAvatarInteraction={handleAvatarInteraction}
             />
             {settings?.field_enabled && (
-              <FieldCanvas people={[]} tileIds={[]} />
+              <FieldCanvas 
+                people={people} 
+                tileIds={tileIds} 
+                onRipple={handleRipple}
+              />
             )}
           </>
         )}
