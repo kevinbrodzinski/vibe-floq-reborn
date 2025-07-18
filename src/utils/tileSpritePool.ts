@@ -1,13 +1,17 @@
+
 import * as PIXI from 'pixi.js';
+
+// Global white texture for all tile sprites
+const WHITE = PIXI.Texture.WHITE;
 
 export class TileSpritePool {
   private pool: PIXI.Sprite[] = [];
   public active = new Map<string, PIXI.Sprite>(); // key = tile_id
-  constructor(private texture: PIXI.Texture, private max = 400) {}
+  constructor(private max = 400) {}
 
   acquire(id: string): PIXI.Sprite {
     if (this.active.has(id)) return this.active.get(id)!;
-    const sprite = this.pool.pop() ?? new PIXI.Sprite(this.texture);
+    const sprite = this.pool.pop() ?? new PIXI.Sprite(WHITE);
     sprite.alpha = 0;                    // start invisible
     this.active.set(id, sprite);
     return sprite;

@@ -1,341 +1,218 @@
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import * as PIXI from 'pixi.js';
-import RippleEffect from '@/shaders/RippleEffect';
-import useRippleQueue from '@/hooks/useRippleQueue';
-import { useViewportBounds } from '@/hooks/useViewportBounds';
-import { useSpatialIndex, type SpatialItem } from '@/hooks/useSpatialIndex';
-import { GraphicsPool } from '@/utils/objectPool';
+import { Application, Container, Graphics } from 'pixi.js';
+import { useSpatialIndex } from '@/hooks/useSpatialIndex';
+import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
+import { tileIdToScreenCoords, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor, type Vibe } from '@/utils/vibeToHSL';
-import { tileIdToScreenCoords } from '@/lib/geo';
-import type { Person } from '../field/contexts/FieldSocialContext';
+import type { Person } from '@/components/field/contexts/FieldSocialContext';
+import type { FieldTile } from '@/types/field';
 
 interface FieldCanvasProps {
   people: Person[];
-  tileIds: string[];
-  fieldTiles: any[];
-  onRipple?: (tileId: string, delta: number) => void;
-}
-
-interface PersonSprite extends SpatialItem {
-  person: Person;
-  graphics: PIXI.Graphics;
-  lastUpdateId: number;
-}
-
-interface RippleSprite extends SpatialItem {
-  ripple: RippleEffect;
-  isVisible: boolean;
-}
-
-export default function FieldCanvas({ people, tileIds, fieldTiles, onRipple }: FieldCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const appRef = useRef<PIXI.Application | null>(null);
-  const rippleContainer = useRef<PIXI.Container | null>(null);
-  const peopleContainer = useRef<PIXI.Container | null>(null);
-  const heatContainer = useRef<PIXI.Container | null>(null);
-  const tickerRef = useRef<PIXI.Ticker | null>(null);
-  const animateRef = useRef<(() => void) | null>(null);
-  const isCleaningUpRef = useRef(false);
-  const graphicsPoolRef = useRef<GraphicsPool>(new GraphicsPool(100, 300));
-  const tilePoolRef = useRef<TileSpritePool | null>(null);
-  const updateCounterRef = useRef(0);
-
-  // Viewport bounds for culling
-  const viewportBounds = useViewportBounds(canvasRef);
-
-  // Sprite tracking with refs for performance
-  const personSpritesRef = useRef<PersonSprite[]>([]);
-  const rippleSpritesRef = useRef<RippleSprite[]>([]);
-  const [, forceRender] = useState({});
-
-  // Spatial indexes
-  const peopleSpatialIndex = useSpatialIndex(personSpritesRef.current);
-  const rippleSpatialIndex = useSpatialIndex(rippleSpritesRef.current);
-
-  // Handle ripple creation from queue
-  const handleRipple = (tileId: string, delta: number) => {
-    if (isCleaningUpRef.current || !canvasRef.current || !appRef.current || !rippleContainer.current) {
-      return;
-    }
-    
-    onRipple?.(tileId, delta);
-    
-    // Create ripple effect at random position for demo
-    const x = Math.random() * (appRef.current.screen.width || 800);
-    const y = Math.random() * (appRef.current.screen.height || 600);
-    
-    const ripple = new RippleEffect(x, y, 20, delta > 0 ? 0x00ff00 : 0xff0000);
-    rippleContainer.current.addChild(ripple.sprite);
-    
-    const width = 40, height = 40;
-    const rippleSprite: RippleSprite = {
-      id: `ripple-${Date.now()}-${Math.random()}`,
-      x,
-      y,
-      width,
-      height,
-      minX: x - width / 2,
-      minY: y - height / 2,
-      maxX: x + width / 2,
-      maxY: y + height / 2,
-      ripple,
-      isVisible: true,
-      sprite: ripple.sprite,
-    };
-    
-    rippleSpritesRef.current = [...rippleSpritesRef.current, rippleSprite];
+  tileIds?: string[];
+  fieldTiles?: FieldTile[];
+  viewportGeo?: {
+    minLat: number;
+    maxLat: number;  
+    minLng: number;
+    maxLng: number;
   };
+  onRipple?: (x: number, y: number) => void;
+}
 
-  useRippleQueue(tileIds, handleRipple);
+export const FieldCanvas: React.FC<FieldCanvasProps> = ({
+  people = [],
+  tileIds = [],
+  fieldTiles = [],
+  viewportGeo,
+  onRipple
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const appRef = useRef<Application | null>(null);
+  const peopleContainerRef = useRef<Container | null>(null);
+  const heatContainerRef = useRef<Container | null>(null);
+  const rippleSpriteMapRef = useRef<Map<string, Graphics>>(new Map());
+  const tilePoolRef = useRef<TileSpritePool | null>(null);
+  const graphicsPoolRef = useRef<GraphicsPool | null>(null);
+  
+  const spatialPeople = useMemo(() => 
+    people.map(person => ({
+      id: person.id,
+      x: person.x,
+      y: person.y,
+      width: 24,
+      height: 24,
+      minX: person.x - 12,
+      minY: person.y - 12,
+      maxX: person.x + 12,
+      maxY: person.y + 12,
+      sprite: null as any
+    })), [people]
+  );
 
-  // Initialize PIXI application
+  const { searchViewport } = useSpatialIndex(spatialPeople);
+
+  // Initialize PIXI app
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    isCleaningUpRef.current = false;
-
-    const app = new PIXI.Application({
-      view: canvasRef.current,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoStart: true,
-      backgroundAlpha: 0,
-    });
+    const app = new Application();
     appRef.current = app;
 
-    // Create containers
-    const heatContainerInstance = new PIXI.Container();
-    const peopleContainerInstance = new PIXI.Container();
-    const rippleContainerInstance = new PIXI.Container();
-    
-    app.stage.addChildAt(heatContainerInstance, 0); // bottom layer
-    app.stage.addChild(peopleContainerInstance);
-    app.stage.addChild(rippleContainerInstance);
-    
-    heatContainer.current = heatContainerInstance;
-    peopleContainer.current = peopleContainerInstance;
-    rippleContainer.current = rippleContainerInstance;
+    app.init({
+      canvas: canvasRef.current,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: 0x000000,
+      antialias: true,
+    }).then(() => {
+      // Create containers in proper z-order
+      const heatContainer = new Container();
+      const peopleContainer = new Container();
+      
+      app.stage.addChild(heatContainer);
+      app.stage.addChild(peopleContainer);
+      
+      heatContainerRef.current = heatContainer;
+      peopleContainerRef.current = peopleContainer;
+      
+      // Initialize pools
+      tilePoolRef.current = new TileSpritePool();
+      graphicsPoolRef.current = new GraphicsPool();
+    });
 
-    // Initialize tile sprite pool
-    const whiteTex = PIXI.Texture.WHITE;
-    const tilePool = new TileSpritePool(whiteTex);
-    tilePoolRef.current = tilePool;
+    return () => {
+      if (appRef.current) {
+        appRef.current.destroy(true);
+        appRef.current = null;
+      }
+    };
+  }, []);
 
-    // Animation loop with viewport culling
+  // Handle canvas clicks for ripples
+  const handleCanvasClick = useCallback((event: React.MouseEvent) => {
+    if (!onRipple) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      onRipple(x, y);
+    }
+  }, [onRipple]);
+
+  // Animation loop
+  useEffect(() => {
+    const app = appRef.current;
+    const heatContainer = heatContainerRef.current;
+    const peopleContainer = peopleContainerRef.current;
+    const tilePool = tilePoolRef.current;
+    const graphicsPool = graphicsPoolRef.current;
+    
+    if (!app || !heatContainer || !peopleContainer || !tilePool || !graphicsPool) return;
+
+    let animationId: number;
+    
     const animate = () => {
-      if (isCleaningUpRef.current || !canvasRef.current) return;
-      
-      updateCounterRef.current++;
-
-      // Viewport culling for people
-      const visiblePeople = peopleSpatialIndex.searchViewport({
-        minX: viewportBounds.minX - 50, // Add buffer for smooth transitions
-        minY: viewportBounds.minY - 50,
-        maxX: viewportBounds.maxX + 50,
-        maxY: viewportBounds.maxY + 50,
-      });
-
-      const allPeople = peopleSpatialIndex.getAllItems();
-      
-      // O(1) lookup optimization
-      const visibleIds = new Set(visiblePeople.map(p => p.id));
-      allPeople.forEach(personSprite => {
-        personSprite.graphics.renderable = visibleIds.has(personSprite.id);
-      });
-
-      // Viewport culling and animation for ripples
-      const currentRipples = rippleSpritesRef.current;
-      const visibleRipples = rippleSpatialIndex.searchViewport({
-        minX: viewportBounds.minX - 100,
-        minY: viewportBounds.minY - 100,
-        maxX: viewportBounds.maxX + 100,
-        maxY: viewportBounds.maxY + 100,
-      });
-
-      const visibleRippleIds = new Set(visibleRipples.map(r => r.id));
-      
-      const activeRipples = currentRipples.filter(rippleSprite => {
-        const isInViewport = visibleRippleIds.has(rippleSprite.id);
-        
-        // Only update animation if visible
-        const isActive = isInViewport ? rippleSprite.ripple.update() : true;
-        rippleSprite.ripple.sprite.renderable = isInViewport;
-        
-        if (!isActive) {
-          if (rippleContainer.current && !isCleaningUpRef.current) {
-            rippleContainer.current.removeChild(rippleSprite.ripple.sprite);
-          }
-          rippleSprite.ripple.destroy();
-        }
-        
-        return isActive;
-      });
-      
-      rippleSpritesRef.current = activeRipples;
-
       // ---- TILE HEAT ----
-      if (heatContainer.current && tilePoolRef.current && viewportBounds) {
-        const tilePool = tilePoolRef.current;
-        const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3); // 1.5 cull
+      if (viewportGeo && fieldTiles.length > 0) {
+        const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
         
         visibleTiles.forEach(tile => {
           const id = tile.tile_id;
           const sprite = tilePool.acquire(id);
-          if (!sprite.parent) heatContainer.current!.addChild(sprite);
+          if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // size / position
+          // Use proper geo bounds for coordinate conversion
           const { x, y, size } = tileIdToScreenCoords(
             id,
-            {
-              minLat: viewportBounds.minY,
-              maxLat: viewportBounds.maxY,
-              minLng: viewportBounds.minX,
-              maxLng: viewportBounds.maxX
-            },
-            { width: app?.screen.width || window.innerWidth, height: app?.screen.height || window.innerHeight }
+            viewportGeo,
+            { width: app.screen.width, height: app.screen.height }
           );
+          
           sprite.x = x - size / 2;
           sprite.y = y - size / 2;
           sprite.width = sprite.height = size;
 
-          // colour & fade
-          const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5); // 3 ppl ≈0.3, 32 ppl ≈1
-          sprite.tint = vibeToColor(tile.avg_vibe as Vibe);
-          sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;               // lerp 20 %
+          // Color and fade
+          const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);
+          const vibeColor = tile.avg_vibe?.h !== undefined ? 
+            vibeToColor('chill' as Vibe) : // fallback, should parse avg_vibe properly
+            vibeToColor('chill' as Vibe);
+          
+          sprite.tint = vibeColor;
+          sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
         });
 
-        // release sprites no longer visible
-        Array.from(tilePool.active.keys()).forEach(id => {
+        // Release sprites no longer visible (track in ref to avoid setState)
+        const currentRipples = rippleSpriteMapRef.current;
+        tilePool.active.forEach((sprite, id) => {
           if (!visibleTiles.some(t => t.tile_id === id)) {
             tilePool.release(id);
+            currentRipples.delete(id);
           }
         });
       }
+
+      // ---- PEOPLE DOTS ----
+      const viewport = {
+        minX: 0,
+        minY: 0, 
+        maxX: app.screen.width,
+        maxY: app.screen.height
+      };
+      
+      const visiblePeople = searchViewport(viewport);
+      
+      // Update people sprites without causing infinite setState
+      visiblePeople.forEach(person => {
+        if (!person.sprite) {
+          person.sprite = graphicsPool.acquire();
+          peopleContainer.addChild(person.sprite);
+        }
+        
+        person.sprite.clear();
+        person.sprite.circle(person.x, person.y, 12);
+        person.sprite.fill({ color: 0x00ff00, alpha: 0.8 });
+      });
+
+      animationId = requestAnimationFrame(animate);
     };
 
-    animateRef.current = animate;
-    const ticker = (app as any).ticker ?? PIXI.Ticker.shared;
-    tickerRef.current = ticker;
-    ticker.add(animate);
-    
-    // Window resize handler
-    const handleResize = () => {
-      if (!appRef.current || isCleaningUpRef.current || !canvasRef.current) return;
-      appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', handleResize);
+    animate();
 
     return () => {
-      isCleaningUpRef.current = true;
-      personSpritesRef.current = [];
-      rippleSpritesRef.current = [];
-      
-      // Stop animation loop
-      if (tickerRef.current && animateRef.current) {
-        tickerRef.current.remove(animateRef.current);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
       }
+    };
+  }, [fieldTiles, people, viewportGeo, searchViewport]);
 
-      // Clean up object pool
-      graphicsPoolRef.current.releaseAll();
-      
-      // Clean up tile pool
-      if (tilePoolRef.current) {
-        tilePoolRef.current.clearAll();
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (heatContainerRef.current) {
+        heatContainerRef.current.removeChildren();
       }
-
-      // Clean up containers
-      if (app?.stage) {
-        app.stage.removeChildren();
+      if (peopleContainerRef.current) {
+        peopleContainerRef.current.removeChildren();
       }
-
-      window.removeEventListener('resize', handleResize);
-
-      // Clear refs
-      appRef.current = null;
-      rippleContainer.current = null;
-      peopleContainer.current = null;
-      heatContainer.current = null;
-      tilePoolRef.current = null;
-      tickerRef.current = null;
-      animateRef.current = null;
-      canvasRef.current = null;
+      tilePoolRef.current?.clearAll();
+      graphicsPoolRef.current?.releaseAll();
     };
   }, []);
-
-  // Update people sprites when people data changes
-  useEffect(() => {
-    if (isCleaningUpRef.current || !canvasRef.current || !appRef.current || !peopleContainer.current) {
-      return;
-    }
-
-    const app = appRef.current;
-    const container = peopleContainer.current;
-    const pool = graphicsPoolRef.current;
-    const currentUpdateId = ++updateCounterRef.current;
-
-    // Create new sprite data
-    const newPersonSprites: PersonSprite[] = people.map(person => {
-      const x = (person.x / 100) * app.screen.width;
-      const y = (person.y / 100) * app.screen.height;
-      
-      // Try to reuse existing sprite for this person
-      const existingSprite = personSpritesRef.current.find(ps => ps.person.id === person.id);
-      let graphics: PIXI.Graphics;
-      
-      if (existingSprite && existingSprite.lastUpdateId < currentUpdateId) {
-        graphics = existingSprite.graphics;
-        existingSprite.lastUpdateId = currentUpdateId;
-      } else {
-        graphics = pool.acquire();
-        container.addChild(graphics);
-      }
-      
-      // Update graphics
-      graphics.clear();
-      graphics.beginFill(parseInt(person.color.replace('#', ''), 16));
-      graphics.drawCircle(0, 0, 4);
-      graphics.endFill();
-      graphics.x = x;
-      graphics.y = y;
-      graphics.name = 'person';
-
-      const width = 8, height = 8;
-      return {
-        id: person.id,
-        x,
-        y,
-        width,
-        height,
-        minX: x - width / 2,
-        minY: y - height / 2,
-        maxX: x + width / 2,
-        maxY: y + height / 2,
-        person,
-        graphics,
-        lastUpdateId: currentUpdateId,
-        sprite: graphics,
-      };
-    });
-
-    // Release unused sprites back to pool
-    personSpritesRef.current.forEach(oldSprite => {
-      if (oldSprite.lastUpdateId < currentUpdateId) {
-        container.removeChild(oldSprite.graphics);
-        pool.release(oldSprite.graphics);
-      }
-    });
-
-    personSpritesRef.current = newPersonSprites;
-  }, [people]);
 
   return (
     <canvas 
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 1 }}
+      onClick={handleCanvasClick}
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        display: 'block'
+      }}
     />
   );
-}
+};
