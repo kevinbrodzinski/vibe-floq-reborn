@@ -1,4 +1,5 @@
-import type { Vibe } from '@/types';
+
+import type { Vibe } from '@/types/vibes';
 
 // Mapping vibes to Tailwind border classes for avatar rings
 export const vibeToBorder = (vibe: Vibe): string => {

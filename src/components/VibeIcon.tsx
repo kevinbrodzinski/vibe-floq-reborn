@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Armchair, 
@@ -12,9 +13,7 @@ import {
   Eye 
 } from 'lucide-react';
 import { vibeColor } from '@/utils/vibe';
-import type { Database } from '@/integrations/supabase/types';
-
-type Vibe = Database['public']['Enums']['vibe_enum'];
+import type { Vibe } from '@/types/vibes';
 
 const vibeIconMap = {
   chill: Armchair,

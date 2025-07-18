@@ -1,12 +1,17 @@
-export type Vibe = 'hype' | 'chill' | 'social' | 'open' | 'solo' | 'curious';
+
+import type { Vibe } from '@/types/vibes';
 
 const palette: Record<Vibe, [number, number, number]> = {
-  hype:    [340,  90, 60],  // hot pink
-  chill:   [195,  70, 55],  // teal
-  social:  [ 35,  85, 55],  // orange
-  open:    [125,  60, 50],  // green
-  solo:    [260,  40, 60],  // purple
-  curious: [ 55,  90, 60],  // yellow
+  hype:     [340,  90, 60],  // hot pink
+  chill:    [195,  70, 55],  // teal
+  social:   [ 35,  85, 55],  // orange
+  open:     [125,  60, 50],  // green
+  solo:     [260,  40, 60],  // purple
+  curious:  [ 55,  90, 60],  // yellow
+  romantic: [320,  70, 60],  // pink
+  weird:    [280,  70, 65],  // violet
+  down:     [220,  15, 45],  // muted blue
+  flowing:  [180,  60, 55],  // cyan
 };
 
 export function vibeToColor(vibe: Vibe, alpha = 0.5): number {

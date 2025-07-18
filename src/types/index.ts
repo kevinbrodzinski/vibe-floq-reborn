@@ -1,8 +1,7 @@
-
 // Core type definitions for floq app (aligned with Supabase types)
 import { Database } from '@/integrations/supabase/types';
 
-export type Vibe = Database['public']['Enums']['vibe_enum'];
+export type { Vibe } from '@/types/vibes';
 export type ClusterType = Database['public']['Enums']['cluster_type_enum'];
 export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 
@@ -21,7 +20,6 @@ export interface WalkableFloq {
   distance_meters: number;
   starts_at: string;
 }
-
 
 export interface PresenceData {
   user_id: string;

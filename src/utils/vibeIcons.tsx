@@ -1,10 +1,8 @@
 import { ReactNode } from 'react';
-
-// Type for supported vibes
-export type VibeType = 'chill' | 'hype' | 'curious' | 'social' | 'solo' | 'romantic' | 'weird' | 'down' | 'flowing' | 'open';
+import type { Vibe } from '@/types/vibes';
 
 // Emoji fallbacks (current implementation)
-const emojiMap: Record<VibeType, string> = {
+const emojiMap: Record<Vibe, string> = {
   chill: "😌",
   hype: "🔥", 
   curious: "🤔",
@@ -21,7 +19,7 @@ const emojiMap: Record<VibeType, string> = {
 // When design delivers SVGs, import them like:
 // import ChillSVG from '@/assets/vibes/chill.svg?react'
 // and replace the emoji strings with <ChillSVG /> components
-const svgIconMap: Record<VibeType, ReactNode> = {
+const svgIconMap: Record<Vibe, ReactNode> = {
   chill: emojiMap.chill,
   hype: emojiMap.hype,
   curious: emojiMap.curious,
@@ -36,12 +34,12 @@ const svgIconMap: Record<VibeType, ReactNode> = {
 
 // Main icon function - stable API that can swap between emoji and SVG
 export const getVibeIcon = (vibe?: string | null): ReactNode => {
-  const normalizedVibe = vibe?.toLowerCase() as VibeType;
+  const normalizedVibe = vibe?.toLowerCase() as Vibe;
   return svgIconMap[normalizedVibe] || "📍";
 };
 
 // Backward compatibility - keep the emoji function for any existing code
 export const vibeEmoji = (vibe?: string | null): string => {
-  const normalizedVibe = vibe?.toLowerCase() as VibeType;
+  const normalizedVibe = vibe?.toLowerCase() as Vibe;
   return emojiMap[normalizedVibe] || "📍";
 };

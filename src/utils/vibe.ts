@@ -1,6 +1,4 @@
-import type { Database } from '@/integrations/supabase/types';
-
-export type Vibe = Database['public']['Enums']['vibe_enum'];
+import type { Vibe } from '@/types/vibes';
 
 // keep this tiny file tree-shakable
 export const vibeEmoji = (() => {
