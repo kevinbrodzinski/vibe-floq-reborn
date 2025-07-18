@@ -3,6 +3,7 @@ import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 import { useFieldTiles } from "@/hooks/useFieldTiles";
+import { usePresencePublisher } from "@/hooks/usePresencePublisher";
 import { viewportToTileIds } from "@/lib/geo";
 import type { Vibe } from "@/types";
 import { FieldLocationProvider, useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
@@ -60,6 +61,9 @@ interface FieldDataProviderInnerProps {
 const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { location } = useFieldLocation();
   const { setShowBanner } = useFieldUI();
+  
+  // Start publishing user presence to the field
+  usePresencePublisher(true);
   
   // Define viewport bounds based on location
   const viewport = useMemo(() => {

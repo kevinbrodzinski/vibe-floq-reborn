@@ -31,7 +31,7 @@ export function useFieldTiles(bounds?: TileBounds) {
     queryFn: async () => {
       if (!tileIds.length) return []
       
-      const { data, error } = await supabase.functions.invoke('get-field-tiles', {
+      const { data, error } = await supabase.functions.invoke('get_field_tiles', {
         body: { tile_ids: tileIds }
       })
 
