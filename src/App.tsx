@@ -9,6 +9,7 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
+import { usePlanInviteListener } from "@/hooks/usePlanInviteListener";
 import { supabase } from "@/integrations/supabase/client";
 
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
@@ -24,6 +25,9 @@ const App = () => {
   
   // Auto-join presence channels for all users
   usePresenceChannel();
+
+  // Listen for plan invitations
+  usePlanInviteListener();
 
   // Realtime subscription for floq messages
   useEffect(() => {

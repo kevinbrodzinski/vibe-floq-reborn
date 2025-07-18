@@ -1,0 +1,42 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/providers/AuthProvider'
+import { toast } from 'sonner'
+
+export function usePlanInviteListener() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel('plan_invite_listener')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'plan_invites',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const planId = payload.new.plan_id as string
+          
+          toast.success('You were invited to a plan!', {
+            action: {
+              label: 'View Plan',
+              onClick: () => navigate(`/floqs/plans/${planId}`),
+            },
+            duration: 5000,
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, navigate])
+}

@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Users, Tag } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Users, Tag, X } from 'lucide-react'
+import { FriendPicker } from './FriendPicker'
+import { useFriends } from '@/hooks/useFriends'
 
 interface PlanDetails {
   title: string
@@ -35,6 +38,8 @@ const vibeOptions = [
 
 export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
   const [details, setDetails] = useState(draft)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const { profiles } = useFriends()
 
   const updateField = <K extends keyof PlanDetails>(field: K, value: PlanDetails[K]) => {
     const updated = { ...details, [field]: value }
@@ -50,6 +55,19 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
   const handleNext = () => {
     if (!details.title.trim()) return
     onNext()
+  }
+
+  const handleInviteFriends = (friendIds: string[]) => {
+    updateField('invitedUserIds', friendIds)
+  }
+
+  const removeFriend = (friendId: string) => {
+    const updated = details.invitedUserIds.filter(id => id !== friendId)
+    updateField('invitedUserIds', updated)
+  }
+
+  const getInvitedFriends = () => {
+    return profiles.filter(profile => details.invitedUserIds.includes(profile.id))
   }
 
   return (
@@ -105,17 +123,61 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
         </p>
       </div>
 
-      {/* Invites Placeholder */}
+      {/* Invite Friends */}
       <div className="space-y-3">
         <Label className="text-base font-medium flex items-center gap-2">
           <Users className="w-4 h-4" />
           Invite Friends
         </Label>
-        <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground">
-          <p className="text-sm">Friend invites coming soon!</p>
-          <p className="text-xs mt-1">For now, you can share the plan link after creation</p>
+        <div className="rounded-xl border border-dashed border-muted p-4">
+          {details.invitedUserIds.length === 0 ? (
+            <p className="text-sm text-muted-foreground mb-3">
+              Nobody invited yet – add friends below
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getInvitedFriends().map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex items-center gap-2 bg-accent rounded-full pl-1 pr-3 py-1"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={friend.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {friend.display_name?.charAt(0)?.toUpperCase() || friend.username?.charAt(0)?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">
+                    {friend.display_name || friend.username}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive/20"
+                    onClick={() => removeFriend(friend.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPickerOpen(true)}
+          >
+            + Invite friends
+          </Button>
         </div>
       </div>
+
+      <FriendPicker
+        open={pickerOpen}
+        initial={details.invitedUserIds}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={handleInviteFriends}
+      />
 
       {/* Next Button */}
       <Button 

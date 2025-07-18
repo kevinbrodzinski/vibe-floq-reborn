@@ -88,6 +88,20 @@ export function useCreatePlan() {
 
       if (participantError) throw participantError
 
+      // Send invitations if there are any
+      if (payload.invitedUserIds && payload.invitedUserIds.length > 0) {
+        const { error: inviteError } = await supabase.rpc('invite_friends', {
+          p_plan_id: planData.id,
+          p_user_ids: payload.invitedUserIds
+        })
+
+        if (inviteError) {
+          console.error('Failed to send invitations:', inviteError)
+          // Don't throw here - plan was created successfully, just invites failed
+          toast.error('Plan created but failed to send some invitations')
+        }
+      }
+
       return planData.id
     },
     onSuccess: (planId) => {
