@@ -1,4 +1,5 @@
 import { KIND_COLOUR, VIBE_COLOUR, StopKind, VibeTag } from '@/lib/theme/stopColours';
+import type { Vibe } from '@/types';
 
 export function getGradientClasses(kind: StopKind, vibe?: VibeTag) {
   // vibe overrides kind when present, with safe fallback for unknown vibes
@@ -13,4 +14,23 @@ export function getGradientClasses(kind: StopKind, vibe?: VibeTag) {
   }
   
   return `bg-gradient-to-br ${KIND_COLOUR[kind]}`;
+}
+
+// Extended function for database vibe enums
+export function getVibeGradient(kind: StopKind, vibe?: Vibe): string {
+  const vibeToTheme: Record<Vibe, VibeTag> = {
+    chill: 'chill',
+    social: 'chill', 
+    hype: 'wild',
+    flowing: 'chill',
+    open: 'artsy',
+    curious: 'artsy',
+    solo: 'chill',
+    romantic: 'romantic',
+    weird: 'wild',
+    down: 'chill',
+  };
+
+  const themeVibe = vibe ? vibeToTheme[vibe] : undefined;
+  return getGradientClasses(kind, themeVibe);
 }

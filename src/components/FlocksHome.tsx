@@ -1,11 +1,11 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { RefreshCcw, Filter, Search, Settings, Map } from 'lucide-react';
+import { RefreshCcw, Filter, Search, Settings, Map, Plus } from 'lucide-react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { FloqStatusBadge } from '@/components/FloqStatusBadge';
 import { StoriesBar } from '@/components/StoriesBar';
 import { RecommendationsStrip } from '@/components/RecommendationsStrip';
@@ -15,6 +15,7 @@ import { SearchBarWithTypeahead } from '@/components/SearchBarWithTypeahead';
 import { AdvancedSearchSheet } from '@/components/AdvancedSearchSheet';
 import { CreateFloqSheet } from '@/components/CreateFloqSheet';
 import { FloqCard } from '@/components/floq/FloqCard';
+import { MyFlockCard } from '@/components/flocks/MyFlockCard';
 import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
@@ -231,7 +232,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6 p-4">
-          {/* My Flocks Stories */}
+          {/* My Flocks Cards */}
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground">My Flocks</h2>
@@ -239,7 +240,47 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                 {myFlocks?.length || 0}
               </Badge>
             </div>
-            <StoriesBar flocks={myFlocks || []} onCreatePress={handleCreatePress} onFlockPress={handleFloqPress} isLoading={myFlocksLoading} />
+            {myFlocksLoading ? (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="flex items-center gap-4 p-4">
+                      <div className="h-[104px] w-[104px] rounded-2xl bg-muted" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/4 bg-muted rounded" />
+                        <div className="h-3 w-1/2 bg-muted rounded" />
+                        <div className="h-3 w-2/3 bg-muted rounded" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : myFlocks.length > 0 ? (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+                {myFlocks.map(flock => (
+                  <MyFlockCard 
+                    key={flock.id} 
+                    flock={flock} 
+                    onOpen={() => handleFloqPress(flock.id)} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card 
+                onClick={handleCreatePress}
+                className="cursor-pointer border-dashed border-2 hover:bg-accent/50 transition-colors"
+              >
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="rounded-full bg-primary/10 p-4 mb-4">
+                    <Plus className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="font-semibold mb-2">Create Your First Flock</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start building your community by creating a flock
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </section>
 
           {/* AI Recommendations */}
