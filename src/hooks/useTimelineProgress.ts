@@ -72,8 +72,7 @@ export function useTimelineProgress(containerRef: React.RefObject<HTMLElement>, 
     // Set up intersection observer with single threshold for performance
     observerRef.current = new IntersectionObserver(handleIntersection, {
       root: containerRef.current,
-      /* snap current when ~middle of viewport */
-      rootMargin: '-40% 0px -40% 0px',
+      rootMargin: '-35% 0px -35% 0px',   // ∼ keeps centre moment "active" longer
       threshold: [0.5] // Single threshold for better performance
     });
 

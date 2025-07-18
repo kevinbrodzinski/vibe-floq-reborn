@@ -1,96 +1,75 @@
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  animate,
-} from 'framer-motion';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { motion, useTransform, MotionValue } from 'framer-motion';
+import { useRef } from 'react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
-interface TimelineScrubberProps {
-  /** `scrollProgress` from 0 → 1 (comes from useTimelineProgress) */
-  progress: number;
-  /** callback receives pct 0 → 1 when knob / track clicked */
+interface TLProps {
+  moments: { title: string; color: string }[];
+  progressVal: MotionValue<number>;  // from parent
   onSeek: (pct: number) => void;
-  /** optional coloured dots under the track */
-  moments?: { title: string; color: string }[];
+  className?: string;
 }
 
 export function TimelineScrubber({
-  progress,
+  moments,
+  progressVal,
   onSeek,
-  moments = [],
-}: TimelineScrubberProps) {
-  const prefersReduced = usePrefersReducedMotion();
+  className = '',
+}: TLProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [trackW, setTrackW] = useState(0);
+  const prefersReduced = usePrefersReducedMotion();
+  const knobX = useTransform(progressVal, v => `calc(${v * 100}% - 8px)`);
 
-  /* watch width */
-  useLayoutEffect(() => {
-    if (!trackRef.current) return;
-    const ro = new ResizeObserver(([e]) => setTrackW(e.contentRect.width));
-    ro.observe(trackRef.current);
-    setTrackW(trackRef.current.offsetWidth);
-    return () => ro.disconnect();
-  }, []);
-
-  /* knob motion value */
-  const dragX = useMotionValue(progress * trackW);
-  /* when scroll updates (not dragging) spring knob */
-  useEffect(() => {
-    if (prefersReduced) return;
-    const controls = animate(dragX, progress * trackW, {
-      type: 'spring',
-      stiffness: 350,
-      damping: 40,
-    });
-    return () => controls.stop();
-  }, [progress, trackW, prefersReduced]);
-
-  /* commit knob position → onSeek */
-  const commit = () => {
-    const pct = Math.max(0, Math.min(1, dragX.get() / trackW));
+  /* click / drag helper */
+  const handleSeek = (clientX: number) => {
+    const rect = trackRef.current!.getBoundingClientRect();
+    const pct = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
     onSeek(pct);
+    if (!prefersReduced) progressVal.set(pct);
   };
 
   return (
-    <div className="sticky bottom-2 left-0 right-0 mx-auto max-w-[500px] relative select-none">
-      {/* track */}
-      <div
-        ref={trackRef}
-        className="h-1 w-full rounded-full bg-muted/40"
-        onClick={e => {
-          const rect = trackRef.current!.getBoundingClientRect();
-          const pct = (e.clientX - rect.left) / rect.width;
-          onSeek(pct);
-          if (!prefersReduced) dragX.set(pct * rect.width);
-        }}
-      />
-
+    <div
+      ref={trackRef}
+      className={`relative h-2 rounded-full bg-muted/50 ${className}`}
+      onClick={e => handleSeek(e.clientX)}
+    >
       {/* knob */}
-      <motion.div
+      <motion.span
+        style={{ translateX: knobX }}
         drag="x"
         dragConstraints={trackRef}
-        style={{ x: dragX }}
-        dragMomentum={false}
-        onDragEnd={commit}
-        className="absolute -top-2 h-5 w-5 cursor-pointer rounded-full border-2 border-card bg-primary shadow-lg"
+        dragElastic={0}
+        onDrag={(_, info) => handleSeek(info.point.x)}
+        className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary ring-2 ring-white"
+        aria-label="timeline scrubber"
+        role="slider"
+        aria-valuemin={0}
+        aria-valuemax={moments.length - 1}
+        aria-valuenow={Math.round(progressVal.get() * (moments.length - 1))}
       />
 
-      {/* coloured dots */}
-      {moments.length > 1 &&
-        moments.map((m, i) => (
-          <span
-            key={m.title + i}
-            className="pointer-events-none absolute top-1/2 h-1 w-1 -translate-y-1/2 rounded-full"
-            style={{
-              left: `${(i / (moments.length - 1)) * 100}%`,
-              background: m.color,
-            }}
-            role="button"
-            aria-label={`Jump to ${m.title} moment`}
-          />
-        ))}
+      {/* coloured tick-marks */}
+      {moments.map((m, i) => (
+        <span
+          key={i}
+          className="absolute top-1/2 -translate-y-1/2 h-2 w-2 rounded-full"
+          style={{
+            left:
+              moments.length === 1
+                ? '50%'
+                : `${(i / (moments.length - 1)) * 100}%`,
+            background: m.color,
+          }}
+          role="button"
+          aria-label={`Jump to ${m.title}`}
+          onClick={e => {
+            e.stopPropagation();
+            handleSeek(
+              (e.target as HTMLElement).getBoundingClientRect().left,
+            );
+          }}
+        />
+      ))}
     </div>
   );
 }

@@ -14,6 +14,23 @@ html, body {
   scroll-margin-top: 6rem;
 }
 
+/* CSS helper for the connecting line */
+.afterglow-moment-anchor {
+  /* ensures enough left padding so content does not overlap spline */
+  padding-left: 3.5rem;
+  position: relative;
+}
+
+.afterglow-moment-anchor::before {
+  content: '';
+  position: absolute;
+  left: 1.25rem;         /* align with DynamicTimelinePath's x-pos */
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--muted));
+}
+
 /* Ripple animation */
 @keyframes ripple {
   to {

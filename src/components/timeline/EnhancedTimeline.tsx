@@ -1,4 +1,6 @@
 import { useRef } from 'react';
+import { motion, useMotionValue } from 'framer-motion';
+import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
 import { TimelineScrubber } from '@/components/timeline/TimelineScrubber';
 import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
 import { useTimelineProgress } from '@/hooks/useTimelineProgress';
@@ -11,20 +13,26 @@ interface EnhancedTimelineProps {
 }
 
 export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const prefersReduced = usePrefersReducedMotion();
-  
-  // Track scroll progress and current moment
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  /* ──────────────────────────────────────────────
+     1. scroll progress / current moment
+  ────────────────────────────────────────────── */
   const { scrollProgress, currentMomentIndex } = useTimelineProgress(
     containerRef,
     moments,
   );
 
-  // Jump helper used by keyboard / scrubber
-  const jumpToPct = (pct: number) => {
-    const idx = Math.round(pct * (moments.length - 1));
-    jumpToIndex(idx);
-  };
+  /* ──────────────────────────────────────────────
+     2. scrubber motion-value (kept in sync)
+  ────────────────────────────────────────────── */
+  const progressMV = useMotionValue(scrollProgress);
+  progressMV.set(scrollProgress); // keep MV fresh every render
+
+  /* ──────────────────────────────────────────────
+     3. jumping helpers
+  ────────────────────────────────────────────── */
+  const prefersReduced = usePrefersReducedMotion();
 
   const jumpToIndex = (idx: number) => {
     const el = document.querySelector(
@@ -38,42 +46,58 @@ export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
     }
   };
 
-  // Add keyboard and touch navigation
-  useTimelineNavigation({ 
+  const jumpToPct = (pct: number) => {
+    const idx = Math.round(pct * (moments.length - 1));
+    jumpToIndex(idx);
+  };
+
+  /* ──────────────────────────────────────────────
+     4. keyboard / swipe navigation hook
+  ────────────────────────────────────────────── */
+  useTimelineNavigation({
     total: moments.length,
     current: currentMomentIndex,
-    onJump: jumpToIndex
+    onJump: jumpToIndex,
   });
 
+  /* ──────────────────────────────────────────────
+     5. render
+  ────────────────────────────────────────────── */
   return (
     <>
-      {/* Vertical scrollable timeline */}
-      <main
+      {/* scrollable wrapper gets the ref for IO tracking */}
+      <div
         ref={containerRef}
-        className="relative space-y-8 overflow-y-auto scroll-smooth"
+        className="relative flex flex-col gap-12 pb-24"
       >
-        {/* Connecting line */}
-        <div className="absolute left-3 top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-accent to-secondary opacity-30" />
-        
-        {/* Moment cards */}
-        {moments.map((moment, index) => (
-          <AfterglowMomentCard 
-            key={moment.id} 
-            moment={moment} 
-            index={index}
-            data-moment-index={index}
-          />
-        ))}
-      </main>
+        {/* vertical connecting spline */}
+        <DynamicTimelinePath
+          containerRef={containerRef}
+          mode="geometry"
+          moments={moments}
+        />
 
-      {/* Horizontal scrub helper */}
+        {/* moment cards */}
+        {moments.map((m, i) => (
+          <div
+            key={m.id ?? i}
+            data-moment-index={i}
+            className="afterglow-moment-anchor"
+          >
+            <AfterglowMomentCard moment={m} index={i} />
+          </div>
+        ))}
+      </div>
+
+      {/* horizontal scrubber helper */}
       {moments.length > 1 && (
         <TimelineScrubber
-          progress={scrollProgress}
+          className="sticky bottom-4 mx-auto max-w-[480px]"
+          progressVal={progressMV}
           onSeek={jumpToPct}
-          moments={moments.map(m => ({ 
-            title: m.title, 
-            color: m.color || 'hsl(var(--primary))' 
+          moments={moments.map(m => ({
+            title: m.title || 'Moment',
+            color: m.color || 'hsl(var(--primary))',
           }))}
         />
       )}
