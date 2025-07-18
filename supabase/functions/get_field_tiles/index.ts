@@ -1,10 +1,11 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const TTL = 2; // seconds
 
-serve(async (req, ctx) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -17,63 +18,48 @@ serve(async (req, ctx) => {
     });
   }
 
-  const { tile_ids = [], since } = await req.json().catch(() => ({}));
-  if (!Array.isArray(tile_ids) || !tile_ids.length) {
-    return new Response(JSON.stringify({ error: 'tile_ids[] required' }), { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-
-  const miss: string[] = [];
-  let cached: any[] = [];
-
-  // Try to use KV cache if available, fallback to direct DB query
-  if (ctx.kv) {
-    try {
-      cached = await Promise.all(
-        tile_ids.map(id => ctx.kv.get(`ft:${id}`).then(v => v ? JSON.parse(v) : (miss.push(id), null)))
-      );
-    } catch (error) {
-      console.warn('KV cache unavailable, falling back to direct DB query:', error);
-      miss.push(...tile_ids); // Query all tiles from DB
+  try {
+    const { tile_ids = [], since } = await req.json().catch(() => ({}));
+    if (!Array.isArray(tile_ids) || !tile_ids.length) {
+      return new Response(JSON.stringify({ error: 'tile_ids[] required' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-  } else {
-    // No KV available, query all tiles from DB
-    miss.push(...tile_ids);
-  }
 
-  let rows: any[] = [];
-  if (miss.length) {
-    const { data, error } = await ctx.db
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Query field tiles from database
+    const { data, error } = await supabase
       .from('field_tiles')
       .select('*')
-      .in('tile_id', miss)
+      .in('tile_id', tile_ids)
       .gt('updated_at', since ?? 'epoch');
       
     if (error) {
+      console.error('[FIELD_TILES] Database error:', error);
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    rows = data || [];
+    const tiles = data || [];
+    console.log(`[FIELD_TILES] Returning ${tiles.length} tiles for ${tile_ids.length} requested IDs`);
     
-    // Try to cache results if KV is available
-    if (ctx.kv && rows.length) {
-      try {
-        await Promise.all(
-          rows.map(r => ctx.kv.set(`ft:${r.tile_id}`, JSON.stringify(r), { ex: TTL }))
-        );
-      } catch (error) {
-        console.warn('Failed to cache tiles:', error);
-      }
-    }
-  }
+    return new Response(JSON.stringify({ tiles }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
-  const responseBody = { tiles: [...cached.filter(Boolean), ...rows] };
-  return new Response(JSON.stringify(responseBody), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  } catch (error) {
+    console.error('[FIELD_TILES] Error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 });

@@ -34,7 +34,6 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
   const appRef = useRef<Application | null>(null);
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
-  const rippleSpriteMapRef = useRef<Map<string, Graphics>>(new Map());
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
   
@@ -146,12 +145,10 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
           sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
         });
 
-        // Release sprites no longer visible (track in ref to avoid setState)
-        const currentRipples = rippleSpriteMapRef.current;
+        // Release sprites no longer visible
         tilePool.active.forEach((sprite, id) => {
           if (!visibleTiles.some(t => t.tile_id === id)) {
             tilePool.release(id);
-            currentRipples.delete(id);
           }
         });
       }
@@ -166,7 +163,7 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
       
       const visiblePeople = searchViewport(viewport);
       
-      // Update people sprites without causing infinite setState
+      // Update people sprites
       visiblePeople.forEach(person => {
         if (!person.sprite) {
           person.sprite = graphicsPool.acquire();
@@ -193,12 +190,8 @@ export const FieldCanvas: React.FC<FieldCanvasProps> = ({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (heatContainerRef.current) {
-        heatContainerRef.current.removeChildren();
-      }
-      if (peopleContainerRef.current) {
-        peopleContainerRef.current.removeChildren();
-      }
+      heatContainerRef.current?.removeChildren();
+      peopleContainerRef.current?.removeChildren();
       tilePoolRef.current?.clearAll();
       graphicsPoolRef.current?.releaseAll();
     };
