@@ -50,7 +50,7 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
 
   if (prefersReduced) {
     return (
-      <div onClick={handleMomentClick} className="cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors">
+      <div onClick={handleMomentClick} className="cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors" data-moment-index={index}>
         <TimelineItem>
           <TimelineSeparator>
             <TimelineDot color={moment.color ?? "#6b7280"} />
@@ -106,6 +106,7 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
       }}
       onClick={handleMomentClick} 
       className="cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors"
+      data-moment-index={index}
     >
       <TimelineItem>
         <TimelineSeparator>

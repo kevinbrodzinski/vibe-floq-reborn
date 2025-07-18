@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
+import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
 import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
 import { useAISummary } from '@/hooks/useAISummary';
+import { useTimelineProgress } from '@/hooks/useTimelineProgress';
 
 // This component is now replaced by ParallaxMoment
 
@@ -102,9 +104,22 @@ export default function AfterglowDetailPage() {
   }
 
   const { afterglow, moments } = data;
+  
+  // Timeline progress hook
+  const timelineProgress = useTimelineProgress(containerRef, moments);
 
   return (
-    <div ref={containerRef} className="container mx-auto px-4 py-8 max-w-4xl relative">
+    <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
+      {/* Timeline Progress Bar */}
+      {moments.length > 0 && (
+        <TimelineProgressBar
+          scrollProgress={timelineProgress.scrollProgress}
+          currentMomentIndex={timelineProgress.currentMomentIndex}
+          moments={moments}
+        />
+      )}
+      
+      <div className="container mx-auto px-4 py-8 max-w-4xl relative">
       {/* Generative Background */}
       <GenerativeBackdrop 
         dominantVibe={afterglow.dominant_vibe || 'chill'}
@@ -212,6 +227,7 @@ export default function AfterglowDetailPage() {
         >
           ← Back to Archive
         </Link>
+        </div>
       </div>
     </div>
   );
