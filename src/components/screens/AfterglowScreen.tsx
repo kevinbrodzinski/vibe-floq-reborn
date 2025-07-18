@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { ParticleField } from '@/components/visual/ParticleField';
 import { useAmbientBackground } from '@/hooks/useAmbientBackground';
 import { triggerHaptic } from '@/utils/haptics';
+import { sampleMomentsWithMetadata } from '@/utils/sampleAfterglowData';
 
 interface NightEvent {
   id: string;
@@ -318,11 +319,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
           /* Always use Enhanced Timeline - no more flags */
           <EnhancedTimeline moments={afterglow.moments} />
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <Sparkles className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg mb-2">No moments captured today</p>
-            <p className="text-sm">Start exploring to create your afterglow!</p>
-          </div>
+          /* Show sample moments for demo */
+          <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 2)} />
         )}
       </div>
 
