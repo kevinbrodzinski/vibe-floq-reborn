@@ -1,9 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/providers/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import type { Vibe } from "@/types";
-import type { FloqFilters } from "@/contexts/FloqUIContext";
-import { useEffect } from "react";
+// --- useNearbyFlocks.ts ---
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/providers/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
+import type { Vibe } from '@/types';
+import type { FloqFilters } from '@/contexts/FloqUIContext';
+import { useEffect } from 'react';
+import { z } from 'zod';
 
 export interface NearbyFloq {
   id: string;
@@ -41,6 +43,22 @@ interface UseNearbyFlocksOptions {
   enabled?: boolean;
 }
 
+const SearchFloqSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  primary_vibe: z.string(),
+  starts_at: z.string().nullable().optional(),
+  ends_at: z.string().nullable().optional(),
+  distance_m: z.number().optional(),
+  participant_count: z.union([z.number(), z.string()]),
+  name: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  vibe_tag: z.string().optional().nullable(),
+  friends_going_count: z.number().optional(),
+  friends_going_avatars: z.array(z.string()).optional(),
+  friends_going_names: z.array(z.string()).optional(),
+});
+
 export function useNearbyFlocks({ 
   geo, 
   filters = {},
@@ -50,15 +68,14 @@ export function useNearbyFlocks({
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription for nearby flocks
   useEffect(() => {
     const channel = supabase
       .channel('flocks')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'floqs' }, () => {
-        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+        queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'floqs' }, () => {
-        queryClient.invalidateQueries({ queryKey: ["nearby-flocks"] });
+        queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
       })
       .subscribe();
 
@@ -68,15 +85,14 @@ export function useNearbyFlocks({
   }, [queryClient]);
 
   return useQuery({
-    queryKey: ["nearby-flocks", user?.id, geo?.lat, geo?.lng, filters, limit],
+    queryKey: ['nearby-flocks', user?.id, geo?.lat, geo?.lng, filters, limit],
     enabled: enabled && !!geo && typeof geo.lat === 'number' && typeof geo.lng === 'number',
     queryFn: async (): Promise<NearbyFloq[]> => {
       if (!geo || typeof geo.lat !== 'number' || typeof geo.lng !== 'number') {
         return [];
       }
-      
-      // Use search_floqs to get friends going data
-      const { data, error } = await supabase.rpc("search_floqs", {
+
+      const { data, error } = await supabase.rpc('search_floqs', {
         p_lat: Number(geo.lat),
         p_lng: Number(geo.lng),
         p_radius_km: 25,
@@ -89,54 +105,57 @@ export function useNearbyFlocks({
       });
 
       if (error) {
-        console.error("Nearby flocks error:", error);
+        console.error('Nearby flocks error:', error);
         throw error;
       }
 
       if (!data) return [];
 
-      // Get user's joined floqs to mark as joined
+      const parsed = z.array(SearchFloqSchema).safeParse(data);
+      if (!parsed.success) {
+        console.warn('❌ Invalid search_floqs data:', parsed.error);
+        return [];
+      }
+
       let joinedFloqIds: string[] = [];
       if (user) {
         const { data: joinedData } = await supabase
           .from('floq_participants')
           .select('floq_id')
           .eq('user_id', user.id);
-        
+
         joinedFloqIds = joinedData?.map(item => item.floq_id) || [];
       }
 
-      // Transform and filter the data
-      let filteredData = data.map(floq => {
+      let filteredData = parsed.data.map(floq => {
         const startsAt = floq.starts_at ? new Date(floq.starts_at) : new Date();
         const now = new Date();
-        const startsInMin = Math.max(0, Math.floor((startsAt.getTime() - now.getTime()) / (1000 * 60)));
-        
+        const startsInMin = Math.max(0, Math.floor((startsAt.getTime() - now.getTime()) / 60000));
+
         return {
           id: floq.id,
           title: floq.title,
-          name: (floq as any).name || undefined,
-          description: (floq as any).description || undefined,
-          primary_vibe: floq.primary_vibe,
-          vibe_tag: (floq as any).vibe_tag || undefined,
+          name: floq.name || undefined,
+          description: floq.description || undefined,
+          primary_vibe: floq.primary_vibe as Vibe,
+          vibe_tag: floq.vibe_tag || undefined,
           participant_count: Number(floq.participant_count),
-          boost_count: 0, // search_floqs doesn't return boost_count
+          boost_count: 0,
           distance_meters: Number(floq.distance_m || 0),
-          activity_score: 0, // Default to 0 to avoid mis-ranking
+          activity_score: 0,
           starts_at: floq.starts_at || undefined,
           ends_at: floq.ends_at || undefined,
           starts_in_min: startsInMin,
-          max_participants: undefined, // search_floqs doesn't return max_participants
-          members: [], // search_floqs doesn't return members array
+          max_participants: undefined,
+          members: [],
           is_joined: joinedFloqIds.includes(floq.id),
-          creator_id: undefined, // search_floqs doesn't return creator_id
-          friends_going_count: (floq as any).friends_going_count || 0,
-          friends_going_avatars: (floq as any).friends_going_avatars || [],
-          friends_going_names: (floq as any).friends_going_names || [],
+          creator_id: undefined,
+          friends_going_count: floq.friends_going_count || 0,
+          friends_going_avatars: floq.friends_going_avatars || [],
+          friends_going_names: floq.friends_going_names || [],
         };
       });
 
-      // Apply filters
       if (filters.vibe) {
         filteredData = filteredData.filter(floq => 
           floq.primary_vibe === filters.vibe || floq.vibe_tag === filters.vibe
@@ -144,7 +163,7 @@ export function useNearbyFlocks({
       }
 
       if (filters.distanceKm !== undefined) {
-        const maxDistance = filters.distanceKm * 1000; // Convert to meters
+        const maxDistance = filters.distanceKm * 1000;
         filteredData = filteredData.filter(floq => 
           floq.distance_meters <= maxDistance
         );
@@ -158,8 +177,8 @@ export function useNearbyFlocks({
 
       return filteredData;
     },
-    staleTime: 1000 * 30, // 30 seconds
-    gcTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 30,
+    gcTime: 1000 * 60 * 5,
     refetchOnWindowFocus: true,
   });
 }
