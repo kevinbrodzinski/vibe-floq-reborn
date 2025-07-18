@@ -35,7 +35,7 @@ export function FlockAvatar({
       className={cn(
         'relative shrink-0 rounded-full overflow-hidden select-none ring-2 ring-black/40',
         glow
-          ? 'before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(var(--neon),_transparent_60%)] before:opacity-60 before:blur-lg'
+          ? "after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-[radial-gradient(var(--neon),_transparent_60%)] after:opacity-60 after:blur-2xl"
           : '',
         gradient,
         className,

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --neon: theme(colors.sky.400); /* neon glow color for circular avatars */
+  --neon: hsl(199 100% 60%); /* sky-400 looks good on both dark & light */
 }
 
 /* Silence ResizeObserver loop limit exceeded warnings */

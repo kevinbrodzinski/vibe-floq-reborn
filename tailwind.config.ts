@@ -95,6 +95,7 @@ export default {
 					open: '126 84% 75%',
 					curious: '280 61% 68%'
 				},
+				neon: 'var(--neon)', // we read this in the component
 				cardBg: 'rgb(var(--card-bg) / <alpha-value>)',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
