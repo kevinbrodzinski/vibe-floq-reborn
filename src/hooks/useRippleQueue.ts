@@ -13,7 +13,7 @@ export default function useRippleQueue(
 ) {
 
   useEffect(() => {
-    if (!tileIds.length) return;
+    if (!tileIds?.length) return;
 
     const channel = rtChannel(
       supabase,
@@ -39,5 +39,5 @@ export default function useRippleQueue(
     return () => {
       channel.unsubscribe();
     };
-  }, [tileIds.join(','), push]);
+  }, [tileIds?.join(','), push]);
 }

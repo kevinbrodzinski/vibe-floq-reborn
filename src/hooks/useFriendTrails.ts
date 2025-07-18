@@ -20,7 +20,7 @@ export default function useFriendTrails(friendIds: string[]) {
   const [, force] = useState(0);
 
   useEffect(() => {
-    if (!friendIds.length) return;
+    if (!friendIds?.length) return;
 
     const channel = rtChannel(
       supabase,
@@ -50,7 +50,7 @@ export default function useFriendTrails(friendIds: string[]) {
     return () => {
       channel.unsubscribe();
     };
-  }, [friendIds.join(',')]);
+  }, [friendIds?.join(',')]);
 
   return buffer.current;
 }
