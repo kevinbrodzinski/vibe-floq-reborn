@@ -6,23 +6,44 @@ export function useFieldDiffs(tileIds: string[]) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const subs = tileIds.map(id =>
-      supabase.channel(`field:${id}`)
-        .on('broadcast', { event: 'tile_update' }, ({ payload }) =>
+    if (!tileIds.length) return;
+
+    // Subscribe to postgres_changes for field_tiles table
+    const channel = supabase
+      .channel('field_tiles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'field_tiles',
+        },
+        (payload) => {
+          // Filter client-side to only handle tiles in current viewport
+          const tileId = payload.new?.tile_id || payload.old?.tile_id;
+          if (!tileIds.includes(tileId)) return;
+
           qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[] = []) => {
             const m = new Map(old.map(t => [t.tile_id, t]));
-            m.set(payload.tile_id, { ...m.get(payload.tile_id), ...payload });
+            
+            switch (payload.eventType) {
+              case 'INSERT':
+              case 'UPDATE':
+                m.set(payload.new.tile_id, payload.new);
+                break;
+              case 'DELETE':
+                m.delete(payload.old.tile_id);
+                break;
+            }
+            
             return [...m.values()];
-          })
-        )
-        .on('broadcast', { event: 'tile_remove' }, ({ payload }) =>
-          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[] = []) =>
-            old.filter(t => t.tile_id !== payload.tile_id)
-          )
-        )
-        .subscribe()
-    );
+          });
+        }
+      )
+      .subscribe();
 
-    return () => subs.forEach(ch => ch.unsubscribe());
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tileIds.join('|')]);
 }
