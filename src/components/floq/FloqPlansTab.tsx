@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus } from 'lucide-react';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 import { useFloqPlans } from '@/hooks/useFloqPlans';
+import { useSession } from '@supabase/auth-helpers-react';
 
 interface FloqPlansTabProps {
   floqDetails: FloqDetails;
@@ -13,6 +14,7 @@ interface FloqPlansTabProps {
 
 export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
   const navigate = useNavigate();
+  const session = useSession();
   const [quickIdeas, setQuickIdeas] = useState(false);
 
   const startTemplate = (templateName: string) => {
@@ -21,6 +23,23 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
   };
 
   const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
+
+  // Bulletproof host detection - same logic as JoinedFloqView
+  const isHost = useMemo(() => 
+    floqDetails?.creator_id === session?.user.id, 
+    [floqDetails?.creator_id, session?.user.id]
+  );
+
+  // Debug logging
+  console.log('🔍 Plans tab creator debug:', {
+    floqId: floqDetails.id,
+    creatorId: floqDetails.creator_id,
+    userId: session?.user.id,
+    isCreatorProp: floqDetails.is_creator,
+    isHostCalculated: isHost,
+    sessionExists: !!session,
+    userExists: !!session?.user
+  });
 
   if (isLoading) {
     return (
@@ -38,8 +57,8 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
           Coordinate activities and future meet-ups
         </p>
 
-        {/* single CTA - show for host or if no restrictions */}
-        {floqDetails.is_creator && (
+        {/* single CTA - show for host using robust detection */}
+        {isHost && (
           <Button
             variant="default"
             className="mx-auto"
@@ -50,7 +69,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
           </Button>
         )}
 
-        {!floqDetails.is_creator && (
+        {!isHost && (
           <p className="text-sm text-muted-foreground">
             No plans yet — ask the host!
           </p>
@@ -119,7 +138,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
       </div>
 
       {/* Floating action button for host when plans exist */}
-      {floqDetails.is_creator && (
+      {isHost && (
         <Button
           size="icon"
           className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg"
