@@ -17,6 +17,8 @@ import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
 import { MomentDetailDrawer } from '@/components/moments/MomentDetailDrawer';
 import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
+import TimelineScrubber from '@/components/timeline/TimelineScrubber';
+import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
 import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
 import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
@@ -33,6 +35,7 @@ export default function AfterglowDetailPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [selectedMoment, setSelectedMoment] = useState<AfterglowMoment | null>(null);
   const [highlightedMomentIds, setHighlightedMomentIds] = useState<string[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const { mutate: togglePinned } = useTogglePinned();
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReduced = usePrefersReducedMotion();
@@ -162,6 +165,23 @@ export default function AfterglowDetailPage() {
   // Timeline progress hook
   const timelineProgress = useTimelineProgress(containerRef, moments);
   const scrollContext = useScrollContext(containerRef, moments, timelineProgress.currentMomentIndex);
+
+  // Update current index when scroll progress changes
+  React.useEffect(() => {
+    setCurrentIdx(timelineProgress.currentMomentIndex);
+  }, [timelineProgress.currentMomentIndex]);
+
+  // Timeline navigation helpers
+  useTimelineNavigation({
+    total: moments.length,
+    current: currentIdx,
+    onJump: (i) => {
+      setCurrentIdx(i);
+      document
+        .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
@@ -306,6 +326,20 @@ export default function AfterglowDetailPage() {
         onOpenChange={setShareOpen}
         afterglow={afterglow}
       />
+
+      {/* Timeline Scrubber */}
+      {moments.length > 0 && (
+        <TimelineScrubber
+          count={moments.length}
+          current={currentIdx}
+          onJump={(i) => {
+            setCurrentIdx(i);
+            document
+              .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)
+              ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+        />
+      )}
 
       {/* Navigation */}
       <div className="pt-8 border-t relative z-10">

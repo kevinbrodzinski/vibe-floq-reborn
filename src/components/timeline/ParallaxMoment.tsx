@@ -74,10 +74,12 @@ const ParallaxMoment = memo(({
       <div 
         onClick={handleMomentClick} 
         onMouseEnter={handleMomentHover}
-        className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors ${
+        tabIndex={0}
+        className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/60 ${
           isHighlighted ? 'ring-2 ring-primary/60 bg-primary/5' : ''
         }`} 
         data-moment-index={index}
+        aria-label={`Moment ${index + 1}: ${moment.title}`}
       >
         <TimelineItem>
           <TimelineSeparator>
@@ -134,10 +136,12 @@ const ParallaxMoment = memo(({
       }}
       onClick={handleMomentClick} 
       onMouseEnter={handleMomentHover}
-      className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors ${
+      tabIndex={0}
+      className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/60 ${
         isHighlighted ? 'ring-2 ring-primary/60 bg-primary/5' : ''
       }`}
       data-moment-index={index}
+      aria-label={`Moment ${index + 1}: ${moment.title}`}
     >
       <TimelineItem>
         <TimelineSeparator>
