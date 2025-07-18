@@ -95,11 +95,16 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       // 1. stop the animation loop (v8 may not have app.ticker)
       ticker.remove(animate);
 
-      // 2. destroy stage children – clone first to avoid holes
-      [...app.stage.children].forEach(child => (child as any)?.destroy?.());
+      // 2. just empty the display-list, don't mutate the array in-place
+      //    This leaves PIXI with an intact (but length-0) children array,
+      //    so its own `Application.destroy()` loop never sees `undefined`.
+      app.stage.removeChildren();      // <-- no individual destroy calls
 
-      // 3. destroy the app itself
-      app.destroy(true);
+      // 3. destroy the app itself (idempotent guard)
+      if (!(app as any)._destroyed) {
+        (app as any)._destroyed = true;   // mark so we don't run twice
+        app.destroy(true);
+      }
 
       // 4. detach listeners
       window.removeEventListener('resize', handleResize);
