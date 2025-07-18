@@ -17,7 +17,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { FieldCanvas } from "@/components/field/FieldCanvas";
+import FieldCanvas from "@/components/field/FieldCanvas";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldMapLayerProps {

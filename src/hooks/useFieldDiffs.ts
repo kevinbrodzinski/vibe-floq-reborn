@@ -1,49 +1,28 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FieldTile } from './useFieldTiles';
 
 export function useFieldDiffs(tileIds: string[]) {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
   useEffect(() => {
-    if (!tileIds.length) return;
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔄 Setting up realtime subscriptions for ${tileIds.length} tiles`);
-    }
-
-    const channels = tileIds.map(id => {
-      const channel = supabase
-        .channel(`field:${id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'field_tiles',
-            filter: `tile_id=eq.${id}`
-          },
-          (payload) => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🔴 Field tile update:', payload);
-            }
-            mergeDelta(payload.new as FieldTile);
-          }
+    const subs = tileIds.map(id =>
+      supabase.channel(`field:${id}`)
+        .on('broadcast', { event: 'tile_update' }, ({ payload }) =>
+          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[] = []) => {
+            const m = new Map(old.map(t => [t.tile_id, t]));
+            m.set(payload.tile_id, { ...m.get(payload.tile_id), ...payload });
+            return [...m.values()];
+          })
         )
-        .subscribe();
+        .on('broadcast', { event: 'tile_remove' }, ({ payload }) =>
+          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[] = []) =>
+            old.filter(t => t.tile_id !== payload.tile_id)
+          )
+        )
+        .subscribe()
+    );
 
-      return channel;
-    });
-
-    function mergeDelta(row: FieldTile) {
-      queryClient.setQueriesData({ queryKey: ['fieldTiles'] }, (old: FieldTile[] = []) =>
-        old.map(t => (t.tile_id === row.tile_id ? { ...t, ...row } : t))
-      );
-    }
-
-    return () => {
-      channels.forEach(ch => ch.unsubscribe());
-    };
-  }, [tileIds, queryClient]);
+    return () => subs.forEach(ch => ch.unsubscribe());
+  }, [tileIds.join('|')]);
 }

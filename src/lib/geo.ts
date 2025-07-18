@@ -1,31 +1,19 @@
 import { encode, decode } from 'ngeohash';
 
-/**
- * Generate geohash tile IDs for a viewport using a grid approach
- */
+export const stepForZoom = (z: number) => 0.03 / 2 ** Math.max(0, z - 10);
+
 export function tilesForViewport(
-  nw: [number, number], 
-  se: [number, number], 
-  precision: number = 5
-): string[] {
+  nw: [number, number], se: [number, number], zoom: number, p = 5
+) {
   const ids = new Set<string>();
-  const step = 0.025; // degrees - roughly 2.5km at equator
-  
-  // Ensure correct bounds (nw should be top-left, se should be bottom-right)
-  const northLat = Math.max(nw[0], se[0]);
-  const southLat = Math.min(nw[0], se[0]);
-  const westLng = Math.min(nw[1], se[1]);
-  const eastLng = Math.max(nw[1], se[1]);
-  
-  // Generate grid of points and get their geohashes
-  for (let lat = southLat; lat <= northLat; lat += step) {
-    for (let lng = westLng; lng <= eastLng; lng += step) {
-      const hash = encode(lat, lng, precision);
-      ids.add(hash.slice(0, precision));
+  const step = stepForZoom(zoom);
+
+  for (let lat = se[0]; lat <= nw[0]; lat += step) {
+    for (let lng = nw[1]; lng <= se[1]; lng += step) {
+      ids.add(encode(lat, lng, p).slice(0, p));
     }
   }
-  
-  return Array.from(ids);
+  return [...ids];
 }
 
 /**
