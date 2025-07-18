@@ -1,4 +1,5 @@
 import React, { useState, memo, useMemo, useRef } from 'react';
+import { useMotionValue } from 'framer-motion';
 import { Timeline } from "@/components/ui/timeline";
 import { useParams, Link } from "react-router-dom";
 import { useAfterglowDetail, AfterglowMoment } from "@/lib/afterglow-helpers";
@@ -17,7 +18,7 @@ import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
 import { MomentDetailDrawer } from '@/components/moments/MomentDetailDrawer';
 import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
-import TimelineScrubber from '@/components/timeline/TimelineScrubber';
+import { TimelineScrubber } from '@/components/timeline/TimelineScrubber';
 import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
 import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
@@ -347,9 +348,9 @@ export default function AfterglowDetailPage() {
       {moments.length > 0 && (
         <div className="mt-6">
           <TimelineScrubber
-            count={moments.length}
-            current={currentIdx}
-            onJump={(i) => {
+            progress={useMotionValue(currentIdx / Math.max(1, moments.length - 1))}
+            onSeek={(pct) => {
+              const i = Math.round(pct * (moments.length - 1));
               setCurrentIdx(i);
               document
                 .querySelector<HTMLElement>(`[data-moment-index="${i}"]`)

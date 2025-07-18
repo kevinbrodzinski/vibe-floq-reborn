@@ -1,93 +1,72 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
-interface Options {
-  /** total number of moments in the current timeline */
+interface TimelineNavigationOptions {
+  /** total number of moments on the page */
   total: number;
-  /** zero-based index of the moment that is currently "in view" */
+  /** index of the moment that is currently most-visible */
   current: number;
-  /** callback that actually scrolls / focuses the requested moment */
-  onJump(index: number): void;
+  /** seek handler – jump to the given moment index */
+  onJump: (index: number) => void;
 }
 
-/**
- * Global timeline-navigation helpers:
- *  • ← / → / ↑ / ↓ / Home / End   (desktop)
- *  • single-finger vertical swipe (mobile)
- *
- *  Usage:
- *    useTimelineNavigation({ total, current, onJump })
- *
- *  The hook is completely passive – it only installs / cleans up listeners.
- */
-export function useTimelineNavigation({ total, current, onJump }: Options) {
-  /* ------------------------------------------------------------------ *
-   * Keyboard shortcuts
-   * ------------------------------------------------------------------ */
-  const handleKey = useCallback<(e: KeyboardEvent) => void>(
-    (e) => {
-      // don't hijack when the user is typing in an input / textarea
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return;
+export function useTimelineNavigation({
+  total,
+  current,
+  onJump,
+}: TimelineNavigationOptions) {
+  const prefersReduced = usePrefersReducedMotion();
 
-      switch (e.key) {
-        case 'ArrowRight':
-        case 'ArrowDown':
-          onJump(Math.min(total - 1, current + 1));
-          break;
-        case 'ArrowLeft':
-        case 'ArrowUp':
-          onJump(Math.max(0, current - 1));
-          break;
-        case 'Home':
-          onJump(0);
-          break;
-        case 'End':
-          onJump(total - 1);
-          break;
-        default:
-          break;
-      }
-    },
-    [current, total, onJump]
-  );
-
-  /* ------------------------------------------------------------------ *
-   * Touch swipe (basic one-finger vertical)
-   * ------------------------------------------------------------------ */
-  const handleTouchStart = useCallback<(e: TouchEvent) => void>(
-    (e) => {
-      if (e.touches.length !== 1) return;               // multi-touch → ignore
-      const startY = e.touches[0].clientY;
-
-      const handleMove = (m: TouchEvent) => {
-        const dy = m.touches[0].clientY - startY;
-        if (Math.abs(dy) < 60) return;                  // 60 px threshold
-
-        if (dy > 0) {
-          onJump(Math.min(total - 1, current + 1));     // swipe ↓ → next
-        } else {
-          onJump(Math.max(0, current - 1));             // swipe ↑ → previous
-        }
-        window.removeEventListener('touchmove', handleMove);
-      };
-
-      window.addEventListener('touchmove', handleMove, { passive: true, once: true });
-    },
-    [current, total, onJump]
-  );
-
-  /* ------------------------------------------------------------------ *
-   * Install / cleanup listeners
-   * ------------------------------------------------------------------ */
+  // ──────────────────────────────────
+  //  keyboard navigation ( ← / → )
+  // ──────────────────────────────────
   useEffect(() => {
-    if (typeof window === 'undefined') return; // SSR guard
-    
-    window.addEventListener('keydown', handleKey);
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    function onKey(e: KeyboardEvent) {
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
 
+      let targetIdx = current;
+      if (e.key === 'ArrowRight') targetIdx = Math.min(total - 1, current + 1);
+      if (e.key === 'ArrowLeft')  targetIdx = Math.max(0, current - 1);
+      if (targetIdx !== current) {
+        e.preventDefault();
+        onJump(targetIdx);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [current, total, onJump]);
+
+  // ──────────────────────────────────
+  //  touch swipe (mobile)
+  // ──────────────────────────────────
+  useEffect(() => {
+    let startX = 0;
+    let startY = 0;
+
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // horizontal swipe with small vertical movement
+      if (Math.abs(dx) > 40 && Math.abs(dy) < 30) {
+        const dir = dx < 0 ? 1 : -1;
+        const targetIdx = Math.max(0, Math.min(total - 1, current + dir));
+        if (targetIdx !== current) onJump(targetIdx);
+      }
+    }
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
     return () => {
-      window.removeEventListener('keydown', handleKey);
-      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
     };
-  }, [handleKey, handleTouchStart]);
+  }, [current, total, onJump, prefersReduced]);
 }
