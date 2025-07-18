@@ -32,6 +32,29 @@ export function hslToString(hsl: { h: number; s: number; l: number }): string {
 }
 
 /**
+ * Converts visible bounds to a stable list of geohash-6 tile IDs.
+ * Used to match the get-field-tiles edge function API contract.
+ */
+export function viewportToTileIds(
+  minLat: number,
+  maxLat: number,
+  minLng: number,
+  maxLng: number,
+  precision = 6
+): string[] {
+  const ids = new Set<string>();
+  const step = 0.03; // ≈3 km at equator → safe oversample
+
+  for (let lat = minLat; lat <= maxLat; lat += step) {
+    for (let lng = minLng; lng <= maxLng; lng += step) {
+      ids.add(encode(lat, lng, precision));
+    }
+  }
+
+  return [...ids];
+}
+
+/**
  * Calculate radius based on crowd count
  */
 export function crowdCountToRadius(count: number): number {

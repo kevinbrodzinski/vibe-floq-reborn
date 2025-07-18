@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { viewportToTileIds } from '@/lib/geo'
 
 interface TileBounds {
   minLat: number
@@ -16,25 +17,28 @@ interface FieldTile {
 }
 
 export function useFieldTiles(bounds?: TileBounds) {
+  // Convert bounds to tile IDs to match edge function API
+  const tileIds = bounds ? viewportToTileIds(
+    bounds.minLat,
+    bounds.maxLat,
+    bounds.minLng,
+    bounds.maxLng,
+    bounds.precision ?? 6
+  ).sort() : []; // stable cache key
+
   return useQuery({
-    queryKey: ['field-tiles', bounds],
+    queryKey: ['field-tiles', tileIds],
     queryFn: async () => {
-      if (!bounds) return []
+      if (!tileIds.length) return []
       
       const { data, error } = await supabase.functions.invoke('get-field-tiles', {
-        body: {
-          min_lat: bounds.minLat,
-          max_lat: bounds.maxLat,
-          min_lng: bounds.minLng,
-          max_lng: bounds.maxLng,
-          precision: bounds.precision || 6
-        }
+        body: { tile_ids: tileIds }
       })
 
       if (error) throw error
       return data as FieldTile[]
     },
-    enabled: !!(bounds?.minLat && bounds?.maxLat && bounds?.minLng && bounds?.maxLng),
+    enabled: tileIds.length > 0,
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // 1 minute
   })
