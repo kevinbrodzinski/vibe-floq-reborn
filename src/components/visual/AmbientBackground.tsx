@@ -1,5 +1,5 @@
 import { motion, useSpring, useTransform } from 'framer-motion';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 interface Props {
   /** hex / hsl / css color representing current moment */
@@ -12,7 +12,7 @@ interface Props {
  */
 export default function AmbientBackground({ color }: Props) {
   // Memoized color cache to avoid DOM operations on every render
-  const hslCache = useMemo(() => new Map<string, string>(), []);
+  const hslCache = useRef(new Map<string, string>()).current;
   
   const hslColor = useMemo(() => {
     if (hslCache.has(color)) return hslCache.get(color)!;

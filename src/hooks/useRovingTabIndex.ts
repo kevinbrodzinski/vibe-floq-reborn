@@ -33,5 +33,5 @@ export function useRovingTabIndex(containerSelector: string, itemCount?: number)
 
     container.addEventListener('keydown', handleKey);
     return () => container.removeEventListener('keydown', handleKey);
-  }, [containerSelector, itemCount]);
+  }, [containerSelector]);
 }
