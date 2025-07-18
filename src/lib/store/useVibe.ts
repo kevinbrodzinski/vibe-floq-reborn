@@ -88,9 +88,9 @@ export const useVibe = create<VibeState>()(
           } else if (data) {
             // Use the returned row directly - no second query needed
             set((s) => {
-              s.currentRow = data;
-              s.vibe = data.vibe_tag;
-              s.updatedAt = data.started_at;
+              s.currentRow = data as any;
+              s.vibe = (data as any)?.vibe_tag;
+              s.updatedAt = (data as any)?.started_at;
             });
           }
         } finally {

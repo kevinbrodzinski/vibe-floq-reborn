@@ -56,6 +56,8 @@ export function useSyncedVisibility() {
         () => setVisibility('public'), // Reset to default when row is deleted
       )
       .subscribe();
-    return () => channel.unsubscribe();
-  }, [user?.id]);
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user?.id, setVisibility]);
 }

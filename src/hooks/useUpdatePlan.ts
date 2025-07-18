@@ -9,7 +9,7 @@ interface UpdatePlanData {
   start_time?: string
   end_time?: string
   planned_at?: string
-  status?: string
+  status?: 'draft' | 'active' | 'closed' | 'cancelled' | 'finalized' | 'executing' | 'completed'
 }
 
 export function useUpdatePlan() {

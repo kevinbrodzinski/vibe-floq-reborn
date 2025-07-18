@@ -63,7 +63,9 @@ export function VibeRealtime() {
         )
         .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId, sync]);
 
   // Clean up channels and store on auth state change

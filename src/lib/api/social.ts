@@ -1,10 +1,14 @@
 import { supabase } from '@/integrations/supabase/client'
 
 export const createPing = async (targetId: string) => {
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('Not authenticated');
+  
   const { error } = await supabase
     .from('ping_requests')
     .insert({ 
       target_id: targetId,
+      requester_id: user.data.user.id,
       status: 'pending'
     })
   

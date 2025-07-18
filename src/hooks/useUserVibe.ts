@@ -16,29 +16,40 @@ export function useUserVibe(userId: string | null) {
     queryFn: async (): Promise<UserVibe | null> => {
       if (!userId) return null;
       
-      const { data, error } = await supabase
-        .from('vibes_now')
-        .select('vibe, started_at, location')
-        .eq('user_id', userId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('user_vibe_states')
+          .select('vibe_tag, started_at, location')
+          .eq('user_id', userId)
+          .eq('active', true)
+          .maybeSingle();
 
-      if (error) throw error;
-      
-      if (data?.location) {
-        // Extract lat/lng from PostGIS geometry
-        const coords = data.location as any;
-        if (coords?.coordinates) {
-          return {
-            ...data,
-            location: {
-              lng: coords.coordinates[0],
-              lat: coords.coordinates[1]
-            }
-          };
+        if (error) throw error;
+        if (!data) return null;
+        
+        if (data.location) {
+          // Extract lat/lng from PostGIS geometry
+          const coords = data.location as any;
+          if (coords?.coordinates) {
+            return {
+              vibe: data.vibe_tag,
+              started_at: data.started_at,
+              location: {
+                lng: coords.coordinates[0],
+                lat: coords.coordinates[1]
+              }
+            };
+          }
         }
+        
+        return {
+          vibe: data.vibe_tag,
+          started_at: data.started_at
+        };
+      } catch (error) {
+        console.error('Error fetching user vibe:', error);
+        return null;
       }
-      
-      return data;
     },
     enabled: !!userId,
     staleTime: 1 * 60 * 1000, // 1 minute - vibe data changes frequently

@@ -151,7 +151,7 @@ export const getArchiveStats = async (): Promise<ArchiveStats> => {
   const { data, error } = await supabase.rpc('get_archive_stats');
   
   if (error) throw error;
-  return data;
+  return data as unknown as ArchiveStats;
 };
 
 export const exportAfterglowData = async (params: ExportParams = {}) => {
@@ -166,9 +166,15 @@ export const exportAfterglowData = async (params: ExportParams = {}) => {
 
 // Favorites
 export const addToFavorites = async (afterglowId: string) => {
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('Not authenticated');
+  
   const { error } = await supabase
     .from('afterglow_favorites')
-    .insert({ daily_afterglow_id: afterglowId });
+    .insert({ 
+      daily_afterglow_id: afterglowId,
+      user_id: user.data.user.id
+    });
   
   if (error) throw error;
 };
@@ -216,9 +222,17 @@ export interface Collection {
 }
 
 export const createCollection = async (name: string, description?: string, color = '#3b82f6') => {
+  const user = await supabase.auth.getUser();
+  if (!user.data.user) throw new Error('Not authenticated');
+  
   const { data, error } = await supabase
     .from('afterglow_collections')
-    .insert({ name, description, color })
+    .insert({ 
+      name, 
+      description, 
+      color,
+      user_id: user.data.user.id
+    })
     .select()
     .single();
 

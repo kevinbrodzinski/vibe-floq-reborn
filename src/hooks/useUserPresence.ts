@@ -23,8 +23,10 @@ export function useUserPresence() {
         const presenceMap = new Map<string, UserPresence>();
         
         Object.entries(state).forEach(([userId, presences]) => {
-          const presence = presences[0] as UserPresence;
-          presenceMap.set(userId, presence);
+          const presence = presences[0] as any;
+          if (presence?.user_id) {
+            presenceMap.set(userId, presence as UserPresence);
+          }
         });
         
         setUserPresence(presenceMap);
@@ -32,8 +34,10 @@ export function useUserPresence() {
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         setUserPresence(prev => {
           const updated = new Map(prev);
-          newPresences.forEach((presence: UserPresence) => {
-            updated.set(key, presence);
+          newPresences.forEach((presence: any) => {
+            if (presence?.user_id) {
+              updated.set(key, presence as UserPresence);
+            }
           });
           return updated;
         });

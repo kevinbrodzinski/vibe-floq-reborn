@@ -36,28 +36,30 @@ export function useStopEditingPresence({ planId, enabled = true }: UseStopEditin
         const newPresences = new Map<string, StopEditingPresence>()
         
         Object.entries(state).forEach(([userId, presences]) => {
-          const presence = presences[0] // Get latest presence
-          if (presence && userId !== user.id) {
-            newPresences.set(`${userId}_${presence.stopId}`, presence)
+          const presence = presences[0] as any // Get latest presence
+          if (presence && userId !== user.id && presence.stopId) {
+            newPresences.set(`${userId}_${presence.stopId}`, presence as StopEditingPresence)
           }
         })
         
         setEditingPresences(newPresences)
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        newPresences.forEach((presence: StopEditingPresence) => {
-          if (presence.userId !== user.id) {
-            setEditingPresences(prev => new Map(prev.set(`${presence.userId}_${presence.stopId}`, presence)))
+        newPresences.forEach((presence: any) => {
+          if (presence.userId !== user.id && presence.stopId) {
+            setEditingPresences(prev => new Map(prev.set(`${presence.userId}_${presence.stopId}`, presence as StopEditingPresence)))
           }
         })
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        leftPresences.forEach((presence: StopEditingPresence) => {
-          setEditingPresences(prev => {
-            const next = new Map(prev)
-            next.delete(`${presence.userId}_${presence.stopId}`)
-            return next
-          })
+        leftPresences.forEach((presence: any) => {
+          if (presence.userId && presence.stopId) {
+            setEditingPresences(prev => {
+              const next = new Map(prev)
+              next.delete(`${presence.userId}_${presence.stopId}`)
+              return next
+            })
+          }
         })
       })
       .subscribe()

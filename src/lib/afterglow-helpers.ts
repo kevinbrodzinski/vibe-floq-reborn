@@ -35,7 +35,7 @@ export const fetchAfterglowDetail = async (
 
   if (error) throw error;
 
-  return data as AfterglowDetail;
+  return data as unknown as AfterglowDetail;
 };
 
 /* ---------- React-query hook ---------- */

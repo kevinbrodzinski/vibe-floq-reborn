@@ -100,7 +100,7 @@ export const CollaborativePlanningScreen = () => {
     }))
     
     newStops.forEach(stop => {
-      addStop(stop)
+      addStop()
     })
   }
 
@@ -133,7 +133,7 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop(newStop);
+    addStop();
     showOverlay('stop-action', 'Stop created!');
   };
 
@@ -278,7 +278,7 @@ export const CollaborativePlanningScreen = () => {
       votes: []
     };
 
-    await addStop(newStop);
+    await addStop();
     showOverlay('stop-action', 'AI suggestion added!');
   };
 
@@ -362,7 +362,7 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop(newStop);
+    addStop();
     showOverlay('stop-action', 'Stop added!');
   };
 
@@ -487,7 +487,7 @@ export const CollaborativePlanningScreen = () => {
             role: 'participant' as const,
             checkInStatus: 'checked-in' as const
           }))}
-          onParticipantUpdate={(userId, updates) => updateParticipantStatus(userId, JSON.stringify(updates))}
+          onParticipantUpdate={updateParticipantStatus}
         />
 
         {/* RSVP Card */}

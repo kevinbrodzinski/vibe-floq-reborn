@@ -94,11 +94,12 @@ export function useUsername() {
         throw error;
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Username update failed');
+      const result = data as any;
+      if (!result?.success) {
+        throw new Error(result?.error || 'Username update failed');
       }
 
-      return data.username;
+      return result.username;
     },
     onSuccess: (newUsername) => {
       toast({
