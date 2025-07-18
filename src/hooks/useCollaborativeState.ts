@@ -6,7 +6,22 @@ import { mapPlanStopFromDb } from '@/types/mappers'
 import type { PlanStop } from '@/types/plan'
 import type { PlanStopRow } from '@/types/database'
 
-export function useCollaborativeState(planId: string) {
+interface CollaborativeState {
+  stops: PlanStop[];
+  isLoading: boolean;
+  plan: any;
+  activities: any[];
+  addStop: any;
+  updateStop: any;
+  deleteStop: any;
+  removeStop: (id: string) => Promise<void>;
+  reorderStops: (from: number, to: number) => Promise<void>;
+  voteOnStop: (stopId: string, vote: string) => void;
+  updateParticipantStatus: (userId: string, status: string) => void;
+  recentVotes: any[];
+}
+
+export function useCollaborativeState(planId: string): CollaborativeState {
   const [optimisticStops, setOptimisticStops] = useState<PlanStop[]>([])
   const session = useSession()
   const queryClient = useQueryClient()
@@ -140,12 +155,29 @@ export function useCollaborativeState(planId: string) {
     setOptimisticStops(prev => [...prev, newStop])
   }, [planId])
 
+  const mockPlan = {
+    id: planId,
+    title: 'Mock Plan',
+    date: new Date().toISOString().split('T')[0],
+    status: 'draft',
+    creator_id: 'current-user',
+    participants: [],
+    stops: allStops
+  };
+
   return {
     stops: allStops,
     isLoading,
+    plan: mockPlan,
+    activities: [],
     addStop,
     updateStop,
     deleteStop,
+    removeStop: (id: string) => Promise.resolve(),
+    reorderStops: (from: number, to: number) => Promise.resolve(),
+    voteOnStop: () => {},
+    updateParticipantStatus: () => {},
+    recentVotes: [],
     addOptimisticStop,
   }
 }

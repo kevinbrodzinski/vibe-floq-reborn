@@ -69,7 +69,7 @@ export function DraggableTimelineGrid({
 
   const handleStopEdit = (stop: PlanStop) => {
     if (onStopEdit) {
-      onStopEdit(stop as PlanStopUi)
+      onStopEdit(stop as unknown as PlanStopUi)
     }
   }
 
@@ -111,7 +111,7 @@ export function DraggableTimelineGrid({
                     )}
                   >
                     <DraggableStopCard
-                      stop={stop}
+                      stop={stop as unknown as PlanStopUi}
                       onEdit={() => handleStopEdit(stop)}
                       onDelete={() => handleStopDelete(stop.id)}
                       isDragging={snapshot.isDragging}

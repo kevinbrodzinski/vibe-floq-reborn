@@ -18,7 +18,7 @@ export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }:
   const { toast } = useToast();
   
   // Subscribe to global boost changes
-  useBoostSubscription();
+  useBoostSubscription('');
   
   const userHasBoosted = !!userBoost;
   const [isAnimating, setIsAnimating] = useState(false);

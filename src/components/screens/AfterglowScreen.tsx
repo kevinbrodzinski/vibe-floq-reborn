@@ -312,7 +312,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-muted-foreground">Loading afterglow data...</p>
           </div>
-        ) : isGenerating && generationProgress ? (
+        ) : isGenerating && typeof generationProgress === 'object' ? (
           <AfterglowGenerationProgress progress={generationProgress} />
         ) : isGenerating ? (
           <div className="text-center py-12">
@@ -327,7 +327,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => generateAfterglow(true)}
+                onClick={() => generateAfterglow()}
                 className="ml-3"
               >
                 <RefreshCw className="w-3 h-3 mr-1" />

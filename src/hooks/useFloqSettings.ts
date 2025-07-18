@@ -29,7 +29,7 @@ export function useFloqSettings(floqId: string) {
         join_approval_required: data.join_approval_required ?? false,
         activity_visibility: data.activity_visibility ?? 'public',
         welcome_message: data.welcome_message ?? '',
-        pinned_note: data.pinned_note ?? null,
+        pinned_note: (data as any).pinned_note ?? null,
       };
     },
     enabled: !!floqId,

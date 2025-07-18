@@ -109,11 +109,17 @@ export const CollaborativePlanningScreen = () => {
       venue: "TBD",
       description: "Add details",
       startTime: timeSlot,
-      endTime: "22:00", // Default 2 hour duration
+      endTime: "22:00",
+      start_time: timeSlot,
+      end_time: "22:00",
       location: "TBD",
       vibeMatch: 50,
       status: 'suggested' as const,
-      color: "hsl(200 70% 60%)"
+      color: "hsl(200 70% 60%)",
+      kind: 'restaurant' as any,
+      createdBy: 'current-user',
+      participants: [],
+      votes: []
     };
     addStop(newStop);
     showOverlay('stop-action', 'Stop created!');
@@ -248,10 +254,16 @@ export const CollaborativePlanningScreen = () => {
       description: `AI suggested: ${s.reasons?.[0]?.description ?? ''}`,
       startTime: s.startTime,
       endTime: s.endTime,
+      start_time: s.startTime,
+      end_time: s.endTime,
       location: s.location ?? 'TBD',
       vibeMatch: s.vibeMatch,
       status: 'suggested' as const,
-      color: 'hsl(280 70% 60%)'
+      color: 'hsl(280 70% 60%)',
+      kind: 'restaurant' as any,
+      createdBy: 'current-user',
+      participants: [],
+      votes: []
     };
 
     await addStop(newStop);
@@ -325,12 +337,18 @@ export const CollaborativePlanningScreen = () => {
       title: `${venue.type} at ${venue.name}`,
       venue: venue.name,
       description: venue.description,
-      startTime: "20:00", // Default time, user can adjust
+      startTime: "20:00",
       endTime: "22:00",
+      start_time: "20:00",
+      end_time: "22:00",
       location: venue.location,
       vibeMatch: venue.vibeMatch,
       status: 'suggested' as const,
-      color: venue.color
+      color: venue.color,
+      kind: 'restaurant' as any,
+      createdBy: 'current-user',
+      participants: [],
+      votes: []
     };
     addStop(newStop);
     showOverlay('stop-action', 'Stop added!');

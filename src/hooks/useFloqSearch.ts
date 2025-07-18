@@ -21,7 +21,7 @@ export function useFloqSearch(
         p_lng: coords.lng,
         p_radius_km: filters.radiusKm ?? 25,
         p_query: filters.query,
-        p_vibe_ids: filters.vibes,
+        p_vibe_ids: filters.vibes as any,
         p_time_from: filters.timeRange[0].toISOString(),
         p_time_to: filters.timeRange[1].toISOString(),
         p_limit: 200,
@@ -31,13 +31,13 @@ export function useFloqSearch(
       if (error) throw error;
       return (data ?? []).map(floq => ({
         ...floq,
-        friends_going_count: floq.friends_going_count || 0,
-        friends_going_avatars: floq.friends_going_avatars || [],
-        friends_going_names: floq.friends_going_names || [],
+        friends_going_count: (floq as any).friends_going_count || 0,
+        friends_going_avatars: (floq as any).friends_going_avatars || [],
+        friends_going_names: (floq as any).friends_going_names || [],
         friendsGoing: {
-          count: floq.friends_going_count || 0,
-          avatars: floq.friends_going_avatars || [],
-          names: floq.friends_going_names || [],
+          count: (floq as any).friends_going_count || 0,
+          avatars: (floq as any).friends_going_avatars || [],
+          names: (floq as any).friends_going_names || [],
         },
       })) as FloqSearchResult[];
     },

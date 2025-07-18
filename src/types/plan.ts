@@ -9,7 +9,7 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 export interface PlanStopUi {
   id: string
   title: string
-  venue: string
+  venue: string | { id: string; name: string; address?: string }
   description?: string
   start_time: string
   end_time: string

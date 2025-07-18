@@ -133,7 +133,7 @@ export function useFloqDetails(
         ends_at: floqData.ends_at,
         created_at: floqData.starts_at,
         visibility: floqData.visibility,
-        pinned_note: typeof floqData.pinned_note === 'string' ? floqData.pinned_note : null,
+        pinned_note: typeof (floqData as any).pinned_note === 'string' ? (floqData as any).pinned_note : null,
         location: { lat: 0, lng: 0 },
         participants,
         pending_invites: pendingInvites,

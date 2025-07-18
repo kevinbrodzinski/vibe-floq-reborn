@@ -46,7 +46,7 @@ export function useAfterglowData(date?: string) {
           // Properly map the database row to our domain type
           const mappedData: DailyAfterglowData = {
             ...data,
-            emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey : [],
+            emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey.map(String) : [],
             moments: Array.isArray(data.moments) ? data.moments : [],
             vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path.map(String) : []
           }

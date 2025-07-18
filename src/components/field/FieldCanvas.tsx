@@ -57,6 +57,7 @@ export default function FieldCanvas() {
   const trailGraphics = useRef<PIXI.Graphics>();
   const ripples = useRef<RippleEffect[]>([]);
   // Simple random drift instead of complex noise
+  const noise = useMemo(() => Math.random, []);
   
   // Create a simple projection function since we don't have mapbox integration yet
   const project = useMemo(() => {
@@ -91,7 +92,7 @@ export default function FieldCanvas() {
     ripples.current.push(ripple);
   }, [activeTiles, project]);
   
-  useRippleQueue(tileIds, addRipple);
+  useRippleQueue<string>(tileIds, addRipple);
 
   const tree = useMemo(() => {
     const screenTiles: ScreenTile[] = (activeTiles as any[]).map(t => {
