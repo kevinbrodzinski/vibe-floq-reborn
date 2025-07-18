@@ -9,6 +9,7 @@ import { LocationChip } from '@/components/location/LocationChip'
 import { usePeopleData } from '@/hooks/usePeopleData'
 import { useTimelineV2 } from '@/hooks/useTimelineV2'
 import { openMomentDrawer } from '@/state/momentDrawer'
+import { startTransition } from 'react'
 import { Link } from 'react-router-dom'
 
 interface AfterglowMomentCardProps {
@@ -64,7 +65,8 @@ export function AfterglowMomentCard({
       data-moment-index={index}
       onClick={() => {
         if (timelineV2) {
-          openMomentDrawer(moment);
+          /* let React handle suspense concurrently */
+          startTransition(() => openMomentDrawer(moment));
         }
       }}
     >

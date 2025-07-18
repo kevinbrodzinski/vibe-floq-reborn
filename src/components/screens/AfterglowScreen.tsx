@@ -14,6 +14,7 @@ import AfterglowInsightsModal from "@/components/afterglow/AfterglowInsightsModa
 import { useTimelineV2 } from "@/hooks/useTimelineV2";
 import { EnhancedTimeline } from "@/components/afterglow/EnhancedTimeline";
 import { MomentDetailDrawer } from "@/components/drawer/MomentDetailDrawer";
+import { Suspense } from 'react';
 import { Link } from "react-router-dom";
 
 interface NightEvent {
@@ -469,7 +470,11 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       )}
       
       {/* Moment Detail Drawer */}
-      <MomentDetailDrawer />
+      <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>}>
+        <MomentDetailDrawer />
+      </Suspense>
     </div>
   );
 };
