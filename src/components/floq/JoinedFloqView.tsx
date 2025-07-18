@@ -84,6 +84,12 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   // Set up real-time updates for unread counts
   useRealtimeUnreadUpdates([floqDetails.id]);
 
+  // Debug logging for badge visibility issues
+  useEffect(() => {
+    console.log('🔍 Badge Debug - unreadCounts:', unreadCounts);
+    console.log('🔍 Badge Debug - floqId:', floqDetails.id);
+  }, [unreadCounts, floqDetails.id]);
+
   // Track activity when tab changes - remove 'track' from deps to avoid re-runs
   useEffect(() => {
     // Map activeTab to section names for tracking
@@ -234,26 +240,35 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             "grid w-full",
             isHost ? "grid-cols-4" : "grid-cols-3"
            )}>
-            <TabsTrigger value="chat" className="relative">
+            <TabsTrigger value="chat" className="relative px-4 py-2">
               Chat
               {unreadCounts?.unread_chat && unreadCounts.unread_chat > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <NotificationBadge 
+                  className="absolute -right-3 -top-2"
+                  aria-label={`${unreadCounts.unread_chat} unread messages`}
+                >
                   {unreadCounts.unread_chat}
                 </NotificationBadge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="activity" className="relative">
+            <TabsTrigger value="activity" className="relative px-4 py-2">
               Activity
               {unreadCounts?.unread_activity && unreadCounts.unread_activity > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <NotificationBadge 
+                  className="absolute -right-3 -top-2"
+                  aria-label={`${unreadCounts.unread_activity} new items`}
+                >
                   {unreadCounts.unread_activity}
                 </NotificationBadge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="plans" className="relative">
+            <TabsTrigger value="plans" className="relative px-4 py-2">
               Plans
               {unreadCounts?.unread_plans && unreadCounts.unread_plans > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <NotificationBadge 
+                  className="absolute -right-3 -top-2"
+                  aria-label={`${unreadCounts.unread_plans} new plans`}
+                >
                   {unreadCounts.unread_plans}
                 </NotificationBadge>
               )}

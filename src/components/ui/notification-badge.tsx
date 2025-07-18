@@ -14,12 +14,14 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
 }) => {
   return (
     <span 
+      data-badge
       className={cn(
-        "bg-destructive text-destructive-foreground rounded-full text-xs w-5 h-5 flex items-center justify-center font-medium shadow-sm",
+        "min-w-[1.25rem] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs leading-none flex items-center justify-center",
         showPulse && "animate-pulse",
         className
       )}
       aria-label={`${children} unread`}
+      {...(typeof children === 'number' && children > 0 ? { 'aria-label': `${children} unread` } : {})}
     >
       {children}
     </span>
