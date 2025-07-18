@@ -57,7 +57,34 @@ serve(async (req) => {
 
     console.log(`Generating weekly AI suggestion for user ${user.id}, week ending ${weekKey}, forceRefresh: ${forceRefresh}`);
 
-    // ─── 3. Check cache ─────────────────────────────────────────────────────
+    // ─── 3. Check cooldown (12 hours for regeneration) ──────────────────────
+    if (forceRefresh) {
+      const { data: cooldown } = await supabase
+        .from("weekly_ai_suggestion_cooldowns")
+        .select("last_regenerated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cooldown?.last_regenerated_at) {
+        const lastRegen = new Date(cooldown.last_regenerated_at);
+        const hoursAgo = (Date.now() - lastRegen.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursAgo < 12) {
+          const hoursLeft = Math.ceil(12 - hoursAgo);
+          console.log(`Cooldown active: ${hoursLeft} hours remaining`);
+          return new Response(JSON.stringify({ 
+            error: 'cooldown_active',
+            message: `Please wait ${hoursLeft} more hour${hoursLeft > 1 ? 's' : ''} before regenerating`,
+            hoursLeft 
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
+
+    // ─── 4. Check cache ─────────────────────────────────────────────────────
     if (!forceRefresh) {
       const { data, error } = await supabase
         .from("weekly_ai_suggestions")
@@ -91,29 +118,41 @@ serve(async (req) => {
 
     console.log(`User stats - Energy: ${avgEnergy}, Social: ${avgSocial}`);
 
-    // ─── 5. Call OpenAI ───────────────────────────────────────────────────
-    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a friendly social coach who speaks in concise bullet points. Always return exactly three actionable suggestions in bullet point format.",
-          },
-          {
-            role: "user",
-            content: buildPrompt({ avgEnergy, avgSocial }),
-          },
-        ],
-        max_tokens: 150,
-        temperature: 0.7,
-      }),
-    });
+    // ─── 5. Call OpenAI with network error handling ─────────────────────────
+    let completion;
+    try {
+      completion = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openaiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: "You are a friendly social coach who speaks in concise bullet points. Always return exactly three actionable suggestions in bullet point format.",
+            },
+            {
+              role: "user",
+              content: buildPrompt({ avgEnergy, avgSocial }),
+            },
+          ],
+          max_tokens: 150,
+          temperature: 0.7,
+        }),
+      });
+    } catch (networkError) {
+      console.error('Network error calling OpenAI:', networkError);
+      return new Response(JSON.stringify({ 
+        error: 'network_error',
+        message: 'Unable to connect to AI service. Please try again later.' 
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!completion.ok) {
       const errorText = await completion.text();
@@ -154,6 +193,16 @@ serve(async (req) => {
     if (upsertError) {
       console.error('Error caching suggestion:', upsertError);
       // Still return the suggestion even if caching fails
+    }
+
+    // ─── 7. Update cooldown if this was a regeneration ──────────────────────
+    if (forceRefresh) {
+      await supabase
+        .from("weekly_ai_suggestion_cooldowns")
+        .upsert({
+          user_id: user.id,
+          last_regenerated_at: new Date().toISOString(),
+        });
     }
 
     console.log('Generated new AI suggestion successfully');
