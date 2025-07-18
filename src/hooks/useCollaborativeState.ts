@@ -9,16 +9,8 @@ import type { PlanStopRow } from '@/types/database'
 interface CollaborativeState {
   stops: PlanStop[];
   isLoading: boolean;
-  plan: any;
-  activities: any[];
-  addStop: any;
-  updateStop: any;
-  deleteStop: any;
   removeStop: (id: string) => Promise<void>;
   reorderStops: (from: number, to: number) => Promise<void>;
-  voteOnStop: (stopId: string, vote: string) => void;
-  updateParticipantStatus: (userId: string, status: string) => void;
-  recentVotes: any[];
 }
 
 export function useCollaborativeState(planId: string): CollaborativeState {
@@ -165,18 +157,13 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     stops: allStops
   };
 
+  const removeStop = async (id: string) => {}
+  const reorderStops = async (from: number, to: number) => {}
+
   return {
     stops: allStops,
     isLoading,
-    plan: mockPlan,
-    activities: [],
-    addStop,
-    updateStop,
-    deleteStop,
-    removeStop: (id: string) => Promise.resolve(),
-    reorderStops: (from: number, to: number) => Promise.resolve(),
-    voteOnStop: () => {},
-    updateParticipantStatus: () => {},
-    recentVotes: [],
+    removeStop,
+    reorderStops,
   }
 }

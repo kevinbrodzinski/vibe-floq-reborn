@@ -38,6 +38,7 @@ const hslToHex = (hsl: { h: number; s: number; l: number }): number => {
 };
 
 export default function FieldCanvas() {
+  const noise = useMemo(() => createNoise3D(() => Math.random()), []);
   const { data: tiles = [] } = useFieldTiles();
   const qc = useQueryClient();
   const [shouldUsePIXI, setShouldUsePIXI] = useState(false);
@@ -56,8 +57,7 @@ export default function FieldCanvas() {
   const rippleContainer = useRef<PIXI.Container>();
   const trailGraphics = useRef<PIXI.Graphics>();
   const ripples = useRef<RippleEffect[]>([]);
-  // Create noise function for smooth drift
-  const noise = useMemo(() => createNoise3D(Math.random()), []);
+  // Noise already created above
   
   // Create a simple projection function since we don't have mapbox integration yet
   const project = useMemo(() => {

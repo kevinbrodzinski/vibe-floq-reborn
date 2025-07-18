@@ -44,15 +44,16 @@ export function useFloqMessages(floqId: string) {
   })
 }
 
-export function useSendFloqMessage(floqId: string) {
+export function useSendFloqMessage() {
   return useMutation({
-    mutationFn: async (body: string) => {
+    mutationFn: async (p: { floqId: string; body: string; emoji?: string }) => {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
       
       const { error } = await supabase.from('floq_messages').insert({
-        floq_id: floqId,
-        body,
+        floq_id: p.floqId,
+        body: p.body,
+        emoji: p.emoji ?? null,
         sender_id: user.user.id,
       })
       if (error) throw error

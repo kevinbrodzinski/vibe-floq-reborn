@@ -2,7 +2,7 @@ import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
   const { data, fetchNextPage, hasNextPage } = useFloqMessages(floqId)
-  const { mutate: send } = useSendFloqMessage(floqId)
+  const { mutate: send } = useSendFloqMessage()
   const msgs = (data?.pages.flat() ?? []) as Array<{
     id: string;
     body: string;
@@ -32,7 +32,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
         onSubmit={(e) => {
           e.preventDefault()
           const body = (e.currentTarget.elements.namedItem('m') as HTMLInputElement).value.trim()
-          if (body) send(body)
+          if (body) send({ floqId, body })
           e.currentTarget.reset()
         }}
         className="border-t border-border flex"
