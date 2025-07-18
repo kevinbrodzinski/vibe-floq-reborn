@@ -254,7 +254,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     });
 
     setPersonSprites(newPersonSprites);
-  }, [people, personSprites]);
+  }, [people]); // Removed personSprites dependency to fix infinite loop
 
   return (
     <canvas 
