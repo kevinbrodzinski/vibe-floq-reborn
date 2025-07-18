@@ -20,10 +20,11 @@ export function useTimelineNavigation({
   onJump,
 }: TimelineNavigationOptions) {
   const prefersReduced = usePrefersReducedMotion();
-  if (total <= 1) return;
 
   /* ───────────────────────── keyboard ( ← / → ) */
   useEffect(() => {
+    if (total <= 1) return;
+    
     const onKey = (e: KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -44,6 +45,8 @@ export function useTimelineNavigation({
 
   /* ───────────────────────── touch swipe (mobile) */
   useEffect(() => {
+    if (total <= 1) return;
+    
     let startX = 0;
     let startY = 0;
 
