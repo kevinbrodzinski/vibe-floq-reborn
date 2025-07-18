@@ -1,5 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
+import { Suspense } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
 import { FieldScreen } from '@/components/screens/FieldScreen';
 import { FlocksHome } from '@/components/FlocksHome';
 import FloqDetail from '@/pages/FloqDetail';
@@ -46,7 +48,11 @@ export const AppRoutes = () => {
     {exploreBeta && (
       <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
     )}
-    <Route path="/afterglow" element={<AfterglowRoutes />} />
+    <Route path="/afterglow" element={
+      <Suspense fallback={<FullScreenSpinner />}>
+        <AfterglowRoutes />
+      </Suspense>
+    } />
     <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
