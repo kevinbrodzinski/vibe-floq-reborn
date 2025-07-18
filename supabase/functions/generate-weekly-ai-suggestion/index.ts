@@ -1,11 +1,21 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.50.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper function to handle both authenticated and pre-warm requests
+function getUserIdAuthedOrPrewarm(body: any, supabase: SupabaseClient, req: Request) {
+  // preWarm bypasses JWT
+  if (body?.preWarm === true && body?.userId) return { userId: body.userId };
+
+  // regular auth path
+  const auth = req.headers.get('authorization') ?? '';
+  return supabase.auth.getUser(auth.replace('Bearer ', ''));
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,41 +38,31 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ─── 1. AUTH ─────────────────────────────────────────────────────────────
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // ─── 1. AUTH or PREWARM ─────────────────────────────────────────────────
+    const body = await req.json().catch(() => ({}));
+    const preWarm = body.preWarm === true;
+    const force = !!body.forceRefresh;
+    const userRes = await getUserIdAuthedOrPrewarm(body, supabase, req);
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-    
-    if (authErr || !user) {
-      console.error('Auth error:', authErr);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!userRes?.userId && !userRes?.data?.user) {
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
     }
+    const userId = userRes.userId ?? userRes.data.user.id;
 
     // ─── 2. Params & helpers ────────────────────────────────────────────────
-    const { forceRefresh = false } = await req.json().catch(() => ({}));
     const today = new Date();
     const sunday = new Date(today);
     sunday.setDate(sunday.getDate() - sunday.getDay());  // previous Sunday
     const weekKey = sunday.toISOString().slice(0, 10);  // YYYY-MM-DD
 
-    console.log(`Generating weekly AI suggestion for user ${user.id}, week ending ${weekKey}, forceRefresh: ${forceRefresh}`);
+    console.log(`${preWarm ? 'Pre-warming' : 'Generating'} weekly AI suggestion for user ${userId}, week ending ${weekKey}, forceRefresh: ${force}`);
 
-    // ─── 3. Check cooldown (12 hours for regeneration) ──────────────────────
-    if (forceRefresh) {
+    // ─── 3. Check cooldown (12 hours for regeneration, but skip for pre-warm) ─
+    if (force && !preWarm) {
       const { data: cooldown } = await supabase
         .from("weekly_ai_suggestion_cooldowns")
         .select("last_regenerated_at")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (cooldown?.last_regenerated_at) {
@@ -87,17 +87,17 @@ serve(async (req) => {
       await supabase
         .from("weekly_ai_suggestion_cooldowns")
         .upsert({
-          user_id: user.id,
+          user_id: userId,
           last_regenerated_at: new Date().toISOString(),
         });
     }
 
-    // ─── 4. Check cache ─────────────────────────────────────────────────────
-    if (!forceRefresh) {
+    // ─── 4. Check cache (skip for force refresh or pre-warm) ────────────────
+    if (!force && !preWarm) {
       const { data, error } = await supabase
         .from("weekly_ai_suggestions")
         .select("json")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("week_ending", weekKey)
         .maybeSingle();
 
@@ -118,9 +118,9 @@ serve(async (req) => {
       }
     }
 
-    // ─── 4. Gather stats needed for prompt (energy/social etc.) ─────────────
+    // ─── 5. Gather stats needed for prompt (energy/social etc.) ─────────────
     const { data: trends, error: trendsError } = await supabase
-      .rpc("get_afterglow_weekly_trends", { p_user_id: user.id });
+      .rpc("get_afterglow_weekly_trends", { p_user_id: userId });
 
     if (trendsError) {
       console.error('Error fetching weekly trends:', trendsError);
@@ -200,7 +200,7 @@ serve(async (req) => {
     const { error: upsertError } = await supabase
       .from("weekly_ai_suggestions")
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         week_ending: weekKey,
         json: payload,
       });
