@@ -1,14 +1,22 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "floq-social",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A living interface for human presence, motion, and belonging",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "eas:build": "eas build",
+    "eas:build:development": "eas build --profile development",
+    "eas:build:preview": "eas build --profile preview",
+    "eas:build:production": "eas build --profile production",
+    "eas:submit": "eas submit",
+    "eas:submit:ios": "eas submit --platform ios",
+    "eas:submit:android": "eas submit --platform android"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.2",
