@@ -5,11 +5,24 @@
 /* Silence ResizeObserver loop limit exceeded warnings */
 html, body {
   overflow-anchor: none;
+  background: var(--afterglow-bg, hsl(var(--primary)));
+  transition: background 500ms ease;
 }
 
 /* Smooth scroll behavior for timeline navigation */
 [data-moment-index] {
   scroll-margin-top: 6rem;
+}
+
+/* Ripple animation */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+.animate-ripple {
+  animation: ripple 600ms linear;
 }
 
 /* Enhanced focus ring system - WCAG 2.1 compliant */

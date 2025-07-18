@@ -87,6 +87,8 @@ export function TimelineScrubber({
               left: `${(i / (moments.length - 1)) * 100}%`,
               background: m.color,
             }}
+            role="button"
+            aria-label={`Jump to ${m.title} moment`}
           />
         ))}
     </div>

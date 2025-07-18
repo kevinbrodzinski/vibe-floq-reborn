@@ -24,9 +24,16 @@ export function MomentDetailDrawer() {
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto">
+      <DialogContent 
+        className="max-h-[90dvh] overflow-y-auto"
+        aria-labelledby="moment-detail-title"
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle 
+            id="moment-detail-title"
+            tabIndex={-1}
+            className="flex items-center gap-2"
+          >
             <span>{title}</span>
             <span className="text-muted-foreground text-sm">
               {format(new Date(timestamp), 'p')}

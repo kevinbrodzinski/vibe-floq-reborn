@@ -16,6 +16,9 @@ import { EnhancedTimeline } from "@/components/afterglow/EnhancedTimeline";
 import { MomentDetailDrawer } from "@/components/drawer/MomentDetailDrawer";
 import { Suspense } from 'react';
 import { Link } from "react-router-dom";
+import { ParticleField } from '@/components/visual/ParticleField';
+import { useAmbientBackground } from '@/hooks/useAmbientBackground';
+import { triggerHaptic } from '@/utils/haptics';
 
 interface NightEvent {
   id: string;
@@ -44,6 +47,10 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const currentDate = date || new Date().toISOString().split('T')[0];
   const { afterglow, isLoading: afterglowLoading, isGenerating, generationProgress, error: afterglowError, generateAfterglow } = useAfterglowData(currentDate);
   const { mutate: togglePinned } = useTogglePinned();
+  
+  // Get current moment for ambient background
+  const currentMoment = afterglow?.moments?.[0]; // Using first moment for now
+  useAmbientBackground(currentMoment?.color);
   
   const [nightEvents] = useState<NightEvent[]>([
     {
@@ -158,7 +165,11 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen">
+    <>
+      {/* Ambient particle field */}
+      <ParticleField density={48} />
+      
+      <div className="min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center p-6 pt-16">
         <h1 className="text-4xl font-light glow-primary">afterglow</h1>
@@ -206,7 +217,10 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             </div>
           </div>
 
-          <Button className="w-full gradient-primary text-primary-foreground font-medium transition-smooth hover:glow-active">
+          <Button 
+            className="w-full gradient-primary text-primary-foreground font-medium transition-smooth hover:glow-active"
+            onClick={() => triggerHaptic()}
+          >
             Revisit This Night
           </Button>
         </div>
@@ -357,7 +371,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
                       togglePinned({ 
                         id: afterglow.id, 
                         pinned: !afterglow.is_pinned 
-                      })
+                      });
+                      triggerHaptic();
                     }
                   }}
                 />
@@ -475,7 +490,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       </div>}>
         <MomentDetailDrawer />
       </Suspense>
-    </div>
+      </div>
+    </>
   );
 };
 
