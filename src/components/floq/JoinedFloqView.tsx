@@ -4,7 +4,6 @@ import { Clock, MapPin, Users, UserMinus, Zap, X, Trash2, Calendar } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { NotificationBadge } from '@/components/ui/notification-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { VibeRing } from '@/components/VibeRing';
@@ -233,29 +232,29 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           <TabsList className={cn(
             "grid w-full",
             isHost ? "grid-cols-4" : "grid-cols-3"
-           )}>
+          )}>
             <TabsTrigger value="chat" className="relative">
               Chat
               {unreadCounts?.unread_chat && unreadCounts.unread_chat > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <Badge className="ml-1 h-4 px-1 text-xs" key="chat-badge">
                   {unreadCounts.unread_chat}
-                </NotificationBadge>
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="activity" className="relative">
               Activity
               {unreadCounts?.unread_activity && unreadCounts.unread_activity > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <Badge className="ml-1 h-4 px-1 text-xs" key="activity-badge">
                   {unreadCounts.unread_activity}
-                </NotificationBadge>
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="plans" className="relative">
               Plans
               {unreadCounts?.unread_plans && unreadCounts.unread_plans > 0 && (
-                <NotificationBadge className="absolute -right-3 -top-2">
+                <Badge className="ml-1 h-4 px-1 text-xs" key="plans-badge">
                   {unreadCounts.unread_plans}
-                </NotificationBadge>
+                </Badge>
               )}
             </TabsTrigger>
             {canManage && <TabsTrigger value="manage">Manage</TabsTrigger>}
