@@ -37,7 +37,7 @@ export function useFieldDiffs(tileIds: string[]) {
     });
 
     function mergeDelta(row: FieldTile) {
-      queryClient.setQueriesData(['fieldTiles'], (old: FieldTile[] = []) =>
+      queryClient.setQueriesData({ queryKey: ['fieldTiles'] }, (old: FieldTile[] = []) =>
         old.map(t => (t.tile_id === row.tile_id ? { ...t, ...row } : t))
       );
     }

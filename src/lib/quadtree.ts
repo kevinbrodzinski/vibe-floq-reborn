@@ -7,6 +7,7 @@ export interface TileForTree {
   tile_id: string;
   crowd_count: number;
   avg_vibe: any;
+  color: string;
 }
 
 export function buildTileTree(tiles: TileForTree[]) {

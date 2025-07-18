@@ -4,7 +4,8 @@ import { useFieldTiles } from '@/hooks/useFieldTiles';
 import { useFieldDiffs } from '@/hooks/useFieldDiffs';
 import { useMapViewport } from '@/hooks/useMapViewport';
 import { hslToString, crowdCountToRadius, geohashToCenter } from '@/lib/geo';
-import { buildTileTree, hitTest, TileForTree } from '@/lib/quadtree';
+import { buildTileTree, hitTest } from '@/lib/quadtree';
+import type { TileForTree } from '@/lib/quadtree';
 
 // Ripple shader
 const rippleFragShader = `
@@ -43,7 +44,7 @@ export function FieldCanvas() {
   // Performance and compatibility check
   const shouldUsePIXI = useMemo(async () => {
     // Check WebGL support
-    if (!PIXI.utils.isWebGLSupported()) {
+    if (!PIXI.isWebGLSupported()) {
       console.warn('WebGL not supported, falling back to SVG');
       return false;
     }
@@ -136,11 +137,9 @@ export function FieldCanvas() {
             return false;
           }
           
-          // Update ripple shader uniform
+          // Update ripple alpha based on progress
           const progress = elapsed / ripple.duration;
-          if (ripple.sprite.shader) {
-            ripple.sprite.shader.uniforms.uTime = progress;
-          }
+          ripple.sprite.alpha = 1 - progress;
           return true;
         });
       });
@@ -186,39 +185,21 @@ export function FieldCanvas() {
     const rippleContainer = rippleContainerRef.current;
     if (!rippleContainer) return;
 
-    try {
-      // Create ripple shader
-      const rippleShader = PIXI.Shader.from(`
-        attribute vec2 aVertexPosition;
-        attribute vec2 aTextureCoord;
-        uniform mat3 projectionMatrix;
-        varying vec2 vTextureCoord;
-        
-        void main(void) {
-          gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);
-          vTextureCoord = aTextureCoord;
-        }
-      `, rippleFragShader, {
-        uColor: [1.0, 1.0, 1.0, 0.8],
-        uTime: 0.0,
-      });
-
-      const rippleSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-      rippleSprite.shader = rippleShader;
-      rippleSprite.width = rippleSprite.height = tile.radius * 3;
-      rippleSprite.anchor.set(0.5);
-      rippleSprite.position.set(tile.x, tile.y);
-      
-      rippleContainer.addChild(rippleSprite);
-      
-      ripples.current.push({
-        sprite: rippleSprite,
-        startTime: Date.now(),
-        duration: 2000, // 2 seconds
-      });
-    } catch (error) {
-      console.warn('Failed to create ripple effect:', error);
-    }
+    // Create simple ripple effect without custom shaders
+    const rippleSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+    rippleSprite.tint = 0xff8000; // orange glow
+    rippleSprite.alpha = 0.8;
+    rippleSprite.width = rippleSprite.height = tile.radius * 3;
+    rippleSprite.anchor.set(0.5);
+    rippleSprite.position.set(tile.x, tile.y);
+    
+    rippleContainer.addChild(rippleSprite);
+    
+    ripples.current.push({
+      sprite: rippleSprite,
+      startTime: Date.now(),
+      duration: 2000, // 2 seconds
+    });
   }, []);
 
   // Update PIXI sprites when tiles change
@@ -236,7 +217,7 @@ export function FieldCanvas() {
     // Create new sprites
     screenTiles.forEach(tile => {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-      sprite.tint = PIXI.utils.string2hex(tile.color);
+      sprite.tint = parseInt(tile.color.replace('#', '0x'));
       sprite.alpha = 0.6;
       sprite.width = sprite.height = tile.radius * 2;
       sprite.anchor.set(0.5);
