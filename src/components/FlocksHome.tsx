@@ -3,11 +3,14 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NewPlanWizard } from '@/pages/NewPlanWizard'
+import { CreateFloqSheet } from '@/components/CreateFloqSheet'
+import { useFloqUI } from '@/contexts/FloqUIContext'
 import { useActiveFloqs } from '@/hooks/useActiveFloqs'
 import { useMyFlocks } from '@/hooks/useMyFlocks'
 
 export function FlocksHome() {
   const [showNewPlan, setShowNewPlan] = useState(false)
+  const { setShowCreateSheet } = useFloqUI()
   const { data: activeFloqs = [], isLoading } = useActiveFloqs({ limit: 10 })
   const { data: myFloqs = [] } = useMyFlocks()
 
@@ -23,7 +26,7 @@ export function FlocksHome() {
             </p>
           </div>
           <Button
-            onClick={() => setShowNewPlan(true)}
+            onClick={() => setShowCreateSheet(true)}
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
             size="lg"
           >
@@ -69,6 +72,9 @@ export function FlocksHome() {
         </div>
       </div>
 
+      {/* Create Floq Sheet */}
+      <CreateFloqSheet />
+      
       {/* New Plan Wizard Modal */}
       {showNewPlan && <NewPlanWizard />}
     </div>
