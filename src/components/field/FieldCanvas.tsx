@@ -43,66 +43,46 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const initApp = async () => {
-      if (!appRef.current) {
-        /* PIXI v6/7 */
-        if (typeof (PIXI.Application as any).init !== 'function') {
-          appRef.current = new PIXI.Application({
-            view: canvasRef.current!,
-            width: window.innerWidth,
-            height: window.innerHeight,
-            backgroundColor: 0x000000,
-            backgroundAlpha: 0,
-          });
-        } else {
-          /* PIXI v8 */
-          appRef.current = await (PIXI.Application as any).init({
-            view: canvasRef.current!,
-            width: window.innerWidth,
-            height: window.innerHeight,
-            backgroundColor: 0x000000,
-            backgroundAlpha: 0,
-          });
-        }
-      }
+    // v8 deprecation-note: use Application.init → but `new Application()` still works
+    const app = new PIXI.Application({
+      view: canvasRef.current,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoStart: true,
+      backgroundAlpha: 0,
+    });
+    appRef.current = app;
 
-      const app = appRef.current;
+    // Containers AFTER the app exists
+    rippleContainer.current = new PIXI.Container();
+    app.stage.addChild(rippleContainer.current);
 
-      // Create ripple container
-      if (!rippleContainer.current) {
-        rippleContainer.current = new PIXI.Container();
-        app.stage.addChild(rippleContainer.current);
-      }
-
-      // Animation loop
-      const animate = () => {
-        setRipples(prev => {
-          const active = prev.filter(ripple => {
-            const isActive = ripple.update();
-            if (!isActive) {
-              // Guard against null references
-              if (rippleContainer.current) {
-                rippleContainer.current.removeChild(ripple.sprite);
-              }
-              ripple.destroy();
+    // Animation loop
+    const animate = () => {
+      setRipples(prev => {
+        const active = prev.filter(ripple => {
+          const isActive = ripple.update();
+          if (!isActive) {
+            // Guard against null references
+            if (rippleContainer.current) {
+              rippleContainer.current.removeChild(ripple.sprite);
             }
-            return isActive;
-          });
-          return active;
+            ripple.destroy();
+          }
+          return isActive;
         });
-      };
-
-      app.ticker.add(animate);
+        return active;
+      });
     };
 
-    initApp();
+    app.ticker.add(animate);
 
-    // Cleanup with defensive guards
     return () => {
-      if (appRef.current) {
-        appRef.current.destroy(true);
-        appRef.current = null;
-      }
+      // guard - only destroy objects that expose destroy()
+      app.stage.children.forEach(c => (c as any)?.destroy?.());
+      app.destroy(true);
+      appRef.current = null;
       rippleContainer.current = null;
     };
   }, []);
@@ -115,10 +95,8 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     // Safe clear existing people sprites
     app.stage.children.forEach(child => {
       if (child.name === 'person') {
-        // child.destroy exists only on Sprite / Graphics etc.
-        if ('destroy' in child && typeof (child as any).destroy === 'function') {
-          (child as any).destroy(true);
-        }
+        // guard - only destroy objects that expose destroy()
+        (child as any)?.destroy?.();
         app.stage.removeChild(child);
       }
     });
