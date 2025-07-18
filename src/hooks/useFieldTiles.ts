@@ -20,16 +20,10 @@ export const useFieldTiles = () => {
   const { viewport } = useMapViewport();
   const { settings } = useUserSettings();
   
-  // Extract viewport bounds - assuming bounds is [nw, se]
-  const nw: [number, number] = viewport.bounds ? [
-    viewport.bounds[0][0], // north lat
-    viewport.bounds[0][1]  // west lng
-  ] : [viewport.center[0] + 0.01, viewport.center[1] - 0.01];
-  
-  const se: [number, number] = viewport.bounds ? [
-    viewport.bounds[1][0], // south lat  
-    viewport.bounds[1][1]  // east lng
-  ] : [viewport.center[0] - 0.01, viewport.center[1] + 0.01];
+  // Extract viewport bounds - bounds format is [west, south, east, north]
+  const [west, south, east, north] = viewport.bounds;
+  const nw: [number, number] = [north, west];
+  const se: [number, number] = [south, east];
 
   const tileIds = tilesForViewport(nw, se, 5);
   const enabled = settings?.field_enabled ?? false;
@@ -37,15 +31,21 @@ export const useFieldTiles = () => {
   return useQuery({
     queryKey: ['fieldTiles', tileIds.join('|')],
     queryFn: async (): Promise<FieldTile[]> => {
+      console.time('get_field_tiles');
+      console.log(`🔄 Fetching ${tileIds.length} field tiles:`, tileIds);
+      
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
         body: { tile_ids: tileIds },
       });
 
+      console.timeEnd('get_field_tiles');
+
       if (error) {
-        console.error('Failed to fetch field tiles:', error);
+        console.error('❌ Failed to fetch field tiles:', error);
         throw error;
       }
 
+      console.log(`✅ Retrieved ${data?.tiles?.length || 0} field tiles`);
       return data?.tiles || [];
     },
     refetchInterval: 5000, // 5 second refresh

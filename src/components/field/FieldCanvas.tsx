@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useFieldTiles } from '@/hooks/useFieldTiles';
 import { useMapViewport } from '@/hooks/useMapViewport';
 import { hslToString, crowdCountToRadius } from '@/lib/geo';
@@ -7,6 +7,14 @@ import { geohashToCenter } from '@/lib/geo';
 export function FieldCanvas() {
   const { data: tiles = [], isLoading } = useFieldTiles();
   const { viewport } = useMapViewport();
+
+  // Performance monitoring
+  useEffect(() => {
+    console.time('FieldCanvas:render');
+    return () => {
+      console.timeEnd('FieldCanvas:render');
+    };
+  }, [tiles]);
 
   // Convert tiles to screen coordinates
   const screenTiles = useMemo(() => {
