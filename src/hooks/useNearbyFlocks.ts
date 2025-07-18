@@ -1,4 +1,3 @@
-// --- useNearbyFlocks.ts ---
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,11 +58,11 @@ const SearchFloqSchema = z.object({
   friends_going_names: z.array(z.string()).optional(),
 });
 
-export function useNearbyFlocks({ 
-  geo, 
+export function useNearbyFlocks({
+  geo,
   filters = {},
-  limit = 20, 
-  enabled = true 
+  limit = 20,
+  enabled = true,
 }: UseNearbyFlocksOptions = {}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -88,13 +87,11 @@ export function useNearbyFlocks({
     queryKey: ['nearby-flocks', user?.id, geo?.lat, geo?.lng, filters, limit],
     enabled: enabled && !!geo && typeof geo.lat === 'number' && typeof geo.lng === 'number',
     queryFn: async (): Promise<NearbyFloq[]> => {
-      if (!geo || typeof geo.lat !== 'number' || typeof geo.lng !== 'number') {
-        return [];
-      }
+      if (!geo) return [];
 
       const { data, error } = await supabase.rpc('search_floqs', {
-        p_lat: Number(geo.lat),
-        p_lng: Number(geo.lng),
+        p_lat: geo.lat,
+        p_lng: geo.lng,
         p_radius_km: 25,
         p_query: '',
         p_vibe_ids: [],
@@ -138,7 +135,7 @@ export function useNearbyFlocks({
           name: floq.name || undefined,
           description: floq.description || undefined,
           primary_vibe: floq.primary_vibe as Vibe,
-          vibe_tag: floq.vibe_tag || undefined,
+          vibe_tag: floq.vibe_tag as Vibe,
           participant_count: Number(floq.participant_count),
           boost_count: 0,
           distance_meters: Number(floq.distance_m || 0),
@@ -157,20 +154,20 @@ export function useNearbyFlocks({
       });
 
       if (filters.vibe) {
-        filteredData = filteredData.filter(floq => 
+        filteredData = filteredData.filter(floq =>
           floq.primary_vibe === filters.vibe || floq.vibe_tag === filters.vibe
         );
       }
 
       if (filters.distanceKm !== undefined) {
         const maxDistance = filters.distanceKm * 1000;
-        filteredData = filteredData.filter(floq => 
+        filteredData = filteredData.filter(floq =>
           floq.distance_meters <= maxDistance
         );
       }
 
       if (filters.isActive) {
-        filteredData = filteredData.filter(floq => 
+        filteredData = filteredData.filter(floq =>
           floq.participant_count > 0
         );
       }
