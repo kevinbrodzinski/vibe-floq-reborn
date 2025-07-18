@@ -29,7 +29,7 @@ interface FieldMapLayerProps {
 export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
   const { people } = useFieldSocial();
-  const { floqEvents, walkableFloqs, tileIds, viewport } = data;
+  const { floqEvents, walkableFloqs, tileIds, viewport, fieldTiles } = data;
   const { settings } = useUserSettings();
   
   // Phase 2: Social interaction state
@@ -248,6 +248,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
               <FieldCanvas 
                 people={people} 
                 tileIds={tileIds} 
+                fieldTiles={fieldTiles}
                 onRipple={handleRipple}
               />
             )}

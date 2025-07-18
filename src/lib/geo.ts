@@ -55,19 +55,25 @@ export function viewportToTileIds(
 }
 
 /**
- * Map tile_id to screen coordinates for ripple effects
+ * Map tile_id to screen coordinates for ripple effects and heat tiles
  */
 export function tileIdToScreenCoords(
   tileId: string,
   viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number },
   screenSize: { width: number; height: number }
-): { x: number; y: number } {
+): { x: number; y: number; size: number } {
   const { latitude, longitude } = decode(tileId);
   
   const x = ((longitude - viewport.minLng) / (viewport.maxLng - viewport.minLng)) * screenSize.width;
   const y = ((latitude - viewport.minLat) / (viewport.maxLat - viewport.minLat)) * screenSize.height;
   
-  return { x, y };
+  // Calculate tile size based on precision and viewport
+  const latRange = viewport.maxLat - viewport.minLat;
+  const lngRange = viewport.maxLng - viewport.minLng;
+  const avgRange = (latRange + lngRange) / 2;
+  const size = Math.max(20, (avgRange / Math.pow(32, tileId.length - 1)) * screenSize.width * 0.5);
+  
+  return { x, y, size };
 }
 
 /**

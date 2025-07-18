@@ -6,11 +6,15 @@ import useRippleQueue from '@/hooks/useRippleQueue';
 import { useViewportBounds } from '@/hooks/useViewportBounds';
 import { useSpatialIndex, type SpatialItem } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/objectPool';
+import { TileSpritePool } from '@/utils/tileSpritePool';
+import { vibeToColor, type Vibe } from '@/utils/vibeToHSL';
+import { tileIdToScreenCoords } from '@/lib/geo';
 import type { Person } from '../field/contexts/FieldSocialContext';
 
 interface FieldCanvasProps {
   people: Person[];
   tileIds: string[];
+  fieldTiles: any[];
   onRipple?: (tileId: string, delta: number) => void;
 }
 
@@ -25,15 +29,17 @@ interface RippleSprite extends SpatialItem {
   isVisible: boolean;
 }
 
-export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasProps) {
+export default function FieldCanvas({ people, tileIds, fieldTiles, onRipple }: FieldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const rippleContainer = useRef<PIXI.Container | null>(null);
   const peopleContainer = useRef<PIXI.Container | null>(null);
+  const heatContainer = useRef<PIXI.Container | null>(null);
   const tickerRef = useRef<PIXI.Ticker | null>(null);
   const animateRef = useRef<(() => void) | null>(null);
   const isCleaningUpRef = useRef(false);
   const graphicsPoolRef = useRef<GraphicsPool>(new GraphicsPool(100, 300));
+  const tilePoolRef = useRef<TileSpritePool | null>(null);
   const updateCounterRef = useRef(0);
 
   // Viewport bounds for culling
@@ -101,14 +107,22 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     appRef.current = app;
 
     // Create containers
+    const heatContainerInstance = new PIXI.Container();
     const peopleContainerInstance = new PIXI.Container();
     const rippleContainerInstance = new PIXI.Container();
     
+    app.stage.addChildAt(heatContainerInstance, 0); // bottom layer
     app.stage.addChild(peopleContainerInstance);
     app.stage.addChild(rippleContainerInstance);
     
+    heatContainer.current = heatContainerInstance;
     peopleContainer.current = peopleContainerInstance;
     rippleContainer.current = rippleContainerInstance;
+
+    // Initialize tile sprite pool
+    const whiteTex = PIXI.Texture.WHITE;
+    const tilePool = new TileSpritePool(whiteTex);
+    tilePoolRef.current = tilePool;
 
     // Animation loop with viewport culling
     const animate = () => {
@@ -161,6 +175,45 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       });
       
       rippleSpritesRef.current = activeRipples;
+
+      // ---- TILE HEAT ----
+      if (heatContainer.current && tilePoolRef.current && viewportBounds) {
+        const tilePool = tilePoolRef.current;
+        const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3); // 1.5 cull
+        
+        visibleTiles.forEach(tile => {
+          const id = tile.tile_id;
+          const sprite = tilePool.acquire(id);
+          if (!sprite.parent) heatContainer.current!.addChild(sprite);
+
+          // size / position
+          const { x, y, size } = tileIdToScreenCoords(
+            id,
+            {
+              minLat: viewportBounds.minY,
+              maxLat: viewportBounds.maxY,
+              minLng: viewportBounds.minX,
+              maxLng: viewportBounds.maxX
+            },
+            { width: app?.screen.width || window.innerWidth, height: app?.screen.height || window.innerHeight }
+          );
+          sprite.x = x - size / 2;
+          sprite.y = y - size / 2;
+          sprite.width = sprite.height = size;
+
+          // colour & fade
+          const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5); // 3 ppl ≈0.3, 32 ppl ≈1
+          sprite.tint = vibeToColor(tile.avg_vibe as Vibe);
+          sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;               // lerp 20 %
+        });
+
+        // release sprites no longer visible
+        Array.from(tilePool.active.keys()).forEach(id => {
+          if (!visibleTiles.some(t => t.tile_id === id)) {
+            tilePool.release(id);
+          }
+        });
+      }
     };
 
     animateRef.current = animate;
@@ -187,6 +240,11 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
       // Clean up object pool
       graphicsPoolRef.current.releaseAll();
+      
+      // Clean up tile pool
+      if (tilePoolRef.current) {
+        tilePoolRef.current.clearAll();
+      }
 
       // Clean up containers
       if (app?.stage) {
@@ -199,6 +257,8 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       appRef.current = null;
       rippleContainer.current = null;
       peopleContainer.current = null;
+      heatContainer.current = null;
+      tilePoolRef.current = null;
       tickerRef.current = null;
       animateRef.current = null;
       canvasRef.current = null;
