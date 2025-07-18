@@ -1,10 +1,23 @@
 import { useWeeklyTrends, useDailyTrends } from '@/hooks/useWeeklyTrends';
-import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useWeeklySuggestion } from '@/hooks/useWeeklySuggestion';
+import { useUser } from '@supabase/auth-helpers-react';
+import { TrendMiniChart } from '@/components/charts/TrendMiniChart';
 
 export default function WeeklyTrendsTab() {
+  const user = useUser();
   const { data: weeklyData, isLoading: weeklyLoading } = useWeeklyTrends();
   const { data: dailyData, isLoading: dailyLoading } = useDailyTrends();
+  const { data: aiSuggestion, isLoading: suggestionLoading, regenerate, isRegenerating } = useWeeklySuggestion(user?.id);
+
+  // Prepare chart data from recent daily trends
+  const chartData = dailyData?.slice(-7).map(day => ({
+    day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    energy: day.energy_score,
+    social: day.social_intensity
+  })) || [];
 
   if (weeklyLoading || dailyLoading) {
     return (
@@ -80,6 +93,14 @@ export default function WeeklyTrendsTab() {
         </div>
       </div>
 
+      {/* 7-Day Trend Chart */}
+      {chartData.length > 0 && (
+        <div className="p-4 bg-card rounded-lg border">
+          <h4 className="font-medium mb-3">7-Day Trend</h4>
+          <TrendMiniChart data={chartData} width="100%" height={140} />
+        </div>
+      )}
+
       {/* Recent activity */}
       <div>
         <h4 className="font-medium mb-3">Last 7 Days</h4>
@@ -100,12 +121,41 @@ export default function WeeklyTrendsTab() {
         </div>
       </div>
 
-      {/* Suggestion */}
+      {/* AI Suggestions */}
       <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
-        <h4 className="font-medium text-primary mb-2">💡 Insight</h4>
-        <p className="text-sm text-muted-foreground">
-          {getSuggestion()}
-        </p>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-medium text-primary">🤖 AI Coach</h4>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => regenerate()}
+            disabled={isRegenerating || suggestionLoading}
+            className="flex items-center gap-2 text-xs"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+            Regenerate
+          </Button>
+        </div>
+        
+        {suggestionLoading || isRegenerating ? (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating personalized suggestions...
+          </div>
+        ) : aiSuggestion?.suggestion?.text ? (
+          <div className="space-y-2">
+            <div className="text-sm whitespace-pre-line">
+              {aiSuggestion.suggestion.text}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Based on Energy: {aiSuggestion.suggestion.energy_score}% • Social: {aiSuggestion.suggestion.social_score}%
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {getSuggestion()}
+          </p>
+        )}
       </div>
     </div>
   );
