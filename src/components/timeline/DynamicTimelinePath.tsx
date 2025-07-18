@@ -26,14 +26,23 @@ export const DynamicTimelinePath = ({
   const uniqueId = useId();
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Always call hooks - conditional returns only after all hooks
-  const { scrollYProgress } = useScroll({ target: containerRef });
+  // Check if we're in browser environment
+  const isBrowser = typeof window !== 'undefined';
+
+  // Always call hooks - conditional logic comes after
+  const { scrollYProgress } = useScroll({ 
+    target: containerRef,
+    // Add offset to prevent SSR issues
+    offset: isBrowser ? undefined : ["start start", "end end"]
+  });
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   // Lazy hydrate after first frame to avoid blocking first paint
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    if (isBrowser) {
+      setIsHydrated(true);
+    }
+  }, [isBrowser]);
 
   // Get actual container dimensions for accurate path generation
   const spineWidth = containerRef.current?.offsetWidth ?? 48;

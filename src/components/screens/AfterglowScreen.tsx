@@ -38,6 +38,26 @@ interface AfterglowScreenProps {
 
 const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const { crossedPaths, isLoading: crossedPathsLoading, error: crossedPathsError, refetch: refetchCrossedPaths, count: crossedPathsCount } = useCrossedPathsToday();
+
+  // Temporary error handler to get real stack trace
+  useEffect(() => {
+    const handleError = (e: ErrorEvent) => {
+      console.error('ERROR:', e.message, e.filename, e.lineno, e.colno);
+      alert('ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
+    };
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      console.error('PROMISE:', e.reason);
+      alert('PROMISE: ' + e.reason);
+    };
+    
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);

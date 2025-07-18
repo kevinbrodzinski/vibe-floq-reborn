@@ -21,7 +21,8 @@ export function TimelineScrubber({
 
   /* click / drag helper */
   const handleSeek = (clientX: number) => {
-    const rect = trackRef.current!.getBoundingClientRect();
+    if (!trackRef.current) return; // Guard against null ref
+    const rect = trackRef.current.getBoundingClientRect();
     const pct = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
     onSeek(pct);
     if (!prefersReduced) progressVal.set(pct);
@@ -64,6 +65,7 @@ export function TimelineScrubber({
           aria-label={`Jump to ${m.title}`}
           onClick={e => {
             e.stopPropagation();
+            if (!trackRef.current) return; // Guard against null ref
             handleSeek(
               (e.target as HTMLElement).getBoundingClientRect().left,
             );

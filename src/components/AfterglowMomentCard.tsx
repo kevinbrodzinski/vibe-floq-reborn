@@ -71,8 +71,8 @@ export function AfterglowMomentCard({
       <div 
         className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
         style={{
-          backgroundColor: moment.color.startsWith('#') ? moment.color : getTimelineColor(index),
-          boxShadow: `0 0 30px ${moment.color.startsWith('#') ? moment.color : getTimelineColor(index)}40`
+          backgroundColor: (moment.color && moment.color.startsWith('#')) ? moment.color : getTimelineColor(index),
+          boxShadow: `0 0 30px ${((moment.color && moment.color.startsWith('#')) ? moment.color : getTimelineColor(index))}40`
         }}
       />
 
@@ -110,7 +110,7 @@ export function AfterglowMomentCard({
           )}
         </div>
 
-        <h3 className="text-lg font-bold mb-2 text-foreground">{moment.title}</h3>
+        <h3 className="text-lg font-bold mb-2 text-foreground">{moment.title || 'Untitled Moment'}</h3>
         
         {moment.description && (
           <p className="text-sm text-muted-foreground mb-3">{moment.description}</p>

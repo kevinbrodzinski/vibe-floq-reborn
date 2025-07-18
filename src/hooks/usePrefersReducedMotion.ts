@@ -7,6 +7,9 @@ export function usePrefersReducedMotion() {
   const [prefersReduced, setPrefersReduced] = useState(false);
 
   useEffect(() => {
+    // Guard against SSR
+    if (typeof window === 'undefined') return;
+    
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReduced(mediaQuery.matches);
 
