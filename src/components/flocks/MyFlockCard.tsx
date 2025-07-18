@@ -1,7 +1,7 @@
 import { FlockAvatar } from './FlockAvatar';
 import type { MyFloq } from '@/hooks/useMyFlocks';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, Crown } from 'lucide-react';
 
 interface MyFlockCardProps {
   flock: MyFloq;
@@ -28,7 +28,12 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
         <FlockAvatar flock={flock} size={92} glow />
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-semibold text-foreground">{flock.title}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="truncate font-semibold text-foreground">{flock.title}</h3>
+            {flock.is_creator && (
+              <Crown className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+            )}
+          </div>
           <p className="text-xs text-muted-foreground capitalize">{flock.primary_vibe}</p>
 
           <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
