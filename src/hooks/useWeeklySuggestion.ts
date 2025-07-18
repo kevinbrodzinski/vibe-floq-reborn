@@ -1,14 +1,21 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/providers/AuthProvider';
 
-export const useWeeklySuggestion = (userId?: string) => {
+export const useWeeklySuggestion = () => {
   const { toast } = useToast();
+  const { user, session } = useAuth();
   
   const query = useQuery({
-    queryKey: ['weekly-suggestion', userId],
-    enabled: !!userId,
+    queryKey: ['weekly-suggestion', user?.id],
+    enabled: !!(user?.id && session?.access_token), // Only run when fully authenticated
     queryFn: async () => {
+      if (!user?.id || !session?.access_token) {
+        throw new Error('Authentication required');
+      }
+      
       const { data, error } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
         body: { forceRefresh: false },
       });
@@ -17,17 +24,28 @@ export const useWeeklySuggestion = (userId?: string) => {
       return data;
     },
     staleTime: 6 * 60 * 60 * 1000, // 6 hours
+    retry: (failureCount, error) => {
+      // Don't retry auth errors
+      if (error?.message?.includes('Authentication') || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Check cooldown status
   const cooldownQuery = useQuery({
-    queryKey: ['suggestion-cooldown', userId],
-    enabled: !!userId,
+    queryKey: ['suggestion-cooldown', user?.id],
+    enabled: !!(user?.id && session?.access_token), // Only run when fully authenticated
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('User ID required');
+      }
+      
       const { data, error } = await supabase
         .from('weekly_ai_suggestion_cooldowns')
         .select('last_regenerated_at')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .maybeSingle();
       
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
@@ -45,11 +63,22 @@ export const useWeeklySuggestion = (userId?: string) => {
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry auth errors
+      if (error?.message?.includes('User ID required') || error?.message?.includes('401')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   const queryClient = useQueryClient();
   const regenerate = useMutation({
     mutationFn: async () => {
+      if (!user?.id || !session?.access_token) {
+        throw new Error('Authentication required for regeneration');
+      }
+      
       const { data, error } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
         body: { forceRefresh: true },
       });
@@ -67,14 +96,15 @@ export const useWeeklySuggestion = (userId?: string) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['weekly-suggestion', userId] });
-      queryClient.invalidateQueries({ queryKey: ['suggestion-cooldown', userId] });
+      queryClient.invalidateQueries({ queryKey: ['weekly-suggestion', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['suggestion-cooldown', user?.id] });
       toast({
         title: "New suggestions generated!",
         description: "Your personalized weekly coaching has been updated.",
       });
     },
     onError: (error: Error) => {
+      console.error('[WeeklySuggestion] Regeneration error:', error);
       toast({
         title: "Regeneration failed",
         description: error.message,
@@ -88,6 +118,7 @@ export const useWeeklySuggestion = (userId?: string) => {
     regenerate: regenerate.mutate,
     isRegenerating: regenerate.isPending,
     cooldown: cooldownQuery.data,
-    isCooldownLoading: cooldownQuery.isLoading
+    isCooldownLoading: cooldownQuery.isLoading,
+    isAuthenticated: !!(user?.id && session?.access_token)
   };
 };
