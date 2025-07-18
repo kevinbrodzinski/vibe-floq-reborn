@@ -26,9 +26,22 @@ serve(async (req, ctx) => {
   }
 
   const miss: string[] = [];
-  const cached = await Promise.all(
-    tile_ids.map(id => ctx.kv.get(`ft:${id}`).then(v => v ? JSON.parse(v) : (miss.push(id), null)))
-  );
+  let cached: any[] = [];
+
+  // Try to use KV cache if available, fallback to direct DB query
+  if (ctx.kv) {
+    try {
+      cached = await Promise.all(
+        tile_ids.map(id => ctx.kv.get(`ft:${id}`).then(v => v ? JSON.parse(v) : (miss.push(id), null)))
+      );
+    } catch (error) {
+      console.warn('KV cache unavailable, falling back to direct DB query:', error);
+      miss.push(...tile_ids); // Query all tiles from DB
+    }
+  } else {
+    // No KV available, query all tiles from DB
+    miss.push(...tile_ids);
+  }
 
   let rows: any[] = [];
   if (miss.length) {
@@ -45,8 +58,18 @@ serve(async (req, ctx) => {
       });
     }
 
-    rows = data!;
-    rows.forEach(r => ctx.kv.set(`ft:${r.tile_id}`, JSON.stringify(r), { ex: TTL }));
+    rows = data || [];
+    
+    // Try to cache results if KV is available
+    if (ctx.kv && rows.length) {
+      try {
+        await Promise.all(
+          rows.map(r => ctx.kv.set(`ft:${r.tile_id}`, JSON.stringify(r), { ex: TTL }))
+        );
+      } catch (error) {
+        console.warn('Failed to cache tiles:', error);
+      }
+    }
   }
 
   const responseBody = { tiles: [...cached.filter(Boolean), ...rows] };
