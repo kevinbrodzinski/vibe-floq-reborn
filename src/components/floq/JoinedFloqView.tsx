@@ -262,7 +262,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 
           {/* Action Pills Row - Only show if member */}
           {(isMember || isHost || floqDetails.is_creator) && (
-            <div className="flex gap-2 mt-4 mb-4">
+            <div className="flex gap-3 mt-4 mb-6">
               {/* End Floq for persistent hosts only */}
               {(isHost || floqDetails.is_creator) && !floqDetails.ends_at && onEndFloq && (
                 <IconPill
