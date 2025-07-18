@@ -2214,13 +2214,16 @@ export type Database = {
       }
       user_preferences: {
         Row: {
+          both_streak_weeks: number | null
           checkin_streak: number | null
           created_at: string | null
           declined_plan_types: Json | null
+          energy_streak_weeks: number | null
           favorite_locations: string[] | null
           feedback_sentiment: Json | null
           prefer_smart_suggestions: boolean
           preferred_vibe: string | null
+          social_streak_weeks: number | null
           updated_at: string | null
           user_id: string
           vibe_color: string | null
@@ -2228,13 +2231,16 @@ export type Database = {
           vibe_strength: number | null
         }
         Insert: {
+          both_streak_weeks?: number | null
           checkin_streak?: number | null
           created_at?: string | null
           declined_plan_types?: Json | null
+          energy_streak_weeks?: number | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
+          social_streak_weeks?: number | null
           updated_at?: string | null
           user_id: string
           vibe_color?: string | null
@@ -2242,13 +2248,16 @@ export type Database = {
           vibe_strength?: number | null
         }
         Update: {
+          both_streak_weeks?: number | null
           checkin_streak?: number | null
           created_at?: string | null
           declined_plan_types?: Json | null
+          energy_streak_weeks?: number | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
+          social_streak_weeks?: number | null
           updated_at?: string | null
           user_id?: string
           vibe_color?: string | null
@@ -2620,6 +2629,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_ai_suggestion_cooldowns: {
+        Row: {
+          created_at: string
+          last_regenerated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_regenerated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_regenerated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       weekly_ai_suggestions: {
         Row: {
