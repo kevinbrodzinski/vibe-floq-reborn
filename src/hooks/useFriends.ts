@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,21 +23,22 @@ export function useFriendsWithPresence() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const userId = user?.id;
 
   // New query using get_friends_with_presence
   const { data: friendsWithPresence = [], isLoading, error: friendsError } = useQuery({
-    queryKey: ['friends-with-presence', user?.id, OFFLINE_MODE],
-    enabled: !!user?.id && !OFFLINE_MODE,
+    queryKey: ['friends-with-presence', userId, OFFLINE_MODE],
+    enabled: !!userId && !OFFLINE_MODE,
     staleTime: 30 * 1000, // 30 seconds
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: 1000,
     queryFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!userId) throw new Error('User not authenticated');
       
       // Debug: Check current user session
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      console.log('🔍 Auth debug - Frontend user ID:', user?.id);
+      console.log('🔍 Auth debug - Frontend user ID:', userId);
       console.log('🔍 Auth debug - Supabase user ID:', currentUser?.id);
       
       const { data, error } = await supabase.rpc('get_friends_with_presence');
@@ -178,22 +180,24 @@ export function useFriendsWithPresence() {
       isAddingFriend: false,
       isRemovingFriend: false,
       isFriend: () => true,
+      isAuthed: true,
     };
   }
 
   // Handle auth/loading states gracefully
-  if (!user?.id || isLoading || friendsError) {
+  if (!userId || isLoading || friendsError) {
     return {
       friendsWithPresence: [],
       friends: [],
       friendCount: 0,
       profiles: [],
-      isLoading: isLoading || !user?.id,
+      isLoading: isLoading || !userId,
       addFriend: () => {},
       removeFriend: () => {},
       isAddingFriend: false,
       isRemovingFriend: false,
       isFriend: () => false,
+      isAuthed: !!userId,
     };
   }
 
@@ -208,6 +212,7 @@ export function useFriendsWithPresence() {
     isAddingFriend: addFriend.isPending,
     isRemovingFriend: removeFriend.isPending,
     isFriend,
+    isAuthed: !!userId,
   };
 }
 

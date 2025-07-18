@@ -6,8 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SearchedUser {
   id: string;
   display_name: string;
-  full_name?: string | null;  // Add full_name for search
-  username: string;  // Now guaranteed to be non-null after our migration
+  full_name?: string | null;
+  username: string;
   avatar_url: string | null;
   created_at: string;
 }
