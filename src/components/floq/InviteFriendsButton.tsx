@@ -188,8 +188,8 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
             <DialogTrigger asChild>
               <Button 
                 variant={variant} 
-                size="sm" 
-                className={cn("h-mobile-action px-4", className)}
+                size={size} 
+                className={className}
                 disabled={disabled}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
