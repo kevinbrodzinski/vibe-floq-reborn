@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { ArrowLeft, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import { JoinedFloqView } from '@/components/floq/JoinedFloqView';
 import { useFloqDetails } from '@/hooks/useFloqDetails';
 import { useLiveFloqScore } from '@/hooks/useLiveFloqScore';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
-import { useNavigation } from '@/hooks/useNavigation';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useFloqUI } from '@/contexts/FloqUIContext';
 import { useRateLimiter } from '@/hooks/useRateLimiter';
 import { useEndFloq } from '@/hooks/useEndFloq';
 import { EndFloqConfirmDialog } from '@/components/EndFloqConfirmDialog';
@@ -19,8 +19,8 @@ const FloqDetail = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const { session, loading } = useAuth();
-  
-  const { goBack } = useNavigation();
+  const navigate = useNavigate();
+  const { setSelectedFloqId } = useFloqUI();
   const { successFeedback, errorFeedback } = useHapticFeedback();
   const { mutateAsync: endFloq, isPending: isEndingFloq } = useEndFloq();
   
@@ -64,11 +64,16 @@ const FloqDetail = () => {
       await endFloq(floqDetails!.id);
       successFeedback();
       setShowEndConfirm(false);
-      goBack();
+      goBackToFloqs();
     } catch (error) {
       console.error('Failed to end floq:', error);
       errorFeedback();
     }
+  };
+
+  const goBackToFloqs = () => {
+    setSelectedFloqId(null);
+    navigate('/floqs');
   };
 
   // Auto-refresh on errors to recover from transient issues
@@ -87,7 +92,7 @@ const FloqDetail = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={goBack}>
+            <Button variant="ghost" size="sm" onClick={goBackToFloqs}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="h-6 w-32 bg-muted animate-pulse rounded" />
@@ -107,7 +112,7 @@ const FloqDetail = () => {
       <div className="min-h-screen bg-background">
         <div className="max-w-md mx-auto p-4">
           <div className="flex items-center gap-3 mb-6">
-            <Button variant="ghost" size="sm" onClick={goBack}>
+            <Button variant="ghost" size="sm" onClick={goBackToFloqs}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="text-lg font-semibold">Floq Not Found</h1>
@@ -150,7 +155,7 @@ const FloqDetail = () => {
     <div className="flex flex-col h-screen">
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur flex items-center justify-between px-4 py-3 border-b">
-        <Button variant="ghost" size="sm" onClick={goBack}>
+        <Button variant="ghost" size="sm" onClick={goBackToFloqs}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         
