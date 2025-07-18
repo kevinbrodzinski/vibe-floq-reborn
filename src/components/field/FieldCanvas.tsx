@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as PIXI from 'pixi.js';
-import { createNoise3D } from 'simplex-noise';
+// Removed simplex-noise import - using simple random drift instead
 import { useFieldTiles } from '@/hooks/useFieldTiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { geohashToCenter, crowdCountToRadius, hslToString, tilesForViewport } from '@/lib/geo';
@@ -56,7 +56,7 @@ export default function FieldCanvas() {
   const rippleContainer = useRef<PIXI.Container>();
   const trailGraphics = useRef<PIXI.Graphics>();
   const ripples = useRef<RippleEffect[]>([]);
-  const noise = useMemo(() => createNoise3D(), []);
+  // Simple random drift instead of complex noise
   
   // Create a simple projection function since we don't have mapbox integration yet
   const project = useMemo(() => {
@@ -167,8 +167,8 @@ export default function FieldCanvas() {
       app.stage.children.forEach(child => {
         if (child === rippleContainer.current || child === trailGraphics.current) return;
         if (child instanceof PIXI.Sprite) {
-          const ox = noise(child.x * 0.002, child.y * 0.002, t) * 0.5;
-          const oy = noise(child.y * 0.002, child.x * 0.002, t + 30) * 0.5;
+          const ox = (Math.random() - 0.5) * 0.3;
+          const oy = (Math.random() - 0.5) * 0.3;
           child.x += ox;
           child.y += oy;
         }
@@ -191,7 +191,7 @@ export default function FieldCanvas() {
     return () => {
       app.ticker.remove(ticker);
     };
-  }, [shouldUsePIXI, noise, (settings as any)?.field_ripples]);
+  }, [shouldUsePIXI, (settings as any)?.field_ripples]);
 
   /** render tiles */
   useEffect(() => {
