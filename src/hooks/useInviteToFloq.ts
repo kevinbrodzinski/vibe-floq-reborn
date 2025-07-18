@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,35 +15,41 @@ interface InviteToFloqReturn {
 }
 
 /**
- * Send invitations to a floq via the `invite-to-floq` Edge Function.
- * Adds the current auth access-token in the headers so RLS validates correctly.
+ * Calls the `invite-to-floq` Edge Function and passes the *fresh* access token
+ * obtained directly from `supabase.auth.getSession()` so that RLS checks succeed.
  */
 export function useInviteToFloq(): InviteToFloqReturn {
-  const session = useSession();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const mutation = useMutation({
     mutationFn: async ({ floqId, inviteeIds }: InviteToFloqParams) => {
-      if (!session?.access_token) throw new Error("Not authenticated");
-      if (!floqId || inviteeIds.length === 0)
+      if (!floqId || inviteeIds.length === 0) {
         throw new Error("Invalid parameters");
+      }
 
-      const { data, error } = await supabase.functions.invoke(
-        "invite-to-floq",
-        {
-          // ⇢ key bit: pass the access token so the edge function can call back
-          //   into Supabase with row-level-security intact
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            Prefer: "return=minimal", // edge-function returns 204 unless it sets a body
-          },
-          body: {
-            floq_id: floqId,
-            invitee_ids: inviteeIds,
-          },
-        }
-      );
+      /* ------------------------------------------------------------------ */
+      /* 1️⃣  Get the *fresh* session on demand (bypasses React context lag) */
+      /* ------------------------------------------------------------------ */
+      const {
+        data: { session },
+        error: sessionErr,
+      } = await supabase.auth.getSession();
+
+      if (sessionErr) throw sessionErr;
+      if (!session?.access_token) throw new Error("Not authenticated");
+      /* ------------------------------------------------------------------ */
+
+      const { data, error } = await supabase.functions.invoke("invite-to-floq", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          Prefer: "return=minimal",
+        },
+        body: {
+          floq_id: floqId,
+          invitee_ids: inviteeIds,
+        },
+      });
 
       if (error) throw error;
       return data; // can be undefined when Prefer: return=minimal
@@ -53,7 +58,7 @@ export function useInviteToFloq(): InviteToFloqReturn {
     onSuccess: (_data, variables) => {
       const { floqId } = variables;
 
-      // refetch local caches that might now include pending invites
+      // Refresh any queries that might show new pending invites / updated floq
       queryClient.invalidateQueries({ queryKey: ["pending-invites"] });
       queryClient.invalidateQueries({ queryKey: ["floq-details", floqId] });
 
