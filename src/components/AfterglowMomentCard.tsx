@@ -7,6 +7,9 @@ import { useState } from 'react'
 import { PeopleEncountersModal } from '@/components/modals/PeopleEncountersModal'
 import { LocationChip } from '@/components/location/LocationChip'
 import { usePeopleData } from '@/hooks/usePeopleData'
+import { useTimelineV2 } from '@/hooks/useTimelineV2'
+import { openMomentDrawer } from '@/state/momentDrawer'
+import { Link } from 'react-router-dom'
 
 interface AfterglowMomentCardProps {
   moment: AfterglowMoment
@@ -25,6 +28,7 @@ export function AfterglowMomentCard({
 }: AfterglowMomentCardProps) {
   const [isPeopleModalOpen, setIsPeopleModalOpen] = useState(false)
   const { getPeopleInMoment } = usePeopleData()
+  const timelineV2 = useTimelineV2()
   const getEventTypeIcon = (type: string) => {
     switch(type) {
       case "venue_checkin": 
@@ -55,7 +59,15 @@ export function AfterglowMomentCard({
   }
 
   return (
-    <div className="relative flex items-start space-x-6">
+    <div 
+      className={`relative flex items-start space-x-6 ${timelineV2 ? 'cursor-pointer' : ''}`}
+      data-moment-index={index}
+      onClick={() => {
+        if (timelineV2) {
+          openMomentDrawer(moment);
+        }
+      }}
+    >
       {/* Timeline dot */}
       <div 
         className="relative z-10 w-6 h-6 rounded-full flex-shrink-0 animate-pulse-glow border-2 border-background"
@@ -189,6 +201,15 @@ export function AfterglowMomentCard({
                 </Badge>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Insights deep-link for power users */}
+        {timelineV2 && (
+          <div className="mt-2 pt-2 border-t border-border/20">
+            <span className="text-xs text-muted-foreground">
+              Click for details, or view insights →
+            </span>
           </div>
         )}
       </div>

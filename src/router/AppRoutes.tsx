@@ -17,7 +17,7 @@ import UserProfile from '@/pages/UserProfile';
 import NotFound from '@/pages/NotFound';
 import NewPlan from '@/pages/floqs/[id]/plans/NewPlan';
 import Archive from '@/pages/Archive';
-import AfterglowDetailPage from '@/pages/AfterglowDetailPage';
+import AfterglowInsightsPage from '@/pages/AfterglowInsightsPage';
 import { RoleGuard } from '@/components/RoleGuard';
 import Invites from '@/pages/Invites';
 import { PlansHub } from '@/components/plans/PlansHub';
@@ -47,7 +47,7 @@ export const AppRoutes = () => {
       <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
     )}
     <Route path="/afterglow" element={<AfterglowRoutes />} />
-    <Route path="/afterglow/:afterglowId" element={<AfterglowDetailPage />} />
+    <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
