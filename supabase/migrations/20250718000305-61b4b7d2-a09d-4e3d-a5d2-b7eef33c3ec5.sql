@@ -60,33 +60,39 @@ ALTER TABLE public.user_preferences
   ADD COLUMN IF NOT EXISTS both_streak_weeks    INTEGER DEFAULT 0;
 
 /*─────────────────────────────────────────────────────────────────────────────
-  Weekly-AI pre-warm infrastructure
+  Weekly AI Suggestions – pre-warm infrastructure
 ─────────────────────────────────────────────────────────────────────────────*/
 
--- 0. safety: extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron  WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS http     WITH SCHEMA extensions;
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;            -- misc
+---------------------------- 0. extensions -----------------------------------
+CREATE EXTENSION IF NOT EXISTS pg_cron   WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS http      WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto  WITH SCHEMA extensions;
 
--------------------------------------------------------------------------------
--- 1. helper: store the service-role token privately inside Postgres config
---    (run ONCE, **outside** version control; leave commented here for docs)
--- ALTER SYSTEM SET app.admin_secret = '<YOUR-SERVICE-ROLE-JWT>';
--- SELECT pg_reload_conf();
+---------------------------- 1. partial index for recent lookups -------------
+CREATE INDEX IF NOT EXISTS idx_weekly_ai_suggestions_recent
+  ON public.weekly_ai_suggestions (user_id, week_ending DESC)
+  WHERE week_ending > CURRENT_DATE - 60;
 
--------------------------------------------------------------------------------
--- 2. SECURE WRAPPER that pg_cron will call
+---------------------------- 2. analytics read policy -----------------------
+DROP POLICY IF EXISTS "service role read" ON public.weekly_ai_suggestions;
+CREATE POLICY "service role read"
+  ON public.weekly_ai_suggestions
+  FOR SELECT
+  TO service_role
+  USING (true);
+
+---------------------------- 3. pre-warm caller function --------------------
 CREATE OR REPLACE FUNCTION public.call_weekly_ai_suggestion(p_user_id uuid)
 RETURNS void
 LANGUAGE plpgsql
-SECURITY DEFINER                            -- runs with creator's power
+SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 DECLARE
   resp jsonb;
 BEGIN
   resp := net.http_post(
-    url     := 'https://<YOUR-PROJECT-REF>.supabase.co/functions/v1/generate-weekly-ai-suggestion',
+    url     := 'https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/generate-weekly-ai-suggestion',
     headers := jsonb_build_object(
       'Content-Type',              'application/json',
       'x-supabase-admin-secret',   current_setting('app.admin_secret', true)
@@ -97,33 +103,35 @@ BEGIN
       'userId',       p_user_id
     )
   );
-
-  -- optional: log failures
-  IF resp->>'status' <> '200' THEN
-    RAISE WARNING 'Pre-warm call for % returned: %', p_user_id, resp;
+  
+  IF resp ->> 'status' <> '200' THEN
+    RAISE WARNING 'pre-warm: % → %', p_user_id, resp;
   END IF;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.call_weekly_ai_suggestion(uuid) TO cron; -- not to PUBLIC
+GRANT EXECUTE ON FUNCTION public.call_weekly_ai_suggestion(uuid) TO cron;
 
--------------------------------------------------------------------------------
--- 3. pg_cron job (runs Sun 23:59 UTC)
-SELECT cron.unschedule(jobid)
-FROM   cron.job
-WHERE  jobname = 'prewarm-weekly-ai-suggestions';
+---------------------------- 4. cron job -------------------------------------
+-- Remove old job if name reused
+SELECT cron.unschedule(jobid) 
+FROM cron.job
+WHERE jobname = 'prewarm-weekly-ai-suggestions';
 
 SELECT cron.schedule(
   job_name => 'prewarm-weekly-ai-suggestions',
-  schedule => '59 23 * * 0',  -- Sunday 23:59 UTC
+  schedule => '59 23 * * 0',              -- Sunday 23:59 UTC
   command  => $cmd$
     WITH active AS (
       SELECT DISTINCT user_id
       FROM   daily_afterglow
-      WHERE  date >= CURRENT_DATE - 7
-      LIMIT  100                       -- tune per quota
+      WHERE  date >= CURRENT_DATE - 7      -- "active last week"
+      LIMIT  100
     )
-    SELECT public.call_weekly_ai_suggestion(user_id)
-    FROM   active;
+    SELECT public.call_weekly_ai_suggestion(user_id) FROM active;
   $cmd$
 );
+
+-- Note: Before applying, run manually:
+-- ALTER SYSTEM SET app.admin_secret = '<YOUR-SERVICE-ROLE-JWT>';
+-- SELECT pg_reload_conf();
