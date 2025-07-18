@@ -7,10 +7,10 @@ import { geohashToCenter, crowdCountToRadius, hslToString, tilesForViewport } fr
 import { buildTileTree, hitTest } from '@/lib/quadtree';
 import { useMapViewport } from '@/hooks/useMapViewport';
 import { useFriends } from '@/hooks/useFriends';
-import { useFriendTrails } from '@/hooks/useFriendTrails';
-import { useRippleQueue } from '@/hooks/useRippleQueue';
+import useFriendTrails from '@/hooks/useFriendTrails';
+import useRippleQueue from '@/hooks/useRippleQueue';
 import { useUserSettings } from '@/hooks/useUserSettings';
-import { RippleEffect } from '@/shaders/RippleFilter';
+import RippleEffect from '@/shaders/RippleEffect';
 import type { ScreenTile } from '@/types/field';
 
 // Convert HSL color to hex for PIXI

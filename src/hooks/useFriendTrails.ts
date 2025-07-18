@@ -1,21 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
 
-export interface TrailPoint { 
-  lat: number; 
-  lng: number; 
-  ts: string; 
+export interface TrailPoint {
+  lat: number;
+  lng: number;
+  ts: string;
 }
 
-export function useFriendTrails(friendIds: string[]) {
+/**
+ * Keeps up to the last five GPS fixes per friend (live; in-memory only).
+ * @param friendIds – array of `uuid` strings to watch
+ * @returns Map<friendId, TrailPoint[]>
+ */
+export default function useFriendTrails(friendIds: string[]) {
+  const supabase = useSupabaseClient();
   const buffer = useRef<Map<string, TrailPoint[]>>(new Map());
-  const [, force] = useState(0);           // trigger re-render
+  // dummy state to force re-renders when buffer mutates
+  const [, force] = useState(0);
 
   useEffect(() => {
     if (!friendIds.length) return;
 
-    const ch = supabase
-      .channel(`vibes_now_trails_${Date.now()}_${Math.random().toString(36)}`)
+    const channel = supabase
+      .channel(`vibes_now_trails_${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -25,18 +32,22 @@ export function useFriendTrails(friendIds: string[]) {
           filter: `id=in.(${friendIds.join(',')})`,
         },
         ({ new: row }) => {
-          if (!row.lat || !row.lng) return;
+          if (!row?.lat || !row?.lng) return;
+
           const arr = buffer.current.get(row.id) ?? [];
           arr.push({ lat: row.lat, lng: row.lng, ts: row.updated_at });
-          if (arr.length > 5) arr.shift();
+          if (arr.length > 5) arr.shift(); // keep 5
           buffer.current.set(row.id, arr);
-          force(v => v + 1);
+
+          force(v => v + 1);               // trigger re-render
         },
       )
       .subscribe();
 
-    return () => ch.unsubscribe();
+    return () => {
+      channel.unsubscribe();
+    };
   }, [friendIds.join(',')]);
 
-  return buffer.current; // Map<user_id, TrailPoint[]>
+  return buffer.current;
 }
