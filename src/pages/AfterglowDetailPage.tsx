@@ -1,7 +1,7 @@
 import React, { useState, memo, useMemo, useRef } from 'react';
 import { Timeline } from "@/components/ui/timeline";
 import { useParams, Link } from "react-router-dom";
-import { useAfterglowDetail } from "@/lib/afterglow-helpers";
+import { useAfterglowDetail, AfterglowMoment } from "@/lib/afterglow-helpers";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { LazyShareModal } from '@/components/LazyShareModal';
 import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
+import { MomentDetailDrawer } from '@/components/moments/MomentDetailDrawer';
 import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
 import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
@@ -30,6 +31,8 @@ import { useScrollContext } from '@/hooks/useScrollContext';
 export default function AfterglowDetailPage() {
   const { afterglowId } = useParams<{ afterglowId: string }>();
   const [shareOpen, setShareOpen] = useState(false);
+  const [selectedMoment, setSelectedMoment] = useState<AfterglowMoment | null>(null);
+  const [highlightedMomentIds, setHighlightedMomentIds] = useState<string[]>([]);
   const { mutate: togglePinned } = useTogglePinned();
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReduced = usePrefersReducedMotion();
@@ -62,6 +65,53 @@ export default function AfterglowDetailPage() {
     if (!data?.afterglow) return
     await generateSummary(data.afterglow.id)
   }
+
+  const handleMomentClick = (moment: AfterglowMoment) => {
+    setSelectedMoment(moment);
+    
+    // Find related moments (same venue or people)
+    const related = moments.filter(m => {
+      if (m.id === moment.id) return false;
+      
+      // Same venue
+      if (moment.metadata?.venue_id && m.metadata?.venue_id === moment.metadata.venue_id) {
+        return true;
+      }
+      
+      // Shared people
+      const momentUsers = moment.metadata?.encountered_users || [];
+      const mUsers = m.metadata?.encountered_users || [];
+      const hasSharedUsers = momentUsers.some((u: any) => 
+        mUsers.some((mu: any) => mu.user_id === u.user_id)
+      );
+      
+      return hasSharedUsers;
+    });
+    
+    setHighlightedMomentIds(related.map(m => m.id));
+  };
+
+  const handleMomentHover = (moment: AfterglowMoment) => {
+    // Optional: Could add hover preview logic here
+  };
+
+  const handleHighlightMoment = (momentId: string) => {
+    // Scroll to the highlighted moment
+    const element = document.querySelector(`[data-moment-index]`);
+    const momentElements = Array.from(document.querySelectorAll('[data-moment-index]'));
+    const targetElement = momentElements.find(el => 
+      moments[parseInt(el.getAttribute('data-moment-index') || '0')]?.id === momentId
+    );
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleDrawerClose = () => {
+    setSelectedMoment(null);
+    setHighlightedMomentIds([]);
+  };
 
   if (isLoading) {
     return (
@@ -226,6 +276,9 @@ export default function AfterglowDetailPage() {
                   index={index}
                   isLast={index === moments.length - 1}
                   containerRef={containerRef}
+                  onMomentClick={handleMomentClick}
+                  onMomentHover={handleMomentHover}
+                  isHighlighted={highlightedMomentIds.includes(moment.id)}
                 />
               ))}
             </Timeline>
@@ -237,6 +290,15 @@ export default function AfterglowDetailPage() {
           <p className="text-sm text-muted-foreground">This was a quiet day without tracked activities.</p>
         </div>
       )}
+
+      {/* Moment Detail Drawer */}
+      <MomentDetailDrawer
+        moment={selectedMoment}
+        isOpen={selectedMoment !== null}
+        onClose={handleDrawerClose}
+        relatedMoments={moments.filter(m => highlightedMomentIds.includes(m.id))}
+        onHighlightMoment={handleHighlightMoment}
+      />
 
       {/* Lazy Share Modal */}
       <LazyShareModal

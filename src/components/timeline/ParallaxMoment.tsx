@@ -2,21 +2,35 @@ import React, { memo } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useMomentDetailPrefetch } from '@/hooks/useMomentDetailPrefetch';
 import { TimelineItem, TimelineSeparator, TimelineDot, TimelineConnector, TimelineContent } from '@/components/ui/timeline';
 import { Chip } from '@/components/ui/Chip';
 import { getMomentIcon, getColorFromHex, formatMomentType } from '@/constants/moments';
 import { format } from 'date-fns';
+import { AfterglowMoment } from '@/lib/afterglow-helpers';
 
 interface ParallaxMomentProps {
-  moment: any;
+  moment: AfterglowMoment;
   index: number;
   isLast: boolean;
   containerRef: React.RefObject<HTMLElement>;
+  onMomentClick?: (moment: AfterglowMoment) => void;
+  onMomentHover?: (moment: AfterglowMoment) => void;
+  isHighlighted?: boolean;
 }
 
-const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMomentProps) => {
+const ParallaxMoment = memo(({ 
+  moment, 
+  index, 
+  isLast, 
+  containerRef, 
+  onMomentClick,
+  onMomentHover,
+  isHighlighted = false 
+}: ParallaxMomentProps) => {
   const prefersReduced = usePrefersReducedMotion();
   const { triggerHaptic } = useHaptic();
+  const { prefetchMomentDetails } = useMomentDetailPrefetch();
   
   // Guard against null containerRef to avoid Framer warnings
   const { scrollYProgress } = useScroll({
@@ -46,11 +60,25 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       triggerHaptic('light');
     }
+    onMomentClick?.(moment);
+  };
+
+  const handleMomentHover = () => {
+    onMomentHover?.(moment);
+    // Prefetch related moment data
+    prefetchMomentDetails(moment);
   };
 
   if (prefersReduced) {
     return (
-      <div onClick={handleMomentClick} className="cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors" data-moment-index={index}>
+      <div 
+        onClick={handleMomentClick} 
+        onMouseEnter={handleMomentHover}
+        className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors ${
+          isHighlighted ? 'ring-2 ring-primary/60 bg-primary/5' : ''
+        }`} 
+        data-moment-index={index}
+      >
         <TimelineItem>
           <TimelineSeparator>
             <TimelineDot color={moment.color ?? "#6b7280"} />
@@ -105,7 +133,10 @@ const ParallaxMoment = memo(({ moment, index, isLast, containerRef }: ParallaxMo
         damping: 15
       }}
       onClick={handleMomentClick} 
-      className="cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors"
+      onMouseEnter={handleMomentHover}
+      className={`cursor-pointer hover:bg-muted/5 rounded-lg p-2 transition-colors ${
+        isHighlighted ? 'ring-2 ring-primary/60 bg-primary/5' : ''
+      }`}
       data-moment-index={index}
     >
       <TimelineItem>
