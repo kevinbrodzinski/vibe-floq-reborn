@@ -5,7 +5,7 @@
     "slug": "vibe-flow-orb",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "/lovable-uploads/eba285b4-d984-4dae-97e3-e48ecf96ce3a.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
