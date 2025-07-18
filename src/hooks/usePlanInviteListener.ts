@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
@@ -27,7 +28,7 @@ export function usePlanInviteListener() {
           toast.success('You were invited to a plan!', {
             action: {
               label: 'View Plan',
-              onClick: () => navigate(`/floqs/plans/${planId}`),
+              onClick: () => navigate(`/plan/${planId}`),
             },
             duration: 5000,
           })
@@ -36,7 +37,7 @@ export function usePlanInviteListener() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe()
     }
   }, [user, navigate])
 }
