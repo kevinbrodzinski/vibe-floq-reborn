@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --neon: theme(colors.sky.400); /* neon glow color for circular avatars */
+}
+
 /* Silence ResizeObserver loop limit exceeded warnings */
 html, body {
   overflow-anchor: none;

@@ -6,44 +6,49 @@ import type { MyFloq } from '@/hooks/useMyFlocks';
 
 interface FlockAvatarProps {
   flock: MyFloq;
-  size?: number;
+  size?: number; // diameter in px
   className?: string;
   onClick?: () => void;
+  glow?: boolean; // NEW → neon style
 }
 
-export function FlockAvatar({ flock, size = 104, className, onClick }: FlockAvatarProps) {
+export function FlockAvatar({
+  flock,
+  size = 104,
+  className,
+  onClick,
+  glow = true, // default ON for new look
+}: FlockAvatarProps) {
   const gradient = getVibeGradient('floq', flock.primary_vibe);
-  const initials = flock.title?.split(' ')
-    .slice(0, 2)
-    .map(word => word[0]?.toUpperCase())
-    .join('') || '?';
+  const initials =
+    flock.title
+      ?.split(' ')
+      .slice(0, 2)
+      .map(w => w[0]?.toUpperCase())
+      .join('') || '?';
 
   return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.96 }}
-      whileHover={{ scale: 1.03 }}
+    <div
       onClick={onClick}
-      className={cn(
-        'relative flex-shrink-0 rounded-2xl shadow-md shadow-black/20',
-        'ring-1 ring-white/5 overflow-hidden focus-visible:ring-2 focus-visible:ring-primary',
-        className
-      )}
+      role={onClick ? 'button' : undefined}
       style={{ width: size, height: size }}
+      className={cn(
+        'relative shrink-0 rounded-full overflow-hidden select-none ring-2 ring-black/40',
+        glow
+          ? 'before:absolute before:inset-0 before:rounded-full before:bg-[radial-gradient(var(--neon),_transparent_60%)] before:opacity-60 before:blur-lg'
+          : '',
+        gradient,
+        className,
+      )}
     >
-      {/* Gradient background with initials fallback */}
-      <div className={cn('w-full h-full flex items-center justify-center', gradient)}>
-        <span className="font-bold text-xl/none tracking-wide text-white/90">
-          {initials}
-        </span>
+      {/* fallback initials (always show since no cover_url in MyFloq) */}
+      <div className="flex h-full w-full items-center justify-center font-bold text-xl text-white/90">
+        {initials}
       </div>
-
-      {/* Vibe badge */}
-      <div className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60">
-        <span className="text-[11px] leading-none">
-          {vibeEmoji(flock.primary_vibe)}
-        </span>
-      </div>
-    </motion.button>
+      {/* vibe chip */}
+      <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 py-0.5 text-xs backdrop-blur">
+        {vibeEmoji(flock.primary_vibe)}
+      </span>
+    </div>
   );
 }

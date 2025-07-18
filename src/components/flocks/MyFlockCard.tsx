@@ -25,7 +25,7 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
       className="cursor-pointer transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-primary/70 rounded-2xl"
     >
       <CardContent className="flex items-center gap-4 p-4">
-        <FlockAvatar flock={flock} />
+        <FlockAvatar flock={flock} size={92} glow />
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold text-foreground">{flock.title}</h3>
