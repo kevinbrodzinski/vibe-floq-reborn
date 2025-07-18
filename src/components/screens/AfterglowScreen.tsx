@@ -41,7 +41,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const [showAllCrossedPaths, setShowAllCrossedPaths] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
-  const timelineV2 = useTimelineV2();
+  // TEMP: Force enable timeline V2 for testing
+  const timelineV2 = true; // useTimelineV2();
   
   // Use provided date or default to today
   const currentDate = date || new Date().toISOString().split('T')[0];
