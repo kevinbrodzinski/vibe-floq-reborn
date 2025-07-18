@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { viewportToTileIds } from '@/lib/geo'
@@ -26,20 +27,37 @@ export function useFieldTiles(bounds?: TileBounds) {
     bounds.precision ?? 6
   ).sort() : []; // stable cache key
 
+  // Debug logging
+  console.log('[FIELD_TILES] Hook called with:', {
+    bounds,
+    tileIds,
+    tileCount: tileIds.length
+  })
+
   return useQuery({
     queryKey: ['field-tiles', tileIds],
     queryFn: async () => {
-      if (!tileIds.length) return []
+      if (!tileIds.length) {
+        console.log('[FIELD_TILES] No tile IDs, returning empty array')
+        return []
+      }
+      
+      console.log('[FIELD_TILES] Fetching tiles for IDs:', tileIds)
       
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
         body: { tile_ids: tileIds }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('[FIELD_TILES] Error fetching tiles:', error)
+        throw error
+      }
+      
+      console.log('[FIELD_TILES] Received tiles:', data)
       return data as FieldTile[]
     },
     enabled: tileIds.length > 0,
-    staleTime: 30_000, // 30 seconds
-    refetchInterval: 60_000, // 1 minute
+    staleTime: 10_000, // 10 seconds - shorter for debugging
+    refetchInterval: 30_000, // 30 seconds
   })
 }

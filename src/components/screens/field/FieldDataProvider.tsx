@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
@@ -10,7 +11,6 @@ import { FieldLocationProvider, useFieldLocation } from "@/components/field/cont
 import { FieldSocialProvider, type Person } from "@/components/field/contexts/FieldSocialContext";
 import { FieldUIProvider, useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFriends } from "@/hooks/useFriends";
-
 
 export interface FloqEvent {
   id: string;
@@ -81,23 +81,39 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   // Get tile IDs for current viewport
   const tileIds = useMemo(() => {
     if (!viewport) return [];
-    return viewportToTileIds(
+    const ids = viewportToTileIds(
       viewport.minLat,
       viewport.maxLat,
       viewport.minLng,
       viewport.maxLng,
       6
     );
+    
+    // Debug helper - expose to window for debugging
+    if (typeof window !== 'undefined') {
+      (window as any).__debug_tiles = ids;
+      console.log('[FIELD_DEBUG] Tile IDs for viewport:', ids);
+    }
+    
+    return ids;
   }, [viewport]);
 
   // Get field tiles data
-  const { data: fieldTiles = [] } = useFieldTiles(viewport ? {
+  const { data: fieldTiles = [], error: tilesError, isLoading } = useFieldTiles(viewport ? {
     minLat: viewport.minLat,
     maxLat: viewport.maxLat,
     minLng: viewport.minLng,
     maxLng: viewport.maxLng,
     precision: 6
   } : undefined);
+  
+  // Debug logging for field tiles
+  console.log('[FIELD_DEBUG] Field tiles query state:', {
+    isLoading,
+    error: tilesError,
+    tilesCount: fieldTiles?.length || 0,
+    tiles: fieldTiles
+  });
   
   // Get nearby venues for chip and current event
   const { data: nearbyVenues = [] } = useNearbyVenues(location?.lat ?? 0, location?.lng ?? 0, 0.3);
