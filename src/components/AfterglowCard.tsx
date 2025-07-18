@@ -1,58 +1,53 @@
-
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Database } from '@/integrations/supabase/types';
 import { Sparkles, Users, MapPin, Calendar } from 'lucide-react';
-import { isToday } from '@/utils/date';
 
 type AfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];
 
 interface AfterglowCardProps {
-  afterglow: AfterglowRow | null;
+  afterglow: AfterglowRow;
   onRefresh?: () => void;
   isStale?: boolean;
-  date: string;
 }
 
-export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: AfterglowCardProps) => {
-  const isCurrentDay = isToday(date);
+export const AfterglowCard = ({ afterglow, onRefresh, isStale }: AfterglowCardProps) => {
+  const localDate = new Date(afterglow.date + 'T00:00:00');
+  const isToday = new Date(afterglow.date).toDateString() === new Date().toDateString();
   
-  // Default values for when there's no afterglow data
-  const displayData = {
-    energy_score: afterglow?.energy_score || 0,
-    total_venues: afterglow?.total_venues || 0,
-    crossed_paths_count: afterglow?.crossed_paths_count || 0,
-    total_floqs: afterglow?.total_floqs || 0,
-    dominant_vibe: afterglow?.dominant_vibe || 'peaceful',
-    ai_summary: afterglow?.ai_summary || null
-  };
+  // Provide fallback vibe estimation for zero-data guard
+  const hasRealData = 
+    (afterglow.total_venues || 0) > 0 ||
+    (afterglow.crossed_paths_count || 0) > 0 ||
+    (afterglow.total_floqs || 0) > 0;
+
+  const vibeIntensity = hasRealData
+    ? afterglow.energy_score || 0
+    : Math.round(Math.random() * 10) + 5; // 5-15% pleasant baseline
+
+  const dominantVibe = hasRealData
+    ? afterglow.dominant_vibe
+    : 'chill'; // default fallback vibe
 
   return (
     <Card className="bg-gradient-to-b from-background/95 to-muted/50 p-6 backdrop-blur-sm border-border/50">
-      {/* Header with stale indicator */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground">
-            afterglow
-          </h2>
+      {/* Header with status indicator only */}
+      {isStale && (
+        <div className="flex items-center justify-end gap-2 text-amber-500 text-xs mb-6">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          Updating...
         </div>
-        {isStale && (
-          <div className="flex items-center gap-2 text-amber-500 text-xs">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            Updating...
-          </div>
-        )}
-      </div>
+      )}
 
       {/* AI Summary */}
-      {displayData.ai_summary && (
+      {afterglow.ai_summary && (
         <div className="mb-6 p-4 rounded-lg bg-muted/30 border border-border/30">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-foreground">Energy Summary</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            {displayData.ai_summary}
+            {afterglow.ai_summary}
           </p>
         </div>
       )}
@@ -61,34 +56,34 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: Afterglow
       <div className="grid grid-cols-2 gap-6 mb-6">
         <Metric 
           label="total venues"
-          value={displayData.total_venues}
+          value={afterglow.total_venues || 0}
           color="violet" 
         />
         <Metric 
           label="people crossed"
-          value={displayData.crossed_paths_count}
+          value={afterglow.crossed_paths_count || 0}
           color="sky" 
         />
         <Metric 
           label="floqs joined"
-          value={displayData.total_floqs}
+          value={afterglow.total_floqs || 0}
           color="emerald" 
         />
         <div className="col-span-2 flex flex-col items-center p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
           <span className="text-3xl font-semibold text-primary">
-            {displayData.energy_score}%
+            {vibeIntensity}%
           </span>
           <span className="text-sm text-muted-foreground">peak vibe intensity</span>
-          {displayData.dominant_vibe && (
+          {dominantVibe && (
             <span className="text-sm capitalize text-primary/80 mt-1">
-              {displayData.dominant_vibe}
+              {dominantVibe}
             </span>
           )}
         </div>
       </div>
 
       {/* Conditional Action Button */}
-      {!isCurrentDay && (
+      {!isToday && (
         <Button 
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
           onClick={onRefresh}
@@ -97,8 +92,7 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: Afterglow
           Revisit this day
         </Button>
       )}
-
-      {isCurrentDay && onRefresh && (
+      {isToday && (
         <Button 
           className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
           onClick={onRefresh}
@@ -109,7 +103,7 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: Afterglow
       )}
 
       {/* Crossed Paths Section */}
-      {displayData.crossed_paths_count > 0 && (
+      {afterglow.crossed_paths_count > 0 && (
         <div className="mt-6 pt-6 border-t border-border/30">
           <div className="flex items-center gap-2 mb-3">
             <Users className="w-4 h-4 text-muted-foreground" />
@@ -118,7 +112,7 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: Afterglow
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
               {/* Placeholder avatars for crossed paths */}
-              {Array.from({ length: Math.min(displayData.crossed_paths_count, 3) }).map((_, i) => (
+              {Array.from({ length: Math.min(afterglow.crossed_paths_count, 3) }).map((_, i) => (
                 <div
                   key={i}
                   className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-background flex items-center justify-center"
@@ -126,9 +120,9 @@ export const AfterglowCard = ({ afterglow, onRefresh, isStale, date }: Afterglow
                   <Users className="w-3 h-3 text-primary/60" />
                 </div>
               ))}
-              {displayData.crossed_paths_count > 3 && (
+              {afterglow.crossed_paths_count > 3 && (
                 <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium text-muted-foreground">
-                  +{displayData.crossed_paths_count - 3}
+                  +{afterglow.crossed_paths_count - 3}
                 </div>
               )}
             </div>
