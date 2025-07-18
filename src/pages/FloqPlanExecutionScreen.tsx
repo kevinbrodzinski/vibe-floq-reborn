@@ -33,9 +33,7 @@ const toUi = (stop: PlanStop): PlanStopUi => ({
   start_time: stop.start_time,
   end_time: stop.end_time,
   stop_order: stop.stop_order ?? 0,
-  venue: typeof stop.venue === 'string'
-    ? { id: 'venue-unknown', name: stop.venue }
-    : stop.venue ?? { id: 'venue-unknown', name: '' },
+  venue: { id: 'venue-unknown', name: stop.venue || 'Unknown Venue' },
   address: stop.address || stop.location,
   duration_minutes: stop.duration_minutes,
   estimated_cost_per_person: stop.estimated_cost_per_person,

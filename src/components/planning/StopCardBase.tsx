@@ -56,7 +56,9 @@ export function StopCardBase({
             <h4 className="font-medium text-foreground">{stop.title}</h4>
           </div>
           {stop.venue && (
-            <p className="text-sm text-muted-foreground">{stop.venue}</p>
+            <p className="text-sm text-muted-foreground">
+              {stop.venue}
+            </p>
           )}
         </div>
         <div className="text-xs text-muted-foreground">

@@ -23,7 +23,7 @@ export interface PlanStop {
   id: string
   plan_id?: string
   title: string
-  venue: { id: string; name: string; address?: string } // Updated to match PlanStopUi
+  venue: string // Keep as string for compatibility
   description: string
   startTime: string
   endTime: string
@@ -56,7 +56,7 @@ export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
     id: dbStop.id,
     plan_id: dbStop.plan_id,
     title: dbStop.title,
-    venue: { id: 'venue-unknown', name: dbStop.venue?.name || 'Unknown Venue' },
+    venue: dbStop.venue?.name || '',
     description: dbStop.description || '',
     startTime: dbStop.start_time || '',
     endTime: dbStop.end_time || '',
