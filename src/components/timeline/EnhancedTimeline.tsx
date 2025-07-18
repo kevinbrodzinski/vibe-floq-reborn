@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { useMotionValue } from 'framer-motion';
-import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
 import { TimelineScrubber } from '@/components/timeline/TimelineScrubber';
 import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
+import { useTimelineProgress } from '@/hooks/useTimelineProgress';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { AfterglowMomentCard } from '@/components/AfterglowMomentCard';
 import type { AfterglowMoment } from '@/types/afterglow';
 
 interface EnhancedTimelineProps {
@@ -11,45 +12,71 @@ interface EnhancedTimelineProps {
 
 export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const prefersReduced = usePrefersReducedMotion();
   
-  // Create motion values for the new scrubber
-  const progress = useMotionValue(0);
-  
-  // Add keyboard and touch navigation with proper current index
+  // Track scroll progress and current moment
+  const { scrollProgress, currentMomentIndex } = useTimelineProgress(
+    containerRef,
+    moments,
+  );
+
+  // Jump helper used by keyboard / scrubber
+  const jumpToPct = (pct: number) => {
+    const idx = Math.round(pct * (moments.length - 1));
+    jumpToIndex(idx);
+  };
+
+  const jumpToIndex = (idx: number) => {
+    const el = document.querySelector(
+      `[data-moment-index='${idx}']`,
+    ) as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({
+        behavior: prefersReduced ? 'auto' : 'smooth',
+        block: 'center',
+      });
+    }
+  };
+
+  // Add keyboard and touch navigation
   useTimelineNavigation({ 
     total: moments.length,
-    current: 0, // TODO: Wire to useTimelineProgress().currentMomentIndex
-    onJump: (index) => {
-      if (typeof document === 'undefined') return;
-      const el = document.querySelector(`[data-moment-index='${index}']`);
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (el) el.scrollIntoView({ 
-        behavior: prefersReduced ? 'auto' : 'smooth', 
-        block: 'center' 
-      });
-      // Update progress for scrubber
-      progress.set(index / Math.max(1, moments.length - 1));
-    }
+    current: currentMomentIndex,
+    onJump: jumpToIndex
   });
 
   return (
-    <aside
-      ref={containerRef}
-      className="pointer-events-none fixed left-0 top-0 h-full w-12 lg:w-16"
-    >
-      <DynamicTimelinePath
-        containerRef={containerRef}
-        moments={moments}
-      />
-      <TimelineScrubber
-        progress={progress.get()}
-        onSeek={(pct) => {
-          const index = Math.round(pct * (moments.length - 1));
-          const el = document.querySelector(`[data-moment-index='${index}']`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }}
-        moments={moments.map(m => ({ title: m.title, color: m.color }))}
-      />
-    </aside>
+    <>
+      {/* Vertical scrollable timeline */}
+      <main
+        ref={containerRef}
+        className="relative space-y-8 overflow-y-auto scroll-smooth"
+      >
+        {/* Connecting line */}
+        <div className="absolute left-3 top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-accent to-secondary opacity-30" />
+        
+        {/* Moment cards */}
+        {moments.map((moment, index) => (
+          <AfterglowMomentCard 
+            key={moment.id} 
+            moment={moment} 
+            index={index}
+            data-moment-index={index}
+          />
+        ))}
+      </main>
+
+      {/* Horizontal scrub helper */}
+      {moments.length > 1 && (
+        <TimelineScrubber
+          progress={scrollProgress}
+          onSeek={jumpToPct}
+          moments={moments.map(m => ({ 
+            title: m.title, 
+            color: m.color || 'hsl(var(--primary))' 
+          }))}
+        />
+      )}
+    </>
   );
 }

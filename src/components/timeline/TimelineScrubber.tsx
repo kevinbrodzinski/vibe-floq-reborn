@@ -54,7 +54,7 @@ export function TimelineScrubber({
   };
 
   return (
-    <div className="relative mx-auto mt-4 w-full max-w-md select-none">
+    <div className="sticky bottom-2 left-0 right-0 mx-auto max-w-[500px] relative select-none">
       {/* track */}
       <div
         ref={trackRef}
