@@ -47,9 +47,16 @@ export function TimelineProgressBar({
           </span>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar with ARIA attributes */}
         <div className="flex-1 relative">
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-2 bg-muted rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={Math.round(scrollProgress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Timeline scroll progress"
+          >
             <motion.div
               className="h-full bg-primary rounded-full"
               initial={{ width: 0 }}
@@ -58,9 +65,10 @@ export function TimelineProgressBar({
             />
           </div>
           
-          {/* Moment indicators */}
+          {/* Moment indicators - fixed NaN issue */}
           <div className="absolute top-0 left-0 w-full h-2 flex items-center">
             {moments.map((moment, index) => {
+              // Guard against NaN when length === 1
               const position = moments.length > 1 ? (index / (moments.length - 1)) * 100 : 50;
               const isActive = index === currentMomentIndex;
               

@@ -16,14 +16,12 @@ export function useTimelineProgress(containerRef: React.RefObject<HTMLElement>, 
   });
 
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const momentElementsRef = useRef<Set<Element>>(new Set());
+  const observedElementsRef = useRef<Set<Element>>(new Set());
 
   const updateScrollProgress = useCallback(() => {
-    if (!containerRef.current) return;
-
-    const container = containerRef.current;
-    const scrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight - container.clientHeight;
+    const scroller = containerRef.current ?? document.documentElement;
+    const scrollTop = scroller.scrollTop;
+    const scrollHeight = scroller.scrollHeight - scroller.clientHeight;
     const progress = scrollHeight > 0 ? Math.min(scrollTop / scrollHeight, 1) : 0;
 
     setState(prev => ({
@@ -43,18 +41,12 @@ export function useTimelineProgress(containerRef: React.RefObject<HTMLElement>, 
       if (entry.isIntersecting) {
         visibleMoments.push(index);
         
-        // Calculate visibility ratio
-        const rect = entry.boundingClientRect;
-        const containerRect = containerRef.current?.getBoundingClientRect();
-        if (containerRect) {
-          const visibleHeight = Math.min(rect.bottom, containerRect.bottom) - 
-                               Math.max(rect.top, containerRect.top);
-          const visibility = visibleHeight / rect.height;
-          
-          if (visibility > maxVisibility) {
-            maxVisibility = visibility;
-            mostVisibleIndex = index;
-          }
+        // Use built-in intersectionRatio - faster and more reliable
+        const visibility = entry.intersectionRatio;
+        
+        if (visibility > maxVisibility) {
+          maxVisibility = visibility;
+          mostVisibleIndex = index;
         }
       }
     });
@@ -64,48 +56,48 @@ export function useTimelineProgress(containerRef: React.RefObject<HTMLElement>, 
       visibleMoments: visibleMoments.sort((a, b) => a - b),
       currentMomentIndex: mostVisibleIndex
     }));
-  }, [containerRef]);
+  }, []);
 
   useEffect(() => {
     setState(prev => ({ ...prev, totalMoments: moments.length }));
   }, [moments.length]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const container = containerRef.current;
+    const scroller = containerRef.current ?? document.documentElement;
+    if (!scroller) return;
     
-    // Set up scroll listener
-    container.addEventListener('scroll', updateScrollProgress, { passive: true });
+    // Set up scroll listener with iOS PWA fallback
+    scroller.addEventListener('scroll', updateScrollProgress, { passive: true });
     
-    // Set up intersection observer for moment visibility
+    // Set up intersection observer with single threshold for performance
     observerRef.current = new IntersectionObserver(handleIntersection, {
-      root: container,
+      root: containerRef.current,
       rootMargin: '-20% 0px -20% 0px',
-      threshold: [0, 0.25, 0.5, 0.75, 1]
+      threshold: [0.5] // Single threshold for better performance
     });
 
-    // Observe all moment elements
-    const momentElements = container.querySelectorAll('[data-moment-index]');
+    // Observe moment elements and track them for cleanup
+    const momentElements = scroller.querySelectorAll('[data-moment-index]');
     momentElements.forEach((element) => {
       observerRef.current?.observe(element);
-      momentElementsRef.current.add(element);
+      observedElementsRef.current.add(element);
     });
 
     // Initial scroll progress calculation
     updateScrollProgress();
 
     return () => {
-      container.removeEventListener('scroll', updateScrollProgress);
+      scroller.removeEventListener('scroll', updateScrollProgress);
       if (observerRef.current) {
-        momentElementsRef.current.forEach((element) => {
+        // Clean up all observed elements
+        observedElementsRef.current.forEach((element) => {
           observerRef.current?.unobserve(element);
         });
         observerRef.current.disconnect();
       }
-      momentElementsRef.current.clear();
+      observedElementsRef.current.clear();
     };
-  }, [containerRef, updateScrollProgress, handleIntersection]);
+  }, [containerRef, updateScrollProgress, handleIntersection, moments.length]); // Added moments.length dependency
 
   return state;
 }

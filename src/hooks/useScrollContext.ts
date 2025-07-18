@@ -6,6 +6,7 @@ interface ScrollContextState {
   scrollDirection: 'up' | 'down' | 'idle';
   momentProgress: number; // Progress through current moment (0-1)
   transitionProgress: number; // Progress between moments (0-1)
+  isScrolling: boolean;
 }
 
 export function useScrollContext(
@@ -18,18 +19,21 @@ export function useScrollContext(
     scrollVelocity: 0,
     scrollDirection: 'idle',
     momentProgress: 0,
-    transitionProgress: 0
+    transitionProgress: 0,
+    isScrolling: false
   });
 
   const lastScrollTop = useRef(0);
   const lastScrollTime = useRef(Date.now());
   const velocityHistory = useRef<number[]>([]);
+  const elementCacheRef = useRef<Record<number, HTMLElement>>({});
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
   const calculateContext = useCallback(() => {
-    if (!containerRef.current || moments.length === 0) return;
+    const scroller = containerRef.current ?? document.documentElement;
+    if (!scroller || moments.length === 0) return;
 
-    const container = containerRef.current;
-    const scrollTop = container.scrollTop;
+    const scrollTop = scroller.scrollTop;
     const currentTime = Date.now();
     
     // Calculate velocity
@@ -37,7 +41,7 @@ export function useScrollContext(
     const deltaScroll = scrollTop - lastScrollTop.current;
     const velocity = deltaTime > 0 ? Math.abs(deltaScroll / deltaTime) : 0;
     
-    // Smooth velocity with history
+    // Smooth velocity with capped history
     velocityHistory.current.push(velocity);
     if (velocityHistory.current.length > 5) {
       velocityHistory.current.shift();
@@ -50,26 +54,43 @@ export function useScrollContext(
       direction = deltaScroll > 0 ? 'down' : 'up';
     }
     
-    // Calculate moment progress
-    const currentMoment = moments[currentMomentIndex];
-    const nextMoment = moments[currentMomentIndex + 1];
+    // iOS momentum scroll detection
+    const isScrolling = smoothVelocity > 0.1;
+    if (isScrolling) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setContext(prev => ({ ...prev, isScrolling: false }));
+      }, 150);
+    }
     
+    // Calculate moment progress using cached elements
+    const currentMoment = moments[currentMomentIndex];
     let momentProgress = 0;
     let transitionProgress = 0;
     
     if (currentMoment) {
-      const currentElement = container.querySelector(`[data-moment-index="${currentMomentIndex}"]`);
+      // Cache element reference
+      if (!elementCacheRef.current[currentMomentIndex]) {
+        const element = scroller.querySelector(`[data-moment-index="${currentMomentIndex}"]`) as HTMLElement;
+        if (element) {
+          elementCacheRef.current[currentMomentIndex] = element;
+        }
+      }
+      
+      const currentElement = elementCacheRef.current[currentMomentIndex];
       if (currentElement) {
         const elementRect = currentElement.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
+        const containerRect = scroller.getBoundingClientRect();
         
-        // Calculate how much of the current moment is visible
+        // Calculate how much of the current moment is visible (fix edge case)
         const visibleTop = Math.max(elementRect.top, containerRect.top);
         const visibleBottom = Math.min(elementRect.bottom, containerRect.bottom);
         const visibleHeight = Math.max(0, visibleBottom - visibleTop);
-        momentProgress = Math.min(1, visibleHeight / elementRect.height);
+        const maxHeight = Math.min(elementRect.height, containerRect.height); // Clamp to viewport height
+        momentProgress = Math.min(1, visibleHeight / maxHeight);
         
-        // Calculate transition progress if we have a next moment
+        // Calculate transition progress
+        const nextMoment = moments[currentMomentIndex + 1];
         if (nextMoment) {
           const scrollProgress = (containerRect.top - elementRect.top) / elementRect.height;
           transitionProgress = Math.max(0, Math.min(1, scrollProgress));
@@ -77,22 +98,24 @@ export function useScrollContext(
       }
     }
 
-    setContext({
+    setContext(prev => ({
+      ...prev,
       currentMoment,
       scrollVelocity: smoothVelocity,
       scrollDirection: direction,
       momentProgress,
-      transitionProgress
-    });
+      transitionProgress,
+      isScrolling
+    }));
 
     lastScrollTop.current = scrollTop;
     lastScrollTime.current = currentTime;
   }, [containerRef, moments, currentMomentIndex]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const scroller = containerRef.current ?? document.documentElement;
+    if (!scroller) return;
 
-    const container = containerRef.current;
     let animationFrame: number;
 
     const handleScroll = () => {
@@ -100,14 +123,17 @@ export function useScrollContext(
       animationFrame = requestAnimationFrame(calculateContext);
     };
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
 
     // Initial calculation
     calculateContext();
 
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      scroller.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(animationFrame);
+      clearTimeout(scrollTimeoutRef.current);
+      // Clear element cache on cleanup
+      elementCacheRef.current = {};
     };
   }, [calculateContext]);
 

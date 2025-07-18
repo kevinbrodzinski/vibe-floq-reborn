@@ -130,6 +130,7 @@ export default function AfterglowDetailPage() {
           scrollDirection={scrollContext.scrollDirection}
           momentProgress={scrollContext.momentProgress}
           transitionProgress={scrollContext.transitionProgress}
+          isScrolling={scrollContext.isScrolling}
         />
       )}
       
