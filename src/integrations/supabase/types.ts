@@ -3080,6 +3080,10 @@ export type Database = {
         Args: { interaction_count: number; days_since_last_interaction: number }
         Returns: number
       }
+      call_weekly_ai_suggestion: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       check_floq_admin_role: {
         Args: { p_floq_id: string; p_user_id?: string }
         Returns: boolean
