@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { TimeDialStep } from '@/components/new-plan/TimeDialStep'
 import { DetailsStep } from '@/components/new-plan/DetailsStep'
@@ -27,6 +27,7 @@ export interface PlanDraft extends PlanDetails, TimeRange {
 
 export function NewPlanWizard() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { mutateAsync: createPlan, isPending } = useCreatePlan()
   
   const [step, setStep] = useState<0 | 1 | 2>(0)
@@ -74,8 +75,10 @@ export function NewPlanWizard() {
       }
       
       // Map to CreatePlanPayload format for legacy flow
+      const floqId = searchParams.get('floqId') || undefined;
       const planData_result = await createPlan({
         ...planData,
+        floqId,                // ← forward it
         plannedAt: planData.start, // Legacy flow uses start/end times
       })
       navigate(`/plan/${planData_result.id}`, { replace: true })

@@ -38,15 +38,23 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
           Coordinate activities and future meet-ups
         </p>
 
-        {/* single CTA */}
-        <Button
-          variant="default"
-          className="mx-auto"
-          onClick={() => navigate(`/floqs/${floqDetails.id}/plans/new`)}
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Create a plan
-        </Button>
+        {/* single CTA - show for host or if no restrictions */}
+        {floqDetails.is_creator && (
+          <Button
+            variant="default"
+            className="mx-auto"
+            onClick={() => navigate(`/floqs/${floqDetails.id}/plans/new`)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Create a plan
+          </Button>
+        )}
+
+        {!floqDetails.is_creator && (
+          <p className="text-sm text-muted-foreground">
+            No plans yet — ask the host!
+          </p>
+        )}
 
         {/* optional quick ideas – invisible until you toggle the flag */}
         {quickIdeas && (
