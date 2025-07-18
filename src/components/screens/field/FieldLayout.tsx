@@ -8,6 +8,7 @@ import { FieldModalLayer } from "./FieldModalLayer";
 import { FieldSystemLayer } from "./FieldSystemLayer";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import type { FieldData } from "./FieldDataProvider";
 
@@ -18,6 +19,7 @@ interface FieldLayoutProps {
 export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
+  const { people } = useFieldSocial();
   
   // Get shake detection functions for motion permission banner
   const { requestMotionPermission, isMotionAvailable } = useShakeDetection({
@@ -26,6 +28,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
     onLongPress: () => {},
     onMultiTouch: () => {}
   });
+
+  // Handle ripple effect for canvas clicks
+  const handleRipple = (x: number, y: number) => {
+    // TODO: Implement ripple visual effect
+    console.log('Ripple at:', x, y);
+  };
 
   // Show geolocation prompt if no location and not loading, or if there's an error
   if ((!location?.lat && !location?.loading) || location?.error) {
@@ -75,7 +83,11 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         />
         
         {/* Base Map Layer - z-0 */}
-        <FieldMapLayer data={data} />
+        <FieldMapLayer 
+          data={data} 
+          people={people} 
+          onRipple={handleRipple} 
+        />
         
         {/* UI Content Layer - z-10 to z-30 */}
         <FieldUILayer data={data} />
