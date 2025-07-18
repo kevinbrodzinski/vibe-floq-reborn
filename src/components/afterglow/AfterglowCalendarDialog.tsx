@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
@@ -19,9 +20,12 @@ export default function AfterglowCalendarDialog({ open, onOpenChange }: Afterglo
   const onSelect = (d: Date | undefined) => {
     if (!d) return;
     
+    const selectedDate = d.toISOString().slice(0, 10);
     const newParams = new URLSearchParams(params);
-    newParams.set('date', d.toISOString().slice(0, 10));
-    navigate({ search: newParams.toString() });
+    newParams.set('date', selectedDate);
+    
+    // Navigate to the afterglow route with the new date
+    navigate(`/afterglow?${newParams.toString()}`);
     onOpenChange(false);
   };
 
