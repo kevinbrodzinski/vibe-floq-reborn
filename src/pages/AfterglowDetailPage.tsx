@@ -174,7 +174,7 @@ export default function AfterglowDetailPage() {
   const timelineProgress = useTimelineProgress(containerRef, moments);
   const scrollContext = useScrollContext(containerRef, moments, timelineProgress.currentMomentIndex);
 
-  // Update current index when scroll progress changes (throttled)
+  // Update current index when scroll progress changes (RAF throttled)
   const rafRef = useRef<number>();
   React.useEffect(() => {
     cancelAnimationFrame(rafRef.current!);
