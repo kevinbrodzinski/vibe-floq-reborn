@@ -105,7 +105,7 @@ export const usePresencePublisher = (isActive: boolean) => {
       const cached = getCachedCoordinates()
       if (cached) {
         console.log('[PRESENCE_PUBLISHER] Using cached coordinates as fallback')
-        const fallbackPosition: GeolocationPosition = {
+        const fallbackPosition = {
           coords: {
             latitude: cached.latitude,
             longitude: cached.longitude,
@@ -116,7 +116,7 @@ export const usePresencePublisher = (isActive: boolean) => {
             speed: null
           },
           timestamp: cached.timestamp
-        }
+        } as GeolocationPosition
         publishPresence(fallbackPosition)
       }
     }
