@@ -25,8 +25,11 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
 
   const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
 
-  // Simplified host detection using only the hook's computed is_creator flag
-  const isHost = floqDetails?.is_creator;
+  // Simple host detection using creator_id comparison
+  const isHost = useMemo(
+    () => floqDetails?.creator_id === session?.user.id,
+    [floqDetails?.creator_id, session?.user.id]
+  );
 
   // Debug logging to confirm the fix works
   useEffect(() => {
