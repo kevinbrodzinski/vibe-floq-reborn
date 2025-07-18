@@ -87,7 +87,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
 
   // Render people as dots
   useEffect(() => {
-    if (!appRef.current || !people.length) return;
+    if (!appRef.current?.stage || !people.length) return;
 
     // Clear existing people sprites
     const peopleSprites = appRef.current.stage.children.filter(

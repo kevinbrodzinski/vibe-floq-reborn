@@ -13,7 +13,7 @@ export { useOfflineQueue } from './useOfflineQueue';
 export { useFloqChat } from './useFloqChat';
 export { useInviteToFloq } from './useInviteToFloq';
 export { usePendingInvites } from './usePendingInvites';
-export { rtChannel } from '../lib/rtChannel';
+
 export type { HapticPattern } from './useHapticFeedback';
 export type { FloqSuggestion } from './useFloqSuggestions';
 export type { MyFloq } from './useMyFlocks';
