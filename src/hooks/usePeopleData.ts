@@ -19,6 +19,14 @@ interface SocialContext {
   activity_type?: string
 }
 
+// Constants for interaction strength levels
+const INTERACTION_LEVELS = [
+  { threshold: 0.8, level: 'strong', color: 'emerald', label: 'Strong Connection' },
+  { threshold: 0.6, level: 'good', color: 'blue', label: 'Good Interaction' },
+  { threshold: 0.4, level: 'medium', color: 'yellow', label: 'Medium Interaction' },
+  { threshold: 0, level: 'brief', color: 'gray', label: 'Brief Encounter' }
+] as const
+
 export function usePeopleData() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,10 +82,8 @@ export function usePeopleData() {
   }, [])
 
   const getInteractionStrength = useCallback((strength: number) => {
-    if (strength >= 0.8) return { level: 'strong', color: 'emerald', label: 'Strong Connection' }
-    if (strength >= 0.6) return { level: 'good', color: 'blue', label: 'Good Interaction' }
-    if (strength >= 0.4) return { level: 'medium', color: 'yellow', label: 'Medium Interaction' }
-    return { level: 'brief', color: 'gray', label: 'Brief Encounter' }
+    const level = INTERACTION_LEVELS.find(l => strength >= l.threshold) || INTERACTION_LEVELS[INTERACTION_LEVELS.length - 1]
+    return level
   }, [])
 
   const formatDuration = useCallback((minutes: number) => {

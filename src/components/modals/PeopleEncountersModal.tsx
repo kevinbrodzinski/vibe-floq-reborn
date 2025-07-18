@@ -89,7 +89,7 @@ export function PeopleEncountersModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="w-5 h-5" />
@@ -131,7 +131,7 @@ export function PeopleEncountersModal({
                 return (
                   <div key={encounter.user_id} className="flex items-center space-x-3 p-3 rounded-lg border bg-card/50 hover:bg-card transition-colors">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={profile?.avatar_url} />
+                      <AvatarImage src={profile?.avatar_url || undefined} />
                       <AvatarFallback>
                         {profile?.display_name?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || '?'}
                       </AvatarFallback>

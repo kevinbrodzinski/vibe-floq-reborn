@@ -119,7 +119,7 @@ export function AfterglowMomentCard({
                   onClick={() => {
                     if (moment.metadata.location.coordinates) {
                       const [lng, lat] = moment.metadata.location.coordinates
-                      window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank')
+                      window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank', 'noopener,noreferrer')
                     }
                   }}
                 />
@@ -140,6 +140,7 @@ export function AfterglowMomentCard({
                         size="sm"
                         className="h-auto p-2 hover:bg-accent/50 transition-colors"
                         onClick={() => setIsPeopleModalOpen(true)}
+                        aria-label={`Encountered ${peopleData.total_people_count} people`}
                       >
                         <div className="flex items-center gap-1.5">
                           <Users className="w-4 h-4" />

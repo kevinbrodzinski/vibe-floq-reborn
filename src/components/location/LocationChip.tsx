@@ -84,9 +84,14 @@ export function LocationChip({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button onClick={onClick} className="inline-block">
-            {chipContent}
-          </button>
+        <button 
+          onClick={onClick} 
+          className="inline-block"
+          aria-label={`View ${displayText} on map`}
+          role="button"
+        >
+          {chipContent}
+        </button>
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-1 text-xs">
@@ -94,7 +99,7 @@ export function LocationChip({
             {address && <p className="text-muted-foreground">{address}</p>}
             {hasCoordinates && (
               <p className="text-muted-foreground">
-                {coordinates![1].toFixed(4)}, {coordinates![0].toFixed(4)}
+                {(+coordinates![1]).toFixed(4)}, {(+coordinates![0]).toFixed(4)}
               </p>
             )}
             {distance_from_previous && distance_from_previous > 0 && (
