@@ -92,6 +92,8 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     window.addEventListener('resize', handleResize);
 
     return () => {
+      // 0️⃣ remove PIXI's global resize hook **before** the canvas disappears
+      (window as any).removeEventListener?.('resize', (app as any)._resize);
       // 1. stop the animation loop (v8 may not have app.ticker)
       ticker.remove(animate);
 
