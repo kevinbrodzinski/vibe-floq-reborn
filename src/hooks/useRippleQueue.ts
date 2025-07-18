@@ -1,5 +1,7 @@
+
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { rtChannel } from '@/lib/rtChannel';
 
 /**
  * Listens for crowd-count surges on the supplied tile IDs
@@ -13,8 +15,10 @@ export default function useRippleQueue(
   useEffect(() => {
     if (!tileIds.length) return;
 
-    const channel = supabase
-      .channel(`field_tiles_ripple_${Date.now()}`)
+    const channel = rtChannel(
+      supabase,
+      `field_tiles_ripple_${Date.now()}`
+    )
       .on(
         'postgres_changes',
         {

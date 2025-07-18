@@ -1,17 +1,32 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const TTL = 2; // seconds
 
-serve(async (req, ctx) => {
-  if (req.method === 'OPTIONS')  // CORS pre-flight
-    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' }});
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-  if (req.method !== 'POST')
-    return new Response('POST only', { status: 405, headers: { 'Access-Control-Allow-Origin': '*' }});
+serve(async (req, ctx) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'POST only' }), { 
+      status: 405, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   const { tile_ids = [], since } = await req.json().catch(() => ({}));
-  if (!Array.isArray(tile_ids) || !tile_ids.length)
-    return new Response('tile_ids[] required', { status: 400, headers: { 'Access-Control-Allow-Origin': '*' }});
+  if (!Array.isArray(tile_ids) || !tile_ids.length) {
+    return new Response(JSON.stringify({ error: 'tile_ids[] required' }), { 
+      status: 400, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   const miss: string[] = [];
   const cached = await Promise.all(
@@ -25,13 +40,20 @@ serve(async (req, ctx) => {
       .select('*')
       .in('tile_id', miss)
       .gt('updated_at', since ?? 'epoch');
-    if (error) return new Response(error.message, { status: 500 });
+      
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     rows = data!;
     rows.forEach(r => ctx.kv.set(`ft:${r.tile_id}`, JSON.stringify(r), { ex: TTL }));
   }
 
-  return Response.json({ tiles: [...cached.filter(Boolean), ...rows] }, {
-    headers: { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
+  const responseBody = { tiles: [...cached.filter(Boolean), ...rows] };
+  return new Response(JSON.stringify(responseBody), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 });

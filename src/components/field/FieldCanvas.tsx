@@ -1,294 +1,130 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+
+import { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
-import { createNoise3D } from 'simplex-noise';
-import { useFieldTiles } from '@/hooks/useFieldTiles';
-import { useQueryClient } from '@tanstack/react-query';
-import { geohashToCenter, crowdCountToRadius, hslToString, tilesForViewport } from '@/lib/geo';
-import { buildTileTree, hitTest } from '@/lib/quadtree';
-import { useMapViewport } from '@/hooks/useMapViewport';
-import { useFriends } from '@/hooks/useFriends';
-import useFriendTrails from '@/hooks/useFriendTrails';
-import useRippleQueue from '@/hooks/useRippleQueue';
-import { useUserSettings } from '@/hooks/useUserSettings';
 import RippleEffect from '@/shaders/RippleEffect';
-import type { ScreenTile } from '@/types/field';
+import useRippleQueue from '@/hooks/useRippleQueue';
+import type { Person } from '../field/contexts/FieldSocialContext';
 
-// Convert HSL color to hex for PIXI
-const hslToHex = (hsl: { h: number; s: number; l: number }): number => {
-  const h = hsl.h / 360;
-  const s = hsl.s;
-  const l = hsl.l;
-  
-  const hue2rgb = (p: number, q: number, t: number) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q - p) * 6 * t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-    return p;
-  };
-  
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  const r = hue2rgb(p, q, h + 1/3);
-  const g = hue2rgb(p, q, h);
-  const b = hue2rgb(p, q, h - 1/3);
-  
-  return (Math.round(r * 255) << 16) + (Math.round(g * 255) << 8) + Math.round(b * 255);
-};
+interface FieldCanvasProps {
+  people: Person[];
+  tileIds: string[];
+  onRipple?: (tileId: string, delta: number) => void;
+}
 
-export default function FieldCanvas() {
-  const noise = useMemo(() => createNoise3D(), []);
-  const { viewport } = useMapViewport();
-  
-  // Calculate bounds from viewport
-  const bounds = useMemo(() => ({
-    minLat: viewport.center[0] - 0.01,
-    maxLat: viewport.center[0] + 0.01,
-    minLng: viewport.center[1] - 0.01,
-    maxLng: viewport.center[1] + 0.01
-  }), [viewport.center]);
-  
-  const { data: tiles = [] } = useFieldTiles(bounds);
-  const qc = useQueryClient();
-  const [shouldUsePIXI, setShouldUsePIXI] = useState(false);
-  
-  // Get realtime-updated cache data for faster rendering
-  const cachedTiles = qc.getQueryData(['fieldTilesCache']) as any[] || tiles;
-  const activeTiles = cachedTiles.length > 0 ? cachedTiles : tiles;
-  
-  // viewport is now accessed above
-  const { settings } = useUserSettings();
-  const { friends = [] } = useFriends();
+export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const appRef = useRef<PIXI.Application>();
-  
-  // Phase 3 refs and state
-  const rippleContainer = useRef<PIXI.Container>();
-  const trailGraphics = useRef<PIXI.Graphics>();
-  const ripples = useRef<RippleEffect[]>([]);
-  // Noise already created above
-  
-  // Create a simple projection function since we don't have mapbox integration yet
-  const project = useMemo(() => {
-    return ([lng, lat]: [number, number]) => {
-      const x = ((lng - viewport.center[1]) * 100000 / Math.pow(2, 10 - viewport.zoom)) + 400;
-      const y = ((viewport.center[0] - lat) * 100000 / Math.pow(2, 10 - viewport.zoom)) + 400;
-      return { x, y };
-    };
-  }, [viewport]);
+  const appRef = useRef<PIXI.Application | null>(null);
+  const rippleContainer = useRef<PIXI.Container | null>(null);
+  const [ripples, setRipples] = useState<RippleEffect[]>([]);
 
-  // Friend trails
-  const friendIds = useMemo(() => friends.map((f: any) => f.friend_id), [friends]);
-  const friendTrails = useFriendTrails(friendIds);
-  
-  // Tile IDs for ripple detection
-  const [west, south, east, north] = viewport.bounds;
-  const nw: [number, number] = [north, west];
-  const se: [number, number] = [south, east];
-  const tileIds = useMemo(() => tilesForViewport(nw, se, viewport.zoom), [nw, se, viewport.zoom]);
-  
-  // Ripple queue handler
-  const addRipple = useMemo(() => (tileId: string, delta: number) => {
-    const tile = activeTiles.find((t: any) => t.tile_id === tileId);
-    if (!tile || !rippleContainer.current) return;
+  // Handle ripple creation from queue
+  const handleRipple = (tileId: string, delta: number) => {
+    onRipple?.(tileId, delta);
     
-    const [lat, lng] = geohashToCenter(tile.tile_id);
-    const { x, y } = project([lng, lat]);
-    const radius = crowdCountToRadius(tile.crowd_count);
+    // Guard against null references
+    if (!rippleContainer.current || !appRef.current) return;
     
-    const ripple = new RippleEffect(x, y, radius, 0xffffff);
+    // Create ripple effect at random position for demo
+    const x = Math.random() * (appRef.current.screen.width || 800);
+    const y = Math.random() * (appRef.current.screen.height || 600);
+    
+    const ripple = new RippleEffect(x, y, 20, delta > 0 ? 0x00ff00 : 0xff0000);
     rippleContainer.current.addChild(ripple.sprite);
-    ripples.current.push(ripple);
-  }, [activeTiles, project]);
-  
-  useRippleQueue(tileIds, addRipple);
+    
+    setRipples(prev => [...prev, ripple]);
+  };
 
-  const tree = useMemo(() => {
-    const screenTiles: ScreenTile[] = (activeTiles as any[]).map(t => {
-      const [lat, lng] = geohashToCenter(t.tile_id);
-      const { x, y } = project([lng, lat]);
-      return {
-        ...t,
-        x,
-        y,
-        radius: crowdCountToRadius(t.crowd_count),
-        color: hslToString(t.avg_vibe),
-        hsl: t.avg_vibe,
-      };
-    });
-    return buildTileTree(screenTiles);
-  }, [activeTiles, project]);
+  useRippleQueue(tileIds, handleRipple);
 
-  /** Check PIXI support once */
+  // Initialize PIXI application
   useEffect(() => {
-    const checkPIXI = async () => {
-      try {
-        const isSupported = PIXI.isWebGLSupported();
-        setShouldUsePIXI(isSupported);
-      } catch (e) {
-        setShouldUsePIXI(false);
-      }
-    };
-    checkPIXI();
-  }, []);
+    if (!canvasRef.current) return;
 
-  /** boot PIXI once */
-  useEffect(() => {
-    if (!canvasRef.current || !shouldUsePIXI) return;
-    appRef.current = new PIXI.Application({
+    const app = new PIXI.Application({
       view: canvasRef.current,
-      resizeTo: window,
-      antialias: true,
-      autoStart: true,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: 0x000000,
       backgroundAlpha: 0,
     });
-    
-    // Setup Phase 3 containers
-    rippleContainer.current = new PIXI.Container();
-    trailGraphics.current = new PIXI.Graphics();
-    appRef.current.stage.addChild(rippleContainer.current);
-    appRef.current.stage.addChild(trailGraphics.current);
-    
-    return () => appRef.current?.destroy(true);
-  }, [shouldUsePIXI]);
 
-  /** FPS guard -> downgrade blur if low */
-  useEffect(() => {
-    const app = appRef.current;
-    if (!app) return;
-    let low = 0;
-    app.ticker.add(() => {
-      if (app.ticker.FPS < 24) low++; else low = 0;
-      if (low > 180) {               // 3 s
-        app.stage.filters = [];      // drop blur
-      }
-    });
-  }, []);
+    appRef.current = app;
 
-  /** animate ripples & drift */
-  useEffect(() => {
-    const app = appRef.current;
-    if (!app || !shouldUsePIXI) return;
-    
-    const ticker = () => {
-      const t = performance.now() * 0.0004;
-      
-      // drift dots with noise
-      app.stage.children.forEach(child => {
-        if (child === rippleContainer.current || child === trailGraphics.current) return;
-        if (child instanceof PIXI.Sprite) {
-          const ox = (Math.random() - 0.5) * 0.3;
-          const oy = (Math.random() - 0.5) * 0.3;
-          child.x += ox;
-          child.y += oy;
-        }
-      });
-      
-      // update ripples
-      if (settings?.field_ripples !== false) {
-        ripples.current = ripples.current.filter(ripple => {
-          const shouldContinue = ripple.update();
-          if (!shouldContinue) {
-            rippleContainer.current?.removeChild(ripple.sprite);
+    // Create ripple container
+    const container = new PIXI.Container();
+    rippleContainer.current = container;
+    app.stage.addChild(container);
+
+    // Animation loop
+    const animate = () => {
+      setRipples(prev => {
+        const active = prev.filter(ripple => {
+          const isActive = ripple.update();
+          if (!isActive) {
+            // Guard against null references
+            if (rippleContainer.current) {
+              rippleContainer.current.removeChild(ripple.sprite);
+            }
             ripple.destroy();
           }
-          return shouldContinue;
+          return isActive;
         });
-      }
-    };
-    
-    app.ticker.add(ticker);
-    return () => {
-      app.ticker.remove(ticker);
-    };
-  }, [shouldUsePIXI, settings?.field_ripples]);
-
-  /** render tiles */
-  useEffect(() => {
-    const app = appRef.current;
-    if (!app || !shouldUsePIXI) return;
-    
-    // Clear existing tile sprites only (preserve containers)
-    app.stage.children.forEach(child => {
-      if (child instanceof PIXI.Sprite) {
-        child.destroy();
-        app.stage.removeChild(child);
-      }
-    });
-
-    (activeTiles as any[]).forEach(t => {
-      const [lat, lng] = geohashToCenter(t.tile_id);
-      const { x, y } = project([lng, lat]);
-      const spr = new PIXI.Sprite(PIXI.Texture.WHITE);
-      spr.tint = hslToHex(t.avg_vibe);
-      spr.alpha = 0.55;
-      spr.width = spr.height = crowdCountToRadius(t.crowd_count);
-      spr.anchor.set(0.5);
-      spr.position.set(x, y);
-      (spr as any).__tile = t;             // attach for hit-test
-      app.stage.addChild(spr);
-    });
-    
-    // Draw friend trails
-    if (settings?.field_trails !== false && trailGraphics.current) {
-      trailGraphics.current.clear();
-      trailGraphics.current.lineStyle(2, 0xffffff, 0.7);
-      
-      Array.from(friendTrails.entries()).forEach(([userId, trail]) => {
-        if (trail.length > 1) {
-          const startPoint = project([trail[0].lng, trail[0].lat]);
-          trailGraphics.current!.moveTo(startPoint.x, startPoint.y);
-          
-          trail.forEach(point => {
-            const { x, y } = project([point.lng, point.lat]);
-            trailGraphics.current!.lineTo(x, y);
-          });
-        }
+        return active;
       });
-    }
-  }, [activeTiles, project, shouldUsePIXI]);
+    };
 
-  /** pointer hit */
+    app.ticker.add(animate);
+
+    // Cleanup with defensive guards
+    return () => {
+      if (appRef.current) {
+        appRef.current.destroy(true);
+        appRef.current = null;
+      }
+      rippleContainer.current = null;
+    };
+  }, []);
+
+  // Render people as dots
   useEffect(() => {
-    const cvs = canvasRef.current;
-    if (!cvs) return;
-    const onUp = (e: PointerEvent) => {
-      const rect = cvs.getBoundingClientRect();
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      const x = (e.clientX - rect.left) * devicePixelRatio;
-      const y = (e.clientY - rect.top) * devicePixelRatio;
-      const tile = hitTest(tree, x, y);
-      if (tile) {
-        console.log('Tile hit:', tile);       // TODO implement openTileModal
+    if (!appRef.current || !people.length) return;
+
+    // Clear existing people sprites
+    const peopleSprites = appRef.current.stage.children.filter(
+      child => child.name === 'person'
+    );
+    peopleSprites.forEach(sprite => appRef.current!.stage.removeChild(sprite));
+
+    // Add new people sprites
+    people.forEach(person => {
+      const dot = new PIXI.Graphics();
+      dot.beginFill(parseInt(person.color.replace('#', ''), 16));
+      dot.drawCircle(0, 0, 4);
+      dot.endFill();
+      dot.x = (person.x / 100) * appRef.current!.screen.width;
+      dot.y = (person.y / 100) * appRef.current!.screen.height;
+      dot.name = 'person';
+      appRef.current!.stage.addChild(dot);
+    });
+  }, [people]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (appRef.current) {
+        appRef.current.renderer.resize(window.innerWidth, window.innerHeight);
       }
     };
-    cvs.addEventListener('pointerup', onUp);
-    return () => cvs.removeEventListener('pointerup', onUp);
-  }, [tree]);
 
-  // Fallback to SVG if PIXI not supported
-  if (!shouldUsePIXI) {
-    return (
-      <svg className="absolute inset-0 pointer-events-auto">
-        {(activeTiles as any[]).map(t => {
-          const [lat, lng] = geohashToCenter(t.tile_id);
-          const { x, y } = project([lng, lat]);
-          const radius = crowdCountToRadius(t.crowd_count);
-          return (
-            <circle
-              key={t.tile_id}
-              cx={x}
-              cy={y}
-              r={radius}
-              fill={hslToString(t.avg_vibe)}
-              opacity={0.55}
-            />
-          );
-        })}
-      </svg>
-    );
-  }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-auto" />;
+  return (
+    <canvas 
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 1 }}
+    />
+  );
 }

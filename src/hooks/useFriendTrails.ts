@@ -1,5 +1,7 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { rtChannel } from '@/lib/rtChannel';
 
 export interface TrailPoint {
   lat: number;
@@ -20,8 +22,10 @@ export default function useFriendTrails(friendIds: string[]) {
   useEffect(() => {
     if (!friendIds.length) return;
 
-    const channel = supabase
-      .channel(`vibes_now_trails_${Date.now()}`)
+    const channel = rtChannel(
+      supabase,
+      `vibes_now_trails_${Date.now()}`
+    )
       .on(
         'postgres_changes',
         {
