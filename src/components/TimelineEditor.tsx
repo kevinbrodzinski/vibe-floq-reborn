@@ -4,11 +4,7 @@ import { AddStopButton } from './AddStopButton';
 import { StopEditModal } from './StopEditModal';
 import { usePlanStops } from '@/hooks/usePlanStops';
 import { usePlanSync } from '@/hooks/usePlanSync';
-import type { Database } from '@/integrations/supabase/types';
-
-type PlanStop = Database['public']['Tables']['plan_stops']['Row'] & {
-  venue?: Database['public']['Tables']['venues']['Row'];
-};
+import { type PlanStop } from '@/types/plan';
 
 interface TimelineEditorProps {
   planId: string;
@@ -23,7 +19,7 @@ export const TimelineEditor = ({
   onStopSelect,
   selectedStopId
 }: TimelineEditorProps) => {
-  const [editingStop, setEditingStop] = useState<PlanStop | null>(null);
+  const [editingStop, setEditingStop] = useState<any | null>(null);
   const [draggedStop, setDraggedStop] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 

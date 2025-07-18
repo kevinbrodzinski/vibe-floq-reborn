@@ -237,7 +237,8 @@ export const VibeScreen = () => {
     if (user) {
       try {
         await supabase.from('user_action_log').insert({
-          action: newAutoMode ? 'vibe_detection_enabled' : 'vibe_detection_disabled'
+          action: newAutoMode ? 'vibe_detection_enabled' : 'vibe_detection_disabled',
+          user_id: user.id
         });
       } catch (error) {
         console.warn('Failed to log vibe detection toggle:', error);

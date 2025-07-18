@@ -151,7 +151,7 @@ export const UserProfileByUsername = () => {
             )}
             
             <div className="text-sm text-muted-foreground mb-6">
-              Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Unknown'}
+              Member since Unknown
             </div>
             
             {/* Action Buttons */}

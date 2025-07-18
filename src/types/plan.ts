@@ -1,22 +1,70 @@
-// Types for better type safety
+import type { Database } from '@/integrations/supabase/types';
+
+// Database types
+export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
+  venue?: Database['public']['Tables']['venues']['Row'];
+};
+
+// Domain types for UI components
 export interface PlanStop {
   id: string
+  plan_id?: string
   title: string
-  venue?: string
-  description?: string
+  venue: string
+  description: string
   startTime: string
   endTime: string
-  location?: string
-  vibeMatch?: number
-  status: 'confirmed' | 'suggested' | 'pending'
+  location: string
+  vibeMatch: number
+  status: 'confirmed' | 'suggested' | 'voted' | 'pending'
   color: string
   duration_minutes?: number
   durationMinutes?: number // For backwards compatibility
   stop_order?: number
   created_by?: string
-  start_time?: string
-  end_time?: string
+  createdBy: string
+  start_time: string
+  end_time: string
   participants: string[]
+  votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[]
+  kind: any // StopKind from theme
+  vibe_tag?: any // VibeTag from theme
+  address?: string
+  estimated_cost_per_person?: number
+}
+
+// Utility function to transform database row to domain object
+export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
+  const duration = dbStop.start_time && dbStop.end_time 
+    ? Math.round((new Date(`1970-01-01T${dbStop.end_time}`).getTime() - new Date(`1970-01-01T${dbStop.start_time}`).getTime()) / (1000 * 60))
+    : undefined;
+
+  return {
+    id: dbStop.id,
+    plan_id: dbStop.plan_id,
+    title: dbStop.title,
+    venue: dbStop.venue?.name || '',
+    description: dbStop.description || '',
+    startTime: dbStop.start_time || '',
+    endTime: dbStop.end_time || '',
+    location: dbStop.address || '',
+    vibeMatch: 0.8, // Default value
+    status: 'confirmed' as const, // Default status
+    color: '#3B82F6', // Default color
+    duration_minutes: duration,
+    durationMinutes: duration,
+    stop_order: dbStop.stop_order,
+    created_by: dbStop.created_by,
+    createdBy: dbStop.created_by,
+    start_time: dbStop.start_time || '',
+    end_time: dbStop.end_time || '',
+    participants: [], // Default empty array
+    votes: [], // Default empty array
+    kind: 'restaurant', // Default kind
+    vibe_tag: undefined,
+    address: dbStop.address || undefined,
+    estimated_cost_per_person: dbStop.estimated_cost_per_person || undefined,
+  };
 }
 
 export interface PlanParticipant {

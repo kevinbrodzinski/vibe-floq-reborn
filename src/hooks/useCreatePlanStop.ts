@@ -26,6 +26,7 @@ export function useCreatePlanStop() {
         .insert({
           ...data,
           created_by: user.id,
+          stop_order: 0,
         })
         .select()
         .single()

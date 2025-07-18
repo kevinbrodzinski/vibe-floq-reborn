@@ -68,10 +68,10 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
       if (error) throw error;
 
       return data?.map(f => ({
-        friend_id: f.friend_id,
-        username: f.profiles.username,
-        display_name: f.profiles.display_name,
-        avatar_url: f.profiles.avatar_url || undefined,
+        friend_id: f.user_b,
+        username: (f.profiles as any)?.username || '',
+        display_name: (f.profiles as any)?.display_name || '',
+        avatar_url: (f.profiles as any)?.avatar_url || undefined,
       })) || [];
     },
   });

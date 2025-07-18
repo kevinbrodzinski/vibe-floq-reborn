@@ -4,25 +4,7 @@ import { StopCardMeta } from "./StopCardMeta";
 import { StopCardActions } from "./StopCardActions";
 import { getGradientClasses } from "@/lib/utils/getGradientClasses";
 import { StopKind, VibeTag } from "@/lib/theme/stopColours";
-
-interface PlanStop {
-  id: string;
-  plan_id?: string;
-  title: string;
-  venue: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  location: string;
-  vibeMatch: number;
-  participants: string[];
-  status: 'confirmed' | 'suggested' | 'voted';
-  votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[];
-  createdBy: string;
-  color: string;
-  kind: StopKind;
-  vibe_tag?: VibeTag;
-}
+import { type PlanStop } from "@/types/plan";
 
 interface StopCardProps {
   stop: PlanStop;

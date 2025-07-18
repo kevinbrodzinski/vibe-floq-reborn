@@ -131,9 +131,17 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
       // Filter out existing participants and pending invitations
       const participantIds = floqDetails.participants.map(p => p.user_id);
       const invitationIds = pendingInvitations.map(inv => inv.invitee_id);
-      const filteredResults = data?.filter(
+      const typedData = data as Array<{
+        id: string;
+        username: string;
+        display_name: string;
+        avatar_url?: string;
+        created_at: string;
+      }> || [];
+
+      const filteredResults = typedData.filter(
         user => !participantIds.includes(user.id) && !invitationIds.includes(user.id)
-      ) || [];
+      );
 
       setSearchResults(filteredResults);
       // Cache non-empty results to prevent flashing during debounce

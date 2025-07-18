@@ -34,9 +34,10 @@ export default function UsernameSettings() {
       console.debug('RPC result', data);
       
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Username update failed');
+      const result = data as any;
+      if (!result?.success) throw new Error(result?.error || 'Username update failed');
       
-      return data.username as string;
+      return result.username as string;
     },
     onSuccess: (newUsername) => {
       toast({
@@ -72,7 +73,7 @@ export default function UsernameSettings() {
     setIsCheckingAvailability(true);
     try {
       const { data, error } = await supabase
-        .rpc('username_available', { username: candidate.toLowerCase() });
+        .rpc('username_available', { p_username: candidate.toLowerCase() });
       
       if (error) throw error;
       
