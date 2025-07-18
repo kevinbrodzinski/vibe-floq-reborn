@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface InviteToFloqParams {
   floqId: string;
@@ -21,45 +21,55 @@ export function useInviteToFloq(): InviteToFloqReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const mutation = useMutation({
-    mutationFn: async ({ floqId, inviteeIds }: InviteToFloqParams) => {
-      if (!user) throw new Error("Not authenticated");
-      if (!floqId || !inviteeIds.length) throw new Error("Invalid parameters");
+  const mutation = useMutation<
+    // Return type
+    { message?: string } | null,
+    // Error type
+    Error,
+    // Variables type
+    InviteToFloqParams
+  >({
+    mutationFn: async ({ floqId, inviteeIds }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      if (!floqId || inviteeIds.length === 0)
+        throw new Error('No invitees selected');
 
-      const { data, error } = await supabase.functions.invoke('invite-to-floq', {
-        body: {
-          floq_id: floqId,
-          invitee_ids: inviteeIds,
+      const { data, error } = await supabase.functions.invoke(
+        'invite-to-floq',
+        {
+          body: {
+            floq_id: floqId,
+            invitee_ids: inviteeIds,
+          },
         },
-      });
+      );
 
       if (error) throw error;
-      return data;
+      return data as { message?: string } | null;
     },
-    onSuccess: (data, variables) => {
-      const { floqId } = variables;
-      
-      // Invalidate queries to refresh data
+
+    onSuccess: (data, { floqId }) => {
+      // Refresh any cached queries that rely on invites or floq details
       queryClient.invalidateQueries({
-        queryKey: ["pending-invites", user?.id],
+        queryKey: ['pending-invites', user?.id],
       });
-      
       queryClient.invalidateQueries({
-        queryKey: ["floq-details", floqId],
+        queryKey: ['floq-details', floqId],
       });
 
-      // Show success message from server response
       toast({
-        title: "Invitations sent",
-        description: data?.message || "Invitations sent successfully",
+        title: 'Invitations sent',
+        description: data?.message || 'Your friends have been invited.',
       });
     },
+
     onError: (error) => {
-      console.error("Failed to send invitations:", error);
+      console.error('Failed to send invitations:', error);
       toast({
-        title: "Failed to send invitations",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive",
+        title: 'Failed to send invitations',
+        description:
+          error instanceof Error ? error.message : 'Please try again',
+        variant: 'destructive',
       });
     },
   });
