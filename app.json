@@ -1,5 +1,51 @@
+
 {
-  "main": "src/main.native.tsx",
-  "name": "vibe-flow-orb",
-  "slug": "vibe-flow-orb"
+  "expo": {
+    "name": "Vibe Flow Orb",
+    "slug": "vibe-flow-orb",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.lovable.11986cc974734e3383ddacd244d83d3e",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Floq uses the microphone ONLY to measure ambient noise levels so it can suggest a matching vibe. Audio is never recorded or stored.",
+        "NSMotionUsageDescription": "Floq analyses your device motion to recognise walking or dancing patterns and suggest a vibe that matches your activity.",
+        "NSLocationWhenInUseUsageDescription": "Floq uses your location to show nearby people and places that fit your current vibe. Precise location is never shared publicly without consent.",
+        "NSBluetoothAlwaysUsageDescription": "Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights.",
+        "NSBluetoothPeripheralUsageDescription": "Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "app.lovable.11986cc974734e3383ddacd244d83d3e"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "vite"
+    },
+    "plugins": [
+      "@capacitor/cli"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "11986cc9-7473-4e33-83dd-acd244d83d3e"
+      }
+    }
+  },
+  "main": "src/main.native.tsx"
 }

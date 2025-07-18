@@ -1,3 +1,4 @@
+
 {
   "cli": {
     "version": ">= 5.0.0"
@@ -7,24 +8,32 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "buildConfiguration": "Debug"
+        "buildConfiguration": "Debug",
+        "resourceClass": "m-medium"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "buildConfiguration": "Release",
-        "autoIncrement": true
+        "autoIncrement": true,
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     },
     "production": {
       "distribution": "store",
       "ios": {
         "buildConfiguration": "Release",
-        "autoIncrement": true
+        "autoIncrement": true,
+        "resourceClass": "m-medium"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "VITE_SUPABASE_URL": "https://reztyrrafsmlvvlqvsqt.supabase.co",
+        "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck"
       }
     }
   },
@@ -36,6 +45,5 @@
         "appleTeamId": "9C7VN2PKAK"
       }
     }
-  },
-  "workflow": "generic"
+  }
 }
