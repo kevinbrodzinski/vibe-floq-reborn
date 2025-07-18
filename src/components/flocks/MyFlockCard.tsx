@@ -9,10 +9,20 @@ interface MyFlockCardProps {
 }
 
 export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen?.(flock);
+    }
+  };
+
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onClick={() => onOpen?.(flock)}
-      className="cursor-pointer transition-colors hover:bg-accent/50"
+      className="cursor-pointer transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-primary/70 rounded-2xl"
     >
       <CardContent className="flex items-center gap-4 p-4">
         <FlockAvatar flock={flock} />

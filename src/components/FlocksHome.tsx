@@ -243,13 +243,13 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             {myFlocksLoading ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {[...Array(3)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card key={i}>
                     <CardContent className="flex items-center gap-4 p-4">
-                      <div className="h-[104px] w-[104px] rounded-2xl bg-muted" />
+                      <div className="h-[104px] w-[104px] rounded-2xl bg-muted/40 animate-pulse" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-3/4 bg-muted rounded" />
-                        <div className="h-3 w-1/2 bg-muted rounded" />
-                        <div className="h-3 w-2/3 bg-muted rounded" />
+                        <div className="h-4 w-3/4 bg-muted/40 rounded animate-pulse" />
+                        <div className="h-3 w-1/2 bg-muted/40 rounded animate-pulse" />
+                        <div className="h-3 w-2/3 bg-muted/40 rounded animate-pulse" />
                       </div>
                     </CardContent>
                   </Card>

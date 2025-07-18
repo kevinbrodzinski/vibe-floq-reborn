@@ -31,6 +31,11 @@ export function getVibeGradient(kind: StopKind, vibe?: Vibe): string {
     down: 'chill',
   };
 
-  const themeVibe = vibe ? vibeToTheme[vibe] : undefined;
+  // Handle undefined vibe with fallback
+  if (!vibe) {
+    return `bg-gradient-to-br ${KIND_COLOUR[kind]}`;
+  }
+
+  const themeVibe = vibeToTheme[vibe];
   return getGradientClasses(kind, themeVibe);
 }
