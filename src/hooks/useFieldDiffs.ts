@@ -23,7 +23,8 @@ export function useFieldDiffs(tileIds: string[]) {
           const tileId = payload.new?.tile_id || payload.old?.tile_id;
           if (!tileIds.includes(tileId)) return;
 
-          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[] = []) => {
+          // Update both fieldTilesCache and current fieldTiles query
+          const updateTileData = (old: any[] = []) => {
             const m = new Map(old.map(t => [t.tile_id, t]));
             
             switch (payload.eventType) {
@@ -37,7 +38,10 @@ export function useFieldDiffs(tileIds: string[]) {
             }
             
             return [...m.values()];
-          });
+          };
+
+          qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, updateTileData);
+          qc.setQueriesData({ queryKey: ['fieldTiles'] }, updateTileData);
         }
       )
       .subscribe();

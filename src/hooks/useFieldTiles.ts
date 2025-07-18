@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { tilesForViewport } from '@/lib/geo';
 import { useMapViewport } from '@/hooks/useMapViewport';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -19,7 +20,7 @@ export const useFieldTiles = () => {
   // Subscribe to realtime diffs
   useFieldDiffs(enabled ? tileIds : []);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['fieldTiles', tileIds.join('|')],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
@@ -32,4 +33,17 @@ export const useFieldTiles = () => {
     staleTime: 4000,
     enabled,
   });
+
+  // Prime cache when data changes
+  useEffect(() => {
+    if (query.data) {
+      qc.setQueriesData({ queryKey: ['fieldTilesCache'] }, (old: any[]) => {
+        const m = new Map((old || []).map((t: any) => [t.tile_id, t]));
+        query.data.forEach((t: any) => m.set(t.tile_id, t));
+        return [...m.values()];
+      });
+    }
+  }, [query.data, qc]);
+
+  return query;
 };

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as PIXI from 'pixi.js';
 import { useFieldTiles } from '@/hooks/useFieldTiles';
+import { useQueryClient } from '@tanstack/react-query';
 import { geohashToCenter, crowdCountToRadius, hslToString } from '@/lib/geo';
 import { buildTileTree, hitTest } from '@/lib/quadtree';
 import { useMapViewport } from '@/hooks/useMapViewport';
@@ -8,6 +9,12 @@ import type { ScreenTile } from '@/types/field';
 
 export default function FieldCanvas() {
   const { data: tiles = [] } = useFieldTiles();
+  const qc = useQueryClient();
+  
+  // Get realtime-updated cache data for faster rendering
+  const cachedTiles = qc.getQueryData(['fieldTilesCache']) as any[] || tiles;
+  const activeTiles = cachedTiles.length > 0 ? cachedTiles : tiles;
+  
   const { viewport } = useMapViewport();     // mapbox viewport util
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<PIXI.Application>();
@@ -22,7 +29,7 @@ export default function FieldCanvas() {
   }, [viewport]);
 
   const tree = useMemo(() => {
-    const screenTiles: ScreenTile[] = (tiles as any[]).map(t => {
+    const screenTiles: ScreenTile[] = (activeTiles as any[]).map(t => {
       const [lat, lng] = geohashToCenter(t.tile_id);
       const { x, y } = project([lng, lat]);
       return {
@@ -34,7 +41,7 @@ export default function FieldCanvas() {
       };
     });
     return buildTileTree(screenTiles);
-  }, [tiles, project]);
+  }, [activeTiles, project]);
 
   /** boot PIXI once */
   useEffect(() => {
@@ -68,7 +75,7 @@ export default function FieldCanvas() {
     if (!app) return;
     app.stage.removeChildren();
 
-    (tiles as any[]).forEach(t => {
+    (activeTiles as any[]).forEach(t => {
       const [lat, lng] = geohashToCenter(t.tile_id);
       const { x, y } = project([lng, lat]);
       const spr = new PIXI.Sprite(PIXI.Texture.WHITE);
@@ -80,7 +87,7 @@ export default function FieldCanvas() {
       (spr as any).__tile = t;             // attach for hit-test
       app.stage.addChild(spr);
     });
-  }, [tiles, project]);
+  }, [activeTiles, project]);
 
   /** pointer hit */
   useEffect(() => {
