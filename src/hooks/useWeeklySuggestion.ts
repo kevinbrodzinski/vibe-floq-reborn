@@ -56,8 +56,8 @@ export const useWeeklySuggestion = (userId?: string) => {
       
       if (error) {
         // Handle specific error types
-        if (error?.status === 429) {
-          throw new Error('Please wait before regenerating again.');
+        if (error?.status === 429 || error?.message?.includes('cooldown_active')) {
+          throw new Error('Cooldown active. Please wait before regenerating again.');
         }
         if (error.message?.includes('network_error')) {
           throw new Error('Unable to connect to AI service. Please try again later.');

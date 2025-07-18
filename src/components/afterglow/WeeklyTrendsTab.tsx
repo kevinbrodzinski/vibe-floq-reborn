@@ -1,5 +1,5 @@
 import { useWeeklyTrends, useDailyTrends } from '@/hooks/useWeeklyTrends';
-import { Loader2, TrendingUp, TrendingDown, Minus, RefreshCw, Zap, Crown } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Minus, RefreshCw, Zap, Crown, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useWeeklySuggestion } from '@/hooks/useWeeklySuggestion';
@@ -188,19 +188,28 @@ export default function WeeklyTrendsTab() {
                   : undefined
               }
             >
-              <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+              {cooldown && !cooldown.canRegenerate ? (
+                <Clock className="h-3 w-3 text-amber-500" />
+              ) : (
+                <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+              )}
               Regenerate
+              {cooldown && !cooldown.canRegenerate && (
+                <span className="ml-1 inline-flex items-center gap-1 text-amber-500">
+                  {cooldown.hoursLeft}h
+                </span>
+              )}
             </Button>
           </div>
         </div>
         
         {suggestionLoading || isRegenerating ? (
-          <div className="text-sm text-muted-foreground flex items-center gap-2 animate-fade-in">
+          <div className="text-sm text-muted-foreground flex items-center gap-2 animate-fade-in" aria-live="polite">
             <Loader2 className="h-4 w-4 animate-spin" />
             Generating personalized suggestions...
           </div>
         ) : aiSuggestion?.suggestion?.text ? (
-          <div className="space-y-2 animate-fade-in">
+          <div className="space-y-2 animate-fade-in" aria-live="polite">
             <div className="text-sm whitespace-pre-line">
               {aiSuggestion.suggestion.text}
             </div>

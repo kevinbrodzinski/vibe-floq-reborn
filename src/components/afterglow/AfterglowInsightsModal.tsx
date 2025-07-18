@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DailyInsightsTab from '@/components/afterglow/DailyInsightsTab';
 import WeeklyTrendsTab from '@/components/afterglow/WeeklyTrendsTab';
+import WeeklyAITest from '@/components/debug/WeeklyAITest';
 
 interface AfterglowInsightsModalProps {
   open: boolean;
@@ -34,9 +35,10 @@ export default function AfterglowInsightsModal({
         <DialogTitle>Insights</DialogTitle>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="weekly">7-day Trends</TabsTrigger>
             <TabsTrigger value="daily" disabled={!afterglowId}>Daily AI</TabsTrigger>
+            <TabsTrigger value="debug">🧪 Test</TabsTrigger>
           </TabsList>
 
           <TabsContent value="weekly">
@@ -51,6 +53,10 @@ export default function AfterglowInsightsModal({
                 <p>No afterglow data available for AI insights.</p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="debug">
+            <WeeklyAITest />
           </TabsContent>
         </Tabs>
       </DialogContent>
