@@ -27,6 +27,9 @@ import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
 import { useAISummary } from '@/hooks/useAISummary';
 import { useTimelineProgress } from '@/hooks/useTimelineProgress';
 import { useScrollContext } from '@/hooks/useScrollContext';
+import ParticleCanvas from '@/components/visual/ParticleCanvas';
+import AmbientBackground from '@/components/visual/AmbientBackground';
+import { useHaptics } from '@/hooks/useHaptics';
 
 // This component is now replaced by ParallaxMoment
 
@@ -171,6 +174,12 @@ export default function AfterglowDetailPage() {
     setCurrentIdx(timelineProgress.currentMomentIndex);
   }, [timelineProgress.currentMomentIndex]);
 
+  // Visual effects
+  const activeColor = moments[currentIdx]?.color ?? 'hsl(var(--background))';
+  
+  // Haptic tick each time user jumps to another moment
+  useHaptics({ enabled: true, pattern: 6 }, [currentIdx]);
+
   // Timeline navigation helpers
   useTimelineNavigation({
     total: moments.length,
@@ -184,7 +193,12 @@ export default function AfterglowDetailPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
+    <>
+      {/* Visual Effects */}
+      <AmbientBackground color={activeColor} />
+      <ParticleCanvas />
+
+      <div className="min-h-screen bg-background relative overflow-hidden" ref={containerRef}>
       {/* Timeline Progress Bar */}
       {moments.length > 0 && (
         <TimelineProgressBar
@@ -352,5 +366,6 @@ export default function AfterglowDetailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

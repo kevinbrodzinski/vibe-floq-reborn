@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 
-export const usePrefersReducedMotion = () => {
-  // SSR-safe guard - return true for SSR to avoid hydration mismatches
-  if (typeof window === 'undefined') return true;
-
+/**
+ * Hook that returns true if user prefers reduced motion
+ */
+export function usePrefersReducedMotion() {
   const [prefersReduced, setPrefersReduced] = useState(false);
 
   useEffect(() => {
@@ -14,16 +14,9 @@ export const usePrefersReducedMotion = () => {
       setPrefersReduced(e.matches);
     };
 
-    // Use modern addEventListener if available, fallback for older browsers
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else {
-      // Fallback for Safari < 14
-      (mediaQuery as any).addListener(handleChange);
-      return () => (mediaQuery as any).removeListener(handleChange);
-    }
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   return prefersReduced;
-};
+}
