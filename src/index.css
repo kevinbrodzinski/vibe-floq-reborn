@@ -2,9 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* focus ring only for keyboard navigation */
-.using-keyboard :focus { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
-:focus { outline: none; }
+/* Enhanced focus ring system - WCAG 2.1 compliant */
+body:not(.using-keyboard) *:focus {
+  outline: none;     /* hides default focus when using pointer */
+}
+
+/* Custom focus ring for keyboard navigation */
+*:focus-visible,            /* fallback if browser supports it */
+body.using-keyboard *:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.

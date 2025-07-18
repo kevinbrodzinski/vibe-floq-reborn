@@ -80,6 +80,8 @@ export function useTimelineNavigation({ total, current, onJump }: Options) {
    * Install / cleanup listeners
    * ------------------------------------------------------------------ */
   useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR guard
+    
     window.addEventListener('keydown', handleKey);
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
 

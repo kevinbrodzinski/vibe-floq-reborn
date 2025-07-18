@@ -19,7 +19,7 @@ export function useHaptics(opts: Options, deps: unknown[] = []) {
 
   useEffect(() => {
     if (!enabled) return;
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return; // SSR guard
     if (!navigator.vibrate) return;                       // browser support
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 

@@ -4,14 +4,18 @@ import { useEffect } from 'react';
  * Implements "roving tabindex" inside a container so only one
  * item is tabbable at a time.  Arrow ← / → switch focus.
  */
-export function useRovingTabIndex(containerSelector: string) {
+export function useRovingTabIndex(containerSelector: string, itemCount?: number) {
   useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR guard
+    
     const container = document.querySelector<HTMLElement>(containerSelector);
     if (!container) return;
 
     const items = Array.from(
       container.querySelectorAll<HTMLElement>('[data-roving="true"]')
     );
+
+    if (items.length === 0) return;
 
     /* make the first item tabbable by default */
     items.forEach((el, i) => (el.tabIndex = i === 0 ? 0 : -1));
@@ -29,5 +33,5 @@ export function useRovingTabIndex(containerSelector: string) {
 
     container.addEventListener('keydown', handleKey);
     return () => container.removeEventListener('keydown', handleKey);
-  }, [containerSelector]);
+  }, [containerSelector, itemCount]);
 }

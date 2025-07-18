@@ -22,10 +22,12 @@ export default function TimelineScrubber({ count, current, onJump, moments }: Pr
   const pct = (current / Math.max(1, count - 1)) * 100;
 
   /* Enable Arrow-key roving focus inside the bar if moments provided */
-  useRovingTabIndex('#tl-scrubber');
+  useRovingTabIndex('#tl-scrubber', moments?.length);
 
   /* Capture Enter / Space on the focused dot */
   useEffect(() => {
+    if (typeof window === 'undefined') return; // SSR guard
+    
     const el = navRef.current;
     if (!el) return;
 
@@ -57,6 +59,7 @@ export default function TimelineScrubber({ count, current, onJump, moments }: Pr
           <button
             key={idx}
             type="button"
+            role="button"
             data-idx={idx}
             data-roving="true"
             /* visual state */
