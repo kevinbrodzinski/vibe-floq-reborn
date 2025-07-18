@@ -18,6 +18,7 @@ import { ParallaxMoment } from '@/components/timeline/ParallaxMoment';
 import { TimelineProgressBar } from '@/components/timeline/TimelineProgressBar';
 import { ScrollContextBar } from '@/components/timeline/ScrollContextBar';
 import { GenerativeBackdrop } from '@/components/background/GenerativeBackdrop';
+import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
 import { AISummaryChip } from '@/components/afterglow/AISummaryChip';
 import { useAISummary } from '@/hooks/useAISummary';
 import { useTimelineProgress } from '@/hooks/useTimelineProgress';
@@ -208,17 +209,20 @@ export default function AfterglowDetailPage() {
       {moments.length > 0 ? (
         <div className="mb-8 relative z-10">
           <h2 className="text-xl font-semibold mb-6">Your Journey</h2>
-          <Timeline>
-            {moments.map((moment, index) => (
-              <ParallaxMoment
-                key={moment.id || index} 
-                moment={moment} 
-                index={index}
-                isLast={index === moments.length - 1}
-                containerRef={containerRef}
-              />
-            ))}
-          </Timeline>
+          <div className="relative">
+            <DynamicTimelinePath containerRef={containerRef} moments={moments} />
+            <Timeline>
+              {moments.map((moment, index) => (
+                <ParallaxMoment
+                  key={moment.id || index} 
+                  moment={moment} 
+                  index={index}
+                  isLast={index === moments.length - 1}
+                  containerRef={containerRef}
+                />
+              ))}
+            </Timeline>
+          </div>
         </div>
       ) : (
         <div className="text-center py-12 relative z-10">
