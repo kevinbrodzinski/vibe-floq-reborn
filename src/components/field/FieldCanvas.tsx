@@ -129,7 +129,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       // 3. destroy the app itself (idempotent guard)
       if (!(app as any)._destroyed) {
         (app as any)._destroyed = true;   // mark so we don't run twice
-        app.destroy(true);
+        app.destroy(false);               // false = don't destroy children (we already did that)
       }
 
       // 4. detach listeners
@@ -155,7 +155,9 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       // guard: skip falsy or already-destroyed references
       if (!obj || (obj as any)._destroyed) continue;
       if (obj.name === 'person') {
-        (obj as any).destroy?.();          // optional-chaining is *not* enough if obj === undefined
+        // Mark as destroyed before calling destroy to prevent double-destroy
+        (obj as any)._destroyed = true;
+        (obj as any).destroy?.();          
         app.stage.removeChild(obj);
       }
     }
