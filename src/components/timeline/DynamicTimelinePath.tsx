@@ -1,80 +1,63 @@
-import { useScroll, useTransform, motion } from 'framer-motion';
-import { RefObject, useEffect, useState } from 'react';
-import { useTimelineGeometry } from '@/hooks/useTimelineGeometry';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useMemo } from 'react';
+import { buildTimelinePath } from '@/utils/timelinePath';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface DynamicTimelinePathProps {
-  containerRef: RefObject<HTMLElement>;
-  moments: any[];
-  enabled?: boolean; // Feature flag for A/B testing
+  /** outer scrolling container (usually the main page ref) */
+  containerRef: React.RefObject<HTMLElement>;
+  /** afterglow moments */
+  moments: { vibe_intensity?: number; color?: string }[];
 }
 
-export const DynamicTimelinePath = ({ 
-  containerRef, 
-  moments, 
-  enabled = true 
+/**
+ * Sticky SVG squiggle that "draws" itself on scroll.
+ */
+export const DynamicTimelinePath = ({
+  containerRef,
+  moments,
 }: DynamicTimelinePathProps) => {
+  const prefersReduced = usePrefersReducedMotion();
   const { scrollYProgress } = useScroll({ target: containerRef });
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  const prefersReduced = usePrefersReducedMotion();
-  const [isHydrated, setIsHydrated] = useState(false);
 
-  const { 
-    pathString, 
-    gradientStops, 
-    totalHeight 
-  } = useTimelineGeometry({ 
-    containerRef, 
-    moments, 
-    enabled: enabled && isHydrated 
-  });
+  const d = useMemo(() => buildTimelinePath(moments), [moments]);
 
-  // Lazy hydrate after first frame to avoid blocking first paint
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      setIsHydrated(true);
-    });
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  if (!enabled || !isHydrated || moments.length === 0 || !pathString) {
-    return null;
-  }
+  if (moments.length === 0) return null;
 
   return (
     <svg
+      className="pointer-events-auto absolute left-6 top-0 h-full w-12 cursor-pointer"
+      viewBox="0 0 48 9999"
+      preserveAspectRatio="xMidYMin meet"
       aria-hidden="true"
-      width={60}
-      height={totalHeight}
-      className="absolute left-0 top-0 select-none pointer-events-none z-10 overflow-visible"
-      style={{ minHeight: totalHeight }}
     >
-      <defs>
-        <linearGradient id="vibeGradient" x1="0" y1="0" x2="0" y2="100%">
-          {gradientStops.map((stop, index) => (
-            <stop
-              key={index}
-              offset={`${stop.offset}%`}
-              stopColor={stop.color}
-            />
-          ))}
-        </linearGradient>
-      </defs>
       <motion.path
-        d={pathString}
+        d={d}
+        stroke="url(#vibe-gradient)"
         strokeWidth={4}
-        stroke="url(#vibeGradient)"
         fill="none"
         strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray="1 1"
-        {...(!prefersReduced && { 
-          style: { pathLength },
-          initial: { pathLength: 0 },
-          animate: { pathLength: 1 },
-          transition: { duration: 0.5, ease: "easeOut" }
-        })}
+        className="hover:stroke-8 transition-all duration-200"
+        style={prefersReduced ? {} : { pathLength }}
       />
+      {/* Linear-gradient driven by first/last moment colors (fallback gray) */}
+      <defs>
+        <linearGradient id="vibe-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop
+            offset="0%"
+            stopColor={moments[0]?.color ?? '#9ca3af'}
+            stopOpacity="1"
+          />
+          <stop
+            offset="100%"
+            stopColor={
+              moments[moments.length - 1]?.color ?? moments[0]?.color ?? '#9ca3af'
+            }
+            stopOpacity="1"
+          />
+        </linearGradient>
+      </defs>
     </svg>
   );
 };

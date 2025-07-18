@@ -210,15 +210,13 @@ export default function AfterglowDetailPage() {
         <div className="mb-8 relative z-10">
           <h2 className="text-xl font-semibold mb-6">Your Journey</h2>
           <div className="relative">
-            <DynamicTimelinePath 
-              containerRef={containerRef} 
-              moments={moments} 
-              enabled={true} // Feature flag - can be controlled via config
-            />
+            {/* 📈 Dynamic squiggly spine (Phase-3) */}
+            <DynamicTimelinePath containerRef={containerRef} moments={moments} />
             <Timeline>
               {moments.map((moment, index) => (
                 <ParallaxMoment
                   key={moment.id || index} 
+                  data-moment-index={index}
                   moment={moment} 
                   index={index}
                   isLast={index === moments.length - 1}
