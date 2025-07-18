@@ -14,8 +14,8 @@ export default function useRippleQueue(
   useEffect(() => {
     if (!tileIds.length) return;
 
-    const channel = supabase
-      .channel(`field_tiles_ripple_${Date.now()}`)
+    const realtime = (supabase as any).realtime;       // v1 compat
+    const channel = realtime.channel(`field_tiles_ripple_${Date.now()}`)
       .on(
         'postgres_changes',
         {
