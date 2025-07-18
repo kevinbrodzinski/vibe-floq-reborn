@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
-import type { DailyAfterglowData, AfterglowMoment } from '@/types/afterglow'
+import { Database } from '@/integrations/supabase/types'
 import { useToast } from '@/hooks/use-toast'
+
+type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];
 
 interface GenerationProgress {
   step: string
@@ -14,7 +16,7 @@ interface GenerationProgress {
 export function useRealtimeAfterglowData(date: string) {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [afterglow, setAfterglow] = useState<DailyAfterglowData | null>(null)
+  const [afterglow, setAfterglow] = useState<DailyAfterglowRow | null>(null)
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -36,7 +38,7 @@ export function useRealtimeAfterglowData(date: string) {
           if ((payload.new as any)?.date !== date) return // Secondary filter for date
           
           console.log('Afterglow changed:', payload)
-          setAfterglow(payload.new as DailyAfterglowData)
+          setAfterglow(payload.new as DailyAfterglowRow)
           setIsGenerating(false)
           setGenerationProgress(null)
           
@@ -120,9 +122,10 @@ export function useRealtimeAfterglowData(date: string) {
           console.log('New moment added:', payload)
           setAfterglow(prev => {
             if (!prev) return prev
+            const currentMoments = Array.isArray(prev.moments) ? prev.moments : [];
             return {
               ...prev,
-              moments: [...(prev.moments || []), JSON.stringify(payload.new)]
+              moments: [...currentMoments, JSON.stringify(payload.new)]
             }
           })
           
