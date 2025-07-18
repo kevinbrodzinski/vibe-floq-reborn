@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, User, Shield, Bell, Palette } from 'lucide-react';
+import { ArrowLeft, LogOut, User, Shield, Bell, Palette, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
+import { useUserSettings } from '@/hooks/useUserSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile } = useProfile(user?.id);
+  const { settings, updateFieldEnabled, isUpdating } = useUserSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -281,6 +283,31 @@ const Settings = () => {
                   </p>
                 </div>
                 <Switch defaultChecked />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Experimental Features */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Zap className="w-4 h-4" />
+                Experimental
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Field View (Beta)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Show real-time activity density on the map as colored circles
+                  </p>
+                </div>
+                <Switch
+                  checked={settings?.field_enabled ?? false}
+                  onCheckedChange={updateFieldEnabled}
+                  disabled={isUpdating}
+                />
               </div>
             </CardContent>
           </Card>

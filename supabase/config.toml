@@ -1,5 +1,8 @@
 project_id = "reztyrrafsmlvvlqvsqt"
 
+[functions.get_field_tiles]
+verify_jwt = false
+
 [functions.notification-worker]
 verify_jwt = false
 

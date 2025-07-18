@@ -16,6 +16,8 @@ import { useVenueJoin } from "@/hooks/useVenueJoin";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
+import { useUserSettings } from "@/hooks/useUserSettings";
+import { FieldCanvas } from "@/components/field/FieldCanvas";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldMapLayerProps {
@@ -26,6 +28,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
   const { mode, isFull, isList, constellationMode } = useFieldUI();
   const { people } = useFieldSocial();
   const { floqEvents, walkableFloqs } = data;
+  const { settings } = useUserSettings();
   
   // Phase 2: Social interaction state
   const [selectedPerson, setSelectedPerson] = useState<any>(null);
@@ -210,17 +213,22 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
         transition={{ type: 'spring', stiffness: 300, damping: 35 }}
       >
         {(mode === 'map' || mode === 'full') && (
-          <FieldVisualization
-            className={clsx('absolute inset-0', isFull && 'fullscreen-map')}
-            constellationMode={constellationMode}
-            people={people}
-            friends={friends}
-            floqEvents={floqEvents}
-            walkableFloqs={walkableFloqs}
-            onFriendInteraction={handleFriendInteraction}
-            onConstellationGesture={handleConstellationGesture}
-            onAvatarInteraction={handleAvatarInteraction}
-          />
+          <>
+            <FieldVisualization
+              className={clsx('absolute inset-0', isFull && 'fullscreen-map')}
+              constellationMode={constellationMode}
+              people={people}
+              friends={friends}
+              floqEvents={floqEvents}
+              walkableFloqs={walkableFloqs}
+              onFriendInteraction={handleFriendInteraction}
+              onConstellationGesture={handleConstellationGesture}
+              onAvatarInteraction={handleAvatarInteraction}
+            />
+            {settings?.field_enabled && (
+              <FieldCanvas />
+            )}
+          </>
         )}
       </motion.div>
 

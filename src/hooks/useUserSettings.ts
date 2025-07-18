@@ -26,6 +26,7 @@ export interface UserSettings {
   };
   preferred_welcome_template?: 'casual-hangout' | 'professional-meetup' | 'event-based' | 'study-group' | 'creative-collab' | 'support-group';
   available_until?: string | null;
+  field_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ const DEFAULT_SETTINGS: Partial<UserSettings> = {
   notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
   privacy_settings: DEFAULT_PRIVACY_SETTINGS,
   theme_preferences: DEFAULT_THEME_PREFERENCES,
+  field_enabled: false,
 };
 
 export const useUserSettings = () => {
@@ -102,6 +104,7 @@ export const useUserSettings = () => {
             ...DEFAULT_THEME_PREFERENCES, 
             ...themePrefs
           },
+          field_enabled: data.field_enabled ?? false,
         } as UserSettings;
       }
       return {
@@ -109,6 +112,7 @@ export const useUserSettings = () => {
         notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
         privacy_settings: DEFAULT_PRIVACY_SETTINGS,
         theme_preferences: DEFAULT_THEME_PREFERENCES,
+        field_enabled: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as UserSettings;
@@ -233,6 +237,14 @@ export const useUserSettings = () => {
     }
   };
 
+  const updateFieldEnabled = (enabled: boolean) => {
+    if (!settings) return;
+    
+    updateSettingsMutation.mutate({
+      field_enabled: enabled,
+    });
+  };
+
   return {
     settings: settings as UserSettings | undefined,
     isLoading,
@@ -241,6 +253,7 @@ export const useUserSettings = () => {
     updatePrivacySetting,
     updateBroadcastRadius,
     updateWelcomeTemplate,
+    updateFieldEnabled,
     isUpdating: updateSettingsMutation.isPending,
   };
 };
