@@ -54,9 +54,12 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     });
     appRef.current = app;
 
-    // Containers AFTER the app exists
-    rippleContainer.current = new PIXI.Container();
-    app.stage.addChild(rippleContainer.current);
+    // create, then cache – cannot be undefined afterwards
+    const rc = new PIXI.Container();
+    
+    app.stage.addChild(rc);
+    
+    rippleContainer.current = rc;
 
     // Animation loop
     const animate = () => {
@@ -79,9 +82,14 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
     app.ticker.add(animate);
 
     return () => {
-      // guard - only destroy objects that expose destroy()
-      app.stage.children.forEach(c => (c as any)?.destroy?.());
-      app.destroy(true);
+      if (appRef.current) {
+        // only remove sprite children – skip ripple containers
+        appRef.current.stage.children
+          .filter(c => c instanceof PIXI.Sprite)
+          .forEach(c => (c as any)?.destroy?.());
+
+        appRef.current.destroy(true);
+      }
       appRef.current = null;
       rippleContainer.current = null;
     };
