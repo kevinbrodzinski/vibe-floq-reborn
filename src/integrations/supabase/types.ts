@@ -332,6 +332,7 @@ export type Database = {
           id: string
           is_pinned: boolean | null
           is_public: boolean | null
+          is_stale: boolean
           moments: Json | null
           peak_vibe_time: string | null
           regenerated_at: string | null
@@ -354,6 +355,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean | null
           is_public?: boolean | null
+          is_stale?: boolean
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean | null
           is_public?: boolean | null
+          is_stale?: boolean
           moments?: Json | null
           peak_vibe_time?: string | null
           regenerated_at?: string | null
@@ -2223,6 +2226,33 @@ export type Database = {
         }
         Relationships: []
       }
+      task_queue: {
+        Row: {
+          created_at: string | null
+          id: string
+          payload: Json
+          processed_at: string | null
+          status: string
+          task: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          task: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          status?: string
+          task?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           code: string
@@ -3413,6 +3443,10 @@ export type Database = {
       end_floq: {
         Args: { p_floq_id: string; p_reason?: string }
         Returns: Json
+      }
+      enqueue_afterglow_cron: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       equals: {
         Args: { geom1: unknown; geom2: unknown }
