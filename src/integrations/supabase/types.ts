@@ -3250,6 +3250,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_field_tiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_inactive_floqs: {
         Args: Record<PropertyKey, never>
         Returns: Json
