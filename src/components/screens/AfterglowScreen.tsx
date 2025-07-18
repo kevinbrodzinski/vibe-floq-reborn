@@ -297,7 +297,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               />
             </svg>
           </>
-        )}
+        ) : null}
 
         {/* Loading and generation states */}
         {afterglowLoading && !isGenerating ? (
