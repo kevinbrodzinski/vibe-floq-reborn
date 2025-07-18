@@ -1805,6 +1805,45 @@ export type Database = {
           },
         ]
       }
+      plan_invites: {
+        Row: {
+          inserted_at: string
+          plan_id: string
+          status: Database["public"]["Enums"]["invite_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          inserted_at?: string
+          plan_id: string
+          status?: Database["public"]["Enums"]["invite_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          inserted_at?: string
+          plan_id?: string
+          status?: Database["public"]["Enums"]["invite_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_invites_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_invites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_participants: {
         Row: {
           invite_type: string | null
@@ -4078,6 +4117,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
+      invite_friends: {
+        Args: { p_plan_id: string; p_user_ids: string[] }
+        Returns: Json
+      }
       join_floq: {
         Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
@@ -5756,6 +5799,7 @@ export type Database = {
         | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       invitation_status: "pending" | "accepted" | "declined"
+      invite_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
       plan_status_enum:
         | "draft"
@@ -5975,6 +6019,7 @@ export const Constants = {
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       invitation_status: ["pending", "accepted", "declined"],
+      invite_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
       plan_status_enum: [
         "draft",
