@@ -226,7 +226,7 @@ export const FieldMapLayer = ({ data }: FieldMapLayerProps) => {
               onAvatarInteraction={handleAvatarInteraction}
             />
             {settings?.field_enabled && (
-              <FieldCanvas />
+              <FieldCanvas people={[]} tileIds={[]} />
             )}
           </>
         )}
