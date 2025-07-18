@@ -1,7 +1,12 @@
 import { AfterglowMoment } from '@/hooks/useAfterglowData'
 import { formatMomentTime, getMomentTypeIcon } from '@/utils/afterglowHelpers'
 import { Button } from '@/components/ui/button'
-import { Heart, Mail } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Heart, Mail, Users, MapPin } from 'lucide-react'
+import { useState } from 'react'
+import { PeopleEncountersModal } from '@/components/modals/PeopleEncountersModal'
+import { LocationChip } from '@/components/location/LocationChip'
+import { usePeopleData } from '@/hooks/usePeopleData'
 
 interface AfterglowMomentCardProps {
   moment: AfterglowMoment
@@ -18,6 +23,8 @@ export function AfterglowMomentCard({
   onShare, 
   onSave 
 }: AfterglowMomentCardProps) {
+  const [isPeopleModalOpen, setIsPeopleModalOpen] = useState(false)
+  const { getPeopleInMoment } = usePeopleData()
   const getEventTypeIcon = (type: string) => {
     switch(type) {
       case "venue_checkin": 
@@ -98,24 +105,89 @@ export function AfterglowMomentCard({
           <p className="text-sm text-muted-foreground mb-3">{moment.description}</p>
         )}
 
-        {/* Additional metadata display */}
+        {/* Enhanced metadata display with people and location */}
         {moment.metadata && Object.keys(moment.metadata).length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {moment.metadata.vibe && (
-              <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20">
-                {moment.metadata.vibe}
-              </span>
+          <div className="space-y-3 mt-4">
+            {/* Location information */}
+            {moment.metadata.location && (
+              <div className="flex items-center gap-2">
+                <LocationChip 
+                  location={moment.metadata.location}
+                  size="sm"
+                  showDistance={!!moment.metadata.location.distance_from_previous}
+                  interactive={!!moment.metadata.location.coordinates}
+                  onClick={() => {
+                    if (moment.metadata.location.coordinates) {
+                      const [lng, lat] = moment.metadata.location.coordinates
+                      window.open(`https://maps.google.com/?q=${lat},${lng}`, '_blank')
+                    }
+                  }}
+                />
+              </div>
             )}
-            {moment.metadata.floq_id && (
-              <span className="px-2 py-1 text-xs rounded-full bg-accent/10 text-accent border border-accent/20">
-                Floq
-              </span>
+
+            {/* People and social context */}
+            {moment.metadata.people && (
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const peopleData = getPeopleInMoment(moment.metadata)
+                  const hasKnownConnections = peopleData.encountered_users.length > 0
+                  
+                  return (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-2 hover:bg-accent/50 transition-colors"
+                        onClick={() => setIsPeopleModalOpen(true)}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Users className="w-4 h-4" />
+                          <span className="text-xs font-medium">{peopleData.total_people_count}</span>
+                          {hasKnownConnections && (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                              {peopleData.encountered_users.length} known
+                            </Badge>
+                          )}
+                        </div>
+                      </Button>
+                      
+                      <PeopleEncountersModal
+                        isOpen={isPeopleModalOpen}
+                        onClose={() => setIsPeopleModalOpen(false)}
+                        encounteredUsers={peopleData.encountered_users}
+                        totalPeopleCount={peopleData.total_people_count}
+                        momentTitle={moment.title}
+                      />
+                    </>
+                  )
+                })()}
+              </div>
             )}
-            {moment.metadata.venue_id && (
-              <span className="px-2 py-1 text-xs rounded-full bg-secondary/10 text-secondary border border-secondary/20">
-                Venue
-              </span>
-            )}
+
+            {/* Traditional metadata badges */}
+            <div className="flex flex-wrap gap-2">
+              {moment.metadata.vibe && (
+                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                  {moment.metadata.vibe}
+                </Badge>
+              )}
+              {moment.metadata.social_context?.floq_id && (
+                <Badge variant="outline" className="text-xs bg-accent/10 text-accent border-accent/20">
+                  Floq
+                </Badge>
+              )}
+              {moment.metadata.social_context?.activity_type && (
+                <Badge variant="outline" className="text-xs bg-secondary/10 text-secondary border-secondary/20">
+                  {moment.metadata.social_context.activity_type}
+                </Badge>
+              )}
+              {moment.metadata.intensity && (
+                <Badge variant="outline" className="text-xs">
+                  {Math.round(moment.metadata.intensity * 100)}% intensity
+                </Badge>
+              )}
+            </div>
           </div>
         )}
       </div>
