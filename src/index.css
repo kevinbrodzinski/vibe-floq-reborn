@@ -9,7 +9,7 @@
 /* Silence ResizeObserver loop limit exceeded warnings */
 html, body {
   overflow-anchor: none;
-  background: var(--afterglow-bg, hsl(var(--primary)));
+  background: var(--afterglow-bg, hsl(var(--background)));
   transition: background 500ms ease;
 }
 
