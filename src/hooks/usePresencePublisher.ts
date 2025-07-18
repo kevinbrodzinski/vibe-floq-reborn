@@ -45,8 +45,7 @@ export const usePresencePublisher = (isActive: boolean) => {
         const { data, error } = await supabase.rpc('upsert_presence', {
           p_lat: latitude,
           p_lng: longitude,
-          p_vibe: vibe,
-          p_gh5: gh5
+          p_vibe: vibe
         })
 
         if (error) {
