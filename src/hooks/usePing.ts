@@ -5,10 +5,14 @@ import { toast } from 'sonner'
 export const usePing = () => {
   return useCallback(async (targetId: string) => {
     try {
+      const { data: user } = await supabase.auth.getUser()
+      if (!user.user) throw new Error('Not authenticated')
+      
       const { error } = await supabase
         .from('ping_requests')
         .insert({ 
           target_id: targetId,
+          requester_id: user.user.id,
           status: 'pending'
         })
 

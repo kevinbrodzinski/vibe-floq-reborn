@@ -33,7 +33,7 @@ export function useRealtimeAfterglowData(date: string) {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          if (payload.new?.date !== date) return // Secondary filter for date
+          if ((payload.new as any)?.date !== date) return // Secondary filter for date
           
           console.log('Afterglow changed:', payload)
           setAfterglow(payload.new as DailyAfterglowData)

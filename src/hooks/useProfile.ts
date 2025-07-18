@@ -12,7 +12,7 @@ export function useCurrentUserProfile() {
   return useQuery({
     enabled: !!session?.user,
     queryKey : ['profile:v2', session?.user.id],
-    queryFn  : async (): Promise<Profile> => {
+    queryFn  : async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
@@ -22,13 +22,19 @@ export function useCurrentUserProfile() {
       if (error && error.code === 'PGRST116') {        // "No rows"
         // attempt one retry: maybe trigger hasn't fired yet (cold edge function)
         await new Promise(r => setTimeout(r, 1500))
-        return queryClient.fetchQuery({
+        const result = await queryClient.fetchQuery({
           queryKey: ['profile:v2', session!.user.id],
-          queryFn: () => supabase.from('profiles').select('id, username, display_name, avatar_url').eq('id', session!.user.id).single().then(({ data, error }) => {
+          queryFn: async () => {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('id, username, display_name, avatar_url')
+              .eq('id', session!.user.id)
+              .single()
             if (error) throw error
             return data as Profile
-          })
+          }
         })
+        return result
       }
 
       if (error) throw error

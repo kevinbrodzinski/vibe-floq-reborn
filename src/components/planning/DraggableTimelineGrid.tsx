@@ -111,7 +111,16 @@ export function DraggableTimelineGrid({
                     )}
                   >
                     <DraggableStopCard
-                      stop={stop as unknown as PlanStopUi}
+                      stop={{
+                        id: stop.id,
+                        title: stop.title,
+                        description: stop.description,
+                        start_time: stop.start_time,
+                        end_time: stop.end_time,
+                        duration_minutes: stop.duration_minutes,
+                        estimated_cost_per_person: stop.estimated_cost_per_person,
+                        venue: typeof stop.venue === 'string' ? { id: '', name: stop.venue } : stop.venue
+                      }}
                       onEdit={() => handleStopEdit(stop)}
                       onDelete={() => handleStopDelete(stop.id)}
                       isDragging={snapshot.isDragging}

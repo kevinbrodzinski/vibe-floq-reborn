@@ -57,7 +57,7 @@ export function useMentionNotifications() {
                 message_id: payload.new.message_id,
                 mentioned_user: payload.new.mentioned_user,
                 sender_username: mentionDetails.floq_messages.profiles.username,
-                floq_title: mentionDetails.floqs?.title,
+                floq_title: (mentionDetails as any).floqs?.title,
                 created_at: payload.new.created_at,
               };
 

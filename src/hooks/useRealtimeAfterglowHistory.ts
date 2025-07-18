@@ -29,7 +29,13 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
         throw fetchError
       }
 
-      setHistory(data || [])
+      setHistory((data || []).map(item => ({
+        ...item,
+        updated_at: (item as any).updated_at || item.created_at,
+        emotion_journey: Array.isArray(item.emotion_journey) ? item.emotion_journey.map(String) : [],
+        moments: Array.isArray(item.moments) ? item.moments : [],
+        vibe_path: Array.isArray(item.vibe_path) ? item.vibe_path.map(String) : []
+      } as DailyAfterglowData)))
     } catch (err) {
       console.error('Error fetching afterglow history:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch afterglow history')

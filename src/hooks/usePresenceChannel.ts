@@ -59,7 +59,15 @@ export const usePresenceChannel = () => {
     const existingChannel = channels.find(ch => ch.topic === channelName);
     
     if (existingChannel && existingChannel.state === 'joined') {
-      existingChannel.update({
+      // Note: update method doesn't exist on RealtimeChannel, 
+      // would need to track again with new state
+      existingChannel.track({
+        userId: user.id,
+        name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
+        avatar: user.user_metadata?.avatar_url,
+        online_at: new Date().toISOString(),
+        vibe,
+        gh5,
         visible: visibility !== 'off'
       });
     }

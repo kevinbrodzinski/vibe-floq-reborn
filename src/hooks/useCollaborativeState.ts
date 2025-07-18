@@ -178,6 +178,5 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     voteOnStop: () => {},
     updateParticipantStatus: () => {},
     recentVotes: [],
-    addOptimisticStop,
   }
 }

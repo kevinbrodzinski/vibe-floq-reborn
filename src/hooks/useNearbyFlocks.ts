@@ -115,10 +115,10 @@ export function useNearbyFlocks({
         return {
           id: floq.id,
           title: floq.title,
-          name: floq.name || undefined,
-          description: floq.description || undefined,
+          name: (floq as any).name || undefined,
+          description: (floq as any).description || undefined,
           primary_vibe: floq.primary_vibe,
-          vibe_tag: floq.vibe_tag || undefined,
+          vibe_tag: (floq as any).vibe_tag || undefined,
           participant_count: Number(floq.participant_count),
           boost_count: 0, // search_floqs doesn't return boost_count
           distance_meters: Number(floq.distance_m || 0),
@@ -130,9 +130,9 @@ export function useNearbyFlocks({
           members: [], // search_floqs doesn't return members array
           is_joined: joinedFloqIds.includes(floq.id),
           creator_id: undefined, // search_floqs doesn't return creator_id
-          friends_going_count: floq.friends_going_count || 0,
-          friends_going_avatars: floq.friends_going_avatars || [],
-          friends_going_names: floq.friends_going_names || [],
+          friends_going_count: (floq as any).friends_going_count || 0,
+          friends_going_avatars: (floq as any).friends_going_avatars || [],
+          friends_going_names: (floq as any).friends_going_names || [],
         };
       });
 

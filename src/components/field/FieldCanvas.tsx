@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as PIXI from 'pixi.js';
-// Removed simplex-noise import - using simple random drift instead
+import { createNoise3D } from 'simplex-noise';
 import { useFieldTiles } from '@/hooks/useFieldTiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { geohashToCenter, crowdCountToRadius, hslToString, tilesForViewport } from '@/lib/geo';
@@ -56,8 +56,8 @@ export default function FieldCanvas() {
   const rippleContainer = useRef<PIXI.Container>();
   const trailGraphics = useRef<PIXI.Graphics>();
   const ripples = useRef<RippleEffect[]>([]);
-  // Simple random drift instead of complex noise
-  const noise = useMemo(() => Math.random, []);
+  // Create noise function for smooth drift
+  const noise = useMemo(() => createNoise3D(Math.random()), []);
   
   // Create a simple projection function since we don't have mapbox integration yet
   const project = useMemo(() => {
@@ -92,7 +92,7 @@ export default function FieldCanvas() {
     ripples.current.push(ripple);
   }, [activeTiles, project]);
   
-  useRippleQueue<string>(tileIds, addRipple);
+  useRippleQueue(tileIds, addRipple);
 
   const tree = useMemo(() => {
     const screenTiles: ScreenTile[] = (activeTiles as any[]).map(t => {

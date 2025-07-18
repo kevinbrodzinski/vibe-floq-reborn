@@ -25,7 +25,7 @@ export function useRealtimeFriends() {
         (payload) => {
           console.log('Friend change received:', payload);
           
-          const row = payload.new ?? payload.old as { status?: string } | null;
+          const row = (payload.new ?? payload.old) as any;
           
           // Invalidate relevant queries
           queryClient.invalidateQueries({ queryKey: ['friends-list'] });

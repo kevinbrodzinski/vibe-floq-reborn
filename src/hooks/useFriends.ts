@@ -137,7 +137,7 @@ export function useFriendsWithPresence() {
       display_name: friend.display_name,
       avatar_url: friend.avatar_url,
       username: friend.username,
-      bio: friend.bio
+      bio: null // bio is not included in FriendPresence type
     })), 
     [friendsWithPresence]
   );

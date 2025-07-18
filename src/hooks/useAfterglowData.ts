@@ -13,7 +13,7 @@ export interface DailyAfterglowData {
   moments: any[]
   vibe_path: string[]
   created_at: string
-  updated_at: string
+  updated_at?: string
   total_venues: number
   total_floqs: number
   crossed_paths_count: number
@@ -46,6 +46,7 @@ export function useAfterglowData(date?: string) {
           // Properly map the database row to our domain type
           const mappedData: DailyAfterglowData = {
             ...data,
+            updated_at: (data as any).updated_at || data.created_at,
             emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey.map(String) : [],
             moments: Array.isArray(data.moments) ? data.moments : [],
             vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path.map(String) : []
