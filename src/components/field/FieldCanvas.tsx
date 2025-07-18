@@ -1,10 +1,16 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as PIXI from 'pixi.js';
+import { createNoise3D } from 'simplex-noise';
 import { useFieldTiles } from '@/hooks/useFieldTiles';
 import { useQueryClient } from '@tanstack/react-query';
-import { geohashToCenter, crowdCountToRadius, hslToString } from '@/lib/geo';
+import { geohashToCenter, crowdCountToRadius, hslToString, tilesForViewport } from '@/lib/geo';
 import { buildTileTree, hitTest } from '@/lib/quadtree';
 import { useMapViewport } from '@/hooks/useMapViewport';
+import { useFriends } from '@/hooks/useFriends';
+import { useFriendTrails } from '@/hooks/useFriendTrails';
+import { useRippleQueue } from '@/hooks/useRippleQueue';
+import { useUserSettings } from '@/hooks/useUserSettings';
+import { RippleEffect } from '@/shaders/RippleFilter';
 import type { ScreenTile } from '@/types/field';
 
 // Convert HSL color to hex for PIXI
@@ -40,10 +46,18 @@ export default function FieldCanvas() {
   const cachedTiles = qc.getQueryData(['fieldTilesCache']) as any[] || tiles;
   const activeTiles = cachedTiles.length > 0 ? cachedTiles : tiles;
   
-  const { viewport } = useMapViewport();     // mapbox viewport util
+  const { viewport } = useMapViewport();
+  const { settings } = useUserSettings();
+  const { friends = [] } = useFriends();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<PIXI.Application>();
-
+  
+  // Phase 3 refs and state
+  const rippleContainer = useRef<PIXI.Container>();
+  const trailGraphics = useRef<PIXI.Graphics>();
+  const ripples = useRef<RippleEffect[]>([]);
+  const noise = useMemo(() => createNoise3D(), []);
+  
   // Create a simple projection function since we don't have mapbox integration yet
   const project = useMemo(() => {
     return ([lng, lat]: [number, number]) => {
@@ -52,6 +66,32 @@ export default function FieldCanvas() {
       return { x, y };
     };
   }, [viewport]);
+
+  // Friend trails
+  const friendIds = useMemo(() => friends.map((f: any) => f.friend_id), [friends]);
+  const friendTrails = useFriendTrails(friendIds);
+  
+  // Tile IDs for ripple detection
+  const [west, south, east, north] = viewport.bounds;
+  const nw: [number, number] = [north, west];
+  const se: [number, number] = [south, east];
+  const tileIds = useMemo(() => tilesForViewport(nw, se, viewport.zoom), [nw, se, viewport.zoom]);
+  
+  // Ripple queue handler
+  const addRipple = useMemo(() => (tileId: string, delta: number) => {
+    const tile = activeTiles.find((t: any) => t.tile_id === tileId);
+    if (!tile || !rippleContainer.current) return;
+    
+    const [lat, lng] = geohashToCenter(tile.tile_id);
+    const { x, y } = project([lng, lat]);
+    const radius = crowdCountToRadius(tile.crowd_count);
+    
+    const ripple = new RippleEffect(x, y, radius, 0xffffff);
+    rippleContainer.current.addChild(ripple.sprite);
+    ripples.current.push(ripple);
+  }, [activeTiles, project]);
+  
+  useRippleQueue(tileIds, addRipple);
 
   const tree = useMemo(() => {
     const screenTiles: ScreenTile[] = (activeTiles as any[]).map(t => {
@@ -92,6 +132,13 @@ export default function FieldCanvas() {
       autoStart: true,
       backgroundAlpha: 0,
     });
+    
+    // Setup Phase 3 containers
+    rippleContainer.current = new PIXI.Container();
+    trailGraphics.current = new PIXI.Graphics();
+    appRef.current.stage.addChild(rippleContainer.current);
+    appRef.current.stage.addChild(trailGraphics.current);
+    
     return () => appRef.current?.destroy(true);
   }, [shouldUsePIXI]);
 
@@ -108,18 +155,56 @@ export default function FieldCanvas() {
     });
   }, []);
 
+  /** animate ripples & drift */
+  useEffect(() => {
+    const app = appRef.current;
+    if (!app || !shouldUsePIXI) return;
+    
+    const ticker = () => {
+      const t = performance.now() * 0.0004;
+      
+      // drift dots with noise
+      app.stage.children.forEach(child => {
+        if (child === rippleContainer.current || child === trailGraphics.current) return;
+        if (child instanceof PIXI.Sprite) {
+          const ox = noise(child.x * 0.002, child.y * 0.002, t) * 0.5;
+          const oy = noise(child.y * 0.002, child.x * 0.002, t + 30) * 0.5;
+          child.x += ox;
+          child.y += oy;
+        }
+      });
+      
+      // update ripples
+      if ((settings as any)?.field_ripples !== false) {
+        ripples.current = ripples.current.filter(ripple => {
+          const shouldContinue = ripple.update();
+          if (!shouldContinue) {
+            rippleContainer.current?.removeChild(ripple.sprite);
+            ripple.destroy();
+          }
+          return shouldContinue;
+        });
+      }
+    };
+    
+    app.ticker.add(ticker);
+    return () => {
+      app.ticker.remove(ticker);
+    };
+  }, [shouldUsePIXI, noise, (settings as any)?.field_ripples]);
+
   /** render tiles */
   useEffect(() => {
     const app = appRef.current;
     if (!app || !shouldUsePIXI) return;
     
-    // Destroy existing sprites and clear stage
+    // Clear existing tile sprites only (preserve containers)
     app.stage.children.forEach(child => {
       if (child instanceof PIXI.Sprite) {
         child.destroy();
+        app.stage.removeChild(child);
       }
     });
-    app.stage.removeChildren();
 
     (activeTiles as any[]).forEach(t => {
       const [lat, lng] = geohashToCenter(t.tile_id);
@@ -133,6 +218,24 @@ export default function FieldCanvas() {
       (spr as any).__tile = t;             // attach for hit-test
       app.stage.addChild(spr);
     });
+    
+    // Draw friend trails
+    if ((settings as any)?.field_trails !== false && trailGraphics.current) {
+      trailGraphics.current.clear();
+      trailGraphics.current.lineStyle(2, 0xffffff, 0.7);
+      
+      Array.from(friendTrails.entries()).forEach(([userId, trail]) => {
+        if (trail.length > 1) {
+          const startPoint = project([trail[0].lng, trail[0].lat]);
+          trailGraphics.current!.moveTo(startPoint.x, startPoint.y);
+          
+          trail.forEach(point => {
+            const { x, y } = project([point.lng, point.lat]);
+            trailGraphics.current!.lineTo(x, y);
+          });
+        }
+      });
+    }
   }, [activeTiles, project, shouldUsePIXI]);
 
   /** pointer hit */

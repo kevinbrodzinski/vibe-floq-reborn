@@ -1264,6 +1264,27 @@ export type Database = {
           },
         ]
       }
+      friend_trails: {
+        Row: {
+          lat: number
+          lng: number
+          ts: string
+          user_id: string
+        }
+        Insert: {
+          lat: number
+          lng: number
+          ts?: string
+          user_id: string
+        }
+        Update: {
+          lat?: number
+          lng?: number
+          ts?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friends: {
         Row: {
           created_at: string
