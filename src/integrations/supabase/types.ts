@@ -170,6 +170,7 @@ export type Database = {
           daily_afterglow_id: string
           description: string | null
           id: string
+          location_geom: unknown | null
           metadata: Json | null
           moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
           timestamp: string
@@ -181,6 +182,7 @@ export type Database = {
           daily_afterglow_id: string
           description?: string | null
           id?: string
+          location_geom?: unknown | null
           metadata?: Json | null
           moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
           timestamp: string
@@ -192,6 +194,7 @@ export type Database = {
           daily_afterglow_id?: string
           description?: string | null
           id?: string
+          location_geom?: unknown | null
           metadata?: Json | null
           moment_type?: Database["public"]["Enums"]["afterglow_moment_type"]
           timestamp?: string
