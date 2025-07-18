@@ -16,7 +16,7 @@ export const FloqActions: React.FC<FloqActionsProps> = ({
   isJoined, 
   onInvite 
 }) => {
-  const { boost } = useFloqBoost();
+  const { mutateAsync: boost } = useFloqBoost();
 
   const handleBoost = () => {
     boost({ floqId });

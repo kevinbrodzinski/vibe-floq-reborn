@@ -83,7 +83,7 @@ export function useAutoSaveDrafts(planId: string) {
       if (data?.draft_data) {
         // Safely parse the JSON data
         try {
-          return typeof data.draft_data === 'object' ? data.draft_data as DraftData : JSON.parse(data.draft_data as string)
+          return typeof data.draft_data === 'object' ? data.draft_data as unknown as DraftData : JSON.parse(data.draft_data as string)
         } catch {
           return null
         }
@@ -110,7 +110,7 @@ export function useAutoSaveDrafts(planId: string) {
       if (data?.draft_data) {
         // Safely parse the JSON data
         try {
-          return typeof data.draft_data === 'object' ? data.draft_data as DraftData : JSON.parse(data.draft_data as string)
+          return typeof data.draft_data === 'object' ? data.draft_data as unknown as DraftData : JSON.parse(data.draft_data as string)
         } catch {
           return null
         }

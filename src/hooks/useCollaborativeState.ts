@@ -39,9 +39,14 @@ export function useCollaborativeState(planId: string) {
       const { data, error } = await supabase
         .from('plan_stops')
         .insert({
-          ...newStop,
           plan_id: planId,
           created_by: session.user.id,
+          title: newStop.title,
+          description: newStop.description || '',
+          start_time: newStop.start_time,
+          end_time: newStop.end_time,
+          address: newStop.address || '',
+          stop_order: 0,
         })
         .select()
         .single()

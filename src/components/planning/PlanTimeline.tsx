@@ -147,8 +147,6 @@ export function PlanTimeline({ plan }: PlanTimelineProps) {
         <CardContent>
           <DraggableTimelineGrid
             planId={plan.id}
-            startTime={plan.start_time}
-            endTime={plan.end_time}
           />
         </CardContent>
       </Card>

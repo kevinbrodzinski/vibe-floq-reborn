@@ -13,7 +13,7 @@ interface BoostButtonProps {
 }
 
 export const BoostButton = ({ floqId, boostCount, className = '', size = 'md' }: BoostButtonProps) => {
-  const { boost, removeBoost, isPending } = useFloqBoost();
+  const { mutateAsync: boost, isPending } = useFloqBoost();
   const { data: userBoost, isLoading } = useUserBoostStatus(floqId);
   const { toast } = useToast();
   

@@ -6,7 +6,18 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 };
 
 // Domain types for UI components
-export interface PlanStop {
+export interface PlanStopUi {
+  id: string
+  title: string
+  venue: string
+  description?: string
+  start_time: string
+  end_time: string
+  duration_minutes?: number
+  estimated_cost_per_person?: number
+}
+
+export interface PlanStop extends PlanStopUi {
   id: string
   plan_id?: string
   title: string

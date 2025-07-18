@@ -60,6 +60,47 @@ export function useFloqBoosts(floqId: string) {
   return {
     ...query,
     boost: boostFloq.mutateAsync,
-    boosting: boostFloq.isLoading,
+    boosting: boostFloq.isPending,
   }
+}
+
+// Additional hook exports
+export function useFloqBoost() {
+  return useMutation({
+    mutationFn: async ({ floqId }: { floqId: string }) => {
+      const { data, error } = await supabase.functions.invoke('boost-floq', {
+        body: { floq_id: floqId, boost_type: 'vibe' }
+      })
+      if (error) throw error
+      return data
+    }
+  })
+}
+
+export function useUserBoostStatus(floqId: string) {
+  return useQuery({
+    queryKey: ['user-boost-status', floqId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('floq_boosts')
+        .select('*')
+        .eq('floq_id', floqId)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .maybeSingle()
+      
+      if (error) throw error
+      return !!data
+    },
+    enabled: !!floqId
+  })
+}
+
+export function useBoostSubscription(floqId: string) {
+  return useQuery({
+    queryKey: ['boost-subscription', floqId],
+    queryFn: async () => {
+      return { subscribed: true } // Placeholder
+    },
+    enabled: !!floqId
+  })
 }

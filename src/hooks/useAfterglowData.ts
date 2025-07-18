@@ -48,7 +48,7 @@ export function useAfterglowData(date?: string) {
             ...data,
             emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey : [],
             moments: Array.isArray(data.moments) ? data.moments : [],
-            vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path : []
+            vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path.map(String) : []
           }
           setAfterglowData(mappedData)
         } else {
@@ -65,5 +65,13 @@ export function useAfterglowData(date?: string) {
     fetchAfterglowData()
   }, [date])
 
-  return { afterglowData, isLoading, error }
+  return { 
+    afterglow: afterglowData,
+    isGenerating: isLoading,
+    generationProgress: 0,
+    generateAfterglow: () => {},
+    afterglowData, 
+    isLoading, 
+    error 
+  }
 }

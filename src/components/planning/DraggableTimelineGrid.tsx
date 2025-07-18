@@ -4,12 +4,12 @@ import { DraggableStopCard } from './DraggableStopCard'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUpdateStopOrder } from '@/hooks/useUpdateStopOrder'
 import { cn } from '@/lib/utils'
-import type { PlanStop } from '@/types/plan'
+import type { PlanStop, PlanStopUi } from '@/types/plan'
 
 interface DraggableTimelineGridProps {
   planId: string
   planStatus?: 'draft' | 'planning' | 'executing' | 'completed'
-  onStopEdit?: (stop: PlanStop) => void
+  onStopEdit?: (stop: PlanStopUi) => void
   onStopDelete?: (stopId: string) => void
 }
 
@@ -69,7 +69,7 @@ export function DraggableTimelineGrid({
 
   const handleStopEdit = (stop: PlanStop) => {
     if (onStopEdit) {
-      onStopEdit(stop)
+      onStopEdit(stop as PlanStopUi)
     }
   }
 
