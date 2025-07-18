@@ -210,6 +210,45 @@ export type Database = {
           },
         ]
       }
+      afterglow_people: {
+        Row: {
+          created_at: string | null
+          interaction_strength: number | null
+          moment_id: string
+          person_id: string
+          shared_moments_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          interaction_strength?: number | null
+          moment_id: string
+          person_id: string
+          shared_moments_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          interaction_strength?: number | null
+          moment_id?: string
+          person_id?: string
+          shared_moments_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_people_moment_id_fkey"
+            columns: ["moment_id"]
+            isOneToOne: false
+            referencedRelation: "afterglow_moments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "afterglow_people_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       afterglow_share_links: {
         Row: {
           created_at: string | null
@@ -238,6 +277,44 @@ export type Database = {
             columns: ["daily_afterglow_id"]
             isOneToOne: false
             referencedRelation: "daily_afterglow"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      afterglow_venues: {
+        Row: {
+          created_at: string | null
+          lat: number
+          lng: number
+          moment_id: string
+          name: string
+          venue_id: string | null
+          venue_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          lat: number
+          lng: number
+          moment_id: string
+          name: string
+          venue_id?: string | null
+          venue_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          lat?: number
+          lng?: number
+          moment_id?: string
+          name?: string
+          venue_id?: string | null
+          venue_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "afterglow_venues_moment_id_fkey"
+            columns: ["moment_id"]
+            isOneToOne: true
+            referencedRelation: "afterglow_moments"
             referencedColumns: ["id"]
           },
         ]
@@ -3062,6 +3139,10 @@ export type Database = {
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
+      }
+      calculate_distance_meters: {
+        Args: { lat1: number; lng1: number; lat2: number; lng2: number }
+        Returns: number
       }
       calculate_floq_activity_score: {
         Args:
