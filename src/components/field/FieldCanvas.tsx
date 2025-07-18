@@ -15,6 +15,7 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const rippleContainer = useRef<PIXI.Container | null>(null);
+  const tickerRef = useRef<PIXI.Ticker | null>(null);
   const [ripples, setRipples] = useState<RippleEffect[]>([]);
 
   // Handle ripple creation from queue
@@ -79,9 +80,20 @@ export default function FieldCanvas({ people, tileIds, onRipple }: FieldCanvasPr
       });
     };
 
-    app.ticker.add(animate);
+    // v8: ticker is optional → fall back to PIXI.Ticker.shared
+    const ticker = (app as any).ticker ?? PIXI.Ticker.shared;
+    ticker.add(animate);
+    
+    // keep a ref so we can remove it in cleanup
+    tickerRef.current = ticker;
 
     return () => {
+      // Remove ticker callback first
+      if (tickerRef.current) {
+        tickerRef.current.remove(animate);
+        tickerRef.current = null;
+      }
+      
       if (appRef.current) {
         // only remove sprite children – skip ripple containers
         appRef.current.stage.children
