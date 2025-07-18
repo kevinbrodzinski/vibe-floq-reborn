@@ -9,7 +9,12 @@ export function useFloqMessages(floqId: string) {
         .rpc('fetch_floq_messages', { p_floq: floqId, p_before: pageParam ?? null })
         .then(({ data, error }) => {
           if (error) throw error
-          return data as any[]
+          return (data as Array<{
+            id: string;
+            body: string;
+            created_at: string;
+            sender_id: string;
+          }>) || []
         }),
     getNextPageParam: (last) => last?.length === 20 ? last.at(-1)?.created_at : undefined,
     staleTime: 60_000,

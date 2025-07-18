@@ -281,8 +281,8 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
                 label="Boost"
                 onClick={async () => {
                   try {
-                    const { data, error } = await supabase.rpc('boost_floq', { 
-                      p_floq_id: floqDetails.id 
+                    const { data, error } = await supabase.functions.invoke('boost-floq', { 
+                      body: { floq_id: floqDetails.id }
                     });
                     
                     if (error) throw error;

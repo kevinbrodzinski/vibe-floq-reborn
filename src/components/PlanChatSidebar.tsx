@@ -62,7 +62,7 @@ export const PlanChatSidebar = ({
             content,
             user_id,
             created_at,
-            profiles!inner(username, display_name, avatar_url)
+            profiles!plan_comments_user_id_fkey(username, display_name, avatar_url)
           `)
           .eq('plan_id', planId)
           .order('created_at', { ascending: true })
@@ -73,9 +73,9 @@ export const PlanChatSidebar = ({
         const formattedMessages = data?.map(msg => ({
           ...msg,
           user: {
-            username: msg.profiles.username,
-            display_name: msg.profiles.display_name,
-            avatar_url: msg.profiles.avatar_url
+            username: (msg.profiles as any)?.username || '',
+            display_name: (msg.profiles as any)?.display_name || '',
+            avatar_url: (msg.profiles as any)?.avatar_url || ''
           }
         })) || [];
 
@@ -118,7 +118,7 @@ export const PlanChatSidebar = ({
               content,
               user_id,
               created_at,
-              profiles!inner(username, display_name, avatar_url)
+              profiles!plan_comments_user_id_fkey(username, display_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single();
@@ -127,9 +127,9 @@ export const PlanChatSidebar = ({
             const newMessage = {
               ...data,
               user: {
-                username: data.profiles.username,
-                display_name: data.profiles.display_name,
-                avatar_url: data.profiles.avatar_url
+                username: (data.profiles as any)?.username || '',
+                display_name: (data.profiles as any)?.display_name || '',
+                avatar_url: (data.profiles as any)?.avatar_url || ''
               }
             };
 

@@ -9,7 +9,7 @@ export interface FloqSuggestion {
   distance_meters: number;
   participant_count: number;
   confidence_score: number;
-  reasoning: Record<string, any>;
+  reasoning: any; // Flexible type to handle Json variations
 }
 
 interface UseFloqSuggestionsOptions {

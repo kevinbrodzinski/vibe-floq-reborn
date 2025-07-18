@@ -3,7 +3,12 @@ import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
 export function FloqChatPanel({ floqId }: { floqId: string }) {
   const { data, fetchNextPage, hasNextPage } = useFloqMessages(floqId)
   const { mutate: send } = useSendFloqMessage(floqId)
-  const msgs = data?.pages.flat() ?? []
+  const msgs = (data?.pages.flat() ?? []) as Array<{
+    id: string;
+    body: string;
+    created_at: string;
+    sender_id: string;
+  }>
 
   return (
     <div className="flex h-full flex-col">
