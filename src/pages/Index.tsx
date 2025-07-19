@@ -25,8 +25,8 @@ const Index = () => {
     return (
       <EnhancedOnboardingScreen 
         onComplete={() => {
-          // The hook will automatically refetch and hide onboarding
-          window.location.reload();
+          // The completion step will handle the state update
+          // No need for page reload - React Query will handle the refetch
         }} 
       />
     );
