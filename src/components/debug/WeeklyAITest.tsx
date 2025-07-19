@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@supabase/auth-helpers-react';
 import { Loader2, TestTube, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { GenericStatusEnum, type GenericStatus } from '@/types/enums/genericStatus';
 
 interface TestResult {
   test: string;
-  status: 'pending' | 'success' | 'error';
+  status: GenericStatus;
   message: string;
   timestamp: Date;
 }
@@ -18,7 +19,7 @@ export default function WeeklyAITest() {
   const [tests, setTests] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const addTestResult = (test: string, status: 'pending' | 'success' | 'error', message: string) => {
+  const addTestResult = (test: string, status: GenericStatus, message: string) => {
     setTests(prev => [...prev, { test, status, message, timestamp: new Date() }]);
   };
 

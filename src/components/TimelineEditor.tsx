@@ -5,6 +5,7 @@ import { StopEditModal } from './StopEditModal';
 import { usePlanStops } from '@/hooks/usePlanStops';
 import { usePlanSync } from '@/hooks/usePlanSync';
 import { type PlanStop } from '@/types/plan';
+import { type VoteType } from '@/types/enums/voteType';
 
 interface TimelineEditorProps {
   planId: string;
@@ -105,7 +106,7 @@ export const TimelineEditor = ({
     });
   };
 
-  const handleVote = (stopId: string, voteType: 'yes' | 'no' | 'maybe') => {
+  const handleVote = (stopId: string, voteType: VoteType) => {
     // Vote logic handled by VotePanel internally
     console.log('Vote:', stopId, voteType);
   };

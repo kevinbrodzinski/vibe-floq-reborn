@@ -1,27 +1,28 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Heart, Star, Zap, Users, ThumbsUp } from 'lucide-react';
+import { ExecutionActionEnum, type ExecutionAction } from '@/types/enums/executionAction';
 
 interface ExecutionOverlayProps {
   isVisible: boolean;
-  action: 'vote' | 'rsvp' | 'check-in' | 'stop-action';
+  action: ExecutionAction;
   feedback?: string;
   onComplete?: () => void;
   className?: string;
 }
 
 const actionIcons = {
-  vote: ThumbsUp,
-  rsvp: Users,
-  'check-in': Check,
-  'stop-action': Zap
+  [ExecutionActionEnum.enum.vote]: ThumbsUp,
+  [ExecutionActionEnum.enum.rsvp]: Users,
+  [ExecutionActionEnum.enum['check-in']]: Check,
+  [ExecutionActionEnum.enum['stop-action']]: Zap,
 };
 
 const actionColors = {
-  vote: 'text-yellow-400',
-  rsvp: 'text-blue-400',
-  'check-in': 'text-green-400',
-  'stop-action': 'text-purple-400'
+  [ExecutionActionEnum.enum.vote]: 'text-yellow-400',
+  [ExecutionActionEnum.enum.rsvp]: 'text-blue-400', 
+  [ExecutionActionEnum.enum['check-in']]: 'text-green-400',
+  [ExecutionActionEnum.enum['stop-action']]: 'text-purple-400',
 };
 
 export const ExecutionOverlay = ({

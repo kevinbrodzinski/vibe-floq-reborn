@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle2, Clock, Users, MapPin, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+import { RSVPStatusEnum, type RSVPStatus } from '@/types/enums/rsvpStatus';
 
 interface Stop {
   id: string;
@@ -17,7 +18,7 @@ interface Stop {
 interface Participant {
   id: string;
   name: string;
-  rsvpStatus: 'attending' | 'maybe' | 'not_attending' | 'pending';
+  rsvpStatus: RSVPStatus;
 }
 
 interface SummaryReviewPanelProps {
@@ -43,8 +44,8 @@ export function SummaryReviewPanel({
 }: SummaryReviewPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const attendingCount = participants.filter(p => p.rsvpStatus === 'attending').length;
-  const maybeCount = participants.filter(p => p.rsvpStatus === 'maybe').length;
+  const attendingCount = participants.filter(p => p.rsvpStatus === RSVPStatusEnum.enum.attending).length;
+  const maybeCount = participants.filter(p => p.rsvpStatus === RSVPStatusEnum.enum.maybe).length;
   const confirmedStops = stops.filter(s => s.status === 'confirmed').length;
   const totalDuration = stops.length * 2; // Assume 2 hours per stop
   
