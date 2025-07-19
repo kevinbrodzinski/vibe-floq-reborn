@@ -18,6 +18,16 @@ export function AppContainer() {
   const onboardingVersion = 'v2'
   const hasCompleted = preferences?.onboarding_version === onboardingVersion
 
+  // Debug logging
+  console.log('[AppContainer Debug]', {
+    user: !!user,
+    preferences,
+    onboardingVersion,
+    hasCompleted,
+    onboardingComplete,
+    currentDbVersion: preferences?.onboarding_version
+  })
+
   useEffect(() => {
     if (hasCompleted) setOnboardingComplete(true)
   }, [hasCompleted])
