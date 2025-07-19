@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VibeRing } from '@/components/VibeRing';
 import { useSuggestedInvitees } from '@/hooks/useSuggestedInvitees';
-import { safeVibe } from '@/types/enums/vibes';
+import { safeVibe } from '@/utils/safeVibe';
 
 interface InviteOverlayProps {
   open: boolean;
@@ -294,7 +294,7 @@ export function InviteOverlay({
                           onChange={() => toggleUserSelection(suggestion.id)}
                         />
                         <VibeRing 
-                          vibe={suggestion.current_vibe || planVibe || 'social'} 
+                          vibe={safeVibe(suggestion.current_vibe || planVibe)}
                           className="w-10 h-10"
                         >
                           <Avatar className="w-8 h-8">

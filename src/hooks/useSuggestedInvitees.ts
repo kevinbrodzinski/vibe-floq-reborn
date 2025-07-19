@@ -59,8 +59,8 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
     const excludedIds = new Set([...floqMembers, ...planParticipants]);
     
     return friendSuggestions
-      .filter(friend => !excludedIds.has(friend.id))
-      .map(friend => ({
+      .filter((friend: FriendSuggestion) => !excludedIds.has(friend.id))
+      .map((friend: FriendSuggestion) => ({
         id: friend.id,
         username: friend.username,
         display_name: friend.display_name,
@@ -69,7 +69,7 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
         suggestion_reason: friend.shared_tags > 3 
           ? `${friend.shared_tags} shared interests`
           : 'Similar vibe preferences',
-        confidence_score: friend.shared_tags, // Use shared_tags as confidence score
+        confidence_score: 0.8, // Default confidence score
       }))
       .sort((a, b) => b.confidence_score - a.confidence_score)
       .slice(0, 8); // Limit to top 8 suggestions

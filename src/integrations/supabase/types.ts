@@ -1882,6 +1882,36 @@ export type Database = {
           },
         ]
       }
+      plan_share_links: {
+        Row: {
+          click_count: number
+          created_at: string
+          created_by: string | null
+          id: string
+          last_accessed_at: string | null
+          plan_id: string
+          slug: string
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          plan_id: string
+          slug: string
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          plan_id?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       plan_stops: {
         Row: {
           address: string | null
@@ -3530,6 +3560,10 @@ export type Database = {
       gc_vibes_now: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      gen_plan_share_slug: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       gen_share_slug: {
         Args: Record<PropertyKey, never>

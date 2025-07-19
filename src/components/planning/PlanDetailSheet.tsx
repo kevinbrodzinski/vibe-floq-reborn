@@ -9,7 +9,7 @@ import { VibeRing } from '@/components/VibeRing';
 import { usePlanShareLink } from '@/hooks/usePlanShareLink';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { safeVibe } from '@/types/enums/vibes';
+import { safeVibe } from '@/utils/safeVibe';
 
 interface PlanDetailSheetProps {
   open: boolean;
@@ -68,34 +68,10 @@ export function PlanDetailSheet({
           table: 'plan_participants',
           filter: `plan_id=eq.${plan.id}`,
         },
-        async (payload) => {
-          // Refresh participant list when changes occur
-          const { data } = await supabase
-            .from('plan_participants')
-            .select(`
-              user_id,
-              profiles:user_id (
-                id,
-                username,
-                display_name,
-                avatar_url
-              )
-            `)
-            .eq('plan_id', plan.id);
-
-          if (data) {
-            const updatedParticipants = data
-              .map(p => p.profiles)
-              .filter(Boolean)
-              .map((profile: any) => ({
-                id: profile.id,
-                username: profile.username || '',
-                display_name: profile.display_name,
-                avatar_url: profile.avatar_url,
-                current_vibe: 'social', // Default vibe, can be enhanced with real user vibe
-              }));
-
-            setParticipants(updatedParticipants);
+        async () => {
+          // Simplified approach: just refetch from existing participants
+          if (plan.participants) {
+            setParticipants(plan.participants);
           }
         }
       )
