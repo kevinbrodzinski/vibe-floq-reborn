@@ -147,16 +147,17 @@ export const AvatarInteractionLayer = ({
   }, [onInteraction, socialHaptics]);
 
   const handleContextAction = useCallback((action: string, personId: string) => {
-    const actionMap = {
+    const actionMap: Record<string, AvatarInteraction['type']> = {
       dm: 'dm',
       invite: 'invite', 
       vibe: 'vibe-check',
       connect: 'connect'
-    } as const;
+    };
 
-    if (actionMap[action as keyof typeof actionMap]) {
+    const actionType = actionMap[action];
+    if (actionType) {
       onInteraction?.({
-        type: actionMap[action as keyof typeof actionMap],
+        type: actionType,
         sourceId: personId
       });
       socialHaptics.gestureConfirm();

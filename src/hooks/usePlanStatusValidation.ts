@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
-
-type PlanStatus = 'draft' | 'finalized' | 'executing' | 'completed' | 'cancelled'
+import { type PlanStatus } from '@/types/enums/planStatus'
 
 interface StatusTransitionRule {
   from: PlanStatus
@@ -21,8 +20,15 @@ export function usePlanStatusValidation() {
   // Define the complete status transition matrix
   const transitionRules: StatusTransitionRule[] = [
     // Draft transitions
+    { from: 'draft', to: 'active', requiresConfirmation: false, requiresPermission: 'creator' },
     { from: 'draft', to: 'finalized', requiresConfirmation: false, requiresPermission: 'creator', validationRules: ['has_stops'] },
     { from: 'draft', to: 'cancelled', requiresConfirmation: true, requiresPermission: 'creator' },
+    
+    // Active transitions
+    { from: 'active', to: 'finalized', requiresConfirmation: false, requiresPermission: 'creator' },
+    { from: 'active', to: 'executing', requiresConfirmation: false, requiresPermission: 'creator' },
+    { from: 'active', to: 'closed', requiresConfirmation: true, requiresPermission: 'creator' },
+    { from: 'active', to: 'cancelled', requiresConfirmation: true, requiresPermission: 'creator' },
     
     // Finalized transitions
     { from: 'finalized', to: 'executing', requiresConfirmation: true, requiresPermission: 'creator' },
@@ -31,6 +37,9 @@ export function usePlanStatusValidation() {
     // Executing transitions
     { from: 'executing', to: 'completed', requiresConfirmation: true, requiresPermission: 'creator' },
     { from: 'executing', to: 'cancelled', requiresConfirmation: true, requiresPermission: 'creator' },
+    
+    // Closed transitions
+    { from: 'closed', to: 'active', requiresConfirmation: false, requiresPermission: 'creator' },
     
     // Completed/Cancelled are terminal states - no transitions allowed
   ]
@@ -125,6 +134,8 @@ export function usePlanStatusValidation() {
   const getStatusActionLabel = (status: PlanStatus): string => {
     const labels: Record<PlanStatus, string> = {
       draft: 'Save as Draft',
+      active: 'Activate Plan', 
+      closed: 'Close Plan',
       finalized: 'Finalize Plan',
       executing: 'Start Execution',
       completed: 'Complete Plan',
@@ -136,6 +147,8 @@ export function usePlanStatusValidation() {
   const getStatusDescription = (status: PlanStatus): string => {
     const descriptions: Record<PlanStatus, string> = {
       draft: 'Plan is being created and can be edited freely',
+      active: 'Plan is active and ready for participants',
+      closed: 'Plan is closed for new activity',
       finalized: 'Plan is locked and ready for execution',
       executing: 'Plan is currently being executed',
       completed: 'Plan has been successfully completed',
@@ -145,15 +158,15 @@ export function usePlanStatusValidation() {
   }
 
   const isTerminalStatus = (status: PlanStatus): boolean => {
-    return status === 'completed' || status === 'cancelled'
+    return status === 'completed' || status === 'cancelled' || status === 'closed'
   }
 
   const canEditPlan = (status: PlanStatus): boolean => {
-    return status === 'draft'
+    return status === 'draft' || status === 'active'
   }
 
   const canVoteOnStops = (status: PlanStatus): boolean => {
-    return status === 'finalized' || status === 'executing'
+    return status === 'active' || status === 'finalized' || status === 'executing'
   }
 
   return {
@@ -163,6 +176,7 @@ export function usePlanStatusValidation() {
     getStatusDescription,
     isTerminalStatus,
     canEditPlan,
+    canVoteOnPlan: canVoteOnStops,  // alias for backward compatibility
     canVoteOnStops
   }
 }

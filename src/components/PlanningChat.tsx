@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Smile, Image, MapPin } from "lucide-react";
+import { safeNotificationType, type NotificationType } from '@/types/enums/notification';
 
 interface ChatMessage {
   id: string;
@@ -8,7 +9,7 @@ interface ChatMessage {
   avatar: string;
   message: string;
   timestamp: number;
-  type: 'message' | 'system' | 'suggestion';
+  type: 'message' | NotificationType | 'suggestion';
   stopId?: string;
 }
 
@@ -26,7 +27,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
       avatar: "",
       message: "Planning session started! Use this chat to coordinate while building your night.",
       timestamp: Date.now() - 600000,
-      type: "system"
+      type: safeNotificationType("system")
     },
     {
       id: "msg-2", 
@@ -53,7 +54,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
       avatar: "",
       message: "Alex added EP & LP to the timeline",
       timestamp: Date.now() - 120000,
-      type: "system"
+      type: safeNotificationType("system")
     }
   ]);
 
@@ -144,7 +145,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
 
   const getMessageStyle = (message: ChatMessage) => {
     switch (message.type) {
-      case 'system':
+      case safeNotificationType('system'):
         return 'bg-muted/30 text-muted-foreground text-center text-xs py-2 px-3 rounded-full';
       case 'suggestion':
         return 'bg-accent/20 border border-accent/30 text-accent-foreground';
@@ -166,19 +167,19 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
         {messages.map((message) => (
-          <div key={message.id} className={`${message.type === 'system' ? 'flex justify-center' : 'flex'}`}>
+          <div key={message.id} className={`${message.type === safeNotificationType('system') ? 'flex justify-center' : 'flex'}`}>
             <div className={`max-w-xs lg:max-w-md ${getMessageStyle(message)} rounded-2xl p-3 ${
               message.userId === currentUserId ? 'rounded-br-sm' : 'rounded-bl-sm'
             }`}>
-              {message.type !== 'system' && message.userId !== currentUserId && (
+              {message.type !== safeNotificationType('system') && message.userId !== currentUserId && (
                 <div className="text-xs text-muted-foreground mb-1 font-medium">
                   {message.userName}
                 </div>
               )}
-              <div className={message.type === 'system' ? 'text-xs' : 'text-sm'}>
+              <div className={message.type === safeNotificationType('system') ? 'text-xs' : 'text-sm'}>
                 {message.message}
               </div>
-              {message.type !== 'system' && (
+              {message.type !== safeNotificationType('system') && (
                 <div className="text-xs opacity-70 mt-1">
                   {formatTime(message.timestamp)}
                 </div>

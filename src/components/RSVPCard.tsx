@@ -5,8 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
-
-type RSVPStatus = 'attending' | 'maybe' | 'not_attending' | 'pending';
+import { safeRSVPStatus, type RSVPStatus } from '@/types/enums/rsvpStatus';
 
 interface RSVPCardProps {
   planId: string;
@@ -24,7 +23,7 @@ export const RSVPCard = ({
   planId,
   planTitle,
   planDate,
-  currentUserRSVP = 'pending',
+  currentUserRSVP = safeRSVPStatus('pending'),
   attendeeCount = 0,
   maybeCount = 0,
   onRSVPChange,
@@ -46,10 +45,10 @@ export const RSVPCard = ({
       onRSVPChange?.(status);
       
       const statusText = {
-        attending: "attending",
-        maybe: "maybe attending",
-        not_attending: "not attending",
-        pending: "pending"
+        [safeRSVPStatus('attending')]: "attending",
+        [safeRSVPStatus('maybe')]: "maybe attending", 
+        [safeRSVPStatus('not_attending')]: "not attending",
+        [safeRSVPStatus('pending')]: "pending"
       }[status];
       
       toast({
@@ -70,18 +69,22 @@ export const RSVPCard = ({
 
   const getStatusColor = (status: RSVPStatus) => {
     switch (status) {
-      case 'attending': return 'text-green-400';
-      case 'maybe': return 'text-yellow-400';
-      case 'not_attending': return 'text-red-400';
+      case safeRSVPStatus('attending'): return 'text-green-400';
+      case safeRSVPStatus('maybe'): return 'text-yellow-400'; 
+      case safeRSVPStatus('not_attending'): return 'text-red-400';
       default: return 'text-muted-foreground';
     }
   };
 
   const getStatusIcon = (status: RSVPStatus) => {
+    const attending = safeRSVPStatus('attending');
+    const maybe = safeRSVPStatus('maybe');
+    const notAttending = safeRSVPStatus('not_attending');
+    
     switch (status) {
-      case 'attending': return <Check className="w-4 h-4" />;
-      case 'maybe': return <Clock className="w-4 h-4" />;
-      case 'not_attending': return <X className="w-4 h-4" />;
+      case attending: return <Check className="w-4 h-4" />;
+      case maybe: return <Clock className="w-4 h-4" />;
+      case notAttending: return <X className="w-4 h-4" />;
       default: return <User className="w-4 h-4" />;
     }
   };
@@ -106,33 +109,33 @@ export const RSVPCard = ({
         {/* RSVP Buttons */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <Button
-            variant={currentUserRSVP === 'attending' ? 'default' : 'outline'}
+            variant={currentUserRSVP === safeRSVPStatus('attending') ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleRSVP('attending')}
+            onClick={() => handleRSVP(safeRSVPStatus('attending'))}
             disabled={isUpdating}
-            className={currentUserRSVP === 'attending' ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50 hover:border-green-300'}
+            className={currentUserRSVP === safeRSVPStatus('attending') ? 'bg-green-600 hover:bg-green-700' : 'hover:bg-green-50 hover:border-green-300'}
           >
             <Check className="w-3 h-3 mr-1" />
             Going
           </Button>
           
           <Button
-            variant={currentUserRSVP === 'maybe' ? 'default' : 'outline'}
+            variant={currentUserRSVP === safeRSVPStatus('maybe') ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleRSVP('maybe')}
+            onClick={() => handleRSVP(safeRSVPStatus('maybe'))}
             disabled={isUpdating}
-            className={currentUserRSVP === 'maybe' ? 'bg-yellow-600 hover:bg-yellow-700' : 'hover:bg-yellow-50 hover:border-yellow-300'}
+            className={currentUserRSVP === safeRSVPStatus('maybe') ? 'bg-yellow-600 hover:bg-yellow-700' : 'hover:bg-yellow-50 hover:border-yellow-300'}
           >
             <Clock className="w-3 h-3 mr-1" />
             Maybe
           </Button>
           
           <Button
-            variant={currentUserRSVP === 'not_attending' ? 'default' : 'outline'}
+            variant={currentUserRSVP === safeRSVPStatus('not_attending') ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleRSVP('not_attending')}
+            onClick={() => handleRSVP(safeRSVPStatus('not_attending'))}
             disabled={isUpdating}
-            className={currentUserRSVP === 'not_attending' ? 'bg-red-600 hover:bg-red-700' : 'hover:bg-red-50 hover:border-red-300'}
+            className={currentUserRSVP === safeRSVPStatus('not_attending') ? 'bg-red-600 hover:bg-red-700' : 'hover:bg-red-50 hover:border-red-300'}
           >
             <X className="w-3 h-3 mr-1" />
             Can't Go
