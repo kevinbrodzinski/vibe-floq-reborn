@@ -9,6 +9,7 @@ import { VibeRing } from '@/components/VibeRing';
 import { usePlanShareLink } from '@/hooks/usePlanShareLink';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { safeVibe } from '@/types/enums/vibes';
 
 interface PlanDetailSheetProps {
   open: boolean;
@@ -86,7 +87,7 @@ export function PlanDetailSheet({
             const updatedParticipants = data
               .map(p => p.profiles)
               .filter(Boolean)
-              .map(profile => ({
+              .map((profile: any) => ({
                 id: profile.id,
                 username: profile.username || '',
                 display_name: profile.display_name,
@@ -266,7 +267,7 @@ export function PlanDetailSheet({
                 participants.map((participant) => (
                   <div key={participant.id} className="flex items-center gap-3">
                     <VibeRing 
-                      vibe={participant.current_vibe || plan.vibe_tag || 'social'} 
+                      vibe={safeVibe(participant.current_vibe || plan.vibe_tag)} 
                       pulse={participant.id === plan.creator_id}
                       className="w-10 h-10"
                     >
