@@ -3,7 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, MapPin, Users, Sparkles, Heart, User } from 'lucide-react';
 import { VibeSelectionStep } from './VibeSelectionStep';
 import { ProfileSetupStep } from './ProfileSetupStep';
+import { AvatarSelectionStep } from './AvatarSelectionStep';
 import { OnboardingProgress } from './OnboardingProgress';
+import { OnboardingCelebration } from './OnboardingCelebration';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useUpdateUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/providers/AuthProvider';
@@ -43,6 +45,12 @@ const ONBOARDING_STEPS = [
     description: 'Set up your profile'
   },
   { 
+    id: 'avatar', 
+    title: 'Photo', 
+    icon: User,
+    description: 'Add your photo'
+  },
+  { 
     id: 'features', 
     title: 'Features', 
     icon: MapPin,
@@ -80,6 +88,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   
@@ -106,6 +115,11 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
 
   const handleProfileSubmitted = async (data: ProfileData) => {
     setProfileData(data);
+    handleNext();
+  };
+
+  const handleAvatarSelected = (url: string | null) => {
+    setAvatarUrl(url);
     handleNext();
   };
 
@@ -152,7 +166,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
           display_name: profileData.display_name,
           bio: profileData.bio || null,
           interests: profileData.interests || [],
-          avatar_url: defaultAvatar,
+           avatar_url: avatarUrl || defaultAvatar,
         })
         .eq('id', user.id);
 
@@ -246,6 +260,15 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
             )}
 
             {currentStep === 3 && (
+              <AvatarSelectionStep 
+                onNext={handleAvatarSelected}
+                onBack={handleBack}
+                currentAvatarUrl={avatarUrl}
+                displayName={profileData?.display_name}
+              />
+            )}
+
+            {currentStep === 4 && (
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-2xl font-bold mb-2">Discover What You Can Do</h2>
@@ -282,32 +305,14 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
               </div>
             )}
 
-            {currentStep === 4 && (
-              <div className="text-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">You're Ready to Explore!</h2>
-                  <p className="text-muted-foreground">
-                    Your profile is set up with your {selectedVibe} vibe. 
-                    Start discovering floqs and connecting with your people.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="flex-1">
-                    Back
-                  </Button>
-                  <Button 
-                    onClick={handleComplete}
-                    disabled={isCompleting}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    {isCompleting ? "Setting up..." : "Enter Floq"}
-                  </Button>
-                </div>
-              </div>
+            {currentStep === 5 && (
+              <OnboardingCelebration
+                onComplete={handleComplete}
+                onBack={handleBack}
+                userName={profileData?.display_name}
+                selectedVibe={selectedVibe || undefined}
+                isCompleting={isCompleting}
+              />
             )}
           </CardContent>
         </Card>
