@@ -51,7 +51,7 @@ export function PlanDetailSheet({
 }: PlanDetailSheetProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'stops' | 'participants'>('overview');
   const [participants, setParticipants] = useState(plan?.participants || []);
-  const { trigger: createShareLink, isMutating: creatingLink } = usePlanShareLink(plan?.id || '');
+  const { data: shareLink, isLoading: loadingShareLink } = usePlanShareLink(plan?.id);
   const { toast } = useToast();
 
   // Real-time participant updates
@@ -83,11 +83,10 @@ export function PlanDetailSheet({
   }, [plan?.id, open]);
 
   const handleShare = async () => {
-    if (!plan?.id) return;
+    if (!plan?.id || !shareLink?.url) return;
 
     try {
-      const result = await createShareLink();
-      await navigator.clipboard.writeText(result.url);
+      await navigator.clipboard.writeText(shareLink.url);
       
       toast({
         title: "Link copied!",
@@ -95,8 +94,8 @@ export function PlanDetailSheet({
       });
     } catch (error) {
       toast({
-        title: "Error creating share link",
-        description: "Failed to create shareable link. Please try again.",
+        title: "Error copying link",
+        description: "Failed to copy link to clipboard. Please try again.",
         variant: "destructive",
       });
     }
@@ -195,9 +194,9 @@ export function PlanDetailSheet({
                     variant="outline" 
                     size="icon"
                     onClick={handleShare}
-                    disabled={creatingLink}
+                    disabled={loadingShareLink || !shareLink}
                   >
-                    {creatingLink ? (
+                    {loadingShareLink ? (
                       <ExternalLink className="w-4 h-4 animate-spin" />
                     ) : (
                       <Share2 className="w-4 h-4" />

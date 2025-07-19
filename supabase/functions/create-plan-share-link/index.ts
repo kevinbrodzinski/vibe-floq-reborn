@@ -82,7 +82,7 @@ serve(async (req) => {
       )
     }
 
-    const baseUrl = Deno.env.get('SITE_URL') || 'https://reztyrrafsmlvvlqvsqt.lovable.app'
+    const baseUrl = 'https://11986cc9-7473-4e33-83dd-acd244d83d3e.lovableproject.com'
     const shareUrl = `${baseUrl}/plan/${slug}`
 
     return new Response(

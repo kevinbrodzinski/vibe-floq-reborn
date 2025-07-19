@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 interface SharePlanButtonProps {
   planId: string;
   variant?: 'default' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'lg';
 }
 
 export function SharePlanButton({ planId, variant = 'outline', size = 'sm' }: SharePlanButtonProps) {
