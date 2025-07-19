@@ -1,5 +1,6 @@
 import { Vote, Users, TrendingUp, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { safeVoteType } from '@/types/enums/voteType';
 
 interface VoteData {
   love: number;
@@ -65,7 +66,7 @@ export const VoteSummaryBar = ({
       {/* Vote breakdown */}
       <div className="space-y-2 mb-3">
         {voteConfig.map((config) => {
-          const count = votes[config.type as keyof VoteData];
+          const count = votes[safeVoteType(config.type) as keyof VoteData];
           const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
           
           return (

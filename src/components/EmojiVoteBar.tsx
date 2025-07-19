@@ -40,7 +40,7 @@ export const EmojiVoteBar = ({
     submitVote({
       plan_id: planId,
       stop_id: stopId,
-      vote_type: voteType as any,
+      vote_type: voteType as 'up' | 'down', // Keep existing functionality - EmojiVoteBar uses different vote types
       emoji_reaction: voteOptions.find(v => v.type === voteType)?.emoji
     }, {
       onSuccess: () => {

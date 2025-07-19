@@ -1,10 +1,21 @@
 import { Play, Pencil, CheckCircle, Archive, Flag, Clock } from 'lucide-react'
+import { safePlanStatus } from '@/types/enums/planStatus';
 
 export const planStatusConfig = {
   draft: {
     label: 'Draft',
     className: 'bg-muted/50 text-muted-foreground border-muted',
     icon: Pencil
+  },
+  active: {
+    label: 'Active',
+    className: 'bg-primary/10 text-primary border-primary/30',
+    icon: Play
+  },
+  closed: {
+    label: 'Closed',
+    className: 'bg-muted text-muted-foreground border-muted',
+    icon: Archive
   },
   finalized: {
     label: 'Finalized',
@@ -28,6 +39,7 @@ export const planStatusConfig = {
   }
 } as const;
 
+// Re-export PlanStatus type for backward compatibility 
 export type PlanStatus = keyof typeof planStatusConfig;
 
 // Default configuration for unknown statuses
@@ -39,7 +51,7 @@ export const defaultStatusConfig = {
 
 // Utility function for consistent status badge props
 export function getStatusBadgeProps(status: string) {
-  const normalizedStatus = status as PlanStatus;
+  const normalizedStatus = safePlanStatus(status);
   
   if (normalizedStatus in planStatusConfig) {
     return planStatusConfig[normalizedStatus];
@@ -53,5 +65,5 @@ export function getStatusBadgeProps(status: string) {
 
 // Centralized utility for safe status handling
 export function getSafeStatus(status: string | undefined): PlanStatus {
-  return (status as PlanStatus) ?? 'draft';
+  return status as PlanStatus || 'draft';
 }

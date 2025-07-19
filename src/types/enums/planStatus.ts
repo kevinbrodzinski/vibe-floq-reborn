@@ -3,7 +3,7 @@ import { z as zPlan } from 'zod';
 export const PlanStatusEnum = zPlan.enum([
   'draft',
   'active',
-  'closed',
+  'closed', 
   'cancelled',
   'finalized',
   'executing',
