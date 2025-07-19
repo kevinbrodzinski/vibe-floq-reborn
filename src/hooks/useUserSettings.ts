@@ -213,8 +213,11 @@ export const useUserSettings = () => {
     if (!user?.id) return;
     
     try {
-      const { error } = await supabase.functions.invoke('update-user-settings', {
-        body: { preferred_welcome_template: template },
+      const { error } = await supabase.functions.invoke('update-settings', {
+        body: { 
+          target: 'user',
+          updates: { preferred_welcome_template: template }
+        },
       });
 
       if (error) throw error;
