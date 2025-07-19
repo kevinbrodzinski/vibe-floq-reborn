@@ -10,3 +10,8 @@ export const PlanStatusEnum = zPlan.enum([
   'completed'
 ]);
 export type PlanStatus = zPlan.infer<typeof PlanStatusEnum>;
+
+export const safePlanStatus = (input: unknown): PlanStatus => {
+  const parsed = PlanStatusEnum.safeParse(input);
+  return parsed.success ? parsed.data : 'draft';
+};
