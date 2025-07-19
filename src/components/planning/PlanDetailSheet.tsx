@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Clock, MapPin, Users, Settings, Share2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Settings, Share2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { VibeRing } from '@/components/VibeRing';
+import { usePlanShareLink } from '@/hooks/usePlanShareLink';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PlanDetailSheetProps {
   open: boolean;
@@ -23,6 +27,7 @@ interface PlanDetailSheetProps {
       username: string;
       display_name?: string;
       avatar_url?: string;
+      current_vibe?: string;
     }>;
     stops?: Array<{
       id: string;
@@ -44,6 +49,81 @@ export function PlanDetailSheet({
   onEdit 
 }: PlanDetailSheetProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'stops' | 'participants'>('overview');
+  const [participants, setParticipants] = useState(plan?.participants || []);
+  const { trigger: createShareLink, isMutating: creatingLink } = usePlanShareLink(plan?.id || '');
+  const { toast } = useToast();
+
+  // Real-time participant updates
+  useEffect(() => {
+    if (!plan?.id || !open) return;
+
+    const channel = supabase
+      .channel(`plan-participants-${plan.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'plan_participants',
+          filter: `plan_id=eq.${plan.id}`,
+        },
+        async (payload) => {
+          // Refresh participant list when changes occur
+          const { data } = await supabase
+            .from('plan_participants')
+            .select(`
+              user_id,
+              profiles:user_id (
+                id,
+                username,
+                display_name,
+                avatar_url
+              )
+            `)
+            .eq('plan_id', plan.id);
+
+          if (data) {
+            const updatedParticipants = data
+              .map(p => p.profiles)
+              .filter(Boolean)
+              .map(profile => ({
+                id: profile.id,
+                username: profile.username || '',
+                display_name: profile.display_name,
+                avatar_url: profile.avatar_url,
+                current_vibe: 'social', // Default vibe, can be enhanced with real user vibe
+              }));
+
+            setParticipants(updatedParticipants);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [plan?.id, open]);
+
+  const handleShare = async () => {
+    if (!plan?.id) return;
+
+    try {
+      const result = await createShareLink();
+      await navigator.clipboard.writeText(result.url);
+      
+      toast({
+        title: "Link copied!",
+        description: "Plan invitation link copied to clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error creating share link",
+        description: "Failed to create shareable link. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!plan) return null;
 
@@ -134,8 +214,17 @@ export function PlanDetailSheet({
                     <Settings className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
-                  <Button variant="outline" size="icon">
-                    <Share2 className="w-4 h-4" />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={handleShare}
+                    disabled={creatingLink}
+                  >
+                    {creatingLink ? (
+                      <ExternalLink className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Share2 className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
@@ -173,24 +262,37 @@ export function PlanDetailSheet({
 
           {activeTab === 'participants' && (
             <div className="space-y-3">
-              {plan.participants && plan.participants.length > 0 ? (
-                plan.participants.map((participant) => (
+              {participants && participants.length > 0 ? (
+                participants.map((participant) => (
                   <div key={participant.id} className="flex items-center gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={participant.avatar_url} />
-                      <AvatarFallback>
-                        {participant.display_name?.[0] || participant.username[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <VibeRing 
+                      vibe={participant.current_vibe || plan.vibe_tag || 'social'} 
+                      pulse={participant.id === plan.creator_id}
+                      className="w-10 h-10"
+                    >
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={participant.avatar_url} />
+                        <AvatarFallback>
+                          {participant.display_name?.[0] || participant.username[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </VibeRing>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">
                         {participant.display_name || participant.username}
                       </p>
-                      {participant.display_name && (
-                        <p className="text-xs text-muted-foreground">
-                          @{participant.username}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {participant.display_name && (
+                          <p className="text-xs text-muted-foreground">
+                            @{participant.username}
+                          </p>
+                        )}
+                        {participant.current_vibe && (
+                          <Badge variant="outline" className="text-xs">
+                            {participant.current_vibe}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     {participant.id === plan.creator_id && (
                       <Badge variant="outline" className="text-xs">

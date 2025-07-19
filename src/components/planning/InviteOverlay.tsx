@@ -8,16 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { UserPlus, Mail, Users, X, Send, Search } from 'lucide-react';
+import { UserPlus, Mail, Users, X, Send, Search, Star, Sparkles } from 'lucide-react';
 import { callSendInvitations } from '@/lib/api/callSendInvitations';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { VibeRing } from '@/components/VibeRing';
+import { useSuggestedInvitees } from '@/hooks/useSuggestedInvitees';
 
 interface InviteOverlayProps {
   open: boolean;
   onClose: () => void;
   planId?: string;
   floqId?: string;
+  planVibe?: string;
+  planLocation?: { lat: number; lng: number };
 }
 
 interface FloqMember {
@@ -34,8 +38,15 @@ interface Friend {
   avatar_url?: string;
 }
 
-export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayProps) {
-  const [activeTab, setActiveTab] = useState<'floq' | 'friends' | 'email'>('floq');
+export function InviteOverlay({ 
+  open, 
+  onClose, 
+  planId, 
+  floqId, 
+  planVibe, 
+  planLocation 
+}: InviteOverlayProps) {
+  const [activeTab, setActiveTab] = useState<'suggested' | 'floq' | 'friends' | 'email'>('suggested');
   const [floqMembers, setFloqMembers] = useState<FloqMember[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
@@ -44,6 +55,14 @@ export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayPr
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // Hook up smart friend suggestions
+  const { suggestions, loading: suggestionsLoading } = useSuggestedInvitees({
+    planId,
+    floqId,
+    targetVibe: planVibe,
+    planLocation,
+  });
 
   useEffect(() => {
     if (open) {
@@ -232,7 +251,11 @@ export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayPr
 
         <CardContent className="space-y-4">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="suggested" className="text-xs">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Smart
+              </TabsTrigger>
               <TabsTrigger value="floq" className="text-xs">
                 <Users className="w-3 h-3 mr-1" />
                 Floq
@@ -246,6 +269,92 @@ export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayPr
                 Email
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="suggested" className="space-y-3">
+              {suggestionsLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                  <p className="text-sm">Finding perfect matches...</p>
+                </div>
+              ) : suggestions.length > 0 ? (
+                <>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Smart suggestions based on shared interests and vibe compatibility
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {suggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer border border-primary/20"
+                        onClick={() => toggleUserSelection(suggestion.id)}
+                      >
+                        <Checkbox
+                          checked={selectedUsers.includes(suggestion.id)}
+                          onChange={() => toggleUserSelection(suggestion.id)}
+                        />
+                        <VibeRing 
+                          vibe={suggestion.current_vibe || planVibe || 'social'} 
+                          className="w-10 h-10"
+                        >
+                          <Avatar className="w-8 h-8">
+                            <AvatarImage src={suggestion.avatar_url} />
+                            <AvatarFallback>
+                              {suggestion.display_name?.[0] || suggestion.username[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </VibeRing>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {suggestion.display_name || suggestion.username}
+                            </p>
+                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {suggestion.suggestion_reason}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {selectedUsers.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-2">
+                      {selectedUsers.map((userId) => {
+                        const user = suggestions.find(s => s.id === userId) || 
+                                    floqMembers.find(m => m.id === userId) ||
+                                    friends.find(f => f.id === userId);
+                        if (!user) return null;
+                        return (
+                          <Badge key={userId} variant="secondary" className="text-xs">
+                            {user.display_name || user.username}
+                            <X
+                              className="w-3 h-3 ml-1 cursor-pointer"
+                              onClick={() => toggleUserSelection(userId)}
+                            />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <Button
+                    onClick={sendInternalInvites}
+                    disabled={selectedUsers.length === 0 || loading}
+                    className="w-full"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {loading ? 'Sending...' : `Invite ${selectedUsers.length} Smart Picks`}
+                  </Button>
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No smart suggestions available</p>
+                  <p className="text-xs">Try the other tabs to invite manually</p>
+                </div>
+              )}
+            </TabsContent>
 
             <TabsContent value="floq" className="space-y-3">
               <div className="relative">
@@ -269,12 +378,14 @@ export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayPr
                       checked={selectedUsers.includes(member.id)}
                       onChange={() => toggleUserSelection(member.id)}
                     />
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={member.avatar_url} />
-                      <AvatarFallback>
-                        {member.display_name?.[0] || member.username[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <VibeRing vibe={planVibe || 'social'} className="w-10 h-10">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={member.avatar_url} />
+                        <AvatarFallback>
+                          {member.display_name?.[0] || member.username[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </VibeRing>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">
                         {member.display_name || member.username}
@@ -339,12 +450,14 @@ export function InviteOverlay({ open, onClose, planId, floqId }: InviteOverlayPr
                       checked={selectedUsers.includes(friend.id)}
                       onChange={() => toggleUserSelection(friend.id)}
                     />
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={friend.avatar_url} />
-                      <AvatarFallback>
-                        {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <VibeRing vibe={planVibe || 'social'} className="w-10 h-10">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={friend.avatar_url} />
+                        <AvatarFallback>
+                          {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </VibeRing>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">
                         {friend.display_name || friend.username}
