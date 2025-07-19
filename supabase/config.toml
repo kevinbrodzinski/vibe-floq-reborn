@@ -63,3 +63,9 @@ verify_jwt = true
 
 [functions.get-venue-intelligence]
 verify_jwt = true
+
+[functions.send-invitations]
+verify_jwt = true
+
+[functions.floq-actions]
+verify_jwt = true

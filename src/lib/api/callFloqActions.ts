@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client'
 
 type FloqAction = 'boost' | 'mention'

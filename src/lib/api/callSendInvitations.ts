@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client'
 
 type SendInviteMode = 'internal' | 'external'
