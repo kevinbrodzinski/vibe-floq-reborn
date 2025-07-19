@@ -40,12 +40,13 @@ export function useInviteToFloq(): InviteToFloqReturn {
       if (!session?.access_token) throw new Error("Not authenticated");
       /* ------------------------------------------------------------------ */
 
-      const { data, error } = await supabase.functions.invoke("invite-to-floq", {
+      const { data, error } = await supabase.functions.invoke("send-invitations", {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
           Prefer: "return=minimal",
         },
         body: {
+          type: 'internal',
           floq_id: floqId,
           invitee_ids: inviteeIds,
         },

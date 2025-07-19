@@ -22,8 +22,8 @@ export function useInviteFriends() {
 
   return useMutation<InviteFriendsResponse, Error, InviteExternalFriendsParams>({
     mutationFn: async (params: InviteExternalFriendsParams) => {
-      const { data, error } = await supabase.functions.invoke('invite-external-friends', {
-        body: params
+      const { data, error } = await supabase.functions.invoke('send-invitations', {
+        body: { type: 'external', ...params }
       })
       
       if (error) {

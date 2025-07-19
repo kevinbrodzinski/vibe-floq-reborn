@@ -4,6 +4,24 @@ This document tracks the merged edge functions in Floq's Supabase/Deno backend f
 
 ---
 
+## ✅ Merged Function: `generate-intelligence.ts`
+
+**File:** `supabase/functions/generate-intelligence/index.ts`
+
+**Replaces:**
+- `generate-afterglow-summary`
+- `generate-daily-afterglow`
+- `generate-plan-summary`
+- `generate-weekly-ai-suggestion`
+
+**Modes Supported:**
+- `afterglow-summary` - Generates AI summary for afterglow records
+- `daily-afterglow` - Generates daily afterglow data
+- `plan-summary` - Generates plan summaries
+- `weekly-ai` - Generates weekly AI suggestions
+
+---
+
 ## ✅ Merged Function: `get-venue-intelligence.ts`
 
 **File:** `supabase/functions/get-venue-intelligence/index.ts`
@@ -17,6 +35,34 @@ This document tracks the merged edge functions in Floq's Supabase/Deno backend f
 - `people` - Returns list of people currently at venue
 - `posts` - Returns recent venue posts/feed
 - `energy` - Returns venue energy metrics and social texture
+
+---
+
+## ✅ Merged Function: `send-invitations.ts`
+
+**File:** `supabase/functions/send-invitations/index.ts`
+
+**Replaces:**
+- `invite-to-floq`
+- `invite-external-friends`
+
+**Types Supported:**
+- `internal` - Send invitations to existing users for floqs
+- `external` - Send email invitations to external friends for plans
+
+---
+
+## ✅ Merged Function: `floq-actions.ts`
+
+**File:** `supabase/functions/floq-actions/index.ts`
+
+**Replaces:**
+- `floq-boost`
+- `floq-mention-handler`
+
+**Actions Supported:**
+- `boost` - Boost a floq with vibe or activity type
+- `mention` - Handle @floq mentions in messages
 
 ---
 
@@ -89,4 +135,4 @@ Check logs in Supabase → Edge Function Invocations for specific function behav
 ---
 
 **Last Updated:** January 2025  
-**Consolidated Functions:** 6 → 2 (67% reduction)
+**Consolidated Functions:** 15 → 5 (67% reduction)

@@ -163,8 +163,9 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
   const sendInvitation = async (userId: string) => {
     setInvitingUserId(userId);
     try {
-      const { error } = await supabase.functions.invoke('invite-to-floq', {
+      const { error } = await supabase.functions.invoke('send-invitations', {
         body: {
+          type: 'internal',
           floq_id: floqDetails.id,  // Use snake_case as expected by edge function
           invitee_ids: [userId]     // Use snake_case plural as expected
         }
