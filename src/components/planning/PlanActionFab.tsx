@@ -3,14 +3,41 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { UserPlus, Info, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PlanDetailSheet } from './PlanDetailSheet';
+import { InviteOverlay } from './InviteOverlay';
+import { usePlanOverlayController } from '@/hooks/usePlanOverlayController';
 
 interface PlanActionFabProps {
-  onInvite?: () => void;
-  onShowDetails?: () => void;
+  plan?: {
+    id: string;
+    title: string;
+    description?: string;
+    planned_at: string;
+    status: string;
+    location?: any;
+    vibe_tag?: string;
+    creator_id: string;
+    floq_id: string;
+    participants?: Array<{
+      id: string;
+      username: string;
+      display_name?: string;
+      avatar_url?: string;
+    }>;
+    stops?: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      location: any;
+      stop_order: number;
+    }>;
+  };
+  onEdit?: () => void;
 }
 
-export function PlanActionFab({ onInvite, onShowDetails }: PlanActionFabProps) {
+export function PlanActionFab({ plan, onEdit }: PlanActionFabProps) {
   const [expanded, setExpanded] = useState(false);
+  const overlayController = usePlanOverlayController();
 
   const toggleExpanded = () => setExpanded(!expanded);
 
@@ -29,7 +56,7 @@ export function PlanActionFab({ onInvite, onShowDetails }: PlanActionFabProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onInvite}
+                  onClick={overlayController.openInviteOverlay}
                   className="justify-start gap-2 h-10"
                 >
                   <UserPlus className="w-4 h-4" />
@@ -38,7 +65,7 @@ export function PlanActionFab({ onInvite, onShowDetails }: PlanActionFabProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={onShowDetails}
+                  onClick={overlayController.openPlanDetail}
                   className="justify-start gap-2 h-10"
                 >
                   <Info className="w-4 h-4" />
@@ -61,6 +88,22 @@ export function PlanActionFab({ onInvite, onShowDetails }: PlanActionFabProps) {
           <Plus className="w-6 h-6" />
         )}
       </Button>
+
+      {/* Overlays */}
+      <PlanDetailSheet
+        open={overlayController.showDetails}
+        onOpenChange={overlayController.closeDetails}
+        plan={plan}
+        onInvite={overlayController.openInviteOverlay}
+        onEdit={onEdit}
+      />
+
+      <InviteOverlay
+        open={overlayController.showInvite}
+        onClose={overlayController.closeInvite}
+        planId={plan?.id}
+        floqId={plan?.floq_id}
+      />
     </div>
   );
 }

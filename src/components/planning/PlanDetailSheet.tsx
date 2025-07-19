@@ -1,0 +1,214 @@
+import { useState } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar, Clock, MapPin, Users, Settings, Share2 } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface PlanDetailSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  plan?: {
+    id: string;
+    title: string;
+    description?: string;
+    planned_at: string;
+    status: string;
+    location?: any;
+    vibe_tag?: string;
+    creator_id: string;
+    participants?: Array<{
+      id: string;
+      username: string;
+      display_name?: string;
+      avatar_url?: string;
+    }>;
+    stops?: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      location: any;
+      stop_order: number;
+    }>;
+  };
+  onInvite?: () => void;
+  onEdit?: () => void;
+}
+
+export function PlanDetailSheet({ 
+  open, 
+  onOpenChange, 
+  plan, 
+  onInvite,
+  onEdit 
+}: PlanDetailSheetProps) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'stops' | 'participants'>('overview');
+
+  if (!plan) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            {plan.title}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="flex gap-1 mb-6 mt-4">
+          <Button
+            variant={activeTab === 'overview' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('overview')}
+            className="flex-1"
+          >
+            Overview
+          </Button>
+          <Button
+            variant={activeTab === 'stops' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('stops')}
+            className="flex-1"
+          >
+            Stops
+          </Button>
+          <Button
+            variant={activeTab === 'participants' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveTab('participants')}
+            className="flex-1"
+          >
+            People
+          </Button>
+        </div>
+
+        <div className="space-y-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-4">
+              {plan.description && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2">Description</h3>
+                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {format(new Date(plan.planned_at), 'PPP p')}
+                  </span>
+                </div>
+
+                {plan.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">Starting location set</span>
+                  </div>
+                )}
+
+                {plan.vibe_tag && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{plan.vibe_tag}</Badge>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {plan.participants?.length || 0} participants
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 space-y-2">
+                <Button onClick={onInvite} className="w-full" variant="outline">
+                  <Users className="w-4 h-4 mr-2" />
+                  Invite Friends
+                </Button>
+                
+                <div className="flex gap-2">
+                  <Button onClick={onEdit} variant="outline" className="flex-1">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'stops' && (
+            <div className="space-y-3">
+              {plan.stops && plan.stops.length > 0 ? (
+                plan.stops
+                  .sort((a, b) => a.stop_order - b.stop_order)
+                  .map((stop, index) => (
+                    <div key={stop.id} className="flex gap-3 p-3 rounded-lg border">
+                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm">{stop.title}</h4>
+                        {stop.description && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {stop.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No stops planned yet</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'participants' && (
+            <div className="space-y-3">
+              {plan.participants && plan.participants.length > 0 ? (
+                plan.participants.map((participant) => (
+                  <div key={participant.id} className="flex items-center gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={participant.avatar_url} />
+                      <AvatarFallback>
+                        {participant.display_name?.[0] || participant.username[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">
+                        {participant.display_name || participant.username}
+                      </p>
+                      {participant.display_name && (
+                        <p className="text-xs text-muted-foreground">
+                          @{participant.username}
+                        </p>
+                      )}
+                    </div>
+                    {participant.id === plan.creator_id && (
+                      <Badge variant="outline" className="text-xs">
+                        Host
+                      </Badge>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No participants yet</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
