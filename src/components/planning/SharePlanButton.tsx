@@ -7,17 +7,16 @@ import { toast } from 'sonner';
 interface SharePlanButtonProps {
   planId: string;
   variant?: 'default' | 'outline';
-  size?: 'sm' | 'lg';
+  size?: 'sm' | 'lg' | 'default' | 'icon';
 }
 
-export function SharePlanButton({ planId, variant = 'outline', size = 'sm' }: SharePlanButtonProps) {
-  const { data: shareLink, isLoading } = usePlanShareLink(planId);
+export function SharePlanButton({ planId, variant = 'outline', size = 'default' }: SharePlanButtonProps) {
+  const { mutateAsync: createShareLink, isPending: isLoading } = usePlanShareLink(planId);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    if (!shareLink?.url) return;
-    
     try {
+      const shareLink = await createShareLink();
       await navigator.clipboard.writeText(shareLink.url);
       setCopied(true);
       toast.success('Plan link copied to clipboard!');
@@ -31,35 +30,40 @@ export function SharePlanButton({ planId, variant = 'outline', size = 'sm' }: Sh
   };
 
   const handleShare = async () => {
-    if (!shareLink?.url) return;
-    
-    // Try native sharing first (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Join my plan!',
-          text: 'Check out this plan I created',
-          url: shareLink.url,
-        });
-        return;
-      } catch (error) {
-        // Fall back to copying if sharing was cancelled
-        console.log('Share cancelled or failed, falling back to copy');
+    try {
+      const shareLink = await createShareLink();
+      
+      // Try native sharing first (mobile)
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Join my plan!',
+            text: 'Check out this plan I created',
+            url: shareLink.url,
+          });
+          return;
+        } catch (error) {
+          // Fall back to copying if sharing was cancelled
+          console.log('Share cancelled or failed, falling back to copy');
+        }
       }
+      
+      // Fall back to copying
+      handleCopy();
+    } catch (error) {
+      console.error('Failed to create share link:', error);
+      toast.error('Failed to create share link');
     }
-    
-    // Fall back to copying
-    handleCopy();
   };
 
-  if (!shareLink && !isLoading) return null;
+  if (!planId) return null;
 
   return (
     <Button
       variant={variant}
       size={size}
       onClick={handleShare}
-      disabled={isLoading || !shareLink}
+      disabled={isLoading}
       className="gap-2"
     >
       {isLoading ? (
