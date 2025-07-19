@@ -10,20 +10,23 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const SettingsSchema = {
   safeParse: (data: any) => {
-    const validTargets = ['user', 'floq', 'availability'];
+    const validTargets = ['user', 'floq', 'availability', 'preferences'];
     if (!data.target || !validTargets.includes(data.target)) {
       return { success: false, error: { format: () => 'Invalid target' } };
     }
     
     // Validate required fields based on target
-    if (data.target === 'user' && (!data.user_id || !data.updates)) {
-      return { success: false, error: { format: () => 'Missing user_id or updates' } };
+    if (data.target === 'user' && !data.updates) {
+      return { success: false, error: { format: () => 'Missing updates for user settings' } };
     }
     if (data.target === 'floq' && (!data.floq_id || !data.updates)) {
       return { success: false, error: { format: () => 'Missing floq_id or updates' } };
     }
-    if (data.target === 'availability' && (!data.user_id || !data.available_until)) {
-      return { success: false, error: { format: () => 'Missing user_id or available_until' } };
+    if (data.target === 'availability' && !data.available_until) {
+      return { success: false, error: { format: () => 'Missing available_until' } };
+    }
+    if (data.target === 'preferences' && !data.updates) {
+      return { success: false, error: { format: () => 'Missing updates for preferences' } };
     }
     
     return { success: true, data };
@@ -37,6 +40,23 @@ serve(async (req) => {
   }
 
   try {
+    // Get user from JWT token
+    const jwt = req.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!jwt) {
+      return new Response(JSON.stringify({ error: 'Missing bearer token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid user' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
     const input = SettingsSchema.safeParse(body);
 
@@ -50,48 +70,60 @@ serve(async (req) => {
       });
     }
 
-    const { target, user_id, floq_id, updates, available_until } = input.data;
+    const { target, floq_id, updates, available_until } = input.data;
 
     switch (target) {
       case 'user': {
-        // Update user settings
-        const { data: updatedSettings, error: updateError } = await supabase
+        // Update user settings (based on update-user-settings.ts)
+        const {
+          available_until: userAvailableUntil,
+          preferred_welcome_template,
+          notification_preferences,
+          theme_preferences,
+          field_enabled,
+          field_ripples,
+          field_trails,
+          privacy_settings
+        } = updates;
+
+        const { error: updateError } = await supabase
           .from('user_settings')
           .upsert({
-            user_id,
-            ...updates,
-            updated_at: new Date().toISOString()
+            user_id: user.id,
+            available_until: userAvailableUntil,
+            preferred_welcome_template,
+            notification_preferences,
+            theme_preferences,
+            field_enabled,
+            field_ripples,
+            field_trails,
+            privacy_settings,
+            updated_at: new Date().toISOString(),
           })
-          .select()
-          .single();
+          .eq('user_id', user.id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Failed to update user settings' }), {
+          return new Response(JSON.stringify({ error: 'Error updating user settings' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          settings: updatedSettings,
-          message: 'User settings updated successfully' 
-        }), {
+        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       case 'floq': {
         // Update floq settings
-        const { data: updatedSettings, error: updateError } = await supabase
+        const { error: updateError } = await supabase
           .from('floq_settings')
           .upsert({
             floq_id,
             ...updates,
             updated_at: new Date().toISOString()
           })
-          .select()
-          .single();
+          .eq('floq_id', floq_id);
 
         if (updateError) {
           return new Response(JSON.stringify({ error: 'Failed to update floq settings' }), {
@@ -100,39 +132,77 @@ serve(async (req) => {
           });
         }
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          settings: updatedSettings,
-          message: 'Floq settings updated successfully' 
-        }), {
+        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       case 'availability': {
-        // Update user availability
-        const { data: updatedAvailability, error: updateError } = await supabase
-          .from('user_availability')
+        // Update user availability (based on update-availability.ts)
+        const { error: updateError } = await supabase
+          .from('user_settings')
           .upsert({
-            user_id,
+            user_id: user.id,
             available_until,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
-          .select()
-          .single();
+          .eq('user_id', user.id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Failed to update availability' }), {
+          return new Response(JSON.stringify({ error: 'Error updating availability' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          availability: updatedAvailability,
-          message: 'Availability updated successfully' 
-        }), {
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'preferences': {
+        // Update user preferences (based on update-user-preferences.ts)
+        const {
+          preferred_vibe,
+          prefer_smart_suggestions,
+          feedback_sentiment,
+          checkin_streak,
+          energy_streak_weeks,
+          social_streak_weeks,
+          both_streak_weeks,
+          vibe_color,
+          vibe_strength,
+          vibe_detection_enabled,
+          favorite_locations,
+        } = updates;
+
+        const { error: updateError } = await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: user.id,
+            preferred_vibe,
+            prefer_smart_suggestions,
+            feedback_sentiment,
+            checkin_streak,
+            energy_streak_weeks,
+            social_streak_weeks,
+            both_streak_weeks,
+            vibe_color,
+            vibe_strength,
+            vibe_detection_enabled,
+            favorite_locations,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          return new Response(JSON.stringify({ error: 'Error updating user preferences' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
