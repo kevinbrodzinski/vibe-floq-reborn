@@ -9,7 +9,7 @@ import { useUpdateUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { type Vibe } from '@/types/vibes';
+import { type Vibe } from '@/types/enums/vibes';
 import { Button } from '@/components/ui/button';
 
 interface EnhancedOnboardingScreenProps {
