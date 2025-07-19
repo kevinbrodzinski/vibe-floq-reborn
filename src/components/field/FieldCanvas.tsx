@@ -7,6 +7,7 @@ import { TileSpritePool } from '@/utils/tileSpritePool';
 import { tileIdToScreenCoords, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
+import { safeVibe } from '@/types/enums/vibes';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
 import { forwardRef } from 'react';
@@ -141,8 +142,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);
           const vibeColor = tile.avg_vibe?.h !== undefined ? 
-            vibeToColor('chill' as Vibe) : // fallback, should parse avg_vibe properly
-            vibeToColor('chill' as Vibe);
+            vibeToColor(safeVibe('chill')) : // fallback, should parse avg_vibe properly
+            vibeToColor(safeVibe('chill'));
           
           sprite.tint = vibeColor;
           sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
