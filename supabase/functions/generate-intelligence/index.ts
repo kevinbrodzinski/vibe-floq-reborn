@@ -364,16 +364,84 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
         });
       }
 
-      case 'daily':
-      case 'floq-match':
-      case 'weekly':
-        // Placeholder for other modes - implement these based on your original functions
-        return new Response(JSON.stringify({ 
-          message: `${mode} intelligence generation not yet implemented in merged function`,
-          mode 
-        }), {
+      case 'daily': {
+        // Generate daily afterglow logic
+        if (!user_id || !date) {
+          return new Response(JSON.stringify({ error: 'Missing user_id or date' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { data, error } = await supabase.rpc('generate_daily_afterglow_sql', {
+          p_user_id: user_id,
+          p_date: date,
+        });
+
+        if (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        return new Response(JSON.stringify(data), {
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      case 'weekly': {
+        // Generate weekly AI suggestion logic
+        if (!user_id) {
+          return new Response(JSON.stringify({ error: 'Missing user_id' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { data, error } = await supabase.rpc('call_weekly_ai_suggestion', {
+          p_user_id: user_id,
+        });
+
+        if (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'floq-match': {
+        // Generate floq auto match logic
+        if (!user_id) {
+          return new Response(JSON.stringify({ error: 'Missing user_id' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { data, error } = await supabase.rpc('generate_floq_auto_match', {
+          p_user_id: user_id,
+        });
+
+        if (error) {
+          return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        return new Response(JSON.stringify(data), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       default:
         return new Response(JSON.stringify({ error: 'Unhandled mode' }), {
