@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
+import { safeVibe } from '@/types/enums/vibes';
 import { z } from 'zod';
 import { VibeEnum } from '@/types/vibes';
 import { MyFloqSchema, ParticipantRowSchema, type MyFloq } from '@/types/schemas/MyFloqSchema';
@@ -105,7 +106,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         id: floq.id,
         title: floq.title || floq.name || 'Untitled',
         name: floq.name || undefined,
-        primary_vibe: floq.primary_vibe as Vibe,
+        primary_vibe: safeVibe(floq.primary_vibe),
         participant_count: 0, // Will be filled below
         role,
         joined_at,
@@ -139,7 +140,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         id: floq.id,
         title: floq.title || floq.name || 'Untitled',
         name: floq.name || undefined,
-        primary_vibe: floq.primary_vibe as Vibe,
+        primary_vibe: safeVibe(floq.primary_vibe),
         participant_count: 0, // Will be filled below
         role: 'creator',
         joined_at: floq.created_at || floq.starts_at || new Date().toISOString(),
