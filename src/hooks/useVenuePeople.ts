@@ -22,9 +22,9 @@ export const useVenuePeople = (venueId: string | null) => {
       }
 
       const { data, error } = await supabase.functions.invoke(
-        "get-venue-people-list",
+        "get-venue-intelligence",
         {
-          body: { venue_id: venueId }
+          body: { venue_id: venueId, mode: "people" }
         }
       );
 

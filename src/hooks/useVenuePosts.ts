@@ -26,9 +26,9 @@ export const useVenuePosts = (venueId: string | null) => {
       }
 
       const { data, error } = await supabase.functions.invoke(
-        "get-venue-recent-posts",
+        "get-venue-intelligence",
         {
-          body: { venue_id: venueId }
+          body: { venue_id: venueId, mode: "posts" }
         }
       );
 

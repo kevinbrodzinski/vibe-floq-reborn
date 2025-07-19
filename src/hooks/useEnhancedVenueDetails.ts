@@ -67,9 +67,9 @@ export const useEnhancedVenueDetails = (venueId: string | null) => {
       console.log('useEnhancedVenueDetails calling edge function for:', venueId);
 
       const { data, error } = await supabase.functions.invoke(
-        "get-venue-social-energy",
+        "get-venue-intelligence",
         {
-          body: { venueId }
+          body: { venue_id: venueId, mode: "energy" }
         }
       );
 
