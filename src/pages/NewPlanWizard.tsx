@@ -86,7 +86,7 @@ export function NewPlanWizard() {
 
   return (
     <Dialog open={true} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-[60] fixed inset-4 m-auto">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
