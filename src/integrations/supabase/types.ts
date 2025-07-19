@@ -2415,6 +2415,8 @@ export type Database = {
           energy_streak_weeks: number | null
           favorite_locations: string[] | null
           feedback_sentiment: Json | null
+          onboarding_completed_at: string | null
+          onboarding_version: string | null
           prefer_smart_suggestions: boolean
           preferred_vibe: string | null
           social_streak_weeks: number | null
@@ -2432,6 +2434,8 @@ export type Database = {
           energy_streak_weeks?: number | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
+          onboarding_completed_at?: string | null
+          onboarding_version?: string | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
           social_streak_weeks?: number | null
@@ -2449,6 +2453,8 @@ export type Database = {
           energy_streak_weeks?: number | null
           favorite_locations?: string[] | null
           feedback_sentiment?: Json | null
+          onboarding_completed_at?: string | null
+          onboarding_version?: string | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
           social_streak_weeks?: number | null

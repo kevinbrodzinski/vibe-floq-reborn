@@ -11,6 +11,8 @@ export interface UserPreferences {
   favorite_locations: string[];
   feedback_sentiment: Record<string, any>;
   prefer_smart_suggestions: boolean;
+  onboarding_version?: string;
+  onboarding_completed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,10 +76,13 @@ export function useUpdateUserPreferences() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
-      toast({
-        title: 'Preferences Updated',
-        description: 'Your preferences have been saved successfully!',
-      });
+      // Only show toast for user-initiated updates, not onboarding completion
+      if (!queryClient.getQueryData(['suppress-toast'])) {
+        toast({
+          title: 'Preferences Updated',
+          description: 'Your preferences have been saved successfully!',
+        });
+      }
     },
     onError: (error) => {
       console.error('Failed to update preferences:', error);
