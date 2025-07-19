@@ -1,12 +1,10 @@
+
 project_id = "reztyrrafsmlvvlqvsqt"
 
 [functions.get_field_tiles]
 verify_jwt = false
 
 [functions.notification-worker]
-verify_jwt = false
-
-[functions.floq-mention-handler]
 verify_jwt = false
 
 [functions.upsert-presence]
@@ -24,13 +22,7 @@ verify_jwt = true
 [functions.plan-rsvp]
 verify_jwt = true
 
-[functions.update-floq-settings]
-verify_jwt = true
-
 [functions.get_hotspots]
-verify_jwt = true
-
-[functions.generate-afterglow-summary]
 verify_jwt = true
 
 [functions.create-share-link]
@@ -48,9 +40,6 @@ verify_jwt = true
 [functions.finalize-plan]
 verify_jwt = true
 
-[functions.invite-external-friends]
-verify_jwt = true
-
 [functions.sync-plan-changes]
 verify_jwt = true
 
@@ -58,4 +47,19 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.post-floq-message]
+verify_jwt = true
+
+[functions.generate-intelligence]
+verify_jwt = true
+
+[functions.send-invite]
+verify_jwt = true
+
+[functions.floq-interactions]
+verify_jwt = true
+
+[functions.update-settings]
+verify_jwt = true
+
+[functions.get-venue-intelligence]
 verify_jwt = true
