@@ -6,6 +6,8 @@ import { ProfileSetupStep } from './ProfileSetupStep';
 import { AvatarSelectionStep } from './AvatarSelectionStep';
 import { OnboardingProgress } from './OnboardingProgress';
 import { OnboardingCelebration } from './OnboardingCelebration';
+import { ProgressResumePrompt } from './ProgressResumePrompt';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useUpdateUserPreferences } from '@/hooks/useUserPreferences';
 import { useAuth } from '@/providers/AuthProvider';
@@ -85,46 +87,62 @@ const FEATURE_HIGHLIGHTS = [
 const ENHANCED_ONBOARDING_VERSION = 'v2';
 
 export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScreenProps) {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null);
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { markCompleted } = useOnboardingStatus();
+  const { toast } = useToast();
+  const progress = useOnboardingProgress();
+  
   const [isCompleting, setIsCompleting] = useState(false);
+  const [showResumePrompt, setShowResumePrompt] = useState(progress.hasProgress);
   const [showSuccess, setShowSuccess] = useState(false);
   
-  const { user } = useAuth();
-  const { mutateAsync: updatePreferences } = useUpdateUserPreferences();
-  const { toast } = useToast();
+  // Initialize from saved progress
+  const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(progress.state.selectedVibe || null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(progress.state.profileData || null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(progress.state.avatarUrl || null);
 
   const handleNext = () => {
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
+    progress.nextStep();
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+    progress.prevStep();
   };
 
   const handleVibeSelected = (vibe: Vibe) => {
     setSelectedVibe(vibe);
+    progress.setVibe(vibe);
     handleNext();
   };
 
   const handleProfileSubmitted = async (data: ProfileData) => {
     setProfileData(data);
+    progress.setProfile(data);
     handleNext();
   };
 
   const handleAvatarSelected = (url: string | null) => {
     setAvatarUrl(url);
+    progress.setAvatar(url);
     handleNext();
+  };
+
+  const handleResumeProgress = () => {
+    setShowResumePrompt(false);
+  };
+
+  const handleRestartOnboarding = () => {
+    progress.clearProgress();
+    setSelectedVibe(null);
+    setProfileData(null);
+    setAvatarUrl(null);
+    setShowResumePrompt(false);
   };
 
   const handleComplete = async () => {
     if (!user || !selectedVibe || !profileData) return;
+
+    progress.clearProgress();
 
     try {
       setIsCompleting(true);
@@ -143,7 +161,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
           description: "Please choose a different username.",
           variant: "destructive",
         });
-        setCurrentStep(2); // Go back to profile step
+        progress.goToStep(2); // Go back to profile step
         return;
       }
 
@@ -151,6 +169,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
       const defaultAvatar = `https://api.dicebear.com/7.x/shapes/svg?seed=${profileData.username}`;
 
       // Update user preferences
+      const { mutateAsync: updatePreferences } = useUpdateUserPreferences();
       await updatePreferences({
         preferred_vibe: selectedVibe,
         vibe_color: selectedVibe,
@@ -213,7 +232,22 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
     );
   }
 
+  const currentStep = progress.state.currentStep;
   const stepTitles = ONBOARDING_STEPS.map(step => step.title);
+
+  // Show resume prompt if user has previous progress
+  if (showResumePrompt) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
+        <ProgressResumePrompt
+          onResume={handleResumeProgress}
+          onRestart={handleRestartOnboarding}
+          progressPercentage={progress.progressPercentage}
+          lastStep={ONBOARDING_STEPS[progress.state.currentStep]?.title || 'Profile setup'}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">

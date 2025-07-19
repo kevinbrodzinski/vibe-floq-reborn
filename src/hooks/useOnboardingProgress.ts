@@ -1,0 +1,107 @@
+import { useState, useEffect } from 'react';
+import { type Vibe } from '@/types/vibes';
+
+interface OnboardingState {
+  currentStep: number;
+  selectedVibe?: Vibe;
+  profileData?: {
+    username: string;
+    display_name: string;
+    bio?: string;
+    interests?: string[];
+  };
+  avatarUrl?: string | null;
+  startedAt: number;
+}
+
+const STORAGE_KEY = 'floq_onboarding_progress';
+const EXPIRY_HOURS = 24; // Progress expires after 24 hours
+
+export function useOnboardingProgress() {
+  const [state, setState] = useState<OnboardingState>({
+    currentStep: 0,
+    startedAt: Date.now()
+  });
+
+  // Load saved progress on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem(STORAGE_KEY);
+    if (savedProgress) {
+      try {
+        const parsed: OnboardingState = JSON.parse(savedProgress);
+        
+        // Check if progress has expired
+        const hoursSinceStart = (Date.now() - parsed.startedAt) / (1000 * 60 * 60);
+        if (hoursSinceStart < EXPIRY_HOURS) {
+          setState(parsed);
+        } else {
+          // Clear expired progress
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch (error) {
+        console.error('Failed to parse onboarding progress:', error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  // Save progress whenever state changes
+  useEffect(() => {
+    if (state.currentStep > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  }, [state]);
+
+  const updateProgress = (updates: Partial<OnboardingState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  };
+
+  const clearProgress = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setState({
+      currentStep: 0,
+      startedAt: Date.now()
+    });
+  };
+
+  const goToStep = (step: number) => {
+    updateProgress({ currentStep: step });
+  };
+
+  const nextStep = () => {
+    updateProgress({ currentStep: state.currentStep + 1 });
+  };
+
+  const prevStep = () => {
+    updateProgress({ currentStep: Math.max(0, state.currentStep - 1) });
+  };
+
+  const setVibe = (vibe: Vibe) => {
+    updateProgress({ selectedVibe: vibe });
+  };
+
+  const setProfile = (profileData: OnboardingState['profileData']) => {
+    updateProgress({ profileData });
+  };
+
+  const setAvatar = (avatarUrl: string | null) => {
+    updateProgress({ avatarUrl });
+  };
+
+  const hasProgress = state.currentStep > 0;
+  const progressPercentage = Math.round((state.currentStep / 5) * 100);
+
+  return {
+    state,
+    hasProgress,
+    progressPercentage,
+    goToStep,
+    nextStep,
+    prevStep,
+    setVibe,
+    setProfile,
+    setAvatar,
+    clearProgress,
+    updateProgress
+  };
+}
