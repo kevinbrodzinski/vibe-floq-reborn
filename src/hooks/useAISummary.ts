@@ -18,8 +18,8 @@ export function useAISummary() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
-        const { data, error } = await supabase.functions.invoke('generate-plan-summary', {
-          body: { plan_id: planId }
+        const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+          body: { mode: 'plan-summary', plan_id: planId }
         });
 
         clearTimeout(timeoutId);

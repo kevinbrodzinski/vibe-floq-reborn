@@ -66,8 +66,8 @@ export function useGeneratePlanSummary() {
 
   return useMutation({
     mutationFn: async ({ planId, mode }: { planId: string; mode: SummaryMode }) => {
-      const { data, error } = await supabase.functions.invoke('generate-plan-summary', {
-        body: { plan_id: planId, mode },
+      const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'plan-summary', plan_id: planId, summary_mode: mode },
       });
 
       if (error) throw error;

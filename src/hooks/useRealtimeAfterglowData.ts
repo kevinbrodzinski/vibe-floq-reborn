@@ -160,8 +160,8 @@ export function useRealtimeAfterglowData(date: string) {
     setIsGenerating(true);
     
     try {
-      const { data: result, error } = await supabase.functions.invoke('generate-daily-afterglow', {
-        body: { user_id: user.id, date, force_regenerate: true }
+      const { data: result, error } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'daily-afterglow', user_id: user.id, date, force_regenerate: true }
       });
 
       if (error) {

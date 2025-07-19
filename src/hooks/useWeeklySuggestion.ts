@@ -16,8 +16,8 @@ export const useWeeklySuggestion = () => {
         throw new Error('Authentication required');
       }
       
-      const { data, error } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { forceRefresh: false },
+      const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', forceRefresh: false },
       });
       
       if (error) throw error;
@@ -79,8 +79,8 @@ export const useWeeklySuggestion = () => {
         throw new Error('Authentication required for regeneration');
       }
       
-      const { data, error } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { forceRefresh: true },
+      const { data, error } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', forceRefresh: true },
       });
       
       if (error) {

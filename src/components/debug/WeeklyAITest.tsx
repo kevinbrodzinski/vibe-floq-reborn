@@ -32,8 +32,8 @@ export default function WeeklyAITest() {
     try {
       // Test 1: Normal call
       addTestResult('Normal Call', 'pending', 'Testing normal edge function call...');
-      const { data: normalData, error: normalError } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { forceRefresh: false },
+      const { data: normalData, error: normalError } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', forceRefresh: false },
       });
 
       if (normalError) {
@@ -44,8 +44,8 @@ export default function WeeklyAITest() {
 
       // Test 2: Force refresh (should work first time)
       addTestResult('Force Refresh #1', 'pending', 'Testing forceRefresh: true...');
-      const { data: forceData1, error: forceError1 } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { forceRefresh: true },
+      const { data: forceData1, error: forceError1 } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', forceRefresh: true },
       });
 
       if (forceError1) {
@@ -56,8 +56,8 @@ export default function WeeklyAITest() {
 
       // Test 3: Immediate second force refresh (should hit cooldown)
       addTestResult('Force Refresh #2 (Cooldown Test)', 'pending', 'Testing immediate second forceRefresh...');
-      const { data: forceData2, error: forceError2 } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { forceRefresh: true },
+      const { data: forceData2, error: forceError2 } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', forceRefresh: true },
       });
 
       if (forceError2 && (forceError2.status === 429 || forceError2.message?.includes('cooldown'))) {
@@ -70,8 +70,8 @@ export default function WeeklyAITest() {
 
       // Test 4: Pre-warm call
       addTestResult('Pre-warm Call', 'pending', 'Testing preWarm: true...');
-      const { data: prewarmData, error: prewarmError } = await supabase.functions.invoke('generate-weekly-ai-suggestion', {
-        body: { preWarm: true, userId: user.id },
+      const { data: prewarmData, error: prewarmError } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'weekly-ai', preWarm: true, userId: user.id },
       });
 
       if (prewarmError) {
