@@ -10,13 +10,22 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const InviteSchema = {
   safeParse: (data: any) => {
-    const validTypes = ['floq', 'external'];
-    if (!data.type || !validTypes.includes(data.type)) {
+    if (!data.type || !['internal', 'external'].includes(data.type)) {
       return { success: false, error: { format: () => 'Invalid type' } };
     }
-    if (!data.user_id || !data.target_id) {
-      return { success: false, error: { format: () => 'Missing required fields' } };
+    
+    if (data.type === 'internal') {
+      if (!data.floq_id || !data.inviter_id || !Array.isArray(data.invitee_ids) || data.invitee_ids.length === 0) {
+        return { success: false, error: { format: () => 'Missing required fields for internal invite' } };
+      }
     }
+    
+    if (data.type === 'external') {
+      if (!data.plan_id || !data.inviter_id || !Array.isArray(data.emails) || data.emails.length === 0) {
+        return { success: false, error: { format: () => 'Missing required fields for external invite' } };
+      }
+    }
+    
     return { success: true, data };
   }
 };
@@ -41,107 +50,76 @@ serve(async (req) => {
       });
     }
 
-    const { type, user_id, target_id, message } = input.data;
+    const { type } = input.data;
 
-    switch (type) {
-      case 'floq': {
-        // Internal floq invitation logic
-        const floq_id = target_id;
+    if (type === 'internal') {
+      const { floq_id, inviter_id, invitee_ids } = input.data;
 
-        // Verify user can invite to this floq
-        const { data: participation, error: participationError } = await supabase
-          .from('floq_participants')
-          .select('role')
-          .eq('floq_id', floq_id)
-          .eq('user_id', user_id)
-          .single();
+      const inserts = invitee_ids.map((invitee_id: string) => ({
+        floq_id,
+        inviter_id,
+        invitee_id,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        id: crypto.randomUUID(),
+      }));
 
-        if (participationError || !participation) {
-          return new Response(JSON.stringify({ error: 'User not authorized to invite to this floq' }), {
-            status: 403,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+      const { error } = await supabase
+        .from('floq_invitations')
+        .upsert(inserts, { onConflict: 'id' });
 
-        // Create invitation record
-        const { data: invitation, error: inviteError } = await supabase
-          .from('floq_invitations')
-          .insert({
-            floq_id,
-            inviter_id: user_id,
-            invitee_id: body.invitee_id,
-            status: 'pending'
-          })
-          .select()
-          .single();
-
-        if (inviteError) {
-          return new Response(JSON.stringify({ error: 'Failed to create invitation' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          invitation_id: invitation.id,
-          message: 'Floq invitation sent successfully' 
-        }), {
+      if (error) {
+        console.error('Internal invite error:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
-      case 'external': {
-        // External email invitation logic
-        const email = target_id;
-
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          return new Response(JSON.stringify({ error: 'Invalid email address' }), {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Create external invitation record
-        const { data: invitation, error: inviteError } = await supabase
-          .from('external_invitations')
-          .insert({
-            inviter_id: user_id,
-            email,
-            message: message || 'Join me on Floq!',
-            status: 'sent'
-          })
-          .select()
-          .single();
-
-        if (inviteError) {
-          return new Response(JSON.stringify({ error: 'Failed to create external invitation' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Here you would typically send an actual email
-        // For now, we'll just log it
-        console.log(`External invitation sent to ${email} from user ${user_id}`);
-
-        return new Response(JSON.stringify({ 
-          success: true, 
-          invitation_id: invitation.id,
-          message: 'External invitation sent successfully' 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      default:
-        return new Response(JSON.stringify({ error: 'Unhandled invitation type' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      return new Response(JSON.stringify({ 
+        success: true, 
+        inserted: inserts.length 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
+
+    if (type === 'external') {
+      const { plan_id, inviter_id, emails } = input.data;
+
+      const inserts = emails.map((email: string) => ({
+        plan_id,
+        inviter_id,
+        invitee_email: email,
+        status: 'pending',
+        invited_at: new Date().toISOString(),
+        id: crypto.randomUUID(),
+      }));
+
+      const { error } = await supabase
+        .from('plan_invitations')
+        .upsert(inserts, { onConflict: 'id' });
+
+      if (error) {
+        console.error('External invite error:', error);
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        inserted: inserts.length 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: 'Unhandled type' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in send-invite function:', error);
