@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { Send, User } from 'lucide-react';
 import { Z } from '@/constants/zLayers';
@@ -36,6 +37,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
   const queryClient = useQueryClient();
   const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
   
+  // Debug logging for overlay management
+  useEffect(() => {
+    console.log('[DM_SHEET] Sheet state changed:', { open, friendId });
+  }, [open, friendId]);
+  
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
     onSwipeDown: () => onOpenChange(false)
@@ -70,7 +76,6 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       });
     }
   }, [friendError, open, toast]);
-
 
   // Auto-scroll to bottom with requestAnimationFrame
   useEffect(() => {
@@ -115,10 +120,11 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80 z-[${Z.dmSheet}]`}
+        className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80`}
         style={{ 
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)'
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
+          zIndex: Z.dmSheet
         }}
         {...swipeGestures.handlers}
       >
