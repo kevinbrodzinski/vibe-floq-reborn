@@ -15,6 +15,7 @@ import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
 import type { Vibe } from "@/types/vibes";
+import { safeVibe, safeVibeState } from '@/types/enums/vibes';
 import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';
@@ -140,7 +141,7 @@ export const VibeScreen = () => {
         }
         
         // Only apply if it's a valid VibeState
-        const vibeAsState = vibeDetection.suggestedVibe as VibeState;
+        const vibeAsState = safeVibeState(vibeDetection.suggestedVibe);
         if (vibes[vibeAsState]) {
           await setSelectedVibe(vibeAsState);
           // Debounce feedback banner to prevent double-shows
@@ -188,7 +189,7 @@ export const VibeScreen = () => {
     setIsLearning(true);
     try {
       await recordFeedback(false, correctedVibe);
-      await setSelectedVibe(correctedVibe as VibeState);
+      await setSelectedVibe(safeVibeState(correctedVibe));
       // Small delay to show completion before hiding with cleanup
       feedbackTimeoutRef.current = setTimeout(() => setShowFeedback(false), 200);
     } catch (error) {
@@ -291,7 +292,7 @@ export const VibeScreen = () => {
   // Remove the local visibility management - now handled by useSyncedVisibility
 
   const handleApplySuggestion = useCallback(async (suggestion: any) => {
-    await handleVibeSelect(suggestion.vibe as VibeState);
+    await handleVibeSelect(safeVibeState(suggestion.vibe));
     applyVibe(suggestion);
   }, [handleVibeSelect, applyVibe]);
 
@@ -323,7 +324,7 @@ export const VibeScreen = () => {
   if (!hydrated) return <FullScreenSpinner />;
 
   // Safe vibe fallback to prevent crashes
-  const safeVibe = selectedVibe ?? 'chill';
+  const safeFallbackVibe = selectedVibe ?? 'chill';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -480,13 +481,13 @@ export const VibeScreen = () => {
                 <div 
                   className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
                   style={{ 
-                    backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeVibe].color} 80%, ${tintColor} 20%)` : vibes[safeVibe].color,
+                    backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeFallbackVibe].color} 80%, ${tintColor} 20%)` : vibes[safeFallbackVibe].color,
                     transform: `scale(${pulseScale})`,
                     boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
                   }}
                 >
                   <span className="text-lg font-bold text-white drop-shadow-sm">
-                    {vibes[safeVibe].label.charAt(0).toUpperCase()}
+                    {vibes[safeFallbackVibe].label.charAt(0).toUpperCase()}
                   </span>
                   {/* Accessibility: Reduced motion fallback */}
                   <style>{`
@@ -500,7 +501,7 @@ export const VibeScreen = () => {
                   `}</style>
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">{vibes[safeVibe].label}</span>
+                  <span className="font-medium text-foreground">{vibes[safeFallbackVibe].label}</span>
                    <div className="text-xs text-muted-foreground">
                      Active for {elapsed}
                     {clusters.length > 0 && (

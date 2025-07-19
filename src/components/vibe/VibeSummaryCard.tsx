@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { VIBE_COLORS, type VibeEnum } from "@/constants/vibes";
+import { safeVibe } from '@/types/enums/vibes';
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
 import { useVibe } from "@/lib/store/useVibe";
@@ -37,7 +38,7 @@ export const VibeSummaryCard = memo(({
     }
   }, [currentVibe]);
 
-  const vibeColor = currentVibe ? VIBE_COLORS[currentVibe as VibeEnum] : 'hsl(var(--muted))';
+  const vibeColor = currentVibe ? VIBE_COLORS[safeVibe(currentVibe)] : 'hsl(var(--muted))';
 
   // Hide vibe display when visibility is 'off'
   if (visibility === 'off') {

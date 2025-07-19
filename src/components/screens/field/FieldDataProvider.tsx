@@ -7,6 +7,7 @@ import { useFieldTiles } from "@/hooks/useFieldTiles";
 import { usePresencePublisher } from "@/hooks/usePresencePublisher";
 import { viewportToTileIds } from "@/lib/geo";
 import type { Vibe } from "@/types";
+import { safeVibe } from '@/types/enums/vibes';
 import { FieldLocationProvider, useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { FieldSocialProvider, type Person } from "@/components/field/contexts/FieldSocialContext";
 import { FieldUIProvider, useFieldUI } from "@/components/field/contexts/FieldUIContext";
@@ -124,7 +125,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const walkable_floqs = activeFloqs.map(floq => ({
     id: floq.id,
     title: floq.title,
-    primary_vibe: floq.primary_vibe as Vibe,
+    primary_vibe: safeVibe(floq.primary_vibe),
     participant_count: floq.participant_count,
     distance_meters: floq.distance_meters || 0,
     starts_at: floq.starts_at
