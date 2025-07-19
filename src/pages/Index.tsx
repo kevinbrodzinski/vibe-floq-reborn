@@ -1,7 +1,7 @@
 import { FloqApp } from "@/components/FloqApp";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { OnboardingScreen } from "@/components/onboarding/OnboardingScreen";
+import { EnhancedOnboardingScreen } from "@/components/onboarding/EnhancedOnboardingScreen";
 import { useAuth } from "@/providers/AuthProvider";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
@@ -23,7 +23,7 @@ const Index = () => {
 
   if (needsOnboarding) {
     return (
-      <OnboardingScreen 
+      <EnhancedOnboardingScreen 
         onComplete={() => {
           // The hook will automatically refetch and hide onboarding
           window.location.reload();

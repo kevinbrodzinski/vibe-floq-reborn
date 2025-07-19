@@ -514,6 +514,22 @@ All colors MUST be HSL.
     animation: fade-in 0.6s ease-out forwards;
   }
 
+  /* Scale in animation */
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out forwards;
+  }
+
   /* Slide up animation for suggestion banner */
   @keyframes slideUp {
     from {

@@ -1,0 +1,176 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, AtSign, FileText, Heart } from 'lucide-react';
+
+interface ProfileData {
+  username: string;
+  display_name: string;
+  bio?: string;
+  interests?: string[];
+}
+
+interface ProfileSetupStepProps {
+  onNext: (data: ProfileData) => void;
+  onBack?: () => void;
+}
+
+export function ProfileSetupStep({ onNext, onBack }: ProfileSetupStepProps) {
+  const [formData, setFormData] = useState<ProfileData>({
+    username: '',
+    display_name: '',
+    bio: '',
+    interests: [],
+  });
+  const [interestsInput, setInterestsInput] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.username || formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+    
+    if (!formData.display_name || formData.display_name.length < 2) {
+      newErrors.display_name = 'Display name must be at least 2 characters';
+    }
+
+    // Check for valid username format (letters, numbers, underscores only)
+    if (formData.username && !/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = 'Username can only contain letters, numbers, and underscores';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleInterestsChange = (value: string) => {
+    setInterestsInput(value);
+    const interests = value.split(',').map(i => i.trim()).filter(Boolean);
+    setFormData(prev => ({
+      ...prev,
+      interests
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onNext(formData);
+    }
+  };
+
+  const isValid = formData.username.length >= 3 && formData.display_name.length >= 2;
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">Create Your Profile</h2>
+        <p className="text-muted-foreground">
+          Tell us a bit about yourself to personalize your Floq experience
+        </p>
+      </div>
+
+      <Card className="max-w-md mx-auto">
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="flex items-center gap-2">
+              <AtSign className="w-4 h-4" />
+              Username
+            </Label>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="Enter your username"
+              className={errors.username ? 'border-destructive' : ''}
+            />
+            {errors.username && (
+              <p className="text-sm text-destructive">{errors.username}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="display_name" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Display Name
+            </Label>
+            <Input
+              id="display_name"
+              value={formData.display_name}
+              onChange={(e) => handleInputChange('display_name', e.target.value)}
+              placeholder="How should others see you?"
+              className={errors.display_name ? 'border-destructive' : ''}
+            />
+            {errors.display_name && (
+              <p className="text-sm text-destructive">{errors.display_name}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bio" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Bio <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <Textarea
+              id="bio"
+              value={formData.bio}
+              onChange={(e) => handleInputChange('bio', e.target.value)}
+              placeholder="Tell us about yourself..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="interests" className="flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              Interests <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <Input
+              id="interests"
+              value={interestsInput}
+              onChange={(e) => handleInterestsChange(e.target.value)}
+              placeholder="music, art, hiking, coffee..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Separate interests with commas
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-3 max-w-md mx-auto">
+        {onBack && (
+          <Button variant="outline" onClick={onBack} className="flex-1">
+            Back
+          </Button>
+        )}
+        <Button 
+          onClick={handleSubmit}
+          disabled={!isValid}
+          className="flex-1"
+        >
+          Create Profile
+        </Button>
+      </div>
+    </div>
+  );
+}

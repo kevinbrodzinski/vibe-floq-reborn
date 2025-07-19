@@ -1,6 +1,6 @@
 import { useUserPreferences, useUpdateUserPreferences } from './useUserPreferences';
 
-const CURRENT_ONBOARDING_VERSION = 'v1';
+const CURRENT_ONBOARDING_VERSION = 'v2';
 
 export interface OnboardingStatus {
   needsOnboarding: boolean;
