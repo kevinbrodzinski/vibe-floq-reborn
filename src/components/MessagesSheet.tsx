@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { MessageSquare, ArrowRight, Loader2 } from 'lucide-react';
 import {
@@ -52,47 +53,92 @@ export const MessagesSheet = ({
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
 
   /* ────────────────────────────────────────────
-     Fetch threads + latest message in one query
+     Fetch threads + latest message with proper query
      ──────────────────────────────────────────── */
   const { data: threads = [], isLoading } = useQuery({
     queryKey: ['dm-threads', user?.id],
     enabled: !!user?.id && open,
     queryFn: async () => {
-      const { data: threadsData, error } = await supabase
+      console.log('📱 Fetching DM threads for user:', user!.id);
+      
+      // First, get all threads for this user
+      const { data: threadsData, error: threadsError } = await supabase
         .from('direct_threads')
         .select(`
           id,
           member_a,
           member_b,
-          last_message_at,
-          last_message:v_latest_dm(content,sender_id,created_at)
+          last_message_at
         `)
         .or(`member_a.eq.${user!.id},member_b.eq.${user!.id}`)
         .order('last_message_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (threadsError) {
+        console.error('Error fetching threads:', threadsError);
+        throw threadsError;
+      }
 
-      const otherUserIds =
-        threadsData?.map((t: any) =>
-          t.member_a === user!.id ? t.member_b : t.member_a,
-        ) || [];
+      console.log('📱 Found threads:', threadsData?.length || 0);
 
-      if (otherUserIds.length === 0) return [];
+      if (!threadsData || threadsData.length === 0) {
+        return [];
+      }
 
-      const { data: profiles } = await supabase
+      // Get the other user IDs for profile lookup
+      const otherUserIds = threadsData.map((t: any) =>
+        t.member_a === user!.id ? t.member_b : t.member_a,
+      );
+
+      // Fetch profiles for other users
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, display_name, avatar_url, username')
         .in('id', otherUserIds);
 
-      return (
-        threadsData?.map((t: any) => {
-          const otherId =
-            t.member_a === user!.id ? t.member_b : t.member_a;
-          const otherUser = (profiles as any)?.find((p: any) => p.id === otherId);
-          return { ...t, other_user: otherUser } as DMThread;
-        }) || []
-      );
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      // Get thread IDs for latest message lookup
+      const threadIds = threadsData.map(t => t.id);
+
+      // Fetch latest messages for each thread
+      const { data: allMessages, error: messagesError } = await supabase
+        .from('direct_messages')
+        .select('thread_id, content, sender_id, created_at')
+        .in('thread_id', threadIds)
+        .order('created_at', { ascending: false });
+
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+      }
+
+      // Group messages by thread_id and get the latest for each
+      const latestMessagesByThread = new Map();
+      if (allMessages) {
+        for (const msg of allMessages) {
+          if (!latestMessagesByThread.has(msg.thread_id)) {
+            latestMessagesByThread.set(msg.thread_id, msg);
+          }
+        }
+      }
+
+      // Combine threads with their latest messages and user profiles
+      const enrichedThreads = threadsData.map((t: any) => {
+        const otherId = t.member_a === user!.id ? t.member_b : t.member_a;
+        const otherUser = profiles?.find((p: any) => p.id === otherId);
+        const lastMessage = latestMessagesByThread.get(t.id);
+        
+        return {
+          ...t,
+          other_user: otherUser,
+          last_message: lastMessage
+        } as DMThread;
+      });
+
+      console.log('📱 Enriched threads:', enrichedThreads.length);
+      return enrichedThreads;
     },
   });
 
