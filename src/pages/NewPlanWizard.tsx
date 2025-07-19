@@ -8,6 +8,7 @@ import { useCreatePlan } from '@/hooks/useCreatePlan'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { X, ArrowLeft } from 'lucide-react'
+import { useBottomGap } from '@/hooks/useBottomGap'
 
 export interface TimeRange {
   start: string
@@ -28,6 +29,7 @@ export interface PlanDraft extends PlanDetails, TimeRange {
 export function NewPlanWizard() {
   const navigate = useNavigate()
   const { mutateAsync: createPlan, isPending } = useCreatePlan()
+  const gap = useBottomGap()
   
   const [step, setStep] = useState<0 | 1 | 2>(0)
   const [timeRange, setTimeRange] = useState<TimeRange>({ start: '18:00', end: '00:00' })
@@ -86,7 +88,10 @@ export function NewPlanWizard() {
 
   return (
     <Dialog open={true} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        style={{ paddingBottom: gap }}
+      >
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
