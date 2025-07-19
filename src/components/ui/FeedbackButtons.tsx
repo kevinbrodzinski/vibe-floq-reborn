@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Vibe } from "@/utils/vibe";
+import type { Vibe } from "@/types/vibes";
 
 interface FeedbackButtonsProps {
   suggestedVibe: Vibe;

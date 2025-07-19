@@ -1,4 +1,4 @@
-import type { Vibe } from '@/utils/vibe';
+import type { Vibe } from '@/types/vibes';
 import { SensorFusion } from './SensorFusion';
 import { TemporalContext } from './TemporalContext';
 import { ConfidenceCalculator } from './ConfidenceCalculator';

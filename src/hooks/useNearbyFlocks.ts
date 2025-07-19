@@ -5,6 +5,7 @@ import type { Vibe } from '@/types';
 import type { FloqFilters } from '@/contexts/FloqUIContext';
 import { useEffect } from 'react';
 import { z } from 'zod';
+import { VibeEnum } from '@/types/vibes';
 
 export interface NearbyFloq {
   id: string;
@@ -45,7 +46,7 @@ interface UseNearbyFlocksOptions {
 const SearchFloqSchema = z.object({
   id: z.string(),
   title: z.string(),
-  primary_vibe: z.string(),
+  primary_vibe: VibeEnum,
   starts_at: z.string().nullable().optional(),
   ends_at: z.string().nullable().optional(),
   distance_m: z.number().optional(),

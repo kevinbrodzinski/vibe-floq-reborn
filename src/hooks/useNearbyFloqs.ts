@@ -2,18 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-
-// Zod schema for walkable floqs
-const WalkableFloqSchema = z.object({
-  id: z.string(),
-  title: z.string().nullable(),
-  primary_vibe: z.string(),
-  participant_count: z.number(),
-  distance_meters: z.number(),
-  starts_at: z.string().nullable(),
-});
-
-type WalkableFloq = z.infer<typeof WalkableFloqSchema>;
+import { WalkableFloqSchema, type WalkableFloq } from '@/types/schemas/WalkableFloqSchema';
 
 export interface NearbyFloqsReturn {
   nearby: WalkableFloq[];

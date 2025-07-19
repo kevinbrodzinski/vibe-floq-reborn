@@ -1,4 +1,4 @@
-import type { Vibe } from '@/utils/vibe';
+import type { Vibe } from '@/types/vibes';
 import type { AnalysisContext, SensorData } from './VibeAnalysisEngine';
 
 export interface UserCorrection {

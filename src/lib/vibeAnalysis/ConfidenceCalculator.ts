@@ -1,4 +1,4 @@
-import type { Vibe } from '@/utils/vibe';
+import type { Vibe } from '@/types/vibes';
 import type { SensorFeatures, SensorQuality } from './SensorFusion';
 import type { TemporalFactors } from './TemporalContext';
 

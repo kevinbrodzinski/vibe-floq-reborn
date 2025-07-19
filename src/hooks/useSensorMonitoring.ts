@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Vibe } from '@/utils/vibe';
+import type { Vibe } from '@/types/vibes';
 import { VibeAnalysisEngine, type SensorData, type VibeAnalysisResult } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 import { UserLearningSystem } from '@/lib/vibeAnalysis/UserLearningSystem';
 

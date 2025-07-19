@@ -14,7 +14,7 @@ import { useClusters } from "@/hooks/useClusters";
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
-import type { Vibe } from "@/utils/vibe";
+import type { Vibe } from "@/types/vibes";
 import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';

@@ -1,5 +1,5 @@
 import type { AnalysisContext } from './VibeAnalysisEngine';
-import type { Vibe } from '@/utils/vibe';
+import type { Vibe } from '@/types/vibes';
 
 export interface TemporalFactors {
   relevance: number; // 0-1 how much temporal context should influence

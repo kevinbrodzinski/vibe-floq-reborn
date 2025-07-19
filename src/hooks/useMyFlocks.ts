@@ -5,48 +5,15 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from "@/types";
 import { z } from 'zod';
+import { VibeEnum } from '@/types/vibes';
+import { MyFloqSchema, ParticipantRowSchema, type MyFloq } from '@/types/schemas/MyFloqSchema';
 
-export interface MyFloq {
-  id: string;
-  title: string;
-  name?: string;
-  primary_vibe: Vibe;
-  participant_count: number;
-  role: string;
-  joined_at: string;
-  last_activity_at: string;
-  starts_at?: string;
-  ends_at?: string;
-  creator_id?: string;
-  distance_meters?: number;
-  is_creator: boolean;
-}
+export type { MyFloq };
 
 interface CountRow {
   floq_id: string;
   count: string;
 }
-
-// Zod schemas for runtime validation
-const FloqSchema = z.object({
-  id: z.string(),
-  title: z.string().nullable().optional(),
-  name: z.string().nullable().optional(),
-  primary_vibe: z.string(),
-  creator_id: z.string().nullable().optional(),
-  starts_at: z.string().nullable().optional(),
-  ends_at: z.string().nullable().optional(),
-  last_activity_at: z.string().nullable().optional(),
-  created_at: z.string().nullable().optional(),
-  deleted_at: z.string().nullable().optional(),
-});
-
-const ParticipantRowSchema = z.object({
-  floq_id: z.string(),
-  role: z.string(),
-  joined_at: z.string(),
-  floqs: FloqSchema.nullable(),
-});
 
 const CountRowSchema = z.object({
   floq_id: z.string(),
@@ -154,7 +121,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
   // Add created floqs with validation
   if (createdResult.data) {
     for (const raw of createdResult.data) {
-      const parsed = FloqSchema.safeParse(raw);
+      const parsed = MyFloqSchema.safeParse(raw);
       if (!parsed.success) {
         if (import.meta.env.DEV) {
           console.warn('❌ Invalid created floq:', parsed.error);
