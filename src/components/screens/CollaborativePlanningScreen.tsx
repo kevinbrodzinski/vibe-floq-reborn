@@ -37,6 +37,7 @@ import { usePlanSummaries } from "@/hooks/usePlanSummaries";
 import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
 import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
+import { SummaryModeEnum } from '@/types/enums/summaryMode';
 import { toastError } from '@/lib/toast';
 import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
 import * as Collapsible from '@radix-ui/react-collapsible';
@@ -582,7 +583,7 @@ export const CollaborativePlanningScreen = () => {
               {/* Plan Summary Card - Finalized Mode */}
               <PlanSummaryCard
                 planId={plan.id}
-                mode="finalized"
+                mode={SummaryModeEnum.enum.finalized}
                 editable={true}
                 title="Plan Summary"
               />
@@ -690,7 +691,7 @@ export const CollaborativePlanningScreen = () => {
       {showSummaryEditModal && (
         <PlanSummaryEditModal
           planId={plan.id}
-          mode="finalized"
+          mode={SummaryModeEnum.enum.finalized}
           onClose={() => setShowSummaryEditModal(false)}
         />
       )}

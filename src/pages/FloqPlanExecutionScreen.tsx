@@ -18,6 +18,7 @@ import { PlanFeedbackDisplay } from '@/components/plan/PlanFeedbackDisplay'
 import { usePlanFeedback } from '@/hooks/usePlanFeedback'
 import { useAutoPromptReview } from '@/hooks/useAutoPromptReview'
 import { useUpdatePreferencesFromFeedback } from '@/hooks/useUpdatePreferencesFromFeedback'
+import { PlanStatusEnum } from '@/types/enums/planStatus'
 import type { PlanStop, PlanStopUi } from '@/types/plan'
 // import type { AfterglowData } from '@/types/afterglow'
 
@@ -117,7 +118,7 @@ export default function FloqPlanExecutionScreen() {
             currentStopIndex={currentStopIndex}
             progress={progress}
           />
-          <PlanStatusTag status="executing" />
+          <PlanStatusTag status={PlanStatusEnum.enum.executing} />
         </div>
 
         {/* Main Execution Content */}
