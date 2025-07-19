@@ -2515,6 +2515,9 @@ export type Database = {
           location: unknown | null
           started_at: string
           user_id: string
+          vibe_h: number | null
+          vibe_l: number | null
+          vibe_s: number | null
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
           visible_to: string | null
         }
@@ -2524,6 +2527,9 @@ export type Database = {
           location?: unknown | null
           started_at?: string
           user_id: string
+          vibe_h?: number | null
+          vibe_l?: number | null
+          vibe_s?: number | null
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
           visible_to?: string | null
         }
@@ -2533,6 +2539,9 @@ export type Database = {
           location?: unknown | null
           started_at?: string
           user_id?: string
+          vibe_h?: number | null
+          vibe_l?: number | null
+          vibe_s?: number | null
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"]
           visible_to?: string | null
         }
@@ -2791,6 +2800,9 @@ export type Database = {
           user_id: string
           venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_h: number | null
+          vibe_l: number | null
+          vibe_s: number | null
           visibility: string | null
         }
         Insert: {
@@ -2804,6 +2816,9 @@ export type Database = {
           user_id: string
           venue_id?: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_h?: number | null
+          vibe_l?: number | null
+          vibe_s?: number | null
           visibility?: string | null
         }
         Update: {
@@ -2817,6 +2832,9 @@ export type Database = {
           user_id?: string
           venue_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"]
+          vibe_h?: number | null
+          vibe_l?: number | null
+          vibe_s?: number | null
           visibility?: string | null
         }
         Relationships: [
@@ -4403,6 +4421,9 @@ export type Database = {
           user_id: string
           venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_h: number | null
+          vibe_l: number | null
+          vibe_s: number | null
           visibility: string | null
         }[]
       }
@@ -4563,6 +4584,9 @@ export type Database = {
           location: unknown | null
           started_at: string
           user_id: string
+          vibe_h: number | null
+          vibe_l: number | null
+          vibe_s: number | null
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
           visible_to: string | null
         }
