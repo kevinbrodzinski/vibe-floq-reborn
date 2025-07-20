@@ -57,6 +57,7 @@ export function InviteOverlay({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [showFriendModal, setShowFriendModal] = useState(false);
+  const [acceptedFriends, setAcceptedFriends] = useState<Friend[]>([]);
   const { toast } = useToast();
 
   // Hook up smart friend suggestions
@@ -73,6 +74,42 @@ export function InviteOverlay({
       loadFriends();
     }
   }, [open, floqId]);
+
+  // Realtime listener for new plan participants
+  useEffect(() => {
+    if (!planId || !open) return;
+
+    const channel = supabase
+      .channel(`plan-participants-${planId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'plan_participants',
+        filter: `plan_id=eq.${planId}`
+      }, async (payload) => {
+        const userId = payload.new?.user_id;
+        if (!userId) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profile) {
+          setAcceptedFriends(prev => {
+            // Avoid duplicates
+            if (prev.find(f => f.id === profile.id)) return prev;
+            return [...prev, profile];
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [planId, open]);
 
   const loadFloqMembers = async () => {
     if (!floqId) return;
@@ -296,6 +333,42 @@ export function InviteOverlay({
               </CardHeader>
 
               <CardContent className="space-y-4">
+                {/* Realtime joined friends notification */}
+                {acceptedFriends.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                        ✅ Just joined: {acceptedFriends.length} friend{acceptedFriends.length > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {acceptedFriends.map((friend) => (
+                        <motion.div
+                          key={friend.id}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="flex flex-col items-center min-w-0"
+                        >
+                          <Avatar className="w-8 h-8 ring-2 ring-green-500">
+                            <AvatarImage src={friend.avatar_url} />
+                            <AvatarFallback className="text-xs">
+                              {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <p className="text-xs text-green-700 dark:text-green-300 mt-1 truncate max-w-16">
+                            {friend.display_name || friend.username}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Smart invite banner */}
                 {suggestions.length > 0 && (
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
