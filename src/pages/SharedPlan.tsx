@@ -1,5 +1,5 @@
 
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useResolvePlanSlug } from '@/hooks/useResolvePlanSlug';
 import { useTrackPlanShareClick } from '@/hooks/useTrackPlanShareClick';
@@ -14,6 +14,7 @@ import { SharePlanButton } from '@/components/planning/SharePlanButton';
 export default function SharedPlan() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -84,8 +85,8 @@ export default function SharedPlan() {
 
       if (error) throw error;
 
-      // Redirect to the collaborative planning screen
-      window.location.href = `/plan/${planId}`;
+      // Navigate to the collaborative planning screen
+      navigate(`/plan/${planId}`);
     } catch (error) {
       console.error('Error joining plan:', error);
     } finally {
@@ -179,7 +180,7 @@ export default function SharedPlan() {
               <div className="space-y-2">
                 <p className="text-sm text-green-600 font-medium">✓ You're part of this plan</p>
                 <Button 
-                  onClick={() => window.location.href = `/plan/${planId}`}
+                  onClick={() => navigate(`/plan/${planId}`)}
                   className="w-full"
                 >
                   View Full Plan
