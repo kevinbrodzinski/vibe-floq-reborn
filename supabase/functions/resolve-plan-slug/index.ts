@@ -52,6 +52,7 @@ serve(async (req) => {
 
       console.log('Successfully resolved slug to plan_id:', link.plan_id);
       return new Response(JSON.stringify({
+        type: 'slug',
         plan_id: link.plan_id,
         resolved_slug: slug,
         creator_id: link.created_by,
@@ -73,6 +74,7 @@ serve(async (req) => {
     if (plan) {
       console.log('Successfully resolved plan ID to plan_id:', plan.id);
       return new Response(JSON.stringify({
+        type: 'plan_id',
         plan_id: plan.id,
         resolved_slug: plan.id,
         floq_id: plan.floq_id,

@@ -24,8 +24,17 @@ export default function SharedPlan() {
   useTrackPlanShareClick(slug);
   const { data: planResolution, isLoading: isResolving, error: resolveError } = useResolvePlanSlug(slug!);
 
+  // If this is a direct plan ID (not a shared slug), redirect to the regular plan view
   useEffect(() => {
-    if (!planResolution?.plan_id) return;
+    if (planResolution?.type === 'plan_id') {
+      navigate(`/plan/${planResolution.plan_id}`, { replace: true });
+      return;
+    }
+  }, [planResolution, navigate]);
+
+  useEffect(() => {
+    // Only fetch plan details for actual shared slugs
+    if (!planResolution?.plan_id || planResolution.type !== 'slug') return;
 
     const fetchPlan = async () => {
       try {

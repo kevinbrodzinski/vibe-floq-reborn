@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 
 interface PlanResolution {
+  type: 'slug' | 'plan_id'
   plan_id: string
   floq_id: string
   creator_id: string
