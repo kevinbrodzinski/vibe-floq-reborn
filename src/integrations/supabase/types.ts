@@ -1886,6 +1886,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_plan_participants_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_plan_participants_user_profile"
             columns: ["user_id"]
             isOneToOne: false
@@ -1928,6 +1935,42 @@ export type Database = {
           last_accessed_at?: string | null
           plan_id?: string
           slug?: string
+        }
+        Relationships: []
+      }
+      plan_stop_votes: {
+        Row: {
+          created_at: string | null
+          emoji_reaction: string | null
+          guest_id: string | null
+          id: string
+          plan_id: string
+          stop_id: string
+          updated_at: string | null
+          user_id: string | null
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          emoji_reaction?: string | null
+          guest_id?: string | null
+          id?: string
+          plan_id: string
+          stop_id: string
+          updated_at?: string | null
+          user_id?: string | null
+          vote_type: string
+        }
+        Update: {
+          created_at?: string | null
+          emoji_reaction?: string | null
+          guest_id?: string | null
+          id?: string
+          plan_id?: string
+          stop_id?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vote_type?: string
         }
         Relationships: []
       }
@@ -4533,6 +4576,10 @@ export type Database = {
       remove_friend: {
         Args: { _friend: string }
         Returns: Json
+      }
+      reorder_plan_stops: {
+        Args: { p_plan_id: string; p_stop_ids: string[] }
+        Returns: undefined
       }
       search_afterglows: {
         Args: {
