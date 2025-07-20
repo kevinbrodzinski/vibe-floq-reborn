@@ -116,7 +116,7 @@ export function FloqPlanTab() {
       <div className="absolute bottom-6 right-6 flex flex-col gap-3">
         <Button
           size="icon"
-          className="rounded-full h-14 w-14 shadow-lg"
+          className="rounded-full h-14 w-14 shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
           onPointerDown={() => {
             longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)
           }}

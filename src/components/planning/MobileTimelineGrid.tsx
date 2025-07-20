@@ -284,7 +284,7 @@ function MobileExpandedTimeline({
             {/* Add stop button for this time slot */}
             <AddStopButton
               timeSlot={timeSlot}
-              onAdd={onAddStop || (() => {})}
+              onAdd={(slot) => onAddStop?.(slot)}
               className="h-16 text-xs"
             />
           </div>

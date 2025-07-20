@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,7 +88,7 @@ export function AddStopModal({
     
     try {
       const newStop: PlanStop = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         plan_id: planId,
         title: title.trim(),
         venue: '',
