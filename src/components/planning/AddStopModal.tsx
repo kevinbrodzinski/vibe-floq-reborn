@@ -1,15 +1,17 @@
+
 import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { useCreatePlanStop } from '@/hooks/useCreatePlanStop'
+import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { NovaIndicator } from './NovaIndicator'
 import { Clock, MapPin, DollarSign, Sparkles } from 'lucide-react'
+import type { PlanStop } from '@/types/plan'
 
 interface AddStopModalProps {
   isOpen: boolean
@@ -32,8 +34,9 @@ export function AddStopModal({
   const [endTime, setEndTime] = useState(defaultEndTime)
   const [estimatedCost, setEstimatedCost] = useState('')
   const [usedNovaSuggestion, setUsedNovaSuggestion] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const createStop = useCreatePlanStop()
+  const { addStop } = useCollaborativeState(planId)
   const { data: stops = [] } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
   
@@ -65,20 +68,48 @@ export function AddStopModal({
     }
   }, [isOpen, title, suggestedTime, userPreferences, startTime])
 
+  // Update times when defaultStartTime changes
+  useEffect(() => {
+    if (defaultStartTime) {
+      setStartTime(defaultStartTime)
+    }
+    if (defaultEndTime) {
+      setEndTime(defaultEndTime)
+    }
+  }, [defaultStartTime, defaultEndTime])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!title.trim()) return
+    if (!title.trim() || isSubmitting) return
 
+    setIsSubmitting(true)
+    
     try {
-      await createStop.mutateAsync({
+      const newStop: PlanStop = {
+        id: crypto.randomUUID(),
         plan_id: planId,
         title: title.trim(),
-        description: description.trim() || undefined,
+        venue: '',
+        description: description.trim(),
+        startTime: startTime,
+        endTime: endTime,
         start_time: startTime,
         end_time: endTime,
+        location: '',
+        vibeMatch: 0.8,
+        status: 'pending',
+        color: '#3B82F6',
+        duration_minutes: 60,
+        participants: [],
+        createdBy: '',
+        votes: [],
+        kind: 'restaurant' as any,
+        address: '',
         estimated_cost_per_person: estimatedCost ? parseFloat(estimatedCost) : undefined,
-      })
+      }
+
+      await addStop(newStop)
       
       // Reset form
       setTitle('')
@@ -86,18 +117,24 @@ export function AddStopModal({
       setStartTime(defaultStartTime)
       setEndTime(defaultEndTime)
       setEstimatedCost('')
+      setUsedNovaSuggestion(false)
       onClose()
     } catch (error) {
       console.error('Error creating stop:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleClose = () => {
+    if (isSubmitting) return
+    
     setTitle('')
     setDescription('')
     setStartTime(defaultStartTime)
     setEndTime(defaultEndTime)
     setEstimatedCost('')
+    setUsedNovaSuggestion(false)
     onClose()
   }
 
@@ -120,6 +157,7 @@ export function AddStopModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -131,6 +169,7 @@ export function AddStopModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -156,6 +195,7 @@ export function AddStopModal({
                   setUsedNovaSuggestion(false) // Clear Nova indicator on manual change
                 }}
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -170,6 +210,7 @@ export function AddStopModal({
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 required
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -187,18 +228,24 @@ export function AddStopModal({
               onChange={(e) => setEstimatedCost(e.target.value)}
               min="0"
               step="0.01"
+              disabled={isSubmitting}
             />
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={!title.trim() || createStop.isPending}
+              disabled={!title.trim() || isSubmitting}
             >
-              {createStop.isPending ? 'Adding...' : 'Add Stop'}
+              {isSubmitting ? 'Adding...' : 'Add Stop'}
             </Button>
           </DialogFooter>
         </form>

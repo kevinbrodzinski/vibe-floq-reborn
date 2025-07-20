@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -5,20 +6,32 @@ import { Button } from '@/components/ui/button'
 import { Plus, Mic } from 'lucide-react'
 import { useActiveFloqPlan } from '@/hooks/useActiveFloqPlan'
 import { useFloqDetails } from '@/hooks/useFloqDetails'
+import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { PlanHeader } from './PlanHeader'
 import { MobileTimelineGrid } from '@/components/planning/MobileTimelineGrid'
+import { AddStopModal } from '@/components/planning/AddStopModal'
 import { Loader2 } from 'lucide-react'
 import type { Database } from '@/integrations/supabase/types'
 
 type Floq = Database['public']['Tables']['floqs']['Row']
-
 
 export function FloqPlanTab() {
   const { floqId } = useParams<{ floqId: string }>()
   const { data: floq } = useFloqDetails(floqId)
   const { data: plan, isLoading } = useActiveFloqPlan(floqId)
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [showAddStopModal, setShowAddStopModal] = useState(false)
+  const [defaultTimeSlot, setDefaultTimeSlot] = useState<string>()
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Get collaborative state for the plan
+  const {
+    stops,
+    isLoading: stopsLoading,
+    addStop,
+    reorderStops,
+    voteOnStop
+  } = useCollaborativeState(plan?.id || '')
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -28,6 +41,23 @@ export function FloqPlanTab() {
       }
     }
   }, [])
+
+  const handleAddStop = (timeSlot?: string) => {
+    setDefaultTimeSlot(timeSlot)
+    setShowAddStopModal(true)
+  }
+
+  const handleStopReorder = async (stopId: string, newIndex: number) => {
+    // Convert to stop IDs array for reordering
+    const reorderedStops = [...stops]
+    const currentIndex = reorderedStops.findIndex(s => s.id === stopId)
+    if (currentIndex !== -1) {
+      const [movedStop] = reorderedStops.splice(currentIndex, 1)
+      reorderedStops.splice(newIndex, 0, movedStop)
+      const stopIds = reorderedStops.map(s => s.id)
+      await reorderStops(currentIndex, newIndex)
+    }
+  }
 
   if (isLoading || !plan || !floq) {
     return (
@@ -54,6 +84,10 @@ export function FloqPlanTab() {
             planStatus={plan.status || 'draft'}
             startTime={plan.start_time || '18:00'}
             endTime={plan.end_time || '23:59'}
+            stops={stops}
+            onAddStop={handleAddStop}
+            onStopReorder={handleStopReorder}
+            onStopSelect={(stopId) => console.log('Selected stop:', stopId)}
           />
         </TabsContent>
 
@@ -98,14 +132,26 @@ export function FloqPlanTab() {
               longPressTimerRef.current = null
             }
           }}
-          onClick={() => {
-            // Handle regular click - open add stop modal
-            console.log('Add stop clicked')
-          }}
+          onClick={() => handleAddStop()}
         >
           <Plus size={28} />
         </Button>
       </div>
+
+      {/* Add Stop Modal */}
+      <AddStopModal
+        isOpen={showAddStopModal}
+        onClose={() => {
+          setShowAddStopModal(false)
+          setDefaultTimeSlot(undefined)
+        }}
+        planId={plan.id}
+        defaultStartTime={defaultTimeSlot}
+        defaultEndTime={defaultTimeSlot ? 
+          `${(parseInt(defaultTimeSlot.split(':')[0]) + 1).toString().padStart(2, '0')}:00` : 
+          undefined
+        }
+      />
 
       {/* Voice Input Sheet - placeholder */}
       {voiceOpen && (
