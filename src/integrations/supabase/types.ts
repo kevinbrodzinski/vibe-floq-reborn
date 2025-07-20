@@ -1849,26 +1849,32 @@ export type Database = {
       }
       plan_participants: {
         Row: {
+          id: string
           invite_type: string | null
           joined_at: string | null
           plan_id: string
           reminded_at: string | null
+          role: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status: string | null
           user_id: string
         }
         Insert: {
+          id?: string
           invite_type?: string | null
           joined_at?: string | null
           plan_id: string
           reminded_at?: string | null
+          role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: string | null
           user_id: string
         }
         Update: {
+          id?: string
           invite_type?: string | null
           joined_at?: string | null
           plan_id?: string
           reminded_at?: string | null
+          role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: string | null
           user_id?: string
         }
@@ -5918,6 +5924,7 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
+      plan_role_enum: "participant" | "organizer"
       plan_status_enum:
         | "draft"
         | "active"
@@ -6138,6 +6145,7 @@ export const Constants = {
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
+      plan_role_enum: ["participant", "organizer"],
       plan_status_enum: [
         "draft",
         "active",

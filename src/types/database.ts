@@ -18,6 +18,10 @@ export type FloqParticipantRow = Database['public']['Tables']['floq_participants
   profiles?: ProfileRow
 }
 
+export type PlanParticipantRow = Database['public']['Tables']['plan_participants']['Row'] & {
+  profiles?: ProfileRow
+}
+
 export type PlanCommentRow = Database['public']['Tables']['plan_comments']['Row'] & {
   profiles: Pick<ProfileRow, 'username' | 'display_name' | 'avatar_url'>
 }

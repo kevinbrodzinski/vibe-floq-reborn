@@ -8,8 +8,16 @@ export function usePlanParticipants(plan_id: string) {
       const { data, error } = await supabase
         .from('plan_participants')
         .select(`
-          *,
-          profiles!user_id(*)
+          id,
+          user_id,
+          role,
+          joined_at,
+          profiles:user_id (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
         `)
         .eq('plan_id', plan_id)
       
