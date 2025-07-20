@@ -1874,6 +1874,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_plan_participants_user_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plan_participants_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
@@ -3967,6 +3974,18 @@ export type Database = {
           distance_m: number
           user_count: number
         }[]
+      }
+      get_dashboard_overview: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
+      get_dashboard_plans: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
+      get_dashboard_users: {
+        Args: { p_days?: number }
+        Returns: Json
       }
       get_floq_full_details: {
         Args: { p_floq_id: string }
