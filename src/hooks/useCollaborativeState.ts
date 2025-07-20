@@ -50,6 +50,12 @@ export function useCollaborativeState(planId: string): CollaborativeState {
         if (!guestId) throw new Error('Not authenticated')
       }
 
+      // Get current count first, then insert
+      const { count } = await supabase
+        .from('plan_stops')
+        .select('*', { count: 'exact', head: true })
+        .eq('plan_id', planId)
+
       const { data, error } = await supabase
         .from('plan_stops')
         .insert({
@@ -61,7 +67,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
           end_time: newStop.endTime || newStop.end_time,
           address: newStop.address || '',
           location: newStop.location || '',
-          stop_order: (planStops?.length || 0) + 1,
+          stop_order: (count || 0) + 1,
         })
         .select()
         .single()
