@@ -1849,8 +1849,10 @@ export type Database = {
       }
       plan_participants: {
         Row: {
+          guest_name: string | null
           id: string
           invite_type: string | null
+          is_guest: boolean | null
           joined_at: string | null
           plan_id: string
           reminded_at: string | null
@@ -1859,8 +1861,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          guest_name?: string | null
           id?: string
           invite_type?: string | null
+          is_guest?: boolean | null
           joined_at?: string | null
           plan_id: string
           reminded_at?: string | null
@@ -1869,8 +1873,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          guest_name?: string | null
           id?: string
           invite_type?: string | null
+          is_guest?: boolean | null
           joined_at?: string | null
           plan_id?: string
           reminded_at?: string | null
