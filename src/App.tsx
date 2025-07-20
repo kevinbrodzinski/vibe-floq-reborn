@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
 import SharedPlan from "./pages/SharedPlan";
+import { PlanInvite } from "./pages/PlanInvite";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,7 @@ const App = () => {
                 {/* Public shared routes - no auth required */}
                 <Route path="/a/:slug" element={<SharedAfterglow />} />
                 <Route path="/plan/:slug" element={<SharedPlan />} />
+                <Route path="/invite/:slug" element={<PlanInvite />} />
                 {/* Settings route */}
                 <Route path="/settings/profile" element={<Settings />} />
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}
