@@ -162,10 +162,14 @@ function MobileCompactTimeline({
       ) : (
         <>
           {stops.map((stop) => (
-            <div
+            <motion.div
               key={stop.id}
+              layout
               className="bg-card rounded-xl p-4 border cursor-pointer hover:bg-card/80 transition-colors"
               onClick={() => onStopSelect?.(stop.id)}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -179,7 +183,7 @@ function MobileCompactTimeline({
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
           <button
             onClick={() => onAddStop?.()}
@@ -237,7 +241,7 @@ function MobileExpandedTimeline({
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => onAddStop?.()}
-            className="btn-primary mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            className="btn-primary mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors animate-fade-in"
           >
             Add your first stop
           </motion.button>
@@ -263,9 +267,13 @@ function MobileExpandedTimeline({
             {slotStops.map((stop) => (
               <motion.div
                 key={stop.id}
+                layout
                 className="bg-card rounded-xl p-4 border cursor-pointer hover:bg-card/80 transition-colors"
                 onClick={() => onStopSelect?.(stop.id)}
                 whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
