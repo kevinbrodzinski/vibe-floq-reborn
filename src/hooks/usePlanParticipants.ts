@@ -9,7 +9,7 @@ export function usePlanParticipants(plan_id: string) {
         .from('plan_participants')
         .select(`
           *,
-          profile:profiles(*)
+          profiles!user_id(*)
         `)
         .eq('plan_id', plan_id)
       
