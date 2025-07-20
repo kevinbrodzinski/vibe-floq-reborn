@@ -68,7 +68,7 @@ const App = () => {
               <Routes>
                 {/* Public shared routes - no auth required */}
                 <Route path="/a/:slug" element={<SharedAfterglow />} />
-                <Route path="/plan/:slug" element={<SharedPlan />} />
+                <Route path="/share/:slug" element={<SharedPlan />} />
                 <Route path="/invite/:slug" element={<PlanInvite />} />
                 {/* Settings route */}
                 <Route path="/settings/profile" element={<Settings />} />
