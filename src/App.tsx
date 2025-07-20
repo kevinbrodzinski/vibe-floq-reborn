@@ -17,6 +17,7 @@ import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
+import SharedPlan from "./pages/SharedPlan";
 
 const queryClient = new QueryClient();
 
@@ -64,8 +65,9 @@ const App = () => {
             <BrowserRouter>
               <PlanInviteProvider />
               <Routes>
-                {/* Public shared afterglow route */}
+                {/* Public shared routes - no auth required */}
                 <Route path="/a/:slug" element={<SharedAfterglow />} />
+                <Route path="/plan/:slug" element={<SharedPlan />} />
                 {/* Settings route */}
                 <Route path="/settings/profile" element={<Settings />} />
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}

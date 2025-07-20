@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { Suspense } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
@@ -25,6 +26,7 @@ import Invites from '@/pages/Invites';
 import { PlansHub } from '@/components/plans/PlansHub';
 import { NewPlanWizard } from '@/pages/NewPlanWizard';
 import FloqPlan from '@/pages/FloqPlan';
+import SharedPlan from '@/pages/SharedPlan';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -57,8 +59,9 @@ export const AppRoutes = () => {
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
-    <Route path="/plan" element={<CollaborativePlanningScreen />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
+    {/* New anonymous route for shared plans */}
+    <Route path="/plan/:slug" element={<SharedPlan />} />
     <Route path="/invites" element={<Invites />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
