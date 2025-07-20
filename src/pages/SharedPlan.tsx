@@ -4,11 +4,10 @@ import { useState, useEffect } from 'react';
 import { useResolvePlanSlug } from '@/hooks/useResolvePlanSlug';
 import { useTrackPlanShareClick } from '@/hooks/useTrackPlanShareClick';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AuthModal } from '@/components/auth/AuthModal';
 import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
 import { Share2, Users, Calendar, MapPin } from 'lucide-react';
 
@@ -16,7 +15,7 @@ export default function SharedPlan() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
@@ -68,7 +67,7 @@ export default function SharedPlan() {
 
   const handleJoinPlan = async () => {
     if (!user) {
-      setShowLoginModal(true);
+      navigate('/auth');
       return;
     }
 
@@ -258,13 +257,6 @@ export default function SharedPlan() {
           </CardContent>
         </Card>
 
-        {/* Login Modal */}
-        <AuthModal
-          open={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          title="Sign in to join this plan"
-          description="Create an account or sign in to collaborate on this plan."
-        />
       </div>
     </div>
   );
