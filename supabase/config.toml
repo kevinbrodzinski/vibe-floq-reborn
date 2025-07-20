@@ -72,3 +72,6 @@ verify_jwt = true
 
 [functions.resolve-plan-slug]
 verify_jwt = false
+
+[functions.join-as-guest]
+verify_jwt = false

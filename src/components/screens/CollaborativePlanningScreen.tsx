@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Settings, Play, Users, MessageCircle, HelpCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { useParams } from 'react-router-dom';
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { KeyboardShortcutHelp } from "@/components/ui/keyboard-shortcut-help";
 import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
@@ -43,6 +44,8 @@ import { usePlanAutoProgression } from '@/hooks/usePlanAutoProgression';
 import * as Collapsible from '@radix-ui/react-collapsible';
 
 export const CollaborativePlanningScreen = () => {
+  const { planId } = useParams<{ planId: string }>();
+  
   const [planMode, setPlanMode] = useState<'planning' | 'executing'>('planning');
   const [showChat, setShowChat] = useState(false);
   const [venueSearchQuery, setVenueSearchQuery] = useState("");
@@ -60,16 +63,19 @@ export const CollaborativePlanningScreen = () => {
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
   const overlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
+  // Use the actual plan ID from URL params
+  const actualPlanId = planId || 'plan-1';
+  
   const {
     stops,
     isLoading,
     removeStop,
     reorderStops
-  } = useCollaborativeState("plan-1");
+  } = useCollaborativeState(actualPlanId);
 
   // Mock the removed properties for now
   const plan = { 
-    id: 'plan-1',
+    id: actualPlanId,
     title: 'Collaborative Plan',
     date: new Date().toISOString().split('T')[0],
     stops, 

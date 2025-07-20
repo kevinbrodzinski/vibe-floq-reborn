@@ -5,20 +5,27 @@ import { useResolvePlanSlug } from '@/hooks/useResolvePlanSlug';
 import { useTrackPlanShareClick } from '@/hooks/useTrackPlanShareClick';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { useGuestSession } from '@/hooks/useGuestSession';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
-import { Share2, Users, Calendar, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Share2, Users, Calendar, MapPin, UserPlus } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 export default function SharedPlan() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const { guestName, saveGuestName } = useGuestSession();
   const navigate = useNavigate();
   
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isJoining, setIsJoining] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [guestInputName, setGuestInputName] = useState('');
 
   // Track click and resolve slug to plan ID
   useTrackPlanShareClick(slug);
@@ -33,44 +40,6 @@ export default function SharedPlan() {
   }, [planResolution, navigate]);
 
   useEffect(() => {
-    // Only fetch plan details for actual shared slugs
-    if (!planResolution?.plan_id || planResolution.type !== 'slug') return;
-
-    const fetchPlan = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('floq_plans')
-          .select(`
-            *,
-            floqs:floq_id (
-              id,
-              name,
-              description
-            ),
-            plan_participants (
-              id,
-              user_id,
-              role,
-              profiles:user_id (
-                id,
-                username,
-                display_name,
-                avatar_url
-              )
-            )
-          `)
-          .eq('id', planResolution.plan_id)
-          .single();
-
-        if (error) throw error;
-        setPlan(data);
-      } catch (error) {
-        console.error('Error fetching plan:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPlan();
   }, [planResolution?.plan_id]);
 
@@ -114,6 +83,91 @@ export default function SharedPlan() {
     }
   };
 
+  const handleJoinAsGuest = async () => {
+    if (!guestInputName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name to join as a guest.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!planResolution?.plan_id) return;
+
+    setIsJoining(true);
+    try {
+      const response = await supabase.functions.invoke('join-as-guest', {
+        body: {
+          plan_id: planResolution.plan_id,
+          guest_name: guestInputName.trim()
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      // Save guest name locally
+      saveGuestName(guestInputName.trim());
+      setShowGuestModal(false);
+      
+      toast({
+        title: "Joined Successfully!",
+        description: `Welcome ${guestInputName}! You've joined the plan as a guest.`,
+      });
+
+      // Refresh plan data to show guest in participants
+      await fetchPlan();
+    } catch (error) {
+      console.error('Error joining as guest:', error);
+      toast({
+        title: "Failed to Join",
+        description: "There was an error joining the plan. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const fetchPlan = async () => {
+    if (!planResolution?.plan_id || planResolution.type !== 'slug') return;
+
+    try {
+      const { data, error } = await supabase
+        .from('floq_plans')
+        .select(`
+          *,
+          floqs:floq_id (
+            id,
+            name,
+            description
+          ),
+          plan_participants (
+            id,
+            user_id,
+            role,
+            is_guest,
+            guest_name,
+            profiles:user_id (
+              id,
+              username,
+              display_name,
+              avatar_url
+            )
+          )
+        `)
+        .eq('id', planResolution.plan_id)
+        .single();
+
+      if (error) throw error;
+      setPlan(data);
+    } catch (error) {
+      console.error('Error fetching plan:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (isResolving || loading) {
     return <FullScreenSpinner />;
   }
@@ -134,6 +188,7 @@ export default function SharedPlan() {
   }
 
   const isParticipant = user && plan.plan_participants?.some((p: any) => p.user_id === user.id);
+  const isGuestParticipant = !user && guestName && plan.plan_participants?.some((p: any) => p.is_guest && p.guest_name === guestName);
   const participantCount = plan.plan_participants?.length || 0;
 
   return (
@@ -210,7 +265,11 @@ export default function SharedPlan() {
                       key={participant.id}
                       className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1"
                     >
-                      {participant.profiles?.avatar_url ? (
+                      {participant.is_guest ? (
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <UserPlus className="w-3 h-3 text-white" />
+                        </div>
+                      ) : participant.profiles?.avatar_url ? (
                         <img
                           src={participant.profiles.avatar_url}
                           alt=""
@@ -220,13 +279,15 @@ export default function SharedPlan() {
                         <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs font-bold">
                             {participant.profiles?.display_name?.[0] || 
-                             participant.profiles?.username?.[0] || '?'}
+                             participant.profiles?.username?.[0] || 'U'}
                           </span>
                         </div>
                       )}
                       <span className="text-sm font-medium">
-                        {participant.profiles?.display_name || 
-                         participant.profiles?.username || 'Anonymous'}
+                        {participant.is_guest 
+                          ? `${participant.guest_name} (Guest)`
+                          : participant.profiles?.display_name || 
+                            participant.profiles?.username || 'Anonymous'}
                       </span>
                     </div>
                   ))}
@@ -243,9 +304,11 @@ export default function SharedPlan() {
 
             {/* Action Buttons */}
             <div className="flex flex-col space-y-3">
-              {isParticipant ? (
+              {isParticipant || isGuestParticipant ? (
                 <div className="space-y-2">
-                  <p className="text-sm text-green-600 font-medium">✓ You're part of this plan</p>
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ You're part of this plan{isGuestParticipant ? ' as a guest' : ''}
+                  </p>
                   <Button 
                     onClick={() => navigate(`/plan/${planResolution?.plan_id}`)}
                     className="w-full"
@@ -254,17 +317,80 @@ export default function SharedPlan() {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={handleJoinPlan}
-                  disabled={isJoining}
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                >
-                  {isJoining ? 'Joining...' : 'Join Plan'}
-                </Button>
+                <div className="space-y-3">
+                  {user ? (
+                    <Button
+                      onClick={handleJoinPlan}
+                      disabled={isJoining}
+                      className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                    >
+                      {isJoining ? 'Joining...' : 'Join Plan'}
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={handleJoinPlan}
+                        disabled={isJoining}
+                        className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                      >
+                        Sign In & Join Plan
+                      </Button>
+                      <div className="text-center">
+                        <span className="text-sm text-gray-500">or</span>
+                      </div>
+                      <Button
+                        onClick={() => setShowGuestModal(true)}
+                        variant="outline"
+                        className="w-full"
+                        disabled={isJoining}
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Join as Guest
+                      </Button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Guest Join Modal */}
+        <Dialog open={showGuestModal} onOpenChange={setShowGuestModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Join as Guest</DialogTitle>
+              <DialogDescription>
+                Enter your name to join this plan without creating an account. You can upgrade to a full account later.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Your name"
+                value={guestInputName}
+                onChange={(e) => setGuestInputName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleJoinAsGuest()}
+                maxLength={50}
+              />
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => setShowGuestModal(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleJoinAsGuest}
+                  disabled={isJoining || !guestInputName.trim()}
+                  className="flex-1"
+                >
+                  {isJoining ? 'Joining...' : 'Join Plan'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </div>

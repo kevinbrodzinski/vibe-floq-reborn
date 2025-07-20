@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
+import { useLocation } from 'react-router-dom';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
 const ONBOARDING_VERSION = 'v2';
@@ -17,9 +18,14 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const { getRedirectPath, clearRedirectPath } = useDeepLinkRedirect();
   const { getItem, setItem } = useSafeStorage();
+  const location = useLocation();
 
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const hasCompleted = preferences?.onboarding_version === ONBOARDING_VERSION;
+
+  // Check if user is visiting a shared plan route (bypass onboarding)
+  const isSharedPlanRoute = location.pathname.startsWith('/share/');
+  const isDirectPlanRoute = location.pathname.startsWith('/plan/');
 
   useEffect(() => {
     const loadOnboardingState = async () => {
@@ -58,9 +64,15 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Allow access to shared routes without authentication
+  if (!user && isSharedPlanRoute) {
+    return <>{children}</>;
+  }
+
   if (!user) return <AuthScreen />;
 
-  if (!onboardingComplete) {
+  // Skip onboarding for shared plan routes or if already completed
+  if (!onboardingComplete && !isSharedPlanRoute && !isDirectPlanRoute) {
     return (
       <EnhancedOnboardingScreen
         onComplete={async () => {
