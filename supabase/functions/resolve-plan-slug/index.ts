@@ -32,25 +32,64 @@ serve(async (req) => {
 
     console.log('Resolving plan slug:', slug);
 
-    // Find the plan_id for this slug
-    const { data, error } = await supabase
+    // First, check if this is already a share slug
+    let { data: shareLink, error } = await supabase
       .from('plan_share_links')
-      .select('plan_id')
+      .select('plan_id, click_count')
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(
-        JSON.stringify({ error: 'Database error' }), 
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    let planId = shareLink?.plan_id;
+
+    // If not found as a share slug, check if it's a direct plan ID
+    if (!shareLink) {
+      const { data: plan } = await supabase
+        .from('floq_plans')
+        .select('id, creator_id')
+        .eq('id', slug)
+        .maybeSingle();
+
+      if (plan) {
+        // Create a share link for this plan
+        console.log('Creating share link for plan ID:', slug);
+        
+        const { data: newShareLink, error: createError } = await supabase
+          .from('plan_share_links')
+          .insert({
+            plan_id: slug,
+            slug: slug, // Use the plan ID as the slug for now
+            created_by: plan.creator_id,
+            click_count: 1,
+            last_accessed_at: new Date().toISOString(),
+          })
+          .select('plan_id')
+          .single();
+
+        if (createError) {
+          console.error('Failed to create share link:', createError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create share link' }), 
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          );
         }
-      );
+
+        planId = newShareLink.plan_id;
+      }
+    } else {
+      // Track usage - increment click count
+      await supabase
+        .from('plan_share_links')
+        .update({
+          click_count: (shareLink.click_count || 0) + 1,
+          last_accessed_at: new Date().toISOString(),
+        })
+        .eq('slug', slug);
     }
 
-    if (!data) {
+    if (!planId) {
       return new Response(
         JSON.stringify({ error: 'Plan not found' }), 
         { 
@@ -60,19 +99,10 @@ serve(async (req) => {
       );
     }
 
-    // Track usage - increment click count and update last accessed
-    await supabase
-      .from('plan_share_links')
-      .update({
-        click_count: supabase.raw('COALESCE(click_count, 0) + 1'),
-        last_accessed_at: new Date().toISOString(),
-      })
-      .eq('slug', slug);
-
-    console.log('Successfully resolved slug to plan_id:', data.plan_id);
+    console.log('Successfully resolved slug to plan_id:', planId);
 
     return new Response(
-      JSON.stringify({ plan_id: data.plan_id }), 
+      JSON.stringify({ plan_id: planId }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
