@@ -60,8 +60,8 @@ export const AppRoutes = () => {
     <Route path="/plans" element={<PlansHub />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
-    {/* New anonymous route for shared plans */}
-    <Route path="/plan/:slug" element={<SharedPlan />} />
+    {/* New route for shared plans using /share/:slug */}
+    <Route path="/share/:slug" element={<SharedPlan />} />
     <Route path="/invites" element={<Invites />} />
     <Route path="/u/:username" element={<UserProfileByUsername />} />
     <Route path="/profile/:userId" element={<UserProfile />} />
