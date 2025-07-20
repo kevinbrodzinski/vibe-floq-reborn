@@ -70,29 +70,29 @@ export const CollaborativePlanningScreen = () => {
   const actualPlanId = planId;
   
 
-  // Get collaborative state including addStop function
+  // Get collaborative state including all functions
   const {
     stops,
     isLoading,
     removeStop,
     reorderStops,
-    addStop
+    addStop,
+    voteOnStop
   } = useCollaborativeState(actualPlanId);
 
-  // Mock the removed properties for now - TODO: Get from usePlan hook
+  // Mock the remaining properties that need real implementation
   const plan = { 
     id: actualPlanId,
     title: 'Collaborative Plan',
     date: new Date().toISOString().split('T')[0],
     stops, 
     status: 'draft' as const,
-    participants: [],
+    participants: [], // TODO: Get from usePlanRoom
     creator_id: 'current-user'
   };
-  const activities = [];
-  const voteOnStop = () => {};
+  const activities = []; // TODO: Get from plan activities hook
   const updateParticipantStatus = () => {};
-  const recentVotes = [];
+  const recentVotes = []; // TODO: Get from plan votes hook
 
   // Status validation for edit guards
   const { canEditPlan, canVoteOnStops } = usePlanStatusValidation()

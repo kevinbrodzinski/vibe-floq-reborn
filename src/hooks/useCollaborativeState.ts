@@ -11,7 +11,8 @@ interface CollaborativeState {
   isLoading: boolean;
   removeStop: (id: string) => Promise<void>;
   reorderStops: (from: number, to: number) => Promise<void>;
-  addStop: (stop: PlanStop) => void;
+  addStop: (stop: PlanStop) => Promise<void>;
+  voteOnStop: (stopId: string, voteType: 'upvote' | 'downvote' | 'maybe', emoji?: string) => Promise<void>;
 }
 
 export function useCollaborativeState(planId: string): CollaborativeState {
@@ -41,34 +42,35 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     enabled: !!planId,
   })
 
-  const { mutate: addStop } = useMutation({
-    mutationFn: async (newStop: Omit<PlanStop, 'id'>) => {
-      if (!session?.user) throw new Error('Not authenticated')
+  const { mutateAsync: addStopMutation } = useMutation({
+    mutationFn: async (newStop: PlanStop) => {
+      if (!session?.user) {
+        // Check if user is a guest
+        const guestId = localStorage.getItem('guest_participant_id')
+        if (!guestId) throw new Error('Not authenticated')
+      }
 
       const { data, error } = await supabase
         .from('plan_stops')
         .insert({
           plan_id: planId,
-          created_by: session.user.id,
+          created_by: session?.user?.id || localStorage.getItem('guest_participant_id'),
           title: newStop.title,
           description: newStop.description || '',
-          start_time: newStop.start_time,
-          end_time: newStop.end_time,
+          start_time: newStop.startTime || newStop.start_time,
+          end_time: newStop.endTime || newStop.end_time,
           address: newStop.address || '',
-          stop_order: 0,
+          location: newStop.location || '',
+          stop_order: (planStops?.length || 0) + 1,
         })
         .select()
         .single()
 
       if (error) throw error
-      return data
+      return mapPlanStopFromDb(data)
     },
     onSuccess: (data) => {
-      // Optimistically update the cache
-      queryClient.setQueryData(['plan-stops', planId], (old: PlanStop[] | undefined) => {
-        if (!old) return [data]
-        return [...old, data]
-      })
+      queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
       setOptimisticStops(prev => prev.filter(stop => stop.id !== data.id))
     },
     onError: (error) => {
@@ -164,7 +166,51 @@ export function useCollaborativeState(planId: string): CollaborativeState {
   }
   
   const reorderStops = async (from: number, to: number) => {
-    // TODO: Implement reordering
+    const currentStops = allStops
+    const reorderedStops = [...currentStops]
+    const [movedStop] = reorderedStops.splice(from, 1)
+    reorderedStops.splice(to, 0, movedStop)
+    
+    const stopIds = reorderedStops.map(stop => stop.id)
+    
+    const { error } = await supabase.rpc('reorder_plan_stops', {
+      p_plan_id: planId,
+      p_stop_ids: stopIds,
+    })
+    
+    if (error) {
+      console.error('Reorder stops error:', error)
+      throw error
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
+  }
+
+  const voteOnStop = async (stopId: string, voteType: 'upvote' | 'downvote' | 'maybe', emoji?: string) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    const guestId = localStorage.getItem('guest_participant_id')
+    
+    if (!user && !guestId) {
+      throw new Error('Must be logged in or joined as guest to vote')
+    }
+    
+    const { error } = await supabase
+      .from('plan_stop_votes')
+      .upsert({
+        plan_id: planId,
+        stop_id: stopId,
+        user_id: user?.id || null,
+        guest_id: guestId || null,
+        vote_type: voteType,
+        emoji_reaction: emoji
+      })
+    
+    if (error) {
+      console.error('Vote error:', error)
+      throw error
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
   }
 
   return {
@@ -172,6 +218,10 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     isLoading,
     removeStop,
     reorderStops,
-    addStop: (stop: PlanStop) => addStop(stop), // Expose addStop
+    addStop: async (stop: PlanStop) => {
+      addOptimisticStop(stop)
+      await addStopMutation(stop)
+    },
+    voteOnStop,
   }
 }
