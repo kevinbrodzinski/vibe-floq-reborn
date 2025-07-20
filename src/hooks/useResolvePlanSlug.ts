@@ -1,19 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
 
-export function useResolvePlanSlug(slug: string) {
-  return useQuery({
-    queryKey: ['resolve-plan-slug', slug],
-    enabled: !!slug,
+interface PlanResolution {
+  plan_id: string
+  floq_id: string
+  creator_id: string
+  resolved_slug: string
+}
+
+export function useResolvePlanSlug(slugOrId?: string) {
+  return useQuery<PlanResolution | null>({
+    queryKey: ['resolve-plan-slug', slugOrId],
+    enabled: !!slugOrId,
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('resolve-plan-slug', {
-        body: { slug }
-      });
-      
-      if (error) throw error;
-      if (!data?.plan_id) throw new Error('Plan not found');
-      
-      return data.plan_id;
+      const { data, error } = await supabase.functions.invoke<PlanResolution>(
+        'resolve-plan-slug',
+        { body: { slug: slugOrId } }
+      )
+
+      if (error) {
+        console.warn('[useResolvePlanSlug] Failed to resolve:', error)
+        return null
+      }
+
+      return data || null
     },
-  });
+  })
 }

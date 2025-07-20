@@ -22,10 +22,10 @@ export default function SharedPlan() {
 
   // Track click and resolve slug to plan ID
   useTrackPlanShareClick(slug);
-  const { data: planId, isLoading: isResolving, error: resolveError } = useResolvePlanSlug(slug!);
+  const { data: planResolution, isLoading: isResolving, error: resolveError } = useResolvePlanSlug(slug!);
 
   useEffect(() => {
-    if (!planId) return;
+    if (!planResolution?.plan_id) return;
 
     const fetchPlan = async () => {
       try {
@@ -50,7 +50,7 @@ export default function SharedPlan() {
               )
             )
           `)
-          .eq('id', planId)
+          .eq('id', planResolution.plan_id)
           .single();
 
         if (error) throw error;
@@ -63,7 +63,7 @@ export default function SharedPlan() {
     };
 
     fetchPlan();
-  }, [planId]);
+  }, [planResolution?.plan_id]);
 
   const handleJoinPlan = async () => {
     if (!user) {
@@ -71,7 +71,7 @@ export default function SharedPlan() {
       return;
     }
 
-    if (!planId) return;
+    if (!planResolution?.plan_id) return;
 
     setIsJoining(true);
     try {
@@ -79,7 +79,7 @@ export default function SharedPlan() {
       const { data: existingParticipant } = await supabase
         .from('plan_participants')
         .select('id')
-        .eq('plan_id', planId)
+        .eq('plan_id', planResolution.plan_id)
         .eq('user_id', user.id)
         .single();
 
@@ -88,7 +88,7 @@ export default function SharedPlan() {
         const { error } = await supabase
           .from('plan_participants')
           .insert({
-            plan_id: planId,
+            plan_id: planResolution.plan_id,
             user_id: user.id,
             role: 'participant'
           });
@@ -97,7 +97,7 @@ export default function SharedPlan() {
       }
 
       // Navigate to the collaborative planning screen
-      navigate(`/plan/${planId}`);
+      navigate(`/plan/${planResolution.plan_id}`);
     } catch (error) {
       console.error('Error joining plan:', error);
     } finally {
@@ -238,7 +238,7 @@ export default function SharedPlan() {
                 <div className="space-y-2">
                   <p className="text-sm text-green-600 font-medium">✓ You're part of this plan</p>
                   <Button 
-                    onClick={() => navigate(`/plan/${planId}`)}
+                    onClick={() => navigate(`/plan/${planResolution?.plan_id}`)}
                     className="w-full"
                   >
                     View Full Plan

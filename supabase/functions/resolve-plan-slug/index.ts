@@ -32,79 +32,53 @@ serve(async (req) => {
 
     console.log('Resolving plan slug:', slug);
 
-    // First, check if this is already a share slug
-    let { data: shareLink, error } = await supabase
+    // Try to resolve by slug first
+    const { data: link } = await supabase
       .from('plan_share_links')
-      .select('plan_id, click_count')
+      .select('plan_id, created_by')
       .eq('slug', slug)
+      .limit(1)
       .maybeSingle();
 
-    let planId = shareLink?.plan_id;
-
-    // If not found as a share slug, check if it's a direct plan ID
-    if (!shareLink) {
-      const { data: plan } = await supabase
-        .from('floq_plans')
-        .select('id, creator_id')
-        .eq('id', slug)
-        .maybeSingle();
-
-      if (plan) {
-        // Create a share link for this plan
-        console.log('Creating share link for plan ID:', slug);
-        
-        const { data: newShareLink, error: createError } = await supabase
-          .from('plan_share_links')
-          .insert({
-            plan_id: slug,
-            slug: slug, // Use the plan ID as the slug for now
-            created_by: plan.creator_id,
-            click_count: 1,
-            last_accessed_at: new Date().toISOString(),
-          })
-          .select('plan_id')
-          .single();
-
-        if (createError) {
-          console.error('Failed to create share link:', createError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to create share link' }), 
-            { 
-              status: 500, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-
-        planId = newShareLink.plan_id;
-      }
-    } else {
-      // Track usage - increment click count
-      await supabase
-        .from('plan_share_links')
-        .update({
-          click_count: (shareLink.click_count || 0) + 1,
-          last_accessed_at: new Date().toISOString(),
-        })
-        .eq('slug', slug);
+    if (link) {
+      console.log('Successfully resolved slug to plan_id:', link.plan_id);
+      return new Response(JSON.stringify({
+        plan_id: link.plan_id,
+        resolved_slug: slug,
+        creator_id: link.created_by,
+        floq_id: null, // will be fetched later
+      }), { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    if (!planId) {
-      return new Response(
-        JSON.stringify({ error: 'Plan not found' }), 
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
+    // Fallback: maybe it's a plan_id directly
+    const { data: plan } = await supabase
+      .from('floq_plans')
+      .select('id, floq_id, creator_id')
+      .eq('id', slug)
+      .limit(1)
+      .maybeSingle();
 
-    console.log('Successfully resolved slug to plan_id:', planId);
+    if (plan) {
+      console.log('Successfully resolved plan ID to plan_id:', plan.id);
+      return new Response(JSON.stringify({
+        plan_id: plan.id,
+        resolved_slug: plan.id,
+        floq_id: plan.floq_id,
+        creator_id: plan.creator_id,
+      }), { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     return new Response(
-      JSON.stringify({ plan_id: planId }), 
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify({ error: 'Plan not found' }), 
+      { 
+        status: 404, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
 
@@ -118,4 +92,4 @@ serve(async (req) => {
       }
     );
   }
-});
+})
