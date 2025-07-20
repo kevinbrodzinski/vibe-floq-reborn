@@ -63,17 +63,23 @@ export const CollaborativePlanningScreen = () => {
   const [selectedStopIds, setSelectedStopIds] = useState<string[]>([]);
   const overlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  // Use the actual plan ID from URL params
-  const actualPlanId = planId || 'plan-1';
+  // Use the actual plan ID from URL params - throw error if missing
+  if (!planId) {
+    throw new Error('Plan ID is required but not provided in URL params');
+  }
+  const actualPlanId = planId;
   
+
+  // Get collaborative state including addStop function
   const {
     stops,
     isLoading,
     removeStop,
-    reorderStops
+    reorderStops,
+    addStop
   } = useCollaborativeState(actualPlanId);
 
-  // Mock the removed properties for now
+  // Mock the removed properties for now - TODO: Get from usePlan hook
   const plan = { 
     id: actualPlanId,
     title: 'Collaborative Plan',
@@ -84,7 +90,6 @@ export const CollaborativePlanningScreen = () => {
     creator_id: 'current-user'
   };
   const activities = [];
-  const addStop = () => {};
   const voteOnStop = () => {};
   const updateParticipantStatus = () => {};
   const recentVotes = [];
@@ -107,7 +112,7 @@ export const CollaborativePlanningScreen = () => {
     }))
     
     newStops.forEach(stop => {
-      addStop()
+      addStop(stop)
     })
   }
 
@@ -140,7 +145,7 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop();
+    addStop(newStop);
     showOverlay('stop-action', 'Stop created!');
   };
 
@@ -267,7 +272,9 @@ export const CollaborativePlanningScreen = () => {
   );
 
   const handleAcceptSuggestion = async (s: any) => {
+    const { v4: uuidv4 } = require('uuid')
     const newStop = {
+      id: uuidv4(),
       title: s.title,
       venue: s.venue ?? 'TBD',
       description: `AI suggested: ${s.reasons?.[0]?.description ?? ''}`,
@@ -285,7 +292,7 @@ export const CollaborativePlanningScreen = () => {
       votes: []
     };
 
-    await addStop();
+    await addStop(newStop);
     showOverlay('stop-action', 'AI suggestion added!');
   };
 
@@ -352,7 +359,9 @@ export const CollaborativePlanningScreen = () => {
     }
 
     hapticFeedback.gestureConfirm();
+    const { v4: uuidv4 } = require('uuid')
     const newStop = {
+      id: uuidv4(),
       title: `${venue.type} at ${venue.name}`,
       venue: venue.name,
       description: venue.description,
@@ -369,7 +378,7 @@ export const CollaborativePlanningScreen = () => {
       participants: [],
       votes: []
     };
-    addStop();
+    addStop(newStop);
     showOverlay('stop-action', 'Stop added!');
   };
 

@@ -12,7 +12,9 @@ export function usePlanParticipants(plan_id: string) {
           user_id,
           role,
           joined_at,
-          profiles:user_id (
+          is_guest,
+          guest_name,
+          profiles!user_id (
             id,
             username,
             display_name,

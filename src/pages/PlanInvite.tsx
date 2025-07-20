@@ -62,7 +62,7 @@ export function PlanInvite() {
         .from('plan_participants')
         .select(`
           user_id,
-          profiles:user_id(id, display_name, username, avatar_url)
+          profiles!user_id(id, display_name, username, avatar_url)
         `)
         .eq('plan_id', resolution!.plan_id)
 
