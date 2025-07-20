@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VibeRing } from '@/components/VibeRing';
 import { useSuggestedInvitees } from '@/hooks/useSuggestedInvitees';
 import { safeVibe } from '@/utils/safeVibe';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface InviteOverlayProps {
   open: boolean;
@@ -55,6 +56,7 @@ export function InviteOverlay({
   const [customMessage, setCustomMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showFriendModal, setShowFriendModal] = useState(false);
   const { toast } = useToast();
 
   // Hook up smart friend suggestions
@@ -150,6 +152,33 @@ export function InviteOverlay({
     );
   };
 
+  const sendSmartInvites = async () => {
+    if (!floqId || suggestions.length === 0) return;
+
+    setLoading(true);
+    try {
+      await callSendInvitations('internal', {
+        floq_id: floqId,
+        invitee_ids: suggestions.map(s => s.id)
+      });
+
+      toast({
+        title: "Smart invites sent!",
+        description: `Sent invitations to ${suggestions.length} suggested friends.`,
+      });
+
+      onClose();
+    } catch (error: any) {
+      toast({
+        title: "Error sending invites",
+        description: error.message || "Failed to send smart invitations",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const sendInternalInvites = async () => {
     if (!floqId || selectedUsers.length === 0) return;
 
@@ -231,298 +260,402 @@ export function InviteOverlay({
     friend.display_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Calculate mutual friends already going to the plan
+  const mutualFriends = suggestions.filter(s => friends.some(f => f.id === s.id));
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md max-h-[80vh] overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5" />
-            Invite People
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
+    <AnimatePresence>
+      {open && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <X className="w-4 h-4" />
-          </Button>
-        </CardHeader>
+            <Card className="w-full max-w-md max-h-[80vh] overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  Invite People
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </CardHeader>
 
-        <CardContent className="space-y-4">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="suggested" className="text-xs">
-                <Sparkles className="w-3 h-3 mr-1" />
-                Smart
-              </TabsTrigger>
-              <TabsTrigger value="floq" className="text-xs">
-                <Users className="w-3 h-3 mr-1" />
-                Floq
-              </TabsTrigger>
-              <TabsTrigger value="friends" className="text-xs">
-                <Users className="w-3 h-3 mr-1" />
-                Friends
-              </TabsTrigger>
-              <TabsTrigger value="email" className="text-xs">
-                <Mail className="w-3 h-3 mr-1" />
-                Email
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="suggested" className="space-y-3">
-              {suggestionsLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
-                  <p className="text-sm">Finding perfect matches...</p>
-                </div>
-              ) : suggestions.length > 0 ? (
-                <>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Smart suggestions based on shared interests and vibe compatibility
-                  </div>
-                  <div className="max-h-48 overflow-y-auto space-y-2">
-                    {suggestions.map((suggestion) => (
-                      <div
-                        key={suggestion.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer border border-primary/20"
-                        onClick={() => toggleUserSelection(suggestion.id)}
-                      >
-                        <Checkbox
-                          checked={selectedUsers.includes(suggestion.id)}
-                          onChange={() => toggleUserSelection(suggestion.id)}
-                        />
-                        <VibeRing 
-                          vibe={safeVibe(suggestion.current_vibe || planVibe)}
-                          className="w-10 h-10"
-                        >
-                          <Avatar className="w-8 h-8">
-                            <AvatarImage src={suggestion.avatar_url} />
-                            <AvatarFallback>
-                              {suggestion.display_name?.[0] || suggestion.username[0]?.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </VibeRing>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">
-                              {suggestion.display_name || suggestion.username}
-                            </p>
-                            <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                          </div>
+              <CardContent className="space-y-4">
+                {/* Smart invite banner */}
+                {suggestions.length > 0 && (
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-600" />
+                        <div>
+                          <p className="text-sm font-medium">Smart Suggestions</p>
                           <p className="text-xs text-muted-foreground">
-                            {suggestion.suggestion_reason}
+                            {suggestions.length} perfect matches found
                           </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {selectedUsers.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-2">
-                      {selectedUsers.map((userId) => {
-                        const user = suggestions.find(s => s.id === userId) || 
-                                    floqMembers.find(m => m.id === userId) ||
-                                    friends.find(f => f.id === userId);
-                        if (!user) return null;
-                        return (
-                          <Badge key={userId} variant="secondary" className="text-xs">
-                            {user.display_name || user.username}
-                            <X
-                              className="w-3 h-3 ml-1 cursor-pointer"
-                              onClick={() => toggleUserSelection(userId)}
-                            />
-                          </Badge>
-                        );
-                      })}
+                      <Button
+                        onClick={sendSmartInvites}
+                        disabled={suggestionsLoading || loading}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      >
+                        {loading ? 'Sending...' : `Invite ${suggestions.length}`}
+                      </Button>
                     </div>
-                  )}
+                    
+                    {mutualFriends.length > 0 && (
+                      <div className="mt-2">
+                        <button
+                          onClick={() => setShowFriendModal(true)}
+                          className="text-xs text-purple-700 dark:text-purple-300 hover:underline"
+                        >
+                          {mutualFriends.length} friend{mutualFriends.length !== 1 ? 's' : ''} already going — view
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                  <Button
-                    onClick={sendInternalInvites}
-                    disabled={selectedUsers.length === 0 || loading}
-                    className="w-full"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    {loading ? 'Sending...' : `Invite ${selectedUsers.length} Smart Picks`}
-                  </Button>
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No smart suggestions available</p>
-                  <p className="text-xs">Try the other tabs to invite manually</p>
-                </div>
-              )}
-            </TabsContent>
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="suggested" className="text-xs">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Smart
+                    </TabsTrigger>
+                    <TabsTrigger value="floq" className="text-xs">
+                      <Users className="w-3 h-3 mr-1" />
+                      Floq
+                    </TabsTrigger>
+                    <TabsTrigger value="friends" className="text-xs">
+                      <Users className="w-3 h-3 mr-1" />
+                      Friends
+                    </TabsTrigger>
+                    <TabsTrigger value="email" className="text-xs">
+                      <Mail className="w-3 h-3 mr-1" />
+                      Email
+                    </TabsTrigger>
+                  </TabsList>
 
-            <TabsContent value="floq" className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search floq members..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+                  <TabsContent value="suggested" className="space-y-3">
+                    {suggestionsLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                        <p className="text-sm">Finding perfect matches...</p>
+                      </div>
+                    ) : suggestions.length > 0 ? (
+                      <>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Smart suggestions based on shared interests and vibe compatibility
+                        </div>
+                        <div className="max-h-48 overflow-y-auto space-y-2">
+                          {suggestions.map((suggestion) => (
+                            <div
+                              key={suggestion.id}
+                              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer border border-primary/20"
+                              onClick={() => toggleUserSelection(suggestion.id)}
+                            >
+                              <Checkbox
+                                checked={selectedUsers.includes(suggestion.id)}
+                                onChange={() => toggleUserSelection(suggestion.id)}
+                              />
+                              <VibeRing 
+                                vibe={safeVibe(suggestion.current_vibe || planVibe)}
+                                className="w-10 h-10"
+                              >
+                                <Avatar className="w-8 h-8">
+                                  <AvatarImage src={suggestion.avatar_url} />
+                                  <AvatarFallback>
+                                    {suggestion.display_name?.[0] || suggestion.username[0]?.toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </VibeRing>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium">
+                                    {suggestion.display_name || suggestion.username}
+                                  </p>
+                                  <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {suggestion.suggestion_reason}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
-              <div className="max-h-48 overflow-y-auto space-y-2">
-                {filteredFloqMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleUserSelection(member.id)}
-                  >
-                    <Checkbox
-                      checked={selectedUsers.includes(member.id)}
-                      onChange={() => toggleUserSelection(member.id)}
-                    />
-                    <VibeRing vibe={safeVibe(planVibe)} className="w-10 h-10">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={member.avatar_url} />
-                        <AvatarFallback>
-                          {member.display_name?.[0] || member.username[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </VibeRing>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        {member.display_name || member.username}
+                        {selectedUsers.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-2">
+                            {selectedUsers.map((userId) => {
+                              const user = suggestions.find(s => s.id === userId) || 
+                                          floqMembers.find(m => m.id === userId) ||
+                                          friends.find(f => f.id === userId);
+                              if (!user) return null;
+                              return (
+                                <Badge key={userId} variant="secondary" className="text-xs">
+                                  {user.display_name || user.username}
+                                  <X
+                                    className="w-3 h-3 ml-1 cursor-pointer"
+                                    onClick={() => toggleUserSelection(userId)}
+                                  />
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <Button
+                          onClick={sendInternalInvites}
+                          disabled={selectedUsers.length === 0 || loading}
+                          className="w-full"
+                        >
+                          <Send className="w-4 h-4 mr-2" />
+                          {loading ? 'Sending...' : `Invite ${selectedUsers.length} Smart Picks`}
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No smart suggestions available</p>
+                        <p className="text-xs">Try the other tabs to invite manually</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="floq" className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search floq members..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {filteredFloqMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
+                          onClick={() => toggleUserSelection(member.id)}
+                        >
+                          <Checkbox
+                            checked={selectedUsers.includes(member.id)}
+                            onChange={() => toggleUserSelection(member.id)}
+                          />
+                          <VibeRing vibe={safeVibe(planVibe)} className="w-10 h-10">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={member.avatar_url} />
+                              <AvatarFallback>
+                                {member.display_name?.[0] || member.username[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </VibeRing>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">
+                              {member.display_name || member.username}
+                            </p>
+                            {member.display_name && (
+                              <p className="text-xs text-muted-foreground">
+                                @{member.username}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedUsers.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-2">
+                        {selectedUsers.map((userId) => {
+                          const user = floqMembers.find(m => m.id === userId);
+                          if (!user) return null;
+                          return (
+                            <Badge key={userId} variant="secondary" className="text-xs">
+                              {user.display_name || user.username}
+                              <X
+                                className="w-3 h-3 ml-1 cursor-pointer"
+                                onClick={() => toggleUserSelection(userId)}
+                              />
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={sendInternalInvites}
+                      disabled={selectedUsers.length === 0 || loading}
+                      className="w-full"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {loading ? 'Sending...' : `Invite ${selectedUsers.length} People`}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="friends" className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search friends..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {filteredFriends.map((friend) => (
+                        <div
+                          key={friend.id}
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
+                          onClick={() => toggleUserSelection(friend.id)}
+                        >
+                          <Checkbox
+                            checked={selectedUsers.includes(friend.id)}
+                            onChange={() => toggleUserSelection(friend.id)}
+                          />
+                          <VibeRing vibe={safeVibe(planVibe)} className="w-10 h-10">
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={friend.avatar_url} />
+                              <AvatarFallback>
+                                {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </VibeRing>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium">
+                              {friend.display_name || friend.username}
+                            </p>
+                            {friend.display_name && (
+                              <p className="text-xs text-muted-foreground">
+                                @{friend.username}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button
+                      onClick={sendInternalInvites}
+                      disabled={selectedUsers.length === 0 || loading}
+                      className="w-full"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {loading ? 'Sending...' : `Invite ${selectedUsers.length} Friends`}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="email" className="space-y-3">
+                    <div>
+                      <Label htmlFor="emails">Email Addresses</Label>
+                      <Textarea
+                        id="emails"
+                        placeholder="user1@example.com, user2@example.com"
+                        value={emailList}
+                        onChange={(e) => setEmailList(e.target.value)}
+                        className="mt-1"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Separate multiple emails with commas
                       </p>
-                      {member.display_name && (
-                        <p className="text-xs text-muted-foreground">
-                          @{member.username}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
 
-              {selectedUsers.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-2">
-                  {selectedUsers.map((userId) => {
-                    const user = floqMembers.find(m => m.id === userId);
-                    if (!user) return null;
-                    return (
-                      <Badge key={userId} variant="secondary" className="text-xs">
-                        {user.display_name || user.username}
-                        <X
-                          className="w-3 h-3 ml-1 cursor-pointer"
-                          onClick={() => toggleUserSelection(userId)}
-                        />
-                      </Badge>
-                    );
-                  })}
-                </div>
-              )}
+                    <div>
+                      <Label htmlFor="message">Custom Message (Optional)</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Join me for this awesome plan!"
+                        value={customMessage}
+                        onChange={(e) => setCustomMessage(e.target.value)}
+                        className="mt-1"
+                        rows={2}
+                      />
+                    </div>
 
-              <Button
-                onClick={sendInternalInvites}
-                disabled={selectedUsers.length === 0 || loading}
-                className="w-full"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? 'Sending...' : `Invite ${selectedUsers.length} People`}
-              </Button>
-            </TabsContent>
+                    <Button
+                      onClick={sendEmailInvites}
+                      disabled={!emailList.trim() || loading}
+                      className="w-full"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {loading ? 'Sending...' : 'Send Email Invites'}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
 
-            <TabsContent value="friends" className="space-y-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search friends..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              <div className="max-h-48 overflow-y-auto space-y-2">
-                {filteredFriends.map((friend) => (
-                  <div
-                    key={friend.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => toggleUserSelection(friend.id)}
+                {/* Friend preview modal */}
+                {showFriendModal && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 z-10"
                   >
-                    <Checkbox
-                      checked={selectedUsers.includes(friend.id)}
-                      onChange={() => toggleUserSelection(friend.id)}
-                    />
-                    <VibeRing vibe={safeVibe(planVibe)} className="w-10 h-10">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={friend.avatar_url} />
-                        <AvatarFallback>
-                          {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </VibeRing>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        {friend.display_name || friend.username}
-                      </p>
-                      {friend.display_name && (
-                        <p className="text-xs text-muted-foreground">
-                          @{friend.username}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <Button
-                onClick={sendInternalInvites}
-                disabled={selectedUsers.length === 0 || loading}
-                className="w-full"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? 'Sending...' : `Invite ${selectedUsers.length} Friends`}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="email" className="space-y-3">
-              <div>
-                <Label htmlFor="emails">Email Addresses</Label>
-                <Textarea
-                  id="emails"
-                  placeholder="user1@example.com, user2@example.com"
-                  value={emailList}
-                  onChange={(e) => setEmailList(e.target.value)}
-                  className="mt-1"
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Separate multiple emails with commas
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="message">Custom Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Join me for this awesome plan!"
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  className="mt-1"
-                  rows={2}
-                />
-              </div>
-
-              <Button
-                onClick={sendEmailInvites}
-                disabled={!emailList.trim() || loading}
-                className="w-full"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? 'Sending...' : 'Send Email Invites'}
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+                    <Card className="w-full max-w-sm">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span>Friends Already Going</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowFriendModal(false)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {mutualFriends.map((friend) => (
+                            <div key={friend.id} className="flex items-center gap-2">
+                              <Avatar className="w-7 h-7">
+                                <AvatarImage src={friend.avatar_url} />
+                                <AvatarFallback>
+                                  {friend.display_name?.[0] || friend.username[0]?.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">
+                                {friend.display_name || friend.username}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          className="w-full mt-3"
+                          onClick={() => setShowFriendModal(false)}
+                        >
+                          Close
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
