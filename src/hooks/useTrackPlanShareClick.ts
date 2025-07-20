@@ -8,10 +8,17 @@ export function useTrackPlanShareClick(slug?: string) {
 
     const trackClick = async () => {
       try {
+        // First get current count, then increment
+        const { data: current } = await supabase
+          .from('plan_share_links')
+          .select('click_count')
+          .eq('slug', slug)
+          .single();
+
         const { error } = await supabase
           .from('plan_share_links')
           .update({
-            click_count: supabase.raw('COALESCE(click_count, 0) + 1'),
+            click_count: (current?.click_count || 0) + 1,
             last_accessed_at: new Date().toISOString(),
           })
           .eq('slug', slug);
