@@ -35,12 +35,21 @@ serve(async (req) => {
     // Try to resolve by slug first
     const { data: link } = await supabase
       .from('plan_share_links')
-      .select('plan_id, created_by')
+      .select('plan_id, created_by, click_count')
       .eq('slug', slug)
       .limit(1)
       .maybeSingle();
 
     if (link) {
+      // ✅ Track anonymous click
+      await supabase
+        .from('plan_share_links')
+        .update({
+          click_count: (link.click_count || 0) + 1,
+          last_accessed_at: new Date().toISOString(),
+        })
+        .eq('slug', slug);
+
       console.log('Successfully resolved slug to plan_id:', link.plan_id);
       return new Response(JSON.stringify({
         plan_id: link.plan_id,
