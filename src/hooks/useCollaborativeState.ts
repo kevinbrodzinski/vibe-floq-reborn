@@ -61,7 +61,7 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe()
     }
   }, [planId, enabled])
 

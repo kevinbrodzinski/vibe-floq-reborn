@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from './use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 interface AddStopParams {
   planId: string
@@ -26,7 +26,7 @@ export function useAddStop() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<any, Error, AddStopParams>({
     mutationFn: async ({ planId, title, description, venueId, timeSlot }: AddStopParams) => {
       const { data, error } = await supabase
         .from('plan_stops')
@@ -47,7 +47,7 @@ export function useAddStop() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-stops', variables.planId] })
-      queryClient.invalidateQueries({ queryKey: ['floq-activity'] })
+      queryClient.invalidateQueries({ queryKey: ['floq-activity', variables.planId] })
       toast({
         title: 'Stop added',
         description: 'Successfully added stop to plan',
@@ -68,7 +68,7 @@ export function useRemoveStop() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<void, Error, RemoveStopParams>({
     mutationFn: async ({ planId, stopId }: RemoveStopParams) => {
       const { error } = await supabase
         .from('plan_stops')
@@ -80,7 +80,7 @@ export function useRemoveStop() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-stops', variables.planId] })
-      queryClient.invalidateQueries({ queryKey: ['floq-activity'] })
+      queryClient.invalidateQueries({ queryKey: ['floq-activity', variables.planId] })
       toast({
         title: 'Stop removed',
         description: 'Successfully removed stop from plan',
@@ -101,7 +101,7 @@ export function useVoteOnStop() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<any, Error, VoteOnStopParams>({
     mutationFn: async ({ planId, stopId, voteType, emojiReaction }: VoteOnStopParams) => {
       const { data, error } = await supabase
         .from('plan_votes')
@@ -120,7 +120,7 @@ export function useVoteOnStop() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-votes', variables.planId] })
-      queryClient.invalidateQueries({ queryKey: ['floq-activity'] })
+      queryClient.invalidateQueries({ queryKey: ['floq-activity', variables.planId] })
     },
     onError: (error) => {
       console.error('Failed to vote on stop:', error)

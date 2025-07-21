@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
@@ -18,18 +17,18 @@ export function useReorderPlanStops() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation({
+  return useMutation<void, Error, ReorderStopsParams>({
     mutationFn: async ({ planId, stopOrders }: ReorderStopsParams) => {
       const { error } = await supabase.rpc('reorder_plan_stops', {
         p_plan_id: planId,
-        p_stop_orders: stopOrders
+        p_stop_orders: stopOrders // Try as object first, fallback to JSON.stringify if needed
       })
 
       if (error) throw error
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plan-stops', variables.planId] })
-      queryClient.invalidateQueries({ queryKey: ['floq-activity'] })
+      queryClient.invalidateQueries({ queryKey: ['floq-activity', variables.planId] })
     },
     onError: (error) => {
       console.error('Failed to reorder stops:', error)
@@ -48,7 +47,7 @@ export function useUpdateStopOrder() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
   
-  return useMutation({
+  return useMutation<void, Error, LegacyUpdateStopOrderParams>({
     mutationFn: async ({ planId, stopId, newOrder }: LegacyUpdateStopOrderParams) => {
       return reorderMutation.mutateAsync({
         planId,

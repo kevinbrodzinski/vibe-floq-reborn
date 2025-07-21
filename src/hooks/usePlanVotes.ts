@@ -29,7 +29,7 @@ export function usePlanVotes(plan_id: string) {
         .select(`
           *,
           stop:plan_stops!inner(title),
-          user:profiles(display_name, username, avatar_url)
+          user:profiles!user_id(display_name, username, avatar_url)
         `)
         .eq('plan_id', plan_id)
         .order('created_at', { ascending: false })
