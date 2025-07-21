@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, DollarSign, MoreVertical, Edit, Trash2, GripVertical } from 'lucide-react'
+import { Clock, MapPin, DollarSign, MoreVertical, Edit, Trash2, GripVertical, ThumbsUp, ThumbsDown, HelpCircle } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useDragFeedback } from '@/hooks/useDragFeedback'
+import { useSwipeGestures } from '@/hooks/useSwipeGestures'
+import { useStopInteractions } from '@/hooks/useStopInteractions'
 
 interface DraggableStopCardProps {
   stop: {
@@ -31,19 +33,32 @@ interface DraggableStopCardProps {
       address?: string
     }
   }
+  planId: string
   onEdit?: (stop: any) => void
   onDelete?: (stopId: string) => void
   isDragging?: boolean
+  showQuickActions?: boolean
+  compact?: boolean
 }
 
 export function DraggableStopCard({ 
   stop, 
+  planId,
   onEdit, 
   onDelete, 
-  isDragging = false
+  isDragging = false,
+  showQuickActions = true,
+  compact = false
 }: DraggableStopCardProps) {
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const [showSwipeHint, setShowSwipeHint] = useState(false)
   const dragFeedback = useDragFeedback()
+  
+  const {
+    voteCounts,
+    userVote,
+    handleQuickVote
+  } = useStopInteractions({ planId, stopId: stop.id })
 
   const {
     attributes,
@@ -73,6 +88,15 @@ export function DraggableStopCard({
     dragFeedback.triggerDragEnd(true)
   }
 
+  // Swipe gestures for quick voting
+  const swipeGestures = useSwipeGestures({
+    onSwipeRight: () => handleQuickVote('upvote', '👍'),
+    onSwipeLeft: () => handleQuickVote('downvote', '👎'),
+    onSwipeUp: () => handleQuickVote('maybe', '🤔'),
+    threshold: 80,
+    hapticFeedback: true
+  })
+
   const formatTime = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':')
     const hour = parseInt(hours)
@@ -93,12 +117,16 @@ export function DraggableStopCard({
     <Card 
       ref={setNodeRef}
       style={style}
+      {...(showQuickActions ? swipeGestures.bind() : {})}
       className={cn(
-        "relative transition-all duration-200 group",
+        "relative transition-all duration-200 group touch-pan-y select-none",
         isBeingDragged
           ? 'shadow-lg scale-105 rotate-1 border-primary z-50' 
-          : 'shadow-sm hover:shadow-md border-border'
+          : 'shadow-sm hover:shadow-md border-border',
+        compact && 'p-2'
       )}
+      onMouseEnter={() => setShowSwipeHint(true)}
+      onMouseLeave={() => setShowSwipeHint(false)}
     >
       <CardContent className="p-4">
         {/* Header with drag handle and menu */}
@@ -185,7 +213,7 @@ export function DraggableStopCard({
         )}
 
         {/* Description */}
-        {stop.description && (
+        {stop.description && !compact && (
           <motion.div 
             className="text-xs text-muted-foreground"
             initial={false}
@@ -214,6 +242,56 @@ export function DraggableStopCard({
                 less
               </button>
             )}
+          </motion.div>
+        )}
+
+        {/* Quick Actions Bar */}
+        {showQuickActions && !isBeingDragged && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ 
+              opacity: showSwipeHint || userVote ? 1 : 0, 
+              height: showSwipeHint || userVote ? 'auto' : 0 
+            }}
+            className="border-t border-border pt-2 mt-2 overflow-hidden"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={userVote?.vote_type === 'upvote' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={() => handleQuickVote('upvote', '👍')}
+                >
+                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {voteCounts.upvote || 0}
+                </Button>
+                <Button
+                  variant={userVote?.vote_type === 'downvote' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={() => handleQuickVote('downvote', '👎')}
+                >
+                  <ThumbsDown className="h-3 w-3 mr-1" />
+                  {voteCounts.downvote || 0}
+                </Button>
+                <Button
+                  variant={userVote?.vote_type === 'maybe' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-6 px-2"
+                  onClick={() => handleQuickVote('maybe', '🤔')}
+                >
+                  <HelpCircle className="h-3 w-3 mr-1" />
+                  {voteCounts.maybe || 0}
+                </Button>
+              </div>
+              
+              {showSwipeHint && !userVote && (
+                <span className="text-xs text-muted-foreground animate-pulse">
+                  Swipe to vote
+                </span>
+              )}
+            </div>
           </motion.div>
         )}
       </CardContent>

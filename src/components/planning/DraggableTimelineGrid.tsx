@@ -121,6 +121,7 @@ export function DraggableTimelineGrid({
                         estimated_cost_per_person: stop.estimated_cost_per_person,
                         venue: typeof stop.venue === 'string' ? { id: '', name: stop.venue } : stop.venue
                       }}
+                      planId={planId}
                       onEdit={() => handleStopEdit(stop)}
                       onDelete={() => handleStopDelete(stop.id)}
                       isDragging={snapshot.isDragging}
