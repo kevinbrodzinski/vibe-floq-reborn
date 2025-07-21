@@ -996,7 +996,7 @@ export type Database = {
           end_at: string | null
           end_time: string | null
           execution_started_at: string | null
-          floq_id: string
+          floq_id: string | null
           id: string
           location: unknown | null
           max_participants: number | null
@@ -1021,7 +1021,7 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           execution_started_at?: string | null
-          floq_id: string
+          floq_id?: string | null
           id?: string
           location?: unknown | null
           max_participants?: number | null
@@ -1046,7 +1046,7 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           execution_started_at?: string | null
-          floq_id?: string
+          floq_id?: string | null
           id?: string
           location?: unknown | null
           max_participants?: number | null
@@ -4078,6 +4078,10 @@ export type Database = {
           user_count: number
         }[]
       }
+      get_dashboard_checkins: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
       get_dashboard_overview: {
         Args: { p_days?: number }
         Returns: Json
@@ -4087,6 +4091,10 @@ export type Database = {
         Returns: Json
       }
       get_dashboard_users: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
+      get_dashboard_vibes: {
         Args: { p_days?: number }
         Returns: Json
       }
