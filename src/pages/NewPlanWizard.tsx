@@ -71,7 +71,7 @@ export function NewPlanWizard() {
         custom: ''
       }
 
-      const templateType = navigationState.templateType as keyof typeof templateTitles
+      const templateType = (navigationState.templateType || 'custom') as keyof typeof templateTitles
       
       setDetails(prev => ({
         ...prev,
