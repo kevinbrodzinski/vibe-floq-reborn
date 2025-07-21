@@ -1910,7 +1910,7 @@ export type Database = {
           reminded_at: string | null
           responded_at: string | null
           role: Database["public"]["Enums"]["plan_role_enum"]
-          rsvp_status: string | null
+          rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"] | null
           user_id: string | null
         }
         Insert: {
@@ -1927,7 +1927,7 @@ export type Database = {
           reminded_at?: string | null
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
-          rsvp_status?: string | null
+          rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
           user_id?: string | null
         }
         Update: {
@@ -1944,7 +1944,7 @@ export type Database = {
           reminded_at?: string | null
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
-          rsvp_status?: string | null
+          rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
           user_id?: string | null
         }
         Relationships: [
@@ -6197,6 +6197,7 @@ export type Database = {
         | "executing"
         | "completed"
         | "invited"
+      rsvp_status_enum: "attending" | "maybe" | "not_attending" | "pending"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -6420,6 +6421,7 @@ export const Constants = {
         "completed",
         "invited",
       ],
+      rsvp_status_enum: ["attending", "maybe", "not_attending", "pending"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
