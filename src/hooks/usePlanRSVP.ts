@@ -81,5 +81,8 @@ export function usePlanRSVP() {
         variant: "destructive",
       })
     },
+    onSettled: () => {
+      // This could be used to clear temporary state if needed
+    },
   })
 }

@@ -5998,6 +5998,10 @@ export type Database = {
         Args: { p_plan_id: string }
         Returns: boolean
       }
+      user_can_access_plan_simple: {
+        Args: { p_plan: string }
+        Returns: boolean
+      }
       user_can_manage_plan: {
         Args: { p_plan_id: string }
         Returns: boolean

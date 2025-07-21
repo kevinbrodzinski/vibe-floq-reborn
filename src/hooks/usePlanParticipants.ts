@@ -76,21 +76,46 @@ export function usePlanParticipants(plan_id: string) {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'plan_participants',
           filter: `plan_id=eq.${plan_id}`,
         },
         (payload) => {
-          console.log('Plan participants change:', payload)
-          // Invalidate and refetch the query
+          console.log('Plan participant added:', payload)
+          queryClient.invalidateQueries({ queryKey: ['plan-participants', plan_id] })
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'plan_participants',
+          filter: `plan_id=eq.${plan_id}`,
+        },
+        (payload) => {
+          console.log('Plan participant updated:', payload)
+          queryClient.invalidateQueries({ queryKey: ['plan-participants', plan_id] })
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'plan_participants',
+          filter: `plan_id=eq.${plan_id}`,
+        },
+        (payload) => {
+          console.log('Plan participant removed:', payload)
           queryClient.invalidateQueries({ queryKey: ['plan-participants', plan_id] })
         }
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe().catch(console.error)
     }
   }, [plan_id, queryClient])
 

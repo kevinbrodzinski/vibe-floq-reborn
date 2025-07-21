@@ -47,6 +47,7 @@ export function useGuestInvites() {
           notes: guest.notes?.trim() || null,
           role: 'participant',
           rsvp_status: 'pending',
+          invited_at: null, // Will be set when actually sent
         })
         .select()
         .single()
@@ -72,7 +73,7 @@ export function useGuestInvites() {
   })
 
   const removeGuest = useMutation({
-    mutationFn: async ({ participantId }: { participantId: string }) => {
+    mutationFn: async ({ participantId, planId }: { participantId: string; planId: string }) => {
       const { error } = await supabase
         .from('plan_participants')
         .delete()
@@ -81,7 +82,8 @@ export function useGuestInvites() {
 
       if (error) throw error
     },
-    onSuccess: (_, { participantId }) => {
+    onSuccess: (_, { planId }) => {
+      queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] })
       toast({
         title: "Guest Removed",
         description: "Guest has been removed from the plan",
@@ -99,23 +101,47 @@ export function useGuestInvites() {
 
   const sendInvites = useMutation({
     mutationFn: async ({ planId, customMessage }: { planId: string; customMessage?: string }) => {
-      // For now, this is a placeholder that just marks guests as invited
-      // In a production app, you'd call an edge function to send actual emails/SMS
+      // Get all pending guests for this plan
+      const { data: guests, error: fetchError } = await supabase
+        .from('plan_participants')
+        .select('id, guest_name, guest_email, guest_phone')
+        .eq('plan_id', planId)
+        .eq('is_guest', true)
+        .is('invited_at', null)
+
+      if (fetchError) throw fetchError
       
-      const { data, error } = await supabase
+      if (!guests || guests.length === 0) {
+        return { sent: 0, details: [] }
+      }
+
+      // Call the edge function to send actual invites
+      const { data, error } = await supabase.functions.invoke('send-guest-invites', {
+        body: {
+          planId,
+          guests: guests.map(g => ({
+            id: g.id,
+            name: g.guest_name,
+            email: g.guest_email,
+            phone: g.guest_phone
+          })),
+          customMessage
+        }
+      })
+
+      if (error) throw error
+
+      // Update the database to mark guests as invited
+      const { error: updateError } = await supabase
         .from('plan_participants')
         .update({ invited_at: new Date().toISOString() })
         .eq('plan_id', planId)
         .eq('is_guest', true)
         .is('invited_at', null)
-        .select()
 
-      if (error) throw error
-      
-      // Simulate sending invites
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      return { sent: data?.length || 0 }
+      if (updateError) throw updateError
+
+      return { sent: guests.length, details: data }
     },
     onSuccess: (result, { planId }) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] })
