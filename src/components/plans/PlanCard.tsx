@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Edit2, Trash2, MoreHorizontal } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Calendar, MapPin, Edit2, Trash2, MoreHorizontal, Users, Clock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PlanEditModal } from './PlanEditModal';
 import { PlanStatus } from '@/types/enums/planStatus';
+import { usePlanMeta } from '@/hooks/usePlanMeta';
+import { formatCurrency, formatDuration } from '@/lib/format';
+import { planStatusColor } from '@/lib/planStatusColor';
 
 interface PlanCardProps {
   plan: {
@@ -53,6 +57,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { data: meta } = usePlanMeta(plan.id);
 
   const deletePlan = useMutation({
     mutationFn: async () => {
@@ -125,7 +130,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {plan.title}
             </CardTitle>
             <div className="flex items-center gap-1">
-              <Badge variant="outline" className={getStatusColor(plan.status)}>
+              <Badge className={planStatusColor[plan.status]}>
                 {plan.status}
               </Badge>
               
@@ -178,11 +183,45 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             </p>
           )}
           
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>{format(new Date(plan.planned_at), 'MMM d, yyyy')}</span>
+          <div className="space-y-3">
+            {/* Metadata chips */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>{format(new Date(plan.planned_at), 'MMM d, yyyy')}</span>
+              </div>
+              {meta?.participant_count && (
+                <div className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  <span>{meta.participant_count} joining</span>
+                </div>
+              )}
+              {meta?.total_duration_minutes && meta.total_duration_minutes > 0 && (
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatDuration(meta.total_duration_minutes / 60)}</span>
+                </div>
+              )}
+              {meta?.estimated_cost_per_person && meta.estimated_cost_per_person > 0 && (
+                <div className="flex items-center gap-1">
+                  <span>${formatCurrency(meta.estimated_cost_per_person)}/person</span>
+                </div>
+              )}
             </div>
+
+            {/* Progress bar */}
+            {meta?.total_stops && meta.total_stops > 0 && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Progress</span>
+                  <span>{meta.confirmed_stops || 0}/{meta.total_stops} stops</span>
+                </div>
+                <Progress 
+                  value={((meta.confirmed_stops || 0) / meta.total_stops) * 100}
+                  className="h-1.5"
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
