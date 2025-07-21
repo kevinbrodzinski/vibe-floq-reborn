@@ -1,94 +1,131 @@
-import React from 'react';
-import { Calendar, Users, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { usePlanRSVP } from '@/hooks/usePlanRSVP';
-import { formatDistance } from 'date-fns';
-
-interface Plan {
-  id: string;
-  title: string;
-  description?: string;
-  planned_at: string;
-  location?: string;
-  is_joined?: boolean;
-  participant_count?: number;
-  max_participants?: number;
-  floq_id: string;
-}
+import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, MapPin, Clock, DollarSign } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { format } from 'date-fns';
+import { usePlanMeta } from '@/hooks/usePlanMeta';
+import { formatCurrency, formatDuration } from '@/lib/format';
+import { planStatusColor } from '@/lib/planStatusColor';
+import type { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlanCardProps {
-  plan: Plan;
+  plan: {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: PlanStatus;
+    planned_at: string;
+    start_time?: string | null;
+    end_time?: string | null;
+    duration_hours?: number | null;
+    max_participants?: number | null;
+    floqs?: { title: string } | null;
+    budget_per_person?: number | null;
+    vibe_tag?: string | null;
+    floq_id: string;
+    is_joined?: boolean;
+  };
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const rsvp = usePlanRSVP();
+  const nav = useNavigate();
+  const { data: meta } = usePlanMeta(plan.id);
   const isJoined = plan.is_joined ?? false;
+  
+  const progress =
+    meta && meta.total_stops
+      ? Math.round((meta.confirmed_stops / meta.total_stops) * 100)
+      : 0;
 
-  const handleRsvp = () => {
-    rsvp.mutate({ 
-      planId: plan.id, 
-      status: isJoined ? 'not_attending' : 'attending'
-    });
-  };
+  const durationText = useMemo(() => {
+    if (plan.duration_hours) return formatDuration(plan.duration_hours * 60);
+    if (meta) return formatDuration(meta.total_duration_minutes);
+    return null;
+  }, [plan.duration_hours, meta]);
+
+  const budgetText =
+    plan.budget_per_person || (meta?.estimated_cost_per_person ?? 0) > 0
+      ? formatCurrency(plan.budget_per_person ?? meta!.estimated_cost_per_person)
+      : null;
 
   return (
-    <Card className="p-4">
-      <div className="space-y-3">
-        {/* Title and Description */}
-        <div>
-          <h4 className="font-medium">{plan.title}</h4>
-          {plan.description && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {plan.description}
-            </p>
-          )}
+    <Card
+      onClick={() => nav(`/plans/${plan.id}`)}
+      className="cursor-pointer hover:shadow-lg transition-shadow group"
+    >
+      <CardHeader className="pb-1">
+        <div className="flex justify-between items-start">
+          <CardTitle className="line-clamp-1 group-hover:text-primary">
+            {plan.title}
+          </CardTitle>
+          <Badge 
+            variant="outline" 
+            className={planStatusColor[plan.status] || planStatusColor.draft}
+          >
+            {plan.status}
+          </Badge>
         </div>
 
-        {/* Plan Details */}
-        <div className="space-y-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
+        {plan.floqs?.title && (
+          <span className="text-xs text-muted-foreground">
+            Part of {plan.floqs.title}
+          </span>
+        )}
+      </CardHeader>
+
+      <CardContent className="space-y-3">
+        {plan.description && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {plan.description}
+          </p>
+        )}
+
+        {/* META ROW */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            <span>
-              {formatDistance(new Date(plan.planned_at), new Date(), { addSuffix: true })}
-            </span>
+            {format(new Date(plan.planned_at), 'MMM d')}
           </div>
 
-          {plan.location && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3 h-3" />
-              <span>{plan.location}</span>
+          {meta && (
+            <div className="flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {meta.participant_count}
+              {plan.max_participants &&
+                ` / ${plan.max_participants}`}
             </div>
           )}
 
-          <div className="flex items-center gap-2">
-            <Users className="w-3 h-3" />
-            <span>
-              {plan.participant_count || 0}
-              {plan.max_participants && ` / ${plan.max_participants}`} going
-            </span>
-          </div>
+          {meta && meta.total_stops > 0 && (
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              {meta.total_stops} stop
+              {meta.total_stops === 1 ? '' : 's'}
+            </div>
+          )}
+
+          {durationText && (
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {durationText}
+            </div>
+          )}
+
+          {budgetText && (
+            <div className="flex items-center gap-1">
+              <DollarSign className="w-3 h-3" />
+              {budgetText}
+            </div>
+          )}
         </div>
 
-        {/* RSVP Button */}
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            variant={isJoined ? 'secondary' : 'default'}
-            disabled={rsvp.isPending}
-            onClick={handleRsvp}
-            className="min-w-[80px]"
-          >
-            {rsvp.isPending ? (
-              <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : isJoined ? (
-              'Leave'
-            ) : (
-              'Join'
-            )}
-          </Button>
-        </div>
-      </div>
+        {/* PROGRESS BAR */}
+        {meta && meta.total_stops > 0 && progress < 100 && (
+          <Progress value={progress} className="h-1 bg-muted" />
+        )}
+      </CardContent>
     </Card>
   );
 };
