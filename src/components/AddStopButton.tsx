@@ -1,3 +1,4 @@
+
 import { Plus } from "lucide-react";
 
 interface AddStopButtonProps {
@@ -15,6 +16,22 @@ export const AddStopButton = ({
   disabled = false,
   className = "" 
 }: AddStopButtonProps) => {
+  
+  const handleClick = () => {
+    console.log('🔍 AddStopButton clicked for timeSlot:', timeSlot)
+    if (!disabled) {
+      onAdd(timeSlot)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault()
+      console.log('🔍 AddStopButton key pressed for timeSlot:', timeSlot)
+      onAdd(timeSlot)
+    }
+  }
+
   return (
     <div
       className={`
@@ -30,16 +47,11 @@ export const AddStopButton = ({
         }
         ${className}
       `}
-      onClick={() => !disabled && onAdd(timeSlot)}
+      onClick={handleClick}
       role="button"
       aria-label={`Add stop at ${timeSlot}`}
       tabIndex={disabled ? -1 : 0}
-      onKeyDown={(e) => {
-        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onAdd(timeSlot);
-        }
-      }}
+      onKeyDown={handleKeyDown}
     >
       <div className="text-center text-muted-foreground">
         <div className={`flex items-center justify-center mb-2 transition-transform ${

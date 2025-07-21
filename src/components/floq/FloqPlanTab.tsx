@@ -42,11 +42,19 @@ export function FloqPlanTab() {
   }, [])
 
   const handleAddStop = (timeSlot?: string) => {
-    setSelectedTimeSlot(timeSlot || '19:00')
+    console.log('🔍 handleAddStop called with timeSlot:', timeSlot)
+    const selectedSlot = timeSlot || '19:00'
+    console.log('🔍 Setting selectedTimeSlot to:', selectedSlot)
+    setSelectedTimeSlot(selectedSlot)
+    console.log('🔍 Opening AddStopModal')
     setShowAddStopModal(true)
   }
 
-  // Use the collaborative state's reorder handler directly
+  const handleCloseAddStopModal = () => {
+    console.log('🔍 Closing AddStopModal')
+    setShowAddStopModal(false)
+    setSelectedTimeSlot(null)
+  }
 
   const handleLongPress = () => {
     longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)
@@ -66,6 +74,8 @@ export function FloqPlanTab() {
       </div>
     )
   }
+
+  console.log('🔍 FloqPlanTab render - showAddStopModal:', showAddStopModal, 'selectedTimeSlot:', selectedTimeSlot)
 
   return (
     <div className="flex flex-col h-full relative">
@@ -97,7 +107,6 @@ export function FloqPlanTab() {
             <p className="text-muted-foreground">
               Track who's attending this plan
             </p>
-            {/* RSVPScreen component would go here */}
           </div>
         </TabsContent>
 
@@ -107,7 +116,6 @@ export function FloqPlanTab() {
             <p className="text-muted-foreground">
               AI-generated recap of your plan
             </p>
-            {/* PlanSummaryCard component would go here */}
           </div>
         </TabsContent>
       </Tabs>
@@ -122,7 +130,10 @@ export function FloqPlanTab() {
           onPointerDown={handleLongPress}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          onClick={() => handleAddStop()}
+          onClick={() => {
+            console.log('🔍 FAB clicked')
+            handleAddStop()
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
@@ -138,10 +149,7 @@ export function FloqPlanTab() {
       {selectedTimeSlot && (
         <AddStopModeSelector
           isOpen={showAddStopModal}
-          onClose={() => {
-            setShowAddStopModal(false)
-            setSelectedTimeSlot(null)
-          }}
+          onClose={handleCloseAddStopModal}
           planId={plan.id}
           timeSlot={selectedTimeSlot}
         />

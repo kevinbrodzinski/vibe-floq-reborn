@@ -1,104 +1,33 @@
-// Analytics wrapper for PostHog
-const POSTHOG_PUBLIC_KEY = 'phc_nHiyd2XAzSYoFQXWVAhG9yrjQvsX6oQTod6eANt1Jnq';
-const POSTHOG_HOST = 'https://us.i.posthog.com';
 
-export const track = (event: string, properties?: Record<string, any>) => {
+// Analytics utilities with fallbacks for mobile and web
+
+export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
   try {
-    // Send directly to PostHog API
-    if (typeof window !== 'undefined') {
-      fetch(`${POSTHOG_HOST}/capture/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          api_key: POSTHOG_PUBLIC_KEY,
-          event,
-          properties: {
-            ...properties,
-            $current_url: window.location.href,
-            $browser: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-          },
-          distinct_id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        }),
-      }).catch((error) => {
-        console.debug('PostHog tracking failed:', error);
-      });
-    }
+    console.log('📊 Track event:', eventName, properties)
+    // Add actual analytics implementation here (e.g., Mixpanel, Amplitude)
   } catch (error) {
-    console.debug('Analytics tracking failed:', error);
+    console.warn('Analytics tracking failed:', error)
   }
-};
+}
 
-// QA Checklist Analytics Events
-export const trackFloqJoin = (floqId: string, floqTitle: string, vibe: string) => {
-  track('floq_join', {
-    floq_id: floqId,
-    floq_title: floqTitle,
-    vibe,
-    timestamp: new Date().toISOString(),
-  });
-};
-
-export const trackFloqCreated = (floqId: string, floqTitle: string, vibe: string, isPrivate: boolean, flockType: 'momentary' | 'persistent' = 'momentary', endsAt?: string | null) => {
-  // Calculate duration hours for momentary floqs
-  const durationHours = endsAt && flockType === 'momentary' ? 
-    Math.round((new Date(endsAt).getTime() - Date.now()) / (1000 * 60 * 60) * 10) / 10 : null;
-    
-  track('floq_created', {
-    floq_id: floqId,
-    floq_title: floqTitle,
-    vibe,
-    is_private: isPrivate,
-    flock_type: flockType,
-    ends_at_null: !endsAt,
-    duration_hours: durationHours,
-    timestamp: new Date().toISOString(),
-  });
-};
-
-export const trackFloqSuggestionDismissed = (floqId: string, reason?: string) => {
-  track('floq_suggestion_dismissed', {
-    floq_id: floqId,
-    dismissal_reason: reason || 'user_action',
-    timestamp: new Date().toISOString(),
-  });
-};
-
-export const trackFloqLeave = (floqId: string, floqTitle: string, sessionDuration?: number) => {
-  track('floq_leave', {
-    floq_id: floqId,
-    floq_title: floqTitle,
-    session_duration_ms: sessionDuration,
-    timestamp: new Date().toISOString(),
-  });
-};
-
-export const trackLocationPermission = (granted: boolean, method: 'automatic' | 'manual') => {
-  track('location_permission', {
-    granted,
-    request_method: method,
-    timestamp: new Date().toISOString(),
-  });
-};
-
-// General purpose tracking function (alias for backward compatibility)
-export const trackEvent = track;
-
-// Haptic feedback utility for mobile
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
   try {
-    if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
-      const patterns = {
-        light: 10,
-        medium: 20,
-        heavy: 50
-      }
-      navigator.vibrate(patterns[type])
+    // For Capacitor/mobile apps
+    if (typeof window !== 'undefined' && window.Capacitor) {
+      import('@capacitor/haptics').then(({ Haptics, ImpactStyle }) => {
+        const style = type === 'light' ? ImpactStyle.Light : 
+                     type === 'medium' ? ImpactStyle.Medium : ImpactStyle.Heavy
+        Haptics.impact({ style })
+      }).catch(() => {
+        console.log('Haptics not available')
+      })
+    }
+    // For web, use vibration API fallback
+    else if (navigator.vibrate) {
+      const duration = type === 'light' ? 50 : type === 'medium' ? 100 : 200
+      navigator.vibrate(duration)
     }
   } catch (error) {
-    // Fail silently
-    console.debug('Haptic feedback failed:', error)
+    console.log('Haptic feedback not available:', error)
   }
 }

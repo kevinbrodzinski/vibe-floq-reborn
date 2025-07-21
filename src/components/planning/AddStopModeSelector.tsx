@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -25,6 +26,8 @@ export function AddStopModeSelector({
 }: AddStopModeSelectorProps) {
   const [mode, setMode] = useState<AddStopMode>('selector')
 
+  console.log('🔍 AddStopModeSelector render - isOpen:', isOpen, 'timeSlot:', timeSlot, 'mode:', mode)
+
   const formatTimeSlot = (time: string) => {
     const [hours, minutes] = time.split(':')
     const hour = parseInt(hours)
@@ -34,35 +37,53 @@ export function AddStopModeSelector({
   }
 
   const handleClose = () => {
+    console.log('🔍 AddStopModeSelector handleClose called')
     setMode('selector')
     onClose()
   }
 
   const handleModeSelect = (selectedMode: AddStopMode) => {
+    console.log('🔍 AddStopModeSelector handleModeSelect:', selectedMode)
+    
     // Haptic feedback for mobile
-    triggerHaptic('light')
+    try {
+      triggerHaptic('light')
+    } catch (error) {
+      console.warn('Haptic feedback not available:', error)
+    }
     
     // Track mode selection for analytics
-    trackEvent('stop_mode_selected', {
-      mode: selectedMode,
-      plan_id: planId,
-      time_slot: timeSlot
-    })
+    try {
+      trackEvent('stop_mode_selected', {
+        mode: selectedMode,
+        plan_id: planId,
+        time_slot: timeSlot
+      })
+    } catch (error) {
+      console.warn('Analytics tracking failed:', error)
+    }
     
     setMode(selectedMode)
   }
 
   const handleBack = () => {
+    console.log('🔍 AddStopModeSelector handleBack called')
     setMode('selector')
   }
 
   // Calculate default end time (1 hour later)
   const defaultEndTime = (() => {
-    const [hours, minutes] = timeSlot.split(':')
-    const nextHour = (parseInt(hours) + 1).toString().padStart(2, '0')
-    return `${nextHour}:${minutes}`
+    try {
+      const [hours, minutes] = timeSlot.split(':')
+      const nextHour = (parseInt(hours) + 1).toString().padStart(2, '0')
+      return `${nextHour}:${minutes}`
+    } catch (error) {
+      console.error('Error calculating default end time:', error)
+      return '20:00' // fallback
+    }
   })()
 
+  // Render different modes
   if (mode !== 'selector') {
     return (
       <AnimatePresence mode="wait">
