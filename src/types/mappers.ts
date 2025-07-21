@@ -10,8 +10,8 @@ export function mapPlanStopFromDb(row: PlanStopRow): PlanStop {
 
   return {
     id: row.id,
-    plan_id: row.plan_id,
-    title: row.title,
+    plan_id: row.plan_id || '',
+    title: row.title || '',
     venue: row.venue?.name || '',
     description: row.description || '',
     startTime: row.start_time || '',
@@ -22,8 +22,8 @@ export function mapPlanStopFromDb(row: PlanStopRow): PlanStop {
     color: '#3B82F6',
     duration_minutes: duration,
     durationMinutes: duration,
-    stop_order: row.stop_order,
-    created_by: row.created_by,
+    stop_order: row.stop_order || 0,
+    created_by: row.created_by || '',
     createdBy: row.created_by || '',
     start_time: row.start_time || '',
     end_time: row.end_time || '',

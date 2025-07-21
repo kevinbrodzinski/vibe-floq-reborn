@@ -1,0 +1,75 @@
+// Formatting utilities for currency, time, and other display values
+
+export const formatCurrency = (amount: number | undefined | null): string => {
+  if (amount === undefined || amount === null) return '$0';
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+export const formatTime = (timeString: string | undefined | null): string => {
+  if (!timeString) return '';
+  
+  try {
+    // Handle time in HH:MM format
+    if (timeString.includes(':') && !timeString.includes('T')) {
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes));
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+    
+    // Handle ISO timestamp
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) return timeString;
+    
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  } catch {
+    return timeString;
+  }
+};
+
+export const formatTimeRange = (startTime: string | undefined | null, endTime: string | undefined | null): string => {
+  if (!startTime || !endTime) return '';
+  
+  const formattedStart = formatTime(startTime);
+  const formattedEnd = formatTime(endTime);
+  
+  return `${formattedStart} - ${formattedEnd}`;
+};
+
+export const formatDuration = (minutes: number | undefined | null): string => {
+  if (!minutes || minutes <= 0) return '';
+  
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
+  }
+  
+  return `${hours}h ${remainingMinutes}m`;
+};
+
+export const formatParticipantCount = (count: number, max?: number): string => {
+  if (max) {
+    return `${count}/${max}`;
+  }
+  return `${count}`;
+};

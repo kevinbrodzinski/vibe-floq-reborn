@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Clock, DollarSign, Users, Navigation } from 'lucide-react';
-import { formatCurrency, formatTime } from '@/helpers/format';
+import { formatCurrency, formatTime } from '@/lib/format';
 import type { PlanStopUi } from '@/types/plan';
 
 interface PlanTimelinePreviewProps {

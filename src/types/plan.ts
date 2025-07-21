@@ -54,8 +54,8 @@ export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
 
   return {
     id: dbStop.id,
-    plan_id: dbStop.plan_id,
-    title: dbStop.title,
+    plan_id: dbStop.plan_id || '',
+    title: dbStop.title || '',
     venue: dbStop.venue?.name || '',
     description: dbStop.description || '',
     startTime: dbStop.start_time || '',
@@ -66,8 +66,8 @@ export function transformPlanStop(dbStop: PlanStopRow): PlanStop {
     color: '#3B82F6',
     duration_minutes: duration,
     durationMinutes: duration,
-    stop_order: dbStop.stop_order,
-    created_by: dbStop.created_by,
+    stop_order: dbStop.stop_order || 0,
+    created_by: dbStop.created_by || '',
     createdBy: dbStop.created_by || '',
     start_time: dbStop.start_time || '',
     end_time: dbStop.end_time || '',

@@ -3,6 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, DollarSign, MapPin, Users } from 'lucide-react';
+import { formatCurrency, formatDuration } from '@/lib/format';
 import type { PlanStopUi } from '@/types/plan';
 
 interface PlanSummaryStatsProps {
@@ -24,20 +25,6 @@ export function PlanSummaryStats({
     return acc + (stop.estimated_cost_per_person || 0);
   }, 0);
 
-  const formatCurrency = (amount: number) => 
-    new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD', 
-      maximumFractionDigits: 0 
-    }).format(amount);
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    if (mins === 0) return `${hours}h`;
-    return `${hours}h ${mins}m`;
-  };
 
   const completionRate = stops.length > 0 
     ? Math.round((stops.filter(s => s.venue?.id).length / stops.length) * 100)
