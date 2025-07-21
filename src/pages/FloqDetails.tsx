@@ -191,8 +191,8 @@ const FloqDetails = () => {
               <TabsContent value="chat" className="mt-0">
                 <FloqChat 
                   floqId={floqDetails.id}
-                  isOpen={true}
-                  onClose={() => {}}
+                  isOpen={activeTab === 'chat'}
+                  onClose={() => setActiveTab('info')}
                   isJoined={hasAccess}
                 />
               </TabsContent>

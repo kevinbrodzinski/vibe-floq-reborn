@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FloqChatPanel } from '@/components/FloqChatPanel';
 import { Card } from '@/components/ui/card';

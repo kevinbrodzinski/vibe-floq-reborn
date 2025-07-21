@@ -92,17 +92,17 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
       </div>
 
       {/* Tabs - Mobile optimized */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
         <TabsList className="grid w-full grid-cols-4 h-10">
-          <TabsTrigger value="plans" className="text-xs px-1 flex items-center gap-1">
+          <TabsTrigger value="plans" className="text-xs px-1 flex items-center gap-1" aria-label="Plans">
             <ClipboardList className="h-3 w-3 shrink-0" />
             <span className="hidden xs:inline">Plans</span>
           </TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs px-1 flex items-center gap-1">
+          <TabsTrigger value="chat" className="text-xs px-1 flex items-center gap-1" aria-label="Chat">
             <MessageCircle className="h-3 w-3 shrink-0" />
             <span className="hidden xs:inline">Chat</span>
           </TabsTrigger>
-          <TabsTrigger value="members" className="text-xs px-1 flex items-center gap-1 relative">
+          <TabsTrigger value="members" className="text-xs px-1 flex items-center gap-1 relative" aria-label="Members">
             <Users className="h-3 w-3 shrink-0" />
             <span className="hidden xs:inline">Members</span>
             {members.length > 0 && (
@@ -111,7 +111,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs px-1 flex items-center gap-1">
+          <TabsTrigger value="activity" className="text-xs px-1 flex items-center gap-1" aria-label="Activity">
             <Zap className="h-3 w-3 shrink-0" />
             <span className="hidden xs:inline">Activity</span>
           </TabsTrigger>
@@ -124,8 +124,8 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
         <TabsContent value="chat" className="mt-3">
           <FloqChat 
             floqId={floqDetails.id}
-            isOpen={true}
-            onClose={() => {}}
+            isOpen={activeTab === 'chat'}
+            onClose={() => setActiveTab('plans')}
             isJoined={true}
           />
         </TabsContent>
