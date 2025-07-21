@@ -154,12 +154,18 @@ export const calculateOptimalRoute = async (
   let totalDuration = 0;
   let totalDistance = 0;
   
-  for (let i = 0; i < stops.length - 1; i++) {
-    const transit = await calculateTransitTime(stops[i], stops[i + 1], options);
+  // Parallelize transit calculations for better performance
+  const transitPromises = stops.slice(0, -1).map((stop, i) => 
+    calculateTransitTime(stop, stops[i + 1], options)
+  );
+  
+  const transitResults = await Promise.all(transitPromises);
+  
+  transitResults.forEach(transit => {
     transitTimes.push(transit);
     totalDuration += transit.duration_minutes;
     totalDistance += transit.distance_meters;
-  }
+  });
   
   return {
     stops,

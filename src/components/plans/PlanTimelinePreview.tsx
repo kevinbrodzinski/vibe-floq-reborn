@@ -22,14 +22,14 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
       }),
       { totalCost: 0, totalDuration: 0 }
     );
-  }, [stops]);
+  }, [stops.length]);
 
   if (isLoading) {
     return (
       <Card className="p-4">
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[68px] rounded-lg" />
+            <Skeleton key={`timeline-skeleton-${i}`} className="h-[68px] rounded-lg" />
           ))}
         </div>
       </Card>

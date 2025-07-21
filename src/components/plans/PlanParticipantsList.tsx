@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,20 @@ export function PlanParticipantsList({
   planTitle
 }: PlanParticipantsListProps) {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  
+  const handleInviteClick = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('Opening invite modal for plan:', planId);
+    }
+    setInviteModalOpen(true);
+  }, [planId]);
+  
+  const handleInviteFriendsClick = useCallback(() => {
+    if (import.meta.env.DEV) {
+      console.log('Invite friends clicked for plan:', planId);
+    }
+    setInviteModalOpen(true);
+  }, [planId]);
   if (isLoading) {
     return (
       <Card className="p-4">
@@ -130,7 +144,7 @@ export function PlanParticipantsList({
            <Button
              variant="ghost"
              size="sm"
-             onClick={() => setInviteModalOpen(true)}
+             onClick={handleInviteClick}
              className="text-primary"
            >
              <UserPlus className="w-4 h-4 mr-1" />
@@ -193,17 +207,17 @@ export function PlanParticipantsList({
         <div className="text-center py-6">
           <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No participants yet</p>
-          {isCreator && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setInviteModalOpen(true)}
-              className="mt-2"
-            >
-              <UserPlus className="w-4 h-4 mr-1" />
-              Invite Friends
-            </Button>
-          )}
+           {isCreator && (
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={handleInviteFriendsClick}
+               className="mt-2"
+             >
+               <UserPlus className="w-4 h-4 mr-1" />
+               Invite Friends
+             </Button>
+           )}
         </div>
       )}
 

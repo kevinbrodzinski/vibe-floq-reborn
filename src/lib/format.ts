@@ -1,7 +1,8 @@
 // Formatting utilities for currency, time, and other display values
 
 export const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === undefined || amount === null) return '$0';
+  // Return empty string for null to distinguish from explicit $0
+  if (amount === undefined || amount === null) return '';
   
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -11,7 +12,7 @@ export const formatCurrency = (amount: number | undefined | null): string => {
   }).format(amount);
 };
 
-export const formatTime = (timeString: string | undefined | null): string => {
+export const formatTime = (timeString: string | undefined | null, locale?: string): string => {
   if (!timeString) return '';
   
   try {
@@ -20,8 +21,8 @@ export const formatTime = (timeString: string | undefined | null): string => {
       const [hours, minutes] = timeString.split(':');
       // Use fixed date to avoid timezone issues
       const date = new Date('2000-01-01T00:00:00.000Z');
-      date.setUTCHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString('en-US', { 
+      date.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0); // Reset seconds/ms
+      return date.toLocaleTimeString(locale || 'en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
         hour12: true,
@@ -43,11 +44,11 @@ export const formatTime = (timeString: string | undefined | null): string => {
   }
 };
 
-export const formatTimeRange = (startTime: string | undefined | null, endTime: string | undefined | null): string => {
+export const formatTimeRange = (startTime: string | undefined | null, endTime: string | undefined | null): string | undefined => {
   const formattedStart = formatTime(startTime);
   const formattedEnd = formatTime(endTime);
   
-  if (!formattedStart && !formattedEnd) return '';
+  if (!formattedStart && !formattedEnd) return undefined;
   if (!formattedStart) return formattedEnd;
   if (!formattedEnd) return formattedStart;
   

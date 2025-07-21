@@ -194,7 +194,7 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: Ve
 
   const handleAddStop = () => {
     const newStop: PlanStop = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       title: '',
       venue: null,
       start_time: '',
