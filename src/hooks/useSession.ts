@@ -16,7 +16,9 @@ export function useSession() {
       setSession(session)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription?.unsubscribe()
+    }
   }, [])
 
   return session
