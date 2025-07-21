@@ -11,6 +11,7 @@ import type { PlanStopRow } from '@/types/database'
 interface CollaborativeState {
   stops: PlanStop[];
   isLoading: boolean;
+  isDragOperationPending: boolean;
   removeStop: (id: string) => Promise<void>;
   reorderStops: (from: number, to: number) => Promise<void>;
   addStop: (stop: PlanStop) => Promise<void>;
@@ -97,7 +98,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     },
   })
 
-  const { mutateAsync: reorderStopsMutation } = useMutation({
+  const { mutateAsync: reorderStopsMutation, isPending: isReordering } = useMutation({
     mutationFn: async ({ stopIds }: { stopIds: string[] }) => {
       // Use the reorder_plan_stops RPC function
       const { error } = await supabase.rpc('reorder_plan_stops', {
@@ -110,16 +111,17 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
       toast({
-        title: 'Stops reordered',
-        description: 'Your timeline has been updated.',
+        title: 'Timeline reordered',
+        description: 'Your stops have been successfully reordered.',
       })
     },
     onError: (error) => {
       console.error('Failed to reorder stops:', error)
+      // Revert optimistic update
       queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
       toast({
-        title: 'Failed to reorder stops',
-        description: 'Please try again.',
+        title: 'Reorder failed',
+        description: 'Could not save the new order. Changes have been reverted.',
         variant: 'destructive',
       })
     },
@@ -192,15 +194,23 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     const [movedStop] = reorderedStops.splice(from, 1)
     reorderedStops.splice(to, 0, movedStop)
     
-    const stopIds = reorderedStops.map(stop => stop.id)
+    const stopIds = reorderedStops.map(stop => stop.id).filter(id => !id.startsWith('temp-'))
+    
+    // Store original state for rollback
+    const originalStops = [...currentStops]
     
     // Optimistically update the UI
-    queryClient.setQueryData(['plan-stops', planId], reorderedStops.filter(s => !s.id.startsWith('temp-')))
+    queryClient.setQueryData(['plan-stops', planId], 
+      reorderedStops.filter(s => !s.id.startsWith('temp-'))
+    )
     
     try {
       await reorderStopsMutation({ stopIds })
     } catch (error) {
-      // Revert on error - the mutation will handle this
+      // Rollback to original state
+      queryClient.setQueryData(['plan-stops', planId], 
+        originalStops.filter(s => !s.id.startsWith('temp-'))
+      )
       throw error
     }
   }
@@ -245,6 +255,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
   return {
     stops: allStops,
     isLoading,
+    isDragOperationPending: isReordering,
     removeStop,
     reorderStops,
     addStop: async (stop: PlanStop) => {

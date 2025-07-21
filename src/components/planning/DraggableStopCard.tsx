@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useDragFeedback } from '@/hooks/useDragFeedback'
 
 interface DraggableStopCardProps {
   stop: {
@@ -42,6 +43,7 @@ export function DraggableStopCard({
   isDragging = false
 }: DraggableStopCardProps) {
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const dragFeedback = useDragFeedback()
 
   const {
     attributes,
@@ -50,14 +52,26 @@ export function DraggableStopCard({
     transform,
     transition,
     active,
-  } = useSortable({ id: stop.id })
+    isDragging: sortableIsDragging,
+  } = useSortable({ 
+    id: stop.id,
+    data: { stop }
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   }
 
-  const isBeingDragged = active?.id === stop.id || isDragging
+  const isBeingDragged = active?.id === stop.id || isDragging || sortableIsDragging
+
+  const handleDragStart = () => {
+    dragFeedback.triggerDragStart()
+  }
+
+  const handleDragEnd = () => {
+    dragFeedback.triggerDragEnd(true)
+  }
 
   const formatTime = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':')
@@ -96,6 +110,8 @@ export function DraggableStopCard({
               className="cursor-grab hover:text-primary touch-none active:cursor-grabbing transition-colors duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
               aria-label="Drag to reorder stop"
               tabIndex={0}
+              onPointerDown={handleDragStart}
+              onPointerUp={handleDragEnd}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
