@@ -12,11 +12,15 @@ import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useTransitTime, calculateHaversineTime } from '@/hooks/useTransitTimes';
+import { TransitIndicator } from './TransitIndicator';
 
 interface Venue {
   id: string;
   label: string;
   description?: string;
+  lat?: number;
+  lng?: number;
 }
 
 interface PlanStop {
@@ -160,7 +164,8 @@ const SortableStopCard: React.FC<{
 };
 
 export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: VenueStopStepProps) {
-  const [transitTimeMinutes] = useState(15); // Default transit time
+  // Default transit time for calculation when no real data is available
+  const defaultTransitMinutes = 15;
 
   const calculateStopTimes = (stopsToCalculate: PlanStop[], baseStartTime: string) => {
     let currentTime = new Date(`2000-01-01T${baseStartTime}:00`);
@@ -171,7 +176,7 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: Ve
       
       // Add transit time to next stop (except for last stop)
       if (index < stopsToCalculate.length - 1) {
-        currentTime.setMinutes(currentTime.getMinutes() + transitTimeMinutes);
+        currentTime.setMinutes(currentTime.getMinutes() + defaultTransitMinutes);
       }
       
       return {
@@ -228,7 +233,7 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: Ve
 
   const totalDuration = stops.reduce((acc, stop) => acc + stop.duration_minutes, 0);
   const totalCost = stops.reduce((acc, stop) => acc + (stop.estimated_cost_per_person || 0), 0);
-  const transitTime = Math.max(0, stops.length - 1) * transitTimeMinutes;
+  const transitTime = Math.max(0, stops.length - 1) * defaultTransitMinutes;
 
   const canProceed = stops.every(stop => stop.title.trim() && stop.venue) && stops.length > 0;
 
@@ -283,14 +288,20 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: Ve
                     isFirst={index === 0}
                   />
                   
-                  {/* Transit indicator */}
+                  {/* Real-time transit indicator */}
                   {index < stops.length - 1 && (
-                    <div className="flex items-center justify-center py-2">
-                      <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
-                        <MapPin className="w-3 h-3" />
-                        ~{transitTimeMinutes} min transit
-                      </div>
-                    </div>
+                    <TransitIndicator
+                      from={{
+                        lat: stop.venue?.lat,
+                        lng: stop.venue?.lng
+                      }}
+                      to={{
+                        lat: stops[index + 1]?.venue?.lat,
+                        lng: stops[index + 1]?.venue?.lng
+                      }}
+                      mode="walking"
+                      fallbackMinutes={defaultTransitMinutes}
+                    />
                   )}
                 </div>
               ))}
