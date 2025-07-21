@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const RSVPStatusEnum = z.enum([
   'attending',
   'maybe',
-  'not_attending',
+  'not_attending', 
   'pending',
 ]);
 
