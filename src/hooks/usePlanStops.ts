@@ -15,6 +15,7 @@ export function usePlanStops(plan_id: string) {
           venue:venues(*)
         `)
         .eq('plan_id', plan_id)
+        .order('stop_order', { ascending: true, nullsFirst: false })
         .order('start_time', { ascending: true })
         .returns<PlanStopRow[]>()
       
@@ -26,5 +27,7 @@ export function usePlanStops(plan_id: string) {
       return (data || []).map(mapPlanStopFromDb)
     },
     enabled: !!plan_id,
+    staleTime: 15000, // 15 seconds
+    refetchOnWindowFocus: false,
   })
 }

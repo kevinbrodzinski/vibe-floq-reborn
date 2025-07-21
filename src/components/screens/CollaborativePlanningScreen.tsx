@@ -7,7 +7,7 @@ import { MobileTimelineGrid } from "@/components/planning/MobileTimelineGrid";
 import { PlanInviteButton } from "@/components/PlanInviteButton";
 import { CheckInStatusBadge } from "@/components/CheckInStatusBadge";
 import { TimeProgressBar } from "@/components/TimeProgressBar";
-import { useCollaborativeState } from "@/hooks/useCollaborativeState";
+import { useLegacyCollaborativeState } from "@/hooks/useLegacyCollaborativeState";
 import { useAdvancedGestures } from "@/hooks/useAdvancedGestures";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { LiveParticipantTracker } from "@/components/LiveParticipantTracker";
@@ -78,7 +78,7 @@ export const CollaborativePlanningScreen = () => {
     reorderStops,
     addStop,
     voteOnStop
-  } = useCollaborativeState(actualPlanId);
+  } = useLegacyCollaborativeState(actualPlanId);
 
   // Mock the remaining properties that need real implementation
   const plan = { 

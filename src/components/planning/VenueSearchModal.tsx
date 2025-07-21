@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Search, MapPin, Star, Clock, DollarSign } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useCollaborativeState } from '@/hooks/useCollaborativeState'
+import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import type { PlanStop } from '@/types/plan'
 
@@ -60,7 +60,7 @@ export function VenueSearchModal({
   const [selectedVenue, setSelectedVenue] = useState<typeof mockVenues[0] | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useCollaborativeState(planId)
+  const { addStop } = useLegacyCollaborativeState(planId)
   const { data: existingStops } = usePlanStops(planId)
 
   const formatTimeSlot = (time: string) => {

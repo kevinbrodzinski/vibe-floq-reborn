@@ -28,10 +28,9 @@ export function FloqPlanTab() {
   const {
     stops,
     isLoading: stopsLoading,
-    addStop,
-    reorderStops,
-    voteOnStop
-  } = useCollaborativeState(plan?.id || '')
+    isReordering,
+    handleStopReorder
+  } = useCollaborativeState({ planId: plan?.id || '', enabled: !!plan?.id })
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -47,17 +46,7 @@ export function FloqPlanTab() {
     setShowAddStopModal(true)
   }
 
-  const handleStopReorder = async (stopId: string, newIndex: number) => {
-    // Convert to stop IDs array for reordering
-    const reorderedStops = [...stops]
-    const currentIndex = reorderedStops.findIndex(s => s.id === stopId)
-    if (currentIndex !== -1) {
-      const [movedStop] = reorderedStops.splice(currentIndex, 1)
-      reorderedStops.splice(newIndex, 0, movedStop)
-      const stopIds = reorderedStops.map(s => s.id)
-      await reorderStops(currentIndex, newIndex)
-    }
-  }
+  // Use the collaborative state's reorder handler directly
 
   const handleLongPress = () => {
     longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { useCollaborativeState } from '@/hooks/useCollaborativeState'
+import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -37,7 +37,7 @@ export function AddStopModal({
   const [usedNovaSuggestion, setUsedNovaSuggestion] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useCollaborativeState(planId)
+  const { addStop } = useLegacyCollaborativeState(planId)
   const { data: stops = [] } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
   

@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles, Clock, MapPin, DollarSign, RefreshCw } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useCollaborativeState } from '@/hooks/useCollaborativeState'
+import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
 import { NovaIndicator } from './NovaIndicator'
@@ -62,7 +62,7 @@ export function AISuggestionModal({
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useCollaborativeState(planId)
+  const { addStop } = useLegacyCollaborativeState(planId)
   const { data: existingStops } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
 

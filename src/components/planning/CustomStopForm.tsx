@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Clock, MapPin, DollarSign, Sparkles } from 'lucide-react'
 import { trackEvent } from '@/lib/analytics'
-import { useCollaborativeState } from '@/hooks/useCollaborativeState'
+import { useLegacyCollaborativeState } from '@/hooks/useLegacyCollaborativeState'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -38,7 +38,7 @@ export function CustomStopForm({
   const [usedNovaSuggestion, setUsedNovaSuggestion] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { addStop } = useCollaborativeState(planId)
+  const { addStop } = useLegacyCollaborativeState(planId)
   const { data: existingStops } = usePlanStops(planId)
   const { data: userPreferences } = useUserPreferences()
   
