@@ -139,7 +139,8 @@ export function usePlanStatusValidation() {
       finalized: 'Finalize Plan',
       executing: 'Start Execution',
       completed: 'Complete Plan',
-      cancelled: 'Cancel Plan'
+      cancelled: 'Cancel Plan',
+      invited: 'Invite to Plan'
     }
     return labels[status]
   }
@@ -152,7 +153,8 @@ export function usePlanStatusValidation() {
       finalized: 'Plan is locked and ready for execution',
       executing: 'Plan is currently being executed',
       completed: 'Plan has been successfully completed',
-      cancelled: 'Plan has been cancelled and cannot be restarted'
+      cancelled: 'Plan has been cancelled and cannot be restarted',
+      invited: 'Plan invitation is pending response'
     }
     return descriptions[status]
   }

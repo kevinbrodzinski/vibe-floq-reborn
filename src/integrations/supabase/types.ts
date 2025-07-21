@@ -6102,6 +6102,7 @@ export type Database = {
         | "finalized"
         | "executing"
         | "completed"
+        | "invited"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -6323,6 +6324,7 @@ export const Constants = {
         "finalized",
         "executing",
         "completed",
+        "invited",
       ],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [

@@ -47,7 +47,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({ plan, onClose }) =
         .update({
           ...updates,
           max_participants: updates.max_participants ? Number(updates.max_participants) : null,
-          status: updates.status as PlanStatus,
+          status: updates.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', plan.id)

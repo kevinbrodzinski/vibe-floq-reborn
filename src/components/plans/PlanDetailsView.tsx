@@ -51,8 +51,14 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId: propPl
       const { data, error } = await supabase
         .from('plan_participants')
         .select(`
-          *,
-          profiles:user_id (
+          id,
+          user_id,
+          role,
+          joined_at,
+          is_guest,
+          guest_name,
+          profiles!user_id (
+            id,
             username,
             display_name,
             avatar_url
