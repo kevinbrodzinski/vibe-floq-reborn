@@ -205,19 +205,19 @@ const MobileTimelineGridComponent = ({
                              onDelete={(stopId) => console.log('Delete stop:', stopId)}
                            />
                       
-                      {selectedStopId === stop.id && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                        >
-                          <StopInteractionPanel
-                            planId={planId}
-                            stopId={stop.id}
-                            currentUserId={null} // Will be handled by the component
-                          />
-                        </motion.div>
-                      )}
+                       {selectedStopId === stop.id && (
+                         <motion.div
+                           initial={{ opacity: 0, height: 0 }}
+                           animate={{ opacity: 1, height: 'auto' }}
+                           exit={{ opacity: 0, height: 0 }}
+                         >
+                           <StopInteractionPanel
+                             planId={planId}
+                             stopId={stop.id}
+                             currentUserId={null} // Will be handled by the component
+                           />
+                         </motion.div>
+                       )}
                     </motion.div>
                   ))}
                 </AnimatePresence>

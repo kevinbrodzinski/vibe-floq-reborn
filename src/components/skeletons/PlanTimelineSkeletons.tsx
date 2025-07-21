@@ -1,6 +1,30 @@
 import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 
+// Enhanced shimmer animation for skeleton states
+const shimmerVariants = {
+  initial: { backgroundPosition: '-200% 0' },
+  animate: { 
+    backgroundPosition: '200% 0',
+    transition: {
+      duration: 1.5,
+      ease: 'linear',
+      repeat: Infinity
+    }
+  }
+}
+
+const ShimmerSkeleton = ({ className = '', ...props }: { className?: string }) => (
+  <motion.div
+    variants={shimmerVariants}
+    initial="initial"
+    animate="animate"
+    className={`bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] rounded-md ${className}`}
+    style={{ backgroundImage: 'linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted)/0.5) 50%, hsl(var(--muted)) 75%)' }}
+    {...props}
+  />
+)
+
 interface StopCardSkeletonProps {
   compact?: boolean
   count?: number
@@ -15,37 +39,37 @@ export const StopCardSkeleton = ({ compact = false, count = 1 }: StopCardSkeleto
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.1 }}
-          className="relative border rounded-lg p-4 animate-pulse"
+          className="relative border rounded-lg p-4"
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-1">
-              <Skeleton className="h-4 w-4" />
+              <ShimmerSkeleton className="h-4 w-4" />
               <div className="flex-1 space-y-1">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-24" />
+                <ShimmerSkeleton className="h-4 w-32" />
+                <ShimmerSkeleton className="h-3 w-24" />
               </div>
             </div>
-            <Skeleton className="h-6 w-6" />
+            <ShimmerSkeleton className="h-6 w-6" />
           </div>
 
           {/* Time badges */}
           <div className="flex items-center gap-2 mb-2">
-            <Skeleton className="h-5 w-20" />
-            <Skeleton className="h-5 w-12" />
+            <ShimmerSkeleton className="h-5 w-20" />
+            <ShimmerSkeleton className="h-5 w-12" />
           </div>
 
           {/* Cost */}
           <div className="flex items-center gap-1 mb-2">
-            <Skeleton className="h-3 w-3" />
-            <Skeleton className="h-3 w-16" />
+            <ShimmerSkeleton className="h-3 w-3" />
+            <ShimmerSkeleton className="h-3 w-16" />
           </div>
 
           {/* Description - only if not compact */}
           {!compact && (
             <div className="space-y-1">
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-3/4" />
+              <ShimmerSkeleton className="h-3 w-full" />
+              <ShimmerSkeleton className="h-3 w-3/4" />
             </div>
           )}
 

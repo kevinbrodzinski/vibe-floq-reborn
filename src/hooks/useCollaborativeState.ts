@@ -8,9 +8,12 @@ import { mapPlanStopFromDb } from '@/types/mappers'
 import type { PlanStop } from '@/types/plan'
 import type { PlanStopRow } from '@/types/database'
 
+type LoadingState = 'idle' | 'adding' | 'reordering' | 'deleting'
+
 interface CollaborativeState {
   stops: PlanStop[];
   isLoading: boolean;
+  loadingState: LoadingState;
   isDragOperationPending: boolean;
   isAddingStop: boolean;
   removeStop: (id: string) => Promise<void>;
@@ -128,7 +131,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     },
   })
 
-  const { mutate: deleteStop } = useMutation({
+  const { mutate: deleteStop, isPending: isDeleting } = useMutation({
     mutationFn: async (stopId: string) => {
       const { error } = await supabase
         .from('plan_stops')
@@ -163,6 +166,14 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     [...planStops, ...optimisticStops], 
     [planStops, optimisticStops]
   )
+
+  // Consolidated loading state for better UX control
+  const loadingState: LoadingState = useMemo(() => {
+    if (isAddingStop) return 'adding'
+    if (isReordering) return 'reordering' 
+    if (isDeleting) return 'deleting'
+    return 'idle'
+  }, [isAddingStop, isReordering, isDeleting])
 
   const addOptimisticStop = useCallback((tempStop: Partial<PlanStop>) => {
     const newStop: PlanStop = {
@@ -260,6 +271,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
   return {
     stops: allStops,
     isLoading,
+    loadingState,
     isDragOperationPending: isReordering,
     isAddingStop,
     removeStop,
