@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,14 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
   const navigate = useNavigate();
   const { data: plans = [], isLoading } = useFloqPlans(floqDetails.id);
 
-  const handleCreatePlan = () => {
-    navigate('/new-plan');
+  const handleCreatePlan = (templateType?: string) => {
+    navigate('/plan/new', { 
+      state: { 
+        floqId: floqDetails.id,
+        floqTitle: floqDetails.title,
+        templateType 
+      } 
+    });
   };
 
   return (
@@ -27,7 +34,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
           <Calendar className="h-4 w-4 shrink-0" />
           Plans & Events
         </h3>
-        <Button size="sm" className="flex items-center gap-1 text-xs px-3 py-1 h-8" onClick={handleCreatePlan}>
+        <Button size="sm" className="flex items-center gap-1 text-xs px-3 py-1 h-8" onClick={() => handleCreatePlan()}>
           <Plus className="h-3 w-3" />
           <span className="hidden xs:inline">Create Plan</span>
           <span className="xs:hidden">Create</span>
@@ -51,7 +58,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
               <p className="text-sm text-muted-foreground mb-3 px-2">
                 Create the first plan for this floq to coordinate activities and meetups.
               </p>
-              <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs px-3 py-1 h-8 mx-auto" onClick={handleCreatePlan}>
+              <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs px-3 py-1 h-8 mx-auto" onClick={() => handleCreatePlan()}>
                 <Plus className="h-3 w-3" />
                 Create First Plan
               </Button>
@@ -70,25 +77,41 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
       <Card className="p-4">
         <h4 className="font-medium text-base mb-3">Quick Plan Templates</h4>
         <div className="grid grid-cols-1 gap-2">
-          <Button variant="outline" className="justify-start h-auto p-3 text-left">
+          <Button 
+            variant="outline" 
+            className="justify-start h-auto p-3 text-left"
+            onClick={() => handleCreatePlan('coffee')}
+          >
             <div className="w-full">
               <div className="font-medium text-sm">Coffee Meetup</div>
               <div className="text-xs text-muted-foreground">Casual coffee and chat</div>
             </div>
           </Button>
-          <Button variant="outline" className="justify-start h-auto p-3 text-left">
+          <Button 
+            variant="outline" 
+            className="justify-start h-auto p-3 text-left"
+            onClick={() => handleCreatePlan('activity')}
+          >
             <div className="w-full">
               <div className="font-medium text-sm">Group Activity</div>
               <div className="text-xs text-muted-foreground">Organized group event</div>
             </div>
           </Button>
-          <Button variant="outline" className="justify-start h-auto p-3 text-left">
+          <Button 
+            variant="outline" 
+            className="justify-start h-auto p-3 text-left"
+            onClick={() => handleCreatePlan('study')}
+          >
             <div className="w-full">
               <div className="font-medium text-sm">Study Session</div>
               <div className="text-xs text-muted-foreground">Collaborative learning</div>
             </div>
           </Button>
-          <Button variant="outline" className="justify-start h-auto p-3 text-left">
+          <Button 
+            variant="outline" 
+            className="justify-start h-auto p-3 text-left"
+            onClick={() => handleCreatePlan('custom')}
+          >
             <div className="w-full">
               <div className="font-medium text-sm">Custom Plan</div>
               <div className="text-xs text-muted-foreground">Create from scratch</div>

@@ -1,5 +1,5 @@
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense } from 'react';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { FullScreenSpinner } from '@/components/ui/FullScreenSpinner';
@@ -60,6 +60,8 @@ export const AppRoutes = () => {
     <Route path="/plans" element={<PlansHub />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
+    {/* Redirect old new-plan path to new path */}
+    <Route path="/new-plan" element={<Navigate to="/plan/new" replace />} />
     {/* New route for shared plans using /share/:slug */}
     <Route path="/share/:slug" element={<SharedPlan />} />
     <Route path="/invites" element={<Invites />} />

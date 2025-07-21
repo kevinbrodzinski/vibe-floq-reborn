@@ -7,8 +7,10 @@ import { usePlansData } from '@/hooks/usePlansData';
 import { PlansGrid } from './PlansGrid';
 import { PlansFilters } from './PlansFilters';
 import { EmptyState } from '@/components/EmptyState';
+import { useNavigate } from 'react-router-dom';
 
 export const PlansHub: React.FC = () => {
+  const navigate = useNavigate();
   const {
     plans,
     categorizedPlans,
@@ -17,9 +19,12 @@ export const PlansHub: React.FC = () => {
     searchQuery,
     setSearchQuery,
     isLoading,
-    createNewPlan,
     counts
   } = usePlansData();
+
+  const createNewPlan = () => {
+    navigate('/plan/new');
+  };
 
   if (isLoading) {
     return (

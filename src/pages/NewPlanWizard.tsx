@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { TimeDialStep } from '@/components/new-plan/TimeDialStep'
 import { DetailsStep } from '@/components/new-plan/DetailsStep'
@@ -27,10 +28,20 @@ export interface PlanDraft extends PlanDetails, TimeRange {
   duration_hours: number
 }
 
+interface NavigationState {
+  floqId?: string
+  floqTitle?: string
+  templateType?: string
+}
+
 export function NewPlanWizard() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { mutateAsync: createPlan, isPending } = useCreatePlan()
   const gap = useBottomGap()
+  
+  // Get floq context from navigation state
+  const navigationState = location.state as NavigationState | undefined
   
   const [step, setStep] = useState<0 | 1 | 2>(0)
   const [timeRange, setTimeRange] = useState<TimeRange>({ start: '18:00', end: '00:00' })
@@ -40,8 +51,36 @@ export function NewPlanWizard() {
     description: '',
     vibe_tag: '',
     invitedUserIds: [],
-    floqId: null
+    floqId: navigationState?.floqId || null
   })
+
+  // Set initial plan details based on template type and floq context
+  useEffect(() => {
+    if (navigationState) {
+      const templateTitles = {
+        coffee: 'Coffee Meetup',
+        activity: 'Group Activity', 
+        study: 'Study Session',
+        custom: ''
+      }
+      
+      const templateDescriptions = {
+        coffee: 'Casual coffee and conversation',
+        activity: 'Organized group activity',
+        study: 'Collaborative learning session',
+        custom: ''
+      }
+
+      const templateType = navigationState.templateType as keyof typeof templateTitles
+      
+      setDetails(prev => ({
+        ...prev,
+        title: templateTitles[templateType] || '',
+        description: templateDescriptions[templateType] || '',
+        floqId: navigationState.floqId || null
+      }))
+    }
+  }, [navigationState])
 
   const totalSteps = 3
   const progress = ((step + 1) / totalSteps) * 100
@@ -86,7 +125,12 @@ export function NewPlanWizard() {
   }
 
   const handleClose = () => {
-    navigate(-1)
+    // Navigate back to floq if we came from one, otherwise go to plans hub
+    if (navigationState?.floqId) {
+      navigate(`/floqs/${navigationState.floqId}`)
+    } else {
+      navigate('/plans')
+    }
   }
 
   return (
@@ -101,6 +145,11 @@ export function NewPlanWizard() {
             <div className="space-y-1">
               <h2 className="text-2xl font-semibold">{steps[step].title}</h2>
               <p className="text-muted-foreground">{steps[step].description}</p>
+              {navigationState?.floqTitle && (
+                <p className="text-sm text-muted-foreground">
+                  For: <span className="font-medium">{navigationState.floqTitle}</span>
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {step > 0 && (
