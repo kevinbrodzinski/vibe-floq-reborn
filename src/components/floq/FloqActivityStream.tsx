@@ -2,19 +2,85 @@ import React from 'react';
 import { useFloqActivity } from '@/hooks/useFloqActivity';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarClock, MessageCircle, Pencil } from 'lucide-react';
+import { 
+  CalendarClock, 
+  MessageCircle, 
+  Pencil, 
+  UserPlus, 
+  UserMinus, 
+  Crown, 
+  Zap, 
+  Activity, 
+  MapPin, 
+  Users, 
+  X, 
+  Trash2, 
+  Rocket, 
+  Mail 
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-const icons = {
+const planIcons = {
   created: CalendarClock,
   edited: Pencil,
   commented: MessageCircle
 };
 
-const actionText = {
+const historyIcons = {
+  joined: UserPlus,
+  left: UserMinus,
+  created: Crown,
+  vibe_changed: Zap,
+  activity_detected: Activity,
+  location_changed: MapPin,
+  merged: Users,
+  split: Users,
+  ended: X,
+  deleted: Trash2,
+  boosted: Rocket,
+  plan_created: CalendarClock,
+  invited: Mail
+};
+
+const planActionText = {
   created: 'created a plan',
   edited: 'updated a plan', 
   commented: 'commented on a plan'
+};
+
+const getHistoryActionText = (eventType: string, metadata?: any) => {
+  switch (eventType) {
+    case 'joined':
+      return 'joined the floq';
+    case 'left':
+      return 'left the floq';
+    case 'created':
+      return 'created this floq';
+    case 'vibe_changed':
+      const newVibe = metadata?.new_vibe;
+      return newVibe ? `changed vibe to ${newVibe}` : 'changed the vibe';
+    case 'activity_detected':
+      return 'is active';
+    case 'location_changed':
+      return 'moved location';
+    case 'merged':
+      return 'merged this floq';
+    case 'split':
+      return 'split this floq';
+    case 'ended':
+      return 'ended the floq';
+    case 'deleted':
+      return 'deleted the floq';
+    case 'boosted':
+      return 'boosted this floq';
+    case 'plan_created':
+      return 'created a plan';
+    case 'invited':
+      return 'invited someone to join';
+    default:
+      return eventType;
+  }
 };
 
 interface FloqActivityStreamProps {
@@ -51,16 +117,30 @@ export const FloqActivityStream: React.FC<FloqActivityStreamProps> = ({ floqId }
 
   return (
     <div className="space-y-4">
-      {activity.map((entry) => {
-        const Icon = icons[entry.kind] ?? MessageCircle;
+      {activity.map((entry: any) => {
+        const isPlanEvent = entry.source === 'plan_activity';
+        
+        let Icon, actionText, userName, content;
+        
+        if (isPlanEvent) {
+          Icon = planIcons[entry.kind as keyof typeof planIcons] ?? MessageCircle;
+          actionText = planActionText[entry.kind as keyof typeof planActionText];
+          userName = entry.guest_name || 'Someone';
+          content = entry.content;
+        } else {
+          Icon = historyIcons[entry.event_type as keyof typeof historyIcons] ?? Activity;
+          actionText = getHistoryActionText(entry.event_type, entry.metadata);
+          userName = entry.user_profile?.display_name || entry.user_profile?.username || 'Someone';
+          content = null;
+        }
         
         return (
           <Card key={entry.id} className="p-4">
             <div className="flex items-start gap-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={undefined} />
+                <AvatarImage src={entry.user_profile?.avatar_url || undefined} />
                 <AvatarFallback className="text-xs">
-                  {entry.guest_name?.charAt(0)?.toUpperCase() || '?'}
+                  {userName?.charAt(0)?.toUpperCase() || '?'}
                 </AvatarFallback>
               </Avatar>
               
@@ -68,17 +148,24 @@ export const FloqActivityStream: React.FC<FloqActivityStreamProps> = ({ floqId }
                 <div className="flex items-center gap-2 text-sm">
                   <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="font-medium">
-                    {entry.guest_name || 'Someone'}
+                    {userName}
                   </span>
                   <span className="text-muted-foreground">
-                    {actionText[entry.kind]}
+                    {actionText}
                   </span>
                 </div>
                 
-                {entry.content && (
+                {content && (
                   <div className="mt-1 text-sm text-foreground">
-                    "{entry.content}"
+                    "{content}"
                   </div>
+                )}
+                
+                {/* Show vibe badge for vibe changes */}
+                {!isPlanEvent && entry.event_type === 'vibe_changed' && entry.metadata?.new_vibe && (
+                  <Badge variant="outline" className="text-xs capitalize mt-1">
+                    {entry.metadata.new_vibe}
+                  </Badge>
                 )}
                 
                 <div className="mt-1 text-xs text-muted-foreground">
