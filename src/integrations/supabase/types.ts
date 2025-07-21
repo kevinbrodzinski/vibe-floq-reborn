@@ -1897,40 +1897,55 @@ export type Database = {
       }
       plan_participants: {
         Row: {
+          guest_email: string | null
           guest_name: string | null
+          guest_phone: string | null
           id: string
           invite_type: string | null
-          is_guest: boolean | null
+          invited_at: string | null
+          is_guest: boolean
           joined_at: string | null
+          notes: string | null
           plan_id: string
           reminded_at: string | null
+          responded_at: string | null
           role: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          guest_email?: string | null
           guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           invite_type?: string | null
-          is_guest?: boolean | null
+          invited_at?: string | null
+          is_guest?: boolean
           joined_at?: string | null
+          notes?: string | null
           plan_id: string
           reminded_at?: string | null
+          responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          guest_email?: string | null
           guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           invite_type?: string | null
-          is_guest?: boolean | null
+          invited_at?: string | null
+          is_guest?: boolean
           joined_at?: string | null
+          notes?: string | null
           plan_id?: string
           reminded_at?: string | null
+          responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -5993,6 +6008,10 @@ export type Database = {
       }
       user_in_floq: {
         Args: { p_floq: string }
+        Returns: boolean
+      }
+      user_in_floq_or_creator: {
+        Args: { p_plan: string }
         Returns: boolean
       }
       user_is_floq_participant: {
