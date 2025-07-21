@@ -16,27 +16,29 @@ import { FloqPlansTab } from '@/components/floq/FloqPlansTab';
 import { FloqChat } from '@/components/floq/FloqChat';
 import { FloqActivityFeed } from '@/components/floq/FloqActivityFeed';
 
-const VALID_TABS = ['info', 'activity', 'chat', 'plans', 'analytics', 'settings'];
+const VALID_TABS = ['info', 'activity', 'chat', 'plans', 'analytics', 'settings'] as const;
+type ValidTab = typeof VALID_TABS[number];
 
 const FloqDetails = () => {
   const { floqId } = useParams<{ floqId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { session } = useAuth();
   const { goBack } = useNavigation();
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState<ValidTab>('info');
 
   // Handle deep-link tab selection
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && VALID_TABS.includes(tabParam)) {
-      setActiveTab(tabParam);
+    if (tabParam && VALID_TABS.includes(tabParam as ValidTab)) {
+      setActiveTab(tabParam as ValidTab);
     }
   }, [searchParams]);
 
   // Update URL when tab changes
   const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setSearchParams({ tab: value }, { replace: true });
+    const validTab = value as ValidTab;
+    setActiveTab(validTab);
+    setSearchParams({ tab: validTab }, { replace: true });
   };
   
   const { data: floqDetails, isLoading, error } = useFloqDetails(floqId, session?.user?.id);
@@ -177,41 +179,36 @@ const FloqDetails = () => {
 
           {/* Tab Content */}
           <ScrollArea className="h-[calc(100vh-200px)]">
-            <TabsContent value="info" className="mt-0">
+            <TabsContent value="info" className="mt-0" role="tabpanel">
               <FloqInfoTab floqDetails={floqDetails} />
             </TabsContent>
 
             {hasAccess && (
-              <TabsContent value="activity" className="mt-0">
+              <TabsContent value="activity" className="mt-0" role="tabpanel">
                 <FloqActivityFeed floqId={floqDetails.id} />
               </TabsContent>
             )}
 
             {hasAccess && (
-              <TabsContent value="chat" className="mt-0">
-                <FloqChat 
-                  floqId={floqDetails.id}
-                  isOpen={activeTab === 'chat'}
-                  onClose={() => setActiveTab('plans')}
-                  isJoined={hasAccess}
-                />
+              <TabsContent value="chat" className="mt-0" role="tabpanel">
+                <FloqChat floqId={floqDetails.id} />
               </TabsContent>
             )}
 
             {hasAccess && (
-              <TabsContent value="plans" className="mt-0">
+              <TabsContent value="plans" className="mt-0" role="tabpanel">
                 <FloqPlansTab floqDetails={floqDetails} />
               </TabsContent>
             )}
 
             {isCreator && (
-              <TabsContent value="analytics" className="mt-0">
+              <TabsContent value="analytics" className="mt-0" role="tabpanel">
                 <FloqAnalyticsDashboard floqDetails={floqDetails} />
               </TabsContent>
             )}
 
             {isCreator && (
-              <TabsContent value="settings" className="mt-0">
+              <TabsContent value="settings" className="mt-0" role="tabpanel">
                 <Card className="p-4">
                   <div className="text-center py-8 text-muted-foreground">
                     Advanced settings coming soon

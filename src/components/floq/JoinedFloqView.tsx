@@ -80,9 +80,9 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </div>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <Calendar className="h-3 w-3 shrink-0" />
-            <span>Started {floqDetails.starts_at ? formatDistanceToNow(new Date(floqDetails.starts_at)) : 'recently'} ago</span>
+            <span>Started {floqDetails.starts_at && !isNaN(Date.parse(floqDetails.starts_at)) ? formatDistanceToNow(new Date(floqDetails.starts_at)) : 'recently'} ago</span>
           </div>
-          {floqDetails.ends_at && (
+          {floqDetails.ends_at && !isNaN(Date.parse(floqDetails.ends_at)) && (
             <div className="flex items-center gap-1 whitespace-nowrap">
               <Zap className="h-3 w-3 shrink-0" />
               <span>Ends about {formatDistanceToNow(new Date(floqDetails.ends_at))}</span>
@@ -92,7 +92,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
       </div>
 
       {/* Tabs - Mobile optimized */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'plans' | 'chat' | 'members' | 'activity')}>
         <TabsList className="grid w-full grid-cols-4 h-10">
           <TabsTrigger value="plans" className="text-xs px-1 flex items-center gap-1" aria-label="Plans">
             <ClipboardList className="h-3 w-3 shrink-0" />
@@ -117,27 +117,22 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="plans" className="space-y-3 mt-3">
+        <TabsContent value="plans" className="space-y-3 mt-3" role="tabpanel">
           <FloqPlansTab floqDetails={floqDetails} />
         </TabsContent>
 
-        <TabsContent value="chat" className="mt-3">
-          <FloqChat 
-            floqId={floqDetails.id}
-            isOpen={activeTab === 'chat'}
-            onClose={() => setActiveTab('plans')}
-            isJoined
-          />
+        <TabsContent value="chat" className="mt-3" role="tabpanel">
+          <FloqChat floqId={floqDetails.id} />
         </TabsContent>
 
-        <TabsContent value="members" className="mt-3">
+        <TabsContent value="members" className="mt-3" role="tabpanel">
           <ScrollArea className="h-[400px]">
             <FloqMemberList floqId={floqDetails.id} />
             <ScrollBar />
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="activity" className="mt-3">
+        <TabsContent value="activity" className="mt-3" role="tabpanel">
           <ScrollArea className="h-[400px]">
             <FloqActivityStream floqId={floqDetails.id} />
             <ScrollBar />
