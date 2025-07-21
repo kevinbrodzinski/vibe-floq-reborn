@@ -96,7 +96,14 @@ export function FloqPlanTab() {
             endTime={plan.end_time || '23:59'}
             stops={stops}
             onAddStop={handleAddStop}
-            onStopReorder={handleStopReorder}
+            onStopReorder={(activeId: string, overId: string) => {
+              // Convert overId to index for handleStopReorder
+              const stopsArray = stops || []
+              const overIndex = stopsArray.findIndex(stop => stop.id === overId)
+              if (overIndex !== -1) {
+                handleStopReorder(activeId, overIndex)
+              }
+            }}
             onStopSelect={(stopId) => console.log('Selected stop:', stopId)}
           />
         </TabsContent>

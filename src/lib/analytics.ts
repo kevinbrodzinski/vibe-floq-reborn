@@ -1,6 +1,13 @@
 
 // Analytics utilities with fallbacks for mobile and web
 
+// Extend Window interface for Capacitor
+declare global {
+  interface Window {
+    Capacitor?: any;
+  }
+}
+
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
   try {
     console.log('📊 Track event:', eventName, properties)
@@ -9,6 +16,22 @@ export const trackEvent = (eventName: string, properties?: Record<string, any>) 
     console.warn('Analytics tracking failed:', error)
   }
 }
+
+// Generic track function (alias for trackEvent)
+export const track = trackEvent
+
+// Specific tracking functions
+export const trackFloqCreated = (properties?: Record<string, any>) => 
+  trackEvent('floq_created', properties)
+
+export const trackFloqJoin = (properties?: Record<string, any>) => 
+  trackEvent('floq_join', properties)
+
+export const trackFloqSuggestionDismissed = (properties?: Record<string, any>) => 
+  trackEvent('floq_suggestion_dismissed', properties)
+
+export const trackLocationPermission = (properties?: Record<string, any>) => 
+  trackEvent('location_permission', properties)
 
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
   try {
