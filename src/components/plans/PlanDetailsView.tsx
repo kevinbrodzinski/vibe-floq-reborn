@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Trash2, Calendar, MapPin, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ interface PlanDetailsViewProps {
 }
 
 export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -55,7 +55,7 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
         description: 'Your plan has been deleted successfully.'
       });
 
-      router.push('/plans');
+      navigate('/plans');
     } catch (error) {
       console.error('Failed to delete plan:', error);
       toast({
@@ -96,7 +96,7 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
-            onClick={() => router.push('/plans')}
+            onClick={() => navigate('/plans')}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -119,7 +119,7 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
         <div className="flex items-center justify-between px-4 py-3 max-w-4xl mx-auto">
           <Button
             variant="ghost"
-            onClick={() => router.push('/plans')}
+            onClick={() => navigate('/plans')}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Plans

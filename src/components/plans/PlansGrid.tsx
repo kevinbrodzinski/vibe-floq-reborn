@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { PlanCard } from './PlanCard';
+import { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlansGridProps {
   plans: Array<{
     id: string;
     title: string;
     description?: string;
-    status: string;
+    status: PlanStatus;
     planned_at: string;
     created_at: string;
     floqs?: {

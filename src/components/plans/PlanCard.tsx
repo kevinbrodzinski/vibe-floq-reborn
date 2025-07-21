@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,13 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PlanEditModal } from './PlanEditModal';
+import { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlanCardProps {
   plan: {
     id: string;
     title: string;
     description?: string;
-    status: string;
+    status: PlanStatus;
     planned_at: string;
     created_at: string;
     floqs?: {
@@ -28,7 +29,7 @@ interface PlanCardProps {
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -76,7 +77,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
     if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
       return;
     }
-    router.push(`/plans/${plan.id}`);
+    navigate(`/plans/${plan.id}`);
   };
 
   const getStatusColor = (status: string) => {

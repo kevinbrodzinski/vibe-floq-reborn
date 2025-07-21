@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlanEditModalProps {
   plan: {
     id: string;
     title: string;
     description?: string;
-    status: string;
+    status: PlanStatus;
     planned_at: string;
     start_time?: string;
     end_time?: string;
@@ -46,6 +47,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({ plan, onClose }) =
         .update({
           ...updates,
           max_participants: updates.max_participants ? Number(updates.max_participants) : null,
+          status: updates.status as PlanStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', plan.id)

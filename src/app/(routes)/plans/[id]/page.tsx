@@ -1,7 +1,5 @@
 
-'use client';
-
-import { useParams } from 'next/navigation';
+import { useParams } from 'react-router-dom';
 import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
 
 export default function PlanDetailsPage() {
