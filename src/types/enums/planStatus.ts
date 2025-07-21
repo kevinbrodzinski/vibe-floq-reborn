@@ -7,7 +7,8 @@ export const PlanStatusEnum = zPlan.enum([
   'cancelled',
   'finalized',
   'executing',
-  'completed'
+  'completed',
+  'invited'
 ]);
 export type PlanStatus = zPlan.infer<typeof PlanStatusEnum>;
 

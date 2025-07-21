@@ -36,6 +36,11 @@ export const planStatusConfig = {
     label: 'Cancelled',
     className: 'bg-destructive/10 text-destructive border-destructive/30',
     icon: Archive
+  },
+  invited: {
+    label: 'Invited',
+    className: 'bg-info/10 text-info border-info/30',
+    icon: Clock
   }
 } as const;
 
