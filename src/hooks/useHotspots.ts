@@ -96,7 +96,7 @@ export const useHotspots = () => {
       })
 
     return () => {
-      channel.unsubscribe()
+      channel.unsubscribe().catch(console.error)
     }
   }, [env.hotSpotHalos, mutate])
 

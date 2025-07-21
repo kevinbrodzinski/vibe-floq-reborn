@@ -61,7 +61,7 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
       .subscribe()
 
     return () => {
-      channel.unsubscribe()
+      channel.unsubscribe().catch(console.error)
     }
   }, [planId, enabled])
 

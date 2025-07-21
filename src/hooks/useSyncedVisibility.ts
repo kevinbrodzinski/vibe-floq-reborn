@@ -57,7 +57,7 @@ export function useSyncedVisibility() {
       )
       .subscribe();
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe().catch(console.error);
     };
   }, [user?.id, setVisibility]);
 }

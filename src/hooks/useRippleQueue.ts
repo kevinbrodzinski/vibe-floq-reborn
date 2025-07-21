@@ -34,7 +34,7 @@ export default function useRippleQueue(
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe().catch(console.error);
     };
   }, [tileIds?.join(','), push]);
 }

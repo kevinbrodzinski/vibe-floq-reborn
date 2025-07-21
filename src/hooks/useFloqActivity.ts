@@ -123,8 +123,8 @@ export function useFloqActivity(floqId: string) {
       .subscribe();
     
     return () => {
-      void activityChannel.unsubscribe();
-      void historyChannel.unsubscribe();
+      void activityChannel.unsubscribe().catch(console.error);
+      void historyChannel.unsubscribe().catch(console.error);
     };
   }, [floqId, queryClient]);
 

@@ -45,7 +45,7 @@ export default function useFriendTrails(friendIds: string[]) {
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe().catch(console.error);
     };
   }, [friendIds?.join(',')]);
 

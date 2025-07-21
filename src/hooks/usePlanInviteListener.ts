@@ -36,7 +36,7 @@ export function usePlanInviteListener() {
       .subscribe()
 
     return () => {
-      channel.unsubscribe()
+      channel.unsubscribe().catch(console.error)
     }
   }, [user, navigate])
 }

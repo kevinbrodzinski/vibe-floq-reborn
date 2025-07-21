@@ -44,7 +44,7 @@ export const usePresenceChannel = () => {
 
     // Clean-up on vibe / location change
     return () => {
-      ch.unsubscribe();
+      ch.unsubscribe().catch(console.error);
     };
   }, [vibe, gh5, user?.id]);
 

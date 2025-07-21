@@ -47,7 +47,7 @@ export const useClustersLive = (
 
     return () => {
       if (import.meta.env.DEV) console.log('[useClustersLive] Cleaning up subscription')
-      channel.unsubscribe()
+      channel.unsubscribe().catch(console.error)
       joined.current = false
     }
   }, [initial.length, refetchClusters])
@@ -56,7 +56,7 @@ export const useClustersLive = (
   useEffect(() => {
     return () => {
       if (channelRef.current) {
-        channelRef.current.unsubscribe()
+        channelRef.current.unsubscribe().catch(console.error)
       }
     }
   }, [])

@@ -97,7 +97,7 @@ export function usePlaceBanners(lat?: number, lng?: number) {
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe().catch(console.error);
     };
   }, [geohash4]);
 
