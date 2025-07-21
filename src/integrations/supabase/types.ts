@@ -1938,6 +1938,54 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_stop_comments: {
+        Row: {
+          created_at: string | null
+          guest_id: string | null
+          id: string
+          plan_id: string
+          stop_id: string
+          text: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          guest_id?: string | null
+          id?: string
+          plan_id: string
+          stop_id: string
+          text: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          guest_id?: string | null
+          id?: string
+          plan_id?: string
+          stop_id?: string
+          text?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_stop_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_stop_comments_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_stop_votes: {
         Row: {
           created_at: string | null
