@@ -120,7 +120,12 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
         </TabsContent>
 
         <TabsContent value="chat" className="mt-4">
-          <FloqChat floqId={floqDetails.id} />
+          <FloqChat 
+            floqId={floqDetails.id}
+            isOpen={true}
+            onClose={() => {}}
+            isJoined={true}
+          />
         </TabsContent>
 
         <TabsContent value="members" className="mt-4">
