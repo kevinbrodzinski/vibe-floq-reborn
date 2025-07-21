@@ -2189,6 +2189,64 @@ export type Database = {
           },
         ]
       }
+      plan_transit_cache: {
+        Row: {
+          created_at: string
+          distance_meters: number | null
+          duration_seconds: number | null
+          from_stop_id: string
+          id: string
+          plan_id: string
+          to_stop_id: string
+          transit_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          from_stop_id: string
+          id?: string
+          plan_id: string
+          to_stop_id: string
+          transit_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          from_stop_id?: string
+          id?: string
+          plan_id?: string
+          to_stop_id?: string
+          transit_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_transit_cache_from_stop_id_fkey"
+            columns: ["from_stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_transit_cache_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_transit_cache_to_stop_id_fkey"
+            columns: ["to_stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_votes: {
         Row: {
           comment: string | null
@@ -3587,6 +3645,10 @@ export type Database = {
       cleanup_inactive_floqs: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      cleanup_old_transit_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cleanup_old_vibes: {
         Args: Record<PropertyKey, never>
