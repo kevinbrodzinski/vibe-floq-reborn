@@ -59,6 +59,11 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { data: meta } = usePlanMeta(plan.id);
 
+  const progress = useMemo(() => {
+    if (!meta || !meta.total_stops || meta.total_stops === 0) return 0;
+    return Math.round(((meta.confirmed_stops || 0) / meta.total_stops) * 100);
+  }, [meta]);
+
   const deletePlan = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
@@ -217,9 +222,9 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
                   <span>Progress</span>
                   <span>{meta.confirmed_stops || 0}/{meta.total_stops} stops</span>
                 </div>
-                <div aria-label={`Plan progress: ${Math.round(((meta.confirmed_stops || 0) / meta.total_stops) * 100)}% complete`}>
+                <div aria-label={`Plan progress: ${progress}% complete`}>
                   <Progress 
-                    value={((meta.confirmed_stops || 0) / meta.total_stops) * 100}
+                    value={progress}
                     className="h-1.5"
                   />
                 </div>
