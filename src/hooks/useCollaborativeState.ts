@@ -1,7 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useSession } from '@/hooks/useSession'
+import { useToast } from '@/hooks/use-toast'
 import { mapPlanStopFromDb } from '@/types/mappers'
 import type { PlanStop } from '@/types/plan'
 import type { PlanStopRow } from '@/types/database'
@@ -19,6 +21,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
   const [optimisticStops, setOptimisticStops] = useState<PlanStop[]>([])
   const session = useSession()
   const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   // Simple hook that just returns data - no complex collaborative features for now
   const { data: planStops = [], isLoading } = useQuery({
@@ -31,7 +34,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
           venue:venues(*)
         `)
         .eq('plan_id', planId)
-        .order('start_time', { ascending: true })
+        .order('stop_order', { ascending: true })
         .returns<PlanStopRow[]>()
       
       if (error) throw error
@@ -78,34 +81,47 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
       setOptimisticStops(prev => prev.filter(stop => stop.id !== data.id))
+      toast({
+        title: 'Stop added',
+        description: 'Your stop has been added to the plan.',
+      })
     },
     onError: (error) => {
       console.error('Failed to add stop:', error)
       setOptimisticStops(prev => prev.slice(0, -1))
+      toast({
+        title: 'Failed to add stop',
+        description: 'Please try again.',
+        variant: 'destructive',
+      })
     },
   })
 
-  const { mutate: updateStop } = useMutation({
-    mutationFn: async (updatedStop: PlanStop) => {
-      const { data, error } = await supabase
-        .from('plan_stops')
-        .update(updatedStop)
-        .eq('id', updatedStop.id)
-        .select()
-        .single()
-
+  const { mutateAsync: reorderStopsMutation } = useMutation({
+    mutationFn: async ({ stopIds }: { stopIds: string[] }) => {
+      // Use the reorder_plan_stops RPC function
+      const { error } = await supabase.rpc('reorder_plan_stops', {
+        p_plan_id: planId,
+        p_stop_ids: stopIds,
+      })
+      
       if (error) throw error
-      return data
     },
-    onSuccess: (data) => {
-      // Optimistically update the cache
-      queryClient.setQueryData(['plan-stops', planId], (old: PlanStop[] | undefined) => {
-        if (!old) return [data]
-        return old.map(stop => stop.id === data.id ? data : stop)
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
+      toast({
+        title: 'Stops reordered',
+        description: 'Your timeline has been updated.',
       })
     },
     onError: (error) => {
-      console.error('Failed to update stop:', error)
+      console.error('Failed to reorder stops:', error)
+      queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
+      toast({
+        title: 'Failed to reorder stops',
+        description: 'Please try again.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -124,9 +140,18 @@ export function useCollaborativeState(planId: string): CollaborativeState {
         if (!old) return []
         return old.filter(stop => stop.id !== stopId)
       })
+      toast({
+        title: 'Stop removed',
+        description: 'The stop has been removed from your plan.',
+      })
     },
     onError: (error) => {
       console.error('Failed to delete stop:', error)
+      toast({
+        title: 'Failed to remove stop',
+        description: 'Please try again.',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -157,16 +182,6 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     setOptimisticStops(prev => [...prev, newStop])
   }, [planId])
 
-  const mockPlan = {
-    id: planId,
-    title: 'Mock Plan',
-    date: new Date().toISOString().split('T')[0],
-    status: 'draft',
-    creator_id: 'current-user',
-    participants: [],
-    stops: allStops
-  };
-
   const removeStop = async (id: string) => {
     deleteStop(id)
   }
@@ -179,17 +194,15 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     
     const stopIds = reorderedStops.map(stop => stop.id)
     
-    const { error } = await supabase.rpc('reorder_plan_stops', {
-      p_plan_id: planId,
-      p_stop_ids: stopIds,
-    })
+    // Optimistically update the UI
+    queryClient.setQueryData(['plan-stops', planId], reorderedStops.filter(s => !s.id.startsWith('temp-')))
     
-    if (error) {
-      console.error('Reorder stops error:', error)
+    try {
+      await reorderStopsMutation({ stopIds })
+    } catch (error) {
+      // Revert on error - the mutation will handle this
       throw error
     }
-    
-    queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
   }
 
   const voteOnStop = async (stopId: string, voteType: 'upvote' | 'downvote' | 'maybe', emoji?: string) => {
@@ -213,8 +226,18 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     
     if (error) {
       console.error('Vote error:', error)
+      toast({
+        title: 'Failed to vote',
+        description: 'Please try again.',
+        variant: 'destructive',
+      })
       throw error
     }
+    
+    toast({
+      title: 'Vote recorded',
+      description: `You voted ${voteType} on this stop.`,
+    })
     
     queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] })
   }

@@ -59,6 +59,17 @@ export function FloqPlanTab() {
     }
   }
 
+  const handleLongPress = () => {
+    longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)
+  }
+
+  const handlePointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
   if (isLoading || !plan || !floq) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -112,29 +123,23 @@ export function FloqPlanTab() {
         </TabsContent>
       </Tabs>
 
-      {/* Floating Action Buttons */}
+      {/* Enhanced Floating Action Button with Accessibility */}
       <div className="absolute bottom-6 right-6 flex flex-col gap-3">
         <Button
           size="icon"
-          className="rounded-full h-14 w-14 shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-transform duration-200 hover:scale-105"
-          aria-label="Add Stop"
+          className="rounded-full h-14 w-14 shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:scale-105 focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          aria-label="Add Stop to Plan"
           tabIndex={0}
-          onPointerDown={() => {
-            longPressTimerRef.current = setTimeout(() => setVoiceOpen(true), 500)
-          }}
-          onPointerUp={() => {
-            if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current)
-              longPressTimerRef.current = null
-            }
-          }}
-          onPointerLeave={() => {
-            if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current)
-              longPressTimerRef.current = null
-            }
-          }}
+          onPointerDown={handleLongPress}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
           onClick={() => handleAddStop()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleAddStop()
+            }
+          }}
         >
           <Plus size={28} />
         </Button>

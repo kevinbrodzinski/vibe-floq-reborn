@@ -1,6 +1,8 @@
+
 import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 interface DraggableStopCardProps {
   stop: {
@@ -76,24 +79,28 @@ export function DraggableStopCard({
     <Card 
       ref={setNodeRef}
       style={style}
-      className={`relative transition-all duration-200 ${
+      className={cn(
+        "relative transition-all duration-200 group",
         isBeingDragged
           ? 'shadow-lg scale-105 rotate-1 border-primary z-50' 
           : 'shadow-sm hover:shadow-md border-border'
-      }`}
+      )}
     >
       <CardContent className="p-4">
         {/* Header with drag handle and menu */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 flex-1">
-            <button 
+            <motion.button 
               {...attributes}
               {...listeners}
-              className="cursor-grab hover:text-primary touch-none active:cursor-grabbing"
-              aria-label="Drag to reorder"
+              className="cursor-grab hover:text-primary touch-none active:cursor-grabbing transition-colors duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100"
+              aria-label="Drag to reorder stop"
+              tabIndex={0}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
             >
               <GripVertical className="h-4 w-4" />
-            </button>
+            </motion.button>
             
             <div className="flex-1">
               <h3 className="font-medium text-sm leading-tight">{stop.title}</h3>
@@ -108,7 +115,12 @@ export function DraggableStopCard({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200"
+                aria-label="Stop options"
+              >
                 <MoreVertical className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -122,7 +134,7 @@ export function DraggableStopCard({
               {onDelete && (
                 <DropdownMenuItem 
                   onClick={() => onDelete(stop.id)}
-                  className="text-destructive"
+                  className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
@@ -133,7 +145,7 @@ export function DraggableStopCard({
         </div>
 
         {/* Time and duration */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <Badge variant="outline" className="text-xs flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {formatTime(stop.start_time)} - {formatTime(stop.end_time)}
@@ -158,7 +170,11 @@ export function DraggableStopCard({
 
         {/* Description */}
         {stop.description && (
-          <div className="text-xs text-muted-foreground">
+          <motion.div 
+            className="text-xs text-muted-foreground"
+            initial={false}
+            animate={{ height: 'auto' }}
+          >
             {showFullDescription || stop.description.length <= 100 ? (
               <span>{stop.description}</span>
             ) : (
@@ -166,7 +182,8 @@ export function DraggableStopCard({
                 <span>{stop.description.substring(0, 100)}...</span>
                 <button
                   onClick={() => setShowFullDescription(true)}
-                  className="text-primary hover:underline ml-1"
+                  className="text-primary hover:underline ml-1 focus:underline focus:outline-none"
+                  aria-label="Show full description"
                 >
                   more
                 </button>
@@ -175,12 +192,13 @@ export function DraggableStopCard({
             {showFullDescription && stop.description.length > 100 && (
               <button
                 onClick={() => setShowFullDescription(false)}
-                className="text-primary hover:underline ml-1"
+                className="text-primary hover:underline ml-1 focus:underline focus:outline-none"
+                aria-label="Show less description"
               >
                 less
               </button>
             )}
-          </div>
+          </motion.div>
         )}
       </CardContent>
     </Card>
