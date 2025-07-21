@@ -1,5 +1,8 @@
+
 import { useCallback } from 'react'
-import { type PlanStatus } from '@/types/enums/planStatus'
+import type { Database } from '@/integrations/supabase/types'
+
+type PlanStatus = Database['public']['Enums']['plan_status_enum']
 
 interface StatusTransitionRule {
   from: PlanStatus
@@ -37,6 +40,10 @@ export function usePlanStatusValidation() {
     // Executing transitions
     { from: 'executing', to: 'completed', requiresConfirmation: true, requiresPermission: 'creator' },
     { from: 'executing', to: 'cancelled', requiresConfirmation: true, requiresPermission: 'creator' },
+    
+    // Invited transitions
+    { from: 'invited', to: 'active', requiresConfirmation: false, requiresPermission: 'creator' },
+    { from: 'invited', to: 'cancelled', requiresConfirmation: true, requiresPermission: 'creator' },
     
     // Closed transitions
     { from: 'closed', to: 'active', requiresConfirmation: false, requiresPermission: 'creator' },

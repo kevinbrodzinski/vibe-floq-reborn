@@ -1,181 +1,167 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { PlanStatus } from '@/types/enums/planStatus';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import type { Database } from '@/integrations/supabase/types';
+
+type Plan = Database['public']['Tables']['floq_plans']['Row'];
 
 interface PlanEditModalProps {
-  plan: {
-    id: string;
-    title: string;
-    description?: string;
-    status: PlanStatus;
-    planned_at: string;
-    start_time?: string;
-    end_time?: string;
-    max_participants?: number;
-  };
+  plan: Plan;
+  open: boolean;
   onClose: () => void;
+  onSuccess: () => void;
 }
 
-export const PlanEditModal: React.FC<PlanEditModalProps> = ({ plan, onClose }) => {
-  const { toast } = useToast();
+interface PlanFormData {
+  title: string;
+  description?: string;
+  max_participants?: number;
+  status: Database['public']['Enums']['plan_status_enum'];
+}
+
+export const PlanEditModal: React.FC<PlanEditModalProps> = ({
+  plan,
+  open,
+  onClose,
+  onSuccess,
+}) => {
   const queryClient = useQueryClient();
-  
-  const [formData, setFormData] = useState({
-    title: plan.title,
-    description: plan.description || '',
-    status: plan.status,
-    planned_at: format(new Date(plan.planned_at), 'yyyy-MM-dd'),
-    start_time: plan.start_time || '',
-    end_time: plan.end_time || '',
-    max_participants: plan.max_participants || ''
+
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<PlanFormData>({
+    defaultValues: {
+      title: plan.title,
+      description: plan.description || '',
+      max_participants: plan.max_participants || undefined,
+      status: plan.status as Database['public']['Enums']['plan_status_enum'],
+    },
   });
 
-  const updatePlan = useMutation({
-    mutationFn: async (updates: Partial<typeof formData>) => {
-      const { data, error } = await supabase
+  const updateMutation = useMutation({
+    mutationFn: async (updates: PlanFormData) => {
+      const { error } = await supabase
         .from('floq_plans')
         .update({
-          ...updates,
-          max_participants: updates.max_participants ? Number(updates.max_participants) : null,
+          title: updates.title,
+          description: updates.description,
+          max_participants: updates.max_participants || null,
           status: updates.status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', plan.id)
-        .select()
-        .single();
+        .eq('id', plan.id);
 
       if (error) throw error;
-      return data;
     },
     onSuccess: () => {
+      toast.success('Plan updated successfully');
       queryClient.invalidateQueries({ queryKey: ['plan', plan.id] });
-      queryClient.invalidateQueries({ queryKey: ['user-floq-plans'] });
-      toast({
-        title: 'Plan updated',
-        description: 'Your plan has been updated successfully.'
-      });
-      onClose();
+      onSuccess();
     },
     onError: (error) => {
-      console.error('Failed to update plan:', error);
-      toast({
-        title: 'Failed to update plan',
-        description: 'There was an error updating your plan. Please try again.',
-        variant: 'destructive'
-      });
-    }
+      console.error('Update failed:', error);
+      toast.error('Failed to update plan');
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updatePlan.mutate(formData);
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const onSubmit = (data: PlanFormData) => {
+    updateMutation.mutate(data);
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Plan</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Title</Label>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
-              value={formData.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              required
+              {...register('title', { required: 'Title is required' })}
+              placeholder="Plan title"
             />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
           </div>
-          
-          <div>
+
+          <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
+              {...register('description')}
+              placeholder="Plan description (optional)"
               rows={3}
             />
           </div>
-          
-          <div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max_participants">Max Participants</Label>
+            <Input
+              id="max_participants"
+              type="number"
+              min="1"
+              {...register('max_participants', { 
+                valueAsNumber: true,
+                min: { value: 1, message: 'Must be at least 1' }
+              })}
+              placeholder="No limit"
+            />
+            {errors.max_participants && (
+              <p className="text-sm text-destructive">{errors.max_participants.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
-            <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+            <Select 
+              value={watch('status')} 
+              onValueChange={(value) => setValue('status', value as Database['public']['Enums']['plan_status_enum'])}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="finalized">Finalized</SelectItem>
+                <SelectItem value="executing">Executing</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="invited">Invited</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
-          <div>
-            <Label htmlFor="planned_at">Date</Label>
-            <Input
-              id="planned_at"
-              type="date"
-              value={formData.planned_at}
-              onChange={(e) => handleChange('planned_at', e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="start_time">Start Time</Label>
-              <Input
-                id="start_time"
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => handleChange('start_time', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="end_time">End Time</Label>
-              <Input
-                id="end_time"
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => handleChange('end_time', e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="max_participants">Max Participants</Label>
-            <Input
-              id="max_participants"
-              type="number"
-              min="1"
-              value={formData.max_participants}
-              onChange={(e) => handleChange('max_participants', e.target.value)}
-            />
-          </div>
-          
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" disabled={updatePlan.isPending}>
-              {updatePlan.isPending ? 'Saving...' : 'Save Changes'}
+            <Button 
+              type="submit" 
+              disabled={updateMutation.isPending}
+              className="flex-1"
+            >
+              {updateMutation.isPending ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </form>

@@ -1,54 +1,65 @@
 
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Users, ArrowLeft } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { ChevronLeft, Edit, Users, Calendar, MapPin, Clock } from 'lucide-react';
+import { PlanEditModal } from './PlanEditModal';
+import { useAuth } from '@/providers/AuthProvider';
+import { PlanStatusTag } from '@/components/PlanStatusTag';
+import { getStatusBadgeProps } from '@/lib/planStatusConfig';
+import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
-import { PlanStatus } from '@/types/enums/planStatus';
+import type { Database } from '@/integrations/supabase/types';
+import type { PlanStatus } from '@/types/enums/planStatus';
 
-interface PlanDetailsViewProps {
-  planId?: string;
+type Plan = Database['public']['Tables']['floq_plans']['Row'];
+type PlanParticipant = Database['public']['Tables']['plan_participants']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+interface PlanParticipantWithProfile extends PlanParticipant {
+  profiles?: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null;
 }
 
-export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId: propPlanId }) => {
-  const { planId: paramPlanId } = useParams<{ planId: string }>();
+export const PlanDetailsView: React.FC = () => {
+  const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
-  const planId = propPlanId || paramPlanId;
+  const { session } = useAuth();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { validateTransition, getAvailableTransitions } = usePlanStatusValidation();
 
-  const { data: plan, isLoading, error } = useQuery({
-    queryKey: ['plan-details', planId],
+  // Fetch plan details
+  const { data: plan, isLoading: planLoading, error: planError } = useQuery({
+    queryKey: ['plan', planId],
     queryFn: async () => {
       if (!planId) throw new Error('Plan ID is required');
       
       const { data, error } = await supabase
         .from('floq_plans')
-        .select(`
-          *,
-          floqs (
-            title,
-            description
-          )
-        `)
+        .select('*')
         .eq('id', planId)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Plan;
     },
     enabled: !!planId,
   });
 
-  const { data: participants } = useQuery({
+  // Fetch plan participants with profiles using a two-step approach
+  const { data: participants = [], isLoading: participantsLoading } = useQuery({
     queryKey: ['plan-participants', planId],
-    queryFn: async () => {
+    queryFn: async (): Promise<PlanParticipantWithProfile[]> => {
       if (!planId) return [];
-      
-      const { data, error } = await supabase
+
+      // Step 1: Get plan participants
+      const { data: participantData, error: participantError } = await supabase
         .from('plan_participants')
         .select(`
           id,
@@ -56,52 +67,88 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId: propPl
           role,
           joined_at,
           is_guest,
-          guest_name,
-          profiles!user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
+          guest_name
         `)
         .eq('plan_id', planId);
 
-      if (error) throw error;
-      return data || [];
+      if (participantError) throw participantError;
+      if (!participantData?.length) return [];
+
+      // Step 2: Get profiles for non-guest participants
+      const userIds = participantData
+        .filter(p => !p.is_guest && p.user_id)
+        .map(p => p.user_id)
+        .filter(Boolean) as string[];
+
+      let profilesData: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>[] = [];
+      
+      if (userIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.warn('Failed to fetch profiles:', profilesError);
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Step 3: Combine data
+      return participantData.map(participant => ({
+        ...participant,
+        profiles: participant.is_guest 
+          ? null 
+          : profilesData.find(profile => profile.id === participant.user_id) || null
+      }));
     },
     enabled: !!planId,
   });
 
-  const getStatusColor = (status: PlanStatus) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500/10 text-green-700 border-green-200';
-      case 'draft':
-        return 'bg-gray-500/10 text-gray-700 border-gray-200';
-      case 'completed':
-        return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'invited':
-        return 'bg-purple-500/10 text-purple-700 border-purple-200';
-      default:
-        return 'bg-gray-500/10 text-gray-700 border-gray-200';
-    }
-  };
+  // Plan RSVP mutation
+  const rsvpMutation = useMutation({
+    mutationFn: async ({ join }: { join: boolean }) => {
+      if (!planId || !session?.user?.id) throw new Error('Missing required data');
 
-  if (isLoading) {
+      if (join) {
+        const { error } = await supabase
+          .from('plan_participants')
+          .insert({
+            plan_id: planId,
+            user_id: session.user.id,
+            role: 'participant'
+          });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('plan_participants')
+          .delete()
+          .eq('plan_id', planId)
+          .eq('user_id', session.user.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
+    },
+  });
+
+  if (planLoading || participantsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse">Loading plan...</div>
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  if (error || !plan) {
+  if (planError || !plan) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-semibold mb-2">Plan not found</h2>
           <p className="text-muted-foreground mb-4">
-            This plan may have been deleted or you don't have access to it.
+            The plan you're looking for doesn't exist or you don't have access to it.
           </p>
           <Button onClick={() => navigate('/plans')}>
             Back to Plans
@@ -111,122 +158,192 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId: propPl
     );
   }
 
+  const isCreator = plan.creator_id === session?.user?.id;
+  const userParticipation = participants.find(p => p.user_id === session?.user?.id);
+  const isParticipant = !!userParticipation;
+  
+  const validationContext = {
+    hasParticipants: participants.length > 0,
+    isCreator,
+    hasStops: false, // TODO: Add plan stops logic
+    isActive: plan.status === 'active'
+  };
+
+  const availableTransitions = getAvailableTransitions(
+    plan.status as PlanStatus, 
+    validationContext
+  );
+
+  const handleRsvp = () => {
+    rsvpMutation.mutate({ join: !isParticipant });
+  };
+
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/plans')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Plans
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ChevronLeft className="w-5 h-5" />
           </Button>
+          <h1 className="text-lg font-semibold flex-1 truncate">{plan.title}</h1>
+          {isCreator && (
+            <Button variant="ghost" size="icon" onClick={() => setEditModalOpen(true)}>
+              <Edit className="w-4 h-4" />
+            </Button>
+          )}
         </div>
+      </div>
 
-        {/* Plan Details Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl mb-2">{plan.title}</CardTitle>
-                {plan.floqs?.title && (
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Part of {plan.floqs.title}
-                  </p>
-                )}
-                {plan.description && (
-                  <p className="text-muted-foreground">{plan.description}</p>
-                )}
-              </div>
-              <Badge variant="outline" className={getStatusColor(plan.status)}>
-                {plan.status}
-              </Badge>
+      {/* Content */}
+      <div className="p-4 space-y-4">
+        {/* Plan Info Card */}
+        <Card className="p-4 space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">{plan.title}</h2>
+              {plan.description && (
+                <p className="text-muted-foreground">{plan.description}</p>
+              )}
             </div>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">
-                  {format(new Date(plan.planned_at), 'PPP')}
+            <PlanStatusTag status={plan.status as PlanStatus} />
+          </div>
+
+          <Separator />
+
+          {/* Plan Details */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span>{format(new Date(plan.planned_at), 'PPP')}</span>
+            </div>
+            
+            {plan.start_time && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <span>{plan.start_time}</span>
+                {plan.end_time && <span>- {plan.end_time}</span>}
+              </div>
+            )}
+
+            {plan.max_participants && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span>{participants.length} / {plan.max_participants} participants</span>
+              </div>
+            )}
+          </div>
+
+          {/* RSVP Section */}
+          {session?.user && !isCreator && (
+            <>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {isParticipant ? 'You\'re going' : 'Are you going?'}
                 </span>
+                <Button
+                  variant={isParticipant ? 'secondary' : 'default'}
+                  size="sm"
+                  onClick={handleRsvp}
+                  disabled={rsvpMutation.isPending}
+                >
+                  {rsvpMutation.isPending ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : isParticipant ? (
+                    'Leave Plan'
+                  ) : (
+                    'Join Plan'
+                  )}
+                </Button>
               </div>
-              
-              {plan.start_time && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {plan.start_time} - {plan.end_time || 'Open ended'}
-                  </span>
-                </div>
-              )}
-
-              {participants && participants.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    {participants.length} participant{participants.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              )}
-
-              {plan.max_participants && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Max {plan.max_participants} participants
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
+            </>
+          )}
         </Card>
 
         {/* Participants */}
-        {participants && participants.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Participants</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {participants.map((participant) => (
-                  <div key={participant.user_id} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                      {participant.profiles?.avatar_url ? (
-                        <img
-                          src={participant.profiles.avatar_url}
-                          alt={participant.profiles.display_name || participant.profiles.username}
-                          className="w-8 h-8 rounded-full"
-                        />
-                      ) : (
-                        <span className="text-sm font-medium">
-                          {(participant.profiles?.display_name || participant.profiles?.username || 'U').charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">
-                        {participant.profiles?.display_name || participant.profiles?.username || 'Unknown User'}
-                      </p>
-                      {participant.profiles?.username && participant.profiles?.display_name && (
-                        <p className="text-xs text-muted-foreground">
-                          @{participant.profiles.username}
-                        </p>
-                      )}
-                    </div>
+        {participants.length > 0 && (
+          <Card className="p-4">
+            <h3 className="font-medium mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Participants ({participants.length})
+            </h3>
+            <div className="space-y-3">
+              {participants.map((participant) => (
+                <div key={participant.id} className="flex items-center gap-3">
+                  <Avatar className="w-8 h-8">
+                    {participant.profiles?.avatar_url ? (
+                      <AvatarImage 
+                        src={participant.profiles.avatar_url} 
+                        alt={participant.profiles.display_name || participant.profiles.username || 'User'} 
+                      />
+                    ) : null}
+                    <AvatarFallback>
+                      {participant.is_guest 
+                        ? participant.guest_name?.charAt(0).toUpperCase() || 'G'
+                        : (participant.profiles?.display_name?.charAt(0) || 
+                           participant.profiles?.username?.charAt(0) || 
+                           '?').toUpperCase()
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {participant.is_guest 
+                        ? participant.guest_name || 'Guest User'
+                        : (participant.profiles?.username || participant.profiles?.display_name || 'Unknown User')
+                      }
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {participant.role === 'creator' ? 'Creator' : 'Participant'}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
+                  {participant.role === 'creator' && (
+                    <Badge variant="outline" className="text-xs">
+                      Creator
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Status Actions for Creator */}
+        {isCreator && availableTransitions.length > 0 && (
+          <Card className="p-4">
+            <h3 className="font-medium mb-3">Plan Actions</h3>
+            <div className="flex flex-wrap gap-2">
+              {availableTransitions.map((transition) => (
+                <Button
+                  key={transition.status}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // TODO: Implement status transition logic
+                    console.log('Transition to:', transition.status);
+                  }}
+                >
+                  {transition.label}
+                </Button>
+              ))}
+            </div>
           </Card>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editModalOpen && (
+        <PlanEditModal
+          plan={plan}
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onSuccess={() => {
+            setEditModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['plan', planId] });
+          }}
+        />
+      )}
     </div>
   );
 };
