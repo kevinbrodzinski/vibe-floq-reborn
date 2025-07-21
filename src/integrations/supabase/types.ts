@@ -2179,6 +2179,7 @@ export type Database = {
           comment: string | null
           created_at: string | null
           emoji_reaction: string | null
+          guest_name: string | null
           id: string
           plan_id: string
           stop_id: string
@@ -2190,6 +2191,7 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           emoji_reaction?: string | null
+          guest_name?: string | null
           id?: string
           plan_id: string
           stop_id: string
@@ -2201,6 +2203,7 @@ export type Database = {
           comment?: string | null
           created_at?: string | null
           emoji_reaction?: string | null
+          guest_name?: string | null
           id?: string
           plan_id?: string
           stop_id?: string
@@ -3546,6 +3549,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_expired_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_rows: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -4682,7 +4689,9 @@ export type Database = {
         Returns: Json
       }
       reorder_plan_stops: {
-        Args: { p_plan_id: string; p_stop_ids: string[] }
+        Args:
+          | { p_plan_id: string; p_stop_ids: string[] }
+          | { p_plan_id: string; p_stop_orders: Json }
         Returns: undefined
       }
       search_afterglows: {
