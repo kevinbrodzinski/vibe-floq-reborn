@@ -17,12 +17,19 @@ export function PlanSummaryStats({
   maxParticipants 
 }: PlanSummaryStatsProps) {
   const totalDuration = stops.reduce((acc, stop) => {
-    return acc + (stop.duration_minutes || 60);
+    return acc + (stop.duration_minutes || 0);
   }, 0);
 
   const totalCost = stops.reduce((acc, stop) => {
     return acc + (stop.estimated_cost_per_person || 0);
   }, 0);
+
+  const formatCurrency = (amount: number) => 
+    new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'USD', 
+      maximumFractionDigits: 0 
+    }).format(amount);
 
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
@@ -57,7 +64,7 @@ export function PlanSummaryStats({
           <DollarSign className="w-4 h-4 text-muted-foreground" />
           <div>
             <div className="text-sm font-medium">
-              ${totalCost || '—'}
+              {totalCost > 0 ? formatCurrency(totalCost) : '—'}
             </div>
             <div className="text-xs text-muted-foreground">Per person</div>
           </div>

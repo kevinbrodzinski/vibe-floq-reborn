@@ -84,10 +84,12 @@ export const PlanDetailsView: React.FC = () => {
       if (join) {
         const { error } = await supabase
           .from('plan_participants')
-          .insert({
+          .upsert({
             plan_id: planId,
             user_id: session.user.id,
             role: 'participant'
+          }, {
+            onConflict: 'plan_id,user_id'
           });
         if (error) throw error;
       } else {
@@ -329,7 +331,6 @@ export const PlanDetailsView: React.FC = () => {
         <PlanParticipantsList
           participants={participants}
           isCreator={isCreator}
-          onInviteMore={handleInviteMore}
           isLoading={participantsLoading}
         />
 

@@ -2,8 +2,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Clock, DollarSign, Users, Navigation } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import type { PlanStopUi } from '@/types/plan';
 
 interface PlanTimelinePreviewProps {
@@ -14,20 +15,10 @@ interface PlanTimelinePreviewProps {
 export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewProps) {
   if (isLoading) {
     return (
-      <Card className="p-4">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="flex gap-3">
-                <div className="w-4 h-4 bg-muted rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded w-3/4" />
-                  <div className="h-3 bg-muted rounded w-1/2" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <Card className="p-4 space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-14 rounded-lg bg-muted" />
+        ))}
       </Card>
     );
   }
@@ -79,11 +70,11 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
                   
                   <div className="flex-shrink-0 text-right">
                     <div className="text-xs font-medium">
-                      {format(new Date(`2000-01-01T${stop.start_time}`), 'h:mm a')}
+                      {stop.start_time ? format(parseISO(`2000-01-01T${stop.start_time}`), 'h:mm a') : '--:--'}
                     </div>
                     {stop.duration_minutes && (
                       <div className="text-xs text-muted-foreground">
-                        {stop.duration_minutes}min
+                        {stop.duration_minutes} min
                       </div>
                     )}
                   </div>
@@ -118,7 +109,7 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
             {index < stops.length - 1 && (
               <div className="flex items-center gap-2 mt-3 ml-7 text-xs text-muted-foreground">
                 <Navigation className="w-3 h-3" />
-                <span>~5 min transit</span>
+                <span>Transit</span>
               </div>
             )}
           </div>

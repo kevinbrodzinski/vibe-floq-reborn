@@ -30,14 +30,12 @@ interface Participant {
 interface PlanParticipantsListProps {
   participants: Participant[];
   isCreator: boolean;
-  onInviteMore?: () => void;
   isLoading?: boolean;
 }
 
 export function PlanParticipantsList({ 
   participants, 
   isCreator, 
-  onInviteMore,
   isLoading 
 }: PlanParticipantsListProps) {
   if (isLoading) {
@@ -101,7 +99,7 @@ export function PlanParticipantsList({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onInviteMore}
+            onClick={() => console.log('Invite functionality coming soon')}
             className="text-primary"
           >
             <UserPlus className="w-4 h-4 mr-1" />
@@ -168,7 +166,7 @@ export function PlanParticipantsList({
             <Button
               variant="outline"
               size="sm"
-              onClick={onInviteMore}
+              onClick={() => console.log('Invite functionality coming soon')}
               className="mt-2"
             >
               <UserPlus className="w-4 h-4 mr-1" />

@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, Share2, MessageCircle, Calendar, Copy, ExternalLink } from 'lucide-react';
@@ -21,17 +22,21 @@ export function PlanQuickActions({
   onEditTimeline 
 }: PlanQuickActionsProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleShare = async () => {
     const url = `${window.location.origin}/plans/${planId}`;
-    try {
-      await navigator.share({
-        title: planTitle,
-        text: `Check out this plan: ${planTitle}`,
-        url: url,
-      });
-    } catch (error) {
-      // Fallback to clipboard
+    if (typeof window !== 'undefined' && window.navigator?.share) {
+      try {
+        await navigator.share({
+          title: planTitle,
+          text: `Check out this plan: ${planTitle}`,
+          url: url,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else if (typeof window !== 'undefined') {
       await navigator.clipboard.writeText(url);
       toast({
         title: "Link copied!",
@@ -118,7 +123,7 @@ export function PlanQuickActions({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.open(`/plan/${planId}`, '_blank')}
+          onClick={() => navigate(`/plan/${planId}`)}
           className="justify-start"
         >
           <ExternalLink className="w-4 h-4 mr-2" />
