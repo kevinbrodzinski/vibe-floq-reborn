@@ -34,11 +34,27 @@ export function usePlansData() {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
-      // Create a simple draft plan
+      // First create a basic floq for this plan
+      const { data: floq, error: floqError } = await supabase
+        .from('floqs')
+        .insert({
+          title: 'Untitled Plan',
+          creator_id: user.user.id,
+          location: 'POINT(0 0)', // placeholder location
+          primary_vibe: 'chill',
+          visibility: 'private'
+        })
+        .select()
+        .single();
+
+      if (floqError) throw floqError;
+
+      // Then create the plan linked to the floq
       const { data, error } = await supabase
         .from('floq_plans')
         .insert({
           title: 'Untitled Plan',
+          floq_id: floq.id,
           creator_id: user.user.id,
           status: 'draft',
           planned_at: new Date().toISOString()
