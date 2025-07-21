@@ -53,7 +53,25 @@ export const PlanDetailsView: React.FC = () => {
   });
 
   // Fetch plan stops
-  const { data: stops = [], isLoading: stopsLoading } = usePlanStops(planId!);
+  const { data: rawStops = [], isLoading: stopsLoading } = usePlanStops(planId!);
+  
+  // Transform PlanStop[] to PlanStopUi[] for component compatibility
+  const stops = rawStops.map(stop => ({
+    id: stop.id,
+    title: stop.title,
+    venue: {
+      id: '', // We don't have venue ID from the current data structure
+      name: stop.venue,
+      address: stop.address
+    },
+    description: stop.description,
+    start_time: stop.start_time,
+    end_time: stop.end_time,
+    stop_order: stop.stop_order || 0,
+    address: stop.address,
+    duration_minutes: stop.duration_minutes,
+    estimated_cost_per_person: stop.estimated_cost_per_person
+  }));
 
   // Fetch plan participants
   const { data: participants = [], isLoading: participantsLoading } = usePlanParticipantsOptimized(planId!);
