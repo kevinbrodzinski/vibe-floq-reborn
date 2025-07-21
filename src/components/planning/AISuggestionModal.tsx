@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles, Clock, MapPin, DollarSign, RefreshCw } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useUserPreferences } from '@/hooks/useUserPreferences'
@@ -118,6 +119,15 @@ export function AISuggestionModal({
       }
 
       await addStop(newStop)
+      
+      // Track successful AI suggestion addition
+      trackEvent('stop_created', {
+        mode: 'ai',
+        plan_id: planId,
+        time_slot: timeSlot,
+        suggestion_title: selectedSuggestion.title,
+        suggestion_category: selectedSuggestion.category
+      })
       onClose()
     } catch (error) {
       console.error('Failed to add AI suggestion:', error)
@@ -221,3 +231,6 @@ export function AISuggestionModal({
     </Sheet>
   )
 }
+
+// Component display name for debugging
+AISuggestionModal.displayName = 'AISuggestionModal'

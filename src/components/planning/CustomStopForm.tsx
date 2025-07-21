@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Clock, MapPin, DollarSign, Sparkles } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { useSmartTimeSuggestion } from '@/hooks/useSmartTimeSuggestion'
 import { usePlanStops } from '@/hooks/usePlanStops'
@@ -90,6 +91,14 @@ export function CustomStopForm({
       }
 
       await addStop(newStop)
+      
+      // Track successful stop creation
+      trackEvent('stop_created', {
+        mode: 'custom',
+        plan_id: planId,
+        time_slot: startTime,
+        has_ai_assistance: usedNovaSuggestion
+      })
       
       // Reset form
       setTitle('')
@@ -270,3 +279,6 @@ export function CustomStopForm({
     </Sheet>
   )
 }
+
+// Component display name for debugging
+CustomStopForm.displayName = 'CustomStopForm'

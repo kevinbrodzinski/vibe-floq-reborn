@@ -82,3 +82,23 @@ export const trackLocationPermission = (granted: boolean, method: 'automatic' | 
     timestamp: new Date().toISOString(),
   });
 };
+
+// General purpose tracking function (alias for backward compatibility)
+export const trackEvent = track;
+
+// Haptic feedback utility for mobile
+export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
+  try {
+    if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
+      const patterns = {
+        light: 10,
+        medium: 20,
+        heavy: 50
+      }
+      navigator.vibrate(patterns[type])
+    }
+  } catch (error) {
+    // Fail silently
+    console.debug('Haptic feedback failed:', error)
+  }
+}

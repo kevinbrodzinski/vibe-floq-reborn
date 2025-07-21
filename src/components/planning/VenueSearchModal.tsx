@@ -3,6 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Search, MapPin, Star, Clock, DollarSign } from 'lucide-react'
+import { trackEvent } from '@/lib/analytics'
 import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import type { PlanStop } from '@/types/plan'
@@ -107,6 +108,15 @@ export function VenueSearchModal({
       }
 
       await addStop(newStop)
+      
+      // Track successful venue addition
+      trackEvent('stop_created', {
+        mode: 'venue',
+        plan_id: planId,
+        time_slot: timeSlot,
+        venue_name: selectedVenue.name,
+        venue_category: selectedVenue.category
+      })
       onClose()
     } catch (error) {
       console.error('Failed to add venue:', error)
@@ -207,3 +217,6 @@ export function VenueSearchModal({
     </Sheet>
   )
 }
+
+// Component display name for debugging
+VenueSearchModal.displayName = 'VenueSearchModal'

@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Edit3, Search, Sparkles } from 'lucide-react'
+import { trackEvent, triggerHaptic } from '@/lib/analytics'
 import { CustomStopForm } from './CustomStopForm'
 import { VenueSearchModal } from './VenueSearchModal'
 import { AISuggestionModal } from './AISuggestionModal'
@@ -37,6 +39,16 @@ export function AddStopModeSelector({
   }
 
   const handleModeSelect = (selectedMode: AddStopMode) => {
+    // Haptic feedback for mobile
+    triggerHaptic('light')
+    
+    // Track mode selection for analytics
+    trackEvent('stop_mode_selected', {
+      mode: selectedMode,
+      plan_id: planId,
+      time_slot: timeSlot
+    })
+    
     setMode(selectedMode)
   }
 
@@ -51,42 +63,48 @@ export function AddStopModeSelector({
     return `${nextHour}:${minutes}`
   })()
 
-  if (mode === 'custom') {
+  if (mode !== 'selector') {
     return (
-      <CustomStopForm
-        isOpen={isOpen}
-        onClose={handleClose}
-        onBack={handleBack}
-        planId={planId}
-        defaultStartTime={timeSlot}
-        defaultEndTime={defaultEndTime}
-      />
-    )
-  }
-
-  if (mode === 'venue') {
-    return (
-      <VenueSearchModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        onBack={handleBack}
-        planId={planId}
-        timeSlot={timeSlot}
-        defaultEndTime={defaultEndTime}
-      />
-    )
-  }
-
-  if (mode === 'ai') {
-    return (
-      <AISuggestionModal
-        isOpen={isOpen}
-        onClose={handleClose}
-        onBack={handleBack}
-        planId={planId}
-        timeSlot={timeSlot}
-        defaultEndTime={defaultEndTime}
-      />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={mode}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.2 }}
+        >
+          {mode === 'custom' && (
+            <CustomStopForm
+              isOpen={isOpen}
+              onClose={handleClose}
+              onBack={handleBack}
+              planId={planId}
+              defaultStartTime={timeSlot}
+              defaultEndTime={defaultEndTime}
+            />
+          )}
+          {mode === 'venue' && (
+            <VenueSearchModal
+              isOpen={isOpen}
+              onClose={handleClose}
+              onBack={handleBack}
+              planId={planId}
+              timeSlot={timeSlot}
+              defaultEndTime={defaultEndTime}
+            />
+          )}
+          {mode === 'ai' && (
+            <AISuggestionModal
+              isOpen={isOpen}
+              onClose={handleClose}
+              onBack={handleBack}
+              planId={planId}
+              timeSlot={timeSlot}
+              defaultEndTime={defaultEndTime}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     )
   }
 
@@ -99,44 +117,70 @@ export function AddStopModeSelector({
           </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 pb-6">
-          <Button
-            onClick={() => handleModeSelect('custom')}
-            variant="outline"
-            className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+        <motion.div 
+          className="space-y-4 pb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, staggerChildren: 0.1 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
           >
-            <Edit3 className="h-5 w-5" />
-            <div className="text-center">
-              <div className="font-medium">Add Custom Stop</div>
-              <div className="text-xs text-muted-foreground">Create your own activity</div>
-            </div>
-          </Button>
+            <Button
+              onClick={() => handleModeSelect('custom')}
+              variant="outline"
+              className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+            >
+              <Edit3 className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium">Add Custom Stop</div>
+                <div className="text-xs text-muted-foreground">Create your own activity</div>
+              </div>
+            </Button>
+          </motion.div>
 
-          <Button
-            onClick={() => handleModeSelect('venue')}
-            variant="outline"
-            className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <Search className="h-5 w-5" />
-            <div className="text-center">
-              <div className="font-medium">Search Venues</div>
-              <div className="text-xs text-muted-foreground">Find restaurants, bars & activities</div>
-            </div>
-          </Button>
+            <Button
+              onClick={() => handleModeSelect('venue')}
+              variant="outline"
+              className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+            >
+              <Search className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium">Search Venues</div>
+                <div className="text-xs text-muted-foreground">Find restaurants, bars & activities</div>
+              </div>
+            </Button>
+          </motion.div>
 
-          <Button
-            onClick={() => handleModeSelect('ai')}
-            variant="outline"
-            className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            <Sparkles className="h-5 w-5" />
-            <div className="text-center">
-              <div className="font-medium">AI Suggestion</div>
-              <div className="text-xs text-muted-foreground">Get personalized recommendations</div>
-            </div>
-          </Button>
-        </div>
+            <Button
+              onClick={() => handleModeSelect('ai')}
+              variant="outline"
+              className="w-full h-16 flex flex-col gap-2 hover:bg-primary/5"
+            >
+              <Sparkles className="h-5 w-5" />
+              <div className="text-center">
+                <div className="font-medium">AI Suggestion</div>
+                <div className="text-xs text-muted-foreground">Get personalized recommendations</div>
+              </div>
+            </Button>
+          </motion.div>
+        </motion.div>
       </SheetContent>
     </Sheet>
   )
 }
+
+// Component display name for debugging
+AddStopModeSelector.displayName = 'AddStopModeSelector'
