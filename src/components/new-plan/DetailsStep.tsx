@@ -5,15 +5,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { VibePill } from '@/components/floq/VibePill'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Users, Tag, X } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Users, Tag, X, Globe } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
 import { useFriends } from '@/hooks/useFriends'
+import { useMyFloqs } from '@/hooks/useMyFloqs'
 
 interface PlanDetails {
   title: string
   description?: string
   vibe_tag?: string
   invitedUserIds: string[]
+  floqId?: string | null
 }
 
 interface Props {
@@ -40,6 +43,7 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
   const [details, setDetails] = useState(draft)
   const [pickerOpen, setPickerOpen] = useState(false)
   const { profiles } = useFriends()
+  const { data: floqs = [], isLoading: floqsLoading } = useMyFloqs()
 
   const updateField = <K extends keyof PlanDetails>(field: K, value: PlanDetails[K]) => {
     const updated = { ...details, [field]: value }
@@ -98,6 +102,36 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
           onChange={(e) => updateField('description', e.target.value)}
           rows={3}
         />
+      </div>
+
+      {/* Floq Association */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          Link to Floq (Optional)
+        </Label>
+        <Select 
+          value={details.floqId || 'none'} 
+          onValueChange={(value) => updateField('floqId', value === 'none' ? null : value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a floq or create solo plan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Solo Plan (no floq)</SelectItem>
+            {floqs.map((floq) => (
+              <SelectItem key={floq.id} value={floq.id}>
+                {floq.title || floq.name || 'Untitled Floq'}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          {details.floqId 
+            ? "This plan will be shared with floq members" 
+            : "Create a personal plan that only you and invited friends can see"
+          }
+        </p>
       </div>
 
       {/* Vibe Tag */}

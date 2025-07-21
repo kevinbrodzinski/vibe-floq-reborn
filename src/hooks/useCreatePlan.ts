@@ -18,6 +18,7 @@ interface CreatePlanPayload {
   end: string
   duration_hours: number
   invitedUserIds: string[]
+  floqId?: string | null // Optional floq to link the plan to
 }
 
 export function useCreatePlan() {
@@ -34,22 +35,28 @@ export function useCreatePlan() {
         ? payload.vibe_tag.toLowerCase() as typeof validVibes[number]
         : 'chill'
 
-      // First create a temporary floq to attach the plan to
-      const { data: floqData, error: floqError } = await supabase
-        .from('floqs')
-        .insert({
-          title: payload.title,
-          description: payload.description,
-          primary_vibe: primaryVibe,
-          visibility: 'private',
-          location: 'POINT(0 0)', // Default location
-          flock_type: 'momentary',
-          creator_id: session.user.id
-        })
-        .select('id')
-        .single()
+      // Only create a floq if not linking to an existing one
+      let floqId = payload.floqId;
+      
+      if (!floqId) {
+        // Create a temporary floq to attach the plan to (for legacy compatibility)
+        const { data: floqData, error: floqError } = await supabase
+          .from('floqs')
+          .insert({
+            title: payload.title,
+            description: payload.description,
+            primary_vibe: primaryVibe,
+            visibility: 'private',
+            location: 'POINT(0 0)', // Default location
+            flock_type: 'momentary',
+            creator_id: session.user.id
+          })
+          .select('id')
+          .single()
 
-      if (floqError) throw floqError
+        if (floqError) throw floqError
+        floqId = floqData.id;
+      }
 
       // Convert 12-hour time to ISO strings
       const today = new Date().toISOString().slice(0, 10)
@@ -60,7 +67,7 @@ export function useCreatePlan() {
       const { data: planData, error: planError } = await supabase
         .from('floq_plans')
         .insert({
-          floq_id: floqData.id,
+          floq_id: floqId,
           title: payload.title,
           description: payload.description,
           vibe_tag: payload.vibe_tag?.toLowerCase().trim() || 'chill',

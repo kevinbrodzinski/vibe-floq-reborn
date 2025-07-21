@@ -20,6 +20,7 @@ export interface PlanDetails {
   description?: string
   vibe_tag?: string
   invitedUserIds: string[]
+  floqId?: string | null
 }
 
 export interface PlanDraft extends PlanDetails, TimeRange {
@@ -38,7 +39,8 @@ export function NewPlanWizard() {
     title: '',
     description: '',
     vibe_tag: '',
-    invitedUserIds: []
+    invitedUserIds: [],
+    floqId: null
   })
 
   const totalSteps = 3
@@ -72,7 +74,8 @@ export function NewPlanWizard() {
       const planData: PlanDraft = {
         ...details,
         ...timeRange,
-        duration_hours: durationHours
+        duration_hours: durationHours,
+        floqId: details.floqId
       }
       
       const planData_result = await createPlan(planData)
