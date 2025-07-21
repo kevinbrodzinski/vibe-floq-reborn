@@ -126,6 +126,7 @@ export function PlanParticipantsList({
              size="sm"
              onClick={() => {
                if (import.meta.env.DEV) {
+                 // eslint-disable-next-line no-console
                  console.log('TODO: Invite functionality coming soon');
                }
              }}
@@ -197,6 +198,7 @@ export function PlanParticipantsList({
                size="sm"
                onClick={() => {
                  if (import.meta.env.DEV) {
+                   // eslint-disable-next-line no-console
                    console.log('TODO: Invite functionality coming soon');
                  }
                }}
