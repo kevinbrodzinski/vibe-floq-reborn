@@ -68,7 +68,7 @@ export const PlanDetailsView: React.FC = () => {
     queryFn: async (): Promise<PlanParticipantWithProfile[]> => {
       if (!planId) return [];
 
-      // Step 1: Get plan participants
+      // Step 1: Get plan participants with profiles using explicit FK hint
       const { data: participantData, error: participantError } = await supabase
         .from('plan_participants')
         .select(`
@@ -81,40 +81,23 @@ export const PlanDetailsView: React.FC = () => {
           guest_name,
           invite_type,
           reminded_at,
-          rsvp_status
+          rsvp_status,
+          profiles!user_id (
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
         `)
         .eq('plan_id', planId);
 
       if (participantError) throw participantError;
       if (!participantData?.length) return [];
 
-      // Step 2: Get profiles for non-guest participants
-      const userIds = participantData
-        .filter(p => !p.is_guest && p.user_id)
-        .map(p => p.user_id)
-        .filter(Boolean) as string[];
-
-      let profilesData: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'>[] = [];
-      
-      if (userIds.length > 0) {
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', userIds);
-
-        if (profilesError) {
-          console.warn('Failed to fetch profiles:', profilesError);
-        } else {
-          profilesData = profiles || [];
-        }
-      }
-
-      // Step 3: Combine data
+      // Return the data directly since profiles are already included
       return participantData.map(participant => ({
         ...participant,
-        profiles: participant.is_guest 
-          ? null 
-          : profilesData.find(profile => profile.id === participant.user_id) || null
+        profiles: participant.profiles || null
       }));
     },
     enabled: !!planId,
