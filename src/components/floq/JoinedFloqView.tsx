@@ -109,7 +109,6 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             onJoin={() => {}}
             isJoining={false}
             liveScore={liveScore}
-            showJoinButton={false}
           />
         </TabsContent>
 
