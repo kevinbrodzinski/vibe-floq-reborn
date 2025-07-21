@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Calendar, MapPin, Edit2, Trash2, MoreHorizontal, Users, Clock } from 'lucide-react';
+import { Calendar, MapPin, Edit2, Trash2, MoreHorizontal, Users, Clock, DollarSign } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,7 +130,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {plan.title}
             </CardTitle>
             <div className="flex items-center gap-1">
-              <Badge className={planStatusColor[plan.status]}>
+              <Badge className={planStatusColor[plan.status as keyof typeof planStatusColor]}>
                 {plan.status}
               </Badge>
               
@@ -199,12 +199,13 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {meta?.total_duration_minutes && meta.total_duration_minutes > 0 && (
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  <span>{formatDuration(meta.total_duration_minutes / 60)}</span>
+                  <span>{formatDuration(meta.total_duration_minutes)}</span>
                 </div>
               )}
               {meta?.estimated_cost_per_person && meta.estimated_cost_per_person > 0 && (
                 <div className="flex items-center gap-1">
-                  <span>${formatCurrency(meta.estimated_cost_per_person)}/person</span>
+                  <DollarSign className="w-3 h-3" />
+                  <span>{formatCurrency(meta.estimated_cost_per_person)}/person</span>
                 </div>
               )}
             </div>
@@ -216,10 +217,12 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
                   <span>Progress</span>
                   <span>{meta.confirmed_stops || 0}/{meta.total_stops} stops</span>
                 </div>
-                <Progress 
-                  value={((meta.confirmed_stops || 0) / meta.total_stops) * 100}
-                  className="h-1.5"
-                />
+                <div aria-label={`Plan progress: ${Math.round(((meta.confirmed_stops || 0) / meta.total_stops) * 100)}% complete`}>
+                  <Progress 
+                    value={((meta.confirmed_stops || 0) / meta.total_stops) * 100}
+                    className="h-1.5"
+                  />
+                </div>
               </div>
             )}
           </div>
