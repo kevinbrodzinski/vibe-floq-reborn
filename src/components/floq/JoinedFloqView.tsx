@@ -5,11 +5,12 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { PublicFloqPreview } from '@/components/floq/PublicFloqPreview';
 import { FloqActivityStream } from '@/components/floq/FloqActivityStream';
 import { FloqMemberList } from '@/components/floq/FloqMemberList';
+import { FloqPlansTab } from '@/components/floq/FloqPlansTab';
+import { FloqChat } from '@/components/floq/FloqChat';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
-import { MapPin, MessageCircle, Users, Calendar, ExternalLink, Zap } from 'lucide-react';
+import { MapPin, MessageCircle, Users, Calendar, ExternalLink, Zap, ClipboardList } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface JoinedFloqViewProps {
@@ -31,7 +32,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 }) => {
   const { session } = useAuth();
   const { data: members = [] } = useFloqMembers(floqDetails.id);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('plans');
 
   const isHost = floqDetails.creator_id === session?.user?.id;
 
@@ -90,9 +91,17 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="plans" className="relative">
+            <ClipboardList className="h-4 w-4 mr-1" />
+            Plans
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="relative">
+            <MessageCircle className="h-4 w-4 mr-1" />
+            Chat
+          </TabsTrigger>
           <TabsTrigger value="members" className="relative">
+            <Users className="h-4 w-4 mr-1" />
             Members
             {members.length > 0 && (
               <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
@@ -100,16 +109,18 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="activity">
+            <Zap className="h-4 w-4 mr-1" />
+            Activity
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 mt-4">
-          <PublicFloqPreview
-            floqDetails={floqDetails}
-            onJoin={() => {}}
-            isJoining={false}
-            liveScore={liveScore}
-          />
+        <TabsContent value="plans" className="space-y-4 mt-4">
+          <FloqPlansTab floqDetails={floqDetails} />
+        </TabsContent>
+
+        <TabsContent value="chat" className="mt-4">
+          <FloqChat floqId={floqDetails.id} />
         </TabsContent>
 
         <TabsContent value="members" className="mt-4">
