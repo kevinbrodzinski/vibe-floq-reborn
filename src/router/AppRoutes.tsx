@@ -27,6 +27,7 @@ import { PlansHub } from '@/components/plans/PlansHub';
 import { NewPlanWizard } from '@/pages/NewPlanWizard';
 import FloqPlan from '@/pages/FloqPlan';
 import SharedPlan from '@/pages/SharedPlan';
+import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -58,6 +59,7 @@ export const AppRoutes = () => {
     <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
+    <Route path="/plans/:planId" element={<PlanDetailsView planId={""} />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
     {/* Redirect old new-plan path to new path */}

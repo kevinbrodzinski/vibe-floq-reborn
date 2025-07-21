@@ -1,75 +1,72 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2, Calendar, MapPin, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Calendar, MapPin, Users, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { PlanEditModal } from './PlanEditModal';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useNavigate } from 'react-router-dom';
+import { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlanDetailsViewProps {
-  planId: string;
+  planId?: string;
 }
 
-export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
+export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId: propPlanId }) => {
+  const { planId: paramPlanId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const planId = propPlanId || paramPlanId;
 
   const { data: plan, isLoading, error } = useQuery({
-    queryKey: ['plan', planId],
+    queryKey: ['plan-details', planId],
     queryFn: async () => {
+      if (!planId) throw new Error('Plan ID is required');
+      
       const { data, error } = await supabase
         .from('floq_plans')
         .select(`
           *,
-          floqs(title, creator_id, location)
+          floqs (
+            title,
+            description
+          )
         `)
         .eq('id', planId)
         .single();
 
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!planId,
   });
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      const { error } = await supabase
-        .from('floq_plans')
-        .delete()
-        .eq('id', planId);
+  const { data: participants } = useQuery({
+    queryKey: ['plan-participants', planId],
+    queryFn: async () => {
+      if (!planId) return [];
+      
+      const { data, error } = await supabase
+        .from('plan_participants')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
+        .eq('plan_id', planId);
 
       if (error) throw error;
+      return data || [];
+    },
+    enabled: !!planId,
+  });
 
-      toast({
-        title: 'Plan deleted',
-        description: 'Your plan has been deleted successfully.'
-      });
-
-      navigate('/plans');
-    } catch (error) {
-      console.error('Failed to delete plan:', error);
-      toast({
-        title: 'Failed to delete plan',
-        description: 'There was an error deleting your plan. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: PlanStatus) => {
     switch (status) {
       case 'active':
         return 'bg-green-500/10 text-green-700 border-green-200';
@@ -77,6 +74,8 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
         return 'bg-gray-500/10 text-gray-700 border-gray-200';
       case 'completed':
         return 'bg-blue-500/10 text-blue-700 border-blue-200';
+      case 'invited':
+        return 'bg-purple-500/10 text-purple-700 border-purple-200';
       default:
         return 'bg-gray-500/10 text-gray-700 border-gray-200';
     }
@@ -84,78 +83,57 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse">Loading plan...</div>
       </div>
     );
   }
 
   if (error || !plan) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-4xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/plans')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold mb-2">Plan not found</h2>
+          <p className="text-muted-foreground mb-4">
+            This plan may have been deleted or you don't have access to it.
+          </p>
+          <Button onClick={() => navigate('/plans')}>
             Back to Plans
           </Button>
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Plan not found or you don't have access to it.</p>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30">
-        <div className="flex items-center justify-between px-4 py-3 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => navigate('/plans')}
+            className="flex items-center gap-2"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-4 h-4" />
             Back to Plans
           </Button>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit2 className="w-4 h-4 mr-2" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(true)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="p-4 max-w-4xl mx-auto">
-        <Card>
+        {/* Plan Details Card */}
+        <Card className="mb-6">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-2xl mb-2">{plan.title}</CardTitle>
                 {plan.floqs?.title && (
-                  <p className="text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-2">
                     Part of {plan.floqs.title}
                   </p>
+                )}
+                {plan.description && (
+                  <p className="text-muted-foreground">{plan.description}</p>
                 )}
               </div>
               <Badge variant="outline" className={getStatusColor(plan.status)}>
@@ -164,75 +142,85 @@ export const PlanDetailsView: React.FC<PlanDetailsViewProps> = ({ planId }) => {
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-6">
-            {plan.description && (
-              <div>
-                <h3 className="font-medium mb-2">Description</h3>
-                <p className="text-muted-foreground">{plan.description}</p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Planned Date</p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(plan.planned_at), 'PPP')}
-                  </p>
-                </div>
+                <span className="text-sm">
+                  {format(new Date(plan.planned_at), 'PPP')}
+                </span>
               </div>
               
               {plan.start_time && (
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Start Time</p>
-                    <p className="text-sm text-muted-foreground">{plan.start_time}</p>
-                  </div>
+                  <span className="text-sm">
+                    {plan.start_time} - {plan.end_time || 'Open ended'}
+                  </span>
                 </div>
               )}
-              
+
+              {participants && participants.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+
               {plan.max_participants && (
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Max Participants</p>
-                    <p className="text-sm text-muted-foreground">{plan.max_participants}</p>
-                  </div>
+                  <span className="text-sm">
+                    Max {plan.max_participants} participants
+                  </span>
                 </div>
-              )}
-            </div>
-            
-            <div className="text-xs text-muted-foreground pt-4 border-t">
-              Created {format(new Date(plan.created_at), 'PPp')}
-              {plan.updated_at !== plan.created_at && (
-                <> • Last updated {format(new Date(plan.updated_at), 'PPp')}</>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Participants */}
+        {participants && participants.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Participants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {participants.map((participant) => (
+                  <div key={participant.user_id} className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                      {participant.profiles?.avatar_url ? (
+                        <img
+                          src={participant.profiles.avatar_url}
+                          alt={participant.profiles.display_name || participant.profiles.username}
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium">
+                          {(participant.profiles?.display_name || participant.profiles?.username || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {participant.profiles?.display_name || participant.profiles?.username || 'Unknown User'}
+                      </p>
+                      {participant.profiles?.username && participant.profiles?.display_name && (
+                        <p className="text-xs text-muted-foreground">
+                          @{participant.profiles.username}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
-
-      {/* Edit Modal */}
-      {isEditing && (
-        <PlanEditModal
-          plan={plan}
-          onClose={() => setIsEditing(false)}
-        />
-      )}
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={handleDelete}
-        title="Delete Plan"
-        description="Are you sure you want to delete this plan? This action cannot be undone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        isLoading={isDeleting}
-      />
     </div>
   );
 };
