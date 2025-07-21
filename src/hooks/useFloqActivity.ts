@@ -13,26 +13,36 @@ export interface FloqActivity {
   created_at: string;
 }
 
-// Extended interface for flock history events
 export interface FlockHistoryEvent {
   id: string;
   event_type: string;
   created_at: string;
   user_id: string | null;
   metadata: any;
-  user_profile?: {
-    display_name: string;
-    username: string;
-    avatar_url: string | null;
-  };
+  profiles?: any;
+}
+
+export interface UserProfile {
+  display_name: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+export type MergedActivity = 
+  | (FloqActivity & { source: 'plan_activity' })
+  | (FlockHistoryEvent & { source: 'flock_history'; user_profile: UserProfile | null })
+
+// Type guards
+export function isPlanActivity(entry: MergedActivity): entry is FloqActivity & { source: 'plan_activity' } {
+  return entry.source === 'plan_activity';
 }
 
 export function useFloqActivity(floqId: string) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<MergedActivity[]>({
     queryKey: ['floq-activity', floqId],
-    queryFn: async () => {
+    queryFn: async (): Promise<MergedActivity[]> => {
       // Fetch both floq_activity (plan events) and flock_history (all other events)
       const [activityResult, historyResult] = await Promise.all([
         supabase
@@ -57,13 +67,13 @@ export function useFloqActivity(floqId: string) {
       if (activityResult.error) throw activityResult.error;
       if (historyResult.error) throw historyResult.error;
 
-      // Combine and sort all events by timestamp
-      const planEvents = (activityResult.data || []).map(event => ({
+      // Combine and sort all events by timestamp (optimized)
+      const planEvents: MergedActivity[] = (activityResult.data || []).map(event => ({
         ...event,
         source: 'plan_activity' as const
-      }));
+      } as MergedActivity));
 
-      const historyEvents = (historyResult.data || []).map(event => ({
+      const historyEvents: MergedActivity[] = (historyResult.data || []).map(event => ({
         ...event,
         source: 'flock_history' as const,
         user_profile: event.profiles ? {
@@ -71,11 +81,11 @@ export function useFloqActivity(floqId: string) {
           username: (event.profiles as any).username || 'unknown',
           avatar_url: (event.profiles as any).avatar_url || null
         } : null,
-      }));
+      } as MergedActivity));
 
-      // Merge and sort by created_at
+      // Merge and sort by created_at (optimized)
       const allEvents = [...planEvents, ...historyEvents].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
       );
 
       return allEvents;
