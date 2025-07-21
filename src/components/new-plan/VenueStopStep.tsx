@@ -12,8 +12,7 @@ import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useTransitTime, calculateHaversineTime } from '@/hooks/useTransitTimes';
-import { TransitIndicator } from './TransitIndicator';
+import { TransitTime } from './TransitTime';
 
 interface Venue {
   id: string;
@@ -40,6 +39,7 @@ interface VenueStopStepProps {
   onNext: () => void;
   onBack: () => void;
   startTime: string;
+  planId?: string; // Add planId for transit calculations
 }
 
 const SortableStopCard: React.FC<{
@@ -163,7 +163,7 @@ const SortableStopCard: React.FC<{
   );
 };
 
-export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: VenueStopStepProps) {
+export function VenueStopStep({ stops, onChange, onNext, onBack, startTime, planId }: VenueStopStepProps) {
   // Default transit time for calculation when no real data is available
   const defaultTransitMinutes = 15;
 
@@ -288,20 +288,31 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime }: Ve
                     isFirst={index === 0}
                   />
                   
-                  {/* Real-time transit indicator */}
-                  {index < stops.length - 1 && (
-                    <TransitIndicator
+                  {/* Real-time transit times between stops */}
+                  {index < stops.length - 1 && planId && (
+                    <TransitTime
+                      planId={planId}
                       from={{
-                        lat: stop.venue?.lat,
-                        lng: stop.venue?.lng
+                        id: stop.id,
+                        venue: stop.venue
                       }}
                       to={{
-                        lat: stops[index + 1]?.venue?.lat,
-                        lng: stops[index + 1]?.venue?.lng
+                        id: stops[index + 1].id,
+                        venue: stops[index + 1].venue
                       }}
                       mode="walking"
                       fallbackMinutes={defaultTransitMinutes}
                     />
+                  )}
+                  
+                  {/* Fallback for when no planId is provided */}
+                  {index < stops.length - 1 && !planId && (
+                    <div className="flex items-center justify-center py-2">
+                      <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        ~{defaultTransitMinutes} min 🚶
+                      </div>
+                    </div>
                   )}
                 </div>
               ))}

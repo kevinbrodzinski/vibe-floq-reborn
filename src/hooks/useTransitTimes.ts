@@ -1,55 +1,85 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+// ─────────────────────────────────────────────────────────────
+// 📁 src/hooks/useTransitTimes.ts
+//  React Query hook that pulls transit time for a given stop pair.
+// ─────────────────────────────────────────────────────────────
+import { useQuery, UseQueryOptions } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { memoizeTransit } from "@/lib/cache/transitLRU";
 
-interface Location {
-  lng: number;
-  lat: number;
+interface UseTransitOpts extends Partial<UseQueryOptions<TransitResult>> {
+  mode?: "driving" | "walking" | "cycling";
 }
 
-interface TransitResult {
-  duration_minutes: number;
+export interface TransitResult {
+  duration_seconds: number;
   distance_meters: number;
-  provider: string;
-  confidence: 'high' | 'medium' | 'low';
   mode: string;
-  raw_data?: any;
+  provider: string;
+  fetched_at: string;
+  cached: boolean;
 }
 
-interface UseTransitTimeOptions {
-  from: Location;
-  to: Location;
+export function useTransitTime(
+  planId: string,
+  from: { lat: number; lng: number; stopId: string },
+  to: { lat: number; lng: number; stopId: string },
+  opts: UseTransitOpts = {},
+) {
+  const { mode = "driving", ...rqOpts } = opts;
+  return useQuery<TransitResult>({
+    queryKey: ["transit", planId, from.stopId, to.stopId, mode],
+    staleTime: 1000 * 60 * 60, // 1 h
+    queryFn: async () => {
+      const cacheKey = `transit:${planId}:${from.stopId}:${to.stopId}:${mode}`;
+      
+      return memoizeTransit(cacheKey, async () => {
+        const { data, error } = await supabase.functions.invoke("get-transit", {
+          body: { planId, from, to, mode },
+        });
+        if (error) throw error;
+        return data as TransitResult;
+      });
+    },
+    ...rqOpts,
+  });
+}
+
+// Helper to format transit result for display
+export function formatTransit(result: TransitResult): string {
+  const minutes = Math.round(result.duration_seconds / 60);
+  const km = (result.distance_meters / 1000).toFixed(1);
+  
+  const modeIcons = {
+    walking: '🚶',
+    cycling: '🚴', 
+    driving: '🚗'
+  };
+  
+  const icon = modeIcons[result.mode as keyof typeof modeIcons] || '🚗';
+  return `${icon} ${minutes} min • ${km} km`;
+}
+
+// Legacy hook for backwards compatibility with simple lat/lng interface
+export function useSimpleTransitTime({ from, to, mode = 'walking', enabled = true }: {
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
   mode?: 'walking' | 'driving' | 'cycling';
   enabled?: boolean;
-}
-
-export function useTransitTime({ from, to, mode = 'walking', enabled = true }: UseTransitTimeOptions) {
+}) {
   return useQuery({
-    queryKey: ['transit-time', from, to, mode],
-    queryFn: async (): Promise<TransitResult> => {
-      const { data, error } = await supabase.functions.invoke('get-transit', {
-        body: {
-          from,
-          to,
-          mode
-        }
-      })
-
-      if (error) {
-        console.error('Transit time fetch error:', error)
-        throw error
-      }
-
-      return data as TransitResult
+    queryKey: ['simple-transit', from, to, mode],
+    queryFn: async () => {
+      // Fallback Haversine calculation for simple cases
+      return calculateHaversineTime(from, to, mode);
     },
     enabled: enabled && !!(from.lat && from.lng && to.lat && to.lng),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes (renamed from cacheTime in newer versions)
-    retry: 1
-  })
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000
+  });
 }
 
 // Helper function to calculate straight-line distance and estimate time
-export function calculateHaversineTime(from: Location, to: Location, mode: 'walking' | 'driving' | 'cycling' = 'walking'): TransitResult {
+export function calculateHaversineTime(from: { lat: number; lng: number }, to: { lat: number; lng: number }, mode: 'walking' | 'driving' | 'cycling' = 'walking'): TransitResult {
   const R = 6371000; // Earth's radius in meters
   const φ1 = from.lat * Math.PI / 180;
   const φ2 = to.lat * Math.PI / 180;
@@ -70,37 +100,14 @@ export function calculateHaversineTime(from: Location, to: Location, mode: 'walk
     driving: 500    // ~30 km/h (city driving)
   };
 
-  const durationMinutes = Math.max(1, Math.round(distance / speeds[mode]));
+  const durationSeconds = Math.max(60, Math.round(distance / speeds[mode] * 60)); // Convert to seconds
 
   return {
-    duration_minutes: durationMinutes,
+    duration_seconds: durationSeconds,
     distance_meters: Math.round(distance),
     provider: 'haversine',
-    confidence: 'low',
-    mode
-  };
-}
-
-// Hook for multiple transit times between stop pairs
-export function useMultipleTransitTimes(stops: Array<{ lat?: number; lng?: number }>, mode: 'walking' | 'driving' | 'cycling' = 'walking') {
-  const transitPairs = stops.slice(0, -1).map((stop, index) => ({
-    from: { lat: stop.lat || 0, lng: stop.lng || 0 },
-    to: { lat: stops[index + 1]?.lat || 0, lng: stops[index + 1]?.lng || 0 },
-    index
-  })).filter(pair => pair.from.lat && pair.from.lng && pair.to.lat && pair.to.lng);
-
-  const queries = transitPairs.map(pair => 
-    useTransitTime({
-      from: pair.from,
-      to: pair.to,
-      mode,
-      enabled: true
-    })
-  );
-
-  return {
-    transitTimes: queries.map(query => query.data),
-    isLoading: queries.some(query => query.isLoading),
-    errors: queries.map(query => query.error).filter(Boolean)
+    cached: false,
+    mode,
+    fetched_at: new Date().toISOString()
   };
 }
