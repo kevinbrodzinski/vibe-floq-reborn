@@ -699,6 +699,54 @@ export type Database = {
           },
         ]
       }
+      floq_activity: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          floq_id: string
+          guest_name: string | null
+          id: string
+          kind: string
+          plan_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          floq_id: string
+          guest_name?: string | null
+          id?: string
+          kind: string
+          plan_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          floq_id?: string
+          guest_name?: string | null
+          id?: string
+          kind?: string
+          plan_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_activity_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_activity_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_afterglow: {
         Row: {
           chat_highlights: Json | null

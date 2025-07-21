@@ -109,6 +109,21 @@ export function useCreatePlan() {
         }
       }
 
+      // Log activity if plan is linked to a floq
+      if (floqId) {
+        try {
+          await supabase.from('floq_activity').insert({
+            floq_id: floqId,
+            plan_id: planData.id,
+            user_id: session.user.id,
+            kind: 'created',
+            content: payload.title
+          });
+        } catch (activityError) {
+          console.warn('Failed to log activity:', activityError);
+        }
+      }
+
       return planData
     },
     onSuccess: (planData) => {
