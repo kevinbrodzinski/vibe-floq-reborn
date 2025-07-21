@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { VibeRing } from '@/components/VibeRing';
 import { FloqChat } from '@/components/floq/FloqChat';
-import { FloqActivityFeed } from '@/components/floq/FloqActivityFeed';
+import { FloqActivityStream } from '@/components/floq/FloqActivityStream';
 import { IconPill } from '@/components/IconPill';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDeleteFloq } from '@/hooks/useDeleteFloq';
@@ -321,7 +321,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </TabsContent>
 
           <TabsContent value="activity" className="mt-0">
-            <FloqActivityFeed floqId={floqDetails.id} />
+            <FloqActivityStream floqId={floqDetails.id} />
           </TabsContent>
 
           <TabsContent value="plans" className="mt-0">
