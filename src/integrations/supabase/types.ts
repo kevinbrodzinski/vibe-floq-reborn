@@ -4335,6 +4335,16 @@ export type Database = {
           requested_at: string
         }[]
       }
+      get_plan_metadata: {
+        Args: { p_plan_id: string }
+        Returns: {
+          total_stops: number
+          confirmed_stops: number
+          participant_count: number
+          total_duration_minutes: number
+          estimated_cost_per_person: number
+        }[]
+      }
       get_plan_summary: {
         Args: { p_plan_id: string }
         Returns: {
