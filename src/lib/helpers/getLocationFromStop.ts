@@ -10,12 +10,11 @@ export interface Location {
 
 // Extend PlanStopUi to include potential venue lat/lng and location
 interface ExtendedPlanStopUi extends PlanStopUi {
-  venue: PlanStopUi['venue'] & { 
+  venue?: PlanStopUi['venue'] & { 
     lat?: number; 
     lng?: number; 
     address?: string;
   };
-  location?: unknown; // PostGIS geometry field
 }
 
 export const getLocationFromStop = (stop: ExtendedPlanStopUi): Location | null => {

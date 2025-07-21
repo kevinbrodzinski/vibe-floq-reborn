@@ -9,7 +9,7 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 export interface PlanStopUi {
   id: string
   title: string
-  venue: { id: string; name: string; address?: string } // venue coerced into an object for map / tracker components
+  venue?: { id: string; name: string; address?: string } | null // venue coerced into an object for map / tracker components
   description?: string
   start_time: string
   end_time: string
@@ -17,6 +17,7 @@ export interface PlanStopUi {
   address?: string // Add address for compatibility
   duration_minutes?: number
   estimated_cost_per_person?: number
+  location?: unknown // PostGIS geometry field
 }
 
 export interface PlanStop {

@@ -111,6 +111,7 @@ serve(async (req) => {
   }
 
   const result = {
+    duration_minutes: Math.round(route.duration / 60), // Convert seconds to minutes
     duration_seconds: Math.round(route.duration),
     distance_meters: Math.round(route.distance),
     mode,

@@ -11,6 +11,7 @@ interface UseTransitOpts extends Partial<UseQueryOptions<TransitResult>> {
 }
 
 export interface TransitResult {
+  duration_minutes: number;
   duration_seconds: number;
   distance_meters: number;
   mode: string;
@@ -66,7 +67,7 @@ export function useTransitTime(
 
 // Helper to format transit result for display
 export function formatTransit(result: TransitResult): string {
-  const minutes = Math.round(result.duration_seconds / 60);
+  const minutes = result.duration_minutes || Math.round(result.duration_seconds / 60);
   const km = (result.distance_meters / 1000).toFixed(1);
   
   const modeIcons = {
@@ -123,6 +124,7 @@ export function calculateHaversineTime(from: { lat: number; lng: number }, to: {
   const durationSeconds = Math.max(60, Math.round(distance / speeds[mode] * 60)); // Convert to seconds
 
   return {
+    duration_minutes: Math.round(durationSeconds / 60),
     duration_seconds: durationSeconds,
     distance_meters: Math.round(distance),
     provider: 'haversine',
