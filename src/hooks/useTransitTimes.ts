@@ -27,16 +27,36 @@ export function useTransitTime(
 ) {
   const { mode = "driving", ...rqOpts } = opts;
   return useQuery<TransitResult>({
-    queryKey: ["transit", planId, from.stopId, to.stopId, mode],
+    queryKey: ["transit", mode, from.lat, from.lng, to.lat, to.lng],
     staleTime: 1000 * 60 * 60, // 1 h
     queryFn: async () => {
       const cacheKey = `transit:${planId}:${from.stopId}:${to.stopId}:${mode}`;
       
       return memoizeTransit(cacheKey, async () => {
         const { data, error } = await supabase.functions.invoke("get-transit", {
-          body: { planId, from, to, mode },
+          body: { 
+            planId, 
+            from: { lat: from.lat, lng: from.lng }, 
+            to: { lat: to.lat, lng: to.lng }, 
+            mode 
+          },
         });
         if (error) throw error;
+        
+        // Optionally cache in database
+        try {
+          await supabase.from('plan_transit_cache').upsert({
+            from_stop_id: from.stopId,
+            to_stop_id: to.stopId,
+            plan_id: planId,
+            transit_data: data,
+            duration_seconds: data.duration_seconds,
+            distance_meters: data.distance_meters,
+            from_geom: `SRID=4326;POINT(${from.lng} ${from.lat})`,
+            to_geom: `SRID=4326;POINT(${to.lng} ${to.lat})`,
+          });
+        } catch { /* ignore RLS errors */ }
+        
         return data as TransitResult;
       });
     },

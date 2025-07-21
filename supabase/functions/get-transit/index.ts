@@ -26,8 +26,9 @@ interface TransitRequest {
 const MAPBOX_URL = "https://api.mapbox.com/directions/v5/mapbox";
 const MAPBOX_TOKEN = Deno.env.get("MAPBOX_ACCESS_TOKEN");
 
+// Fail fast if token missing
 if (!MAPBOX_TOKEN) {
-  console.error("MAPBOX_ACCESS_TOKEN missing – set via supabase secrets");
+  throw new Error("MAPBOX_ACCESS_TOKEN is required but not configured in secrets");
 }
 
 serve(async (req) => {
@@ -75,8 +76,25 @@ serve(async (req) => {
 
   const mbRes = await fetch(url);
   if (!mbRes.ok) {
-    console.error(`Mapbox API error: ${mbRes.status} ${mbRes.statusText}`);
-    return new Response(JSON.stringify({ error: "Mapbox request failed" }), {
+    const errorText = await mbRes.text();
+    console.error(`Mapbox API error: ${mbRes.status} ${mbRes.statusText}`, errorText);
+    
+    // Handle rate limiting gracefully
+    if (mbRes.status === 429) {
+      console.warn("Mapbox rate limit hit, consider implementing fallback");
+      return new Response(JSON.stringify({ 
+        error: "Rate limit exceeded", 
+        message: "Try again later" 
+      }), {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: "Mapbox request failed",
+      message: "Transit API temporarily unavailable"
+    }), {
       status: 502,
       headers: { ...cors, "Content-Type": "application/json" },
     });
@@ -100,7 +118,7 @@ serve(async (req) => {
     fetched_at: new Date().toISOString(),
   };
 
-  // 3️⃣  Upsert into cache (ignore conflicts)
+  // 3️⃣  Upsert into cache with coordinates
   const { error: upErr } = await supabase.from("plan_transit_cache").upsert(
     {
       plan_id: body.planId,
@@ -109,6 +127,8 @@ serve(async (req) => {
       transit_data: result,
       duration_seconds: result.duration_seconds,
       distance_meters: result.distance_meters,
+      from_geom: `SRID=4326;POINT(${body.from.lng} ${body.from.lat})`,
+      to_geom: `SRID=4326;POINT(${body.to.lng} ${body.to.lat})`,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "plan_id,from_stop_id,to_stop_id" },
