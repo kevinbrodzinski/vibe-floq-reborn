@@ -58,19 +58,44 @@ export function PlanParticipantsList({
 
   const getStatusBadge = (participant: Participant) => {
     if (participant.role === 'organizer') {
-      return <Badge variant="outline" className="text-xs">Host</Badge>;
+      return (
+        <Badge variant="outline" className="text-xs">
+          <Shield className="w-3 h-3 mr-1" />
+          Host
+        </Badge>
+      );
     }
     
     const status = participant.rsvp_status || 'confirmed';
     switch (status) {
       case 'confirmed':
-        return <Badge variant="default" className="text-xs bg-green-500">Going</Badge>;
+        return (
+          <Badge variant="default" className="text-xs bg-green-500">
+            <Check className="w-3 h-3 mr-1" />
+            Going
+          </Badge>
+        );
       case 'maybe':
-        return <Badge variant="secondary" className="text-xs">Maybe</Badge>;
+        return (
+          <Badge variant="secondary" className="text-xs">
+            <HelpCircle className="w-3 h-3 mr-1" />
+            Maybe
+          </Badge>
+        );
       case 'declined':
-        return <Badge variant="destructive" className="text-xs">Can't go</Badge>;
+        return (
+          <Badge variant="destructive" className="text-xs">
+            <X className="w-3 h-3 mr-1" />
+            Can't go
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="text-xs">Pending</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs">
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
+          </Badge>
+        );
     }
   };
 
@@ -95,17 +120,21 @@ export function PlanParticipantsList({
           <Users className="w-4 h-4" />
           Going ({participants.length})
         </h3>
-        {isCreator && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => console.log('TODO: Invite functionality coming soon')}
-            className="text-primary"
-          >
-            <UserPlus className="w-4 h-4 mr-1" />
-            Invite
-          </Button>
-        )}
+         {isCreator && (
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={() => {
+               if (import.meta.env.DEV) {
+                 console.log('TODO: Invite functionality coming soon');
+               }
+             }}
+             className="text-primary"
+           >
+             <UserPlus className="w-4 h-4 mr-1" />
+             Invite
+           </Button>
+         )}
       </div>
 
       <div className="space-y-3">
@@ -162,17 +191,21 @@ export function PlanParticipantsList({
         <div className="text-center py-6">
           <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No participants yet</p>
-          {isCreator && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => console.log('TODO: Invite functionality coming soon')}
-              className="mt-2"
-            >
-              <UserPlus className="w-4 h-4 mr-1" />
-              Invite Friends
-            </Button>
-          )}
+           {isCreator && (
+             <Button
+               variant="outline"
+               size="sm"
+               onClick={() => {
+                 if (import.meta.env.DEV) {
+                   console.log('TODO: Invite functionality coming soon');
+                 }
+               }}
+               className="mt-2"
+             >
+               <UserPlus className="w-4 h-4 mr-1" />
+               Invite Friends
+             </Button>
+           )}
         </div>
       )}
     </Card>
