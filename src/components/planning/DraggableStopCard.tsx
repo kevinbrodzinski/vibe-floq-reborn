@@ -1,12 +1,12 @@
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, DollarSign, MoreVertical, Edit, Trash2, GripVertical, ThumbsUp, ThumbsDown, HelpCircle } from 'lucide-react'
+import { Clock, MapPin, DollarSign, MoreVertical, Edit, Trash2, GripVertical, ThumbsUp, ThumbsDown, HelpCircle, Loader2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useDragFeedback } from '@/hooks/useDragFeedback'
 import { useSwipeGestures } from '@/hooks/useSwipeGestures'
 import { useStopInteractions } from '@/hooks/useStopInteractions'
+import { StopCardSkeleton } from '@/components/skeletons/PlanTimelineSkeletons'
 
 interface DraggableStopCardProps {
   stop: {
@@ -41,7 +42,7 @@ interface DraggableStopCardProps {
   compact?: boolean
 }
 
-export function DraggableStopCard({ 
+const DraggableStopCardComponent = ({ 
   stop, 
   planId,
   onEdit, 
@@ -49,7 +50,7 @@ export function DraggableStopCard({
   isDragging = false,
   showQuickActions = true,
   compact = false
-}: DraggableStopCardProps) {
+}: DraggableStopCardProps) => {
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [showSwipeHint, setShowSwipeHint] = useState(false)
   const dragFeedback = useDragFeedback()
@@ -57,8 +58,14 @@ export function DraggableStopCard({
   const {
     voteCounts,
     userVote,
-    handleQuickVote
+    handleQuickVote,
+    isLoading
   } = useStopInteractions({ planId, stopId: stop.id })
+
+  // Show skeleton while loading interactions
+  if (isLoading) {
+    return <StopCardSkeleton compact={compact} />
+  }
 
   const {
     attributes,
@@ -262,8 +269,9 @@ export function DraggableStopCard({
                   size="sm"
                   className="h-6 px-2"
                   onClick={() => handleQuickVote('upvote', '👍')}
+                  disabled={isLoading}
                 >
-                  <ThumbsUp className="h-3 w-3 mr-1" />
+                  {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ThumbsUp className="h-3 w-3 mr-1" />}
                   {voteCounts.upvote || 0}
                 </Button>
                 <Button
@@ -271,8 +279,9 @@ export function DraggableStopCard({
                   size="sm"
                   className="h-6 px-2"
                   onClick={() => handleQuickVote('downvote', '👎')}
+                  disabled={isLoading}
                 >
-                  <ThumbsDown className="h-3 w-3 mr-1" />
+                  {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ThumbsDown className="h-3 w-3 mr-1" />}
                   {voteCounts.downvote || 0}
                 </Button>
                 <Button
@@ -280,8 +289,9 @@ export function DraggableStopCard({
                   size="sm"
                   className="h-6 px-2"
                   onClick={() => handleQuickVote('maybe', '🤔')}
+                  disabled={isLoading}
                 >
-                  <HelpCircle className="h-3 w-3 mr-1" />
+                  {isLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <HelpCircle className="h-3 w-3 mr-1" />}
                   {voteCounts.maybe || 0}
                 </Button>
               </div>
@@ -298,3 +308,17 @@ export function DraggableStopCard({
     </Card>
   )
 }
+
+// Memoized component for performance optimization
+export const DraggableStopCard = memo(DraggableStopCardComponent, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.stop.id === nextProps.stop.id &&
+    prevProps.stop.title === nextProps.stop.title &&
+    prevProps.stop.start_time === nextProps.stop.start_time &&
+    prevProps.stop.end_time === nextProps.stop.end_time &&
+    prevProps.isDragging === nextProps.isDragging &&
+    prevProps.showQuickActions === nextProps.showQuickActions &&
+    prevProps.compact === nextProps.compact
+  )
+})

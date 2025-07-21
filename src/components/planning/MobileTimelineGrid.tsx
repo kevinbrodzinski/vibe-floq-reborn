@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, DragOverEvent } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
@@ -27,7 +27,7 @@ interface MobileTimelineGridProps {
   onStopSelect?: (stopId: string) => void
 }
 
-export function MobileTimelineGrid({
+const MobileTimelineGridComponent = ({
   planId,
   planStatus,
   startTime,
@@ -41,7 +41,7 @@ export function MobileTimelineGrid({
   onAddStop,
   onStopReorder,
   onStopSelect
-}: MobileTimelineGridProps) {
+}: MobileTimelineGridProps) => {
   const [viewMode, setViewMode] = useState<'compact' | 'expanded'>('expanded')
   const [draggedStop, setDraggedStop] = useState<PlanStop | null>(null)
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null)
@@ -401,3 +401,13 @@ export function MobileTimelineGrid({
     </div>
   )
 }
+
+// Memoized component for performance optimization
+export const MobileTimelineGrid = memo(MobileTimelineGridComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.planId === nextProps.planId &&
+    prevProps.planStatus === nextProps.planStatus &&
+    prevProps.stops?.length === nextProps.stops?.length &&
+    prevProps.isDragOperationPending === nextProps.isDragOperationPending
+  )
+})

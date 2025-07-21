@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { ThumbsUp, ThumbsDown, HelpCircle, MessageCircle, Smile } from 'lucide-react'
+import { useState, memo } from 'react'
+import { ThumbsUp, ThumbsDown, HelpCircle, MessageCircle, Smile, Loader2 } from 'lucide-react'
 import { useStopVotes } from '@/hooks/useStopVotes'
 import { useStopComments } from '@/hooks/useStopComments'
 import { EmojiPicker } from '@/components/EmojiPicker'
 import { cn } from '@/lib/utils'
+import { InteractionsPanelSkeleton } from '@/components/skeletons/PlanTimelineSkeletons'
+import { useStopInteractions } from '@/hooks/useStopInteractions'
 
 interface StopInteractionPanelProps {
   planId: string
@@ -13,19 +15,32 @@ interface StopInteractionPanelProps {
   onAuthPrompt?: () => void
 }
 
-export function StopInteractionPanel({ planId, stopId, currentUserId }: StopInteractionPanelProps) {
+const StopInteractionPanelComponent = ({ planId, stopId, currentUserId }: StopInteractionPanelProps) => {
   const [emoji, setEmoji] = useState<string | null>(null)
-  const { votes, voteCounts, userVote, castVote } = useStopVotes({ planId, stopId })
-  const { comments, addComment } = useStopComments({ planId, stopId })
   const [newComment, setNewComment] = useState('')
+  
+  const {
+    voteCounts,
+    userVote,
+    handleQuickVote,
+    comments,
+    handleAddComment,
+    isLoading
+  } = useStopInteractions({ planId, stopId })
 
-  const handleVote = (type: 'upvote' | 'downvote' | 'maybe') => {
-    castVote({ voteType: type, emoji: emoji || undefined })
+  // Show skeleton while loading
+  if (isLoading) {
+    return <InteractionsPanelSkeleton />
   }
 
-  const handleCommentSubmit = () => {
+  const handleVote = async (type: 'upvote' | 'downvote' | 'maybe') => {
+    await handleQuickVote(type, emoji || undefined)
+    setEmoji(null) // Clear emoji after voting
+  }
+
+  const handleCommentSubmit = async () => {
     if (newComment.trim()) {
-      addComment(newComment.trim())
+      await handleAddComment(newComment.trim())
       setNewComment('')
     }
   }
@@ -36,30 +51,36 @@ export function StopInteractionPanel({ planId, stopId, currentUserId }: StopInte
       <div className="flex items-center gap-4">
         <button
           onClick={() => handleVote('upvote')}
+          disabled={isLoading}
           className={cn(
-            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity',
+            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity disabled:opacity-50',
             userVote?.vote_type === 'upvote' && 'text-green-600 font-semibold'
           )}
         >
-          <ThumbsUp size={16} /> {voteCounts.upvote || 0}
+          {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ThumbsUp size={16} />} 
+          {voteCounts.upvote || 0}
         </button>
         <button
           onClick={() => handleVote('maybe')}
+          disabled={isLoading}
           className={cn(
-            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity',
+            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity disabled:opacity-50',
             userVote?.vote_type === 'maybe' && 'text-yellow-600 font-semibold'
           )}
         >
-          <HelpCircle size={16} /> {voteCounts.maybe || 0}
+          {isLoading ? <Loader2 size={16} className="animate-spin" /> : <HelpCircle size={16} />} 
+          {voteCounts.maybe || 0}
         </button>
         <button
           onClick={() => handleVote('downvote')}
+          disabled={isLoading}
           className={cn(
-            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity',
+            'flex items-center gap-1 text-sm hover:opacity-70 transition-opacity disabled:opacity-50',
             userVote?.vote_type === 'downvote' && 'text-red-600 font-semibold'
           )}
         >
-          <ThumbsDown size={16} /> {voteCounts.downvote || 0}
+          {isLoading ? <Loader2 size={16} className="animate-spin" /> : <ThumbsDown size={16} />} 
+          {voteCounts.downvote || 0}
         </button>
 
         {/* Emoji */}
@@ -96,8 +117,10 @@ export function StopInteractionPanel({ planId, stopId, currentUserId }: StopInte
           />
           <button 
             onClick={handleCommentSubmit} 
-            className="text-xs font-medium text-primary hover:opacity-70 transition-opacity"
+            disabled={isLoading || !newComment.trim()}
+            className="text-xs font-medium text-primary hover:opacity-70 transition-opacity disabled:opacity-50 flex items-center gap-1"
           >
+            {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
             Post
           </button>
         </div>
@@ -105,3 +128,12 @@ export function StopInteractionPanel({ planId, stopId, currentUserId }: StopInte
     </div>
   )
 }
+
+// Memoized component for performance optimization
+export const StopInteractionPanel = memo(StopInteractionPanelComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.planId === nextProps.planId &&
+    prevProps.stopId === nextProps.stopId &&
+    prevProps.currentUserId === nextProps.currentUserId
+  )
+})

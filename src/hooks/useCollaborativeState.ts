@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useSession } from '@/hooks/useSession'
@@ -12,6 +12,7 @@ interface CollaborativeState {
   stops: PlanStop[];
   isLoading: boolean;
   isDragOperationPending: boolean;
+  isAddingStop: boolean;
   removeStop: (id: string) => Promise<void>;
   reorderStops: (from: number, to: number) => Promise<void>;
   addStop: (stop: PlanStop) => Promise<void>;
@@ -46,7 +47,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     enabled: !!planId,
   })
 
-  const { mutateAsync: addStopMutation } = useMutation({
+  const { mutateAsync: addStopMutation, isPending: isAddingStop } = useMutation({
     mutationFn: async (newStop: PlanStop) => {
       if (!session?.user) {
         // Check if user is a guest
@@ -157,7 +158,11 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     },
   })
 
-  const allStops = [...planStops, ...optimisticStops]
+  // Memoize the combined stops array to prevent unnecessary re-renders
+  const allStops = useMemo(() => 
+    [...planStops, ...optimisticStops], 
+    [planStops, optimisticStops]
+  )
 
   const addOptimisticStop = useCallback((tempStop: Partial<PlanStop>) => {
     const newStop: PlanStop = {
@@ -256,6 +261,7 @@ export function useCollaborativeState(planId: string): CollaborativeState {
     stops: allStops,
     isLoading,
     isDragOperationPending: isReordering,
+    isAddingStop,
     removeStop,
     reorderStops,
     addStop: async (stop: PlanStop) => {
