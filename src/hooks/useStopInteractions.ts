@@ -3,15 +3,23 @@ import { useStopVotes } from './useStopVotes'
 import { useStopComments } from './useStopComments'
 import { useToast } from '@/hooks/use-toast'
 import { useDragFeedback } from './useDragFeedback'
+import { useSession } from './useSession'
+import { useGuestSession } from './useGuestSession'
 
 interface UseStopInteractionsParams {
   planId: string
   stopId: string
+  requireAuth?: boolean
 }
 
-export function useStopInteractions({ planId, stopId }: UseStopInteractionsParams) {
+export function useStopInteractions({ planId, stopId, requireAuth = false }: UseStopInteractionsParams) {
   const { toast } = useToast()
   const dragFeedback = useDragFeedback()
+  const session = useSession()
+  const { guestId, guestName } = useGuestSession()
+  
+  const isAuthenticated = !!session?.user
+  const canInteract = isAuthenticated || !requireAuth
   
   const {
     votes,
@@ -28,13 +36,24 @@ export function useStopInteractions({ planId, stopId }: UseStopInteractionsParam
   } = useStopComments({ planId, stopId })
 
   const handleQuickVote = useCallback(async (voteType: 'upvote' | 'downvote' | 'maybe', emoji?: string) => {
+    if (!canInteract) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to vote on stops",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
+
     try {
       await castVote({ voteType, emoji })
       await dragFeedback.triggerDragEnd(true)
       
+      const userDisplay = isAuthenticated ? 'You' : guestName || 'Anonymous'
       toast({
         title: "Vote cast!",
-        description: `You voted ${voteType === 'upvote' ? '👍' : voteType === 'downvote' ? '👎' : '🤔'} on this stop`,
+        description: `${userDisplay} voted ${voteType === 'upvote' ? '👍' : voteType === 'downvote' ? '👎' : '🤔'} on this stop`,
         duration: 2000,
       })
     } catch (error) {
@@ -46,18 +65,29 @@ export function useStopInteractions({ planId, stopId }: UseStopInteractionsParam
         duration: 3000,
       })
     }
-  }, [castVote, dragFeedback, toast])
+  }, [castVote, dragFeedback, toast, canInteract, isAuthenticated, guestName])
 
   const handleAddComment = useCallback(async (text: string) => {
     if (!text.trim()) return
+
+    if (!canInteract) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to comment on stops",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
 
     try {
       await addComment(text.trim())
       await dragFeedback.triggerDragEnd(true)
       
+      const userDisplay = isAuthenticated ? 'Your' : `${guestName || 'Anonymous'}'s`
       toast({
         title: "Comment added!",
-        description: "Your comment has been posted",
+        description: `${userDisplay} comment has been posted`,
         duration: 2000,
       })
     } catch (error) {
@@ -69,7 +99,7 @@ export function useStopInteractions({ planId, stopId }: UseStopInteractionsParam
         duration: 3000,
       })
     }
-  }, [addComment, dragFeedback, toast])
+  }, [addComment, dragFeedback, toast, canInteract, isAuthenticated, guestName])
 
   return {
     // Voting
@@ -83,6 +113,12 @@ export function useStopInteractions({ planId, stopId }: UseStopInteractionsParam
     comments,
     commentsLoading,
     handleAddComment,
+    
+    // User state
+    isAuthenticated,
+    canInteract,
+    guestId,
+    guestName,
     
     // Loading states
     isLoading: votesLoading || commentsLoading

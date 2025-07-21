@@ -9,6 +9,8 @@ interface StopInteractionPanelProps {
   planId: string
   stopId: string
   currentUserId: string | null
+  requireAuth?: boolean
+  onAuthPrompt?: () => void
 }
 
 export function StopInteractionPanel({ planId, stopId, currentUserId }: StopInteractionPanelProps) {
