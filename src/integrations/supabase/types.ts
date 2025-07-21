@@ -2194,11 +2194,11 @@ export type Database = {
           created_at: string
           distance_meters: number | null
           duration_seconds: number | null
-          from_geom: unknown | null
+          from_geom: unknown
           from_stop_id: string
           id: string
           plan_id: string
-          to_geom: unknown | null
+          to_geom: unknown
           to_stop_id: string
           transit_data: Json
           updated_at: string
@@ -2207,11 +2207,11 @@ export type Database = {
           created_at?: string
           distance_meters?: number | null
           duration_seconds?: number | null
-          from_geom?: unknown | null
+          from_geom: unknown
           from_stop_id: string
           id?: string
           plan_id: string
-          to_geom?: unknown | null
+          to_geom: unknown
           to_stop_id: string
           transit_data: Json
           updated_at?: string
@@ -2220,11 +2220,11 @@ export type Database = {
           created_at?: string
           distance_meters?: number | null
           duration_seconds?: number | null
-          from_geom?: unknown | null
+          from_geom?: unknown
           from_stop_id?: string
           id?: string
           plan_id?: string
-          to_geom?: unknown | null
+          to_geom?: unknown
           to_stop_id?: string
           transit_data?: Json
           updated_at?: string
