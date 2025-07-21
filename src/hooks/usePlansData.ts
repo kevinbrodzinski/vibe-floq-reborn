@@ -12,22 +12,61 @@ export function usePlansData() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: plans = [], isLoading } = useQuery({
-    queryKey: ['floq-plans'],
+  // Fetch user's plans
+  const { data: userPlans = [], isLoading: isLoadingUserPlans } = useQuery({
+    queryKey: ['user-floq-plans'],
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
       const { data, error } = await supabase
         .from('floq_plans')
         .select(`
           *,
-          floqs!inner(title, creator_id),
-          floq_participants!inner(user_id)
+          floqs(title, creator_id, location)
         `)
-        .eq('floq_participants.user_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('creator_id', user.user.id);
 
       if (error) throw error;
       return data || [];
     }
   });
+
+  // Fetch invited plans
+  const { data: invitedPlans = [], isLoading: isLoadingInvited } = useQuery({
+    queryKey: ['invited-floq-plans'],
+    queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return [];
+
+      const { data, error } = await supabase
+        .from('plan_participants')
+        .select(`
+          plan_id,
+          floq_plans(
+            *,
+            floqs(title, creator_id, location)
+          )
+        `)
+        .eq('user_id', user.user.id)
+        .neq('floq_plans.creator_id', user.user.id);
+
+      if (error) throw error;
+      return data?.map(item => item.floq_plans).filter(Boolean) || [];
+    }
+  });
+
+  const isLoading = isLoadingUserPlans || isLoadingInvited;
+
+  // Combine and categorize plans
+  const categorizedPlans = useMemo(() => {
+    const draft = userPlans.filter(plan => plan.status === 'draft');
+    const active = userPlans.filter(plan => plan.status === 'active');
+    const completed = userPlans.filter(plan => plan.status === 'completed');
+    const invited = invitedPlans;
+
+    return { draft, active, completed, invited };
+  }, [userPlans, invitedPlans]);
 
   const createNewPlan = useMutation({
     mutationFn: async () => {
@@ -66,7 +105,7 @@ export function usePlansData() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['floq-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['user-floq-plans'] });
       toast({
         title: 'Plan created',
         description: 'Your new plan is ready to edit'
@@ -81,33 +120,53 @@ export function usePlansData() {
     }
   });
 
+  // Filter and search functionality
   const filteredPlans = useMemo(() => {
-    let filtered = plans;
+    let plans = [];
     
-    // Apply status filter
-    if (filter !== 'all') {
-      filtered = filtered.filter(plan => plan.status === filter);
+    switch (filter) {
+      case 'draft':
+        plans = categorizedPlans.draft;
+        break;
+      case 'active':
+        plans = categorizedPlans.active;
+        break;
+      case 'completed':
+        plans = categorizedPlans.completed;
+        break;
+      case 'invited':
+        plans = categorizedPlans.invited;
+        break;
+      default:
+        plans = [...categorizedPlans.draft, ...categorizedPlans.active, ...categorizedPlans.completed, ...categorizedPlans.invited];
     }
 
     // Apply search filter
     if (searchQuery.trim()) {
-      filtered = filtered.filter(plan => 
+      plans = plans.filter(plan => 
         plan.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    return filtered;
-  }, [plans, filter, searchQuery]);
+    return plans;
+  }, [categorizedPlans, filter, searchQuery]);
 
   return {
-    plans,
-    filteredPlans,
+    plans: filteredPlans,
+    categorizedPlans,
     filter,
     setFilter,
     searchQuery,
     setSearchQuery,
     isLoading,
-    createNewPlan: () => createNewPlan.mutate()
+    createNewPlan: () => createNewPlan.mutate(),
+    counts: {
+      all: userPlans.length + invitedPlans.length,
+      draft: categorizedPlans.draft.length,
+      active: categorizedPlans.active.length,
+      completed: categorizedPlans.completed.length,
+      invited: categorizedPlans.invited.length
+    }
   };
 }

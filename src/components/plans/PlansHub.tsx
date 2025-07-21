@@ -11,13 +11,14 @@ import { EmptyState } from '@/components/EmptyState';
 export const PlansHub: React.FC = () => {
   const {
     plans,
-    filteredPlans,
+    categorizedPlans,
     filter,
     setFilter,
     searchQuery,
     setSearchQuery,
     isLoading,
-    createNewPlan
+    createNewPlan,
+    counts
   } = usePlansData();
 
   if (isLoading) {
@@ -52,25 +53,25 @@ export const PlansHub: React.FC = () => {
       {/* Content */}
       <div className="p-4 space-y-4 pb-24">
         <PlansFilters
-          filter={filter}
-          onFilterChange={setFilter}
+          current={filter}
+          onChange={setFilter}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          planCount={filteredPlans.length}
+          counts={counts}
         />
 
-        {filteredPlans.length === 0 ? (
+        {plans.length === 0 ? (
           <EmptyState
-            title={plans.length === 0 ? "No Plans Yet" : "No Plans Match Your Search"}
+            title={counts.all === 0 ? "No Plans Yet" : "No Plans Match Your Search"}
             description={
-              plans.length === 0
+              counts.all === 0
                 ? "Create your first plan to get started with organizing your activities."
                 : "Try adjusting your filters or search terms to see more plans."
             }
             animation="planning"
           />
         ) : (
-          <PlansGrid plans={filteredPlans} />
+          <PlansGrid plans={plans} />
         )}
       </div>
     </div>
