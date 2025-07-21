@@ -56,11 +56,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     <AuthContext.Provider value={{ user, session, loading }}>
       <ProfileErrorHandler />
       {children}
-      {import.meta.env.DEV && (
-        <pre style={{ position:'fixed',bottom:8,right:8,fontSize:12,opacity:.5 }}>
-          {JSON.stringify({ user: user?.id, session: !!session, loading }, null, 2)}
-        </pre>
-      )}
     </AuthContext.Provider>
   );
 };
