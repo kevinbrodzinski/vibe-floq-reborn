@@ -5990,6 +5990,10 @@ export type Database = {
         Args: { p_floq_id: string; p_user_id?: string }
         Returns: boolean
       }
+      user_is_plan_participant: {
+        Args: { p_plan_id: string }
+        Returns: boolean
+      }
       username_available: {
         Args: { p_username: string } | { u: string }
         Returns: boolean
