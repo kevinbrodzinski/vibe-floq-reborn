@@ -32,7 +32,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
 }) => {
   const { session } = useAuth();
   const { data: members = [] } = useFloqMembers(floqDetails.id);
-  const [activeTab, setActiveTab] = useState('plans');
+  const [activeTab, setActiveTab] = useState<'plans' | 'chat' | 'members' | 'activity'>('plans');
 
   const isHost = floqDetails.creator_id === session?.user?.id;
 
@@ -80,7 +80,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
           </div>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <Calendar className="h-3 w-3 shrink-0" />
-            <span>Started {formatDistanceToNow(new Date(floqDetails.starts_at))} ago</span>
+            <span>Started {floqDetails.starts_at ? formatDistanceToNow(new Date(floqDetails.starts_at)) : 'recently'} ago</span>
           </div>
           {floqDetails.ends_at && (
             <div className="flex items-center gap-1 whitespace-nowrap">
@@ -92,7 +92,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
       </div>
 
       {/* Tabs - Mobile optimized */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
         <TabsList className="grid w-full grid-cols-4 h-10">
           <TabsTrigger value="plans" className="text-xs px-1 flex items-center gap-1" aria-label="Plans">
             <ClipboardList className="h-3 w-3 shrink-0" />
@@ -126,7 +126,7 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
             floqId={floqDetails.id}
             isOpen={activeTab === 'chat'}
             onClose={() => setActiveTab('plans')}
-            isJoined={true}
+            isJoined
           />
         </TabsContent>
 
