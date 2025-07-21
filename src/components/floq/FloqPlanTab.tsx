@@ -9,7 +9,7 @@ import { useFloqDetails } from '@/hooks/useFloqDetails'
 import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { PlanHeader } from './PlanHeader'
 import { MobileTimelineGrid } from '@/components/planning/MobileTimelineGrid'
-import { AddStopModal } from '@/components/planning/AddStopModal'
+import { AddStopModeSelector } from '@/components/planning/AddStopModeSelector'
 import { Loader2 } from 'lucide-react'
 import type { Database } from '@/integrations/supabase/types'
 
@@ -21,7 +21,7 @@ export function FloqPlanTab() {
   const { data: plan, isLoading } = useActiveFloqPlan(floqId)
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [showAddStopModal, setShowAddStopModal] = useState(false)
-  const [defaultTimeSlot, setDefaultTimeSlot] = useState<string>()
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Get collaborative state for the plan
@@ -43,7 +43,7 @@ export function FloqPlanTab() {
   }, [])
 
   const handleAddStop = (timeSlot?: string) => {
-    setDefaultTimeSlot(timeSlot)
+    setSelectedTimeSlot(timeSlot || '19:00')
     setShowAddStopModal(true)
   }
 
@@ -145,20 +145,18 @@ export function FloqPlanTab() {
         </Button>
       </div>
 
-      {/* Add Stop Modal */}
-      <AddStopModal
-        isOpen={showAddStopModal}
-        onClose={() => {
-          setShowAddStopModal(false)
-          setDefaultTimeSlot(undefined)
-        }}
-        planId={plan.id}
-        defaultStartTime={defaultTimeSlot}
-        defaultEndTime={defaultTimeSlot ? 
-          `${(parseInt(defaultTimeSlot.split(':')[0]) + 1).toString().padStart(2, '0')}:00` : 
-          undefined
-        }
-      />
+      {/* Add Stop Mode Selector */}
+      {selectedTimeSlot && (
+        <AddStopModeSelector
+          isOpen={showAddStopModal}
+          onClose={() => {
+            setShowAddStopModal(false)
+            setSelectedTimeSlot(null)
+          }}
+          planId={plan.id}
+          timeSlot={selectedTimeSlot}
+        />
+      )}
 
       {/* Voice Input Sheet - placeholder */}
       {voiceOpen && (
