@@ -119,6 +119,11 @@ serve(async (req) => {
     fetched_at: new Date().toISOString(),
   };
 
+  // Strip large geometry data to prevent 502 errors on large responses
+  if (JSON.stringify(route).length > 8000) {
+    delete route.geometry;
+  }
+
   // 3️⃣  Upsert into cache with coordinates
   const { error: upErr } = await supabase.from("plan_transit_cache").upsert(
     {
@@ -139,6 +144,10 @@ serve(async (req) => {
   console.log(`Transit calculated: ${Math.round(route.duration/60)}min, ${Math.round(route.distance)}m for ${mode}`);
 
   return new Response(JSON.stringify({ cached: false, ...result }), {
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { 
+      ...cors, 
+      "Content-Type": "application/json",
+      "Cache-Control": "s-maxage=300, public" // 5 min edge caching
+    },
   });
 });

@@ -42,7 +42,10 @@ export function useTransitTime(
             mode 
           },
         });
-        if (error) throw error;
+        if (error) {
+          console.error('Transit API error:', error);
+          throw error;
+        }
         
         // Optionally cache in database
         try {

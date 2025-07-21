@@ -19,7 +19,7 @@ interface ExtendedPlanStopUi extends PlanStopUi {
 
 export const getLocationFromStop = (stop: ExtendedPlanStopUi): Location | null => {
   /* 1️⃣ explicit lat/lng on the venue record */
-  if (stop.venue?.lat && stop.venue?.lng) {
+  if (stop.venue?.lat != null && stop.venue?.lng != null) {
     return {
       lat: stop.venue.lat,
       lng: stop.venue.lng,
