@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { InviteGuestModal } from './InviteGuestModal';
 
 interface Participant {
   id: string;
@@ -31,13 +32,18 @@ interface PlanParticipantsListProps {
   participants: Participant[];
   isCreator: boolean;
   isLoading?: boolean;
+  planId?: string;
+  planTitle?: string;
 }
 
 export function PlanParticipantsList({ 
   participants, 
   isCreator, 
-  isLoading 
+  isLoading,
+  planId,
+  planTitle
 }: PlanParticipantsListProps) {
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   if (isLoading) {
     return (
       <Card className="p-4">
@@ -124,12 +130,7 @@ export function PlanParticipantsList({
            <Button
              variant="ghost"
              size="sm"
-             onClick={() => {
-               if (import.meta.env.DEV) {
-                 // eslint-disable-next-line no-console
-                 console.log('TODO: Invite functionality coming soon');
-               }
-             }}
+             onClick={() => setInviteModalOpen(true)}
              className="text-primary"
            >
              <UserPlus className="w-4 h-4 mr-1" />
@@ -192,23 +193,28 @@ export function PlanParticipantsList({
         <div className="text-center py-6">
           <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No participants yet</p>
-            {isCreator && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (import.meta.env.DEV) {
-                    // eslint-disable-next-line no-console
-                    console.log('TODO: Invite functionality coming soon');
-                  }
-                }}
-                className="mt-2"
-              >
-                <UserPlus className="w-4 h-4 mr-1" />
-                Invite Friends
-              </Button>
-            )}
+          {isCreator && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setInviteModalOpen(true)}
+              className="mt-2"
+            >
+              <UserPlus className="w-4 h-4 mr-1" />
+              Invite Friends
+            </Button>
+          )}
         </div>
+      )}
+
+      {/* Invite Modal */}
+      {inviteModalOpen && planId && planTitle && (
+        <InviteGuestModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          planId={planId}
+          planTitle={planTitle}
+        />
       )}
     </Card>
   );

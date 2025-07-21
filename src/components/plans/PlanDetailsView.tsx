@@ -329,6 +329,8 @@ export const PlanDetailsView: React.FC = () => {
           participants={participants}
           isCreator={isCreator}
           isLoading={participantsLoading}
+          planId={planId}
+          planTitle={plan.title}
         />
 
         {/* Status Actions for Creator */}

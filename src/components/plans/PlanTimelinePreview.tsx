@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Clock, DollarSign, Users, Navigation } from 'lucide-react';
 import { formatCurrency, formatTime } from '@/lib/format';
+import { TransitTimeDisplay } from './TransitTimeDisplay';
 import type { PlanStopUi } from '@/types/plan';
 
 interface PlanTimelinePreviewProps {
@@ -120,10 +121,11 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
 
              {/* Transit time to next stop */}
              {index < stops.length - 1 && (
-               <div className="flex items-center gap-2 mt-3 ml-7 text-xs text-muted-foreground">
-                 <Navigation className="w-3 h-3" />
-                 <span>~5 min</span>
-               </div>
+               <TransitTimeDisplay 
+                 fromStop={stop} 
+                 toStop={stops[index + 1]} 
+                 className="mt-3 ml-7"
+               />
              )}
              </div>
           </React.Fragment>
