@@ -149,7 +149,7 @@ export const CollaborativePlanningScreen = () => {
     showOverlay('stop-action', 'Stop created!');
   };
 
-  const handleStopReorder = async (stopId: string, newIndex: number) => {
+  const handleStopReorderByIndex = async (stopId: string, newIndex: number) => {
     // Check if plan can be edited - normalize status with fallback
     const normalizedStatus = getSafeStatus(plan.status)
     if (!canEditPlan(normalizedStatus)) {
@@ -177,6 +177,15 @@ export const CollaborativePlanningScreen = () => {
         ? prev.filter(id => id !== stopId)
         : [...prev, stopId]
     );
+  };
+
+  // Drag and drop handler with correct signature
+  const handleStopReorder = (activeId: string, overId: string) => {
+    const stopsArray = stops || []
+    const overIndex = stopsArray.findIndex(stop => stop.id === overId)
+    if (overIndex !== -1) {
+      handleStopReorderByIndex(activeId, overIndex)
+    }
   };
 
   // Keyboard shortcuts
@@ -586,13 +595,8 @@ export const CollaborativePlanningScreen = () => {
                 startTime="18:00"
                 endTime="23:59"
                 stops={stops}
-                activeParticipants={collaborationParticipants}
-                connectionStatus={connectionStatus}
-                isOptimistic={isOptimistic}
-                isDragOperationPending={isDragOperationPending}
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
-                selectedStopIds={selectedStopIds}
                 onAddStop={handleStopAdd}
               />
 
