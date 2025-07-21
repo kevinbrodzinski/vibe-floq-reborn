@@ -5980,11 +5980,11 @@ export type Database = {
         Returns: boolean
       }
       user_can_access_plan: {
-        Args: { plan_id_param: string }
+        Args: { p_plan_id: string }
         Returns: boolean
       }
       user_can_manage_plan: {
-        Args: { plan_id_param: string }
+        Args: { p_plan_id: string }
         Returns: boolean
       }
       user_has_plan_access: {
