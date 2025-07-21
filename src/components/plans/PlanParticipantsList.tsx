@@ -192,22 +192,22 @@ export function PlanParticipantsList({
         <div className="text-center py-6">
           <Users className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">No participants yet</p>
-           {isCreator && (
-             <Button
-               variant="outline"
-               size="sm"
-               onClick={() => {
-                 if (import.meta.env.DEV) {
-                   // eslint-disable-next-line no-console
-                   console.log('TODO: Invite functionality coming soon');
-                 }
-               }}
-               className="mt-2"
-             >
-               <UserPlus className="w-4 h-4 mr-1" />
-               Invite Friends
-             </Button>
-           )}
+            {isCreator && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (import.meta.env.DEV) {
+                    // eslint-disable-next-line no-console
+                    console.log('TODO: Invite functionality coming soon');
+                  }
+                }}
+                className="mt-2"
+              >
+                <UserPlus className="w-4 h-4 mr-1" />
+                Invite Friends
+              </Button>
+            )}
         </div>
       )}
     </Card>

@@ -18,12 +18,14 @@ export const formatTime = (timeString: string | undefined | null): string => {
     // Handle time in HH:MM format
     if (timeString.includes(':') && !timeString.includes('T')) {
       const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
+      // Use fixed date to avoid timezone issues
+      const date = new Date('2000-01-01T00:00:00.000Z');
+      date.setUTCHours(parseInt(hours), parseInt(minutes));
       return date.toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit',
-        hour12: true 
+        hour12: true,
+        timeZone: 'UTC'
       });
     }
     
@@ -42,10 +44,12 @@ export const formatTime = (timeString: string | undefined | null): string => {
 };
 
 export const formatTimeRange = (startTime: string | undefined | null, endTime: string | undefined | null): string => {
-  if (!startTime || !endTime) return '';
-  
   const formattedStart = formatTime(startTime);
   const formattedEnd = formatTime(endTime);
+  
+  if (!formattedStart && !formattedEnd) return '';
+  if (!formattedStart) return formattedEnd;
+  if (!formattedEnd) return formattedStart;
   
   return `${formattedStart} - ${formattedEnd}`;
 };
