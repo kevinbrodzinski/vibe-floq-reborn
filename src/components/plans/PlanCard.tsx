@@ -22,14 +22,14 @@ interface PlanCardProps {
     status: PlanStatus;
     planned_at: string;
     created_at: string;
+    creator_id: string;
     floqs?: {
       title: string;
     } | null;
-    // Add required fields from the database schema
+    // Optional database fields
     archived_at?: string | null;
     budget_per_person?: number | null;
     collaboration_status?: string | null;
-    creator_id: string;
     current_stop_id?: string | null;
     duration_hours?: number | null;
     end_at?: string | null;

@@ -11,6 +11,7 @@ interface PlansGridProps {
     status: PlanStatus;
     planned_at: string;
     created_at: string;
+    creator_id: string;
     floqs?: {
       title: string;
     };

@@ -20,10 +20,17 @@ import type { Database } from '@/integrations/supabase/types';
 type Plan = Database['public']['Tables']['floq_plans']['Row'];
 
 interface PlanEditModalProps {
-  plan: Plan;
-  open: boolean;
+  plan: {
+    id: string;
+    title: string;
+    description?: string | null;
+    status: any;
+    max_participants?: number | null;
+    [key: string]: any;
+  };
+  open?: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 interface PlanFormData {
