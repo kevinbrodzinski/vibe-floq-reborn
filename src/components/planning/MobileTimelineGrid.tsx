@@ -16,10 +16,15 @@ interface MobileTimelineGridProps {
   planStatus: string
   startTime: string
   endTime: string
-  stops: PlanStop[]
-  onAddStop: (timeSlot?: string) => void
-  onStopReorder: (stopId: string, newIndex: number) => void
-  onStopSelect: (stopId: string) => void
+  stops?: PlanStop[]
+  activeParticipants?: any[]
+  connectionStatus?: string
+  isOptimistic?: boolean
+  isDragOperationPending?: boolean
+  selectedStopIds?: string[]
+  onAddStop?: (timeSlot?: string) => void
+  onStopReorder?: (stopId: string, newIndex: number) => void
+  onStopSelect?: (stopId: string) => void
 }
 
 export function MobileTimelineGrid({
@@ -27,7 +32,12 @@ export function MobileTimelineGrid({
   planStatus,
   startTime,
   endTime,
-  stops,
+  stops = [],
+  activeParticipants = [],
+  connectionStatus = 'disconnected',
+  isOptimistic = false,
+  isDragOperationPending = false,
+  selectedStopIds = [],
   onAddStop,
   onStopReorder,
   onStopSelect
@@ -125,7 +135,12 @@ export function MobileTimelineGrid({
                       className="space-y-2"
                     >
                       <DraggableStopCard
-                        stop={stop}
+                        stop={{
+                          ...stop,
+                          venue: typeof stop.venue === 'string' 
+                            ? { id: 'unknown', name: stop.venue, address: stop.address }
+                            : stop.venue
+                        }}
                         isDragging={draggedStop?.id === stop.id}
                         onEdit={(stop) => console.log('Edit stop:', stop)}
                         onDelete={(stopId) => console.log('Delete stop:', stopId)}
@@ -154,7 +169,12 @@ export function MobileTimelineGrid({
           <DragOverlay>
             {draggedStop && (
               <DraggableStopCard
-                stop={draggedStop}
+                stop={{
+                  ...draggedStop,
+                  venue: typeof draggedStop.venue === 'string' 
+                    ? { id: 'unknown', name: draggedStop.venue, address: draggedStop.address }
+                    : draggedStop.venue
+                }}
                 isDragging={true}
                 onEdit={() => {}}
                 onDelete={() => {}}
@@ -221,7 +241,12 @@ export function MobileTimelineGrid({
                           onClick={() => handleStopSelect(stop.id)}
                         >
                           <DraggableStopCard
-                            stop={stop}
+                            stop={{
+                              ...stop,
+                              venue: typeof stop.venue === 'string' 
+                                ? { id: 'unknown', name: stop.venue, address: stop.address }
+                                : stop.venue
+                            }}
                             isDragging={draggedStop?.id === stop.id}
                             onEdit={(stop) => console.log('Edit stop:', stop)}
                             onDelete={(stopId) => console.log('Delete stop:', stopId)}
@@ -265,7 +290,12 @@ export function MobileTimelineGrid({
         <DragOverlay>
           {draggedStop && (
             <DraggableStopCard
-              stop={draggedStop}
+              stop={{
+                ...draggedStop,
+                venue: typeof draggedStop.venue === 'string' 
+                  ? { id: 'unknown', name: draggedStop.venue, address: draggedStop.address }
+                  : draggedStop.venue
+              }}
               isDragging={true}
               onEdit={() => {}}
               onDelete={() => {}}

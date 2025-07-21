@@ -585,6 +585,7 @@ export const CollaborativePlanningScreen = () => {
                 planStatus={plan.status}
                 startTime="18:00"
                 endTime="23:59"
+                stops={stops}
                 activeParticipants={collaborationParticipants}
                 connectionStatus={connectionStatus}
                 isOptimistic={isOptimistic}
@@ -592,7 +593,7 @@ export const CollaborativePlanningScreen = () => {
                 onStopReorder={handleStopReorder}
                 onStopSelect={handleStopSelect}
                 selectedStopIds={selectedStopIds}
-                
+                onAddStop={handleStopAdd}
               />
 
               {/* Plan Summary Card - Finalized Mode */}
