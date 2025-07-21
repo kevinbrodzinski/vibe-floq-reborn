@@ -2,23 +2,19 @@ import { motion } from 'framer-motion'
 import { Skeleton } from '@/components/ui/skeleton'
 
 // Enhanced shimmer animation for skeleton states
-const shimmerVariants = {
-  initial: { backgroundPosition: '-200% 0' },
-  animate: { 
-    backgroundPosition: '200% 0',
-    transition: {
-      duration: 1.5,
-      ease: 'linear',
-      repeat: Infinity
-    }
+const shimmerAnimation = {
+  backgroundPosition: ['200% 0', '-200% 0'],
+  transition: {
+    duration: 1.5,
+    ease: [0.4, 0, 0.6, 1] as const, // Cubic bezier easing
+    repeat: Infinity,
+    repeatType: 'loop' as const
   }
 }
 
 const ShimmerSkeleton = ({ className = '', ...props }: { className?: string }) => (
   <motion.div
-    variants={shimmerVariants}
-    initial="initial"
-    animate="animate"
+    animate={shimmerAnimation}
     className={`bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] rounded-md ${className}`}
     style={{ backgroundImage: 'linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted)/0.5) 50%, hsl(var(--muted)) 75%)' }}
     {...props}
@@ -77,11 +73,11 @@ export const StopCardSkeleton = ({ compact = false, count = 1 }: StopCardSkeleto
           <div className="border-t pt-2 mt-2">
             <div className="flex items-center justify-between">
               <div className="flex gap-1">
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
-                <Skeleton className="h-6 w-12" />
+                <ShimmerSkeleton className="h-6 w-12" />
+                <ShimmerSkeleton className="h-6 w-12" />
+                <ShimmerSkeleton className="h-6 w-12" />
               </div>
-              <Skeleton className="h-3 w-16" />
+              <ShimmerSkeleton className="h-3 w-16" />
             </div>
           </div>
         </motion.div>
@@ -104,10 +100,10 @@ export const TimelineGridSkeleton = ({ timeSlots = 8, compact = false }: Timelin
     >
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Skeleton className="h-6 w-32" />
+        <ShimmerSkeleton className="h-6 w-32" />
         <div className="flex gap-2">
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-8 w-20" />
+          <ShimmerSkeleton className="h-8 w-16" />
+          <ShimmerSkeleton className="h-8 w-20" />
         </div>
       </div>
 
@@ -122,7 +118,7 @@ export const TimelineGridSkeleton = ({ timeSlots = 8, compact = false }: Timelin
             className="flex items-center gap-4"
           >
             {/* Time label */}
-            <Skeleton className="h-4 w-16 flex-shrink-0" />
+            <ShimmerSkeleton className="h-4 w-16 flex-shrink-0" />
             
             {/* Drop zone */}
             <div className="flex-1 min-h-[80px] border-2 border-dashed border-muted rounded-lg p-2">
@@ -145,18 +141,18 @@ export const InteractionsPanelSkeleton = () => {
       {/* Voting section */}
       <div className="flex items-center gap-4">
         <div className="flex gap-2">
-          <Skeleton className="h-6 w-12" />
-          <Skeleton className="h-6 w-12" />
-          <Skeleton className="h-6 w-12" />
+          <ShimmerSkeleton className="h-6 w-12" />
+          <ShimmerSkeleton className="h-6 w-12" />
+          <ShimmerSkeleton className="h-6 w-12" />
         </div>
-        <Skeleton className="h-6 w-6 ml-auto" />
+        <ShimmerSkeleton className="h-6 w-6 ml-auto" />
       </div>
 
       {/* Comments section */}
       <div className="space-y-2">
         <div className="flex items-center gap-1">
-          <Skeleton className="h-4 w-4" />
-          <Skeleton className="h-4 w-16" />
+          <ShimmerSkeleton className="h-4 w-4" />
+          <ShimmerSkeleton className="h-4 w-16" />
         </div>
         
         {/* Comment list */}
@@ -164,8 +160,8 @@ export const InteractionsPanelSkeleton = () => {
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-background p-2 rounded-lg">
               <div className="flex items-start gap-2">
-                <Skeleton className="h-3 w-16" />
-                <Skeleton className="h-3 w-32" />
+                <ShimmerSkeleton className="h-3 w-16" />
+                <ShimmerSkeleton className="h-3 w-32" />
               </div>
             </div>
           ))}
@@ -173,8 +169,8 @@ export const InteractionsPanelSkeleton = () => {
 
         {/* Add comment */}
         <div className="flex items-center gap-2">
-          <Skeleton className="flex-1 h-8" />
-          <Skeleton className="h-8 w-12" />
+          <ShimmerSkeleton className="flex-1 h-8" />
+          <ShimmerSkeleton className="h-8 w-12" />
         </div>
       </div>
     </motion.div>

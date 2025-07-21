@@ -23,11 +23,24 @@ export function useStopInteractions({ planId, stopId, requireAuth = false }: Use
   
   const {
     votes,
-    voteCounts,
-    userVote,
+    voteCounts: rawVoteCounts,
+    userVote: rawUserVote,
     isLoading: votesLoading,
     castVote
   } = useStopVotes({ planId, stopId })
+
+  // Type-safe vote counts with guaranteed properties
+  const voteCounts = {
+    upvote: rawVoteCounts?.upvote || 0,
+    downvote: rawVoteCounts?.downvote || 0,
+    maybe: rawVoteCounts?.maybe || 0
+  }
+
+  // Type-safe user vote with proper union type
+  const userVote = rawUserVote ? {
+    ...rawUserVote,
+    vote_type: rawUserVote.vote_type as 'upvote' | 'downvote' | 'maybe'
+  } : null
 
   const {
     comments,
