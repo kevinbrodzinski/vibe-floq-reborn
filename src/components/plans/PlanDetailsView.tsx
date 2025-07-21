@@ -6,40 +6,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Edit, Users, Calendar, MapPin, Clock } from 'lucide-react';
+import { ChevronLeft, Calendar, Clock, Users, MapPin, RefreshCw } from 'lucide-react';
 import { PlanEditModal } from './PlanEditModal';
+import { PlanTimelinePreview } from './PlanTimelinePreview';
+import { PlanSummaryStats } from './PlanSummaryStats';
+import { PlanParticipantsList } from './PlanParticipantsList';
+import { PlanQuickActions } from './PlanQuickActions';
 import { useAuth } from '@/providers/AuthProvider';
 import { PlanStatusTag } from '@/components/PlanStatusTag';
-import { getStatusBadgeProps } from '@/lib/planStatusConfig';
 import { usePlanStatusValidation } from '@/hooks/usePlanStatusValidation';
+import { usePlanStops } from '@/hooks/usePlanStops';
+import { usePlanParticipantsOptimized } from '@/hooks/usePlanParticipantsOptimized';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import type { PlanStatus } from '@/types/enums/planStatus';
 
 type Plan = Database['public']['Tables']['floq_plans']['Row'];
-type PlanParticipant = Database['public']['Tables']['plan_participants']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-interface PlanParticipantWithProfile {
-  id: string;
-  user_id: string | null;
-  plan_id: string;
-  role: 'participant' | 'organizer';
-  joined_at: string | null;
-  is_guest: boolean | null;
-  guest_name: string | null;
-  invite_type?: string | null;
-  reminded_at?: string | null;
-  rsvp_status?: string | null;
-  profiles?: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null;
-}
 
 export const PlanDetailsView: React.FC = () => {
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
   const { session } = useAuth();
+  const { toast } = useToast();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const { validateTransition, getAvailableTransitions } = usePlanStatusValidation();
@@ -62,46 +52,11 @@ export const PlanDetailsView: React.FC = () => {
     enabled: !!planId,
   });
 
-  // Fetch plan participants with profiles using a two-step approach
-  const { data: participants = [], isLoading: participantsLoading } = useQuery({
-    queryKey: ['plan-participants', planId],
-    queryFn: async (): Promise<PlanParticipantWithProfile[]> => {
-      if (!planId) return [];
+  // Fetch plan stops
+  const { data: stops = [], isLoading: stopsLoading } = usePlanStops(planId!);
 
-      // Step 1: Get plan participants with profiles using explicit FK hint
-      const { data: participantData, error: participantError } = await supabase
-        .from('plan_participants')
-        .select(`
-          id,
-          plan_id,
-          user_id,
-          role,
-          joined_at,
-          is_guest,
-          guest_name,
-          invite_type,
-          reminded_at,
-          rsvp_status,
-          profiles!user_id (
-            id,
-            username,
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('plan_id', planId);
-
-      if (participantError) throw participantError;
-      if (!participantData?.length) return [];
-
-      // Return the data directly since profiles are already included
-      return participantData.map(participant => ({
-        ...participant,
-        profiles: participant.profiles || null
-      }));
-    },
-    enabled: !!planId,
-  });
+  // Fetch plan participants
+  const { data: participants = [], isLoading: participantsLoading } = usePlanParticipantsOptimized(planId!);
 
   // Plan RSVP mutation
   const rsvpMutation = useMutation({
@@ -126,12 +81,44 @@ export const PlanDetailsView: React.FC = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, { join }) => {
       queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
+      toast({
+        title: join ? "You're in!" : "You've left the plan",
+        description: join ? "You've successfully joined this plan" : "You've been removed from this plan",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Something went wrong",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
-  if (planLoading || participantsLoading) {
+  // Status transition mutation
+  const statusMutation = useMutation({
+    mutationFn: async ({ status }: { status: PlanStatus }) => {
+      if (!planId) throw new Error('Plan ID is required');
+      
+      const { error } = await supabase
+        .from('floq_plans')
+        .update({ status })
+        .eq('id', planId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plan', planId] });
+      toast({
+        title: "Status updated",
+        description: "Plan status has been updated successfully",
+      });
+    },
+  });
+
+  if (planLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -162,7 +149,7 @@ export const PlanDetailsView: React.FC = () => {
   const validationContext = {
     hasParticipants: participants.length > 0,
     isCreator,
-    hasStops: false, // TODO: Add plan stops logic
+    hasStops: stops.length > 0,
     isActive: plan.status === 'active'
   };
 
@@ -175,6 +162,27 @@ export const PlanDetailsView: React.FC = () => {
     rsvpMutation.mutate({ join: !isParticipant });
   };
 
+  const handleStatusChange = (status: PlanStatus) => {
+    statusMutation.mutate({ status });
+  };
+
+  const handleEditTimeline = () => {
+    navigate(`/plan/${planId}`);
+  };
+
+  const handleInviteMore = () => {
+    toast({
+      title: "Coming soon",
+      description: "Invite functionality will be available soon",
+    });
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['plan', planId] });
+    queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
+    queryClient.invalidateQueries({ queryKey: ['plan-stops', planId] });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -184,23 +192,23 @@ export const PlanDetailsView: React.FC = () => {
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-semibold flex-1 truncate">{plan.title}</h1>
-          {isCreator && (
-            <Button variant="ghost" size="icon" onClick={() => setEditModalOpen(true)}>
-              <Edit className="w-4 h-4" />
-            </Button>
-          )}
+          <Button variant="ghost" size="icon" onClick={handleRefresh}>
+            <RefreshCw className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-4 space-y-4">
-        {/* Plan Info Card */}
+        {/* Plan Header Card */}
         <Card className="p-4 space-y-4">
           <div className="flex items-start justify-between">
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <h2 className="text-xl font-semibold">{plan.title}</h2>
               {plan.description && (
-                <p className="text-muted-foreground">{plan.description}</p>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {plan.description}
+                </p>
               )}
             </div>
             <PlanStatusTag status={plan.status as PlanStatus} />
@@ -212,7 +220,7 @@ export const PlanDetailsView: React.FC = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>{format(new Date(plan.planned_at), 'PPP')}</span>
+              <span>{format(new Date(plan.planned_at), 'EEEE, MMMM d, yyyy')}</span>
             </div>
             
             {plan.start_time && (
@@ -220,13 +228,26 @@ export const PlanDetailsView: React.FC = () => {
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <span>{plan.start_time}</span>
                 {plan.end_time && <span>- {plan.end_time}</span>}
+                {plan.duration_hours && (
+                  <Badge variant="outline" className="ml-2 text-xs">
+                    {plan.duration_hours}h
+                  </Badge>
+                )}
               </div>
             )}
 
-            {plan.max_participants && (
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <span>
+                {participants.length} participant{participants.length !== 1 ? 's' : ''}
+                {plan.max_participants && ` (max ${plan.max_participants})`}
+              </span>
+            </div>
+
+            {stops.length > 0 && (
               <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <span>{participants.length} / {plan.max_participants} participants</span>
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                <span>{stops.length} stop{stops.length !== 1 ? 's' : ''} planned</span>
               </div>
             )}
           </div>
@@ -237,7 +258,7 @@ export const PlanDetailsView: React.FC = () => {
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
-                  {isParticipant ? 'You\'re going' : 'Are you going?'}
+                  {isParticipant ? 'You\'re going to this plan' : 'Want to join this plan?'}
                 </span>
                 <Button
                   variant={isParticipant ? 'secondary' : 'default'}
@@ -258,68 +279,54 @@ export const PlanDetailsView: React.FC = () => {
           )}
         </Card>
 
+        {/* Summary Stats */}
+        <PlanSummaryStats 
+          stops={stops}
+          participantCount={participants.length}
+          maxParticipants={plan.max_participants || undefined}
+        />
+
+        {/* Quick Actions */}
+        <PlanQuickActions
+          planId={planId!}
+          planTitle={plan.title}
+          isCreator={isCreator}
+          onEditPlan={() => setEditModalOpen(true)}
+          onEditTimeline={handleEditTimeline}
+        />
+
+        {/* Timeline Preview */}
+        <div className="space-y-2">
+          <h3 className="font-medium flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Timeline
+          </h3>
+          <PlanTimelinePreview 
+            stops={stops} 
+            isLoading={stopsLoading}
+          />
+        </div>
+
         {/* Participants */}
-        {participants.length > 0 && (
-          <Card className="p-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Participants ({participants.length})
-            </h3>
-            <div className="space-y-3">
-              {participants.map((participant) => (
-                <div key={participant.id} className="flex items-center gap-3">
-                  <Avatar className="w-8 h-8">
-                    {participant.profiles?.avatar_url ? (
-                      <AvatarImage 
-                        src={participant.profiles.avatar_url} 
-                        alt={participant.profiles.display_name || participant.profiles.username || 'User'} 
-                      />
-                    ) : null}
-                    <AvatarFallback>
-                      {participant.is_guest 
-                        ? participant.guest_name?.charAt(0).toUpperCase() || 'G'
-                        : (participant.profiles?.display_name?.charAt(0) || 
-                           participant.profiles?.username?.charAt(0) || 
-                           '?').toUpperCase()
-                      }
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {participant.is_guest 
-                        ? participant.guest_name || 'Guest User'
-                        : (participant.profiles?.username || participant.profiles?.display_name || 'Unknown User')
-                      }
-                    </p>
-                     <p className="text-xs text-muted-foreground">
-                       {participant.role === 'organizer' ? 'Organizer' : 'Participant'}
-                     </p>
-                   </div>
-                   {participant.role === 'organizer' && (
-                     <Badge variant="outline" className="text-xs">
-                       Organizer
-                     </Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
+        <PlanParticipantsList
+          participants={participants}
+          isCreator={isCreator}
+          onInviteMore={handleInviteMore}
+          isLoading={participantsLoading}
+        />
 
         {/* Status Actions for Creator */}
         {isCreator && availableTransitions.length > 0 && (
           <Card className="p-4">
-            <h3 className="font-medium mb-3">Plan Actions</h3>
+            <h3 className="font-medium mb-3">Plan Status</h3>
             <div className="flex flex-wrap gap-2">
               {availableTransitions.map((transition) => (
                 <Button
                   key={transition.status}
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    // TODO: Implement status transition logic
-                    console.log('Transition to:', transition.status);
-                  }}
+                  onClick={() => handleStatusChange(transition.status)}
+                  disabled={statusMutation.isPending}
                 >
                   {transition.label}
                 </Button>
