@@ -15,10 +15,12 @@ interface PlanTimelinePreviewProps {
 export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewProps) {
   if (isLoading) {
     return (
-      <Card className="p-4 space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-14 rounded-lg bg-muted" />
-        ))}
+      <Card className="p-4 min-h-[224px]">
+        <div className="space-y-4">
+          {Array.from({length: 4}).map((_, i) => (
+            <Skeleton key={i} className="h-14 rounded-lg bg-muted" />
+          ))}
+        </div>
       </Card>
     );
   }
@@ -70,7 +72,9 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
                   
                   <div className="flex-shrink-0 text-right">
                     <div className="text-xs font-medium">
-                      {stop.start_time ? format(parseISO(`2000-01-01T${stop.start_time}`), 'h:mm a') : '--:--'}
+                      {stop.start_time && /^[0-2]\d:\d\d/.test(stop.start_time) 
+                        ? format(parseISO(`2000-01-01T${stop.start_time}`), 'h:mm a') 
+                        : '--:--'}
                     </div>
                     {stop.duration_minutes && (
                       <div className="text-xs text-muted-foreground">
@@ -85,7 +89,11 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
                   {stop.estimated_cost_per_person && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <DollarSign className="w-3 h-3" />
-                      ${stop.estimated_cost_per_person}
+                      {new Intl.NumberFormat('en-US', { 
+                        style: 'currency', 
+                        currency: 'USD', 
+                        maximumFractionDigits: 0 
+                      }).format(stop.estimated_cost_per_person)}
                     </div>
                   )}
                   
@@ -109,7 +117,7 @@ export function PlanTimelinePreview({ stops, isLoading }: PlanTimelinePreviewPro
             {index < stops.length - 1 && (
               <div className="flex items-center gap-2 mt-3 ml-7 text-xs text-muted-foreground">
                 <Navigation className="w-3 h-3" />
-                <span>Transit</span>
+                <span>—</span>
               </div>
             )}
           </div>

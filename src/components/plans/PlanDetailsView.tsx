@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Calendar, Clock, Users, MapPin, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { PlanEditModal } from './PlanEditModal';
 import { PlanTimelinePreview } from './PlanTimelinePreview';
 import { PlanSummaryStats } from './PlanSummaryStats';
@@ -212,9 +212,6 @@ export const PlanDetailsView: React.FC = () => {
             <ChevronLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-lg font-semibold flex-1 truncate">{plan.title}</h1>
-          <Button variant="ghost" size="icon" onClick={handleRefresh}>
-            <RefreshCw className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 

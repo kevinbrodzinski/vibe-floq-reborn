@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, MoreHorizontal } from 'lucide-react';
+import { Users, UserPlus, MoreHorizontal, Shield, Check, HelpCircle, X, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,7 +99,7 @@ export function PlanParticipantsList({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => console.log('Invite functionality coming soon')}
+            onClick={() => console.log('TODO: Invite functionality coming soon')}
             className="text-primary"
           >
             <UserPlus className="w-4 h-4 mr-1" />
@@ -166,7 +166,7 @@ export function PlanParticipantsList({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => console.log('Invite functionality coming soon')}
+              onClick={() => console.log('TODO: Invite functionality coming soon')}
               className="mt-2"
             >
               <UserPlus className="w-4 h-4 mr-1" />
