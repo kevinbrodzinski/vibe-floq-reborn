@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, Clock, HelpCircle, X, MessageSquare, Users } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/lib/utils';
-
-type RSVPStatus = 'confirmed' | 'maybe' | 'declined' | 'pending';
+import { usePlanRSVP } from '@/hooks/usePlanRSVP';
+import { RSVPStatus } from '@/types/enums/rsvpStatus';
 
 interface RSVPStatusManagerProps {
   planId: string;
@@ -22,7 +19,7 @@ interface RSVPStatusManagerProps {
 }
 
 const statusConfig = {
-  confirmed: {
+  attending: {
     label: 'Going',
     icon: Check,
     color: 'bg-green-500',
@@ -38,7 +35,7 @@ const statusConfig = {
     bgColor: 'bg-yellow-50',
     description: 'I might be able to make it'
   },
-  declined: {
+  not_attending: {
     label: 'Can\'t go',
     icon: X,
     color: 'bg-red-500',
@@ -64,70 +61,23 @@ export function RSVPStatusManager({
   participantCount = 0
 }: RSVPStatusManagerProps) {
   const { session } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [note, setNote] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
-
-  const rsvpMutation = useMutation({
-    mutationFn: async ({ status, rsvpNote }: { status: RSVPStatus; rsvpNote?: string }) => {
-      if (!session?.user?.id) throw new Error('Not authenticated');
-
-      if (status === 'declined') {
-        // Remove from participants if declining
-        const { error } = await supabase
-          .from('plan_participants')
-          .delete()
-          .eq('plan_id', planId)
-          .eq('user_id', session.user.id);
-        if (error) throw error;
-      } else {
-        // Upsert participation with status
-        const { error } = await supabase
-          .from('plan_participants')
-          .upsert({
-            plan_id: planId,
-            user_id: session.user.id,
-            role: 'participant',
-            rsvp_status: status,
-            notes: rsvpNote || null
-          }, {
-            onConflict: 'plan_id,user_id'
-          });
-        if (error) throw error;
-      }
-    },
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
-      toast({
-        title: "RSVP updated",
-        description: `You're now marked as "${statusConfig[status].label}"`,
-      });
-      setShowNoteInput(false);
-      setNote('');
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to update RSVP",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const rsvpMutation = usePlanRSVP();
 
   const handleStatusChange = (status: RSVPStatus) => {
-    if (status === 'declined' || (note.trim() && showNoteInput)) {
-      rsvpMutation.mutate({ status, rsvpNote: note.trim() || undefined });
+    if (status === 'not_attending' || (note.trim() && showNoteInput)) {
+      rsvpMutation.mutate({ planId, status, notes: note.trim() || undefined });
     } else if (status === 'maybe') {
       setShowNoteInput(true);
     } else {
-      rsvpMutation.mutate({ status });
+      rsvpMutation.mutate({ planId, status });
     }
   };
 
   const handleSubmitWithNote = () => {
-    const status = currentStatus === 'maybe' ? 'maybe' : 'confirmed';
-    rsvpMutation.mutate({ status, rsvpNote: note.trim() || undefined });
+    const status = currentStatus === 'maybe' ? 'maybe' : 'attending';
+    rsvpMutation.mutate({ planId, status, notes: note.trim() || undefined });
   };
 
   if (isCreator) {

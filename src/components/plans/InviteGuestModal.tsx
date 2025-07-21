@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { UserPlus, Mail, Phone, X, Send, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/providers/AuthProvider';
+import { useGuestInvites, GuestData } from '@/hooks/useGuestInvites';
 
-interface Guest {
+interface Guest extends GuestData {
   id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
 }
 
 interface InviteGuestModalProps {
@@ -28,9 +21,8 @@ interface InviteGuestModalProps {
 }
 
 export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGuestModalProps) {
-  const { session } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { addGuest, sendInvites } = useGuestInvites();
   
   const [guests, setGuests] = useState<Guest[]>([]);
   const [currentGuest, setCurrentGuest] = useState({
@@ -42,73 +34,6 @@ export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGue
   const [inviteMessage, setInviteMessage] = useState(
     `Hi! You're invited to join our plan "${planTitle}". Looking forward to seeing you there!`
   );
-
-  const addGuestMutation = useMutation({
-    mutationFn: async (guest: Omit<Guest, 'id'>) => {
-      if (!session?.user?.id) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('plan_participants')
-        .insert({
-          plan_id: planId,
-          user_id: null, // Guest has no user account
-          is_guest: true,
-          guest_name: guest.name,
-          guest_email: guest.email || null,
-          guest_phone: guest.phone || null,
-          notes: guest.notes || null,
-          role: 'participant',
-          rsvp_status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plan-participants', planId] });
-      toast({
-        title: "Guest added",
-        description: "Guest has been added to the plan",
-      });
-      
-      // Reset form
-      setCurrentGuest({ name: '', email: '', phone: '', notes: '' });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to add guest",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const sendInvitesMutation = useMutation({
-    mutationFn: async () => {
-      // In a real implementation, you'd call an edge function to send emails/SMS
-      // For now, just simulate the process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return { sent: guests.length };
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Invites sent!",
-        description: `Successfully sent ${data.sent} invitation${data.sent !== 1 ? 's' : ''}`,
-      });
-      setGuests([]);
-      onClose();
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to send invites",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleAddGuest = () => {
     if (!currentGuest.name.trim()) {
@@ -137,8 +62,9 @@ export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGue
       notes: currentGuest.notes.trim() || undefined
     };
 
-    addGuestMutation.mutate(guest);
+    addGuest.mutate({ planId, guest });
     setGuests(prev => [...prev, guest]);
+    setCurrentGuest({ name: '', email: '', phone: '', notes: '' });
   };
 
   const handleRemoveGuest = (guestId: string) => {
@@ -155,7 +81,9 @@ export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGue
       return;
     }
 
-    sendInvitesMutation.mutate();
+    sendInvites.mutate({ planId, customMessage: inviteMessage });
+    setGuests([]);
+    onClose();
   };
 
   const canAddGuest = currentGuest.name.trim() && (currentGuest.email.trim() || currentGuest.phone.trim());
@@ -225,10 +153,10 @@ export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGue
 
             <Button
               onClick={handleAddGuest}
-              disabled={!canAddGuest || addGuestMutation.isPending}
+              disabled={!canAddGuest || addGuest.isPending}
               className="w-full"
             >
-              {addGuestMutation.isPending ? 'Adding...' : 'Add Guest'}
+              {addGuest.isPending ? 'Adding...' : 'Add Guest'}
             </Button>
           </Card>
 
@@ -306,10 +234,10 @@ export function InviteGuestModal({ open, onClose, planId, planTitle }: InviteGue
             {guests.length > 0 && (
               <Button
                 onClick={handleSendInvites}
-                disabled={sendInvitesMutation.isPending}
+                disabled={sendInvites.isPending}
                 className="flex-1"
               >
-                {sendInvitesMutation.isPending ? (
+                {sendInvites.isPending ? (
                   'Sending...'
                 ) : (
                   <div className="flex items-center gap-2">

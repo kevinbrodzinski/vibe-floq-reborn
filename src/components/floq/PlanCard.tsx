@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Users, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { usePlanRsvp } from '@/hooks/usePlanRsvp';
+import { usePlanRSVP } from '@/hooks/usePlanRSVP';
 import { formatDistance } from 'date-fns';
 
 interface Plan {
@@ -22,13 +22,13 @@ interface PlanCardProps {
 }
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
-  const rsvp = usePlanRsvp(plan.floq_id);
+  const rsvp = usePlanRSVP();
   const isJoined = plan.is_joined ?? false;
 
   const handleRsvp = () => {
     rsvp.mutate({ 
       planId: plan.id, 
-      join: !isJoined 
+      status: isJoined ? 'not_attending' : 'attending'
     });
   };
 
