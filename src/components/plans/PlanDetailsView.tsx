@@ -22,7 +22,17 @@ type Plan = Database['public']['Tables']['floq_plans']['Row'];
 type PlanParticipant = Database['public']['Tables']['plan_participants']['Row'];
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-interface PlanParticipantWithProfile extends PlanParticipant {
+interface PlanParticipantWithProfile {
+  id: string;
+  user_id: string | null;
+  plan_id: string;
+  role: 'participant' | 'organizer';
+  joined_at: string | null;
+  is_guest: boolean | null;
+  guest_name: string | null;
+  invite_type?: string | null;
+  reminded_at?: string | null;
+  rsvp_status?: string | null;
   profiles?: Pick<Profile, 'id' | 'username' | 'display_name' | 'avatar_url'> | null;
 }
 
@@ -63,11 +73,15 @@ export const PlanDetailsView: React.FC = () => {
         .from('plan_participants')
         .select(`
           id,
+          plan_id,
           user_id,
           role,
           joined_at,
           is_guest,
-          guest_name
+          guest_name,
+          invite_type,
+          reminded_at,
+          rsvp_status
         `)
         .eq('plan_id', planId);
 
@@ -294,14 +308,14 @@ export const PlanDetailsView: React.FC = () => {
                         : (participant.profiles?.username || participant.profiles?.display_name || 'Unknown User')
                       }
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {participant.role === 'creator' ? 'Creator' : 'Participant'}
-                    </p>
-                  </div>
-                  {participant.role === 'creator' && (
-                    <Badge variant="outline" className="text-xs">
-                      Creator
-                    </Badge>
+                     <p className="text-xs text-muted-foreground">
+                       {participant.role === 'organizer' ? 'Organizer' : 'Participant'}
+                     </p>
+                   </div>
+                   {participant.role === 'organizer' && (
+                     <Badge variant="outline" className="text-xs">
+                       Organizer
+                     </Badge>
                   )}
                 </div>
               ))}

@@ -18,13 +18,31 @@ interface PlanCardProps {
   plan: {
     id: string;
     title: string;
-    description?: string;
+    description?: string | null;
     status: PlanStatus;
     planned_at: string;
     created_at: string;
     floqs?: {
       title: string;
-    };
+    } | null;
+    // Add required fields from the database schema
+    archived_at?: string | null;
+    budget_per_person?: number | null;
+    collaboration_status?: string | null;
+    creator_id: string;
+    current_stop_id?: string | null;
+    duration_hours?: number | null;
+    end_at?: string | null;
+    end_time?: string | null;
+    execution_started_at?: string | null;
+    floq_id?: string | null;
+    location?: any;
+    max_participants?: number | null;
+    start_time?: string | null;
+    total_budget?: number | null;
+    updated_at?: string | null;
+    vibe_tag?: string | null;
+    vibe_tags?: string[] | null;
   };
 }
 

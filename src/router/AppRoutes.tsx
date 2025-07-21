@@ -59,7 +59,7 @@ export const AppRoutes = () => {
     <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
     <Route path="/archive" element={<Archive />} />
     <Route path="/plans" element={<PlansHub />} />
-    <Route path="/plans/:planId" element={<PlanDetailsView planId={""} />} />
+    <Route path="/plans/:planId" element={<PlanDetailsView />} />
     <Route path="/plan/new" element={<NewPlanWizard />} />
     <Route path="/plan/:planId" element={<CollaborativePlanningScreen />} />
     {/* Redirect old new-plan path to new path */}
