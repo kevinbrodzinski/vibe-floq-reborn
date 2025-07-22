@@ -29,6 +29,12 @@ interface PlanCardProps {
     vibe_tags?: string[] | null;
     floq_id: string;
     is_joined?: boolean;
+    creator?: {
+      id: string;
+      display_name?: string | null;
+      username?: string | null;
+      avatar_url?: string | null;
+    } | null;
   };
 }
 
@@ -83,6 +89,15 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
           <span className="text-xs text-muted-foreground">
             Part of {plan.floqs.title}
           </span>
+        )}
+
+        {plan.creator && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Hosted by</span>
+            <span className="font-medium text-foreground">
+              {plan.creator.display_name || plan.creator.username || 'Unknown'}
+            </span>
+          </div>
         )}
       </CardHeader>
 

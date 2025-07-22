@@ -23,7 +23,8 @@ export function usePlansData() {
         .from('floq_plans')
         .select(`
           *,
-          floqs(title, creator_id, location)
+          floqs(title, creator_id, location),
+          creator:profiles!creator_id(id, display_name, username, avatar_url)
         `)
         .eq('creator_id', user.user.id);
 
@@ -45,7 +46,8 @@ export function usePlansData() {
           plan_id,
           floq_plans(
             *,
-            floqs(title, creator_id, location)
+            floqs(title, creator_id, location),
+            creator:profiles!creator_id(id, display_name, username, avatar_url)
           )
         `)
         .eq('user_id', user.user.id)
