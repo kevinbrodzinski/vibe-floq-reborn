@@ -79,15 +79,15 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
   return (
     <ErrorBoundary>
-      <div className="relative h-svh w-full bg-background">
+      <div className="flex flex-col h-full w-full bg-background">
         {/* Motion Permission Banner - Global Level */}
         <MotionPermissionBanner 
           requestMotionPermission={requestMotionPermission}
           isMotionAvailable={isMotionAvailable}
         />
         
-        {/* Base Map Layer - z-0 */}
-        <div {...gestureHandlers}>
+        {/* Base Map Layer - flex-1 to fill remaining space */}
+        <div className="flex-1 relative" {...gestureHandlers}>
           <FieldMapLayer 
             data={data} 
             people={people} 

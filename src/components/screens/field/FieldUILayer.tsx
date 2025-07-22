@@ -88,7 +88,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   };
 
   return (
-    <>
+    <div className="absolute inset-0 pointer-events-none">
       {/* Social Toast Provider - always active */}
       <SocialToastProvider />
       
@@ -197,6 +197,6 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           />
         </motion.div>
       )}
-    </>
+    </div>
   );
 };
