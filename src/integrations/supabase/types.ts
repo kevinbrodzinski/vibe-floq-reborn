@@ -947,6 +947,41 @@ export type Database = {
         }
         Relationships: []
       }
+      floq_message_mentions: {
+        Row: {
+          created_at: string | null
+          end_idx: number
+          message_id: string
+          start_idx: number
+          target_id: string
+          target_type: Database["public"]["Enums"]["mention_target"]
+        }
+        Insert: {
+          created_at?: string | null
+          end_idx: number
+          message_id: string
+          start_idx: number
+          target_id: string
+          target_type: Database["public"]["Enums"]["mention_target"]
+        }
+        Update: {
+          created_at?: string | null
+          end_idx?: number
+          message_id?: string
+          start_idx?: number
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["mention_target"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_message_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_messages: {
         Row: {
           body: string | null
@@ -1399,39 +1434,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      message_mentions: {
-        Row: {
-          created_at: string
-          mentioned_user: string
-          message_id: string
-        }
-        Insert: {
-          created_at?: string
-          mentioned_user: string
-          message_id: string
-        }
-        Update: {
-          created_at?: string
-          mentioned_user?: string
-          message_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_message_mentions_message"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "floq_messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_message_mentions_user"
-            columns: ["mentioned_user"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       notification_queue: {
         Row: {
@@ -4988,6 +4990,10 @@ export type Database = {
         Args: { "": string }
         Returns: string[]
       }
+      slug_to_id: {
+        Args: { tag: string; t: Database["public"]["Enums"]["mention_target"] }
+        Returns: string
+      }
       spheroid_in: {
         Args: { "": unknown }
         Returns: unknown
@@ -6268,6 +6274,7 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
+      mention_target: "user" | "venue" | "plan"
       onboarding_version_enum: "v1" | "v2"
       plan_role_enum: "participant" | "organizer"
       plan_status_enum:
@@ -6492,6 +6499,7 @@ export const Constants = {
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
+      mention_target: ["user", "venue", "plan"],
       onboarding_version_enum: ["v1", "v2"],
       plan_role_enum: ["participant", "organizer"],
       plan_status_enum: [
