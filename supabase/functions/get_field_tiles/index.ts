@@ -27,6 +27,15 @@ serve(async (req) => {
       });
     }
 
+    // KV cache layer (2 seconds)
+    const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
+    const cached = await caches.default.match(cacheKey);
+    if (cached) {
+      return new Response(cached.body, { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
+      });
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -51,9 +60,13 @@ serve(async (req) => {
     const tiles = data || [];
     console.log(`[FIELD_TILES] Returning ${tiles.length} tiles for ${tile_ids.length} requested IDs`);
     
-    return new Response(JSON.stringify({ tiles }), {
+    const resp = new Response(JSON.stringify({ tiles }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+    
+    // Cache for 2 seconds
+    await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+    return resp;
 
   } catch (error) {
     console.error('[FIELD_TILES] Error:', error);
