@@ -1,24 +1,24 @@
-import React, { useState } from 'react';
+// components/plans/InvitePeopleModal.tsx
+import React, { useMemo, useState } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Tabs, TabsList, TabsTrigger, TabsContent,
-} from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { UserPlus, Users, Send, X, Mail, Phone, Search } from 'lucide-react';
-
+  Button, Input, Textarea, Label, Card, Tabs, TabsList, TabsTrigger,
+} from '@/components/ui';
+import {
+  UserPlus, Users, X, Send, Search, Mail, Phone,
+} from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanInvites, GuestData } from '@/hooks/usePlanInvites';
-import { usePlanUserSearch } from '@/hooks/usePlanUserSearch';
+import { usePlanUserSearch } from '@/hooks/usePlanUserSearch';   // <— NEW isolated search hook
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-type Guest = GuestData & { id: string };
+interface Guest extends GuestData { id: string }
 
 interface Props {
   open: boolean;
@@ -30,28 +30,23 @@ interface Props {
 export const InvitePeopleModal: React.FC<Props> = ({
   open, onClose, planId, planTitle,
 }) => {
+  /* toast & hooks ------------------------------------------------------- */
   const { toast } = useToast();
   const {
     addGuest, addMember, sendInvites,
   } = usePlanInvites();
+
+  /* UI state ------------------------------------------------------------ */
   const [tab, setTab] = useState<'members' | 'guests'>('members');
 
-  // Guest form state
+  /* —— Guests ---------------------------------------------------------- */
   const [guests, setGuests] = useState<Guest[]>([]);
-  const [currentGuest, setCurrentGuest] = useState({
-    name: '', email: '', phone: '', notes: '',
-  });
-  const inviteMessageDefault = `Hi! You're invited to join our plan "${planTitle}".`;
-  const [inviteMessage, setInviteMessage] = useState(inviteMessageDefault);
-
-  // Member search state
-  const [query, setQuery] = useState('');
-  const { data: users, isLoading } = usePlanUserSearch(planId, query);
+  const [currentGuest, setCurrentGuest] = useState({ name: '', email: '', phone: '', notes: '' });
 
   const canAddGuest = currentGuest.name.trim()
     && (currentGuest.email.trim() || currentGuest.phone.trim());
 
-  const handleAddGuest = () => {
+  const addGuestLocal = () => {
     if (!canAddGuest) return;
     const g: Guest = {
       id: Date.now().toString(),
@@ -65,82 +60,86 @@ export const InvitePeopleModal: React.FC<Props> = ({
     setCurrentGuest({ name: '', email: '', phone: '', notes: '' });
   };
 
-  const handleInviteMember = (userId: string) => {
-    addMember.mutate({ planId, userId });
-  };
+  /* —— Member search --------------------------------------------------- */
+  const [rawQuery, setRawQuery] = useState('');
+  const query = useDebounce(rawQuery, 300);
+  const { data: users, isLoading, isError } = usePlanUserSearch(planId, query);
 
-  const handleRemoveGuest = (id: string) =>
-    setGuests((prev) => prev.filter((g) => g.id !== id));
+  /* Invitation message -------------------------------------------------- */
+  const [inviteMessage, setInviteMessage] = useState(
+    `Hi! You’re invited to join our plan “${planTitle}”.`,
+  );
 
-  const handleSend = () => {
-    sendInvites.mutate({ planId, customMessage: inviteMessage });
-    setGuests([]);
+  /* Actions ------------------------------------------------------------- */
+  const sendAllInvites = () => {
+    sendInvites.mutate({ planId, customMessage: inviteMessage }, {
+      onSuccess: () => setGuests([]),
+    });
     onClose();
   };
 
+  /* render helpers ------------------------------------------------------ */
+  const placeholder = useMemo(() => (
+    query.length < 2
+      ? 'Type at least 2 characters'
+      : 'No matching users'
+  ), [query]);
+
+  /* -------------------------------------------------------------------- */
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Invite People
+            <UserPlus className="h-5 w-5" /> Invite people
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as 'members' | 'guests')} className="space-y-6">
-          <TabsList className="grid grid-cols-2 mb-4">
+        {/* ---------------------- Tabs ---------------------------------- */}
+        <Tabs value={tab} onValueChange={(v) => setTab(v as 'members' | 'guests')}>
+          <TabsList className="mb-6">
             <TabsTrigger value="members">App users</TabsTrigger>
             <TabsTrigger value="guests">External guests</TabsTrigger>
           </TabsList>
 
-          {/* Members TAB */}
-          <TabsContent value="members" className="space-y-4">
-            <div>
-              <Label htmlFor="user-search" className="sr-only">
-                Search users
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="user-search"
-                  placeholder="Search by name…"
-                  className="pl-9"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
+          {/* ---------- App-user tab ------------------------------------ */}
+          <div hidden={tab !== 'members'}>
+            <Label htmlFor="user-search">Search users</Label>
+            <div className="relative mt-1">
+              <Input
+                id="user-search"
+                value={rawQuery}
+                placeholder="Kevin … or @username"
+                onChange={(e) => setRawQuery(e.target.value)}
+                className="pl-8"
+              />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             </div>
 
-            {isLoading && <Skeleton className="h-10" />}
-            {users?.length === 0 && query.length >= 2 && (
-              <p className="text-muted-foreground text-sm">
-                No matching users.
-              </p>
+            {isLoading && <p className="mt-4 text-sm text-muted-foreground">Searching…</p>}
+            {isError && <p className="mt-4 text-sm text-destructive">Search failed. Try again.</p>}
+
+            {users?.length === 0 && !isLoading && (
+              <p className="mt-4 text-sm text-muted-foreground">{placeholder}</p>
             )}
 
             {users?.map((u) => (
-              <Card
-                key={u.id}
-                className="p-3 flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <Avatar className="w-8 h-8">
-                    {u.avatar_url && (
+              <Card key={u.id} className="mt-3 p-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    {u.avatar_url ? (
                       <AvatarImage src={u.avatar_url} alt="" />
-                    )}
-                    <AvatarFallback className="text-xs">
-                      {(u.display_name || u.username || 'U').charAt(0).toUpperCase()}
+                    ) : null}
+                    <AvatarFallback>
+                      {(u.display_name ?? u.username ?? 'U')[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="truncate">
-                    <p className="text-sm font-medium truncate">
+                  <div>
+                    <p className="text-sm font-medium">
                       {u.display_name || u.username}
                     </p>
                     {u.username && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        @{u.username}
-                      </p>
+                      <p className="text-xs text-muted-foreground">@{u.username}</p>
                     )}
                   </div>
                 </div>
@@ -148,148 +147,133 @@ export const InvitePeopleModal: React.FC<Props> = ({
                 <Button
                   size="sm"
                   disabled={addMember.isPending}
-                  aria-label={`Invite ${u.display_name || u.username}`}
-                  onClick={() => handleInviteMember(u.id)}
+                  onClick={() => addMember.mutate({ planId, userId: u.id })}
                 >
                   Invite
                 </Button>
               </Card>
             ))}
-          </TabsContent>
+          </div>
 
-          {/* Guests TAB */}
-          <TabsContent value="guests" className="space-y-6">
-            <Card className="p-4 space-y-4">
-              <h3 className="font-medium text-sm">Add Guest</h3>
-              <div className="grid md:grid-cols-2 gap-4">
+          {/* ---------- Guest tab --------------------------------------- */}
+          <div hidden={tab !== 'guests'}>
+            <Card className="p-4">
+              <h3 className="font-medium text-sm mb-3">Add guest</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/** Name */}
                 <div>
-                  <Label htmlFor="g-name">Name *</Label>
+                  <Label>Name *</Label>
                   <Input
-                    id="g-name"
                     value={currentGuest.name}
-                    onChange={(e) =>
-                      setCurrentGuest({ ...currentGuest, name: e.target.value })}
+                    onChange={(e) => setCurrentGuest({ ...currentGuest, name: e.target.value })}
                     placeholder="Guest name"
+                    className="mt-1"
                   />
                 </div>
+                {/** Email */}
                 <div>
-                  <Label htmlFor="g-email">Email</Label>
+                  <Label>Email</Label>
                   <Input
-                    id="g-email"
                     type="email"
                     value={currentGuest.email}
-                    onChange={(e) =>
-                      setCurrentGuest({ ...currentGuest, email: e.target.value })}
+                    onChange={(e) => setCurrentGuest({ ...currentGuest, email: e.target.value })}
                     placeholder="guest@example.com"
+                    className="mt-1"
                   />
                 </div>
+                {/** Phone */}
                 <div>
-                  <Label htmlFor="g-phone">Phone</Label>
+                  <Label>Phone</Label>
                   <Input
-                    id="g-phone"
                     type="tel"
                     value={currentGuest.phone}
-                    onChange={(e) =>
-                      setCurrentGuest({ ...currentGuest, phone: e.target.value })}
+                    onChange={(e) => setCurrentGuest({ ...currentGuest, phone: e.target.value })}
                     placeholder="(555) 123-4567"
+                    className="mt-1"
                   />
                 </div>
+                {/** Notes */}
                 <div>
-                  <Label htmlFor="g-notes">Notes</Label>
+                  <Label>Notes</Label>
                   <Input
-                    id="g-notes"
                     value={currentGuest.notes}
-                    onChange={(e) =>
-                      setCurrentGuest({ ...currentGuest, notes: e.target.value })}
-                    placeholder="Any special notes…"
+                    onChange={(e) => setCurrentGuest({ ...currentGuest, notes: e.target.value })}
+                    placeholder="Any notes…"
+                    className="mt-1"
                   />
                 </div>
               </div>
 
               <Button
-                onClick={handleAddGuest}
+                onClick={addGuestLocal}
                 disabled={!canAddGuest || addGuest.isPending}
-                className="w-full"
+                className="mt-4 w-full"
               >
-                {addGuest.isPending ? 'Adding…' : 'Add Guest'}
+                {addGuest.isPending ? 'Adding…' : 'Add guest'}
               </Button>
             </Card>
 
-            {/* list of newly-added guests (local only) */}
+            {/* Local list ------------------------------------------------ */}
             {guests.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="flex items-center gap-2 text-sm font-medium">
-                  <Users className="h-4 w-4" />
-                  Guests to invite ({guests.length})
+              <div className="mt-6 space-y-3">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Guests to invite ({guests.length})
                 </h3>
+
                 {guests.map((g) => (
                   <Card key={g.id} className="p-3 flex items-start justify-between">
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium">{g.name}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        {g.email && (
-                          <span className="inline-flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {g.email}
-                          </span>
-                        )}
-                        {g.phone && (
-                          <span className="inline-flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {g.phone}
-                          </span>
-                        )}
+                    <div>
+                      <p className="font-medium text-sm">{g.name}</p>
+                      <div className="text-xs text-muted-foreground space-x-2">
+                        {g.email && (<span><Mail className="inline h-3 w-3 mr-0.5" />{g.email}</span>)}
+                        {g.phone && (<span><Phone className="inline h-3 w-3 mr-0.5" />{g.phone}</span>)}
                       </div>
-                      {g.notes && (
-                        <p className="italic text-xs text-muted-foreground">
-                          {g.notes}
-                        </p>
-                      )}
+                      {g.notes && <p className="text-xs italic mt-0.5">{g.notes}</p>}
                     </div>
                     <Button
-                      variant="ghost"
-                      size="sm"
                       onClick={() => handleRemoveGuest(g.id)}
-                      aria-label="Remove guest"
-                      className="h-8 w-8 p-0"
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   </Card>
                 ))}
-              </div>
-            )}
 
-            {guests.length > 0 && (
-              <div className="space-y-3">
-                <Label htmlFor="invite-msg">Invitation message</Label>
-                <Textarea
-                  id="invite-msg"
-                  value={inviteMessage}
-                  onChange={(e) => setInviteMessage(e.target.value)}
-                />
+                <div>
+                  <Label>Invitation message</Label>
+                  <Textarea
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    className="mt-1 min-h-[80px]"
+                  />
+                </div>
               </div>
             )}
-          </TabsContent>
+          </div>
         </Tabs>
 
-        {/* ACTIONS */}
+        {/* ------------ Footer buttons ---------------------------------- */}
         <div className="flex gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose} className="flex-1">
             Cancel
           </Button>
-          {guests.length > 0 && (
+
+          {!!guests.length && (
             <Button
-              onClick={handleSend}
-              disabled={sendInvites.isPending}
               className="flex-1"
+              disabled={sendInvites.isPending}
+              onClick={sendAllInvites}
             >
-              {sendInvites.isPending ? 'Sending…' : (
-                <span className="flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  Send Invites ({guests.length})
-                </span>
-              )}
+              {sendInvites.isPending
+                ? 'Sending…'
+                : (
+                  <>
+                    <Send className="h-4 w-4 mr-1" />
+                    Send invites&nbsp;({guests.length})
+                  </>
+                )}
             </Button>
           )}
         </div>
