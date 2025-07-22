@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { zIndex } from '@/constants/z'
 
 interface LoadingButtonProps {
   loading?: boolean
@@ -81,7 +82,7 @@ export const LoadingOverlay = memo(({
     <div className={cn('relative', className)}>
       {children}
       {isVisible && (
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-50">
+        <div {...zIndex('overlay')} className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
           <LoadingSpinner size="lg" />
         </div>
       )}
