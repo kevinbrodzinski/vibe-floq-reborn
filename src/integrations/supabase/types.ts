@@ -6090,6 +6090,10 @@ export type Database = {
         Args: { p_plan: string }
         Returns: boolean
       }
+      user_can_invite_to_plan: {
+        Args: { p_plan_id: string }
+        Returns: boolean
+      }
       user_can_manage_plan: {
         Args: { p_plan_id: string }
         Returns: boolean
