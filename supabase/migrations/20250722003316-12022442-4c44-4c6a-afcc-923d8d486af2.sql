@@ -1,48 +1,61 @@
--- Add RLS policy for plan creators and co-admins to invite users
--- This ensures only authorized users can send plan invitations
+-- 0️⃣ (Optional) ENUM for version
+CREATE TYPE onboarding_version_enum AS ENUM ('v1','v2');
 
--- First, create a function to check if user can manage plan invitations
-CREATE OR REPLACE FUNCTION public.user_can_invite_to_plan(p_plan_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-  -- Check if user is the plan creator
-  SELECT EXISTS (
-    SELECT 1 FROM public.floq_plans fp
-    WHERE fp.id = p_plan_id AND fp.creator_id = auth.uid()
-  ) OR EXISTS (
-    -- Check if user is a co-admin of the floq associated with the plan
-    SELECT 1 FROM public.floq_plans fp
-    JOIN public.floq_participants fpar ON fpar.floq_id = fp.floq_id
-    WHERE fp.id = p_plan_id 
-      AND fpar.user_id = auth.uid() 
-      AND fpar.role IN ('creator', 'co-admin')
-  );
-$$;
-
--- Add policy for plan_participants table to allow invitations
--- This assumes plan_participants table is used for tracking RSVPs
-DROP POLICY IF EXISTS "plan_participants_invite_access" ON public.plan_participants;
-
-CREATE POLICY "plan_participants_invite_access"
-ON public.plan_participants
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  -- User can invite others if they can manage the plan
-  public.user_can_invite_to_plan(plan_id)
+-- 1️⃣ Main table
+CREATE TABLE public.user_onboarding_progress (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  onboarding_version onboarding_version_enum NOT NULL DEFAULT 'v2',
+  current_step      int  NOT NULL DEFAULT 0,
+  completed_steps   jsonb NOT NULL DEFAULT '[]'::jsonb,
+  selected_vibe     text,
+  profile_data      jsonb,
+  avatar_url        text,
+  started_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  completed_at      timestamptz,
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, onboarding_version)
 );
 
--- Also add a policy for reading plan participants (if not exists)
-DROP POLICY IF EXISTS "plan_participants_read_access" ON public.plan_participants;
+-- 2️⃣ Quick lookups
+CREATE INDEX idx_onboarding_progress_user_version
+  ON public.user_onboarding_progress(user_id, onboarding_version);
+CREATE INDEX idx_onboarding_completed_steps_gin
+  ON public.user_onboarding_progress USING GIN (completed_steps jsonb_path_ops);
 
-CREATE POLICY "plan_participants_read_access"
-ON public.plan_participants
-FOR SELECT
-TO authenticated
-USING (
-  -- Users can see participants if they have plan access
-  public.user_has_plan_access(plan_id)
-);
+-- 3️⃣ Time-stamp trigger
+CREATE OR REPLACE FUNCTION public.set_onboarding_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_onboarding_set_updated_at
+  BEFORE INSERT OR UPDATE ON public.user_onboarding_progress
+  FOR EACH ROW EXECUTE FUNCTION public.set_onboarding_updated_at();
+
+-- 4️⃣ RLS
+ALTER TABLE public.user_onboarding_progress ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "read own onboarding progress"
+  ON public.user_onboarding_progress
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "write own onboarding progress"
+  ON public.user_onboarding_progress
+  FOR INSERT WITH CHECK (user_id = auth.uid())
+  ,  FOR UPDATE USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- 5️⃣ Step range guard
+ALTER TABLE public.user_onboarding_progress
+  ADD CONSTRAINT chk_step_range CHECK (current_step BETWEEN 0 AND 10);
+
+-- 6️⃣ Profile username constraints
+ALTER TABLE public.profiles
+  ADD CONSTRAINT profiles_username_required CHECK (username IS NOT NULL AND username <> ''),
+  ADD CONSTRAINT profiles_username_unique UNIQUE (lower(username));
+
+-- 7️⃣ Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.user_onboarding_progress;
