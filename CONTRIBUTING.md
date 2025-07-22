@@ -23,12 +23,13 @@ Our unified z-index system ensures predictable stacking order across all compone
 Instead of hardcoded values:
 ```tsx
 // ❌ Don't do this
-<div className="z-50" />
+<div className="z-50 fixed bottom-4 right-4" />
 <div style={{ zIndex: 75 }} />
 
 // ✅ Do this
 import { zIndex } from '@/constants/z';
-<div {...zIndex('system')} />
+<div {...zIndex('system')} className="fixed bottom-4 right-4" />
+<div {...zIndex('modal', { position: 'sticky' })} />
 ```
 
 The `zIndex()` helper returns `{ style: { zIndex: value } }` to avoid leaking attributes to the DOM.

@@ -55,12 +55,14 @@ export const ZBanner = Z.overlay;              // 30 - floq header banners
  * Semantic z-index helper.
  * Usage (spread):
  *   <motion.div {...zIndex('overlay')} />
+ *   <div {...zIndex('modal', { position: 'sticky' })} />
  *
  * Returns `{ style:{ zIndex } }` so it can be merged with other props
  * without clobbering or leaking a stray `zIndex` HTML attribute.
  */
-export const zIndex = (
+export function zIndex(
   layer: ZKey,
-): { style: React.CSSProperties } => ({
-  style: { zIndex: Z[layer] },
-});
+  extra?: React.CSSProperties,
+): { style: React.CSSProperties } {
+  return { style: { zIndex: Z[layer], ...extra } };
+}
