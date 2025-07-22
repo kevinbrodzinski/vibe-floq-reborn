@@ -155,7 +155,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           pending = true;
           requestAnimationFrame(() => {
             pending = false;
-            clusterWorker.cluster(rawTiles, 11).then(clusters => {
+            const currentZoom = getMapInstance()?.getZoom() ?? 11;
+            clusterWorker.cluster(rawTiles, currentZoom).then(clusters => {
               const keysThisFrame = new Set<string>();
               
               // Draw clusters exactly like tiles for now
@@ -177,9 +178,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
               });
 
-              // Release cluster sprites no longer visible
+              /* fast viewport cull – if sprite is way outside screen we drop immediately */
               tilePool.active.forEach((sprite, id) => {
-                if (id.startsWith('c:') && !keysThisFrame.has(id)) {
+                if (!id.startsWith('c:')) return;
+                if (!keysThisFrame.has(id)) {          // disappeared cluster
+                  tilePool.release(id);
+                  return;
+                }
+                const { x, y, width } = sprite;
+                if (x + width < -64 || x > app.screen.width + 64 ||
+                    y + width < -64 || y > app.screen.height + 64) {
                   tilePool.release(id);
                 }
               });
