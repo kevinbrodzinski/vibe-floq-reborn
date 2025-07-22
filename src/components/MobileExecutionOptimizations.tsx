@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import type { TimerId } from '@/types/Timer';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 // Enhanced haptic feedback for execution phase
@@ -167,7 +168,7 @@ export const useExecutionPerformance = () => {
 
   // Debounced update function for frequent updates
   const debouncedUpdate = (fn: Function, delay = 300) => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: TimerId;
     return (...args: any[]) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => fn(...args), delay);

@@ -28,11 +28,16 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
-      // Tell Vite to use react-native-web whenever something imports react-native
+      // React-Native on web
       'react-native': 'react-native-web',
-      // Stub out the native Mapbox bridge so Rollup stops complaining
+      // Stub native-only libs so Roll-up doesn't bundle them
       '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
     },
     dedupe: ['react', 'react-dom'],
+  },
+  define: {
+    // Use cross-platform timer types
+    'NodeJS.Timeout': 'ReturnType<typeof setTimeout>',
+    'global': 'globalThis',
   },
 }));

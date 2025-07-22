@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import type { TimerId } from '@/types/Timer';
 import { EventBanner } from '@/components/EventBanner';
 import { EventModal } from '@/components/EventModal';
 import { usePlaceBanners } from '@/hooks/usePlaceBanners';
@@ -20,7 +21,7 @@ export const BannerManager = () => {
   } = useBannerContext();
   
   const [modalOpen, setModalOpen] = useState(false);
-  const autoDismissTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoDismissTimer = useRef<TimerId | null>(null);
 
   // Auto-show first eligible banner
   useEffect(() => {
