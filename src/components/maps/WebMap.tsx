@@ -83,6 +83,7 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
     // Inject map instance for projection utils after style loads
     mapRef.current.on('load', () => {
       console.log('🗺️ Map loaded successfully');
+      console.log('🗺️ Container dimensions:', mapContainerRef.current?.clientWidth, 'x', mapContainerRef.current?.clientHeight);
       if (mapRef.current) {
         setMapInstance(mapRef.current);
       }
@@ -122,7 +123,7 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
       <div 
         ref={mapContainerRef} 
         className="absolute inset-0 w-full h-full bg-gray-900"
-        style={{ position: 'absolute', inset: 0 }}
+        style={{ minHeight: '400px' }}
       />
       {/* Show loading state while token is being fetched */}
       {!tokenLoaded && (
