@@ -6,5 +6,5 @@ export const clusterWorker = (() => {
     new URL('../workers/clustering.worker?worker&url', import.meta.url),
     { type: 'module' },
   );
-  return Comlink.wrap<{ cluster(tiles: RawTile[]): Promise<Cluster[]> }>(worker);
+  return Comlink.wrap<{ cluster(tiles: RawTile[], zoom?: number): Promise<Cluster[]> }>(worker);
 })();

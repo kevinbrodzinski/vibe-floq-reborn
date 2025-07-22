@@ -51,6 +51,7 @@ const api = {
       return clusters;
     } catch (e) {
       console.error('[cluster-worker]', e);
+      if (import.meta.env.DEV) throw e;
       return [];
     }
   },

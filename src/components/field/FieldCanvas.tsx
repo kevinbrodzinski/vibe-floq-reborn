@@ -120,6 +120,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     if (!app || !heatContainer || !peopleContainer || !tilePool || !graphicsPool) return;
 
     let animationId: number;
+    let pending = false;
+    
+    // HSL to RGB conversion (lifted out of loop for performance)
+    const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+      const a = s * Math.min(l, 1 - l);
+      const f = (n: number) => {
+        const k = (n + h * 12) % 12;
+        const color = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+        return Math.round(255 * color);
+      };
+      return [f(0), f(8), f(4)];
+    };
     
     const animate = () => {
       // ---- TILE CLUSTERING ----
@@ -138,48 +150,42 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           };
         });
 
-        // Get clusters from worker (non-blocking)
-        clusterWorker.cluster(rawTiles).then(clusters => {
-          const keysThisFrame = new Set<string>();
-          
-          // Draw clusters exactly like tiles for now
-          clusters.forEach(c => {
-            const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
-            keysThisFrame.add(key);
-            const sprite = tilePool.acquire(key);
-            if (!sprite.parent) heatContainer.addChild(sprite);
-            sprite.position.set(c.x - c.r, c.y - c.r);
-            sprite.width = sprite.height = c.r * 2;
+        // Get clusters from worker (throttled to avoid message flood)
+        if (!pending) {
+          pending = true;
+          requestAnimationFrame(() => {
+            pending = false;
+            clusterWorker.cluster(rawTiles, 11).then(clusters => {
+              const keysThisFrame = new Set<string>();
+              
+              // Draw clusters exactly like tiles for now
+              clusters.forEach(c => {
+                const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
+                keysThisFrame.add(key);
+                const sprite = tilePool.acquire(key);
+                if (!sprite.parent) heatContainer.addChild(sprite);
+                sprite.position.set(c.x - c.r, c.y - c.r);
+                sprite.width = sprite.height = c.r * 2;
 
-            // Color and fade
-            const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
-            
-            // Convert HSL to RGB for PIXI
-            const { h, s, l } = c.vibe;
-            const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
-              const a = s * Math.min(l, 1 - l);
-              const f = (n: number) => {
-                const k = (n + h * 12) % 12;
-                const color = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-                return Math.round(255 * color);
-              };
-              return [f(0), f(8), f(4)];
-            };
-            
-            const [red, green, blue] = hslToRgb(h, s, l);
-            const vibeColor = (red << 16) + (green << 8) + blue;
-            
-            sprite.tint = vibeColor;
-            sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
-          });
+                // Color and fade
+                const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+                
+                const [red, green, blue] = hslToRgb(c.vibe.h, c.vibe.s, c.vibe.l);
+                const vibeColor = (red << 16) + (green << 8) + blue;
+                
+                sprite.tint = vibeColor;
+                sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
+              });
 
-          // Release cluster sprites no longer visible
-          tilePool.active.forEach((sprite, id) => {
-            if (id.startsWith('c:') && !keysThisFrame.has(id)) {
-              tilePool.release(id);
-            }
+              // Release cluster sprites no longer visible
+              tilePool.active.forEach((sprite, id) => {
+                if (id.startsWith('c:') && !keysThisFrame.has(id)) {
+                  tilePool.release(id);
+                }
+              });
+            });
           });
-        });
+        }
       }
 
       // ---- PEOPLE DOTS ----
