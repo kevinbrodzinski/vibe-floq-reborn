@@ -16,53 +16,59 @@ export const WebMap: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<mapboxgl.Map | null>(null);
 
-  /* 1️⃣  fetch token once */
-  useEffect(() => {
-    (async () => {
+  // ⬇️ ONE helper to fetch once (kept tiny to avoid any layout changes)
+  const initToken = (() => {
+    let done = false;
+    return async () => {
+      if (done) return;
       try {
         const { data } = await supabase.functions.invoke('mapbox-token');
         if (data?.token) mapboxgl.accessToken = data.token;
-      } finally {
-        /* even if token fetch fails we still attempt init – Mapbox will error visibly */
-      }
-    })();
-  }, []);
+      } catch { /* silent – Mapbox will throw if truly missing */ }
+      done = true;
+    };
+  })();
 
-  /* 2️⃣  init map */
+  /* init map */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style:     'mapbox://styles/mapbox/dark-v11',
-      center:    [-118.24, 34.05],
-      zoom:      11,
-    });
-    mapRef.current = map;
+    /* 1️⃣  guarantee token is set */
+    initToken().then(() => {
+      /* 2️⃣  build the map only after token attempt */
 
-    /* register once */
-    map.on('load', () => setMapInstance(map));
-
-    /* viewport sync */
-    const handleMoveEnd = () => {
-      const b = map.getBounds();
-      onRegionChange({
-        minLat: b.getSouth(),
-        minLng: b.getWest(),
-        maxLat: b.getNorth(),
-        maxLng: b.getEast(),
-        zoom:   map.getZoom(),
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style:     'mapbox://styles/mapbox/dark-v11',
+        center:    [-118.24, 34.05],
+        zoom:      11,
       });
-    };
-    map.on('moveend', handleMoveEnd);
+      mapRef.current = map;
 
-    /* cleanup – prevents "_cancelResize" crash */
-    return () => {
-      setMapInstance(null);
-      map.off('moveend', handleMoveEnd);
-      map.remove();
-      mapRef.current = null;
-    };
+      /* register once */
+      map.on('load', () => setMapInstance(map));
+
+      /* viewport sync */
+      const handleMoveEnd = () => {
+        const b = map.getBounds();
+        onRegionChange({
+          minLat: b.getSouth(),
+          minLng: b.getWest(),
+          maxLat: b.getNorth(),
+          maxLng: b.getEast(),
+          zoom:   map.getZoom(),
+        });
+      };
+      map.on('moveend', handleMoveEnd);
+
+      /* cleanup – prevents "_cancelResize" crash */
+      return () => {
+        setMapInstance(null);
+        map.off('moveend', handleMoveEnd);
+        map.remove();
+        mapRef.current = null;
+      };
+    });
   }, [onRegionChange]);
 
   return (

@@ -90,10 +90,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     });
 
     return () => {
-      if (appRef.current) {
-        appRef.current.destroy(true);
-        appRef.current = null;
-      }
+      appRef.current?.destroy(true, { children: true, texture: true });
+      appRef.current = null;
     };
   }, []);
 
