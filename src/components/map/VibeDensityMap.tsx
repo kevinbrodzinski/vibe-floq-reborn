@@ -26,23 +26,33 @@ const INITIAL_VIEW_STATE = {
 interface VibeDensityMapProps {
   isOpen: boolean
   onClose: () => void
+  userLocation?: { lat: number; lng: number } | null
+  className?: string
 }
 
-export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
-  const userLocation = useOptimizedGeolocation()
+export const VibeDensityMap = ({
+  isOpen,
+  onClose,
+  userLocation,
+  className = '',
+}: VibeDensityMapProps) => {
+  const fallbackUserLocation = useOptimizedGeolocation()
   
+  // Use provided userLocation or fallback to hook
+  const currentUserLocation = userLocation || fallbackUserLocation
+
   // Guard for valid coordinates (avoid Gulf of Guinea)
-  const hasFix = !!(userLocation?.lat && userLocation?.lng && 
-    !(userLocation.lat === 0 && userLocation.lng === 0))
+  const hasFix = !!(currentUserLocation?.lat && currentUserLocation?.lng && 
+    !(currentUserLocation.lat === 0 && currentUserLocation.lng === 0))
 
   // Center on user location if available, fallback to LA
   const initialViewState = useMemo(() => ({
-    longitude: hasFix ? userLocation.lng : INITIAL_VIEW_STATE.longitude,
-    latitude: hasFix ? userLocation.lat : INITIAL_VIEW_STATE.latitude,
+    longitude: hasFix ? currentUserLocation.lng : INITIAL_VIEW_STATE.longitude,
+    latitude: hasFix ? currentUserLocation.lat : INITIAL_VIEW_STATE.latitude,
     zoom: hasFix ? 14 : INITIAL_VIEW_STATE.zoom,
     pitch: INITIAL_VIEW_STATE.pitch,
     bearing: INITIAL_VIEW_STATE.bearing,
-  }), [hasFix, userLocation?.lat, userLocation?.lng])
+  }), [hasFix, currentUserLocation?.lat, currentUserLocation?.lng])
 
   const [viewState, setViewState] = useState(initialViewState)
   const [hasCentered, setHasCentered] = useState(false)
@@ -52,13 +62,13 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
     if (!hasCentered && hasFix) {
       setViewState(prev => ({
         ...prev,
-        longitude: userLocation.lng,
-        latitude: userLocation.lat,
+        longitude: currentUserLocation.lng,
+        latitude: currentUserLocation.lat,
         zoom: 14
       }))
       setHasCentered(true)
     }
-  }, [hasFix, hasCentered, userLocation?.lat, userLocation?.lng])
+  }, [hasFix, hasCentered, currentUserLocation?.lat, currentUserLocation?.lng])
   
   // Debounce viewport changes to reduce API calls
   const debouncedViewState = useDebounce(viewState, 300)
@@ -80,7 +90,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
     ] as [number, number, number, number]
   }, [debouncedViewState])
 
-  const { clusters, loading, error, isRealTimeConnected } = useClusters(bbox, 6)
+  const { clusters, loading, error } = useClusters(bbox, 6)
 
   // Handle viewport changes
   const handleViewChange = useCallback(({ viewState }: { viewState: any }) => {
@@ -100,14 +110,14 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
     if (hasFix) {
       setViewState(prev => ({
         ...prev,
-        longitude: userLocation.lng,
-        latitude: userLocation.lat,
+        longitude: currentUserLocation.lng,
+        latitude: currentUserLocation.lat,
         zoom: 14,
         transitionDuration: 1000,
         transitionEasing: (x: number) => 1 - Math.pow(1 - x, 3)
       }))
     }
-  }, [hasFix, userLocation?.lat, userLocation?.lng])
+  }, [hasFix])
 
   // Escape key handler
   useEffect(() => {
@@ -144,7 +154,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
 
   // Create deck.gl layers
   const layers = useMemo(() => {
-    if (!clusters || clusters.length === 0) return []
+    if (!clusters?.length) return []
     const densityLayer = createDensityLayer(clusters, {}, () => {})
     const pulseLayer = usePulseLayer(clusters, {})
     return [densityLayer, pulseLayer].filter(Boolean)
@@ -158,7 +168,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
       role="dialog" 
       aria-label="Vibe Field - Pulse of the city"
       aria-modal="true"
-      className="fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden"
+      className={`fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden ${className}`}
     >
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-4 pointer-events-auto">
@@ -171,12 +181,10 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isRealTimeConnected && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs text-muted-foreground">Live</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-muted-foreground">Live</span>
+          </div>
           <Button
             onClick={onClose}
             variant="ghost"
@@ -290,12 +298,10 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
             <span className="text-muted-foreground">
               {clusters.reduce((sum, c) => sum + c.total, 0)} souls in the field
             </span>
-            {isRealTimeConnected && (
-              <div className="flex items-center gap-1.5 text-xs text-green-600">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                Pulse synced
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              Pulse synced
+            </div>
           </div>
         </CardContent>
       )}
