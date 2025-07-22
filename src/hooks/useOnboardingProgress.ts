@@ -80,7 +80,7 @@ export function useOnboardingProgress() {
   // Debounced save to prevent excessive writes
   const debouncedSave = useDebouncedCallback(
     useCallback((stateToSave: OnboardingState) => {
-      if (stateToSave.currentStep > 0) {
+      if (stateToSave.currentStep > 0 || stateToSave.selectedVibe) {
         // Save to localStorage immediately for instant feedback
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
         
@@ -90,8 +90,14 @@ export function useOnboardingProgress() {
         }
       }
     }, [user, saveProgress]),
-    1000 // 1 second debounce
+    1000, // 1 second debounce
+    { leading: false, trailing: true }
   );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => debouncedSave.cancel();
+  }, [debouncedSave]);
 
   // Save progress to both localStorage and database (debounced)
   useEffect(() => {

@@ -30,7 +30,7 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
 
   // Cached onboarding status check  
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
-    queryKey: ['onboarding-complete', user?.id],
+    queryKey: ['onboarding-complete', user?.id ?? 'anon'],
     queryFn: async () => {
       if (!user) return false;
 

@@ -3,6 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { type Vibe } from '@/types/vibes';
 
+export const FINAL_STEP = 6;
+
+type ProfileData = {
+  username: string;
+  display_name: string;
+  bio?: string;
+  interests?: string[];
+};
+
 interface OnboardingProgressData {
   id: string;
   user_id: string;
@@ -86,10 +95,10 @@ export function useOnboardingDatabase() {
       const progressData = {
         user_id: user.id,
         onboarding_version: 'v2' as const,
-        current_step: state.currentStep,
+        current_step: Math.min(state.currentStep, 10),
         completed_steps: state.completedSteps || [],
         selected_vibe: state.selectedVibe,
-        profile_data: state.profileData,
+        profile_data: state.profileData as ProfileData,
         avatar_url: state.avatarUrl,
       };
 
@@ -121,7 +130,7 @@ export function useOnboardingDatabase() {
         .from('user_onboarding_progress')
         .update({ 
           completed_at: new Date().toISOString(),
-          current_step: 6 // Final step
+          current_step: FINAL_STEP
         })
         .eq('user_id', user.id)
         .eq('onboarding_version', 'v2');
