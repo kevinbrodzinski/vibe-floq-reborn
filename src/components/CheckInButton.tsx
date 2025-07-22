@@ -1,3 +1,4 @@
+
 import { MapPin, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCheckInStatus } from '@/hooks/useCheckInStatus';
@@ -5,6 +6,7 @@ import { useCheckInToggle } from '@/hooks/useCheckInToggle';
 import { LoadingOverlay } from '@/components/ExecutionFeedbackUtils';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { zIndex } from '@/constants/z';
 
 interface CheckInButtonProps {
   planId: string;
@@ -116,7 +118,8 @@ export const CheckInButton = ({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
-          className="fixed bottom-4 left-0 right-0 z-50 mx-4 md:absolute md:inset-0 md:mx-0"
+          className="fixed bottom-4 left-0 right-0 mx-4 md:absolute md:inset-0 md:mx-0"
+          {...zIndex('toast')}
         >
           <div className="bg-card/95 backdrop-blur-sm rounded-xl p-4 text-center border border-border/20 shadow-lg">
             <Check className="w-6 h-6 mx-auto mb-2 text-green-500" />

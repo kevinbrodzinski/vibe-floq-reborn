@@ -1,4 +1,6 @@
+
 import { FC } from 'react';
+import { zIndex } from '@/constants/z';
 
 interface Props {
   count: number;
@@ -16,7 +18,7 @@ const ClusterBadge: FC<Props> = ({ count, x, y, onClick }) => (
       left: `${x}%`,
       top: `${y}%`,
       transform: 'translate(-50%, -50%) translate(6px, -6px)',
-      zIndex: 1000
+      ...zIndex('mapOverlay').style
     }}
     onClick={onClick}
     aria-label={`+${count} more people`}

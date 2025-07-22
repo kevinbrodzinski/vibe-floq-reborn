@@ -1,3 +1,4 @@
+
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,6 +8,7 @@ import { useMentionSearch } from '@/hooks/useMentionSearch';
 import { getAvatarUrl } from '@/lib/avatar';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { Loader2 } from 'lucide-react';
+import { zIndex } from '@/constants/z';
 
 interface MentionDropdownProps {
   anchorRect: DOMRect | null;     // caret position (converted → viewport)
@@ -68,9 +70,9 @@ export const MentionDropdown: React.FC<MentionDropdownProps> = ({
         position: 'fixed',
         top: anchorRect.bottom + 4,
         left: anchorRect.left,
-        zIndex: 80,
         width: 260,
         maxHeight: 240,
+        ...zIndex('dmSheet').style
       }}
       className="shadow-lg bg-background border"
     >

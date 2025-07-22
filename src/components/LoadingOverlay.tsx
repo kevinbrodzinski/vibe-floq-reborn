@@ -1,4 +1,6 @@
+
 import { Loader2 } from "lucide-react";
+import { zIndex } from "@/constants/z";
 
 interface LoadingOverlayProps {
   isVisible: boolean;
@@ -16,7 +18,7 @@ export const LoadingOverlay = ({
   if (!isVisible) return null;
 
   const getOverlayClasses = () => {
-    const baseClasses = "fixed inset-0 z-50 flex items-center justify-center";
+    const baseClasses = "fixed inset-0 flex items-center justify-center";
     
     switch (variant) {
       case "minimal":
@@ -38,7 +40,10 @@ export const LoadingOverlay = ({
   };
 
   return (
-    <div className={`${getOverlayClasses()} ${className}`}>
+    <div 
+      className={`${getOverlayClasses()} ${className}`}
+      {...zIndex('modal')}
+    >
       <div className={getContentClasses()}>
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         {message && (

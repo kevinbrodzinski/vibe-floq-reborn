@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Heart, Star, Zap, Users, ThumbsUp } from 'lucide-react';
 import { ExecutionActionEnum, type ExecutionAction } from '@/types/enums/executionAction';
+import { zIndex } from '@/constants/z';
 
 interface ExecutionOverlayProps {
   isVisible: boolean;
@@ -60,7 +62,8 @@ export const ExecutionOverlay = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm ${className}`}
+          className={`fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm ${className}`}
+          {...zIndex('modal')}
         >
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}

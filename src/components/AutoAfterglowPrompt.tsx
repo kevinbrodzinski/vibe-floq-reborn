@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { Sparkles, Clock, ArrowRight, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { TimeProgressBar } from "@/components/ExecutionFeedbackUtils";
+import { zIndex } from "@/constants/z";
 
 interface AutoAfterglowPromptProps {
   planId: string;
@@ -58,7 +60,10 @@ export const AutoAfterglowPrompt = ({
   if (!isActive) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div 
+      className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      {...zIndex('modal')}
+    >
       <Card className={`w-full max-w-md p-6 border-primary/20 bg-gradient-to-br from-purple-50 to-pink-50 animate-scale-in shadow-2xl ${className}`}>
         <div className="text-center space-y-4">
           {/* Header */}

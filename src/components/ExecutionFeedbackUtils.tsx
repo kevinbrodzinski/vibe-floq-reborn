@@ -1,6 +1,8 @@
+
 import { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { zIndex } from '@/constants/z';
 
 export function ExecutionOverlay({
   message,
@@ -23,7 +25,10 @@ export function ExecutionOverlay({
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      {...zIndex('modal')}
+    >
       <div
         className={cn(
           'bg-card border border-border rounded-xl px-6 py-4 flex items-center gap-3 shadow-xl animate-fade-in',
@@ -89,9 +94,10 @@ export function LoadingOverlay({
   return (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center',
+        'fixed inset-0 flex items-center justify-center',
         variant === 'minimal' ? 'bg-transparent' : 'bg-black/50 backdrop-blur-sm'
       )}
+      {...zIndex('modal')}
     >
       <div className="flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-xl shadow-xl">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
