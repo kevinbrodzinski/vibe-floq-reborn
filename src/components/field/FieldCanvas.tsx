@@ -4,7 +4,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { tileIdToScreenCoords, crowdCountToRadius, geohashToCenter } from '@/lib/geo';
+import { crowdCountToRadius, geohashToCenter } from '@/lib/geo';
 import { projectLatLng } from '@/lib/geo/project';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
@@ -124,6 +124,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       if (viewportGeo && fieldTiles.length > 0) {
         const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
         
+        // Cache geohash lookups
+        const tileCoords = new Map<string, { lat: number; lng: number }>();
+        
         visibleTiles.forEach(tile => {
           const id = tile.tile_id;
           const sprite = tilePool.acquire(id);
@@ -131,7 +134,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
           // Use Mapbox projection for pixel-perfect alignment
           try {
-            const [lat, lng] = geohashToCenter(id);
+            if (!tileCoords.has(id)) {
+              const [lat, lng] = geohashToCenter(id);
+              tileCoords.set(id, { lat, lng });
+            }
+            const { lat, lng } = tileCoords.get(id)!;
             const { x, y } = projectLatLng(lng, lat);
             const size = crowdCountToRadius(tile.crowd_count);
             
@@ -139,15 +146,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             sprite.y = y - size / 2;
             sprite.width = sprite.height = size;
           } catch (error) {
-            // Fallback to old projection if map not ready
-            const { x, y, size } = tileIdToScreenCoords(
-              id,
-              viewportGeo,
-              { width: app.screen.width, height: app.screen.height }
-            );
-            sprite.x = x - size / 2;
-            sprite.y = y - size / 2;
-            sprite.width = sprite.height = size;
+            // Fallback - hide sprite if projection fails
+            sprite.alpha = 0;
           }
 
           // Color and fade

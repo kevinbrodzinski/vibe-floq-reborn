@@ -20,7 +20,8 @@ describe('projection utils', () => {
   });
 
   it('throws error when map instance not set', () => {
-    setMapInstance(null as any);
+    vi.resetAllMocks();
+    setMapInstance(null);
     expect(() => projectLatLng(-118, 34)).toThrow('Map instance not set');
     expect(() => unprojectXY(100, 200)).toThrow('Map instance not set');
   });

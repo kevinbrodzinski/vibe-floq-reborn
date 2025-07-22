@@ -87,6 +87,7 @@ export const WebMap: React.FC<BaseMapProps> = ({
       if (mapRef.current) {
         mapRef.current.off('moveend', handleMoveEnd);
         mapRef.current.remove();
+        setMapInstance(null); // Clear stale reference
       }
     };
   }, [onRegionChange, tokenLoaded]);
