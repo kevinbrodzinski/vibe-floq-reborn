@@ -1,48 +1,51 @@
 
 /**
- * Unified Global Z-Index Scale
- * 
- * Higher numbers appear on top. Use these constants instead of hardcoded values.
- * 
- * Production Layers:
- * - toast      (90): Toasts, tooltips, notifications
- * - dmSheet    (80): DM quick sheets, urgent overlays  
- * - modal      (70): Sheets, dialogs, popovers
- * - navigation (60): Top header + bottom navigation
- * - system     (50): FABs, viewport controls, live regions
- * - timewarp   (40): TimeWarp slider & similar controls
- * - overlay    (30): Banners, field overlays
- * - ui         (20): Normal page UI elements
- * - mapOverlay (10): Map markers, PIXI canvas overlays
- * - map         (0): Base map & field canvas
- * - debug    (9999): Development-only debug panels
+ * ------------------------------------------------------------------
+ *  Unified Global Z-Index Scale
+ * ------------------------------------------------------------------
+ *  Lowest-to-highest layering, semantic names only.
+ *
+ *          toast      90   (sonner / toaster notifications)
+ *          dmSheet    80   (quick-DM sheets, emergency overlays)
+ *          modal      70   (all Radix sheets / dialogs / popovers)
+ *          navigation 60   (top header + bottom nav)
+ *          system     50   (FABs, viewport controls, live regions)
+ *          timewarp   40   (time-warp slider & similar)
+ *          overlay    30   (banners, field overlay HUD)
+ *          ui*        20   (regular page UI, friend carousel, etc.)
+ *          mapOverlay 10   (markers, PIXI overlays)
+ *          map         0   (Mapbox GL + FieldCanvas)
+ *          debug    9999   (dev-only panels)
+ *
+ *  *Split ui into subkeys for convenience only; values are identical.*
  */
+
 export const Z = {
-  // Base layers
+  // Base map layers
   map: 0,
   mapOverlay: 10,
-  
-  // UI layers (fine-grained)
-  uiInteractive: 20, // carousels, gestures, etc.
-  uiControls: 21,    // Constellation controls, bottom FABs
-  uiHeader: 22,      // Field header + location banner
+
+  // Regular UI
+  ui: 20,
+  uiHeader: 20,        // FieldHeader, LocationDisplay
+  uiControls: 20,      // ConstellationControls, misc buttons
+  uiInteractive: 20,   // Friend carousel, gesture mgr
   overlay: 30,
+
+  // Special feature layers
   timewarp: 40,
   system: 50,
-  
-  // Global layers
   navigation: 60,
   modal: 70,
   dmSheet: 80,
   toast: 90,
-  
-  // Development
+
+  // Development / debug
   debug: 9999,
 } as const;
 
 export type ZKey = keyof typeof Z;
 
-/**
- * Helper to get z-index style object
- */
-export const zIndex = (layer: keyof typeof Z) => ({ zIndex: Z[layer] });
+/** tiny helper — `<div style={zIndex('modal')}/>` */
+export const zIndex = (layer: ZKey): React.CSSProperties =>
+  ({ zIndex: Z[layer] });

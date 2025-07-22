@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
+
 import { FieldHeader } from "./FieldHeader";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
@@ -9,6 +10,7 @@ import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
 import { SocialToastProvider } from "@/components/social/SocialToast";
 import { LocationDisplay } from "@/components/LocationDisplay";
+
 import { Z } from "@/constants/z";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
@@ -16,20 +18,18 @@ import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useLocationDisplay } from "@/hooks/useLocationDisplay";
 import type { FieldData } from "./FieldDataProvider";
 
+/* ------------------------------------------------------------------ */
+
 interface FieldUILayerProps {
   data: FieldData;
 }
 
 export const FieldUILayer = ({ data }: FieldUILayerProps) => {
+  /* ---------- state from providers ---------- */
   const { isLocationReady, location, lastHeartbeat } = useFieldLocation();
   const { people } = useFieldSocial();
-  const locationDisplay = useLocationDisplay(
-    location?.lat ?? null,
-    location?.lng ?? null,
-    !!(location.lat && location.lng), // hasPermission approximation
-    location.error
-  );
-  const { 
+
+  const {
     isFull,
     currentVibe,
     debug,
@@ -41,101 +41,121 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
     setConstellationMode,
     setShowTimeWarp,
   } = useFieldUI();
-  const { nearbyVenues, walkableFloqs } = data;
 
-  // Event handlers
+  const locationDisplay = useLocationDisplay(
+    location?.lat ?? null,
+    location?.lng ?? null,
+    Boolean(location.lat && location.lng),
+    location.error,
+  );
+
+  const { nearbyVenues, walkableFloqs } = data;
+  const route = useLocation().pathname;
+
+  /* ---------- handlers ---------- */
   const handleSocialAction = (action: any) => {
     switch (action.type) {
-      case 'shake-pulse':
-        setConstellationMode(true);
-        break;
-      case 'social-radar':
+      case "social-radar":
         setConstellationMode(!constellationMode);
         break;
-      case 'quick-join':
+      case "shake-pulse":
+        setConstellationMode(true);
         break;
-      case 'vibe-broadcast':
+      case "quick-join":
+        // TODO: implement quick join
+        break;
+      case "vibe-broadcast":
+        // TODO: implement vibe broadcast
         break;
     }
   };
 
   const handleConstellationAction = (action: any) => {
     switch (action.type) {
-      case 'orbital-adjust':
-        break;
-      case 'constellation-create':
-        break;
-      case 'energy-share':
-        break;
-      case 'group-plan':
-        break;
-      case 'temporal-view':
+      case "temporal-view":
         setShowTimeWarp(true);
+        break;
+      case "orbital-adjust":
+        // TODO: implement orbital adjustment
+        break;
+      case "constellation-create":
+        // TODO: implement constellation creation
+        break;
+      case "energy-share":
+        // TODO: implement energy sharing
+        break;
+      case "group-plan":
+        // TODO: implement group planning
         break;
     }
   };
 
   const handleOrbitalAdjustment = (direction: 'expand' | 'contract', intensity: number) => {
-    // Orbital adjustment handled
+    // TODO: implement orbital adjustment
   };
 
   const handleEnergyShare = (fromId: string, toId: string, energy: number) => {
-    // Energy sharing handled
+    // TODO: implement energy sharing
   };
 
   const handleTimeWarpChange = (hour: number, data: any) => {
-    // Time warp data updated
+    // TODO: implement time warp data handling
   };
 
+  /* ------------------------------------------------------------------ */
   return (
     <>
-      {/* Social Toast Provider - always active */}
+      {/* global social toasts */}
       <SocialToastProvider />
-      
-      {/* Header - hidden in full mode */}
-      <AnimatePresence>
+
+      {/* ---------- header & location ---------- */}
+      <AnimatePresence initial={false}>
         {!isFull && (
-          <motion.div
-            className="absolute top-0 left-0 right-0 pointer-events-auto"
-            style={{ zIndex: Z.uiHeader }}
-            initial={{ y: 0, opacity: 1 }}
-            exit={{ y: '-100%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-          >
-            <FieldHeader 
-              venueCount={nearbyVenues?.length || 0}
-              onOpenVenues={() => setVenuesSheetOpen(true)}
-            />
-          </motion.div>
+          <>
+            {/* header bar */}
+            <motion.div
+              key="field-header"
+              className="absolute inset-x-0 top-0 pointer-events-auto"
+              style={{ zIndex: Z.uiHeader }}
+              initial={{ y: 0, opacity: 1 }}
+              exit={{ y: "-100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 30 }}
+            >
+              <FieldHeader
+                venueCount={nearbyVenues?.length ?? 0}
+                onOpenVenues={() => setVenuesSheetOpen(true)}
+              />
+            </motion.div>
+
+            {/* location strip */}
+            <motion.div
+              key="location-display"
+              className="absolute top-16 inset-x-0 px-6 pt-2 pointer-events-auto"
+              style={{ zIndex: Z.uiHeader }}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+            >
+              <LocationDisplay
+                locationText={locationDisplay.displayText}
+                isReady={locationDisplay.isReady}
+                isLoading={locationDisplay.isLoading}
+                lastHeartbeat={lastHeartbeat}
+              />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
-      {/* Location Display - below header */}
-      {!isFull && (
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="absolute top-16 left-0 right-0 px-6 pt-2 pointer-events-auto"
-          style={{ zIndex: Z.uiHeader - 1 }}
-        >
-          <LocationDisplay
-            locationText={locationDisplay.displayText}
-            isReady={locationDisplay.isReady}
-            isLoading={locationDisplay.isLoading}
-            lastHeartbeat={lastHeartbeat}
-          />
-        </motion.div>
-      )}
-
-      {/* Field Overlay - hidden in full mode and on vibe screen */}
-      {!isFull && useLocation().pathname !== '/vibe' && (
+      {/* ---------- field overlay ---------- */}
+      {!isFull && route !== "/vibe" && (
         <motion.div
           className="absolute inset-0 top-12"
           style={{ zIndex: Z.overlay }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          transition={{ type: "spring", stiffness: 260, damping: 30 }}
         >
           <FieldOverlay
             isLocationReady={isLocationReady}
@@ -145,13 +165,13 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             updating={false}
             error={location.error}
             debug={debug}
-            onVibeChange={(vibe) => setCurrentVibe(vibe)}
+            onVibeChange={setCurrentVibe}
           />
         </motion.div>
       )}
 
-      {/* Constellation Controls - always visible when needed */}
-      {(timeState === 'evening' || timeState === 'night') && !isFull && (
+      {/* ---------- controls (constellation, gestures, etc.) ---------- */}
+      {(timeState === "evening" || timeState === "night") && !isFull && (
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ zIndex: Z.uiControls }}
@@ -167,34 +187,38 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
         </div>
       )}
 
-      {/* Interactive Elements - hidden in full mode */}
-      <AnimatePresence>
+      {/* ---------- interactive layer (carousel, time warp, action card) ---------- */}
+      <AnimatePresence initial={false}>
         {!isFull && (
           <motion.div
+            key="ui-interactive"
             className="absolute inset-0 pointer-events-none"
             style={{ zIndex: Z.uiInteractive }}
             initial={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 30 }}
           >
-            {/* Social Gesture Manager */}
+            {/* gesture manager (full-screen invisible) */}
             <SocialGestureManager onSocialAction={handleSocialAction} />
 
-            {/* Friend Suggestions Carousel */}
-            <div className="absolute bottom-20 left-0 right-0 px-4 pointer-events-auto">
+            {/* friend suggestions */}
+            <div className="absolute bottom-20 inset-x-0 px-4 pointer-events-auto">
               <FriendSuggestionCarousel />
             </div>
 
-            {/* Time Warp Slider */}
-            <div style={{ zIndex: Z.timewarp }}>
-              <TimeWarpSlider 
+            {/* time-warp slider */}
+            <div
+              className="pointer-events-auto"
+              style={{ zIndex: Z.timewarp }}
+            >
+              <TimeWarpSlider
                 isVisible={showTimeWarp}
                 onClose={() => setShowTimeWarp(false)}
                 onTimeChange={handleTimeWarpChange}
               />
             </div>
 
-            {/* Time-Based Bottom Action Card */}
+            {/* bottom action card */}
             <TimeBasedActionCard
               className="pointer-events-auto"
               timeState={timeState}
