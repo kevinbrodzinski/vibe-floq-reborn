@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import type { TimerId } from '@/types/Timer';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -36,7 +35,7 @@ export function useEnhancedRealTime(
   });
 
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const heartbeatRef = useRef<TimerId | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingStartRef = useRef<number | null>(null);
   const presenceDataRef = useRef<any>(null); // Cache presence data
 

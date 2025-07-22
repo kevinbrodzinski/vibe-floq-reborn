@@ -1,6 +1,5 @@
 
 import React, { useState, useRef, useEffect } from 'react'
-import type { TimerId } from '@/types/Timer'
 import { useParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -23,7 +22,7 @@ export function FloqPlanTab() {
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [showAddStopModal, setShowAddStopModal] = useState(false)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null)
-  const longPressTimerRef = useRef<TimerId | null>(null)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Get collaborative state for the plan
   const {

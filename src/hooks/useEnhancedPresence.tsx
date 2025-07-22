@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { TimerId } from '@/types/Timer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +33,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   const { toast } = useToast();
   const location = useGeolocation();
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const updateIntervalRef = useRef<TimerId | null>(null);
+  const updateIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentRef = useRef<number>(0);
   const isUpdatingRef = useRef<boolean>(false);
 

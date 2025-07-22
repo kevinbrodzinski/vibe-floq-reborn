@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { TimerId } from '@/types/Timer';
 import type { TouchEvent as ReactTouchEvent } from 'react';
 
 export type GestureType = 
@@ -49,7 +48,7 @@ export const useAdvancedGestures = ({
 }: UseAdvancedGesturesProps = {}) => {
   const [isListening, setIsListening] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const longPressTimerRef = useRef<TimerId | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shakeDetectionRef = useRef<{ lastX: number; lastY: number; lastZ: number; shakeCount: number }>({
     lastX: 0, lastY: 0, lastZ: 0, shakeCount: 0
   });

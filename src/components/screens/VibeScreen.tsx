@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import type { TimerId } from '@/types/Timer';
 import { Radio, Eye, EyeOff, Users, Zap, ZapOff, Brain } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ export const VibeScreen = () => {
   const [isLearning, setIsLearning] = useState(false);
   const [showPulse, setShowPulse] = useState(false);
   const [showDensityMap, setShowDensityMap] = useState(false);
-  const feedbackTimeoutRef = useRef<TimerId | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loggedThisSessionRef = useRef<boolean>(false);
   const dialRef = useRef<HTMLDivElement>(null);
   
