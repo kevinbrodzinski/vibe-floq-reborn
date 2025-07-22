@@ -1,33 +1,36 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-interface NearbyVenue {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  vibe: string;
-  source: string;
-}
-
-export function useNearbyVenues(lat?: number, lng?: number, km: number = 0.3) {
-  return useQuery({
-    queryKey: ['nearby-venues', lat, lng, km],
-    enabled: lat != null && lng != null,
+export const useNearbyVenues = (lat: number | null, lng: number | null, km: number = 1.2) =>
+  useQuery({
+    enabled: !!lat && !!lng,
+    queryKey: ["nearby-venues", lat, lng, km],
     queryFn: async () => {
-      // Convert km to degree approximation for bbox
-      const degreeOffset = km / 111; // rough conversion
-      
-      const { data, error } = await supabase.rpc('get_venues_in_bbox', {
-        west: lng! - degreeOffset,
-        south: lat! - degreeOffset,
-        east: lng! + degreeOffset,
-        north: lat! + degreeOffset,
+      if (!lat || !lng) return [];
+
+      // 1) call edge function to ensure freshest data
+      console.log(`Syncing places for location: ${lat}, ${lng}`);
+      await supabase.functions.invoke("sync-places", { 
+        body: { lat, lng } 
       });
+
+      // 2) fetch venues within specified radius using our SQL function
+      const radiusMeters = km * 1000; // Convert km to meters
+      const { data, error } = await supabase
+        .rpc("venues_within_radius", { 
+          center_lat: lat, 
+          center_lng: lng, 
+          r_m: radiusMeters 
+        });
+        
+      if (error) {
+        console.error("Error fetching nearby venues:", error);
+        throw error;
+      }
       
-      if (error) throw error;
-      return data as NearbyVenue[];
+      console.log(`Found ${data?.length || 0} nearby venues`);
+      return data || [];
     },
-    staleTime: 30_000, // 30 seconds
+    staleTime: 60_000, // Cache for 1 minute
+    retry: 1
   });
-}

@@ -6272,6 +6272,29 @@ export type Database = {
           live_count: number
         }[]
       }
+      venues_within_radius: {
+        Args: { center_lat: number; center_lng: number; r_m: number }
+        Returns: {
+          address: string | null
+          categories: string[] | null
+          created_at: string | null
+          description: string | null
+          geom: unknown | null
+          id: string
+          lat: number
+          lng: number
+          name: string
+          photo_url: string | null
+          provider: string
+          provider_id: string
+          radius_m: number | null
+          rating: number | null
+          slug: string | null
+          source: string | null
+          updated_at: string | null
+          vibe: string | null
+        }[]
+      }
       vibe_similarity: {
         Args: {
           a: Database["public"]["Enums"]["vibe_enum"]
