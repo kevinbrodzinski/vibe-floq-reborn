@@ -65,8 +65,8 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
   const streamRef = useRef<MediaStream | null>(null);
   const motionListenerRef = useRef<((event: DeviceMotionEvent) => void) | null>(null);
   const lightSensorRef = useRef<any>(null);
-  const audioUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<Date | null>(null);
   const micBaselineRef = useRef<number | null>(null);
 

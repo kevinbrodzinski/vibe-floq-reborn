@@ -28,7 +28,7 @@ export const useShakeDetection = ({
   const { socialHaptics } = useHapticFeedback();
   const motionBuffer = useRef<MotionData[]>([]);
   const lastShakeTime = useRef(0);
-  const longPressTimer = useRef<NodeJS.Timeout>();
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
   const touchStartTime = useRef(0);
   const lastMotionTime = useRef(0);
 

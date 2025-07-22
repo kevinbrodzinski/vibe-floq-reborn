@@ -25,7 +25,7 @@ export function useNearbyFriends(
   lng?: number,
   { km = 1, enabled = true }: UseNearbyFriendsOptions = {}
 ) {
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const env = getEnvironmentConfig();
 
   const debouncedPrimeProfiles = useCallback((primeProfiles: (users: any[]) => void, users: any[]) => {

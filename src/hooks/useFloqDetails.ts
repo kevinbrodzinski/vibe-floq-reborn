@@ -153,7 +153,7 @@ export function useFloqDetails(
   const debouncedRefetchRef = useRef<() => void>();
   
   if (!debouncedRefetchRef.current) {
-    let timeoutId: NodeJS.Timeout | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     debouncedRefetchRef.current = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => query.refetch(), 100);

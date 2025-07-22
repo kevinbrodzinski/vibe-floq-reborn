@@ -33,8 +33,8 @@ export const useOptimizedPresence = ({
   useVibeSessionTracker(vibe, enabled && !!lat && !!lng);
   
   const lastUpdateRef = useRef<number>(0);
-  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVibe = useRef<Vibe>(vibe);
   const lastPosition = useRef<{ lat: number; lng: number } | null>(null);
   const [updating, setUpdating] = useState(false);

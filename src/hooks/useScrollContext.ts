@@ -27,7 +27,7 @@ export function useScrollContext(
   const lastScrollTime = useRef(Date.now());
   const velocityHistory = useRef<number[]>([]);
   const elementCacheRef = useRef<Record<number, HTMLElement>>({});
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const calculateContext = useCallback(() => {
     const scroller = containerRef.current ?? document.documentElement;

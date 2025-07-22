@@ -17,7 +17,7 @@ export function useVoteActivityTracker(
   const [overlays, setOverlays] = useState<Record<string, VoteActivity>>({})
 
   /** keep timeout ids so we can clear them */
-  const timersRef = useRef<Record<string, NodeJS.Timeout>>({})
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   /* listen to live vote events */
   useEffect(() => {

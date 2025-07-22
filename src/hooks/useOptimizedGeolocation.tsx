@@ -22,7 +22,7 @@ export const useOptimizedGeolocation = () => {
 
   const lastPosition = useRef<{ lat: number; lng: number } | null>(null);
   const watchId = useRef<number | null>(null);
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debug location override from localStorage
   const getDebugLocation = useCallback(() => {

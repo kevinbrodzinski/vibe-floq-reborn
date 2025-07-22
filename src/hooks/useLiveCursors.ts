@@ -20,7 +20,7 @@ interface UseLiveCursorsOptions {
 export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions) {
   const [cursors, setCursors] = useState<Map<string, LiveCursor>>(new Map())
   const [myPosition, setMyPosition] = useState<{ x: number; y: number } | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<ReturnType<typeof setTimeout>>()
   const session = useSession()
   const user = session?.user
 
