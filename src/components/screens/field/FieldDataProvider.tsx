@@ -99,7 +99,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     return ids;
   }, [viewport]);
 
-  // Get field tiles data
+  // Get field tiles data with error handling
   const { data: fieldTiles = [], error: tilesError, isLoading } = useFieldTiles(viewport ? {
     minLat: viewport.minLat,
     maxLat: viewport.maxLat,
@@ -108,13 +108,21 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     precision: 6
   } : undefined);
   
-  // Debug logging for field tiles
+  // Debug logging for field tiles with error guard
   console.log('[FIELD_DEBUG] Field tiles query state:', {
     isLoading,
-    error: tilesError,
+    error: tilesError ? { 
+      message: tilesError.message || 'Unknown error',
+      name: tilesError.name || 'No name'
+    } : null,
     tilesCount: fieldTiles?.length || 0,
     tiles: fieldTiles
   });
+
+  // Log error but don't prevent map rendering
+  if (tilesError) {
+    console.warn('[FIELD_DEBUG] Tiles failed to load, map will show without field data:', tilesError);
+  }
   
   // Get nearby venues for chip and current event
   const { data: nearbyVenues = [] } = useNearbyVenues(location?.lat ?? 0, location?.lng ?? 0, 0.3);

@@ -27,13 +27,20 @@ serve(async (req) => {
       });
     }
 
-    // KV cache layer (2 seconds)
-    const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
-    const cached = await caches.default.match(cacheKey);
-    if (cached) {
-      return new Response(cached.body, { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
-      });
+    // KV cache layer (2 seconds) - only if caches is available
+    let cached = null;
+    try {
+      const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
+      if (typeof caches !== 'undefined' && caches.default) {
+        cached = await caches.default.match(cacheKey);
+        if (cached) {
+          return new Response(cached.body, { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
+          });
+        }
+      }
+    } catch (cacheError) {
+      console.log('[FIELD_TILES] Cache not available, skipping:', cacheError.message);
     }
 
     // Initialize Supabase client
@@ -66,8 +73,16 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
-    // Cache for 2 seconds
-    await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+    // Cache for 2 seconds - only if caches is available
+    try {
+      if (typeof caches !== 'undefined' && caches.default) {
+        const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
+        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+      }
+    } catch (cacheError) {
+      console.log('[FIELD_TILES] Cache put failed, continuing:', cacheError.message);
+    }
+    
     return resp;
 
   } catch (error) {

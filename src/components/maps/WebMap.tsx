@@ -29,10 +29,9 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
       try {
         console.log('🗺️ Fetching Mapbox token from edge function...');
         const { data, error } = await supabase.functions.invoke('mapbox-token');
-        console.log('🗺️ Token response:', { data, error });
         
         if (error) {
-          console.warn('🗺️ Failed to fetch token from edge function, using fallback:', error);
+          console.warn('🗺️ Failed to fetch token from edge function:', error.message);
         } else if (data?.token) {
           mapboxgl.accessToken = data.token;
           console.log('🗺️ Successfully loaded Mapbox token from edge function');
@@ -40,7 +39,7 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
           console.warn('🗺️ No token in response, using fallback');
         }
       } catch (err) {
-        console.warn('🗺️ Error fetching token, using fallback:', err);
+        console.warn('🗺️ Error fetching token, using fallback:', err.message);
       } finally {
         setTokenLoaded(true);
       }

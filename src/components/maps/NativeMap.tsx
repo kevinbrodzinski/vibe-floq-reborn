@@ -15,6 +15,12 @@ export interface NativeMapProps {
 }
 
 export const NativeMap: React.FC<NativeMapProps> = ({ onRegionChange, children }) => {
+  React.useEffect(() => {
+    if (__DEV__) {
+      console.warn('Field view not yet supported on React Native');
+    }
+  }, []);
+
   // TODO: Implement React Native Mapbox when mobile support is added
   // Example for @rnmapbox/maps v10+:
   /*
@@ -35,10 +41,6 @@ export const NativeMap: React.FC<NativeMapProps> = ({ onRegionChange, children }
     </MapboxGL.MapView>
   );
   */
-  
-  if (__DEV__) {
-    console.warn('Field view not yet supported on React Native');
-  }
   
   return (
     <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
