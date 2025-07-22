@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { supabase } from '../../../src/integrations/supabase/client';
 
-mapboxgl.accessToken =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-  (process.env.MAPBOX_ACCESS_TOKEN as string);
+// Initialize with a default public token, will be replaced by Supabase secret
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
 export interface BaseMapProps {
   onRegionChange: (b: {
@@ -22,9 +22,32 @@ export const WebMap: React.FC<BaseMapProps> = ({
 }) => {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map>();
+  const [tokenLoaded, setTokenLoaded] = useState(false);
 
+  // Load Mapbox token from Supabase edge function
   useEffect(() => {
-    if (!container.current) return;
+    const loadMapboxToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('mapbox-token');
+        if (data?.token && !error) {
+          mapboxgl.accessToken = data.token;
+          setTokenLoaded(true);
+        } else {
+          console.warn('Using default Mapbox token - add MAPBOX_ACCESS_TOKEN to Supabase secrets');
+          setTokenLoaded(true);
+        }
+      } catch (error) {
+        console.warn('Failed to load Mapbox token from Supabase, using default:', error);
+        setTokenLoaded(true);
+      }
+    };
+    
+    loadMapboxToken();
+  }, []);
+
+  // Initialize map once token is loaded
+  useEffect(() => {
+    if (!container.current || !tokenLoaded) return;
 
     mapRef.current = new mapboxgl.Map({
       container: container.current,
@@ -46,7 +69,7 @@ export const WebMap: React.FC<BaseMapProps> = ({
     });
 
     return () => mapRef.current?.remove();
-  }, []);
+  }, [onRegionChange, tokenLoaded]);
 
   return (
     <div ref={container} style={{ width: '100%', height: '100%' }}>
