@@ -16,3 +16,6 @@ export const unprojectXY = (x: number, y: number) => {
   if (!map) throw new Error('Map instance not set');
   return map.unproject([x, y]);
 };
+
+/** Optional helper for consumers that must read the raw map */
+export const getMapInstance = () => map;

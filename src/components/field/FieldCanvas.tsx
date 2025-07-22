@@ -4,7 +4,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { projectLatLng } from '@/lib/geo/project';
+import { projectLatLng, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
@@ -34,6 +34,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   viewportGeo,
   onRipple
 }, ref) => {
+  // ⬇️ bail until Mapbox bridge is live
+  const mapReady = !!getMapInstance();
+  if (!mapReady) return null;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
   const { light } = useAdvancedHaptics();
@@ -126,16 +129,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const tileCoords = new Map<string, { lat: number; lng: number }>();
         
         visibleTiles.forEach(tile => {
-          const id = tile.tile_id;
-          const sprite = tilePool.acquire(id);
+          const id      = tile.tile_id;
+          const sprite  = tilePool.acquire(id);
           if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // Use Mapbox projection for pixel-perfect alignment
-          const [lat, lng] = geohashToCenter(id);
-          const { x, y }   = projectLatLng(lng, lat);
-          sprite.x = x;
-          sprite.y = y;
-          sprite.width = sprite.height = crowdCountToRadius(tile.crowd_count);
+          // --- geo ➜ pixel ---
+          const [lat, lng] = geohashToCenter(id);        // gh → lat/lng
+          const { x, y }   = projectLatLng(lng, lat);    // mapbox bridge
+          const r          = crowdCountToRadius(tile.crowd_count);
+
+          sprite.position.set(x - r, y - r);
+          sprite.width = sprite.height = r * 2;
 
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);
@@ -152,8 +156,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             return [f(0), f(8), f(4)];
           };
           
-          const [r, g, b] = hslToRgb(h, s, l);
-          const vibeColor = (r << 16) + (g << 8) + b;
+          const [red, green, blue] = hslToRgb(h, s, l);
+          const vibeColor = (red << 16) + (green << 8) + blue;
           
           sprite.tint = vibeColor;
           sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
