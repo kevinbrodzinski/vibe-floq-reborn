@@ -10,6 +10,7 @@ import { ProgressResumePrompt } from './ProgressResumePrompt';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { useUpdateUserPreferences } from '@/hooks/useUserPreferences';
+import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -91,6 +92,7 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   const { markCompleted } = useOnboardingStatus();
   const { toast } = useToast();
   const progress = useOnboardingProgress();
+  const analytics = useOnboardingAnalytics();
   
   const [isCompleting, setIsCompleting] = useState(false);
   const [showResumePrompt, setShowResumePrompt] = useState(progress.hasProgress);
@@ -102,6 +104,9 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   const [avatarUrl, setAvatarUrl] = useState<string | null>(progress.state.avatarUrl || null);
 
   const handleNext = () => {
+    const currentStep = progress.state.currentStep;
+    const stepName = ONBOARDING_STEPS[currentStep]?.id || 'unknown';
+    analytics.trackStepCompleted(currentStep, stepName);
     progress.nextStep();
   };
 
@@ -112,13 +117,19 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   const handleVibeSelected = (vibe: Vibe) => {
     setSelectedVibe(vibe);
     progress.setVibe(vibe);
-    handleNext();
+    analytics.trackStepCompleted(1, 'vibe_selection', { selected_vibe: vibe });
+    progress.nextStep();
   };
 
   const handleProfileSubmitted = async (data: ProfileData) => {
     setProfileData(data);
     progress.setProfile(data);
-    handleNext();
+    analytics.trackStepCompleted(2, 'profile_setup', { 
+      has_bio: !!data.bio,
+      interests_count: data.interests?.length || 0
+    });
+    analytics.trackUsernameCreated(data.username);
+    progress.nextStep();
   };
 
   const handleAvatarSelected = (url: string | null) => {
@@ -194,6 +205,16 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
 
       // Mark onboarding as complete in database
       await progress.markComplete();
+      
+      // Track completion
+      analytics.trackOnboardingCompleted({
+        selected_vibe: selectedVibe,
+        has_avatar: !!avatarUrl,
+        profile_completeness: {
+          has_bio: !!profileData.bio,
+          interests_count: profileData.interests?.length || 0
+        }
+      });
       
       // Clear local progress
       progress.clearProgress();

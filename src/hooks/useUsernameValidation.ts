@@ -55,14 +55,14 @@ export function useUsernameValidation(username: string) {
       return;
     }
 
-    // Validate format
-    if (!/^[a-zA-Z0-9_]+$/.test(debouncedUsername)) {
+    // Validate format - match database constraint
+    if (!/^[A-Za-z0-9_.-]+$/.test(debouncedUsername)) {
       setValidation({
         isValid: false,
         isAvailable: false,
         isChecking: false,
         suggestions: [],
-        message: 'Username can only contain letters, numbers, and underscores'
+        message: 'Username can only contain letters, numbers, dots, dashes, and underscores'
       });
       return;
     }

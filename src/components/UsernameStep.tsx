@@ -20,10 +20,10 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   const { data: isAvailable, isLoading: isCheckingAvailability, error } = useUsernameAvailability(localValue);
   
   const getValidationMessage = () => {
-    if (!localValue.trim()) return 'Enter a username to check availability';
+    if (!localValue.trim()) return 'Username is required to continue';
     if (localValue.length < 3) return 'Username must be at least 3 characters';
-    if (!/^[a-zA-Z0-9_]{3,32}$/.test(localValue)) {
-      return 'Use only letters, numbers, and underscores (3-32 characters)';
+    if (!/^[A-Za-z0-9_.-]+$/.test(localValue)) {
+      return 'Use only letters, numbers, dots, dashes, and underscores';
     }
     if (isCheckingAvailability) return 'Checking availability...';
     if (error) return 'Failed to check username availability';
@@ -33,8 +33,9 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
   };
 
   const getValidationState = (): 'idle' | 'checking' | 'available' | 'taken' | 'invalid' => {
-    if (!localValue.trim() || localValue.length < 3) return 'idle';
-    if (!/^[a-zA-Z0-9_]{3,32}$/.test(localValue)) return 'invalid';
+    if (!localValue.trim()) return 'invalid'; // Changed: empty username is now invalid
+    if (localValue.length < 3) return 'invalid';
+    if (!/^[A-Za-z0-9_.-]+$/.test(localValue)) return 'invalid';
     if (isCheckingAvailability) return 'checking';
     if (error || isAvailable === false) return 'taken';
     if (isAvailable === true) return 'available';
@@ -151,17 +152,7 @@ export const UsernameStep = ({ onComplete, isModal = false }: UsernameStepProps)
             )}
           </Button>
 
-          {onComplete && (
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={onComplete}
-              className="w-full"
-              disabled={isUpdatingUsername}
-            >
-              Skip for now
-            </Button>
-          )}
+          {/* Removed skip option - username is now mandatory */}
         </form>
       </ContentWrapper>
     </div>
