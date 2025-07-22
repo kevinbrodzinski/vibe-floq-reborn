@@ -426,7 +426,7 @@ export const CollaborativePlanningScreen = () => {
       />
 
       {/* Social Pulse Overlay */}
-      <SocialPulseOverlay isPlanning={planMode === 'planning'} currentPlan={plan} />
+      {planMode === 'planning' && <SocialPulseOverlay />}
 
       {/* Header */}
       <div className="p-4 sm:p-6 pt-16">

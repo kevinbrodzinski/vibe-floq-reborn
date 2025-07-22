@@ -22,6 +22,9 @@ interface SearchResult {
 }
 
 interface SearchBarWithTypeaheadProps {
+  value?: string;
+  onChange?: (query: string) => void;
+  onSelect?: (result: SearchResult) => void;
   onSearch?: (query: string) => void;
   onResultSelect?: (result: SearchResult) => void;
   results?: SearchResult[];
@@ -40,6 +43,9 @@ const RESULT_ICONS = {
 } as const;
 
 export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
+  value: controlledValue,
+  onChange,
+  onSelect,
   onSearch = () => {},
   onResultSelect = () => {},
   results = [],
@@ -49,11 +55,18 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
   recentSearches = [],
   isLoading = false
 }) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(controlledValue || '');
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  // Sync with controlled value
+  useEffect(() => {
+    if (controlledValue !== undefined) {
+      setQuery(controlledValue);
+    }
+  }, [controlledValue]);
 
   const displayResults = query.length > 0 ? results : 
     (showRecent && recentSearches.length > 0 ? 
@@ -113,6 +126,7 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
 
   const handleInputChange = (value: string) => {
     setQuery(value);
+    onChange?.(value);
     onSearch(value);
     setIsOpen(value.length > 0 || (showRecent && recentSearches.length > 0));
     setFocusedIndex(-1);
@@ -120,6 +134,7 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
 
   const handleResultClick = (result: SearchResult) => {
     onResultSelect(result);
+    onSelect?.(result);
     setIsOpen(false);
     setQuery('');
     inputRef.current?.blur();

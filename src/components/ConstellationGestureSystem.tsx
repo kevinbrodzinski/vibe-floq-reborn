@@ -17,6 +17,10 @@ interface ConstellationGestureSystemProps {
   onGestureMove?: (point: GesturePoint) => void;
   onGestureEnd?: (point: GesturePoint) => void;
   onMultiTouch?: (points: GesturePoint[]) => void;
+  onConstellationAction?: (action: any) => void;
+  onOrbitalAdjustment?: (direction: 'expand' | 'contract', intensity: number) => void;
+  onEnergyShare?: (fromId: string, toId: string, energy: number) => void;
+  isActive?: boolean;
   enableTrails?: boolean;
   trailLength?: number;
   gestureThreshold?: number;
@@ -36,6 +40,10 @@ export const ConstellationGestureSystem: React.FC<ConstellationGestureSystemProp
   onGestureMove = () => {},
   onGestureEnd = () => {},
   onMultiTouch = () => {},
+  onConstellationAction = () => {},
+  onOrbitalAdjustment = () => {},
+  onEnergyShare = () => {},
+  isActive = false,
   enableTrails = true,
   trailLength = 20,
   gestureThreshold = 10,
@@ -50,7 +58,7 @@ export const ConstellationGestureSystem: React.FC<ConstellationGestureSystemProp
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useTransform([x, y], ([latestX, latestY]) => {
-    const distance = Math.sqrt(latestX * latestX + latestY * latestY);
+    const distance = Math.sqrt((latestX as number) * (latestX as number) + (latestY as number) * (latestY as number));
     return Math.max(0.8, 1 - distance / 1000);
   });
 
