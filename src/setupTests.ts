@@ -1,7 +1,5 @@
 // Jest setup file for testing configuration
 import '@testing-library/jest-dom';
-// Add web worker polyfill for vitest if available
-// import 'vitest-web-worker';
 
 // Mock mapbox-gl to prevent jsdom errors  
 const mockMap = {
@@ -17,8 +15,6 @@ const mockMap = {
   }),
   getZoom: () => 10,
   getCenter: () => ({ lng: -118.25, lat: 34.05 }),
-  project: (lngLat: [number, number]) => ({ x: 500, y: 300 }),
-  unproject: (point: [number, number]) => ({ lng: -118.25, lat: 34.05 }),
   remove: () => {},
   resize: () => {},
   setStyle: () => {},

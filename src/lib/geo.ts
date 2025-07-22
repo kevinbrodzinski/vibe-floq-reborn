@@ -1,4 +1,3 @@
-export * from './geo/project';
 import { encode, decode } from 'ngeohash';
 
 export const stepForZoom = (z: number) => 0.03 / 2 ** Math.max(0, Math.max(3, z) - 10);
@@ -20,9 +19,9 @@ export function tilesForViewport(
 /**
  * Get the center point of a geohash
  */
-export function geohashToCenter(geohash: string): { lng: number; lat: number } {
+export function geohashToCenter(geohash: string): [number, number] {
   const { latitude, longitude } = decode(geohash);
-  return { lng: longitude, lat: latitude };
+  return [latitude, longitude];
 }
 
 /**
@@ -55,8 +54,27 @@ export function viewportToTileIds(
   return [...ids];
 }
 
-// Note: tileIdToScreenCoords removed in favor of precise Mapbox projection
-// Use projectLatLng(lng, lat) from './geo/project' instead
+/**
+ * Map tile_id to screen coordinates for ripple effects and heat tiles
+ */
+export function tileIdToScreenCoords(
+  tileId: string,
+  viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number },
+  screenSize: { width: number; height: number }
+): { x: number; y: number; size: number } {
+  const { latitude, longitude } = decode(tileId);
+  
+  const x = ((longitude - viewport.minLng) / (viewport.maxLng - viewport.minLng)) * screenSize.width;
+  const y = ((latitude - viewport.minLat) / (viewport.maxLat - viewport.minLat)) * screenSize.height;
+  
+  // Calculate tile size based on precision and viewport
+  const latRange = viewport.maxLat - viewport.minLat;
+  const lngRange = viewport.maxLng - viewport.minLng;
+  const avgRange = (latRange + lngRange) / 2;
+  const size = Math.max(20, (avgRange / Math.pow(32, tileId.length - 1)) * screenSize.width * 0.5);
+  
+  return { x, y, size };
+}
 
 /**
  * Calculate radius based on crowd count

@@ -4,7 +4,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { geohashToCenter, projectLatLng, crowdCountToRadius, getMapInstance } from '@/lib/geo';
+import { tileIdToScreenCoords, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -41,9 +41,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
-  
-  // Projection cache for performance (cache [tile_id, zoom] => ScreenXY)
-  const projectionCacheRef = useRef<Map<string, {x: number, y: number, zoom: number}>>(new Map());
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -131,33 +128,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           const sprite = tilePool.acquire(id);
           if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // Use cached projection for performance (memoize by tile_id + zoom + bearing)
-          const projectionCache = projectionCacheRef.current;
-          const map = getMapInstance();
-          const currentZoom = map?.getZoom() ?? 11;
-          const currentBearing = map?.getBearing() ?? 0;
-          const cacheKey = `${id}:${Math.round(currentZoom * 10)}:${Math.round(currentBearing)}`;
+          // Use proper geo bounds for coordinate conversion
+          const { x, y, size } = tileIdToScreenCoords(
+            id,
+            viewportGeo,
+            { width: app.screen.width, height: app.screen.height }
+          );
           
-          let screenPos = projectionCache.get(cacheKey);
-          if (!screenPos || screenPos.zoom !== currentZoom) {
-            const { lng, lat } = geohashToCenter(id);
-            const { x, y } = projectLatLng(lng, lat);
-            screenPos = { x, y, zoom: currentZoom };
-            projectionCache.set(cacheKey, screenPos);
-            
-            // Cleanup old cache entries (keep last 500)
-            if (projectionCache.size > 500) {
-              const oldKeys = Array.from(projectionCache.keys()).slice(0, 100);
-              oldKeys.forEach(key => projectionCache.delete(key));
-            }
-          }
-          
-          const { x, y } = screenPos;
-          const radius = crowdCountToRadius(tile.crowd_count);
-          
-          sprite.x = x - radius;
-          sprite.y = y - radius;
-          sprite.width = sprite.height = radius * 2;
+          sprite.x = x - size / 2;
+          sprite.y = y - size / 2;
+          sprite.width = sprite.height = size;
 
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);

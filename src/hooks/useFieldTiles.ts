@@ -22,8 +22,6 @@ export function useFieldTiles(bounds?: TileBounds) {
     bounds.precision ?? 6
   ).sort() : []; // stable cache key
 
-  console.log('[FIELD_TILES] Hook called with bounds:', bounds);
-  console.log('[FIELD_TILES] Generated tile IDs:', tileIds);
 
   return useQuery({
     queryKey: ['field-tiles', tileIds],
@@ -37,16 +35,8 @@ export function useFieldTiles(bounds?: TileBounds) {
       })
 
       if (error) {
-        console.error('[FIELD_TILES] Error from edge function:', error);
-        // Don't throw raw Response object - extract safe primitives
-        const safeError = { 
-          status: error.status, 
-          message: typeof error.text === 'function' ? await error.text() : error.message ?? error 
-        };
-        throw safeError;
+        throw error
       }
-      
-      console.log('[FIELD_TILES] Response data:', data);
       
       // Handle the response structure from the edge function
       const tiles = data?.tiles || []
