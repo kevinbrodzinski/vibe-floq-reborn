@@ -6,9 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Button, Input, Textarea, Label, Card, Tabs, TabsList, TabsTrigger,
-} from '@/components/ui';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   UserPlus, Users, X, Send, Search, Mail, Phone,
 } from 'lucide-react';
@@ -58,6 +61,10 @@ export const InvitePeopleModal: React.FC<Props> = ({
     addGuest.mutate({ planId, guest: g });
     setGuests((prev) => [...prev, g]);
     setCurrentGuest({ name: '', email: '', phone: '', notes: '' });
+  };
+
+  const removeGuest = (guestId: string) => {
+    setGuests((prev) => prev.filter(g => g.id !== guestId));
   };
 
   /* —— Member search --------------------------------------------------- */
@@ -231,7 +238,7 @@ export const InvitePeopleModal: React.FC<Props> = ({
                       {g.notes && <p className="text-xs italic mt-0.5">{g.notes}</p>}
                     </div>
                     <Button
-                      onClick={() => handleRemoveGuest(g.id)}
+                      onClick={() => removeGuest(g.id)}
                       size="icon"
                       variant="ghost"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
