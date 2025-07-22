@@ -2091,6 +2091,7 @@ export type Database = {
           created_at: string | null
           created_by: string
           description: string | null
+          duration_minutes: number
           end_time: string | null
           estimated_cost_per_person: number | null
           id: string
@@ -2108,6 +2109,7 @@ export type Database = {
           created_at?: string | null
           created_by: string
           description?: string | null
+          duration_minutes?: number
           end_time?: string | null
           estimated_cost_per_person?: number | null
           id?: string
@@ -2125,6 +2127,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           description?: string | null
+          duration_minutes?: number
           end_time?: string | null
           estimated_cost_per_person?: number | null
           id?: string
