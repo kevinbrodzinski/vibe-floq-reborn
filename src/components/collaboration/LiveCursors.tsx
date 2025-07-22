@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Edit3 } from 'lucide-react'
 import { useLiveCursors, type LiveCursor } from '@/hooks/useLiveCursors'
+import { zIndex } from '@/constants/z'
 
 interface LiveCursorsProps {
   planId: string
@@ -11,7 +12,7 @@ export function LiveCursors({ planId, enabled = true }: LiveCursorsProps) {
   const { cursors } = useLiveCursors({ planId, enabled })
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50">
+    <div {...zIndex('system')} className="fixed inset-0 pointer-events-none">
       <AnimatePresence>
         {cursors.map((cursor) => (
           <CursorIndicator key={cursor.userId} cursor={cursor} />

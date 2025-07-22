@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { zIndex } from '@/constants/z'
 
 interface TimelineGridSkeletonProps {
   timeSlots?: number
@@ -67,7 +68,7 @@ export function TimelineGridSkeleton({
 // Specialized skeleton for drag operations
 export function DragOperationSkeleton() {
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div {...zIndex('overlay')} className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

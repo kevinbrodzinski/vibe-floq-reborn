@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { zIndex } from '@/constants/z';
 
 export type VibeSuggestion = {
   clusterId: string;
@@ -61,7 +62,7 @@ const SuggestionToast = memo(({ suggestion, onApply, onDismiss }: Props) => {
             stiffness: 170,
             opacity: { duration: 0.28 }
           }}
-          className="fixed bottom-6 left-4 right-4 z-50 max-w-sm mx-auto"
+          {...zIndex('toast')} className="fixed bottom-6 left-4 right-4 max-w-sm mx-auto"
         >
           <div className="bg-card/95 backdrop-blur-sm border border-border rounded-xl shadow-lg p-4 space-y-3">
             {/* Header */}

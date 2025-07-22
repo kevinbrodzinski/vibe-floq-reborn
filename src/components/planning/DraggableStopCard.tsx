@@ -145,7 +145,7 @@ const DraggableStopCardComponent = ({
         className={cn(
           "relative transition-all duration-200 group touch-pan-y select-none",
           isBeingDragged
-            ? 'shadow-lg scale-105 rotate-1 border-primary z-50' 
+            ? 'shadow-lg scale-105 rotate-1 border-primary' 
             : 'shadow-sm hover:shadow-md border-border',
           compact && 'p-2'
         )}

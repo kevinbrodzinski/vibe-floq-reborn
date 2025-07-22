@@ -107,7 +107,7 @@ export function DraggableTimelineGrid({
                     {...provided.draggableProps}
                     className={cn(
                       "transition-all duration-200",
-                      snapshot.isDragging && "rotate-2 scale-105 z-50"
+                      snapshot.isDragging && "rotate-2 scale-105"
                     )}
                   >
                     <DraggableStopCard

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { Clock } from 'lucide-react';
+import { zIndex } from '@/constants/z';
 
 interface TimelineProgressBarProps {
   scrollProgress: number;
@@ -30,7 +31,7 @@ export function TimelineProgressBar({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg ${className}`}
+      {...zIndex('uiHeader')} className={`fixed top-4 left-1/2 transform -translate-x-1/2 bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-2 shadow-lg ${className}`}
     >
       <div className="flex items-center gap-3 min-w-[300px]">
         {/* Time indicator */}

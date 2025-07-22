@@ -23,6 +23,7 @@ import { useAmbientBackground } from '@/hooks/useAmbientBackground';
 import { triggerHaptic } from '@/utils/haptics';
 import { sampleMomentsWithMetadata } from '@/utils/sampleAfterglowData';
 import { Database } from '@/integrations/supabase/types';
+import { zIndex } from '@/constants/z';
 
 interface NightEvent {
   id: string;
@@ -453,7 +454,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       )}
       
       {/* Moment Detail Drawer */}
-      <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center">
+      <Suspense fallback={<div {...zIndex('overlay')} className="fixed inset-0 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>}>
         <MomentDetailDrawer />

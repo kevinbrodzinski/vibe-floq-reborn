@@ -16,6 +16,7 @@ import { VibeRing } from '@/components/VibeRing';
 import { useSuggestedInvitees } from '@/hooks/useSuggestedInvitees';
 import { safeVibe } from '@/utils/safeVibe';
 import { motion, AnimatePresence } from 'framer-motion';
+import { zIndex } from '@/constants/z';
 
 interface InviteOverlayProps {
   open: boolean;
@@ -309,7 +310,7 @@ export function InviteOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          {...zIndex('modal')} className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}

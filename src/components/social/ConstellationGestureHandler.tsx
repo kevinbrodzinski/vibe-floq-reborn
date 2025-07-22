@@ -6,6 +6,7 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useFieldUI } from '@/components/field/contexts/FieldUIContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { zIndex } from '@/constants/z';
 
 interface Friend {
   id: string;
@@ -134,7 +135,7 @@ export const ConstellationGestureHandler = ({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+            {...zIndex('modal')} className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
           >
             <div className="bg-primary/90 backdrop-blur-xl rounded-2xl p-6 text-center">
               <motion.div
@@ -212,7 +213,7 @@ export const ConstellationGestureHandler = ({
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
-            className="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50"
+            {...zIndex('modal')} className="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
           >
             <div className="bg-accent/90 backdrop-blur-xl rounded-xl p-4 text-center">
               <Users className="h-8 w-8 text-accent-foreground mx-auto mb-1" />

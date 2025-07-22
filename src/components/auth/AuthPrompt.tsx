@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LogIn, UserPlus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { zIndex } from '@/constants/z'
 
 interface AuthPromptProps {
   title?: string
@@ -99,8 +100,9 @@ export function AuthPrompt({
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          {...zIndex('toast')}
           className={cn(
-            "fixed bottom-4 right-4 z-50 max-w-sm",
+            "fixed bottom-4 right-4 max-w-sm",
             className
           )}
         >
@@ -121,7 +123,7 @@ export function AuthPrompt({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+          {...zIndex('modal')} className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

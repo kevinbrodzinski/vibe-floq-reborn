@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { zIndex } from '@/constants/z'
 
 interface StopActivityBubbleProps {
   message: string
@@ -31,8 +32,9 @@ export function StopActivityBubble({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -10, scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      {...zIndex('toast')}
       className={cn(
-        'absolute top-0 left-1/2 -translate-x-1/2 z-50 px-3 py-1 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm',
+        'absolute top-0 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-sm font-medium shadow-lg backdrop-blur-sm',
         getTypeStyles(type),
         className
       )}
