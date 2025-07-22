@@ -121,7 +121,10 @@ export const useClusters = (
       if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
 
       const { data, error } = await supabase.functions.invoke('clusters', {
-        body: { bbox: box, precision }
+        body: { bbox: box, precision },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
       // Check if request was aborted
@@ -155,8 +158,7 @@ export const useClusters = (
   }, [precision, processClusterData])
 
   const debouncedFetch = useMemo(
-    () =>
-      debounce(fetchClusters, 500), // 500 ms debounce
+    () => debounce(fetchClusters, 300), // Faster response for Floq's real-time feel
     [fetchClusters]
   )
 

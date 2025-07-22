@@ -34,19 +34,29 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   const userLocation = useOptimizedGeolocation()
   
   // Center on user location if available, fallback to LA
-  const initialViewState = useMemo(() => {
-    if (userLocation.lat && userLocation.lng) {
-      return {
-        ...INITIAL_VIEW_STATE,
-        longitude: userLocation.lng,
-        latitude: userLocation.lat,
-        zoom: 12,
-      }
-    }
-    return INITIAL_VIEW_STATE
-  }, [userLocation.lat, userLocation.lng])
+  const initialViewState = useMemo(() => ({
+    longitude: userLocation?.lat && userLocation?.lng ? userLocation.lng : INITIAL_VIEW_STATE.longitude,
+    latitude: userLocation?.lat && userLocation?.lng ? userLocation.lat : INITIAL_VIEW_STATE.latitude,
+    zoom: userLocation?.lat && userLocation?.lng ? 14 : INITIAL_VIEW_STATE.zoom,
+    pitch: INITIAL_VIEW_STATE.pitch,
+    bearing: INITIAL_VIEW_STATE.bearing,
+  }), [userLocation?.lat, userLocation?.lng])
 
   const [viewState, setViewState] = useState(initialViewState)
+  const [hasCentered, setHasCentered] = useState(false)
+  
+  // Auto-center once when user location becomes available
+  useEffect(() => {
+    if (!hasCentered && userLocation?.lat && userLocation?.lng) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: userLocation.lng,
+        latitude: userLocation.lat,
+        zoom: 14
+      }))
+      setHasCentered(true)
+    }
+  }, [userLocation?.lat, userLocation?.lng, hasCentered])
   
   // Debounce viewport changes to reduce API calls
   const debouncedViewState = useDebounce(viewState, 300)
@@ -68,7 +78,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
     ] as [number, number, number, number]
   }, [debouncedViewState])
 
-  const { clusters, loading, error } = useClusters(bbox, 6)
+  const { clusters, loading, error, isRealTimeConnected } = useClusters(bbox, 6)
 
   // Handle viewport changes
   const handleViewChange = useCallback(({ viewState }: { viewState: any }) => {
@@ -85,15 +95,17 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   }, [])
 
   const centerOnUser = useCallback(() => {
-    if (userLocation.lat && userLocation.lng) {
-      setViewState(v => ({
-        ...v,
-        longitude: userLocation.lng!,
-        latitude: userLocation.lat!,
+    if (userLocation?.lat && userLocation?.lng) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: userLocation.lng,
+        latitude: userLocation.lat,
         zoom: 14,
+        transitionDuration: 1000,
+        transitionEasing: (x: number) => 1 - Math.pow(1 - x, 3)
       }))
     }
-  }, [userLocation.lat, userLocation.lng])
+  }, [userLocation?.lat, userLocation?.lng])
 
   // Escape key handler
   useEffect(() => {
@@ -132,7 +144,8 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   const layers = useMemo(() => {
     if (!clusters || clusters.length === 0) return []
     const densityLayer = createDensityLayer(clusters, {}, () => {})
-    return [densityLayer].filter(Boolean)
+    const pulseLayer = usePulseLayer(clusters, {})
+    return [densityLayer, pulseLayer].filter(Boolean)
   }, [clusters])
 
   if (!isOpen) return null
@@ -140,46 +153,73 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   return (
     <div
       {...zIndex('modal')}
-      role="dialog"
-      aria-label="Vibe density map"
+      role="dialog" 
+      aria-label="Vibe Field - Pulse of the city"
       aria-modal="true"
-      className={`fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden`}
+      className="fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden"
     >
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-4 pointer-events-auto">
-        <div className="flex items-center gap-3">
-          <CardTitle className="text-xl font-semibold">Vibe Density Map</CardTitle>
-          {loading && (
-            <Badge variant="secondary" className="text-xs">
-              Loading...
-            </Badge>
-          )}
-          {error && (
-            <Badge variant="destructive" className="text-xs">
-              Error
-            </Badge>
-          )}
+        <div>
+          <CardTitle className="text-xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Vibe Field
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            {loading ? "Sensing the vibe..." : `${clusters?.length || 0} energy clusters detected`}
+          </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          aria-label="Close map"
-          className="h-8 w-8"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {isRealTimeConnected && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground">Live</span>
+            </div>
+          )}
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+            aria-label="Close vibe field"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </CardHeader>
 
-      {/* Main map container */}
+      {/* Map Container */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Loading skeleton */}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-muted-foreground">Loading vibe clusters...</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+            <div className="text-center space-y-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin mx-auto"></div>
+                <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-accent/30 animate-pulse mx-auto"></div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-lg font-medium bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  Sensing the vibe...
+                </p>
+                <p className="text-sm text-muted-foreground">Tuning into the city's pulse</p>
+              </div>
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+            <Card className="p-6 text-center max-w-sm mx-4">
+              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                <X className="w-6 h-6 text-destructive" />
+              </div>
+              <p className="text-destructive mb-2 font-medium">Signal lost</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Couldn't connect to the vibe network. Try widening your orbit or check your connection.
+              </p>
+              <Button onClick={() => window.location.reload()} size="sm" variant="outline">
+                Reconnect
+              </Button>
+            </Card>
           </div>
         )}
 
@@ -190,44 +230,44 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
           controller={true}
           layers={layers}
           views={new MapView()}
-          getCursor={() => 'default'}
+          getCursor={() => 'crosshair'}
           style={{ width: '100%', height: '100%', position: 'relative' }}
         />
 
-        {/* Zoom and location controls */}
+        {/* Floating Controls */}
         <div className="absolute right-4 top-4 flex flex-col gap-2 pointer-events-auto">
           <Button
             size="icon"
             variant="secondary"
-            onClick={zoomIn}
+            className="w-10 h-10 rounded-full shadow-lg backdrop-blur-sm bg-background/80 hover:bg-background hover:scale-105 transition-all"
             aria-label="Zoom in"
-            className="h-10 w-10 shadow-lg"
+            onClick={() => setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }))}
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
             variant="secondary"
-            onClick={zoomOut}
+            className="w-10 h-10 rounded-full shadow-lg backdrop-blur-sm bg-background/80 hover:bg-background hover:scale-105 transition-all"
             aria-label="Zoom out"
-            className="h-10 w-10 shadow-lg"
+            onClick={() => setViewState(prev => ({ ...prev, zoom: Math.max(prev.zoom - 1, 2) }))}
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="w-4 h-4" />
           </Button>
-          {userLocation.lat && userLocation.lng && (
+          {userLocation?.lat && userLocation?.lng && (
             <Button
               size="icon"
               variant="secondary"
-              onClick={centerOnUser}
+              className="w-10 h-10 rounded-full shadow-lg backdrop-blur-sm bg-background/80 hover:bg-background hover:scale-105 transition-all"
               aria-label="Center on my location"
-              className="h-10 w-10 shadow-lg"
+              onClick={centerOnUser}
             >
-              <LocateFixed className="h-4 w-4" />
+              <LocateFixed className="w-4 h-4" />
             </Button>
           )}
         </div>
 
-        {/* Legend */}
+        {/* Cluster Legend */}
         {clusters && clusters.length > 0 && (
           <div className="absolute bottom-4 left-4 pointer-events-auto">
             <ClusterLegend clusters={clusters} />
@@ -235,14 +275,25 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
         )}
       </div>
 
-      {/* Stats footer */}
+      {/* Cosmic Stats Footer */}
       {clusters && clusters.length > 0 && (
-        <CardContent className="pt-4 pb-4 pointer-events-auto">
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>{clusters.length} active clusters</span>
-            <span>
-              {clusters.reduce((sum, c) => sum + c.total, 0)} people vibing
+        <CardContent className="pt-4 pb-4 pointer-events-auto border-t border-border/50">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <span className="text-muted-foreground">
+                {clusters.length} energy {clusters.length === 1 ? 'cluster' : 'clusters'}
+              </span>
+            </div>
+            <span className="text-muted-foreground">
+              {clusters.reduce((sum, c) => sum + c.total, 0)} souls in the field
             </span>
+            {isRealTimeConnected && (
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                Pulse synced
+              </div>
+            )}
           </div>
         </CardContent>
       )}

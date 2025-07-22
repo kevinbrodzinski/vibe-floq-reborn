@@ -96,8 +96,4 @@ export const createHaloLayer = (
   })
 }
 
-export const createDeckLayers = {
-  createDensityLayer,
-  usePulseLayer,
-  createHaloLayer
-}
+// Keep individual exports for tree-shaking, remove the object export

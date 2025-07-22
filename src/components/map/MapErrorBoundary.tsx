@@ -58,15 +58,15 @@ function MapErrorFallback({ error, retry }: { error?: Error; retry: () => void }
               <AlertTriangle className="w-6 h-6 text-destructive" />
             </div>
           </div>
-          <CardTitle>Map failed to load</CardTitle>
+          <CardTitle>Vibe field disrupted</CardTitle>
           <CardDescription>
-            {error?.message || 'An unexpected error occurred while loading the vibe density map'}
+            {error?.message || 'Lost connection to the city\'s pulse. The vibe network may be experiencing interference.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={retry} className="w-full" variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            Reconnect to the field
           </Button>
         </CardContent>
       </Card>
