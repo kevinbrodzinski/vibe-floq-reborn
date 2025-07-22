@@ -10,7 +10,7 @@ export interface FloqPlan {
   planned_at: string;
   created_at: string;
   creator_id: string;
-  floq_id?: string;
+  floq_id: string;
   start_time?: string;
   end_time?: string;
   max_participants?: number;
