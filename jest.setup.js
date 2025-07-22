@@ -5,6 +5,7 @@ jest.mock('mapbox-gl', () => ({
   Map: function () {
     return {
       on: jest.fn(),
+      off: jest.fn(),
       getBounds: () => ({
         getSouth: () => 0,
         getWest: () => 0,
@@ -15,4 +16,13 @@ jest.mock('mapbox-gl', () => ({
       remove: jest.fn(),
     };
   },
+}));
+
+jest.mock('@rnmapbox/maps', () => ({
+  __esModule: true,
+  default: {},
+  MapView: 'MapView',
+  Camera: 'Camera',
+  setAccessToken: jest.fn(),
+  setTelemetryEnabled: jest.fn(),
 }));

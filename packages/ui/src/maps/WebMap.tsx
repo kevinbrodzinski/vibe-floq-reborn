@@ -53,7 +53,7 @@ export const WebMap: React.FC<BaseMapProps> = ({
       zoom: 11,
     });
 
-    mapRef.current.on('moveend', () => {
+    const handleMoveEnd = () => {
       const m = mapRef.current!;
       const b = m.getBounds();
       onRegionChange({
@@ -63,9 +63,16 @@ export const WebMap: React.FC<BaseMapProps> = ({
         maxLng: b.getEast(),
         zoom: m.getZoom(),
       });
-    });
+    };
 
-    return () => mapRef.current?.remove();
+    mapRef.current.on('moveend', handleMoveEnd);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.off('moveend', handleMoveEnd);
+        mapRef.current.remove();
+      }
+    };
   }, [onRegionChange, tokenLoaded]);
 
   return (

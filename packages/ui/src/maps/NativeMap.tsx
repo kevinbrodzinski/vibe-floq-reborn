@@ -1,23 +1,24 @@
 import React, { useEffect } from 'react';
 import MapboxGL from '@rnmapbox/maps';
+import Constants from 'expo-constants';
 import type { BaseMapProps } from './types';
-
-// Set access token and disable telemetry
-const setupMapbox = () => {
-  const token = process.env.MAPBOX_ACCESS_TOKEN;
-  if (token) {
-    MapboxGL.setAccessToken(token);
-  }
-  MapboxGL.setTelemetryEnabled(false);
-};
 
 export const NativeMap: React.FC<BaseMapProps> = ({
   onRegionChange,
   children,
 }) => {
   useEffect(() => {
-    setupMapbox();
+    const token = Constants.expoConfig?.extra?.MAPBOX_ACCESS_TOKEN;
+    if (token) {
+      MapboxGL.setAccessToken(token);
+    }
+    MapboxGL.setTelemetryEnabled(false);
   }, []);
+
+  const token = Constants.expoConfig?.extra?.MAPBOX_ACCESS_TOKEN;
+  if (!token) {
+    return null; // Don't render until token is available
+  }
 
   return (
     <MapboxGL.MapView

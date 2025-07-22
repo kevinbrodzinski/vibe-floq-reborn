@@ -9,6 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'Floq',
   slug: 'floq',
   runtimeVersion: { policy: 'appVersion' },
+  updates: { fallbackToCacheTimeout: 0 },
   plugins: ['@rnmapbox/maps', ...(config.plugins ?? [])],
   extra: {
     ...config.extra,
