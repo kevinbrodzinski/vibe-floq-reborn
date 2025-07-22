@@ -2690,7 +2690,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           completed_at: string | null
-          completed_steps: Json
+          completed_steps: number[]
           created_at: string
           current_step: number
           id: string
@@ -2704,7 +2704,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           completed_at?: string | null
-          completed_steps?: Json
+          completed_steps?: number[]
           created_at?: string
           current_step?: number
           id?: string
@@ -2718,7 +2718,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           completed_at?: string | null
-          completed_steps?: Json
+          completed_steps?: number[]
           created_at?: string
           current_step?: number
           id?: string

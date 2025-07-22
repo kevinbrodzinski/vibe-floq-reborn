@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { type Vibe } from '@/types/vibes';
@@ -25,6 +25,7 @@ interface OnboardingProgressData {
 
 interface OnboardingState {
   currentStep: number;
+  completedSteps: number[];
   selectedVibe?: Vibe;
   profileData?: {
     username: string;
@@ -41,7 +42,7 @@ export function useOnboardingDatabase() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadProgress = async (): Promise<OnboardingState | null> => {
+  const loadProgress = useCallback(async (): Promise<OnboardingState | null> => {
     if (!user) return null;
     
     setLoading(true);
@@ -61,6 +62,7 @@ export function useOnboardingDatabase() {
       
       return {
         currentStep: data.current_step,
+        completedSteps: Array.isArray(data.completed_steps) ? data.completed_steps : [],
         selectedVibe: data.selected_vibe as Vibe,
         profileData: data.profile_data as any, // Type assertion for JSONB
         avatarUrl: data.avatar_url,
@@ -72,9 +74,9 @@ export function useOnboardingDatabase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const saveProgress = async (state: OnboardingState): Promise<boolean> => {
+  const saveProgress = useCallback(async (state: OnboardingState): Promise<boolean> => {
     if (!user) return false;
     
     setLoading(true);
@@ -85,7 +87,7 @@ export function useOnboardingDatabase() {
         user_id: user.id,
         onboarding_version: 'v2' as const,
         current_step: state.currentStep,
-        completed_steps: Array.from({ length: state.currentStep }, (_, i) => i),
+        completed_steps: state.completedSteps || [],
         selected_vibe: state.selectedVibe,
         profile_data: state.profileData,
         avatar_url: state.avatarUrl,
@@ -106,9 +108,9 @@ export function useOnboardingDatabase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const completeOnboarding = async (): Promise<boolean> => {
+  const completeOnboarding = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
     
     setLoading(true);
@@ -133,9 +135,9 @@ export function useOnboardingDatabase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const clearProgress = async (): Promise<boolean> => {
+  const clearProgress = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
     
     setLoading(true);
@@ -157,7 +159,7 @@ export function useOnboardingDatabase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   return {
     loading,

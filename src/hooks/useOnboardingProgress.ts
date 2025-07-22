@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { type Vibe } from '@/types/vibes';
 import { useOnboardingDatabase } from './useOnboardingDatabase';
 import { useAuth } from '@/providers/AuthProvider';
 
 interface OnboardingState {
   currentStep: number;
+  completedSteps: number[];
   selectedVibe?: Vibe;
   profileData?: {
     username: string;
@@ -24,6 +26,7 @@ export function useOnboardingProgress() {
   const { loadProgress, saveProgress, completeOnboarding, clearProgress: clearDbProgress } = useOnboardingDatabase();
   const [state, setState] = useState<OnboardingState>({
     currentStep: 0,
+    completedSteps: [],
     startedAt: Date.now()
   });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -35,6 +38,10 @@ export function useOnboardingProgress() {
         // Try to load from database first
         const dbProgress = await loadProgress();
         if (dbProgress) {
+          // Ensure completedSteps exists for backwards compatibility
+          if (!dbProgress.completedSteps) {
+            dbProgress.completedSteps = Array.from({ length: dbProgress.currentStep }, (_, i) => i);
+          }
           setState(dbProgress);
           setIsLoaded(true);
           return;
@@ -50,6 +57,10 @@ export function useOnboardingProgress() {
           // Check if progress has expired
           const hoursSinceStart = (Date.now() - parsed.startedAt) / (1000 * 60 * 60);
           if (hoursSinceStart < EXPIRY_HOURS) {
+            // Ensure completedSteps exists for backwards compatibility
+            if (!parsed.completedSteps) {
+              parsed.completedSteps = Array.from({ length: parsed.currentStep }, (_, i) => i);
+            }
             setState(parsed);
           } else {
             // Clear expired progress
@@ -66,64 +77,82 @@ export function useOnboardingProgress() {
     loadInitialProgress();
   }, [user, loadProgress]);
 
-  // Save progress to both localStorage and database
+  // Debounced save to prevent excessive writes
+  const debouncedSave = useDebouncedCallback(
+    useCallback((stateToSave: OnboardingState) => {
+      if (stateToSave.currentStep > 0) {
+        // Save to localStorage immediately for instant feedback
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+        
+        // Save to database if user is authenticated
+        if (user) {
+          saveProgress(stateToSave);
+        }
+      }
+    }, [user, saveProgress]),
+    1000 // 1 second debounce
+  );
+
+  // Save progress to both localStorage and database (debounced)
   useEffect(() => {
     if (!isLoaded) return;
-    
-    if (state.currentStep > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    debouncedSave(state);
+  }, [state, isLoaded, debouncedSave]);
+
+  const updateProgress = useCallback((updates: Partial<OnboardingState>) => {
+    setState(prev => {
+      const newState = { ...prev, ...updates };
       
-      // Save to database if user is authenticated
-      if (user) {
-        saveProgress(state);
+      // Auto-update completed steps based on current step
+      if (updates.currentStep !== undefined) {
+        newState.completedSteps = Array.from({ length: updates.currentStep }, (_, i) => i);
       }
-    }
-  }, [state, user, saveProgress, isLoaded]);
+      
+      return newState;
+    });
+  }, []);
 
-  const updateProgress = (updates: Partial<OnboardingState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
-
-  const clearProgress = async () => {
+  const clearProgress = useCallback(async () => {
     localStorage.removeItem(STORAGE_KEY);
     if (user) {
       await clearDbProgress();
     }
     setState({
       currentStep: 0,
+      completedSteps: [],
       startedAt: Date.now()
     });
-  };
+  }, [user, clearDbProgress]);
 
-  const markComplete = async () => {
+  const markComplete = useCallback(async () => {
     if (user) {
       await completeOnboarding();
     }
-  };
+  }, [user, completeOnboarding]);
 
-  const goToStep = (step: number) => {
+  const goToStep = useCallback((step: number) => {
     updateProgress({ currentStep: step });
-  };
+  }, [updateProgress]);
 
-  const nextStep = () => {
+  const nextStep = useCallback(() => {
     updateProgress({ currentStep: state.currentStep + 1 });
-  };
+  }, [state.currentStep, updateProgress]);
 
-  const prevStep = () => {
+  const prevStep = useCallback(() => {
     updateProgress({ currentStep: Math.max(0, state.currentStep - 1) });
-  };
+  }, [state.currentStep, updateProgress]);
 
-  const setVibe = (vibe: Vibe) => {
+  const setVibe = useCallback((vibe: Vibe) => {
     updateProgress({ selectedVibe: vibe });
-  };
+  }, [updateProgress]);
 
-  const setProfile = (profileData: OnboardingState['profileData']) => {
+  const setProfile = useCallback((profileData: OnboardingState['profileData']) => {
     updateProgress({ profileData });
-  };
+  }, [updateProgress]);
 
-  const setAvatar = (avatarUrl: string | null) => {
+  const setAvatar = useCallback((avatarUrl: string | null) => {
     updateProgress({ avatarUrl });
-  };
+  }, [updateProgress]);
 
   const hasProgress = state.currentStep > 0;
   const progressPercentage = Math.round((state.currentStep / 5) * 100);

@@ -4,6 +4,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboardingScreen';
 import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
@@ -21,51 +22,50 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const { getItem, setItem } = useSafeStorage();
   const location = useLocation();
 
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const hasCompleted = preferences?.onboarding_version === ONBOARDING_VERSION;
 
   // Check if user is visiting a shared plan route (bypass onboarding)
   const isSharedPlanRoute = location.pathname.startsWith('/share/');
   const isDirectPlanRoute = location.pathname.startsWith('/plan/');
 
-  useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!user) {
-        setOnboardingComplete(null);
-        return;
+  // Cached onboarding status check  
+  const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
+    queryKey: ['onboarding-complete', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+
+      try {
+        // Check database first
+        const { data } = await supabase
+          .from('user_onboarding_progress')
+          .select('completed_at')
+          .eq('user_id', user.id)
+          .eq('onboarding_version', ONBOARDING_VERSION)
+          .maybeSingle();
+
+        if (data?.completed_at) {
+          setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+          return true;
+        }
+
+        // Fallback to preferences and localStorage
+        if (hasCompleted) {
+          setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+          return true;
+        }
+
+        const stored = await getItem(ONBOARDING_KEY);
+        return stored === ONBOARDING_VERSION;
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        const stored = await getItem(ONBOARDING_KEY);
+        return stored === ONBOARDING_VERSION;
       }
-
-      // Check database first
-      const { data } = await supabase
-        .from('user_onboarding_progress')
-        .select('completed_at')
-        .eq('user_id', user.id)
-        .eq('onboarding_version', ONBOARDING_VERSION)
-        .maybeSingle();
-
-      if (data?.completed_at) {
-        setOnboardingComplete(true);
-        setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-        return;
-      }
-
-      // Fallback to preferences and localStorage
-      if (hasCompleted) {
-        setOnboardingComplete(true);
-        setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-        return;
-      }
-
-      const stored = await getItem(ONBOARDING_KEY);
-      if (stored === ONBOARDING_VERSION) {
-        setOnboardingComplete(true);
-      } else {
-        setOnboardingComplete(false);
-      }
-    };
-
-    checkOnboardingStatus();
-  }, [user, hasCompleted, getItem, setItem]);
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   // Debug logging
   console.log('[AppAccessGuard Debug]', {
@@ -77,10 +77,17 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     currentDbVersion: preferences?.onboarding_version
   });
 
-  if (loading || (user && loadingPrefs) || onboardingComplete === null) {
+  if (loading || (user && loadingPrefs) || onboardingLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          {onboardingLoading && (
+            <p className="text-sm text-muted-foreground animate-pulse">
+              Loading your progress...
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -113,14 +120,13 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
           }
 
           await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+          await queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
           await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
 
           const redirect = await getRedirectPath();
           if (redirect) {
             await clearRedirectPath();
             window.location.href = redirect;
-          } else {
-            setOnboardingComplete(true);
           }
         }}
       />
