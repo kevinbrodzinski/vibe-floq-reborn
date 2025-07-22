@@ -70,7 +70,7 @@ export const InvitePeopleModal: React.FC<Props> = ({
   /* —— Member search --------------------------------------------------- */
   const [rawQuery, setRawQuery] = useState('');
   const query = useDebounce(rawQuery, 300);
-  const { data: users, isLoading, isError } = usePlanUserSearch(planId, query);
+  const { data: users, isLoading, isError, error } = usePlanUserSearch(planId, query);
 
   /* Invitation message -------------------------------------------------- */
   const [inviteMessage, setInviteMessage] = useState(
@@ -86,11 +86,12 @@ export const InvitePeopleModal: React.FC<Props> = ({
   };
 
   /* render helpers ------------------------------------------------------ */
-  const placeholder = useMemo(() => (
-    query.length < 2
-      ? 'Type at least 2 characters'
-      : 'No matching users'
-  ), [query]);
+  const placeholder = useMemo(() => {
+    if (query.length < 2) return 'Type at least 2 characters to search';
+    if (isLoading) return 'Searching...';
+    if (users?.length === 0) return 'No matching users found';
+    return null;
+  }, [query, isLoading, users]);
 
   /* -------------------------------------------------------------------- */
   return (
@@ -124,19 +125,31 @@ export const InvitePeopleModal: React.FC<Props> = ({
             </div>
 
             {isLoading && <p className="mt-4 text-sm text-muted-foreground">Searching…</p>}
-            {isError && <p className="mt-4 text-sm text-destructive">Search failed. Try again.</p>}
-
-            {users?.length === 0 && !isLoading && (
-              <p className="mt-4 text-sm text-muted-foreground">{placeholder}</p>
+            
+            {isError && (
+              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive">
+                  Search failed: {error?.message || 'Please try again'}
+                </p>
+              </div>
             )}
 
-            {users?.map((u) => (
+            {!isLoading && !isError && placeholder && (
+              <div className="mt-4 p-8 text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">{placeholder}</p>
+              </div>
+            )}
+
+            {users && users.length > 0 && users.map((u) => (
               <Card key={u.id} className="mt-3 p-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    {u.avatar_url ? (
+                    {u.avatar_url && (
                       <AvatarImage src={u.avatar_url} alt="" />
-                    ) : null}
+                    )}
                     <AvatarFallback>
                       {(u.display_name ?? u.username ?? 'U')[0].toUpperCase()}
                     </AvatarFallback>
@@ -154,9 +167,18 @@ export const InvitePeopleModal: React.FC<Props> = ({
                 <Button
                   size="sm"
                   disabled={addMember.isPending}
-                  onClick={() => addMember.mutate({ planId, userId: u.id })}
+                  onClick={() => {
+                    addMember.mutate({ planId, userId: u.id }, {
+                      onSuccess: () => {
+                        toast({
+                          title: 'Invitation sent',
+                          description: `Invited ${u.display_name || u.username} to join the plan`
+                        });
+                      }
+                    });
+                  }}
                 >
-                  Invite
+                  {addMember.isPending ? 'Inviting...' : 'Invite'}
                 </Button>
               </Card>
             ))}
