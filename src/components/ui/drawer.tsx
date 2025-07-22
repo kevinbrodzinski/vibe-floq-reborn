@@ -2,9 +2,10 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
+import { zIndex } from "@/constants/z"
 
 const Drawer = ({
-  shouldScaleBackground = true,
+  shouldScaleBackground = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
@@ -27,7 +28,7 @@ const DrawerOverlay = React.forwardRef<
   <DrawerPrimitive.Overlay
     ref={ref}
     className={cn("fixed inset-0 bg-black/80", className)}
-    style={{ zIndex: 70 }}
+    {...zIndex('modal')}
     {...props}
   />
 ))
@@ -45,7 +46,7 @@ const DrawerContent = React.forwardRef<
         "fixed inset-x-0 bottom-0 mt-24 flex h-auto max-h-[90vh] overflow-y-auto flex-col rounded-t-[10px] border bg-background",
         className
       )}
-      style={{ zIndex: 70 }}
+      {...zIndex('modal')}
       {...props}
     >
       <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
