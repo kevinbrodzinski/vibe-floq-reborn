@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Plus, Circle, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { IconBtn } from './IconBtn';
 import { usePresenceCount } from '@/hooks/usePresenceCount';
 import { useCurrentVibe } from '@/lib/store/useVibe';
+import { zIndex } from '@/constants/z';
 
 interface FloatingBottomBarProps {
   onShowCreate?: () => void;
@@ -24,7 +26,10 @@ export const FloatingBottomBar: React.FC<FloatingBottomBarProps> = ({
   const displayBadge = badge ?? presenceCount;
 
   return (
-    <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] mx-auto max-w-sm flex justify-around backdrop-blur-md bg-white/5 rounded-full py-3 shadow-lg ring-1 ring-white/10 z-50">
+    <footer 
+      className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+1rem)] mx-auto max-w-sm flex justify-around backdrop-blur-md bg-white/5 rounded-full py-3 shadow-lg ring-1 ring-white/10"
+      {...zIndex('system')}
+    >
       <IconBtn 
         icon={Plus} 
         label="New Floq" 

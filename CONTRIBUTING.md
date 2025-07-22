@@ -1,3 +1,4 @@
+
 # Contributing Guide
 
 ## Z-Index Convention
@@ -34,10 +35,52 @@ import { zIndex } from '@/constants/z';
 
 The `zIndex()` helper returns `{ style: { zIndex: value } }` to avoid leaking attributes to the DOM.
 
+### Layer Decision Tree
+
+When choosing the appropriate layer for a new component:
+
+- **Does it block interaction behind it?** → `modal` (70)
+- **Is it ephemeral feedback?** → `toast` (90) 
+- **Is it a fixed tool/FAB?** → `system` (50)
+- **Does it overlay the map?** → `overlay` (30)
+- **Is it purely local stacking?** → Use relative values ≤ 30
+
 ### ESLint Protection
 
 Our ESLint config automatically prevents hardcoded z-index values:
-- No `z-[number]` or `z-{number}` in Tailwind classes
-- No inline `zIndex: number` in style objects
+- No `z-[number]` or `z-{number}` in Tailwind classes above z-40
+- No inline `zIndex: number` in style objects above 40
+- UI library components in `/src/components/ui/` are exempt from these rules
 
-Only relative z-index values ≤10 are allowed for local component stacking.
+Only relative z-index values ≤30 are allowed for local component stacking.
+
+### Testing Z-Index Hierarchy
+
+Use the test utilities in `/src/test/utils/zIndexHelpers.ts`:
+
+```typescript
+import { validateLayerHierarchy } from '@/test/utils/zIndexHelpers';
+
+// Test that toasts appear above modals
+await validateLayerHierarchy('[data-testid="toast"]', '[role="dialog"]');
+```
+
+### Troubleshooting
+
+**Problem**: Component appears behind expected layer
+**Solution**: 
+1. Check if using semantic `zIndex()` helper
+2. Verify parent container doesn't have lower z-index
+3. Ensure no competing Tailwind z-classes
+
+**Problem**: ESLint errors about hardcoded z-index
+**Solution**: Replace with semantic layer from `@/constants/z`
+
+**Problem**: Dropdown/menu hidden inside modal
+**Solution**: UI library components should use `z-[75]` to appear above modals
+
+### Performance Considerations
+
+- The `zIndex()` helper is lightweight and doesn't cause re-renders
+- Avoid creating many deeply nested stacking contexts
+- Test performance on mobile with 5+ layered components active

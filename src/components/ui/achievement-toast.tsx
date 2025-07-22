@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -5,6 +6,7 @@ import { Achievement } from '@/hooks/useAchievements';
 import * as LucideIcons from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { zIndex } from '@/constants/z';
 
 interface AchievementToastProps {
   achievement: Achievement;
@@ -181,7 +183,10 @@ export function AchievementToastContainer() {
   const activeEvents = events.filter(event => !event.dismissed).slice(0, 3); // Max 3 visible
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+    <div 
+      className="fixed top-4 right-4 space-y-2 pointer-events-none"
+      {...zIndex('toast')}
+    >
       <AnimatePresence mode="popLayout">
         {activeEvents.map((event) => (
           <div key={event.id} className="pointer-events-auto">

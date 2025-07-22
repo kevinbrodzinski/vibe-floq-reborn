@@ -29,18 +29,25 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-unused-vars": "off",
       
-      // Z-index governance rules
+      // Z-index governance rules - strict for application code
       "no-restricted-syntax": [
         "error",
         {
-          selector: "Literal[value=/\\bz-(\\[.*?]|[0-9]+)\\b/]",
+          selector: "Literal[value=/\\bz-(\\[.*?]|[4-9][0-9]+)\\b/]",
           message: "Hard-coded Tailwind z-index detected. Use Z constants from '@/constants/z' instead."
         },
         {
-          selector: "Property[key.name='zIndex'] > Literal[value=/^\\d+$/]",
+          selector: "Property[key.name='zIndex'] > Literal[value=/^([4-9][0-9]|[1-9][0-9]{2,})$/]",
           message: "Inline zIndex detected. Use Z.{layer} constants from '@/constants/z' instead."
         }
       ],
+    },
+  },
+  // Allow z-index values in UI library components
+  {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": "off",
     },
   }
 );

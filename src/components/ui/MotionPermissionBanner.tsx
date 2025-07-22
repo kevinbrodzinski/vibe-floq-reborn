@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { zIndex } from '@/constants/z';
 
 interface MotionPermissionBannerProps {
   requestMotionPermission: () => Promise<boolean>;
@@ -47,7 +49,8 @@ export const MotionPermissionBanner = ({
       initial={{ opacity: 0, y: -50 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -50 }}
-      className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50"
+      className="fixed top-16 left-1/2 transform -translate-x-1/2"
+      {...zIndex('system')}
     >
       <div className="bg-accent/95 backdrop-blur-xl rounded-lg border border-accent/30 p-3 shadow-lg">
         <div className="flex items-center gap-3">
