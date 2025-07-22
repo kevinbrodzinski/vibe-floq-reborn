@@ -87,7 +87,7 @@ export const createHaloLayer = (
     },
     radiusUnits: 'meters',
     getFillColor: d => [
-      ...getClusterColor(d.delta / maxDelta, { [d.dom_vibe]: d.user_cnt || 1 }, prefs),
+      ...getClusterColor(d.delta / maxDelta, { [d.dom_vibe || 'none']: d.user_cnt || 1 }, prefs),
       Math.floor(120 + (d.delta / maxDelta) * 60) // Opacity based on surge intensity
     ],
     opacity: 0.35,
@@ -96,4 +96,4 @@ export const createHaloLayer = (
   })
 }
 
-// Keep individual exports for tree-shaking, remove the object export
+// Individual exports for tree-shaking

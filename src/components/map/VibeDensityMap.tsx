@@ -12,8 +12,6 @@ import { useClusters } from '@/hooks/useClusters'
 import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation'
 import { createDensityLayer, usePulseLayer } from './DeckLayers'
 import { ClusterLegend } from './ClusterLegend'
-import { getClusterColor } from '@/utils/color'
-import { vibeEmoji } from '@/utils/vibe'
 import { zIndex } from '@/constants/z'
 import { useDebounce } from '@/hooks/useDebounce'
 
@@ -33,21 +31,25 @@ interface VibeDensityMapProps {
 export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   const userLocation = useOptimizedGeolocation()
   
+  // Guard for valid coordinates (avoid Gulf of Guinea)
+  const hasFix = !!(userLocation?.lat && userLocation?.lng && 
+    !(userLocation.lat === 0 && userLocation.lng === 0))
+
   // Center on user location if available, fallback to LA
   const initialViewState = useMemo(() => ({
-    longitude: userLocation?.lat && userLocation?.lng ? userLocation.lng : INITIAL_VIEW_STATE.longitude,
-    latitude: userLocation?.lat && userLocation?.lng ? userLocation.lat : INITIAL_VIEW_STATE.latitude,
-    zoom: userLocation?.lat && userLocation?.lng ? 14 : INITIAL_VIEW_STATE.zoom,
+    longitude: hasFix ? userLocation.lng : INITIAL_VIEW_STATE.longitude,
+    latitude: hasFix ? userLocation.lat : INITIAL_VIEW_STATE.latitude,
+    zoom: hasFix ? 14 : INITIAL_VIEW_STATE.zoom,
     pitch: INITIAL_VIEW_STATE.pitch,
     bearing: INITIAL_VIEW_STATE.bearing,
-  }), [userLocation?.lat, userLocation?.lng])
+  }), [hasFix, userLocation?.lat, userLocation?.lng])
 
   const [viewState, setViewState] = useState(initialViewState)
   const [hasCentered, setHasCentered] = useState(false)
   
   // Auto-center once when user location becomes available
   useEffect(() => {
-    if (!hasCentered && userLocation?.lat && userLocation?.lng) {
+    if (!hasCentered && hasFix) {
       setViewState(prev => ({
         ...prev,
         longitude: userLocation.lng,
@@ -56,7 +58,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
       }))
       setHasCentered(true)
     }
-  }, [userLocation?.lat, userLocation?.lng, hasCentered])
+  }, [hasFix, hasCentered, userLocation?.lat, userLocation?.lng])
   
   // Debounce viewport changes to reduce API calls
   const debouncedViewState = useDebounce(viewState, 300)
@@ -95,7 +97,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   }, [])
 
   const centerOnUser = useCallback(() => {
-    if (userLocation?.lat && userLocation?.lng) {
+    if (hasFix) {
       setViewState(prev => ({
         ...prev,
         longitude: userLocation.lng,
@@ -105,7 +107,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
         transitionEasing: (x: number) => 1 - Math.pow(1 - x, 3)
       }))
     }
-  }, [userLocation?.lat, userLocation?.lng])
+  }, [hasFix, userLocation?.lat, userLocation?.lng])
 
   // Escape key handler
   useEffect(() => {
@@ -254,7 +256,7 @@ export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
           >
             <ZoomOut className="w-4 h-4" />
           </Button>
-          {userLocation?.lat && userLocation?.lng && (
+          {hasFix && (
             <Button
               size="icon"
               variant="secondary"
