@@ -6297,26 +6297,17 @@ export type Database = {
         }[]
       }
       venues_within_radius: {
-        Args: { center_lat: number; center_lng: number; r_m: number }
+        Args: { center_lat: number; center_lng: number; r_m?: number }
         Returns: {
-          address: string | null
-          categories: string[] | null
-          created_at: string | null
-          description: string | null
-          geom: unknown | null
           id: string
+          name: string
+          address: string
+          categories: string[]
+          rating: number
+          photo_url: string
           lat: number
           lng: number
-          name: string
-          photo_url: string | null
-          provider: string
-          provider_id: string
-          radius_m: number | null
-          rating: number | null
-          slug: string | null
-          source: string | null
-          updated_at: string | null
-          vibe: string | null
+          distance_m: number
         }[]
       }
       vibe_similarity: {
