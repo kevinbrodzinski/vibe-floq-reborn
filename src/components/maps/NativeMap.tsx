@@ -36,6 +36,10 @@ export const NativeMap: React.FC<NativeMapProps> = ({ onRegionChange, children }
   );
   */
   
+  if (__DEV__) {
+    console.warn('Field view not yet supported on React Native');
+  }
+  
   return (
     <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
       <div className="text-white text-center">

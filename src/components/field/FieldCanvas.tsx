@@ -131,10 +131,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           const sprite = tilePool.acquire(id);
           if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // Use cached projection for performance (memoize by tile_id + zoom)
+          // Use cached projection for performance (memoize by tile_id + zoom + bearing)
           const projectionCache = projectionCacheRef.current;
-          const currentZoom = getMapInstance()?.getZoom() ?? 11;
-          const cacheKey = `${id}-${Math.round(currentZoom * 10)}`;
+          const map = getMapInstance();
+          const currentZoom = map?.getZoom() ?? 11;
+          const currentBearing = map?.getBearing() ?? 0;
+          const cacheKey = `${id}:${Math.round(currentZoom * 10)}:${Math.round(currentBearing)}`;
           
           let screenPos = projectionCache.get(cacheKey);
           if (!screenPos || screenPos.zoom !== currentZoom) {
