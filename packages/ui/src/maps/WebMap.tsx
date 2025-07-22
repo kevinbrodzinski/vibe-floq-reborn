@@ -3,78 +3,77 @@ import mapboxgl from 'mapbox-gl';
 import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
 
-export const WebMap: React.FC<{
+/** one-shot token fetch — runs the first time we mount */
+const loadTokenOnce = (() => {
+  let done = false;
+  return async () => {
+    if (done) return;
+    try {
+      const { data } = await supabase.functions.invoke('mapbox-token');
+      if (data?.token) mapboxgl.accessToken = data.token;
+      else console.warn('[MAP] no token returned, Mapbox will scream');
+    } catch (e) {
+      console.warn('[MAP] token fetch failed', e);
+    }
+    done = true;
+  };
+})();
+
+interface Props {
   onRegionChange: (b: {
-    minLat: number;
-    minLng: number;
-    maxLat: number;
-    maxLng: number;
-    zoom: number;
+    minLat: number; minLng: number;
+    maxLat: number; maxLng: number;
+    zoom:    number;
   }) => void;
   children?: React.ReactNode;
-}> = ({ onRegionChange, children }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef       = useRef<mapboxgl.Map | null>(null);
+}
 
-  // ⬇️ ONE helper to fetch once (kept tiny to avoid any layout changes)
-  const initToken = (() => {
-    let done = false;
-    return async () => {
-      if (done) return;
-      try {
-        const { data } = await supabase.functions.invoke('mapbox-token');
-        if (data?.token) mapboxgl.accessToken = data.token;
-      } catch { /* silent – Mapbox will throw if truly missing */ }
-      done = true;
-    };
-  })();
+export const WebMap: React.FC<Props> = ({ onRegionChange, children }) => {
+  const container = useRef<HTMLDivElement>(null);
+  const mapRef    = useRef<mapboxgl.Map | null>(null);
 
-  /* init map */
+  /* create map once */
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    if (!container.current || mapRef.current) return;
 
-    /* 1️⃣  guarantee token is set */
-    initToken().then(() => {
-      /* 2️⃣  build the map only after token attempt */
-
+    loadTokenOnce().then(() => {
       const map = new mapboxgl.Map({
-        container: containerRef.current,
+        container: container.current!,
         style:     'mapbox://styles/mapbox/dark-v11',
         center:    [-118.24, 34.05],
         zoom:      11,
       });
       mapRef.current = map;
 
-      /* register once */
-      map.on('load', () => setMapInstance(map));
+      /* 👉  register for projection AFTER style loads */
+      map.once('load', () => setMapInstance(map));
 
-      /* viewport sync */
-      const handleMoveEnd = () => {
+      /* viewport → React */
+      const onMove = () => {
         const b = map.getBounds();
         onRegionChange({
-          minLat: b.getSouth(),
-          minLng: b.getWest(),
-          maxLat: b.getNorth(),
-          maxLng: b.getEast(),
+          minLat: b.getSouth(), minLng: b.getWest(),
+          maxLat: b.getNorth(), maxLng: b.getEast(),
           zoom:   map.getZoom(),
         });
       };
-      map.on('moveend', handleMoveEnd);
+      map.on('moveend', onMove);
 
-      /* cleanup – prevents "_cancelResize" crash */
+      /* cleanup – prevents _cancelResize crash */
       return () => {
         setMapInstance(null);
-        map.off('moveend', handleMoveEnd);
+        map.off('moveend', onMove);
         map.remove();
         mapRef.current = null;
       };
     });
   }, [onRegionChange]);
 
+  /* *** PERFECTLY SAFE LAYOUT – fills everything below header *** */
   return (
-    <div ref={containerRef} className="absolute inset-0">
-      {/* Mapbox injects its <canvas> here */}
-      {children /* overlay (pixi canvas) */}
+    <div className="absolute inset-0">
+      <div ref={container} className="absolute inset-0" />
+      {children /* FieldCanvas overlay */}
     </div>
   );
 };
