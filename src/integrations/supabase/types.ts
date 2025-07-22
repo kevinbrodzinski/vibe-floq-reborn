@@ -3018,6 +3018,7 @@ export type Database = {
           lng: number
           name: string
           radius_m: number | null
+          slug: string | null
           source: string | null
           vibe: string | null
         }
@@ -3030,6 +3031,7 @@ export type Database = {
           lng: number
           name: string
           radius_m?: number | null
+          slug?: string | null
           source?: string | null
           vibe?: string | null
         }
@@ -3042,6 +3044,7 @@ export type Database = {
           lng?: number
           name?: string
           radius_m?: number | null
+          slug?: string | null
           source?: string | null
           vibe?: string | null
         }
