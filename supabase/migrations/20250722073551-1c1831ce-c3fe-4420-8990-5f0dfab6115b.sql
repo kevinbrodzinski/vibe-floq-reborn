@@ -1,41 +1,55 @@
--- PR 1: Venues Data Ingestion & Schema (Fixed)
--- Enable PostGIS extension
-CREATE EXTENSION IF NOT EXISTS postgis;
+-- 0) Enable PostGIS once per DB
+create extension if not exists postgis;
 
--- Create venues table first
-CREATE TABLE IF NOT EXISTS public.venues (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider    text NOT NULL,          -- 'google', 'yelp', etc
-  provider_id text NOT NULL,          -- stable id from the provider
-  name        text NOT NULL,
-  slug        text GENERATED ALWAYS AS
-              (lower(regexp_replace(name,'[^a-z0-9]+','-','g'))) STORED,
-  lat         double precision NOT NULL,
-  lng         double precision NOT NULL,
-  address     text,
-  categories  text[],
-  rating      numeric,
-  photo_url   text,
-  updated_at  timestamptz DEFAULT now(),
-  UNIQUE (provider, provider_id)
-);
+-- 1) new columns (nullable first)
+alter table public.venues
+  add column if not exists provider     text,
+  add column if not exists provider_id  text,
+  add column if not exists address      text,
+  add column if not exists categories   text[],
+  add column if not exists rating       numeric,
+  add column if not exists photo_url    text,
+  add column if not exists updated_at   timestamptz default now();
 
--- Add the computed geography column after table creation
-ALTER TABLE public.venues 
-ADD COLUMN IF NOT EXISTS geom geography(point,4326) 
-GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lng,lat),4326)) STORED;
+-- 2) widen coords if needed
+alter table public.venues
+  alter column lat type double precision,
+  alter column lng type double precision;
 
--- Create spatial and performance indexes
-CREATE INDEX IF NOT EXISTS venues_gix ON public.venues USING GIST (geom);
-CREATE INDEX IF NOT EXISTS venues_slug_ix ON public.venues(slug);
-CREATE INDEX IF NOT EXISTS venues_provider_ix ON public.venues(provider, provider_id);
+-- 3) geometry helper
+do $$
+begin
+  -- add only if the column is missing
+  if not exists (
+      select 1 from information_schema.columns
+      where table_name = 'venues' and column_name = 'geom') then
+    alter table public.venues
+      add column geom geography(point,4326)
+      generated always as (ST_SetSRID(ST_MakePoint(lng,lat),4326)) stored;
+  end if;
+end$$;
 
--- Enable RLS with public read access
-ALTER TABLE public.venues ENABLE ROW LEVEL SECURITY;
+-- 4) back-fill provider cols ONCE
+update public.venues
+set    provider     = coalesce(provider,'manual'),
+       provider_id  = coalesce(provider_id, id::text)
+where  provider is null or provider_id is null;
 
-CREATE POLICY "venues_public_read" ON public.venues
-FOR SELECT 
-USING (true);
+-- 5) now we can enforce uniqueness / not-null
+alter table public.venues
+  add constraint if not exists venues_provider_unique
+    unique(provider, provider_id);
 
--- Grant permissions for edge functions
-GRANT ALL ON public.venues TO postgres, supabase_admin;
+alter table public.venues
+  alter column provider    set not null,
+  alter column provider_id set not null;
+
+-- 6) indexes
+create index if not exists venues_gix       on public.venues using gist (geom);
+create index if not exists venues_provider_ix on public.venues(provider, provider_id);
+
+-- 7) RLS (public read)
+alter table public.venues enable row level security;
+drop policy if exists venues_public_read on public.venues;
+create policy venues_public_read
+  on public.venues for select using (true);
