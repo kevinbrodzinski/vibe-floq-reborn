@@ -1,4 +1,5 @@
 import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
+import { RichText } from '@/components/chat/RichText'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
   const { data, fetchNextPage, hasNextPage } = useFloqMessages(floqId)
@@ -23,7 +24,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
             <span className="text-xs opacity-60">
               {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
-            <p>{m.body}</p>
+            <p><RichText text={m.body} /></p>
           </li>
         ))}
       </ul>

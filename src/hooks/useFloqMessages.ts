@@ -2,6 +2,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { extractMentions } from '@/utils/mentionParser'
 
 interface FloqMessage {
   id: string
@@ -145,7 +146,7 @@ export function useSendFloqMessage() {
         }
       )
       
-      // Insert to database
+      // 1️⃣ Insert to database
       const { data, error } = await supabase
         .from('floq_messages')
         .insert({
@@ -159,7 +160,23 @@ export function useSendFloqMessage() {
 
       if (error) throw error
 
-      // Broadcast to other clients
+      // 2️⃣ Resolve @handles → user ids and insert mentions
+      const handles = extractMentions(p.body)
+      if (handles.length) {
+        const { data: users } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('username', handles)
+        
+        if (users?.length) {
+          // 3️⃣ Bulk-insert mention rows
+          await supabase.from('message_mentions').insert(
+            users.map((u) => ({ message_id: data.id, mentioned_user: u.id }))
+          )
+        }
+      }
+
+      // 4️⃣ Broadcast to other clients
       await supabase.channel(`floq-${p.floqId}`).send({
         type: 'broadcast',
         event: 'message',
