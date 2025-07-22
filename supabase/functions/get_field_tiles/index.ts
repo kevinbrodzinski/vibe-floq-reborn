@@ -58,7 +58,9 @@ serve(async (req) => {
     }
 
     const tiles = data || [];
-    console.log(`[FIELD_TILES] Returning ${tiles.length} tiles for ${tile_ids.length} requested IDs`);
+    if (Deno.env.get('ENV') !== 'prod') {
+      console.log(`[FIELD_TILES] Returning ${tiles.length} tiles for ${tile_ids.length} requested IDs`);
+    }
     
     const resp = new Response(JSON.stringify({ tiles }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import MapboxGL from '@rnmapbox/maps';
+import { ActivityIndicator } from 'react-native';
 import type { BaseMapProps } from './types';
 
 export const NativeMap: React.FC<BaseMapProps> = ({
