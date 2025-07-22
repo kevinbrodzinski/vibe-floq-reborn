@@ -79,25 +79,27 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-full w-full bg-background">
+      <div className="relative h-svh w-full bg-background">
         {/* Motion Permission Banner - Global Level */}
         <MotionPermissionBanner 
           requestMotionPermission={requestMotionPermission}
           isMotionAvailable={isMotionAvailable}
         />
         
-        {/* Base Map Layer - flex-1 to fill remaining space */}
-        <div className="flex-1 relative" {...gestureHandlers}>
-          <FieldMapLayer 
-            data={data} 
-            people={people} 
-            onRipple={handleRipple}
-            canvasRef={canvasRef}
-          />
-        </div>
-        
         {/* UI Content Layer - z-10 to z-30 */}
         <FieldUILayer data={data} />
+        
+        {/* Base Map Layer - main flex container below header */}
+        <main className="absolute top-20 left-0 right-0 bottom-0 overflow-hidden">
+          <div className="relative h-full w-full" {...gestureHandlers}>
+            <FieldMapLayer 
+              data={data} 
+              people={people} 
+              onRipple={handleRipple}
+              canvasRef={canvasRef}
+            />
+          </div>
+        </main>
         
         {/* Modal/Sheet Layer - z-40 to z-60 */}
         <FieldModalLayer data={data} />
