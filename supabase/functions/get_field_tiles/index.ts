@@ -3,7 +3,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { corsHeaders } from '../_shared/cors.ts';
 
-const TTL = 2; // seconds
+const TTL = 30; // seconds - aligned with React Query staleTime
 
 serve(async (req) => {
   // Log incoming request safely
@@ -14,7 +14,12 @@ serve(async (req) => {
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { 
+      headers: { 
+        ...corsHeaders,
+        'Vary': 'Origin'
+      }
+    });
   }
 
   if (req.method !== 'POST') {
@@ -58,12 +63,12 @@ serve(async (req) => {
       .gt('updated_at', since ?? 'epoch');
       
     if (error) {
-      console.error('[FIELD_TILES] Database error:', {
-        message: error.message,
+      console.error('[FIELD_TILES] DB err', { 
+        msg: error.message, 
         code: error.code,
         hint: error.hint,
       });
-      return new Response(JSON.stringify({ error: error.message }), {
+      return new Response(JSON.stringify({ tiles: [], error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -78,11 +83,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
-    // Cache for 2 seconds - only if cache is available
+    // Cache for 30 seconds - aligned with React Query staleTime
     const hasCache = typeof caches !== 'undefined' && caches.default;
     if (hasCache) {
       try {
-        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: TTL });
       } catch (err) {
         console.warn('[FIELD_TILES] cache put failed', {
           message: (err as Error).message,

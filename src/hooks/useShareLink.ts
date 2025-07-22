@@ -17,13 +17,13 @@ export function useShareLink(afterglowId: string) {
       })
       
       if (error) {
-        console.error('Error creating share link:', error)
+        console.error('Error creating share link:', { message: error.message, name: error.name })
         throw error
       }
       
       // Validate the response shape
       if (!data || typeof data !== 'object' || !data.url || !data.slug) {
-        console.error('Invalid response from create-share-link:', data)
+        console.error('Invalid response from create-share-link:', { data })
         throw new Error('Invalid response format from server')
       }
       

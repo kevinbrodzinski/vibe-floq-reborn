@@ -108,7 +108,7 @@ export function usePlanInvitations(planId: string) {
 
       await fetchInvitations();
     } catch (error: any) {
-      console.error('Response error:', error);
+      console.error('Response error:', { message: error.message, name: error.name });
       toast({
         title: "Error",
         description: error.message || "Failed to respond to invitation",

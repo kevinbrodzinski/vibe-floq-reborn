@@ -35,12 +35,12 @@ async function callCreatePlanShareLink(planId: string): Promise<PlanShareLinkRes
   });
   
   if (error) {
-    console.error('Error creating plan share link:', error);
+    console.error('Error creating plan share link:', { message: error.message, name: error.name });
     throw error;
   }
   
   if (!data || typeof data !== 'object' || !data.url || !data.slug) {
-    console.error('Invalid response from create-plan-share-link:', data);
+    console.error('Invalid response from create-plan-share-link:', { data });
     throw new Error('Invalid response format from server');
   }
   

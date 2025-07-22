@@ -150,7 +150,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
       setInvitations(prev => prev.filter(inv => inv.id !== inviteId));
 
     } catch (error: any) {
-      console.error('Response error:', error);
+      console.error('Response error:', { message: error.message, name: error.name });
       toast({
         title: "Error",
         description: error.message || "Failed to respond to invitation",
