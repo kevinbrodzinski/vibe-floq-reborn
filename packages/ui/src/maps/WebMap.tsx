@@ -121,7 +121,11 @@ export const WebMap: React.FC<BaseMapProps> = ({
   }, [onRegionChange, tokenLoaded]);
 
   return (
-    <div ref={container} className="w-full h-full">
+    <div className="absolute inset-0">
+      <div
+        ref={container}
+        className="absolute inset-0"
+      />
       {children}
     </div>
   );
