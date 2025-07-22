@@ -141,9 +141,21 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);
-          const vibeColor = tile.avg_vibe?.h !== undefined ? 
-            vibeToColor(safeVibe('chill')) : // fallback, should parse avg_vibe properly
-            vibeToColor(safeVibe('chill'));
+          
+          // Convert HSL to RGB for PIXI
+          const { h, s, l } = tile.avg_vibe;
+          const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+            const a = s * Math.min(l, 1 - l);
+            const f = (n: number) => {
+              const k = (n + h * 12) % 12;
+              const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+              return Math.round(255 * c);
+            };
+            return [f(0), f(8), f(4)];
+          };
+          
+          const [r, g, b] = hslToRgb(h, s, l);
+          const vibeColor = (r << 16) + (g << 8) + b;
           
           sprite.tint = vibeColor;
           sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
