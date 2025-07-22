@@ -1,51 +1,40 @@
 
 /**
- * ------------------------------------------------------------------
- *  Unified Global Z-Index Scale
- * ------------------------------------------------------------------
- *  Lowest-to-highest layering, semantic names only.
- *
- *          toast      90   (sonner / toaster notifications)
- *          dmSheet    80   (quick-DM sheets, emergency overlays)
- *          modal      70   (all Radix sheets / dialogs / popovers)
- *          navigation 60   (top header + bottom nav)
- *          system     50   (FABs, viewport controls, live regions)
- *          timewarp   40   (time-warp slider & similar)
- *          overlay    30   (banners, field overlay HUD)
- *          ui*        20   (regular page UI, friend carousel, etc.)
- *          mapOverlay 10   (markers, PIXI overlays)
- *          map         0   (Mapbox GL + FieldCanvas)
- *          debug    9999   (dev-only panels)
- *
- *  *Split ui into subkeys for convenience only; values are identical.*
+ * Unified Global Z-Index Scale
+ * ───────────────────────────
+ * 0   map           Base Map & WebGL canvas
+ * 10  mapOverlay   Map markers / heat-sprites
+ * 20  uiInteractive Carousels, gesture layers
+ * 21  uiControls   Constellation controls, FABs
+ * 22  uiHeader     Field header, location banner
+ * 30  overlay      Banners & field overlay
+ * 40  timewarp     Time-warp slider
+ * 50  system       Live-regions, viewport helpers
+ * 60  navigation   Top header & bottom nav
+ * 70  modal        Sheets, dialogs, pop-overs
+ * 80  dmSheet      DM quick-sheet (urgent overlay)
+ * 90  toast        Toasts & notifications
+ * 9999 debug       Dev-only debug panels
  */
-
 export const Z = {
-  // Base map layers
   map: 0,
   mapOverlay: 10,
 
-  // Regular UI
-  ui: 20,
-  uiHeader: 20,        // FieldHeader, LocationDisplay
-  uiControls: 20,      // ConstellationControls, misc buttons
-  uiInteractive: 20,   // Friend carousel, gesture mgr
-  overlay: 30,
+  uiInteractive: 20,
+  uiControls: 21,
+  uiHeader: 22,
 
-  // Special feature layers
+  overlay: 30,
   timewarp: 40,
   system: 50,
+
   navigation: 60,
   modal: 70,
   dmSheet: 80,
   toast: 90,
 
-  // Development / debug
   debug: 9999,
 } as const;
 
 export type ZKey = keyof typeof Z;
-
-/** tiny helper — `<div style={zIndex('modal')}/>` */
-export const zIndex = (layer: ZKey): React.CSSProperties =>
-  ({ zIndex: Z[layer] });
+export const zIndex = (layer: ZKey): React.CSSProperties => ({ zIndex: Z[layer] });

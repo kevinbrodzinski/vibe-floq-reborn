@@ -3,9 +3,9 @@ import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { Z } from "@/constants/z";
-import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
+import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
+import { Z, zIndex } from "@/constants/z";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldModalLayerProps {
@@ -26,48 +26,42 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
 
   return (
     <>
-      {/* Banner System */}
-      <div style={{ zIndex: Z.overlay }}>
+      {/* ——— Banners (network, beta flags, etc.) ——— */}
+      <div style={zIndex('overlay')}>
         <BannerManager />
       </div>
 
-      {/* Event Details Sheet */}
+      {/* ——— Event details ——— */}
       {currentEvent && (
-        <div style={{ zIndex: Z.modal }}>
-          <EventDetailsSheet
-            open={detailsOpen}
-            onOpenChange={setDetailsOpen}
-            event={{
-              ...currentEvent,
-              people: people.length,
-            }}
-          />
-        </div>
-      )}
-
-      {/* Venues Sheet */}
-      <div style={{ zIndex: Z.modal }}>
-        <ResizableVenuesSheet
-          isOpen={venuesSheetOpen}
-          onClose={() => setVenuesSheetOpen(false)}
-          onVenueTap={(venueId) => {
-            setSelectedVenueId(venueId);
-            setVenuesSheetOpen(false);
-            if ('vibrate' in navigator) {
-              navigator.vibrate(4);
-            }
+        <EventDetailsSheet
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          event={{
+            ...currentEvent,
+            people: people.length,
           }}
         />
-      </div>
+      )}
 
-      {/* Venue Details Sheet */}
-      <div style={{ zIndex: Z.modal }}>
-        <VenueDetailsSheet
-          open={!!selectedVenueId}
-          onOpenChange={(open) => !open && setSelectedVenueId(null)}
-          venueId={selectedVenueId}
-        />
-      </div>
+      {/* ——— Venues list ——— */}
+      <ResizableVenuesSheet
+        isOpen={venuesSheetOpen}
+        onClose={() => setVenuesSheetOpen(false)}
+        onVenueTap={(venueId) => {
+          setSelectedVenueId(venueId);
+          setVenuesSheetOpen(false);
+          if ('vibrate' in navigator) {
+            navigator.vibrate(4);
+          }
+        }}
+      />
+
+      {/* ——— Venue details ——— */}
+      <VenueDetailsSheet
+        open={!!selectedVenueId}
+        onOpenChange={(open) => !open && setSelectedVenueId(null)}
+        venueId={selectedVenueId}
+      />
     </>
   );
 };

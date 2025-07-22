@@ -1,6 +1,6 @@
 
 import { FullscreenFab } from "@/components/map/FullscreenFab";
-import { Z } from "@/constants/z";
+import { Z, zIndex } from "@/constants/z";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
 
@@ -13,25 +13,20 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   return (
     <>
-      {/* Full-screen toggle FAB */}
+      {/* ——— Full-screen toggle —————————————————— */}
       <div 
-        className="fixed pointer-events-none"
-        style={{ 
-          zIndex: Z.system,
-          inset: 0
-        }}
+        className="fixed bottom-24 left-4 pointer-events-auto"
+        style={zIndex('system')}
       >
-        <div className="pointer-events-auto">
-          <FullscreenFab />
-        </div>
+        <FullscreenFab />
       </div>
 
-      {/* Live region for accessibility */}
+      {/* ——— ARIA Live-region for screen readers —— */}
       <p 
         ref={liveRef} 
         className="sr-only" 
         aria-live="polite"
-        style={{ zIndex: Z.system }}
+        style={zIndex('system')}
       />
     </>
   );
