@@ -43,9 +43,15 @@ export const ZFriend = Z.uiInteractive;        // 20
 export const ZConstellation = Z.uiControls;    // 21
 
 /**
- * Semantic z-index helper
- * Usage:  <div style={zIndex('overlay')} />
+ * Semantic z-index helper.
+ * Usage (spread):
+ *   <motion.div {...zIndex('overlay')} />
+ *
+ * Returns `{ style:{ zIndex } }` so it can be merged with other props
+ * without clobbering or leaking a stray `zIndex` HTML attribute.
  */
-export const zIndex = (layer: ZKey): React.CSSProperties => ({
-  zIndex: Z[layer],
+export const zIndex = (
+  layer: ZKey,
+): { style: React.CSSProperties } => ({
+  style: { zIndex: Z[layer] },
 });

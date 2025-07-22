@@ -62,7 +62,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             {/* Header */}
             <motion.div
               key="field-header"
-              style={zIndex("uiHeader")}
+              {...zIndex("uiHeader")}
               className="absolute inset-x-0 top-0 pointer-events-auto"
               initial={{ y: -64, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -78,7 +78,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
             {/* Location banner */}
             <motion.div
               key="location-banner"
-              style={zIndex("uiHeader")}
+              {...zIndex("uiHeader")}
               className="absolute inset-x-0 top-14 px-6 pointer-events-auto"
               initial={{ y: -8, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -99,7 +99,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {/* ——— Field overlay ———————————————— */}
       {!isFull && route !== "/vibe" && (
         <motion.div
-          style={zIndex("overlay")}
+          {...zIndex("overlay")}
           className="absolute inset-0 top-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -120,7 +120,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
 
       {/* ——— Constellation controls ——————————— */}
       {(timeState === "evening" || timeState === "night") && !isFull && (
-        <div className="absolute inset-0 pointer-events-none" style={zIndex("uiControls")}>
+        <div className="absolute inset-0 pointer-events-none" {...zIndex("uiControls")}>
           <ConstellationControls
             timeState={timeState}
             constellationMode={constellationMode}
@@ -134,7 +134,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
 
       {/* ——— Interactive layer (gestures, cards) —— */}
       {!isFull && (
-        <div className="absolute inset-0 pointer-events-none" style={zIndex("uiInteractive")}>
+        <div className="absolute inset-0 pointer-events-none" {...zIndex("uiInteractive")}>
           <SocialGestureManager onSocialAction={handleSocialAction} />
 
           {/* Friend suggestions */}
@@ -154,7 +154,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {/* ——— Time-warp slider (independent layer) — */}
       <AnimatePresence>
         {showTimeWarp && (
-          <div key="timewarp" style={zIndex("timewarp")}>
+          <div key="timewarp" {...zIndex("timewarp")}>
             <TimeWarpSlider
               isVisible
               onClose={() => setShowTimeWarp(false)}

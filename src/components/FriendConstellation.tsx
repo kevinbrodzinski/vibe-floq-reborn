@@ -169,7 +169,7 @@ export const FriendConstellation = ({
           <svg
             key={`flow-${index}`}
             className="absolute inset-0 pointer-events-none"
-            style={zIndex('uiControls')}
+            {...zIndex('uiControls')}
           >
             <defs>
               <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -205,7 +205,7 @@ export const FriendConstellation = ({
             <div
               className="absolute animate-pulse"
               style={{
-                ...zIndex('uiControls'),
+                ...zIndex('uiControls').style,
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -220,7 +220,7 @@ export const FriendConstellation = ({
             <div
               className="absolute animate-ping"
               style={{
-                ...zIndex('uiControls'),
+                ...zIndex('uiControls').style,
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -236,7 +236,7 @@ export const FriendConstellation = ({
             <div
               className="absolute cursor-pointer transition-all duration-300 hover:scale-110"
               style={{
-                ...zIndex('uiControls'),
+                ...zIndex('uiControls').style,
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -273,7 +273,7 @@ export const FriendConstellation = ({
             <div
               className="absolute border border-primary/20 rounded-full pointer-events-none"
               style={{
-                ...zIndex('mapOverlay'),
+                ...zIndex('mapOverlay').style,
                 left: `${centerX}%`,
                 top: `${centerY}%`,
                 transform: 'translate(-50%, -50%)',
@@ -300,7 +300,7 @@ export const FriendConstellation = ({
             key={groupName}
             className="absolute pointer-events-auto cursor-pointer"
             style={{
-              ...zIndex('uiControls'),
+              ...zIndex('uiControls').style,
               left: `${centerX}%`,
               top: `${centerY}%`,
               transform: 'translate(-50%, -50%)',

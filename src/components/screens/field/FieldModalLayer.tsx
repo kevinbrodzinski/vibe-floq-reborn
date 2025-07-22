@@ -27,7 +27,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
   return (
     <>
       {/* ——— Banners (network, beta flags, etc.) ——— */}
-      <div style={zIndex('overlay')}>
+      <div {...zIndex('overlay')}>
         <BannerManager />
       </div>
 
