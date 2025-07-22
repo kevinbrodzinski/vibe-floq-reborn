@@ -1,11 +1,12 @@
 /* eslint-disable no-restricted-globals */
 import * as Comlink from 'comlink';
 
+/* ────────────── types ────────────── */
 export interface RawTile {
-  id:   string;                               // tile_id  (needed for hit-test)
-  x:    number;                               // projected px
+  id:   string;                       // tile_id (kept for provenance / hit-test)
+  x:    number;                       // screen-space px  (projectLatLng)
   y:    number;
-  r:    number;                               // radius px
+  r:    number;                       // radius  (crowdCountToRadius)
   vibe: { h: number; s: number; l: number };
 }
 
@@ -13,23 +14,22 @@ export interface Cluster {
   x: number;
   y: number;
   r: number;
-  count: number;
+  count: number;                      // how many tiles merged
   vibe: { h: number; s: number; l: number };
-  ids: string[];                             // all source tile_ids in this cluster
+  ids: string[];                      // merged tile_ids  (hit-test)
 }
 
-/* ------------------------------------------------------------------ */
+/* ────────────── helpers ────────────── */
+const BASE_DIST = 32;                 // px at zoom 11
+const mergeDistanceForZoom = (zoom: number) =>
+  BASE_DIST * Math.pow(2, 11 - zoom); // shrinks as we zoom in
 
 let lastClusters: Cluster[] | null = null;
 
-const mergeDistanceForZoom = (zoom: number) => {
-  const base = 32;                            // px at z11
-  return base * Math.pow(2, 11 - zoom);       // shrink at higher zooms
-};
-
+/* ────────────── API ────────────── */
 const api = {
-  /** spatial merge — returns clusters & keeps a copy for hit-test */
-  cluster (tiles: RawTile[], zoom = 11): Cluster[] {
+  /** spatial merge – keeps provenance (ids) for hit-testing */
+  cluster(tiles: RawTile[], zoom = 11): Cluster[] {
     const threshold = mergeDistanceForZoom(zoom);
     const clusters: Cluster[] = [];
 
@@ -42,25 +42,20 @@ const api = {
         });
 
         if (hit) {
-          /* running average merge */
-          const n = hit.count + 1;
-          hit.x = (hit.x * hit.count + t.x) / n;
-          hit.y = (hit.y * hit.count + t.y) / n;
-          hit.r = Math.max(hit.r, t.r);
-          hit.vibe = {
+          /* running-average merge */
+          const n   = hit.count + 1;
+          hit.x     = (hit.x * hit.count + t.x) / n;
+          hit.y     = (hit.y * hit.count + t.y) / n;
+          hit.r     = Math.max(hit.r, t.r);
+          hit.vibe  = {
             h: (hit.vibe.h * hit.count + t.vibe.h) / n,
             s: (hit.vibe.s * hit.count + t.vibe.s) / n,
             l: (hit.vibe.l * hit.count + t.vibe.l) / n,
           };
           hit.count = n;
-          hit.ids.push(t.id);                 // keep provenance
+          hit.ids.push(t.id);
         } else {
-          clusters.push({
-            x: t.x, y: t.y, r: t.r,
-            count: 1,
-            vibe: t.vibe,
-            ids: [t.id],
-          });
+          clusters.push({ x: t.x, y: t.y, r: t.r, count: 1, vibe: t.vibe, ids: [t.id] });
         }
       });
     } catch (err) {
@@ -72,8 +67,8 @@ const api = {
     return clusters;
   },
 
-  /** cursor-hit → return *tile_ids* inside radius (px) */
-  hitTest (x: number, y: number, radius = 12): string[] {
+  /** cursor hit-test → returns tile_ids within `radius` px */
+  hitTest(x: number, y: number, radius = 12): string[] {
     if (!lastClusters) return [];
     const r2 = radius * radius;
     return lastClusters

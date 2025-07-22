@@ -42,6 +42,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
   const { light } = useAdvancedHaptics();
+  const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
   const appRef = useRef<Application | null>(null);
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
@@ -72,9 +73,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     const app = new Application();
     appRef.current = app;
 
-    // Set up hit testing hook
-    const hitTest = useFieldHitTest();
-    let onPointerMove: (e: any) => void;
+    /* will be assigned after init so we can remove cleanly */
+    let onPointerMove: ((e: any) => void) | undefined;
 
     app.init({
       canvas: actualRef.current,
@@ -97,13 +97,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
 
-      // Set up hit testing
+      /* pointer-move hit-test */
       onPointerMove = (e: any) => {
         hitTest(e.globalX, e.globalY).then(ids => {
-          if (ids.length) {
-            // demo – replace with tooltip / ripple as needed
-            console.log('🖱️ hit tiles ➜', ids);
-          }
+          if (ids.length) console.log('🖱️ hit tiles →', ids);
         });
       };
 
@@ -111,14 +108,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       app.stage.on('pointermove', onPointerMove);
     });
 
+    /* ---------- cleanup ---------- */
     return () => {
-      if (onPointerMove) {
-        app.stage.off('pointermove', onPointerMove);
-      }
+      if (onPointerMove) app.stage.off('pointermove', onPointerMove);
       appRef.current?.destroy(true, { children: true, texture: true });
       appRef.current = undefined;
     };
-  }, []);
+  }, [hitTest]);        // ← dependency is safe (stable useCallback)
 
   // Handle canvas clicks for ripples
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
@@ -183,15 +179,15 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               
               // Draw clusters exactly like tiles for now
               clusters.forEach(c => {
-                const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
-                keysThisFrame.add(key);
-                const sprite = tilePool.acquire(key);
-                if (!sprite.parent) heatContainer.addChild(sprite);
-                sprite.position.set(c.x - c.r, c.y - c.r);
-                sprite.width = sprite.height = c.r * 2;
+            const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
+            keysThisFrame.add(key);
+            const sprite = tilePool.acquire(key);
+            if (!sprite.parent) heatContainer.addChild(sprite);
+            sprite.position.set(c.x - c.r, c.y - c.r);
+            sprite.width = sprite.height = c.r * 2;
 
-                // Color and fade
-                const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+            // Color and fade
+            const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
                 
                 const [red, green, blue] = hslToRgb(c.vibe.h, c.vibe.s, c.vibe.l);
                 const vibeColor = (red << 16) + (green << 8) + blue;
