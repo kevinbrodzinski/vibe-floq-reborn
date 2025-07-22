@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime } from "@/lib/timeUtils";
+import { zIndex } from "@/constants/z";
 
 interface ChatMessage {
   id: string;
@@ -192,7 +193,7 @@ export const PlanChatSidebar = ({
   if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-y-0 right-0 w-80 bg-background border-l border-border shadow-lg z-50 flex flex-col ${className}`}>
+    <div className={`fixed inset-y-0 right-0 w-80 bg-background border-l border-border shadow-lg flex flex-col ${className}`} {...zIndex('modal')}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">

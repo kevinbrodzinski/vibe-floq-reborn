@@ -13,6 +13,7 @@ import { MobileTimelineGrid } from '@/components/planning/MobileTimelineGrid'
 import { AddStopModeSelector } from '@/components/planning/AddStopModeSelector'
 import { Loader2 } from 'lucide-react'
 import type { Database } from '@/integrations/supabase/types'
+import { zIndex } from '@/constants/z'
 
 type Floq = Database['public']['Tables']['floqs']['Row']
 
@@ -165,7 +166,7 @@ export function FloqPlanTab() {
 
       {/* Voice Input Sheet - placeholder */}
       {voiceOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center" {...zIndex('modal')}>
           <div className="bg-background rounded-lg p-6 m-4 max-w-sm w-full">
             <div className="text-center">
               <Mic className="mx-auto mb-4 text-primary" size={48} />

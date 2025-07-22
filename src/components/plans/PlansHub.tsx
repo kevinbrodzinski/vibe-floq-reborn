@@ -8,6 +8,7 @@ import { PlansGrid } from './PlansGrid';
 import { PlansFilters } from './PlansFilters';
 import { EmptyState } from '@/components/EmptyState';
 import { useNavigate } from 'react-router-dom';
+import { zIndex } from '@/constants/z';
 
 export const PlansHub: React.FC = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export const PlansHub: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/30">
+      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border/30" {...zIndex('uiHeader')}>
         <div className="flex items-center justify-between px-4 py-3">
           <h1 className="text-xl font-semibold text-foreground">Your Plans</h1>
           

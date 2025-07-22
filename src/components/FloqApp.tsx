@@ -9,6 +9,7 @@ import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 import { Button } from "./ui/button";
+import { zIndex } from "@/constants/z";
 
 export const FloqApp = () => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -40,7 +41,7 @@ export const FloqApp = () => {
         <FloqUIProvider>
           <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
             {/* Header with search button for mobile */}
-            <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2">
+            <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
               <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold">Floq</h1>
                 <Button

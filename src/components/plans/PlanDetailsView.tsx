@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import type { PlanStatus } from '@/types/enums/planStatus';
+import { zIndex } from '@/constants/z';
 
 type Plan = Database['public']['Tables']['floq_plans']['Row'];
 
@@ -206,7 +207,7 @@ export const PlanDetailsView: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b" {...zIndex('uiHeader')}>
         <div className="flex items-center gap-3 px-4 py-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ChevronLeft className="w-5 h-5" />

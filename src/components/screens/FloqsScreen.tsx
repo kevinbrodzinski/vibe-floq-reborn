@@ -22,6 +22,7 @@ import { DMQuickSheet } from "@/components/DMQuickSheet";
 import { GeolocationButton } from "@/components/ui/geolocation-button";
 import { FloqsDebugPanel } from "@/components/debug/FloqsDebugPanel";
 import { useDebug } from "@/lib/useDebug";
+import { zIndex } from "@/constants/z";
 
 // Vibe color mapping
 const vibeColor: Record<string, string> = {
@@ -341,7 +342,7 @@ export const FloqsScreen = () => {
     <div className="min-h-screen p-6 pt-16">
       {/* Debug counter */}
       {debug && (
-        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded">
+        <div className="absolute top-2 right-2 text-xs opacity-60 bg-black/20 px-2 py-1 rounded" {...zIndex('overlay')}>
           {floqs.length} active floqs
         </div>
       )}

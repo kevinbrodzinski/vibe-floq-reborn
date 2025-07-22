@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
+import { zIndex } from '@/constants/z';
 interface FlocksHomeProps {
   geo?: {
     lat: number;
@@ -175,7 +176,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           </div>
         </div>}
       {/* Header with search and filters */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3">
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3" {...zIndex('uiHeader')}>
         <div className="flex items-center gap-3">
           {useAdvancedSearch ? <form onSubmit={handleSearchSubmit} className="flex-1">
               <div className="relative">
@@ -362,7 +363,7 @@ const CreateFloqFAB = () => {
   return (
     <button
       onClick={() => setShowCreateSheet(true)}
-      className="fixed bottom-24 right-4 z-50 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium"
+      className="fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium" {...zIndex('system')}
     >
       <Plus size={20} />
       Create Floq
