@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
@@ -15,6 +15,9 @@ import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
 import { forwardRef } from 'react';
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
+import { AnimatePresence } from 'framer-motion';
+import { ClusterTooltip } from '@/components/field/ClusterTooltip';
+import { useAddRipple } from '@/components/field/RippleOverlay';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -43,7 +46,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
   const { light } = useAdvancedHaptics();
   const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
+  const addRipple = useAddRipple();           // enqueue shader ripple
   const appRef = useRef<Application | null>(null);
+  
+  /* tooltip helper */
+  const [tooltip, setTooltip] = useState<{
+    x: number; y: number; count: number; vibe: string;
+  } | null>(null);
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
@@ -97,10 +106,31 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
 
-      /* pointer-move hit-test */
+      /* ------------------------------------------------- hit-testing + ripple */
       onPointerMove = (e: any) => {
         hitTest(e.globalX, e.globalY).then(ids => {
-          if (ids.length) console.log('🖱️ hit tiles →', ids);
+          if (!ids.length) {
+            setTooltip(null);
+            return;
+          }
+
+          // pick first tile for tooltip; keep all ids for future use
+          const tile = fieldTiles.find(t => t.tile_id === ids[0]);
+          if (!tile) return;
+
+          /* tooltip */
+          setTooltip({
+            x: e.globalX,
+            y: e.globalY,
+            count: tile.crowd_count,
+            vibe: 'energetic', // TODO: derive from tile.avg_vibe HSL values
+          });
+
+          /* GPU ripple */
+          addRipple(e.globalX, e.globalY);
+
+          /* haptic for mobile */
+          light();    // from useAdvancedHaptics()
         });
       };
 
@@ -259,14 +289,20 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   }, []);
 
   return (
-    <canvas 
-      ref={actualRef}
-      onClick={handleCanvasClick}
-      style={{ 
-        width: '100%', 
-        height: '100%',
-        display: 'block'
-      }}
-    />
+    <>
+      <canvas 
+        ref={actualRef}
+        onClick={handleCanvasClick}
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          display: 'block'
+        }}
+      />
+      {/* tooltip portal */}
+      <AnimatePresence>
+        {tooltip && <ClusterTooltip {...tooltip} />}
+      </AnimatePresence>
+    </>
   );
 });

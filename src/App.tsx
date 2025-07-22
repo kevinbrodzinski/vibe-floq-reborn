@@ -11,6 +11,7 @@ import { VibeRealtime } from "@/providers/VibeRealtime";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { supabase } from "@/integrations/supabase/client";
+import { clusterWorker } from "@/lib/clusterWorker";
 
 import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
@@ -27,6 +28,11 @@ const App = () => {
   
   // Auto-join presence channels for all users
   usePresenceChannel();
+
+  // Pre-warm the clustering worker
+  useEffect(() => { 
+    clusterWorker.cluster([], 11); 
+  }, []);
 
   // Realtime subscription for floq messages
   useEffect(() => {
