@@ -59,7 +59,7 @@ export const useMentionAutocomplete = ({ onInsert }: Params) => {
       const { data: plans } = await supabase
         .from('floq_plans')
         .select('id, title')
-        .ilike('id::text', `${q}%`)          // 👈 cast to text
+        .filter('id', 'like', `${q}%`)  // Use filter instead of ilike for UUID
         .limit(5)
 
       const candidates: MentionCandidate[] = [
