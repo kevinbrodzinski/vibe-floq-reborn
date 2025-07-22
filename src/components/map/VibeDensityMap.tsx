@@ -89,14 +89,16 @@ export const VibeDensityMap = ({
    ------------------------------------------------------------------ */
   const bbox = useMemo(() => {
     const { longitude, latitude, zoom } = viewState;
+    const clampLat = (v: number) => Math.max(Math.min(v, 85), -85);
+    
     const scale = Math.pow(2, 15 - zoom);
     const latOffset = scale * 0.01;
     const lngOffset = (scale * 0.01) / Math.cos((latitude * Math.PI) / 180);
     return [
       longitude - lngOffset,
-      latitude - latOffset,
+      clampLat(latitude - latOffset),
       longitude + lngOffset,
-      latitude + latOffset,
+      clampLat(latitude + latOffset),
     ] as [number, number, number, number];
   }, [viewState]);
 
@@ -146,6 +148,17 @@ export const VibeDensityMap = ({
       setHasCentered(true);
     }
   }, [hasFix, hasCentered, centerOnUser]);
+
+  // update viewport when location changes after mount
+  useEffect(() => {
+    if (hasFix) {
+      setViewState((v) => ({
+        ...v,
+        longitude: currentUserLocation.lng,
+        latitude: currentUserLocation.lat,
+      }));
+    }
+  }, [hasFix, currentUserLocation?.lng, currentUserLocation?.lat]);
 
   // esc-to-close
   useEffect(() => {

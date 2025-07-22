@@ -73,6 +73,11 @@ export const useClusters = (
         } else {
           setClusters(data ?? []);
         }
+      } catch (err) {
+        if (!ac.signal.aborted) {
+          setError(err instanceof Error ? err.message : "Network error");
+          setClusters([]);
+        }
       } finally {
         if (!ac.signal.aborted) setLoading(false); // ✅ always clear
       }
@@ -112,7 +117,10 @@ export const useClusters = (
       .on("broadcast", { event: "clusters_updated" }, () =>
         debouncedFetch(debouncedBbox),
       )
-      .subscribe((status) => setIsRealTimeConnected(status === "SUBSCRIBED"));
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setIsRealTimeConnected(true);
+        if (status === "CLOSED" || status === "TIMED_OUT") setIsRealTimeConnected(false);
+      });
 
     channelRef.current = ch;
 
