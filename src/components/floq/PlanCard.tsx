@@ -8,7 +8,9 @@ import { format } from 'date-fns';
 import { usePlanMeta } from '@/hooks/usePlanMeta';
 import { formatCurrency, formatDuration } from '@/lib/format';
 import { planStatusColor } from '@/lib/planStatusColor';
+import { VibePill } from '@/components/floq/VibePill';
 import type { PlanStatus } from '@/types/enums/planStatus';
+import type { Vibe } from '@/types/enums/vibes';
 
 interface PlanCardProps {
   plan: {
@@ -24,6 +26,7 @@ interface PlanCardProps {
     floqs?: { title: string } | null;
     budget_per_person?: number | null;
     vibe_tag?: string | null;
+    vibe_tags?: string[] | null;
     floq_id: string;
     is_joined?: boolean;
   };
@@ -49,6 +52,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
     plan.budget_per_person || (meta?.estimated_cost_per_person ?? 0) > 0
       ? formatCurrency(plan.budget_per_person ?? meta!.estimated_cost_per_person)
       : null;
+
+  const startTimeText = useMemo(() => {
+    if (!plan.start_time) return null;
+    const [hours, minutes] = plan.start_time.split(':');
+    const hour12 = parseInt(hours) % 12 || 12;
+    const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${minutes} ${ampm}`;
+  }, [plan.start_time]);
 
   return (
     <Card
@@ -82,12 +93,26 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
           </p>
         )}
 
+        {/* VIBE PILL */}
+        {plan.vibe_tag && (
+          <div className="flex">
+            <VibePill vibe={plan.vibe_tag as Vibe} className="text-xs" />
+          </div>
+        )}
+
         {/* META ROW */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {format(new Date(plan.planned_at), 'MMM d')}
           </div>
+
+          {startTimeText && (
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {startTimeText}
+            </div>
+          )}
 
           {meta && (
             <div className="flex items-center gap-1">
@@ -98,11 +123,10 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             </div>
           )}
 
-          {meta && meta.total_stops > 0 && (
+          {meta !== undefined && (
             <div className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {meta.total_stops} stop
-              {meta.total_stops === 1 ? '' : 's'}
+              {meta.total_stops} stop{meta.total_stops === 1 ? '' : 's'}
             </div>
           )}
 
