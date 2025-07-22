@@ -42,6 +42,10 @@ export type ZKey = keyof typeof Z;
 export const ZFriend = Z.uiInteractive;        // 20
 export const ZConstellation = Z.uiControls;    // 21
 
+// floq-specific aliases for common UI patterns
+export const ZUIBadge = Z.ui;                  // 20 - tiny live badges
+export const ZBanner = Z.overlay;              // 30 - floq header banners
+
 /**
  * Semantic z-index helper.
  * Usage (spread):
