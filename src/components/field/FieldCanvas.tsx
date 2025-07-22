@@ -140,9 +140,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
         // Get clusters from worker (non-blocking)
         clusterWorker.cluster(rawTiles).then(clusters => {
+          const keysThisFrame = new Set<string>();
+          
           // Draw clusters exactly like tiles for now
           clusters.forEach(c => {
-            const sprite = tilePool.acquire(`cluster:${c.x}:${c.y}`);
+            const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
+            keysThisFrame.add(key);
+            const sprite = tilePool.acquire(key);
             if (!sprite.parent) heatContainer.addChild(sprite);
             sprite.position.set(c.x - c.r, c.y - c.r);
             sprite.width = sprite.height = c.r * 2;
@@ -169,9 +173,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
           });
 
-          // Release sprites no longer visible
+          // Release cluster sprites no longer visible
           tilePool.active.forEach((sprite, id) => {
-            if (id.startsWith('cluster:') && !clusters.some(c => `cluster:${c.x}:${c.y}` === id)) {
+            if (id.startsWith('c:') && !keysThisFrame.has(id)) {
               tilePool.release(id);
             }
           });
