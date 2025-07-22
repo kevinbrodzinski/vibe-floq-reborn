@@ -1,100 +1,74 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
-import type { BaseMapProps } from './types';
 
-// Create supabase client directly to avoid import path issues
-const supabase = createClient(
-  'https://reztyrrafsmlvvlqvsqt.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck'
-);
+export const WebMap: React.FC<{
+  onRegionChange: (b: {
+    minLat: number;
+    minLng: number;
+    maxLat: number;
+    maxLng: number;
+    zoom: number;
+  }) => void;
+  children?: React.ReactNode;
+}> = ({ onRegionChange, children }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef       = useRef<mapboxgl.Map | null>(null);
 
-// Initialize with a default public token, will be replaced by Supabase secret
-mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-
-export const WebMap: React.FC<BaseMapProps> = ({
-  onRegionChange,
-  children,
-}) => {
-  const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map>();
-  const [tokenLoaded, setTokenLoaded] = useState(false);
-
-  // Load Mapbox token from Supabase edge function with caching
+  /* 1️⃣  fetch token once */
   useEffect(() => {
-    const loadMapboxToken = async () => {
+    (async () => {
       try {
-        // Check cache first
-        const cachedToken = sessionStorage.getItem('mapbox_token');
-        if (cachedToken) {
-          mapboxgl.accessToken = cachedToken;
-          setTokenLoaded(true);
-          return;
-        }
-
-        const { data, error } = await supabase.functions.invoke('mapbox-token');
-        if (data?.token && !error) {
-          mapboxgl.accessToken = data.token;
-          sessionStorage.setItem('mapbox_token', data.token);
-          setTokenLoaded(true);
-        } else {
-          console.warn('Using default Mapbox token - add MAPBOX_ACCESS_TOKEN to Supabase secrets');
-          setTokenLoaded(true);
-        }
-      } catch (error) {
-        console.warn('Failed to load Mapbox token from Supabase, using default:', error);
-        setTokenLoaded(true);
+        const { data } = await supabase.functions.invoke('mapbox-token');
+        if (data?.token) mapboxgl.accessToken = data.token;
+      } finally {
+        /* even if token fetch fails we still attempt init – Mapbox will error visibly */
       }
-    };
-    
-    loadMapboxToken();
+    })();
   }, []);
 
-  // Initialize map once token is loaded
+  /* 2️⃣  init map */
   useEffect(() => {
-    if (!container.current || !tokenLoaded) return;
+    if (!containerRef.current || mapRef.current) return;
 
-    mapRef.current = new mapboxgl.Map({
-      container: container.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [-118.24, 34.05], // LA
-      zoom: 11,
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
+      style:     'mapbox://styles/mapbox/dark-v11',
+      center:    [-118.24, 34.05],
+      zoom:      11,
     });
+    mapRef.current = map;
 
+    /* ✅ bridge – register */
+    map.on('load', () => setMapInstance(map));
+
+    /* viewport sync */
     const handleMoveEnd = () => {
-      const m = mapRef.current!;
-      const b = m.getBounds();
+      const b = map.getBounds();
       onRegionChange({
         minLat: b.getSouth(),
         minLng: b.getWest(),
         maxLat: b.getNorth(),
         maxLng: b.getEast(),
-        zoom: m.getZoom(),
+        zoom:   map.getZoom(),
       });
     };
+    map.on('moveend', handleMoveEnd);
 
-    // Inject map instance for projection utils
-    mapRef.current.on('load', () => {
-      console.log('Map loaded, registering instance');
-      setMapInstance(mapRef.current!);
-    });
-
-    mapRef.current.on('moveend', handleMoveEnd);
-
+    /* cleanup – must unset ref to avoid _cancelResize crash */
     return () => {
-      if (mapRef.current) {
-        mapRef.current.off('moveend', handleMoveEnd);
-        mapRef.current.remove();
-        setMapInstance(null); // Clear stale reference
-      }
+      setMapInstance(null);
+      map.off('moveend', handleMoveEnd);
+      map.remove();                 // <- triggers Mapbox's own _cancelResize safely
+      mapRef.current = null;
     };
-  }, [onRegionChange, tokenLoaded]);
+  }, [onRegionChange]);
 
   return (
-    <div ref={container} style={{ width: '100%', height: '100%' }}>
-      {children}
+    <div ref={containerRef} className="absolute inset-0">
+      {/* Mapbox injects its <canvas> here */}
+      {children /* overlay (pixi canvas) */}
     </div>
   );
 };

@@ -4,8 +4,8 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { crowdCountToRadius, geohashToCenter } from '@/lib/geo';
 import { projectLatLng } from '@/lib/geo/project';
+import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -133,22 +133,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           if (!sprite.parent) heatContainer.addChild(sprite);
 
           // Use Mapbox projection for pixel-perfect alignment
-          try {
-            if (!tileCoords.has(id)) {
-              const [lat, lng] = geohashToCenter(id);
-              tileCoords.set(id, { lat, lng });
-            }
-            const { lat, lng } = tileCoords.get(id)!;
-            const { x, y } = projectLatLng(lng, lat);
-            const size = crowdCountToRadius(tile.crowd_count);
-            
-            sprite.x = x - size / 2;
-            sprite.y = y - size / 2;
-            sprite.width = sprite.height = size;
-          } catch (error) {
-            // Fallback - hide sprite if projection fails
-            sprite.alpha = 0;
-          }
+          const [lat, lng] = geohashToCenter(id);
+          const { x, y }   = projectLatLng(lng, lat);
+          sprite.x = x;
+          sprite.y = y;
+          sprite.width = sprite.height = crowdCountToRadius(tile.crowd_count);
 
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);

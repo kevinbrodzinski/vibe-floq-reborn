@@ -25,4 +25,9 @@ describe('projection utils', () => {
     expect(() => projectLatLng(-118, 34)).toThrow('Map instance not set');
     expect(() => unprojectXY(100, 200)).toThrow('Map instance not set');
   });
+
+  afterEach(() => {
+    setMapInstance(null);
+    vi.resetAllMocks();
+  });
 });
