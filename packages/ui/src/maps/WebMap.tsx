@@ -85,7 +85,7 @@ export const WebMap: React.FC<BaseMapProps> = ({
   }, [onRegionChange, tokenLoaded]);
 
   return (
-    <div ref={container} style={{ width: '100%', height: '100%' }}>
+    <div ref={container} className="w-full h-full">
       {children}
     </div>
   );
