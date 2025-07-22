@@ -95,3 +95,9 @@ export const createHaloLayer = (
     updateTriggers: { getRadius: pulseTime, getFillColor: [prefs, hotspots] }
   })
 }
+
+export const createDeckLayers = {
+  createDensityLayer,
+  usePulseLayer,
+  createHaloLayer
+}

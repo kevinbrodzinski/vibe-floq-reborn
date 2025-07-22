@@ -121,8 +121,7 @@ export const useClusters = (
       if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
 
       const { data, error } = await supabase.functions.invoke('clusters', {
-        body: { bbox: box, precision },
-        signal: abortController.signal,
+        body: { bbox: box, precision }
       })
 
       // Check if request was aborted

@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { useClusters } from '@/hooks/useClusters'
 import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation'
-import { createDeckLayers } from './DeckLayers'
+import { createDensityLayer, usePulseLayer } from './DeckLayers'
 import { ClusterLegend } from './ClusterLegend'
 import { getClusterColor } from '@/utils/color'
 import { vibeEmoji } from '@/utils/vibe'
@@ -28,14 +28,9 @@ const INITIAL_VIEW_STATE = {
 interface VibeDensityMapProps {
   isOpen: boolean
   onClose: () => void
-  className?: string
 }
 
-export const VibeDensityMap: React.FC<VibeDensityMapProps> = ({
-  isOpen,
-  onClose,
-  className = '',
-}) => {
+export function VibeDensityMap({ isOpen, onClose }: VibeDensityMapProps) {
   const userLocation = useOptimizedGeolocation()
   
   // Center on user location if available, fallback to LA
@@ -136,7 +131,8 @@ export const VibeDensityMap: React.FC<VibeDensityMapProps> = ({
   // Create deck.gl layers
   const layers = useMemo(() => {
     if (!clusters || clusters.length === 0) return []
-    return createDeckLayers(clusters)
+    const densityLayer = createDensityLayer(clusters, {}, () => {})
+    return [densityLayer].filter(Boolean)
   }, [clusters])
 
   if (!isOpen) return null
@@ -147,7 +143,7 @@ export const VibeDensityMap: React.FC<VibeDensityMapProps> = ({
       role="dialog"
       aria-label="Vibe density map"
       aria-modal="true"
-      className={`fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden ${className}`}
+      className={`fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden`}
     >
       {/* Header */}
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-4 pointer-events-auto">
@@ -189,13 +185,13 @@ export const VibeDensityMap: React.FC<VibeDensityMapProps> = ({
 
         {/* DeckGL Map */}
         <DeckGL
-          viewState={viewState}
+          initialViewState={viewState}
           onViewStateChange={handleViewChange}
           controller={true}
           layers={layers}
-          views={[new MapView({ id: 'map' })]}
-          style={{ position: 'relative', width: '100%', height: '100%' }}
+          views={new MapView()}
           getCursor={() => 'default'}
+          style={{ width: '100%', height: '100%', position: 'relative' }}
         />
 
         {/* Zoom and location controls */}
