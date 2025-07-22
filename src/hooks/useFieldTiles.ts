@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { viewportToTileIds } from '@/lib/geo'
@@ -26,9 +25,7 @@ export function useFieldTiles(bounds?: TileBounds) {
   return useQuery({
     queryKey: ['field-tiles', tileIds],
     queryFn: async (): Promise<FieldTile[]> => {
-      if (!tileIds.length) {
-        return []
-      }
+      if (!tileIds.length) return [];
       
       const { data, error } = await supabase.functions.invoke('get_field_tiles', {
         body: { tile_ids: tileIds }
@@ -39,7 +36,7 @@ export function useFieldTiles(bounds?: TileBounds) {
           message: error.message,
           status: error.status,
         });
-        throw error
+        throw new Error(error.message);
       }
       
       // Handle the response structure from the edge function
@@ -54,7 +51,7 @@ export function useFieldTiles(bounds?: TileBounds) {
         updated_at: tile.updated_at
       }))
     },
-    enabled: tileIds.length > 0,
+    enabled: !!tileIds.length,
     staleTime: 30_000, // 30 seconds - aligns with refresh interval
   })
 }

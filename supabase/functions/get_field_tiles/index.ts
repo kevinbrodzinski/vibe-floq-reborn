@@ -50,15 +50,19 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Query field tiles from database
+    // Query field tiles from database - select only needed columns
     const { data, error } = await supabase
       .from('field_tiles')
-      .select('*')
+      .select('tile_id,crowd_count,avg_vibe,updated_at')
       .in('tile_id', tile_ids)
       .gt('updated_at', since ?? 'epoch');
       
     if (error) {
-      console.error('[FIELD_TILES] Database error:', error);
+      console.error('[FIELD_TILES] Database error:', {
+        message: error.message,
+        code: error.code,
+        hint: error.hint,
+      });
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -75,13 +79,23 @@ serve(async (req) => {
     });
     
     // Cache for 2 seconds - only if cache is available
-    if (typeof caches !== 'undefined' && caches.default) {
-      await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+    const hasCache = typeof caches !== 'undefined' && caches.default;
+    if (hasCache) {
+      try {
+        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+      } catch (err) {
+        console.warn('[FIELD_TILES] cache put failed', {
+          message: (err as Error).message,
+        });
+      }
     }
     return resp;
 
   } catch (error) {
-    console.error('[FIELD_TILES] Error:', error);
+    console.error('[FIELD_TILES] Error:', {
+      message: (error as Error).message,
+      name: (error as Error).name,
+    });
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
