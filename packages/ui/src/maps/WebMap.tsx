@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { createClient } from '@supabase/supabase-js';
+import { setMapInstance } from '@/lib/geo/project';
 import type { BaseMapProps } from './types';
 
 // Create supabase client directly to avoid import path issues
@@ -73,6 +74,12 @@ export const WebMap: React.FC<BaseMapProps> = ({
         zoom: m.getZoom(),
       });
     };
+
+    // Inject map instance for projection utils
+    mapRef.current.on('load', () => {
+      console.log('Map loaded, registering instance');
+      setMapInstance(mapRef.current!);
+    });
 
     mapRef.current.on('moveend', handleMoveEnd);
 
