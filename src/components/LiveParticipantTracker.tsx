@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -39,15 +39,11 @@ export const LiveParticipantTracker: React.FC<LiveParticipantTrackerProps> = ({
   displayDuration = 4000,
   className = ""
 }) => {
-  const [visibleUpdates, setVisibleUpdates] = useState<ParticipantUpdate[]>([]);
-
-  useEffect(() => {
+  const visibleUpdates = useMemo(() => {
     const now = Date.now();
-    const filtered = updates
+    return updates
       .filter(update => now - update.timestamp < displayDuration)
       .slice(-maxVisible);
-    
-    setVisibleUpdates(filtered);
   }, [updates, maxVisible, displayDuration]);
 
   return (

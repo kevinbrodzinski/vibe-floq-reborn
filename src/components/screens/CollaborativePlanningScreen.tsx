@@ -502,17 +502,13 @@ export const CollaborativePlanningScreen = () => {
 
         {/* Live Participant Tracker */}
         <LiveParticipantTracker 
-          participants={plan.participants.map(p => ({
+          updates={plan.participants.map(p => ({
             id: p.id,
-            name: p.name,
+            username: p.name,
             avatar: p.avatar,
-            status: 'online' as const,
-            isEditing: false,
-            lastActivity: Date.now(),
-            role: 'participant' as const,
-            checkInStatus: 'checked-in' as const
+            action: 'joined' as const,
+            timestamp: Date.now(),
           }))}
-          onParticipantUpdate={updateParticipantStatus}
         />
 
         {/* RSVP Card */}

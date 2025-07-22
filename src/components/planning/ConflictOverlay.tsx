@@ -53,7 +53,7 @@ export function ConflictOverlay({
               duration: 0.2
             }
           }}
-          {...zIndex('toast')}
+          {...zIndex('modal')}
           className={`
             fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
             max-w-md p-6 rounded-2xl border-2 backdrop-blur-xl shadow-2xl
