@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import debounce from 'lodash.debounce';
 import { Search, X, MapPin, Clock, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -35,12 +36,6 @@ interface SearchBarWithTypeaheadProps {
   isLoading?: boolean;
 }
 
-const RESULT_ICONS = {
-  venue: MapPin,
-  event: Clock,
-  person: Users,
-  location: MapPin,
-} as const;
 
 export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
   value: controlledValue,
@@ -67,6 +62,17 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
       setQuery(controlledValue);
     }
   }, [controlledValue]);
+
+  // Debounced search to avoid hammering API
+  const debouncedSearch = useMemo(() => debounce(onSearch, 200), [onSearch]);
+
+  // Memoized icon map
+  const RESULT_ICONS = useMemo(() => ({
+    venue: MapPin,
+    event: Clock,
+    person: Users,
+    location: MapPin,
+  }), []);
 
   const displayResults = useMemo(() => {
     return query.length > 0 ? results : 
@@ -129,7 +135,7 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
   const handleInputChange = (value: string) => {
     setQuery(value);
     onChange?.(value);
-    onSearch(value);
+    debouncedSearch(value);
     setIsOpen(value.length > 0 || (showRecent && recentSearches.length > 0));
     setFocusedIndex(-1);
   };

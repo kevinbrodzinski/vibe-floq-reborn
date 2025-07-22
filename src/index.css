@@ -318,7 +318,6 @@ All colors MUST be HSL.
       @apply fixed right-4 h-12 w-12 flex items-center
              justify-center rounded-full shadow-lg transition;
       bottom: var(--fab-bottom-gap);
-      z-index: var(--z-system);
     }
     
     .fixed-fab--secondary {
@@ -709,15 +708,6 @@ All colors MUST be HSL.
     transition: transform 120ms linear;
   }
 
-  /* Z-index CSS custom properties */
-  :root {
-    --z-map: 0;
-    --z-people: 10;
-    --z-header: 25;
-    --z-sheet: 60;
-    --z-toast: 70;
-    --z-system: 50;
-  }
 
 /* Touch action optimizations for better performance */
 .touch-action-pan-y {
