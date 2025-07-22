@@ -315,9 +315,10 @@ All colors MUST be HSL.
   /* FAB System Utilities */
   @layer utilities {
     .fixed-fab {
-      @apply fixed right-4 z-[70] h-12 w-12 flex items-center
+      @apply fixed right-4 h-12 w-12 flex items-center
              justify-center rounded-full shadow-lg transition;
       bottom: var(--fab-bottom-gap);
+      z-index: var(--z-system);
     }
     
     .fixed-fab--secondary {
@@ -715,6 +716,7 @@ All colors MUST be HSL.
     --z-header: 25;
     --z-sheet: 60;
     --z-toast: 70;
+    --z-system: 50;
   }
 
 /* Touch action optimizations for better performance */
