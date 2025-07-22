@@ -45,21 +45,21 @@ interface LoadingSpinnerProps {
   className?: string
 }
 
+const SIZE_CLASSES = {
+  sm: 'h-5 w-5',
+  md: 'h-7 w-7', 
+  lg: 'h-8 w-8'
+} as const
+
 export const LoadingSpinner = memo(({ 
   size = 'md', 
   className 
 }: LoadingSpinnerProps) => {
-  const sizeClasses = {
-    sm: 'h-5 w-5',
-    md: 'h-7 w-7', 
-    lg: 'h-8 w-8'
-  }
-
   return (
     <Loader2 
       className={cn(
         'animate-spin',
-        sizeClasses[size],
+        SIZE_CLASSES[size],
         className
       )} 
     />
