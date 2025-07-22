@@ -20,14 +20,14 @@ export const Z = {
   map: 0,
   mapOverlay: 10,
 
-  uiInteractive: 20,
-  uiControls: 21,
-  uiHeader: 22,
-
+  ui: 20,
+  uiHeader: 20,      // alias
+  uiControls: 20,    // alias  
+  uiInteractive: 20, // alias
   overlay: 30,
+
   timewarp: 40,
   system: 50,
-
   navigation: 60,
   modal: 70,
   dmSheet: 80,
@@ -37,4 +37,6 @@ export const Z = {
 } as const;
 
 export type ZKey = keyof typeof Z;
-export const zIndex = (layer: ZKey): React.CSSProperties => ({ zIndex: Z[layer] });
+
+/** Usage: `<div {...zIndex('modal')}>…` */
+export const zIndex = (layer: ZKey) => ({ style: { zIndex: Z[layer] } });
