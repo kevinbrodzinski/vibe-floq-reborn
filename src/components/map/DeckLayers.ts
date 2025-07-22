@@ -1,3 +1,6 @@
+// ─────────────────────────────────────────────────────────────
+// src/components/map/DeckLayers.ts
+// ─────────────────────────────────────────────────────────────
 import { ScatterplotLayer } from "@deck.gl/layers";
 import { getClusterColor } from "@/utils/color";
 import type { Cluster } from "@/hooks/useClusters";
@@ -13,13 +16,13 @@ export const createDensityLayer = (
   return new ScatterplotLayer({
     id: "vibe-density",
     data: clusters,
-    getPosition: (d: Cluster) => d.centroid.coordinates,
-    getRadius: (d: Cluster) => Math.max(50, Math.sqrt(d.total) * 10),
-    getFillColor: (d: Cluster) => getClusterColor(d.total / 20, d.vibe_counts, prefs),
+    getPosition: (d) => d.centroid.coordinates,
+    getRadius: (d) => Math.max(50, Math.sqrt(d.total) * 10),
+    getFillColor: (d) => getClusterColor(d.total / 20, d.vibe_counts, prefs),
     radiusUnits: "meters",
-    pickable: true,
-    onClick: ({ object }) => object && onClick(object),
     opacity: 0.6,
+    pickable: true,
+    onClick: ({ object }) => object && onClick(object as Cluster),
     updateTriggers: { data: clusters, prefs },
   });
 };
@@ -29,24 +32,23 @@ export const usePulseLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
 ) => {
-  const time = (Date.now() % 2000) / 2000; // 0→1 loop
+  const time = (Date.now() % 2000) / 2000; // 0-1 loop
 
   if (!clusters.length) return null;
 
   return new ScatterplotLayer({
     id: "vibe-pulse",
     data: clusters,
-    getPosition: (d: Cluster) => d.centroid.coordinates,
-    getRadius: (d: Cluster) =>
+    getPosition: (d) => d.centroid.coordinates,
+    getRadius: (d) =>
       30 + Math.sin(time * 2 * Math.PI) * 20 * (d.total / 20),
     radiusUnits: "meters",
-    getFillColor: (d: Cluster) =>
-      getClusterColor(d.total / 20, d.vibe_counts, prefs),
+    getFillColor: (d) => getClusterColor(d.total / 20, d.vibe_counts, prefs),
     opacity: 0.3,
     pickable: false,
     updateTriggers: { getRadius: time, data: clusters },
   });
 };
 
-// Add missing createHaloLayer export for compatibility
+// Stub – keep API compatible for later halo work
 export const createHaloLayer = () => null;
