@@ -40,7 +40,7 @@ export const WebMap: React.FC<{
     });
     mapRef.current = map;
 
-    /* ✅ bridge – register */
+    /* register once */
     map.on('load', () => setMapInstance(map));
 
     /* viewport sync */
@@ -56,11 +56,11 @@ export const WebMap: React.FC<{
     };
     map.on('moveend', handleMoveEnd);
 
-    /* cleanup – must unset ref to avoid _cancelResize crash */
+    /* cleanup – prevents "_cancelResize" crash */
     return () => {
       setMapInstance(null);
       map.off('moveend', handleMoveEnd);
-      map.remove();                 // <- triggers Mapbox's own _cancelResize safely
+      map.remove();
       mapRef.current = null;
     };
   }, [onRegionChange]);
