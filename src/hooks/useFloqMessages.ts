@@ -1,19 +1,25 @@
 
-import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  InfiniteData,
+} from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { extractMentions } from '@/utils/mentionParser'
 
-interface FloqMessage {
+export interface FloqMessage {
   id: string
   body: string
   created_at: string
   sender_id: string
-  profiles?: {
-    username: string
-    display_name: string
-    avatar_url: string
-  }
+  sender: {              // ← explicit alias
+    id: string
+    username: string | null
+    display_name: string | null
+    avatar_url: string | null
+  } | null
 }
 
 export function useFloqMessages(floqId: string) {
@@ -21,44 +27,34 @@ export function useFloqMessages(floqId: string) {
   
   const query = useInfiniteQuery({
     queryKey: ['floq-messages', floqId],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 0 }): Promise<FloqMessage[]> => {
       const limit = 20
       const offset = pageParam * limit
 
-      // Get messages without the problematic join
-      const { data: messages, error } = await supabase
+      /**
+       * Explicit relationship path:
+       *   profiles.id  ⇐ floq_messages.sender_id FK
+       * Give it an alias ("sender") so it's deterministic.
+       */
+      const { data, error } = await supabase
         .from('floq_messages')
-        .select('id, body, emoji, created_at, sender_id')
+        .select(
+          `
+            id,
+            body,
+            created_at,
+            sender_id,
+            sender:profiles!floq_messages_sender_id_fkey (
+              id, username, display_name, avatar_url
+            )
+          `
+        )
         .eq('floq_id', floqId)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
       if (error) throw error
-
-      // Get unique sender IDs for profile lookup
-      const senderIds = [...new Set(messages?.map(m => m.sender_id) || [])]
-      
-      // Fetch profiles separately to avoid relationship ambiguity
-      let profiles: Record<string, any> = {}
-      if (senderIds.length > 0) {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .in('id', senderIds)
-        
-        profiles = Object.fromEntries(
-          (profileData || []).map(p => [p.id, p])
-        )
-      }
-
-      // Map to expected format with profiles
-      return (messages || []).map(msg => ({
-        id: msg.id,
-        body: msg.body || '',
-        created_at: msg.created_at,
-        sender_id: msg.sender_id,
-        profiles: profiles[msg.sender_id] || null
-      }))
+      return data as unknown as FloqMessage[]
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
@@ -92,7 +88,7 @@ export function useFloqMessages(floqId: string) {
                 body: payload.payload.body || '',
                 created_at: payload.payload.created_at,
                 sender_id: payload.payload.sender_id,
-                profiles: senderProfile || null
+                sender: senderProfile || null
               }, ...pages[0]]
             }
             return { ...old, pages }
@@ -130,7 +126,7 @@ export function useSendFloqMessage() {
         body: p.body,
         created_at: new Date().toISOString(),
         sender_id: user.user.id,
-        profiles: userProfile || undefined
+        sender: userProfile || null
       }
 
       // Add optimistic message immediately
@@ -195,7 +191,10 @@ export function useSendFloqMessage() {
           if (pages[0]) {
             // Remove optimistic message and add real one
             const filtered = pages[0].filter(msg => !msg.id.startsWith('temp-'))
-            const realMessage = { ...data, profiles: pages[0][0]?.profiles }
+            const realMessage: FloqMessage = { 
+              ...data, 
+              sender: pages[0][0]?.sender || null 
+            }
             pages[0] = [realMessage, ...filtered]
           }
           return { ...old, pages }
