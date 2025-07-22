@@ -1109,6 +1109,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "floq_plans_creator_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "floq_plans_current_stop_id_fkey"
             columns: ["current_stop_id"]
             isOneToOne: false

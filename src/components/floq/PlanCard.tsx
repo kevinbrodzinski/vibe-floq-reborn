@@ -4,6 +4,7 @@ import { Calendar, Users, MapPin, Clock, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { usePlanMeta } from '@/hooks/usePlanMeta';
 import { formatCurrency, formatDuration } from '@/lib/format';
@@ -92,11 +93,14 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
 
         {plan.creator && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Hosted by</span>
-            <span className="font-medium text-foreground">
-              {plan.creator.display_name ||
-                (plan.creator.username && `@${plan.creator.username}`) ||
-                'Unknown'}
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={plan.creator.avatar_url ?? undefined} />
+              <AvatarFallback className="text-[10px]">
+                {(plan.creator.display_name ?? plan.creator.username ?? 'U')[0]}
+              </AvatarFallback>
+            </Avatar>
+            <span>
+              Hosted by {plan.creator.display_name || (plan.creator.username && `@${plan.creator.username}`) || 'Unknown'}
             </span>
           </div>
         )}
