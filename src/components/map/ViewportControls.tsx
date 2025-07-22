@@ -1,6 +1,6 @@
 import { MapPin, Plus, Minus, Target } from "lucide-react";
 import type { MapViewportControls } from "@/hooks/useMapViewport";
-import { Z } from "@/constants/zLayers";
+import { Z } from "@/constants/z";
 
 interface ViewportControlsProps {
   controls: MapViewportControls;

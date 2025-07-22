@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Send, User } from 'lucide-react';
-import { Z } from '@/constants/zLayers';
+import { Z } from '@/constants/z';
 
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfile';

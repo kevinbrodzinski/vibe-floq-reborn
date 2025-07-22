@@ -4,7 +4,7 @@ import { cva } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Z } from "@/constants/zLayers"
+import { Z } from "@/constants/z"
 
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,

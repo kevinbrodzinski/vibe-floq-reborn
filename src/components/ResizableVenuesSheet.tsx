@@ -7,7 +7,7 @@ import { VenueListItem } from './VenueListItem';
 import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
 import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
-import { Z } from '@/constants/zLayers';
+import { Z } from '@/constants/z';
 import { cn } from '@/lib/utils';
 const List = React.lazy(() => import('react-window').then(m => ({ default: m.FixedSizeList })));
 
