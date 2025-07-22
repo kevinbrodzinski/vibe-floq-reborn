@@ -21,13 +21,22 @@ export const WebMap: React.FC<BaseMapProps> = ({
   const mapRef = useRef<mapboxgl.Map>();
   const [tokenLoaded, setTokenLoaded] = useState(false);
 
-  // Load Mapbox token from Supabase edge function
+  // Load Mapbox token from Supabase edge function with caching
   useEffect(() => {
     const loadMapboxToken = async () => {
       try {
+        // Check cache first
+        const cachedToken = sessionStorage.getItem('mapbox_token');
+        if (cachedToken) {
+          mapboxgl.accessToken = cachedToken;
+          setTokenLoaded(true);
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('mapbox-token');
         if (data?.token && !error) {
           mapboxgl.accessToken = data.token;
+          sessionStorage.setItem('mapbox_token', data.token);
           setTokenLoaded(true);
         } else {
           console.warn('Using default Mapbox token - add MAPBOX_ACCESS_TOKEN to Supabase secrets');

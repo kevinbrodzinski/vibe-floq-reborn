@@ -26,3 +26,5 @@ jest.mock('@rnmapbox/maps', () => ({
   setAccessToken: jest.fn(),
   setTelemetryEnabled: jest.fn(),
 }));
+
+jest.mock('react-native-web', () => require('react-native'));

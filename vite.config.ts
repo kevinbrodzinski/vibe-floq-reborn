@@ -33,11 +33,6 @@ export default defineConfig(({ mode, command }) => ({
       // Stub native-only libs so Roll-up doesn't bundle them
       '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
     },
-    dedupe: ['react', 'react-dom'],
-  },
-  define: {
-    // Use cross-platform timer types
-    'NodeJS.Timeout': 'ReturnType<typeof setTimeout>',
-    'global': 'globalThis',
+    dedupe: ['react', 'react-dom', 'react-native-web'],
   },
 }));

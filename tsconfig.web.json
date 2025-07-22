@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "types": ["vite/client"]
-  }
+    "types": ["vite/client"],
+    "skipLibCheck": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2020"]
+  },
+  "include": ["src/types/global.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "**/*.d.ts"]
 }

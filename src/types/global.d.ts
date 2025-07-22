@@ -1,17 +1,21 @@
-// Global type declarations for better TypeScript support
+/**
+ * Fix for web builds: Override NodeJS types with web-compatible versions
+ */
 
-declare module 'deck.gl' {
-  // For odd sub-path imports, removes red squiggles
+declare global {
+  // Override setTimeout to return number (web standard) instead of NodeJS.Timeout
+  const setTimeout: WindowOrWorkerGlobalScope['setTimeout'];
+  const clearTimeout: WindowOrWorkerGlobalScope['clearTimeout'];
+  const setInterval: WindowOrWorkerGlobalScope['setInterval'];
+  const clearInterval: WindowOrWorkerGlobalScope['clearInterval'];
+  
+  // Override the Timeout type to be compatible with web (number)
+  type Timeout = number;
+  
+  // Also override in NodeJS namespace to prevent conflicts
+  namespace NodeJS {
+    type Timeout = number;
+  }
 }
 
-declare module '@deck.gl/react' {
-  // Additional type coverage for deck.gl React components
-}
-
-declare module '@deck.gl/layers' {
-  // Layer type definitions
-}
-
-declare module '@deck.gl/aggregation-layers' {
-  // Aggregation layer type definitions
-}
+export {};
