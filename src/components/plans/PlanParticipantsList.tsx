@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { InviteGuestModal } from './InviteGuestModal';
+import { InvitePeopleModal } from './InvitePeopleModal';
 
 interface Participant {
   id: string;
@@ -223,7 +223,7 @@ export function PlanParticipantsList({
 
       {/* Invite Modal */}
       {inviteModalOpen && planId && planTitle && (
-        <InviteGuestModal
+        <InvitePeopleModal
           open={inviteModalOpen}
           onClose={() => setInviteModalOpen(false)}
           planId={planId}
