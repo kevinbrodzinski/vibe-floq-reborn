@@ -30,10 +30,15 @@ Deno.serve(async req => {
       console.log(`[clusters] GET params:`, { bbox, precision })
     }
 
-    if (!bbox) {
-      console.error('[clusters] Missing bbox parameter')
+    // ✅ Validate bbox
+    if (
+      !Array.isArray(bbox) ||
+      bbox.length !== 4 ||
+      bbox.some((n) => typeof n !== "number" || Number.isNaN(n))
+    ) {
+      console.error('[clusters] Invalid bbox:', bbox)
       return new Response(
-        JSON.stringify({ error: 'Invalid body, expected { bbox:[minLng,minLat,maxLng,maxLat] }' }),
+        JSON.stringify({ error: "bbox must be [west,south,east,north] numbers" }),
         {
           status: 400,
           headers: { ...cors, 'Content-Type': 'application/json' },
@@ -41,16 +46,11 @@ Deno.serve(async req => {
       )
     }
 
-    // Handle both string and array bbox formats
-    let bboxArray: number[]
-    if (typeof bbox === 'string') {
-      bboxArray = bbox.split(',').map(Number)
-    } else if (Array.isArray(bbox)) {
-      bboxArray = bbox.map(Number)
-    } else {
-      console.error('[clusters] Invalid bbox format:', bbox)
+    // ✅ Validate precision
+    if (typeof precision !== "number" || precision < 1 || precision > 8) {
+      console.error('[clusters] Invalid precision:', precision)
       return new Response(
-        JSON.stringify({ error: 'Invalid bbox format, expected array or comma-separated string' }),
+        JSON.stringify({ error: "precision must be 1–8" }),
         {
           status: 400,
           headers: { ...cors, 'Content-Type': 'application/json' },
@@ -58,18 +58,7 @@ Deno.serve(async req => {
       )
     }
 
-    if (bboxArray.length !== 4) {
-      console.error('[clusters] Invalid bbox length:', bboxArray.length)
-      return new Response(
-        JSON.stringify({ error: 'Invalid bbox, must have 4 values: [minLng,minLat,maxLng,maxLat]' }),
-        {
-          status: 400,
-          headers: { ...cors, 'Content-Type': 'application/json' },
-        }
-      )
-    }
-
-    const [minLng, minLat, maxLng, maxLat] = bboxArray
+    const [minLng, minLat, maxLng, maxLat] = bbox
     console.log(`[clusters] Querying bbox: [${minLng}, ${minLat}, ${maxLng}, ${maxLat}], precision: ${precision}`)
 
     const supabase = createClient(

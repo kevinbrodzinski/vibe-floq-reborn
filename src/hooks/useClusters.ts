@@ -22,6 +22,10 @@ export const useClusters = (
   bbox: [number, number, number, number] | null,
   precision = 6
 ) => {
+  // Add debug logging
+  if (import.meta.env.DEV) {
+    console.log('[useClusters] called with:', { bbox, precision })
+  }
   const [clusters, setClusters] = useState<Cluster[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,7 +109,19 @@ export const useClusters = (
   }, [key, clusters.length])
 
   /** ---- abort-safe edge-function fetch ---- */
-  const fetchClusters = useCallback(async (box: [number, number, number, number]) => {
+  const fetchClusters = useCallback(async (box: [number, number, number, number] | null) => {
+    // Validate bbox on client side before sending
+    if (
+      !box ||
+      !Array.isArray(box) ||
+      box.length !== 4 ||
+      box.some((n) => typeof n !== "number" || Number.isNaN(n))
+    ) {
+      console.error('[useClusters] Invalid bbox, skipping fetch:', box)
+      setError('Invalid map bounds')
+      return
+    }
+
     // Cancel previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -118,7 +134,9 @@ export const useClusters = (
     setError(null)
 
     try {
-      if (import.meta.env.DEV) console.log(`[useClusters] Fetching clusters for bbox: ${box.join(',')}, precision: ${precision}`)
+      if (import.meta.env.DEV) {
+        console.log('[useClusters] sending', { bbox: box, precision })
+      }
 
       const { data, error } = await supabase.functions.invoke('clusters', {
         body: { bbox: box, precision },
@@ -134,7 +152,11 @@ export const useClusters = (
 
       if (error) {
         console.error('[useClusters] Error:', error)
-        setError(error.message || 'Failed to fetch clusters')
+        setError(
+          typeof error === "string" 
+            ? error 
+            : error.message || 'Failed to fetch clusters'
+        )
         setClusters([])
         return
       }

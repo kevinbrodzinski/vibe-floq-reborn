@@ -233,7 +233,7 @@ export const VibeDensityMap = ({
               </div>
               <p className="text-destructive mb-2 font-medium">Signal lost</p>
               <p className="text-sm text-muted-foreground mb-4">
-                Couldn't connect to the vibe network. Try widening your orbit or check your connection.
+                {error || "Couldn't connect to the vibe network. Try widening your orbit or check your connection."}
               </p>
               <Button onClick={() => window.location.reload()} size="sm" variant="outline">
                 Reconnect
