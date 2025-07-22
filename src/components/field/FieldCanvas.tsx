@@ -6,6 +6,7 @@ import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
 import { projectLatLng, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
+import { clusterWorker } from '@/lib/clusterWorker';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -121,53 +122,59 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     let animationId: number;
     
     const animate = () => {
-      // ---- TILE HEAT ----
+      // ---- TILE CLUSTERING ----
       if (viewportGeo && fieldTiles.length > 0) {
         const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
         
-        // Cache geohash lookups
-        const tileCoords = new Map<string, { lat: number; lng: number }>();
-        
-        visibleTiles.forEach(tile => {
-          const id      = tile.tile_id;
-          const sprite  = tilePool.acquire(id);
-          if (!sprite.parent) heatContainer.addChild(sprite);
-
-          // --- geo ➜ pixel ---
-          const [lat, lng] = geohashToCenter(id);        // gh → lat/lng
-          const { x, y }   = projectLatLng(lng, lat);    // mapbox bridge
-          const r          = crowdCountToRadius(tile.crowd_count);
-
-          sprite.position.set(x - r, y - r);
-          sprite.width = sprite.height = r * 2;
-
-          // Color and fade
-          const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);
-          
-          // Convert HSL to RGB for PIXI
-          const { h, s, l } = tile.avg_vibe;
-          const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
-            const a = s * Math.min(l, 1 - l);
-            const f = (n: number) => {
-              const k = (n + h * 12) % 12;
-              const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-              return Math.round(255 * c);
-            };
-            return [f(0), f(8), f(4)];
+        // Build raw tiles for worker
+        const rawTiles = visibleTiles.map(tile => {
+          const [lat, lng] = geohashToCenter(tile.tile_id);
+          const { x, y } = projectLatLng(lng, lat);
+          return {
+            x,
+            y,
+            r: crowdCountToRadius(tile.crowd_count),
+            vibe: tile.avg_vibe,
           };
-          
-          const [red, green, blue] = hslToRgb(h, s, l);
-          const vibeColor = (red << 16) + (green << 8) + blue;
-          
-          sprite.tint = vibeColor;
-          sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
         });
 
-        // Release sprites no longer visible
-        tilePool.active.forEach((sprite, id) => {
-          if (!visibleTiles.some(t => t.tile_id === id)) {
-            tilePool.release(id);
-          }
+        // Get clusters from worker (non-blocking)
+        clusterWorker.cluster(rawTiles).then(clusters => {
+          // Draw clusters exactly like tiles for now
+          clusters.forEach(c => {
+            const sprite = tilePool.acquire(`cluster:${c.x}:${c.y}`);
+            if (!sprite.parent) heatContainer.addChild(sprite);
+            sprite.position.set(c.x - c.r, c.y - c.r);
+            sprite.width = sprite.height = c.r * 2;
+
+            // Color and fade
+            const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+            
+            // Convert HSL to RGB for PIXI
+            const { h, s, l } = c.vibe;
+            const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+              const a = s * Math.min(l, 1 - l);
+              const f = (n: number) => {
+                const k = (n + h * 12) % 12;
+                const color = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+                return Math.round(255 * color);
+              };
+              return [f(0), f(8), f(4)];
+            };
+            
+            const [red, green, blue] = hslToRgb(h, s, l);
+            const vibeColor = (red << 16) + (green << 8) + blue;
+            
+            sprite.tint = vibeColor;
+            sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
+          });
+
+          // Release sprites no longer visible
+          tilePool.active.forEach((sprite, id) => {
+            if (id.startsWith('cluster:') && !clusters.some(c => `cluster:${c.x}:${c.y}` === id)) {
+              tilePool.release(id);
+            }
+          });
         });
       }
 
