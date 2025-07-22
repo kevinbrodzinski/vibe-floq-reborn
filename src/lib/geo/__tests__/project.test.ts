@@ -52,13 +52,12 @@ describe('projection utilities', () => {
     expect(Math.abs(unprojected.lat - originalLat)).toBeLessThan(1e-5);
   });
 
-  it('should throw error when map instance not set', () => {
-    // Create a new module instance to test error case
-    vi.resetModules();
-    const { projectLatLng: testProjectLatLng, unprojectXY: testUnprojectXY } = require('../project');
+  it('should throw error when map instance not set', async () => {
+    // Use dynamic import to test error case with fresh module
+    const freshModule = await vi.importActual('../project') as any;
     
-    expect(() => testProjectLatLng(-118, 34)).toThrow('map instance not set');
-    expect(() => testUnprojectXY(500, 300)).toThrow('map instance not set');
+    expect(() => freshModule.projectLatLng(-118, 34)).toThrow('map instance not set');
+    expect(() => freshModule.unprojectXY(500, 300)).toThrow('map instance not set');
     
     // Restore for other tests
     setMapInstance(mockMap);

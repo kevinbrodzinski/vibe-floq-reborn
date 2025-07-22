@@ -35,11 +35,15 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
       bearing: 0,
     });
 
-    // Inject map instance for projection utils
-    setMapInstance(mapRef.current);
-
     // Add navigation controls
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Inject map instance for projection utils after style loads
+    mapRef.current.on('load', () => {
+      if (mapRef.current) {
+        setMapInstance(mapRef.current);
+      }
+    });
 
     // Handle map move events for field tile updates
     const handleMoveEnd = () => {

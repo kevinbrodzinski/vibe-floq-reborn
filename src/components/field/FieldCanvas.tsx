@@ -4,7 +4,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { geohashToCenter, projectLatLng, crowdCountToRadius } from '@/lib/geo';
+import { geohashToCenter, projectLatLng, crowdCountToRadius, getMapInstance } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -41,6 +41,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
+  
+  // Projection cache for performance (cache [tile_id, zoom] => ScreenXY)
+  const projectionCacheRef = useRef<Map<string, {x: number, y: number, zoom: number}>>(new Map());
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -128,10 +131,26 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           const sprite = tilePool.acquire(id);
           if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // Use precise Mapbox projection instead of viewport approximation
-          const { lng, lat } = geohashToCenter(id);
-          const { x, y } = projectLatLng(lng, lat);
+          // Use cached projection for performance (memoize by tile_id + zoom)
+          const projectionCache = projectionCacheRef.current;
+          const currentZoom = getMapInstance()?.getZoom() ?? 11;
+          const cacheKey = `${id}-${Math.round(currentZoom * 10)}`;
           
+          let screenPos = projectionCache.get(cacheKey);
+          if (!screenPos || screenPos.zoom !== currentZoom) {
+            const { lng, lat } = geohashToCenter(id);
+            const { x, y } = projectLatLng(lng, lat);
+            screenPos = { x, y, zoom: currentZoom };
+            projectionCache.set(cacheKey, screenPos);
+            
+            // Cleanup old cache entries (keep last 500)
+            if (projectionCache.size > 500) {
+              const oldKeys = Array.from(projectionCache.keys()).slice(0, 100);
+              oldKeys.forEach(key => projectionCache.delete(key));
+            }
+          }
+          
+          const { x, y } = screenPos;
           const radius = crowdCountToRadius(tile.crowd_count);
           
           sprite.x = x - radius;

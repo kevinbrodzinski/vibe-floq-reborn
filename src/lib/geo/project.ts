@@ -12,13 +12,25 @@ export function setMapInstance(m: mapboxgl.Map) {
 }
 
 export function projectLatLng(lng: number, lat: number): ScreenXY {
-  if (!map) throw new Error('projectLatLng: map instance not set');
+  if (!map) {
+    const error = 'projectLatLng: map instance not set';
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(error + ' - ensure setMapInstance() is called after map loads');
+    }
+    throw new Error(error);
+  }
   const { x, y } = map.project([lng, lat]);
   return { x, y };
 }
 
 export function unprojectXY(x: number, y: number): LatLng {
-  if (!map) throw new Error('unprojectXY: map instance not set');
+  if (!map) {
+    const error = 'unprojectXY: map instance not set';
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(error + ' - ensure setMapInstance() is called after map loads');
+    }
+    throw new Error(error);
+  }
   const { lng, lat } = map.unproject([x, y]);
   return { lng, lat };
 }
