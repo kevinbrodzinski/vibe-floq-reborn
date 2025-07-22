@@ -1,170 +1,255 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import DeckGL from '@deck.gl/react'
-import { createDensityLayer, usePulseLayer, createHaloLayer } from './DeckLayers'
-import { ClusterLegend } from './ClusterLegend'
-import { useClusters } from '@/hooks/useClusters'
-import { useHotspots } from '@/hooks/useHotspots'
-import { usePulseTime } from '@/hooks/usePulseTime'
-import { getEnvironmentConfig } from '@/lib/environment'
+import { MapView } from '@deck.gl/core'
+import { X, ZoomIn, ZoomOut, LocateFixed } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { X, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react'
-import type { Cluster } from '@/hooks/useClusters'
-
-// Type assertion for DeckGL component
-const DeckGLComponent = DeckGL as any
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
+import { useClusters } from '@/hooks/useClusters'
+import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation'
+import { createDeckLayers } from './DeckLayers'
+import { ClusterLegend } from './ClusterLegend'
+import { getClusterColor } from '@/utils/color'
+import { vibeEmoji } from '@/utils/vibe'
+import { zIndex } from '@/constants/z'
+import { useDebounce } from '@/hooks/useDebounce'
 
 const INITIAL_VIEW_STATE = {
-  longitude: -122.4,
-  latitude: 37.8,
-  zoom: 11,
-  pitch: 45,
-  bearing: 0
+  longitude: -118.2437,
+  latitude: 34.0522,
+  zoom: 10,
+  pitch: 0,
+  bearing: 0,
 }
 
-interface Props {
+interface VibeDensityMapProps {
   isOpen: boolean
   onClose: () => void
-  userLocation?: { lat: number; lng: number } | null
+  className?: string
 }
 
-export const VibeDensityMap = ({ isOpen, onClose, userLocation }: Props) => {
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
-  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null)
+export const VibeDensityMap: React.FC<VibeDensityMapProps> = ({
+  isOpen,
+  onClose,
+  className = '',
+}) => {
+  const userLocation = useOptimizedGeolocation()
+  
+  // Center on user location if available, fallback to LA
+  const initialViewState = useMemo(() => {
+    if (userLocation.lat && userLocation.lng) {
+      return {
+        ...INITIAL_VIEW_STATE,
+        longitude: userLocation.lng,
+        latitude: userLocation.lat,
+        zoom: 12,
+      }
+    }
+    return INITIAL_VIEW_STATE
+  }, [userLocation.lat, userLocation.lng])
 
-  // Calculate bounding box from current viewport with clamping
+  const [viewState, setViewState] = useState(initialViewState)
+  
+  // Debounce viewport changes to reduce API calls
+  const debouncedViewState = useDebounce(viewState, 300)
+
+  // Calculate bounding box from debounced viewport
   const bbox = useMemo(() => {
-    const { longitude, latitude, zoom } = viewState
-    const latDelta = 180 / Math.pow(2, zoom) * 2
-    const lngDelta = 360 / Math.pow(2, zoom) * 2
+    if (!debouncedViewState) return null
     
-    const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), max)
+    const { longitude, latitude, zoom } = debouncedViewState
+    const scale = Math.pow(2, 15 - zoom)
+    const latOffset = scale * 0.01
+    const lngOffset = scale * 0.01 / Math.cos((latitude * Math.PI) / 180)
     
     return [
-      clamp(longitude - lngDelta, -180, 180),
-      clamp(latitude - latDelta, -85, 85),
-      clamp(longitude + lngDelta, -180, 180),
-      clamp(latitude + latDelta, -85, 85)
+      longitude - lngOffset, // west
+      latitude - latOffset,  // south
+      longitude + lngOffset, // east
+      latitude + latOffset,  // north
     ] as [number, number, number, number]
-  }, [viewState])
+  }, [debouncedViewState])
 
-  const precision = useMemo(() => {
-    const zoom = viewState.zoom
-    if (zoom <= 8) return 4
-    if (zoom <= 10) return 5
-    if (zoom <= 12) return 6
-    if (zoom <= 14) return 7
-    return 8
-  }, [viewState.zoom])
+  const { clusters, loading, error } = useClusters(bbox, 6)
 
-  const { clusters, loading, error } = useClusters(bbox, precision)
-
-  // Simple mock preferences - you can replace this with actual user preferences
-  const prefs = useMemo(() => ({
-    social: 0.2,
-    chill: 0.1,
-    hype: -0.1,
-    focus: 0.3,
-    explore: 0.0,
-    create: 0.2,
-    relax: 0.1,
-    exercise: -0.2
-  }), [])
-
-  const handleClusterClick = useCallback((cluster: Cluster) => {
-    setSelectedCluster(cluster)
-    setViewState(prev => ({
-      ...prev,
-      longitude: cluster.centroid.coordinates[0],
-      latitude: cluster.centroid.coordinates[1],
-      zoom: Math.min(prev.zoom + 1, 16)
-    }))
+  // Handle viewport changes
+  const handleViewChange = useCallback(({ viewState }: { viewState: any }) => {
+    setViewState(viewState)
   }, [])
 
-  const pulseLayer = usePulseLayer(clusters, prefs)
-  const { hotspots } = useHotspots()
-  const haloTime = usePulseTime(2.5) // Faster pulse for hotspots
-  const env = getEnvironmentConfig()
+  // Zoom controls
+  const zoomIn = useCallback(() => {
+    setViewState(v => ({ ...v, zoom: Math.min(v.zoom + 1, 20) }))
+  }, [])
 
+  const zoomOut = useCallback(() => {
+    setViewState(v => ({ ...v, zoom: Math.max(v.zoom - 1, 2) }))
+  }, [])
+
+  const centerOnUser = useCallback(() => {
+    if (userLocation.lat && userLocation.lng) {
+      setViewState(v => ({
+        ...v,
+        longitude: userLocation.lng!,
+        latitude: userLocation.lat!,
+        zoom: 14,
+      }))
+    }
+  }, [userLocation.lat, userLocation.lng])
+
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
+  // Viewport persistence
+  useEffect(() => {
+    if (isOpen) {
+      localStorage.setItem('vibeMapViewState', JSON.stringify(viewState))
+    }
+  }, [viewState, isOpen])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('vibeMapViewState')
+    if (saved) {
+      try {
+        const savedState = JSON.parse(saved)
+        setViewState(savedState)
+      } catch (e) {
+        console.warn('Failed to restore saved viewport state')
+      }
+    }
+  }, [])
+
+  // Create deck.gl layers
   const layers = useMemo(() => {
-    const base = createDensityLayer(clusters, prefs, handleClusterClick)
-    const halo = env.hotSpotHalos ? createHaloLayer(hotspots, haloTime, prefs) : null
-    return [base, pulseLayer, halo].filter(Boolean)
-  }, [clusters, prefs, handleClusterClick, pulseLayer, hotspots, haloTime, env.hotSpotHalos])
+    if (!clusters || clusters.length === 0) return []
+    return createDeckLayers(clusters)
+  }, [clusters])
 
-  // Conditional rendering AFTER all hooks
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-4 z-40 bg-background rounded-2xl border border-border shadow-2xl">
+    <div
+      {...zIndex('modal')}
+      role="dialog"
+      aria-label="Vibe density map"
+      aria-modal="true"
+      className={`fixed inset-4 bg-background rounded-2xl shadow-2xl border flex flex-col overflow-hidden ${className}`}
+    >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-background/90 backdrop-blur-sm border-b border-border p-4 flex items-center justify-between rounded-t-2xl">
-        <div>
-          <h2 className="text-lg font-semibold">Vibe Density Map</h2>
-          <p className="text-sm text-muted-foreground">
-            {loading ? 'Loading…' : `${clusters.length} cluster${clusters.length === 1 ? '' : 's'} in view`}
-          </p>
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-4 pointer-events-auto">
+        <div className="flex items-center gap-3">
+          <CardTitle className="text-xl font-semibold">Vibe Density Map</CardTitle>
+          {loading && (
+            <Badge variant="secondary" className="text-xs">
+              Loading...
+            </Badge>
+          )}
+          {error && (
+            <Badge variant="destructive" className="text-xs">
+              Error
+            </Badge>
+          )}
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} className="p-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label="Close map"
+          className="h-8 w-8"
+        >
           <X className="h-4 w-4" />
         </Button>
-      </div>
+      </CardHeader>
 
-      {/* Map Container */}
-      <div className="absolute inset-0 pt-16 rounded-b-2xl overflow-hidden">
-        <DeckGLComponent
+      {/* Main map container */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">Loading vibe clusters...</p>
+            </div>
+          </div>
+        )}
+
+        {/* DeckGL Map */}
+        <DeckGL
           viewState={viewState}
+          onViewStateChange={handleViewChange}
           controller={true}
           layers={layers}
-          onViewStateChange={({viewState}) => setViewState(viewState)}
-          style={{ width: '100%', height: '100%' }}
+          views={[new MapView({ id: 'map' })]}
+          style={{ position: 'relative', width: '100%', height: '100%' }}
+          getCursor={() => 'default'}
         />
+
+        {/* Zoom and location controls */}
+        <div className="absolute right-4 top-4 flex flex-col gap-2 pointer-events-auto">
+          <Button
+            size="icon"
+            variant="secondary"
+            onClick={zoomIn}
+            aria-label="Zoom in"
+            className="h-10 w-10 shadow-lg"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="secondary"
+            onClick={zoomOut}
+            aria-label="Zoom out"
+            className="h-10 w-10 shadow-lg"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          {userLocation.lat && userLocation.lng && (
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={centerOnUser}
+              aria-label="Center on my location"
+              className="h-10 w-10 shadow-lg"
+            >
+              <LocateFixed className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
 
         {/* Legend */}
-        <ClusterLegend 
-          clusters={clusters}
-          className="absolute bottom-4 left-4"
-        />
-
-        {/* Cluster Details */}
-        {selectedCluster && (
-          <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm rounded-xl p-4 border border-border max-w-sm">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-medium">Cluster Details</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedCluster(null)}
-                className="p-1 h-6 w-6"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="space-y-2 text-sm">
-              <p><span className="text-muted-foreground">Total People:</span> {selectedCluster.total}</p>
-              <div>
-                <span className="text-muted-foreground">Vibes:</span>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {Object.entries(selectedCluster.vibe_counts).map(([vibe, count]) => (
-                    <span
-                      key={vibe}
-                      className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary border border-primary/20"
-                    >
-                      {vibe}: {count}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="absolute top-20 left-4 right-4 bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-            <p className="text-sm text-destructive">Failed to load clusters: {error}</p>
+        {clusters && clusters.length > 0 && (
+          <div className="absolute bottom-4 left-4 pointer-events-auto">
+            <ClusterLegend clusters={clusters} />
           </div>
         )}
       </div>
+
+      {/* Stats footer */}
+      {clusters && clusters.length > 0 && (
+        <CardContent className="pt-4 pb-4 pointer-events-auto">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{clusters.length} active clusters</span>
+            <span>
+              {clusters.reduce((sum, c) => sum + c.total, 0)} people vibing
+            </span>
+          </div>
+        </CardContent>
+      )}
     </div>
   )
 }

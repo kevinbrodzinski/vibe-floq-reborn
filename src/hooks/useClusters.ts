@@ -1,7 +1,9 @@
+
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { debounce } from 'lodash-es'
 import { supabase } from '@/integrations/supabase/client'
+import { useDebounce } from '@/hooks/useDebounce'
 
 // Types --------------------------------------------------------------------
 
@@ -26,16 +28,19 @@ export const useClusters = (
   const [isRealTimeConnected, setIsRealTimeConnected] = useState(false)
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null)
 
+  /** ---- Debounce bbox to prevent excessive API calls ---- */
+  const debouncedBbox = useDebounce(bbox, 300)
+
   /** ---- stable key: precision + bbox rounded to 3 dp ---- */
   const key = useMemo(() => {
-    if (!bbox) return null
-    const k = bbox.map(n => n.toFixed(3)).join(',')
+    if (!debouncedBbox) return null
+    const k = debouncedBbox.map(n => n.toFixed(3)).join(',')
     return `${precision}:${k}`
-  }, [bbox, precision])
+  }, [debouncedBbox, precision])
 
   /** ---- keep channel instance across renders ---- */
   const channelRef = useRef<RealtimeChannel | null>(null)
-  const abortRef = useRef<AbortController | undefined>(undefined)
+  const abortControllerRef = useRef<AbortController | undefined>(undefined)
   const lastDataRef = useRef<Cluster[]>([])
 
   /** ---- process clusters with visual properties ---- */
@@ -76,8 +81,8 @@ export const useClusters = (
                 console.log('[useClusters] Checksum changed → refetching clusters')
               }
               // Trigger debounced fetch
-              if (bbox) {
-                debouncedFetch(bbox)
+              if (debouncedBbox) {
+                debouncedFetch(debouncedBbox)
               }
             }
           } catch (e) {
@@ -99,11 +104,15 @@ export const useClusters = (
     }
   }, [key, clusters.length])
 
-  /** ---- debounced edge-function fetch ---- */
+  /** ---- abort-safe edge-function fetch ---- */
   const fetchClusters = useCallback(async (box: [number, number, number, number]) => {
     // Cancel previous request
-    abortRef.current?.abort()
-    abortRef.current = new AbortController()
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     setLoading(true)
     setError(null)
@@ -113,7 +122,13 @@ export const useClusters = (
 
       const { data, error } = await supabase.functions.invoke('clusters', {
         body: { bbox: box, precision },
+        signal: abortController.signal,
       })
+
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        return
+      }
 
       if (error) {
         console.error('[useClusters] Error:', error)
@@ -128,13 +143,15 @@ export const useClusters = (
       setError(null)
 
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
+      if (err.name !== 'AbortError' && !abortController.signal.aborted) {
         console.error('[useClusters] Fetch error:', err)
         setError(err.message || 'Failed to fetch clusters')
         setClusters([])
       }
     } finally {
-      setLoading(false)
+      if (!abortController.signal.aborted) {
+        setLoading(false)
+      }
     }
   }, [precision, processClusterData])
 
@@ -145,15 +162,17 @@ export const useClusters = (
   )
 
   useEffect(() => {
-    if (!bbox) return
+    if (!debouncedBbox) return
     debouncedFetch.cancel()                  // reset debounce when bbox changes
-    debouncedFetch(bbox)                     // fetch with new bbox
-  }, [bbox, debouncedFetch])
+    debouncedFetch(debouncedBbox)           // fetch with new bbox
+  }, [debouncedBbox, debouncedFetch])
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortRef.current?.abort()
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
       debouncedFetch.cancel()
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
