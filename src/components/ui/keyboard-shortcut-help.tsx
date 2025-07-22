@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Keyboard } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,12 +24,14 @@ export function KeyboardShortcutHelp({
   onClose,
   className
 }: KeyboardShortcutHelpProps) {
-  const groupedShortcuts = shortcuts.reduce((acc, shortcut) => {
-    const category = shortcut.category || 'General'
-    if (!acc[category]) acc[category] = []
-    acc[category].push(shortcut)
-    return acc
-  }, {} as Record<string, ShortcutItem[]>)
+  const groupedShortcuts = useMemo(() => {
+    return shortcuts.reduce((acc, shortcut) => {
+      const category = shortcut.category || 'General'
+      if (!acc[category]) acc[category] = []
+      acc[category].push(shortcut)
+      return acc
+    }, {} as Record<string, ShortcutItem[]>)
+  }, [shortcuts])
 
   return (
     <AnimatePresence>
