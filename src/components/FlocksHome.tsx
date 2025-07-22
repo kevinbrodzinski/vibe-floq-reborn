@@ -363,7 +363,8 @@ const CreateFloqFAB = () => {
   return (
     <button
       onClick={() => setShowCreateSheet(true)}
-      className="fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium" {...zIndex('system')}
+      className="fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium"
+      {...zIndex('system')}
     >
       <Plus size={20} />
       Create Floq

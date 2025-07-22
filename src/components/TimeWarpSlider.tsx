@@ -110,7 +110,7 @@ export const TimeWarpSlider = memo(({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xl flex items-end pointer-events-auto" style={{ zIndex: 31 /* Z.timewarp */ }}>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-xl flex items-end pointer-events-auto" style={{ zIndex: 31 /* Z.timewarp */ }}>
       <div className="w-full bg-card/95 backdrop-blur-xl rounded-t-3xl border-t border-border p-6 animate-slide-in-right pointer-events-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
