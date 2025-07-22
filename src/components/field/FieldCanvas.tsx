@@ -4,7 +4,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { tileIdToScreenCoords, crowdCountToRadius } from '@/lib/geo';
+import { geohashToCenter, projectLatLng, crowdCountToRadius } from '@/lib/geo';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -128,16 +128,15 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           const sprite = tilePool.acquire(id);
           if (!sprite.parent) heatContainer.addChild(sprite);
 
-          // Use proper geo bounds for coordinate conversion
-          const { x, y, size } = tileIdToScreenCoords(
-            id,
-            viewportGeo,
-            { width: app.screen.width, height: app.screen.height }
-          );
+          // Use precise Mapbox projection instead of viewport approximation
+          const { lng, lat } = geohashToCenter(id);
+          const { x, y } = projectLatLng(lng, lat);
           
-          sprite.x = x - size / 2;
-          sprite.y = y - size / 2;
-          sprite.width = sprite.height = size;
+          const radius = crowdCountToRadius(tile.crowd_count);
+          
+          sprite.x = x - radius;
+          sprite.y = y - radius;
+          sprite.width = sprite.height = radius * 2;
 
           // Color and fade
           const targetAlpha = Math.min(1, Math.log2(tile.crowd_count) / 5);

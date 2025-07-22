@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, ReactNode } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { setMapInstance } from '@/lib/geo/project';
 
 // Configure Mapbox access token
 // Use the secret management approach for token loading
@@ -33,6 +34,9 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
       pitch: 0,
       bearing: 0,
     });
+
+    // Inject map instance for projection utils
+    setMapInstance(mapRef.current);
 
     // Add navigation controls
     mapRef.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
