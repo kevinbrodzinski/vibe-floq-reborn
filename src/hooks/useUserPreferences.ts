@@ -11,6 +11,7 @@ export interface UserPreferences {
   favorite_locations: string[];
   feedback_sentiment: Record<string, any>;
   prefer_smart_suggestions: boolean;
+  field_enabled: boolean;
   onboarding_version?: string;
   onboarding_completed_at?: string;
   created_at: string;
