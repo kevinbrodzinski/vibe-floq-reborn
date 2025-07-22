@@ -54,12 +54,14 @@ export const useNearbyVenues = (
         const { error } = await supabase.functions.invoke('sync-places', {
           body: { lat, lng }
         });
-        if (error) console.warn('sync-places error (ignored):', error.message);
-        // record the sync so other edge calls skip
-        await supabase
-          .from('sync_log')
-          .insert({ kind: 'google_places', lat, lng })
-          .throwOnError();
+        if (!error) {
+          // Record the sync so other calls skip
+          await supabase
+            .from('sync_log')
+            .insert({ kind: 'google_places', lat, lng });
+        } else {
+          console.warn('Places sync error:', error.message);
+        }
       }
 
       /* ------------------------------------------------- query venues */
