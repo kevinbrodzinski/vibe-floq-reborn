@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
 const ONBOARDING_VERSION = 'v2';
@@ -28,7 +29,33 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const isDirectPlanRoute = location.pathname.startsWith('/plan/');
 
   useEffect(() => {
-    const loadOnboardingState = async () => {
+    const checkOnboardingStatus = async () => {
+      if (!user) {
+        setOnboardingComplete(null);
+        return;
+      }
+
+      // Check database first
+      const { data } = await supabase
+        .from('user_onboarding_progress')
+        .select('completed_at')
+        .eq('user_id', user.id)
+        .eq('onboarding_version', ONBOARDING_VERSION)
+        .maybeSingle();
+
+      if (data?.completed_at) {
+        setOnboardingComplete(true);
+        setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+        return;
+      }
+
+      // Fallback to preferences and localStorage
+      if (hasCompleted) {
+        setOnboardingComplete(true);
+        setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+        return;
+      }
+
       const stored = await getItem(ONBOARDING_KEY);
       if (stored === ONBOARDING_VERSION) {
         setOnboardingComplete(true);
@@ -36,15 +63,9 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
         setOnboardingComplete(false);
       }
     };
-    loadOnboardingState();
-  }, [getItem]);
 
-  useEffect(() => {
-    if (hasCompleted) {
-      setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-      setOnboardingComplete(true);
-    }
-  }, [hasCompleted, setItem]);
+    checkOnboardingStatus();
+  }, [user, hasCompleted, getItem, setItem]);
 
   // Debug logging
   console.log('[AppAccessGuard Debug]', {
@@ -76,6 +97,21 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     return (
       <EnhancedOnboardingScreen
         onComplete={async () => {
+          // Mark as complete in database
+          if (user) {
+            await supabase
+              .from('user_onboarding_progress')
+              .upsert({
+                user_id: user.id,
+                onboarding_version: ONBOARDING_VERSION,
+                current_step: 6,
+                completed_steps: [0, 1, 2, 3, 4, 5],
+                completed_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,onboarding_version'
+              });
+          }
+
           await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
           await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
 

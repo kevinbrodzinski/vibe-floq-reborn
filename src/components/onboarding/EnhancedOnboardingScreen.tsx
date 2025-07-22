@@ -142,8 +142,6 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   const handleComplete = async () => {
     if (!user || !selectedVibe || !profileData) return;
 
-    progress.clearProgress();
-
     try {
       setIsCompleting(true);
 
@@ -194,6 +192,12 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
         throw profileError;
       }
 
+      // Mark onboarding as complete in database
+      await progress.markComplete();
+      
+      // Clear local progress
+      progress.clearProgress();
+
       setShowSuccess(true);
       
       setTimeout(() => {
@@ -217,6 +221,15 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
       setIsCompleting(false);
     }
   };
+
+  // Show loading while onboarding progress is being loaded
+  if (!progress.isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (showSuccess) {
     return (

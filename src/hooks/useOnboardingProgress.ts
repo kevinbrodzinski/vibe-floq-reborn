@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type Vibe } from '@/types/vibes';
+import { useOnboardingDatabase } from './useOnboardingDatabase';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface OnboardingState {
   currentStep: number;
@@ -18,50 +20,85 @@ const STORAGE_KEY = 'floq_onboarding_progress';
 const EXPIRY_HOURS = 24; // Progress expires after 24 hours
 
 export function useOnboardingProgress() {
+  const { user } = useAuth();
+  const { loadProgress, saveProgress, completeOnboarding, clearProgress: clearDbProgress } = useOnboardingDatabase();
   const [state, setState] = useState<OnboardingState>({
     currentStep: 0,
     startedAt: Date.now()
   });
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load saved progress on mount
+  // Load progress from database or localStorage on mount
   useEffect(() => {
-    const savedProgress = localStorage.getItem(STORAGE_KEY);
-    if (savedProgress) {
-      try {
-        const parsed: OnboardingState = JSON.parse(savedProgress);
-        
-        // Check if progress has expired
-        const hoursSinceStart = (Date.now() - parsed.startedAt) / (1000 * 60 * 60);
-        if (hoursSinceStart < EXPIRY_HOURS) {
-          setState(parsed);
-        } else {
-          // Clear expired progress
+    const loadInitialProgress = async () => {
+      if (user) {
+        // Try to load from database first
+        const dbProgress = await loadProgress();
+        if (dbProgress) {
+          setState(dbProgress);
+          setIsLoaded(true);
+          return;
+        }
+      }
+      
+      // Fallback to localStorage
+      const savedProgress = localStorage.getItem(STORAGE_KEY);
+      if (savedProgress) {
+        try {
+          const parsed: OnboardingState = JSON.parse(savedProgress);
+          
+          // Check if progress has expired
+          const hoursSinceStart = (Date.now() - parsed.startedAt) / (1000 * 60 * 60);
+          if (hoursSinceStart < EXPIRY_HOURS) {
+            setState(parsed);
+          } else {
+            // Clear expired progress
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        } catch (error) {
+          console.error('Failed to parse onboarding progress:', error);
           localStorage.removeItem(STORAGE_KEY);
         }
-      } catch (error) {
-        console.error('Failed to parse onboarding progress:', error);
-        localStorage.removeItem(STORAGE_KEY);
       }
-    }
-  }, []);
+      setIsLoaded(true);
+    };
 
-  // Save progress whenever state changes
+    loadInitialProgress();
+  }, [user, loadProgress]);
+
+  // Save progress to both localStorage and database
   useEffect(() => {
+    if (!isLoaded) return;
+    
     if (state.currentStep > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      
+      // Save to database if user is authenticated
+      if (user) {
+        saveProgress(state);
+      }
     }
-  }, [state]);
+  }, [state, user, saveProgress, isLoaded]);
 
   const updateProgress = (updates: Partial<OnboardingState>) => {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  const clearProgress = () => {
+  const clearProgress = async () => {
     localStorage.removeItem(STORAGE_KEY);
+    if (user) {
+      await clearDbProgress();
+    }
     setState({
       currentStep: 0,
       startedAt: Date.now()
     });
+  };
+
+  const markComplete = async () => {
+    if (user) {
+      await completeOnboarding();
+    }
   };
 
   const goToStep = (step: number) => {
@@ -102,6 +139,8 @@ export function useOnboardingProgress() {
     setProfile,
     setAvatar,
     clearProgress,
-    updateProgress
+    updateProgress,
+    markComplete,
+    isLoaded
   };
 }

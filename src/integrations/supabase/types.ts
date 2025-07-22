@@ -2686,6 +2686,51 @@ export type Database = {
           },
         ]
       }
+      user_onboarding_progress: {
+        Row: {
+          avatar_url: string | null
+          completed_at: string | null
+          completed_steps: Json
+          created_at: string
+          current_step: number
+          id: string
+          onboarding_version: Database["public"]["Enums"]["onboarding_version_enum"]
+          profile_data: Json | null
+          selected_vibe: string | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          completed_at?: string | null
+          completed_steps?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          onboarding_version?: Database["public"]["Enums"]["onboarding_version_enum"]
+          profile_data?: Json | null
+          selected_vibe?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          completed_at?: string | null
+          completed_steps?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          onboarding_version?: Database["public"]["Enums"]["onboarding_version_enum"]
+          profile_data?: Json | null
+          selected_vibe?: string | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           both_streak_weeks: number | null
@@ -6217,6 +6262,7 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
+      onboarding_version_enum: "v1" | "v2"
       plan_role_enum: "participant" | "organizer"
       plan_status_enum:
         | "draft"
@@ -6440,6 +6486,7 @@ export const Constants = {
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
+      onboarding_version_enum: ["v1", "v2"],
       plan_role_enum: ["participant", "organizer"],
       plan_status_enum: [
         "draft",
