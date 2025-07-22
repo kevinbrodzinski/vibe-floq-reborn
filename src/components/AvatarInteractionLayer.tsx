@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreHorizontal, MessageSquare, UserPlus, Shield } from 'lucide-react';
+import { MessageSquare, UserPlus, Shield } from 'lucide-react';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { Button } from '@/components/ui/button';
 import { zIndex } from '@/constants/z';
