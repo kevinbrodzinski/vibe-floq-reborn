@@ -74,6 +74,7 @@ export const useClusters = (
           setClusters(data ?? []);
         }
       } catch (err) {
+        if (ac.signal.aborted) return;       // ← add abort short-circuit
         if (!ac.signal.aborted) {
           setError(err instanceof Error ? err.message : "Network error");
           setClusters([]);
