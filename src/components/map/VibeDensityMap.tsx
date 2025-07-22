@@ -117,7 +117,7 @@ export const VibeDensityMap = ({
         transitionEasing: (x: number) => 1 - Math.pow(1 - x, 3)
       }))
     }
-  }, [hasFix])
+  }, [hasFix, currentUserLocation?.lng, currentUserLocation?.lat])
 
   // Escape key handler
   useEffect(() => {
