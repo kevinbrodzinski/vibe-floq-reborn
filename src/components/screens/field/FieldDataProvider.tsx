@@ -111,7 +111,10 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   // Debug logging for field tiles
   console.log('[FIELD_DEBUG] Field tiles query state:', {
     isLoading,
-    error: tilesError,
+    error: tilesError ? {
+      name: tilesError.name,
+      message: tilesError.message,
+    } : null,
     tilesCount: fieldTiles?.length || 0,
     tiles: fieldTiles
   });

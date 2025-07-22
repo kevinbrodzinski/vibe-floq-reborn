@@ -35,6 +35,10 @@ export function useFieldTiles(bounds?: TileBounds) {
       })
 
       if (error) {
+        console.error('[FIELD_TILES] invoke err', {
+          message: error.message,
+          status: error.status,
+        });
         throw error
       }
       

@@ -6,6 +6,12 @@ import { corsHeaders } from '../_shared/cors.ts';
 const TTL = 2; // seconds
 
 serve(async (req) => {
+  // Log incoming request safely
+  console.log('[FIELD_TILES] incoming', {
+    method: req.method,
+    ua: req.headers.get('user-agent'),
+  });
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -27,13 +33,15 @@ serve(async (req) => {
       });
     }
 
-    // KV cache layer (2 seconds)
+    // KV cache layer (2 seconds) - only if cache is available
     const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
-    const cached = await caches.default.match(cacheKey);
-    if (cached) {
-      return new Response(cached.body, { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
-      });
+    if (typeof caches !== 'undefined' && caches.default) {
+      const cached = await caches.default.match(cacheKey);
+      if (cached) {
+        return new Response(cached.body, { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
+        });
+      }
     }
 
     // Initialize Supabase client
@@ -66,8 +74,10 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     
-    // Cache for 2 seconds
-    await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+    // Cache for 2 seconds - only if cache is available
+    if (typeof caches !== 'undefined' && caches.default) {
+      await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+    }
     return resp;
 
   } catch (error) {
