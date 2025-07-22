@@ -2,6 +2,5 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "types": ["@types/node"]
-  },
-  "include": ["src/types/global.d.ts", "**/*.ts", "**/*.tsx"]
+  }
 }
