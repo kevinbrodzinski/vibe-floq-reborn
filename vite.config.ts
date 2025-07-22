@@ -28,6 +28,10 @@ export default defineConfig(({ mode, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@entry": path.resolve(__dirname, "./src/main.web.tsx"),
+      // Tell Vite to use react-native-web whenever something imports react-native
+      'react-native': 'react-native-web',
+      // Stub out the native Mapbox bridge so Rollup stops complaining
+      '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
     },
     dedupe: ['react', 'react-dom'],
   },

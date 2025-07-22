@@ -1,20 +1,14 @@
-// Platform detection for cross-platform maps
-import React from 'react';
+import React, { Suspense } from 'react';
+import { Platform } from 'react-native';
 import type { BaseMapProps } from './types';
 
-// Simple platform detection without react-native dependency for web-first apps
-const isWeb = typeof window !== 'undefined';
+const WebMapLazy = React.lazy(() => import('./WebMap').then(m => ({ default: m.WebMap })));
+const NativeMapLazy = React.lazy(() => import('./NativeMap').then(m => ({ default: m.NativeMap })));
 
-// Dynamically import components to avoid require() issues
-const WebMapComponent = React.lazy(() => import('./WebMap').then(m => ({ default: m.WebMap })));
-const NativeMapComponent = React.lazy(() => import('./NativeMap').then(m => ({ default: m.NativeMap })));
-
-export const BaseMap: React.FC<BaseMapProps> = (props) => {
-  const Component = isWeb ? WebMapComponent : NativeMapComponent;
-  
-  return (
-    <React.Suspense fallback={null}>
-      <Component {...props} />
-    </React.Suspense>
-  );
-};
+export const BaseMap: React.FC<BaseMapProps> = (props) => (
+  <Suspense fallback={null}>
+    {Platform.OS === 'web'
+      ? <WebMapLazy {...props} />
+      : <NativeMapLazy {...props} />}
+  </Suspense>
+);
