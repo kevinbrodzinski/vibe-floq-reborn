@@ -2,12 +2,12 @@ begin;
 
 select plan(3);
 
--- seed two vibe rows with correct column names
-insert into public.vibes_now
-  (user_id, gh5, vibe_hsv, floq_id)
+-- seed two vibe states with correct column names 
+insert into public.user_vibe_states
+  (user_id, gh5, vibe_h, vibe_s, vibe_l, vibe_tag, active, started_at, location)
 values
-  ('00000000-0000-0000-0000-000000000001', '9q5cs', '[0.33,0.9,0.8]', null),
-  ('00000000-0000-0000-0000-000000000002', '9q5cs', '[0.66,0.5,0.7]', '12345678-1234-5678-1234-123456789abc');
+  ('00000000-0000-0000-0000-000000000001', '9q5cs', 0.33, 0.9, 0.8, 'chill', true, now(), ST_SetSRID(ST_MakePoint(-118.2437, 34.0522), 4326)),
+  ('00000000-0000-0000-0000-000000000002', '9q5cs', 0.66, 0.5, 0.7, 'hype', true, now(), ST_SetSRID(ST_MakePoint(-118.2437, 34.0522), 4326));
 
 call public.refresh_field_tiles();
 
@@ -24,9 +24,9 @@ select is(
   'crowd_count aggregated'
 );
 
--- 3. avg_hue ≈ 0.495
+-- 3. avg_hue ≈ 0.495 (check JSON hue value)
 select cmp_ok(
-  (select (avg_vibe->>0)::float from public.field_tiles where tile_id='9q5cs'),
+  (select (avg_vibe->>'h')::float from public.field_tiles where tile_id='9q5cs'),
   '>=',
   0.49,
   'avg hue calculated'
