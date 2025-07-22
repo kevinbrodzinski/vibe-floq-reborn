@@ -36,7 +36,7 @@ export function useFieldTiles(bounds?: TileBounds) {
           message: error.message,
           status: String(error.status),
         });
-        throw new Error(error.message);
+        throw new Error(error.message ?? error.details ?? 'field_tiles invoke failed');
       }
       
       // Handle the response structure from the edge function

@@ -68,8 +68,8 @@ serve(async (req) => {
         code: error.code,
         hint: error.hint,
       });
-      return new Response(JSON.stringify({ tiles: [], error: error.message }), {
-        status: 500,
+      return new Response(JSON.stringify({ tiles: [] }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
