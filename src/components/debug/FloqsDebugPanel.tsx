@@ -14,7 +14,7 @@ export const FloqsDebugPanel = () => {
   const { setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 bg-card/95 backdrop-blur-sm" {...zIndex('debug')}>
+    <Card className="fixed bottom-4 right-4 w-80 bg-card/95 backdrop-blur-sm" style={zIndex('debug')}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Debug Panel</CardTitle>

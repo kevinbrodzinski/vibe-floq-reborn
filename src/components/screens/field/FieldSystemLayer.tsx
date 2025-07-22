@@ -16,7 +16,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
       {/* ——— Fullscreen-map FAB —————————————— */}
       <div 
         className="fixed bottom-24 right-4 pointer-events-auto"
-        {...zIndex('system')}
+        style={zIndex('system')}
       >
         <FullscreenFab />
       </div>
@@ -27,7 +27,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
         className="sr-only" 
         aria-live="polite"
         aria-atomic="true"
-        {...zIndex('system')}
+        style={zIndex('system')}
       >
         {/* Live region content */}
       </div>

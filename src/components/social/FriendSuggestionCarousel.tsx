@@ -24,7 +24,7 @@ export const FriendSuggestionCarousel: React.FC = () => {
   }
 
   return (
-    <Card className="mb-4 animate-fade-in" {...zIndex('uiInteractive')}>
+    <Card className="mb-4 animate-fade-in" style={zIndex('uiInteractive')}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Users className="w-4 h-4" />

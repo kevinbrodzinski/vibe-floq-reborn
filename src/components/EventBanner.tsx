@@ -39,7 +39,7 @@ export const EventBanner = ({
           aria-label="Open event details"
           aria-live="polite"
           onClick={onDetails}
-          {...zIndex('overlay')}
+          style={zIndex('overlay')}
           className={clsx(
             "fixed bottom-24 left-1/2 -translate-x-1/2",
             "w-[92%] max-w-lg px-4 py-3",

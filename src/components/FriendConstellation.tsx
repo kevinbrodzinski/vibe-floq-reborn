@@ -169,7 +169,7 @@ export const FriendConstellation = ({
           <svg
             key={`flow-${index}`}
             className="absolute inset-0 pointer-events-none"
-            {...zIndex('uiControls')}
+            style={zIndex('uiControls')}
           >
             <defs>
               <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -204,8 +204,8 @@ export const FriendConstellation = ({
             {/* Warmth Ring */}
             <div
               className="absolute animate-pulse"
-              {...zIndex('uiControls')}
               style={{
+                ...zIndex('uiControls'),
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -219,8 +219,8 @@ export const FriendConstellation = ({
             {/* Activity Pulse Ring */}
             <div
               className="absolute animate-ping"
-              {...zIndex('uiControls')}
               style={{
+                ...zIndex('uiControls'),
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -235,8 +235,8 @@ export const FriendConstellation = ({
             {/* Friend Avatar with Halo */}
             <div
               className="absolute cursor-pointer transition-all duration-300 hover:scale-110"
-              {...zIndex('uiControls')}
               style={{
+                ...zIndex('uiControls'),
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
@@ -272,8 +272,8 @@ export const FriendConstellation = ({
             {/* Orbital Ring */}
             <div
               className="absolute border border-primary/20 rounded-full pointer-events-none"
-              {...zIndex('mapOverlay')}
               style={{
+                ...zIndex('mapOverlay'),
                 left: `${centerX}%`,
                 top: `${centerY}%`,
                 transform: 'translate(-50%, -50%)',
@@ -299,8 +299,8 @@ export const FriendConstellation = ({
           <div
             key={groupName}
             className="absolute pointer-events-auto cursor-pointer"
-            {...zIndex('uiControls')}
             style={{
+              ...zIndex('uiControls'),
               left: `${centerX}%`,
               top: `${centerY}%`,
               transform: 'translate(-50%, -50%)',
