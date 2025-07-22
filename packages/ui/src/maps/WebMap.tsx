@@ -53,32 +53,68 @@ export const WebMap: React.FC<BaseMapProps> = ({
 
   // Initialize map once token is loaded
   useEffect(() => {
-    if (!container.current || !tokenLoaded) return;
+    if (!container.current || !tokenLoaded) {
+      console.log('🗺 Map init skipped:', { 
+        hasContainer: !!container.current, 
+        tokenLoaded,
+        containerDims: container.current ? 
+          `${container.current.clientWidth}x${container.current.clientHeight}` : 'none'
+      });
+      return;
+    }
 
-    mapRef.current = new mapboxgl.Map({
-      container: container.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [-118.24, 34.05], // LA
-      zoom: 11,
+    console.log('🗺 Initializing map with container:', {
+      width: container.current.clientWidth,
+      height: container.current.clientHeight,
+      token: mapboxgl.accessToken.substring(0, 20) + '...'
     });
 
-    const handleMoveEnd = () => {
-      const m = mapRef.current!;
-      const b = m.getBounds();
-      onRegionChange({
-        minLat: b.getSouth(),
-        minLng: b.getWest(),
-        maxLat: b.getNorth(),
-        maxLng: b.getEast(),
-        zoom: m.getZoom(),
+    try {
+      mapRef.current = new mapboxgl.Map({
+        container: container.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [-118.24, 34.05], // LA
+        zoom: 11,
       });
-    };
 
-    mapRef.current.on('moveend', handleMoveEnd);
+      mapRef.current.on('load', () => {
+        console.log('🗺 Map loaded successfully');
+        // Check if canvas was created
+        const canvas = document.querySelector('.mapboxgl-canvas');
+        if (canvas) {
+          console.log('🗺 Canvas created:', {
+            width: canvas.clientWidth,
+            height: canvas.clientHeight
+          });
+        } else {
+          console.error('🗺 No canvas found after map load');
+        }
+      });
+
+      mapRef.current.on('error', (e) => {
+        console.error('🗺 Map error:', e);
+      });
+
+      const handleMoveEnd = () => {
+        const m = mapRef.current!;
+        const b = m.getBounds();
+        onRegionChange({
+          minLat: b.getSouth(),
+          minLng: b.getWest(),
+          maxLat: b.getNorth(),
+          maxLng: b.getEast(),
+          zoom: m.getZoom(),
+        });
+      };
+
+      mapRef.current.on('moveend', handleMoveEnd);
+    } catch (error) {
+      console.error('🗺 Failed to create map:', error);
+    }
 
     return () => {
       if (mapRef.current) {
-        mapRef.current.off('moveend', handleMoveEnd);
+        mapRef.current.off('moveend');
         mapRef.current.remove();
       }
     };
