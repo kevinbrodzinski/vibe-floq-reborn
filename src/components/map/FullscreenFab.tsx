@@ -15,13 +15,15 @@ export const FullscreenFab = () => {
   const isFieldRoute = location.pathname === '/' || location.pathname === '/field'
   if (!isFieldRoute) return null
 
+  console.log('🎯 [FullscreenFab] Rendering with mode:', mode, 'isFull:', isFull, 'isList:', isList);
+
   return (
     <>
       {/* main full-screen FAB */}
       <button
         aria-label={isFull ? 'Exit full-screen map' : 'Enter full-screen map'}
         onClick={() => {
-          console.log('Fullscreen FAB clicked, current mode:', mode)
+          console.log('🔥 [FullscreenFab] Main button clicked, current mode:', mode)
           toggleFull()
         }}
         className="fixed-fab bg-primary text-primary-foreground hover:bg-primary/90"
@@ -33,7 +35,7 @@ export const FullscreenFab = () => {
       <button
         aria-label={isList ? 'Show map view' : 'Show list view'}
         onClick={() => {
-          console.log('List toggle FAB clicked, current mode:', mode)
+          console.log('📋 [FullscreenFab] List button clicked, current mode:', mode)
           toggleList()
         }}
         className="fixed-fab fixed-fab--secondary
@@ -43,5 +45,5 @@ export const FullscreenFab = () => {
         <List className="h-5 w-5" />
       </button>
     </>
-  )
+  );
 }
