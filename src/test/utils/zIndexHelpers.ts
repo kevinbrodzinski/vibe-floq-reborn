@@ -12,17 +12,9 @@ export interface LayerTest {
 
 /**
  * Get computed z-index value for an element
- * Works with both Cypress and Playwright
+ * Works in browser environment for testing
  */
-export const getZIndex = async (selector: string): Promise<number> => {
-  // For Cypress
-  if (typeof cy !== 'undefined') {
-    return cy.get(selector)
-      .invoke('css', 'z-index')
-      .then((zIndex) => parseInt(zIndex as string, 10) || 0);
-  }
-  
-  // For Playwright (would need to be adapted for actual Playwright usage)
+export const getZIndex = (selector: string): number => {
   const element = document.querySelector(selector);
   if (!element) return 0;
   
@@ -33,12 +25,12 @@ export const getZIndex = async (selector: string): Promise<number> => {
 /**
  * Validate that layer A appears above layer B
  */
-export const validateLayerHierarchy = async (
+export const validateLayerHierarchy = (
   upperSelector: string,
   lowerSelector: string
-): Promise<boolean> => {
-  const upperZ = await getZIndex(upperSelector);
-  const lowerZ = await getZIndex(lowerSelector);
+): boolean => {
+  const upperZ = getZIndex(upperSelector);
+  const lowerZ = getZIndex(lowerSelector);
   
   return upperZ > lowerZ;
 };
@@ -77,10 +69,10 @@ export const LAYER_TEST_SCENARIOS: LayerTest[] = [
 /**
  * Validate all layer scenarios
  */
-export const validateAllLayers = async (): Promise<boolean> => {
+export const validateAllLayers = (): boolean => {
   for (const scenario of LAYER_TEST_SCENARIOS) {
     try {
-      const zIndex = await getZIndex(scenario.selector);
+      const zIndex = getZIndex(scenario.selector);
       if (zIndex < scenario.minZIndex) {
         console.error(`Layer ${scenario.expectedLayer} has z-index ${zIndex}, expected >= ${scenario.minZIndex}`);
         return false;
