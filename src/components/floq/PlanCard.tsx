@@ -43,25 +43,24 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const { data: meta } = usePlanMeta(plan.id);
   const isJoined = plan.is_joined ?? false;
   
-  const progress =
-    meta && meta.total_stops
-      ? Math.round((meta.confirmed_stops / meta.total_stops) * 100)
-      : 0;
+  const progress = useMemo(() => {
+    if (!meta || meta.total_stops === 0) return 0;
+    return Math.round(((meta.confirmed_stops ?? 0) / meta.total_stops) * 100);
+  }, [meta]);
 
   const durationText = useMemo(() => {
     if (plan.duration_hours) return formatDuration(plan.duration_hours * 60);
-    if (meta) return formatDuration(meta.total_duration_minutes);
+    if (meta?.total_duration_minutes) return formatDuration(meta.total_duration_minutes);
     return null;
   }, [plan.duration_hours, meta]);
 
-  const budgetText =
-    plan.budget_per_person || (meta?.estimated_cost_per_person ?? 0) > 0
-      ? formatCurrency(plan.budget_per_person ?? meta!.estimated_cost_per_person)
-      : null;
+  const budgetValue = plan.budget_per_person ?? meta?.estimated_cost_per_person ?? 0;
+  const budgetText = budgetValue > 0 ? formatCurrency(budgetValue) : null;
 
   const startTimeText = useMemo(() => {
     if (!plan.start_time) return null;
-    const [hours, minutes] = plan.start_time.split(':');
+    // Handle both "HH:mm" and "HH:mm:ss" formats
+    const [hours, minutes] = plan.start_time.split(':').slice(0, 2);
     const hour12 = parseInt(hours) % 12 || 12;
     const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
     return `${hour12}:${minutes} ${ampm}`;
@@ -138,7 +137,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             </div>
           )}
 
-          {meta !== undefined && (
+          {meta && (
             <div className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               {meta.total_stops} stop{meta.total_stops === 1 ? '' : 's'}
