@@ -9,7 +9,7 @@ import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
 import { SocialToastProvider } from "@/components/social/SocialToast";
 import { LocationDisplay } from "@/components/LocationDisplay";
-import { Z } from "@/constants/zLayers";
+import { Z } from "@/constants/z";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
@@ -96,7 +96,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && (
         <motion.div
           className="absolute top-0 left-0 right-0 pointer-events-auto"
-          style={{ zIndex: Z.header }}
+          style={{ zIndex: Z.ui }}
           initial={{ y: 0, opacity: 1 }}
           exit={{ y: '-100%', opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
@@ -115,7 +115,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="absolute top-16 left-0 right-0 px-6 pt-2 pointer-events-auto"
-          style={{ zIndex: Z.header - 1 }}
+          style={{ zIndex: Z.ui }}
         >
           <LocationDisplay
             locationText={locationDisplay.displayText}
@@ -152,7 +152,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {(timeState === 'evening' || timeState === 'night') && !isFull && (
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: Z.controls }}
+          style={{ zIndex: Z.ui }}
         >
           <ConstellationControls
             timeState={timeState}
@@ -169,7 +169,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && (
         <motion.div
           className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: Z.interactive }}
+          style={{ zIndex: Z.ui }}
           initial={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 35 }}
