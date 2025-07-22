@@ -38,7 +38,12 @@ export function useFieldTiles(bounds?: TileBounds) {
 
       if (error) {
         console.error('[FIELD_TILES] Error from edge function:', error);
-        throw error
+        // Don't throw raw Response object - extract safe primitives
+        const safeError = { 
+          status: error.status, 
+          message: typeof error.text === 'function' ? await error.text() : error.message ?? error 
+        };
+        throw safeError;
       }
       
       console.log('[FIELD_TILES] Response data:', data);

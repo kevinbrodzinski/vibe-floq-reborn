@@ -31,12 +31,16 @@ serve(async (req) => {
     let cached = null;
     try {
       const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
-      if (typeof caches !== 'undefined' && caches.default) {
-        cached = await caches.default.match(cacheKey);
-        if (cached) {
-          return new Response(cached.body, { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
-          });
+      if (typeof caches !== 'undefined' && caches?.default) {
+        try {
+          cached = await caches.default.match(cacheKey);
+          if (cached) {
+            return new Response(cached.body, { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
+            });
+          }
+        } catch {
+          // Ignore cache errors - continue without cache
         }
       }
     } catch (cacheError) {
@@ -75,9 +79,13 @@ serve(async (req) => {
     
     // Cache for 2 seconds - only if caches is available
     try {
-      if (typeof caches !== 'undefined' && caches.default) {
-        const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
-        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+      if (typeof caches !== 'undefined' && caches?.default) {
+        try {
+          const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
+          await caches.default.put(cacheKey, resp.clone(), { expirationTtl: 2 });
+        } catch {
+          // Ignore cache put errors
+        }
       }
     } catch (cacheError) {
       console.log('[FIELD_TILES] Cache put failed, continuing:', cacheError.message);

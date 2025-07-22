@@ -38,9 +38,9 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
         } else {
           console.warn('🗺️ No token in response, using fallback');
         }
-      } catch (err) {
-        console.warn('🗺️ Error fetching token, using fallback:', err.message);
-      } finally {
+        } catch (err) {
+          console.warn('🗺️ Error fetching token, using fallback:', err?.message ?? err);
+        } finally {
         setTokenLoaded(true);
       }
     };
@@ -122,7 +122,7 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
       <div 
         ref={mapContainerRef} 
         className="absolute inset-0 w-full h-full bg-gray-900"
-        style={{ minHeight: '400px' }}
+        style={{ position: 'absolute', inset: 0 }}
       />
       {/* Show loading state while token is being fetched */}
       {!tokenLoaded && (
