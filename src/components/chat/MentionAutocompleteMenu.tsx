@@ -1,7 +1,9 @@
+
 import React from 'react'
 import clsx from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { MentionCandidate } from '@/hooks/useMentionAutocomplete'
+import { zIndex } from '@/constants/z'
 
 interface Props {
   open: boolean
@@ -28,7 +30,8 @@ export const MentionAutocompleteMenu: React.FC<Props> = ({
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ type: 'spring', stiffness: 300, damping: 22 }}
         style={{ top, left }}
-        className="absolute z-50 w-56 rounded-xl bg-surface p-1 shadow-xl backdrop-blur-md"
+        {...zIndex('modal')}
+        className="absolute w-56 rounded-xl bg-surface p-1 shadow-xl backdrop-blur-md"
       >
         {items.map((c, i) => (
           <li

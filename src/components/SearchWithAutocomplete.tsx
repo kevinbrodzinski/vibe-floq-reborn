@@ -1,44 +1,71 @@
-import { useState, useRef, useEffect } from 'react';
-import { Search, X, History, ArrowUp } from 'lucide-react';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, X, MapPin, Clock, Users, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useUserSearch } from '@/hooks/useUserSearch';
-import { useRecentSearches } from '@/hooks/useRecentSearches';
-import { UserSearchResults } from '@/components/UserSearchResults';
-import { SearchResultSkeleton } from '@/components/skeletons';
+import { Badge } from '@/components/ui/badge';
+import { zIndex } from '@/constants/z';
+
+interface SearchResult {
+  id: string;
+  title: string;
+  type: 'venue' | 'event' | 'person' | 'location';
+  subtitle?: string;
+  distance?: string;
+  isRecent?: boolean;
+}
 
 interface SearchWithAutocompleteProps {
-  onAddFriend: (userId: string) => void;
   placeholder?: string;
+  results?: SearchResult[];
+  recentSearches?: SearchResult[];
+  isLoading?: boolean;
+  showRecent?: boolean;
+  onSearch?: (query: string) => void;
+  onSelect?: (result: SearchResult) => void;
+  onClear?: () => void;
   className?: string;
 }
 
-export const SearchWithAutocomplete = ({ 
-  onAddFriend, 
-  placeholder = "Search users...",
-  className 
-}: SearchWithAutocompleteProps) => {
+const RESULT_ICONS = {
+  venue: MapPin,
+  event: Clock,
+  person: Users,
+  location: MapPin,
+} as const;
+
+export const SearchWithAutocomplete: React.FC<SearchWithAutocompleteProps> = ({
+  placeholder = "Search venues, events, people...",
+  results = [],
+  recentSearches = [],
+  isLoading = false,
+  showRecent = true,
+  onSearch,
+  onSelect,
+  onClear,
+  className = ""
+}) => {
   const [query, setQuery] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const { data: searchResults, isLoading } = useUserSearch(query, showDropdown);
-  const { recentSearches, addRecentSearch, clearRecentSearches } = useRecentSearches();
-
-  const hasResults = searchResults && searchResults.length > 0;
-  const showRecentSearches = showDropdown && !query.trim() && recentSearches.length > 0;
-  const showSearchResults = showDropdown && query.trim().length >= 2 && (hasResults || isLoading);
+  const displayResults = query.length > 0 ? results : 
+    (showRecent && recentSearches.length > 0 ? 
+      recentSearches.map(r => ({ ...r, isRecent: true })) : 
+      []
+    );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(event.target as Node) &&
+        listRef.current &&
+        !listRef.current.contains(event.target as Node) &&
         !inputRef.current?.contains(event.target as Node)
       ) {
-        setShowDropdown(false);
+        setIsOpen(false);
       }
     };
 
@@ -46,74 +73,62 @@ export const SearchWithAutocomplete = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = (value: string) => {
-    setQuery(value);
-    setSelectedIndex(-1);
-    setShowDropdown(true);
-  };
-
-  const handleSearchSubmit = () => {
-    if (query.trim()) {
-      addRecentSearch(query.trim());
-      setShowDropdown(false);
-      // Focus back to input for next search
-      inputRef.current?.focus();
-    }
-  };
-
-  const handleRecentSearchClick = (recentQuery: string) => {
-    setQuery(recentQuery);
-    setShowDropdown(false);
-    addRecentSearch(recentQuery);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showDropdown) return;
-
-    const totalItems = showRecentSearches ? recentSearches.length : (searchResults?.length || 0);
+    if (!isOpen || displayResults.length === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => (prev < totalItems - 1 ? prev + 1 : prev));
+        setFocusedIndex(prev => 
+          prev < displayResults.length - 1 ? prev + 1 : 0
+        );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev));
+        setFocusedIndex(prev => 
+          prev > 0 ? prev - 1 : displayResults.length - 1
+        );
         break;
       case 'Enter':
         e.preventDefault();
-        if (showRecentSearches && selectedIndex >= 0) {
-          const selected = recentSearches[selectedIndex];
-          if (selected) {
-            handleRecentSearchClick(selected.query);
-          }
-        } else if (selectedIndex >= 0 && searchResults?.[selectedIndex]) {
-          onAddFriend(searchResults[selectedIndex].id);
-          setShowDropdown(false);
-        } else {
-          handleSearchSubmit();
+        if (focusedIndex >= 0) {
+          handleSelect(displayResults[focusedIndex]);
         }
         break;
       case 'Escape':
-        setShowDropdown(false);
+        setIsOpen(false);
+        setFocusedIndex(-1);
         inputRef.current?.blur();
         break;
     }
   };
 
-  const clearSearch = () => {
+  const handleInputChange = (value: string) => {
+    setQuery(value);
+    onSearch?.(value);
+    setIsOpen(value.length > 0 || (showRecent && recentSearches.length > 0));
+    setFocusedIndex(-1);
+  };
+
+  const handleSelect = (result: SearchResult) => {
+    onSelect?.(result);
     setQuery('');
-    setShowDropdown(false);
-    setSelectedIndex(-1);
+    setIsOpen(false);
+    setFocusedIndex(-1);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    setIsOpen(false);
+    setFocusedIndex(-1);
+    onClear?.();
     inputRef.current?.focus();
   };
 
   return (
     <div className={`relative ${className}`}>
-      {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
           ref={inputRef}
           type="text"
@@ -121,83 +136,90 @@ export const SearchWithAutocomplete = ({
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => setShowDropdown(true)}
+          onFocus={() => setIsOpen(query.length > 0 || (showRecent && recentSearches.length > 0))}
           className="pl-10 pr-10"
         />
-        {query && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearSearch}
-            className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 p-0"
-          >
-            <X className="h-3 w-3" />
-          </Button>
+        {(query.length > 0 || isLoading) && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+            {query.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClear}
+                className="h-6 w-6 p-0 hover:bg-transparent"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Dropdown */}
-      {showDropdown && (showRecentSearches || showSearchResults) && (
-        <div
-          ref={dropdownRef}
-          className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-lg"
-        >
-          {/* Recent Searches */}
-          {showRecentSearches && (
-            <div className="p-2">
-              <div className="flex items-center justify-between px-2 py-1">
-                <span className="text-xs font-medium text-muted-foreground">Recent searches</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearRecentSearches}
-                  className="h-auto p-1 text-xs"
-                >
-                  Clear
-                </Button>
+      <AnimatePresence>
+        {isOpen && displayResults.length > 0 && (
+          <motion.div
+            ref={listRef}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            {...zIndex('modal')}
+            className="absolute top-full mt-2 w-full bg-background border border-border rounded-lg shadow-lg overflow-hidden"
+          >
+            {query.length === 0 && showRecent && (
+              <div className="px-3 py-2 text-xs text-muted-foreground border-b bg-muted/50">
+                Recent searches
               </div>
-              {recentSearches.map((search, index) => (
-                <button
-                  key={search.timestamp}
-                  onClick={() => handleRecentSearchClick(search.query)}
-                  className={`w-full flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent ${
-                    selectedIndex === index ? 'bg-accent' : ''
-                  }`}
-                >
-                  <History className="h-3 w-3 text-muted-foreground" />
-                  <span>{search.query}</span>
-                  <ArrowUp className="ml-auto h-3 w-3 rotate-45 text-muted-foreground" />
-                </button>
-              ))}
+            )}
+            
+            <div className="max-h-64 overflow-y-auto">
+              {displayResults.map((result, index) => {
+                const IconComponent = RESULT_ICONS[result.type];
+                const isFocused = index === focusedIndex;
+                
+                return (
+                  <motion.div
+                    key={result.id}
+                    className={`
+                      flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors
+                      ${isFocused ? 'bg-accent' : 'hover:bg-accent/50'}
+                    `}
+                    onClick={() => handleSelect(result)}
+                    whileHover={{ backgroundColor: 'var(--accent)' }}
+                  >
+                    <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm truncate">
+                          {result.title}
+                        </p>
+                        {result.isRecent && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            Recent
+                          </Badge>
+                        )}
+                      </div>
+                      {result.subtitle && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {result.subtitle}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {result.distance && (
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
+                        {result.distance}
+                      </span>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
-          )}
-
-          {/* Search Results */}
-          {showSearchResults && (
-            <div className="max-h-96 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-2">
-                  <SearchResultSkeleton count={3} />
-                </div>
-              ) : hasResults ? (
-                <UserSearchResults
-                  users={searchResults}
-                  onAddFriend={(userId) => {
-                    onAddFriend(userId);
-                    setShowDropdown(false);
-                    addRecentSearch(query.trim());
-                  }}
-                  selectedIndex={showRecentSearches ? -1 : selectedIndex}
-                />
-              ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  No users found for "{query}"
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

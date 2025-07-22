@@ -1,7 +1,9 @@
+
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { supabase }    from '@/integrations/supabase/client';
 import type { MentionTarget } from '@/hooks/useMentionPopover';
+import { zIndex } from '@/constants/z';
 
 interface Props {
   target: MentionTarget;
@@ -37,7 +39,8 @@ export const MentionPopover: React.FC<Props> = ({ target, onClose }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: .9 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-      className="pointer-events-auto absolute z-50 w-60 rounded-2xl bg-surface p-4 shadow-xl"
+      {...zIndex('modal')}
+      className="pointer-events-auto absolute w-60 rounded-2xl bg-surface p-4 shadow-xl"
       style={{ top: target.y + 12, left: target.x + 12 }}
       onClick={onClose}                /* anywhere-click closes */
       onContextMenu={(e) => { e.preventDefault(); onClose(); }}

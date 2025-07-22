@@ -1,7 +1,9 @@
+
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Trash2, Copy, Move, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { zIndex } from '@/constants/z'
 
 interface BulkActionsToolbarProps {
   selectedCount: number
@@ -27,7 +29,8 @@ export function BulkActionsToolbar({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+          {...zIndex('toast')}
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2"
         >
           <div className="bg-card border border-border rounded-2xl shadow-lg p-4 min-w-80">
             <div className="flex items-center justify-between gap-4">

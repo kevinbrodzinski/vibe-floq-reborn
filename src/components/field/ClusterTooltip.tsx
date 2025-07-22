@@ -1,5 +1,7 @@
+
 import { motion } from 'framer-motion';
 import React from 'react';
+import { zIndex } from '@/constants/z';
 
 interface Props {
   x: number;
@@ -14,7 +16,8 @@ export const ClusterTooltip: React.FC<Props> = ({ x, y, count, vibeTag }) => (
     animate={{ opacity: 1, scale: 1 }}
     exit={{ opacity: 0, scale: 0.9 }}
     transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-    className="pointer-events-none absolute z-50 select-none 
+    {...zIndex('modal')}
+    className="pointer-events-none absolute select-none 
                rounded-xl bg-black/70 px-3 py-1 text-xs text-white backdrop-blur-md"
     style={{ top: y, left: x }}
   >

@@ -1,5 +1,7 @@
+
 import { motion } from 'framer-motion'
 import { LoadingOverlay } from '@/components/LoadingStates'
+import { zIndex } from '@/constants/z'
 
 interface LoadingStateOverlayProps {
   loadingState: 'idle' | 'adding' | 'reordering' | 'deleting'
@@ -22,7 +24,8 @@ export const LoadingStateOverlay = ({ loadingState, children }: LoadingStateOver
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg z-50"
+          {...zIndex('toast')}
+          className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg"
         >
           <div className="bg-card p-4 rounded-lg shadow-lg border">
             <div className="flex items-center gap-3">

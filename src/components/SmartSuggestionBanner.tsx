@@ -1,6 +1,8 @@
+
 import { useState } from 'react'
 import { X, MapPin, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { zIndex } from '@/constants/z'
 
 interface SmartSuggestion {
   cluster_id: string
@@ -43,7 +45,7 @@ export const SmartSuggestionBanner: React.FC<SmartSuggestionBannerProps> = ({
   }
 
   return (
-    <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 max-w-sm mx-auto animate-slideUp">
+    <div {...zIndex('toast')} className="fixed bottom-24 left-1/2 transform -translate-x-1/2 max-w-sm mx-auto animate-slideUp">
       <div className="bg-card/95 backdrop-blur-sm border border-border shadow-lg rounded-xl p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-0.5">

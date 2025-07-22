@@ -1,6 +1,8 @@
+
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { zIndex } from '@/constants/z'
 
 interface ConflictOverlayProps {
   isVisible: boolean
@@ -51,9 +53,10 @@ export function ConflictOverlay({
               duration: 0.2
             }
           }}
+          {...zIndex('toast')}
           className={`
             fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-            z-50 max-w-md p-6 rounded-2xl border-2 backdrop-blur-xl shadow-2xl
+            max-w-md p-6 rounded-2xl border-2 backdrop-blur-xl shadow-2xl
             ${getConflictColor(conflictType)}
           `}
         >
