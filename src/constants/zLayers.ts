@@ -12,11 +12,15 @@ export const Z = {
   // UI elements
   ui: 10,
   header: 20,
+  navigation: 20,
   overlay: 30,
+  controls: 15,
+  interactive: 15,
   
   // Interactive elements
   modal: 40,
   sheet: 50,
+  dmSheet: 50,
   
   // System elements (highest priority)
   system: 60,
