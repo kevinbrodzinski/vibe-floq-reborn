@@ -122,8 +122,7 @@ export const WebMap: React.FC<WebMapProps> = ({ onRegionChange, children }) => {
     <div className="relative w-full h-full">
       <div 
         ref={mapContainerRef} 
-        className="absolute inset-0 w-full h-full bg-gray-900"
-        style={{ minHeight: '400px' }}
+        className="absolute inset-0"
       />
       {/* Show loading state while token is being fetched */}
       {!tokenLoaded && (

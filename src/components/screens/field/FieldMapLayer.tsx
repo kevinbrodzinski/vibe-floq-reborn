@@ -21,7 +21,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const { onRegionChange } = useFieldViewport();
 
   return (
-    <div className="absolute inset-0 flex flex-col">
+    <div className="flex flex-col flex-1 relative">
       <div style={{ flex: 1 }}>
         <BaseMap onRegionChange={onRegionChange}>
           {/* WebGL layer on top, no pointer events so map remains interactive */}
