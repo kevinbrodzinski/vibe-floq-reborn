@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
@@ -18,6 +18,8 @@ import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
 import { AnimatePresence } from 'framer-motion';
 import { ClusterTooltip } from '@/components/field/ClusterTooltip';
 import { useAddRipple } from '@/hooks/useAddRipple';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { metersToPixelsAtLat } from '@/utils/geoUtils';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -47,6 +49,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const { light } = useAdvancedHaptics();
   const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
   const addRipple = useAddRipple();           // enqueue shader ripple
+  const { pos: myPos } = useUserLocation();   // live lat/lng
   const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
   
@@ -59,6 +62,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   useEffect(() => {
     fieldTilesRef.current = fieldTiles;
   }, [fieldTiles]);
+
+  // dedicated refs so we create the sprites only once
+  const myDotRef = useRef<Sprite | null>(null);
+  const accuracyRef = useRef<Graphics | null>(null);
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
@@ -111,6 +118,26 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // Initialize pools
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
+
+      /* --- "you-are-here" dot --- */
+      if (!myDotRef.current) {
+        const dot = Sprite.from(Texture.WHITE);
+        dot.anchor.set(0.5);
+        dot.tint = 0x3399ff;   // blue
+        dot.width = dot.height = 12;
+        dot.interactive = false;
+        dot.eventMode = 'none';
+        peopleContainer.addChild(dot);
+        myDotRef.current = dot;
+      }
+
+      /* --- accuracy circle (optional) --- */
+      if (!accuracyRef.current) {
+        const g = new Graphics();
+        g.lineStyle(2, 0x3399ff, 0.25);
+        peopleContainer.addChild(g);
+        accuracyRef.current = g;
+      }
 
       /* ------------------------------------------------- hit-testing + ripple */
       onPointerMove = (e: any) => {
@@ -274,6 +301,28 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         person.sprite.fill({ color: 0x00ff00, alpha: 0.8 });
       });
 
+      // ---- USER LOCATION DOT ----
+      if (myPos && getMapInstance()) {
+        const { x, y } = projectLatLng(myPos.lng, myPos.lat);
+
+        /* Dot */
+        myDotRef.current!.position.set(x, y);
+        myDotRef.current!.visible = true;
+
+        /* Accuracy ring (metres ➜ pixels requires projection helper) */
+        if (accuracyRef.current) {
+          const m2px = metersToPixelsAtLat(myPos.lat, getMapInstance()!.getZoom());
+          const r = myPos.accuracy * m2px;
+          accuracyRef.current
+            .clear()
+            .lineStyle(2, 0x3399ff, 0.25)
+            .drawCircle(x, y, r);
+        }
+      } else {
+        if (myDotRef.current) myDotRef.current.visible = false;
+        accuracyRef.current?.clear();
+      }
+
       animationId = requestAnimationFrame(animate);
     };
 
@@ -285,6 +334,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       }
     };
   }, [fieldTiles, people, viewportGeo, searchViewport]);
+
+  // Pan the map to user location on first fix
+  useEffect(() => {
+    if (!myPos) return;
+    const map = getMapInstance();
+    if (!map) return;
+    map.easeTo({ center: [myPos.lng, myPos.lat], duration: 600 });
+  }, [myPos?.lat, myPos?.lng]);
 
   // Cleanup on unmount
   useEffect(() => {
