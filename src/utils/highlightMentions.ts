@@ -1,6 +1,7 @@
 /** Lightweight syntax highlighter for @mentions */
-export const highlightMentions = (text: string): string =>
-  text.replace(
+export const highlightMentions = (html: string) =>
+  html.replace(
     /@([\w-]+)/g,
-    '<span class="text-primary/80 font-medium cursor-pointer" data-tag="$1">@$1</span>'
+    (_, u) =>
+      `<span class="text-primary/80 font-medium cursor-pointer" data-tag="${u}">@${u}</span>`
   )

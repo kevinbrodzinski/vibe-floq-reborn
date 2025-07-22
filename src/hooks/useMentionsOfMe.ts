@@ -24,18 +24,19 @@ export function useMentionsOfMe() {
       if (!session?.user) return [];
       
       const { data, error } = await supabase
-        .from('message_mentions')
+        .from('floq_message_mentions')
         .select(`
           message_id,
           created_at,
-          floq_messages (
+          floq_messages!message_id (
             body,
             floq_id,
             sender_id,
             created_at
           )
         `)
-        .eq('mentioned_user', session.user.id)
+        .eq('target_id', session.user.id)
+        .eq('target_type', 'user')
         .order('created_at', { ascending: false })
         .limit(50);
       

@@ -29,35 +29,38 @@ export function useMentionNotifications() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'message_mentions',
-          filter: `mentioned_user=eq.${session.user.id}`,
+          table: 'floq_message_mentions',
+          filter: `target_id=eq.${session.user.id}`,
         },
         async (payload) => {
           try {
+            // Only handle user mentions
+            if (payload.new.target_type !== 'user') return;
+            
             // Fetch additional details about the mention with explicit join
             const { data: mentionDetails } = await supabase
-              .from('message_mentions')
+              .from('floq_message_mentions')
               .select(`
                 *,
                 floq_messages!message_id(
                   body,
                   sender_id,
                   floq_id,
-                  profiles!sender_id(username)
-                ),
-                floqs!inner(title)
+                  sender:profiles!floq_messages_sender_id_fkey(username)
+                )
               `)
               .eq('message_id', payload.new.message_id)
+              .eq('target_id', session.user.id)
               .single();
 
-            if (mentionDetails) {
+            if (mentionDetails?.floq_messages) {
               const notification: MentionNotification = {
                 id: payload.new.message_id,
                 floq_id: mentionDetails.floq_messages.floq_id,
                 message_id: payload.new.message_id,
-                mentioned_user: payload.new.mentioned_user,
-                sender_username: mentionDetails.floq_messages.profiles.username,
-                floq_title: (mentionDetails as any).floqs?.title,
+                mentioned_user: payload.new.target_id,
+                sender_username: mentionDetails.floq_messages.sender?.username,
+                floq_title: 'floq', // We can fetch this separately if needed
                 created_at: payload.new.created_at,
               };
 

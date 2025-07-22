@@ -156,21 +156,7 @@ export function useSendFloqMessage() {
 
       if (error) throw error
 
-      // 2️⃣ Resolve @handles → user ids and insert mentions
-      const handles = extractMentions(p.body)
-      if (handles.length) {
-        const { data: users } = await supabase
-          .from('profiles')
-          .select('id, username')
-          .in('username', handles)
-        
-        if (users?.length) {
-          // 3️⃣ Bulk-insert mention rows
-          await supabase.from('message_mentions').insert(
-            users.map((u) => ({ message_id: data.id, mentioned_user: u.id }))
-          )
-        }
-      }
+      // Note: Mentions are now handled by the database trigger automatically
 
       // 4️⃣ Broadcast to other clients
       await supabase.channel(`floq-${p.floqId}`).send({

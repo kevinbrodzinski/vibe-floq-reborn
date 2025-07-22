@@ -1,6 +1,9 @@
 import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
 import { supabase } from '@/integrations/supabase/client'
 import { highlightMentions } from '@/utils/highlightMentions'
+import { AnimatePresence } from 'framer-motion'
+import { useMentionPopover } from '@/hooks/useMentionPopover'
+import { MentionPopover } from '@/components/chat/MentionPopover'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 
@@ -20,12 +23,22 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
   }, [])
 
   const msgs = (data?.pages.flat() ?? [])
+  
+  // Mention popover hook
+  const { target, open, close } = useMentionPopover()
 
   return (
     <div className="flex h-full flex-col">
       {/* ---------- list ---------- */}
       <ul
         className="flex flex-1 flex-col-reverse gap-3 overflow-y-auto p-4"
+        onClick={(e) => {
+          const el = e.target as HTMLElement;
+          const tag = el.dataset.tag;
+          if (tag) {
+            open({ tag, x: e.clientX, y: e.clientY });
+          }
+        }}
         onScroll={(e) => {
           if (e.currentTarget.scrollTop === 0 && hasNextPage) fetchNextPage()
         }}
@@ -95,6 +108,11 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
           Send
         </button>
       </form>
+
+      {/* Mention popover portal */}
+      <AnimatePresence>
+        {target && <MentionPopover target={target} onClose={close} />}
+      </AnimatePresence>
     </div>
   )
 }
