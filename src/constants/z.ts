@@ -42,5 +42,10 @@ export type ZKey = keyof typeof Z;
 export const ZFriend = Z.uiInteractive;        // 20
 export const ZConstellation = Z.uiControls;    // 21
 
-/** Usage: `<div {...zIndex('modal')}>…` */
-export const zIndex = (layer: ZKey) => ({ style: { zIndex: Z[layer] } });
+/**
+ * Semantic z-index helper
+ * Usage:  <div style={zIndex('overlay')} />
+ */
+export const zIndex = (layer: ZKey): React.CSSProperties => ({
+  zIndex: Z[layer],
+});
