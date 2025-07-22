@@ -1,236 +1,245 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, X, Loader2, Users } from 'lucide-react';
+import { Search, X, MapPin, Clock, Users } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AvatarStack } from '@/components/ui/AvatarStack';
-import { useFloqSearch } from '@/hooks/useFloqSearch';
-import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
-import { formatDistanceMeters } from '@/utils/formatDistanceMeters';
-import { cn } from '@/lib/utils';
-import { useDebouncedCallback } from 'use-debounce';
-import type { FloqSearchResult } from '@/types/SearchFilters';
+import { zIndex } from '@/constants/z';
 
-interface SearchBarWithTypeaheadProps {
-  value: string;
-  onChange: (value: string) => void;
-  onSelect?: (result: FloqSearchResult) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
+interface SearchResult {
+  id: string;
+  type: 'venue' | 'event' | 'person' | 'location';
+  title: string;
+  subtitle?: string;
+  distance?: string;
+  metadata?: {
+    attendees?: number;
+    time?: string;
+    status?: string;
+  };
 }
 
-export function SearchBarWithTypeahead({
-  value,
-  onChange,
-  onSelect,
-  placeholder = "Search floqs...",
-  disabled = false,
-  className
-}: SearchBarWithTypeaheadProps) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
+interface SearchBarWithTypeaheadProps {
+  onSearch?: (query: string) => void;
+  onResultSelect?: (result: SearchResult) => void;
+  results?: SearchResult[];
+  placeholder?: string;
+  className?: string;
+  showRecent?: boolean;
+  recentSearches?: string[];
+  isLoading?: boolean;
+}
+
+const RESULT_ICONS = {
+  venue: MapPin,
+  event: Clock,
+  person: Users,
+  location: MapPin,
+} as const;
+
+export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
+  onSearch = () => {},
+  onResultSelect = () => {},
+  results = [],
+  placeholder = "Search venues, events, people...",
+  className = "",
+  showRecent = true,
+  recentSearches = [],
+  isLoading = false
+}) => {
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  
-  const { coords } = useEnhancedGeolocation();
-  
-  const debouncedOnChange = useDebouncedCallback(onChange, 250, { leading: false });
-  
-  // Use search hook for typeahead with basic filters
-  const { 
-    data: suggestions = [], 
-    isLoading: isSearching 
-  } = useFloqSearch(
-    coords,
-    {
-      query: value,
-      radiusKm: 100, // Wide radius for suggestions
-      vibes: [], // No vibe filter for suggestions
-      timeRange: [new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)] // Next 30 days
-    },
-    // Only search when we have coords, a query, and suggestions are shown
-    Boolean(value.trim() && showSuggestions && coords)
-  );
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Filter suggestions to only show relevant ones
-  const filteredSuggestions = suggestions.slice(0, 5); // Limit to 5 suggestions
+  const displayResults = query.length > 0 ? results : 
+    (showRecent && recentSearches.length > 0 ? 
+      recentSearches.map(search => ({
+        id: search,
+        type: 'location' as const,
+        title: search,
+        subtitle: 'Recent search'
+      })) : []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    debouncedOnChange(newValue);
-    setSelectedIndex(-1);
-    setShowSuggestions(newValue.trim().length > 0);
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (resultsRef.current && !resultsRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setFocusedIndex(-1);
+      }
+    };
 
-  const handleInputFocus = () => {
-    if (value.trim()) {
-      setShowSuggestions(true);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
     }
-  };
 
-  const handleInputBlur = () => {
-    // Delay hiding suggestions to allow for clicks
-    setTimeout(() => setShowSuggestions(false), 150);
-  };
-
-  const handleSuggestionClick = (suggestion: FloqSearchResult) => {
-    onChange(suggestion.title);
-    setShowSuggestions(false);
-    onSelect?.(suggestion);
-    inputRef.current?.blur();
-  };
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || filteredSuggestions.length === 0) return;
+    if (!isOpen) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+        setFocusedIndex(prev => 
+          prev < displayResults.length - 1 ? prev + 1 : prev
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        setFocusedIndex(prev => prev > 0 ? prev - 1 : prev);
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && filteredSuggestions[selectedIndex]) {
-          handleSuggestionClick(filteredSuggestions[selectedIndex]);
+        if (focusedIndex >= 0 && displayResults[focusedIndex]) {
+          onResultSelect(displayResults[focusedIndex]);
+          setIsOpen(false);
+          setQuery('');
         }
         break;
       case 'Escape':
-        setShowSuggestions(false);
-        setSelectedIndex(-1);
+        setIsOpen(false);
+        setFocusedIndex(-1);
         inputRef.current?.blur();
         break;
     }
   };
 
-  const handleClear = () => {
-    onChange('');
-    setShowSuggestions(false);
-    setSelectedIndex(-1);
+  const handleInputChange = (value: string) => {
+    setQuery(value);
+    onSearch(value);
+    setIsOpen(value.length > 0 || (showRecent && recentSearches.length > 0));
+    setFocusedIndex(-1);
+  };
+
+  const handleResultClick = (result: SearchResult) => {
+    onResultSelect(result);
+    setIsOpen(false);
+    setQuery('');
+    inputRef.current?.blur();
+  };
+
+  const clearSearch = () => {
+    setQuery('');
+    setIsOpen(false);
     inputRef.current?.focus();
   };
 
-  // Format distance for display
-  const getDistanceText = (distanceM: number) => {
-    return formatDistanceMeters(distanceM);
-  };
-
   return (
-    <div className={cn("relative w-full", className)}>
+    <div ref={resultsRef} className={`relative w-full ${className}`}>
+      {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           ref={inputRef}
-          value={value}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
+          value={query}
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setIsOpen(query.length > 0 || (showRecent && recentSearches.length > 0))}
           placeholder={placeholder}
-          disabled={disabled}
-          aria-autocomplete="list"
-          aria-controls={showSuggestions ? "suggestions-list" : undefined}
-          className={cn(
-            "pl-10 pr-10 bg-background/50",
-            value && "pr-16"
-          )}
+          className="pl-10 pr-10"
         />
-        
-        {/* Loading indicator */}
-        {isSearching && value.trim() && (
-          <Loader2 className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-        )}
-        
-        {/* Clear button */}
-        {value && !disabled && (
+        {query && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleClear}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted/50"
+            onClick={clearSearch}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
           >
-            <X className="w-3 h-3" />
+            <X className="h-4 w-4" />
           </Button>
         )}
       </div>
 
-      {/* Suggestions dropdown */}
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <Card 
-          id="suggestions-list"
-          ref={suggestionsRef}
-          role="listbox"
-          tabIndex={-1}
-          className="absolute top-full left-0 right-0 mt-1 z-50 overflow-hidden shadow-lg border bg-background"
-        >
-          <div className="max-h-80 overflow-y-auto">
-            {filteredSuggestions.map((suggestion, index) => (
-              <div
-                key={suggestion.id}
-                role="option"
-                aria-selected={selectedIndex === index}
-                onClick={() => handleSuggestionClick(suggestion)}
-                className={cn(
-                  "flex items-center justify-between p-3 cursor-pointer transition-colors border-b border-border/50 last:border-b-0",
-                  "hover:bg-muted/50",
-                  selectedIndex === index && "bg-muted"
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm truncate">
-                      {suggestion.title}
-                    </span>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs capitalize shrink-0"
-                    >
-                      {suggestion.primary_vibe}
-                    </Badge>
+      {/* Results Dropdown */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            {...zIndex('modal')}
+            className="absolute top-full left-0 right-0 mt-2 max-h-96 overflow-y-auto"
+          >
+            <Card className="shadow-lg border border-border/50">
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2" />
+                    Searching...
                   </div>
-                  
-                  {/* Friends Going Badge */}
-                  {suggestion.friends_going_count > 0 && (
-                    <div className="flex items-center gap-1 mb-1">
-                      <AvatarStack
-                        urls={suggestion.friends_going_avatars || []}
-                        names={suggestion.friends_going_names || []}
-                        size={16}
-                        max={3}
-                        className="pr-1"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {suggestion.friends_going_count === 1 ? '1 friend going' : `${suggestion.friends_going_count} friends going`}
-                      </span>
-                    </div>
-                  )}
+                ) : displayResults.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    {query.length > 0 ? 'No results found' : 'Start typing to search'}
+                  </div>
+                ) : (
+                  <div>
+                    {query.length === 0 && showRecent && recentSearches.length > 0 && (
+                      <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b">
+                        Recent searches
+                      </div>
+                    )}
+                    {displayResults.map((result, index) => {
+                      const IconComponent = RESULT_ICONS[result.type];
+                      const isFocused = index === focusedIndex;
 
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{getDistanceText(suggestion.distance_m)}</span>
-                    <span>•</span>
-                    <span>{suggestion.participant_count} joined</span>
+                      return (
+                        <motion.div
+                          key={result.id}
+                          className={`flex items-center gap-3 p-3 cursor-pointer transition-colors
+                                     ${isFocused ? 'bg-accent' : 'hover:bg-accent/50'}`}
+                          onClick={() => handleResultClick(result)}
+                          whileHover={{ backgroundColor: 'hsl(var(--accent))' }}
+                        >
+                          <IconComponent className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">
+                              {result.title}
+                            </p>
+                            {result.subtitle && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {result.subtitle}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {result.distance && (
+                              <Badge variant="secondary" className="text-xs">
+                                {result.distance}
+                              </Badge>
+                            )}
+                            {result.metadata?.attendees && (
+                              <Badge variant="outline" className="text-xs">
+                                <Users className="h-3 w-3 mr-1" />
+                                {result.metadata.attendees}
+                              </Badge>
+                            )}
+                            {result.metadata?.time && (
+                              <Badge variant="outline" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {result.metadata.time}
+                              </Badge>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                </div>
-                <Search className="w-4 h-4 text-muted-foreground shrink-0 ml-2" />
-              </div>
-            ))}
-          </div>
-          
-          {/* Footer hint */}
-          <div className="px-3 py-2 bg-muted/30 border-t border-border/50">
-            <p className="text-xs text-muted-foreground">
-              ↑↓ to navigate · Enter to select · Esc to close
-            </p>
-          </div>
-        </Card>
-      )}
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};

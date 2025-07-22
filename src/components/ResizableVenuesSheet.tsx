@@ -1,414 +1,180 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { motion, useMotionValue, PanInfo, AnimatePresence } from 'framer-motion';
-import { ChevronDown, MapPin, Users, X } from 'lucide-react';
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { ChevronUp, ChevronDown, X, MapPin, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { VenueListItem } from './VenueListItem';
-import { useVenuesNearMe } from '@/hooks/useVenuesNearMe';
-import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
-import { GeolocationPrompt } from '@/components/ui/geolocation-prompt';
-import { Z } from '@/constants/z';
-import { cn } from '@/lib/utils';
-const List = React.lazy(() => import('react-window').then(m => ({ default: m.FixedSizeList })));
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { zIndex } from '@/constants/z';
+
+interface Venue {
+  id: string;
+  name: string;
+  address: string;
+  distance?: number;
+  currentEvents?: number;
+  nextEventTime?: string;
+  category?: string;
+}
 
 interface ResizableVenuesSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onVenueTap: (venueId: string) => void;
+  venues?: Venue[];
+  className?: string;
 }
 
-// Single state: either open (expanded) or closed (unmounted)
-const EXPANDED_TRANSFORM = 'translateY(0px)';
+export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
+  isOpen,
+  onClose,
+  onVenueTap,
+  venues = [],
+  className = ""
+}) => {
+  const [sheetHeight, setSheetHeight] = useState<'collapsed' | 'half' | 'full'>('half');
+  const constraintsRef = useRef<HTMLDivElement>(null);
 
-// Spring physics configuration
-const SPRING_CONFIG = {
-  type: "spring",
-  stiffness: 400,
-  damping: 40,
-  mass: 0.8,
-} as const;
-
-// Haptic feedback patterns
-const HAPTIC_PATTERNS = {
-  light: 10,
-  medium: 20,
-  heavy: 50,
-} as const;
-
-// Memoized venue list item for performance
-const VenueItem = React.memo(({ 
-  index, 
-  style, 
-  data 
-}: { 
-  index: number; 
-  style: React.CSSProperties; 
-  data: { venues: any[]; onVenueTap: (id: string) => void } 
-}) => (
-  <div style={style}>
-    <VenueListItem
-      venue={data.venues[index]}
-      onTap={data.onVenueTap}
-    />
-  </div>
-));
-
-VenueItem.displayName = 'VenueItem';
-
-export function ResizableVenuesSheet({ isOpen, onClose, onVenueTap }: ResizableVenuesSheetProps) {
-  const { lat, lng, loading: locationLoading, error } = useOptimizedGeolocation();
-  const hasPermission = !!(lat && lng);
-  const requestLocation = useCallback(() => window.location.reload(), []);
-  
-  const { 
-    data, 
-    isLoading, 
-    hasNextPage, 
-    fetchNextPage, 
-    isFetchingNextPage 
-  } = useVenuesNearMe(lat, lng, 0.5);
-
-  // Memoized venue data
-  const { allVenues, totalLiveCount } = useMemo(() => {
-    const venues = data?.pages.flatMap(page => page.venues) ?? [];
-    const liveCount = venues.reduce((sum, venue) => sum + (venue.live_count || 0), 0);
-    return { allVenues: venues, totalLiveCount: liveCount };
-  }, [data]);
-
-  const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const liveRegionRef = useRef<HTMLDivElement>(null);
-  const y = useMotionValue(0);
-
-  // Announce open/close for screen readers
-  useEffect(() => {
-    if (liveRegionRef.current) {
-      liveRegionRef.current.textContent = isOpen ? 'Venues sheet opened' : 'Venues sheet closed';
+  const handleDragEnd = useCallback((event: any, info: PanInfo) => {
+    const { offset } = info;
+    if (offset.y > 100) {
+      setSheetHeight('collapsed');
+    } else if (offset.y < -100) {
+      setSheetHeight('full');
+    } else {
+      setSheetHeight('half');
     }
+  }, []);
+
+  const getSheetStyle = () => {
+    switch (sheetHeight) {
+      case 'collapsed':
+        return { height: '120px' };
+      case 'half':
+        return { height: '50vh' };
+      case 'full':
+        return { height: '90vh' };
+      default:
+        return { height: '50vh' };
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
-  // Haptic feedback helper
-  const triggerHaptic = useCallback((pattern: keyof typeof HAPTIC_PATTERNS) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(HAPTIC_PATTERNS[pattern]);
-    }
-  }, []);
-
-  // Memoized drag handlers
-  const handleDragStart = useCallback(() => {
-    setIsDragging(true);
-    triggerHaptic('light');
-  }, [triggerHaptic]);
-
-  const handleDrag = useCallback((_: any, info: PanInfo) => {
-    // Track drag for visual feedback during dragging
-  }, []);
-
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    const { velocity, offset } = info;
-    const velocityThreshold = 300;
-    const dragThreshold = 150;
-    
-    // Simple logic: if dragging down with enough force, close the sheet
-    if (velocity.y > velocityThreshold || offset.y > dragThreshold) {
-      triggerHaptic('medium');
-      onClose();
-    }
-    
-    setIsDragging(false);
-  }, [onClose, triggerHaptic]);
-
-  // Grabber tap closes the sheet
-  const handleGrabberTap = useCallback(() => {
-    triggerHaptic('medium');
-    onClose();
-  }, [onClose, triggerHaptic]);
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (!isOpen) return;
-    
-    switch (e.key) {
-      case 'Escape':
-        e.preventDefault();
-        onClose();
-        break;
-    }
-  }, [isOpen, onClose]);
-
-  // Memoized load more handler
-  const handleLoadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  // Memoized close handler with haptic
-  const handleClose = useCallback(() => {
-    triggerHaptic('light');
-    onClose();
-  }, [onClose, triggerHaptic]);
-
-  // Safe area and reduced motion support
-  const prefersReducedMotion = useMemo(() => 
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches, []
-  );
-
-  // Memoized list data for react-window
-  const listData = useMemo(() => ({
-    venues: allVenues,
-    onVenueTap
-  }), [allVenues, onVenueTap]);
-
-  // If not open, unmount completely to prevent navigation blocking
   if (!isOpen) return null;
-
-  const shouldUseVirtualization = allVenues.length > 50;
 
   return (
     <>
-      {/* Backdrop overlay - doesn't cover navigation */}
+      {/* Backdrop */}
       <motion.div
-        className="fixed inset-x-0 top-0 bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom))] bg-black/50"
-        style={{ zIndex: 55 }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
         onClick={onClose}
+        {...zIndex('modal')}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
       />
-      
-      <motion.div
-        ref={containerRef}
-        className={cn(
-          "fixed inset-x-4 pointer-events-auto",
-          "bg-background/95 backdrop-blur-md border border-border/40",
-          "shadow-2xl rounded-t-3xl overflow-hidden",
-          "will-change-transform"
-        )}
-        style={{
-          bottom: `calc(var(--mobile-nav-height, 75px) + env(safe-area-inset-bottom))`,
-          height: '80vh',
-          touchAction: 'pan-y',
-          zIndex: 60,
-        }}
-        initial={{ 
-          transform: 'translateY(100%)', 
-          opacity: 0 
-        }}
-        animate={{ 
-          transform: EXPANDED_TRANSFORM,
-          opacity: 1,
-        }}
-        exit={{ 
-          transform: 'translateY(100%)', 
-          opacity: 0 
-        }}
-        transition={prefersReducedMotion ? { duration: 0 } : SPRING_CONFIG}
-        drag="y"
-        dragElastic={0.1}
-        dragMomentum={false}
-        dragConstraints={{ top: 0 }}
-        onDragStart={handleDragStart}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        onKeyDown={handleKeyDown}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Nearby venues"
-        aria-expanded={true}
-        tabIndex={-1}
-      >
-        {/* Grabber Handle */}
-        <motion.button
-          onClick={handleGrabberTap}
-          className={cn(
-            "w-full h-12 flex items-center justify-center",
-            "cursor-grab active:cursor-grabbing touch-manipulation",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-inset"
-          )}
-          whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
-          aria-label="Close venues sheet"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleGrabberTap();
-            }
-          }}
-        >
-          <motion.div
-            animate={{ 
-              scale: isDragging ? 1.1 : 1 
-            }}
-            transition={prefersReducedMotion ? { duration: 0 } : { 
-              type: "spring", 
-              stiffness: 250, 
-              damping: 20 
-            }}
-            className="w-8 h-1 bg-border rounded-full"
-          />
-        </motion.button>
 
-        {/* Header */}
+      {/* Sheet */}
+      <div ref={constraintsRef} className="fixed inset-0 pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-          className="flex items-center justify-between px-6 py-4 border-b border-border/40"
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          drag="y"
+          dragConstraints={constraintsRef}
+          dragElastic={0.1}
+          onDragEnd={handleDragEnd}
+          {...zIndex('modal')}
+          className={`fixed bottom-0 left-0 right-0 pointer-events-auto
+                     bg-card rounded-t-2xl border-t border-border shadow-2xl ${className}`}
+          style={getSheetStyle()}
         >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MapPin className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Nearby Venues
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {allVenues.length} venues • {totalLiveCount} people online
-                  </p>
-                </div>
-              </div>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleClose}
-                className="w-8 h-8 p-0 rounded-full"
-                aria-label="Close venues sheet"
+          {/* Handle */}
+          <div className="flex justify-center py-3">
+            <div className="w-12 h-1 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
+          </div>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Venues</h2>
+              <Badge variant="secondary">{venues.length}</Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSheetHeight(sheetHeight === 'full' ? 'half' : 'full')}
               >
+                {sheetHeight === 'full' ? <ChevronDown /> : <ChevronUp />}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
-            </motion.div>
-
-        {/* Content */}
-        <div 
-          className="flex-1 overflow-hidden"
-          style={{ touchAction: 'auto' }}
-        >
-          {!hasPermission && !lat && !lng ? (
-            <div className="flex items-center justify-center h-full">
-              <GeolocationPrompt onRequestLocation={requestLocation} loading={locationLoading} />
             </div>
-          ) : locationLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-muted-foreground">Getting your location...</p>
-              </div>
-            </div>
-          ) : isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-sm text-muted-foreground">Finding nearby venues...</p>
-              </div>
-            </div>
-          ) : allVenues.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
-                  <MapPin className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">No venues found</p>
-                  <p className="text-sm text-muted-foreground">
-                    No venues within 500m of your location
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : shouldUseVirtualization ? (
-            <React.Suspense fallback={<div className="flex justify-center p-4">Loading...</div>}>
-              <List
-                height={400}
-                width="100%"
-                itemCount={allVenues.length}
-                itemSize={80}
-                itemData={listData}
-                className="overflow-auto"
-              >
-                {VenueItem}
-              </List>
-            </React.Suspense>
-          ) : (
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-0">
-                <AnimatePresence mode="popLayout">
-                  {allVenues.map((venue) => (
-                    <motion.div
-                      key={venue.id}
-                      layout={!prefersReducedMotion}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                    >
-                      <VenueListItem
-                        venue={venue}
-                        onTap={onVenueTap}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+          </div>
 
-                {/* Load More Button */}
-                {hasNextPage && (
-                  <div className="pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={handleLoadMore}
-                      disabled={isFetchingNextPage}
-                      className="w-full"
-                    >
-                      {isFetchingNextPage ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
-                          Loading more...
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="w-4 h-4 mr-2" />
-                          Load more venues
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {venues.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <MapPin className="h-8 w-8 mb-2 opacity-50" />
+                <p>No venues nearby</p>
               </div>
-            </ScrollArea>
-          )}
-        </div>
-
-        {/* Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-          className="p-4 border-t border-border/40 bg-background/50"
-          style={{ paddingBottom: `calc(1rem + env(safe-area-inset-bottom))` }}
-        >
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={handleClose}>
-                  Close
-                </Button>
-                <Button className="flex-1" onClick={() => {
-                  // Navigate to full venues view
-                }}>
-                  <Users className="w-4 h-4 mr-2" />
-                  View All
-                </Button>
+            ) : (
+              <div className="space-y-3">
+                {venues.map((venue) => (
+                  <Card 
+                    key={venue.id}
+                    className="cursor-pointer hover:bg-accent/50 transition-colors"
+                    onClick={() => onVenueTap(venue.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{venue.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {venue.address}
+                          </p>
+                          {venue.distance && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {venue.distance}m away
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {venue.currentEvents && venue.currentEvents > 0 && (
+                            <Badge variant="default" className="text-xs">
+                              <Users className="h-3 w-3 mr-1" />
+                              {venue.currentEvents}
+                            </Badge>
+                          )}
+                          {venue.nextEventTime && (
+                            <Badge variant="outline" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {venue.nextEventTime}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </motion.div>
-      </motion.div>
-
-      {/* Screen reader live region */}
-      <div 
-        ref={liveRegionRef}
-        aria-live="polite" 
-        aria-atomic="true"
-        className="sr-only" 
-      />
+            )}
+          </div>
+        </motion.div>
+      </div>
     </>
   );
-}
+};
