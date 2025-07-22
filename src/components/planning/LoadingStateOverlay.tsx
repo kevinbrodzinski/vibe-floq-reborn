@@ -24,7 +24,7 @@ export const LoadingStateOverlay = ({ loadingState, children }: LoadingStateOver
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          {...zIndex('toast')}
+          {...zIndex('overlay')}
           className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg"
         >
           <div className="bg-card p-4 rounded-lg shadow-lg border">

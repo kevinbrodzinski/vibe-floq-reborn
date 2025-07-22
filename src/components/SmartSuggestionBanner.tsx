@@ -40,7 +40,7 @@ export const SmartSuggestionBanner: React.FC<SmartSuggestionBannerProps> = ({
   }
 
   const formatDistance = (meters: number) => {
-    if (meters < 1000) return `${meters}m`
+    if (meters < 1000) return `${Math.round(meters)}m`
     return `${(meters / 1000).toFixed(1)}km`
   }
 

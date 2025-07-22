@@ -91,7 +91,7 @@ export const CollaborativePlanningScreen = () => {
     creator_id: 'current-user'
   };
   const activities = []; // TODO: Get from plan activities hook
-  const updateParticipantStatus = () => {};
+  
   const recentVotes = []; // TODO: Get from plan votes hook
 
   // Status validation for edit guards
