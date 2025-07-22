@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Heart, Star, Zap, Users, ThumbsUp } from 'lucide-react';
+import { Check, Heart, Zap, Users, ThumbsUp } from 'lucide-react';
 import { ExecutionActionEnum, type ExecutionAction } from '@/types/enums/executionAction';
 import { zIndex } from '@/constants/z';
 

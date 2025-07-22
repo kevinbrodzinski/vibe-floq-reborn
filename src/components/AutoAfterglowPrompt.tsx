@@ -47,7 +47,7 @@ export const AutoAfterglowPrompt = ({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isActive, onAccept]);
+  }, [isActive, onAccept, planId, planTitle]);
 
   // Reset countdown when prompt becomes active
   useEffect(() => {

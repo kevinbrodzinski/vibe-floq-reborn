@@ -28,12 +28,15 @@ export const CheckInButton = ({
   const { data: checkInStatus } = useCheckInStatus(planId, stopId)
   const checkInToggle = useCheckInToggle()
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   
   const checkedIn = !!checkInStatus
   const isLoading = checkInToggle.isPending
 
   const handleCheckIn = async () => {
     if (isLoading) return
+    
+    const wasChecked = checkedIn
     
     try {
       await checkInToggle.mutateAsync({
@@ -42,11 +45,12 @@ export const CheckInButton = ({
         isCheckedIn: checkedIn
       })
       
-      // Show success feedback
+      // Set message and show success feedback
+      setSuccessMessage(wasChecked ? 'Checked out successfully!' : 'Checked in successfully!')
       setShowSuccessOverlay(true)
       setTimeout(() => setShowSuccessOverlay(false), 1500)
       
-      onCheckInChange?.(!checkedIn)
+      onCheckInChange?.(!wasChecked)
     } catch (error) {
       console.error('Check-in error:', error)
     }
@@ -124,7 +128,7 @@ export const CheckInButton = ({
           <div className="bg-card/95 backdrop-blur-sm rounded-xl p-4 text-center border border-border/20 shadow-lg">
             <Check className="w-6 h-6 mx-auto mb-2 text-green-500" />
             <p className="text-sm font-medium text-foreground">
-              {checkedIn ? 'Checked out successfully!' : 'Checked in successfully!'}
+              {successMessage}
             </p>
           </div>
         </motion.div>

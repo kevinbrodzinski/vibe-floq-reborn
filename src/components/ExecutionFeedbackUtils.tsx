@@ -4,7 +4,7 @@ import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { zIndex } from '@/constants/z';
 
-export function ExecutionOverlay({
+export function GenericOverlay({
   message,
   icon = <Sparkles className="h-5 w-5 text-primary" />,
   duration = 2000,
