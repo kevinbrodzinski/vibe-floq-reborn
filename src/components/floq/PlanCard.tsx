@@ -94,7 +94,9 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Hosted by</span>
             <span className="font-medium text-foreground">
-              {plan.creator.display_name || plan.creator.username || 'Unknown'}
+              {plan.creator.display_name ||
+                (plan.creator.username && `@${plan.creator.username}`) ||
+                'Unknown'}
             </span>
           </div>
         )}
