@@ -65,16 +65,16 @@ export function useFloqMessages(floqId: string) {
             ['floq-messages', floqId],
             (old) => {
               if (!old) return old
-              const clone = structuredClone(old)
-              // Add new message to the first page (most recent)
-              clone.pages[0].unshift({
+              // Shallow clone for better compatibility
+              const pages = [...old.pages]
+              pages[0] = [{
                 id: payload.new.id,
                 body: payload.new.body || '',
                 created_at: payload.new.created_at,
                 sender_id: payload.new.sender_id,
                 profiles: null // Will be populated on next refetch if needed
-              })
-              return clone
+              }, ...pages[0]]
+              return { ...old, pages }
             }
           )
         }
@@ -82,7 +82,7 @@ export function useFloqMessages(floqId: string) {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      channel.unsubscribe().catch(console.error)
     }
   }, [floqId, queryClient])
 
@@ -97,13 +97,13 @@ export function useSendFloqMessage() {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
       
-      const { error } = await supabase.from('floq_messages').insert({
+      // Return the promise so onSuccess waits for completion
+      return supabase.from('floq_messages').insert({
         floq_id: p.floqId,
         body: p.body,
         emoji: p.emoji ?? null,
         sender_id: user.user.id,
-      })
-      if (error) throw error
+      }).select('id,body,created_at,sender_id')
     },
     onSuccess: (_, variables) => {
       // Invalidate to ensure we have the latest data
