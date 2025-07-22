@@ -14,6 +14,28 @@ export const NativeMap: React.FC<BaseMapProps> = ({
     MapboxGL.setTelemetryEnabled(false);
   }, []);
 
+  const token = process.env.MAPBOX_ACCESS_TOKEN;
+  if (!token) {
+    return (
+      <div style={{ 
+        flex: 1, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#1a1a1a',
+        color: '#888'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ marginBottom: '8px' }}>🗺️</div>
+          <div>Loading map...</div>
+          <div style={{ fontSize: '12px', marginTop: '4px' }}>
+            Mapbox token required
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MapboxGL.MapView
       style={{ flex: 1 }}

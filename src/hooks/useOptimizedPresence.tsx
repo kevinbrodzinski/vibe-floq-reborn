@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import type { TimerId, IntervalId } from '@/types/Timer';
 import { useBucketedPresence } from './useBucketedPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
@@ -33,8 +34,8 @@ export const useOptimizedPresence = ({
   useVibeSessionTracker(vibe, enabled && !!lat && !!lng);
   
   const lastUpdateRef = useRef<number>(0);
-  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryTimeoutRef = useRef<TimerId | null>(null);
+  const intervalRef = useRef<IntervalId | null>(null);
   const lastVibe = useRef<Vibe>(vibe);
   const lastPosition = useRef<{ lat: number; lng: number } | null>(null);
   const [updating, setUpdating] = useState(false);

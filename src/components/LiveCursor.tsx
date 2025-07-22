@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { TimerId } from '@/types/Timer';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -47,7 +48,7 @@ export const LiveCursor = ({
     if (!enabled || !planId) return;
 
     let channel: any;
-    let trackingInterval: ReturnType<typeof setTimeout>;
+    let trackingInterval: TimerId;
 
     const initializeTracking = async () => {
       const { data: { user } } = await supabase.auth.getUser();
