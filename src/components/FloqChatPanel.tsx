@@ -4,8 +4,10 @@ import { highlightMentions } from '@/utils/highlightMentions'
 import { AnimatePresence } from 'framer-motion'
 import { useMentionPopover } from '@/hooks/useMentionPopover'
 import { MentionPopover } from '@/components/chat/MentionPopover'
+import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete'
+import { MentionAutocompleteMenu } from '@/components/chat/MentionAutocompleteMenu'
 import clsx from 'clsx'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
   const { data, fetchNextPage, hasNextPage } = useFloqMessages(floqId)
@@ -26,6 +28,38 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
   
   // Mention popover hook
   const { target, open, close } = useMentionPopover()
+
+  // Autocomplete state
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+
+  // Autocomplete hook
+  const ac = useMentionAutocomplete({
+    onInsert: c => {
+      if (!inputRef.current) return
+      const i = inputRef.current
+      const { selectionStart } = i
+      const text = i.value
+      /* replace "@query" immediately before caret with "@tag " */
+      const match = /@[\w-]*$/.exec(text.slice(0, selectionStart ?? 0))
+      if (!match) return
+      const start = match.index
+      const before = text.slice(0, start)
+      const after = text.slice(selectionStart ?? 0)
+      i.value = `${before}@${c.tag} ${after}`
+      /* move caret */
+      const pos = before.length + c.tag.length + 2
+      i.setSelectionRange(pos, pos)
+      ac.close()
+    },
+  })
+
+  // Track cursor position to position the menu
+  const updateMenuPos = () => {
+    if (!inputRef.current) return
+    const { top, left } = inputRef.current.getBoundingClientRect()
+    setMenuPos({ top: top - 8, left: left + 8 }) // tweak offsets
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -88,19 +122,45 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          const input = e.currentTarget.elements.namedItem('m') as HTMLInputElement
-          const body = input.value.trim()
+          const textarea = inputRef.current
+          if (!textarea) return
+          const body = textarea.value.trim()
           if (body) send({ floqId, body })
-          input.value = ''
+          textarea.value = ''
+          ac.close()
         }}
         className="flex border-t border-border"
       >
-        <input
-          name="m"
-          placeholder="message…"
-          className="flex-1 bg-transparent p-3 outline-none"
-          autoComplete="off"
-        />
+        <div className="relative flex-1">
+          <textarea
+            ref={inputRef}
+            rows={1}
+            placeholder="message…"
+            className="min-h-[40px] max-h-36 w-full resize-none bg-transparent p-3 outline-none"
+            onKeyDown={ac.onKeyDown}
+            onInput={e => {
+              const val = (e.target as HTMLTextAreaElement).value
+              const sel = (e.target as HTMLTextAreaElement).selectionStart ?? 0
+              const match = /@([\w-]*)$/.exec(val.slice(0, sel))
+              if (match) {
+                ac.setQuery(match[1])
+                updateMenuPos()
+              } else {
+                ac.setQuery('')
+                ac.close()
+              }
+            }}
+          />
+
+          <MentionAutocompleteMenu
+            open={ac.open}
+            top={menuPos.top}
+            left={menuPos.left}
+            items={ac.items}
+            highlight={ac.index}
+            onSelect={ac.onInsert}
+          />
+        </div>
         <button
           type="submit"
           className="px-4 font-semibold text-primary hover:opacity-80"
