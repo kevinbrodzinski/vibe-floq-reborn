@@ -60,7 +60,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const { data: meta } = usePlanMeta(plan.id);
 
   const progress = useMemo(() => {
-    if (!meta || !meta.total_stops || meta.total_stops === 0) return 0;
+    if (!meta?.total_stops || meta.total_stops === 0) return 0;
     return Math.round(((meta.confirmed_stops || 0) / meta.total_stops) * 100);
   }, [meta]);
 
@@ -135,7 +135,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
               {plan.title}
             </CardTitle>
             <div className="flex items-center gap-1">
-              <Badge className={planStatusColor[plan.status as keyof typeof planStatusColor]}>
+              <Badge className={planStatusColor[plan.status] || planStatusColor.draft}>
                 {plan.status}
               </Badge>
               
@@ -195,7 +195,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
                 <Calendar className="w-3 h-3" />
                 <span>{format(new Date(plan.planned_at), 'MMM d, yyyy')}</span>
               </div>
-              {meta?.participant_count && (
+              {meta?.participant_count && meta.participant_count > 0 && (
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   <span>{meta.participant_count} joining</span>
@@ -216,7 +216,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
             </div>
 
             {/* Progress bar */}
-            {meta?.total_stops && meta.total_stops > 0 && (
+            {meta?.total_stops && meta.total_stops > 0 && progress < 100 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Progress</span>
