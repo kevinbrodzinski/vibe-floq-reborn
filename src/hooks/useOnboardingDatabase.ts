@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { type Vibe } from '@/types/vibes';
 
-export const FINAL_STEP = 6;
+export const ONBOARDING_VERSION = 'v2' as const;
+export const FINAL_STEP = 6 as const;
 
-type ProfileData = {
+export type ProfileData = {
   username: string;
   display_name: string;
   bio?: string;
@@ -73,9 +74,9 @@ export function useOnboardingDatabase() {
         currentStep: data.current_step,
         completedSteps: Array.isArray(data.completed_steps) ? data.completed_steps : [],
         selectedVibe: data.selected_vibe as Vibe,
-        profileData: data.profile_data as any, // Type assertion for JSONB
+        profileData: data.profile_data as ProfileData,
         avatarUrl: data.avatar_url,
-        startedAt: new Date(data.started_at).getTime()
+        startedAt: Date.parse(data.started_at ?? data.created_at) || Date.now()
       };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load progress');
@@ -96,7 +97,7 @@ export function useOnboardingDatabase() {
         user_id: user.id,
         onboarding_version: 'v2' as const,
         current_step: Math.min(state.currentStep, 10),
-        completed_steps: state.completedSteps || [],
+        completed_steps: state.completedSteps,
         selected_vibe: state.selectedVibe,
         profile_data: state.profileData as ProfileData,
         avatar_url: state.avatarUrl,

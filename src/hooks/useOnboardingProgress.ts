@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { type Vibe } from '@/types/vibes';
-import { useOnboardingDatabase } from './useOnboardingDatabase';
+import { useOnboardingDatabase, ONBOARDING_VERSION } from './useOnboardingDatabase';
 import { useAuth } from '@/providers/AuthProvider';
 
 interface OnboardingState {
@@ -19,10 +19,11 @@ interface OnboardingState {
 }
 
 const STORAGE_KEY = 'floq_onboarding_progress';
-const EXPIRY_HOURS = 24; // Progress expires after 24 hours
+const EXPIRY_HOURS = 24;
 
 export function useOnboardingProgress() {
   const { user } = useAuth();
+  const userRef = useRef(user);
   const { loadProgress, saveProgress, completeOnboarding, clearProgress: clearDbProgress } = useOnboardingDatabase();
   const [state, setState] = useState<OnboardingState>({
     currentStep: 0,
@@ -30,6 +31,11 @@ export function useOnboardingProgress() {
     startedAt: Date.now()
   });
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Keep user ref updated
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   // Load progress from database or localStorage on mount
   useEffect(() => {
@@ -80,12 +86,10 @@ export function useOnboardingProgress() {
   // Debounced save to prevent excessive writes
   const debouncedSave = useDebouncedCallback(
     useCallback((stateToSave: OnboardingState) => {
+      if (!userRef.current) return; // Guard against logout
       if (stateToSave.currentStep > 0 || stateToSave.selectedVibe) {
-        // Save to localStorage immediately for instant feedback
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
-        
-        // Save to database if user is authenticated
-        if (user) {
+        if (userRef.current) {
           saveProgress(stateToSave);
         }
       }

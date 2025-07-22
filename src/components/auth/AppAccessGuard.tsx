@@ -10,9 +10,9 @@ import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
-const ONBOARDING_VERSION = 'v2';
 
 export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
