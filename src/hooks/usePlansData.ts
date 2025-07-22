@@ -26,11 +26,14 @@ export function usePlansData() {
           floqs(title, creator_id, location),
           creator:profiles!creator_id(id, display_name, username, avatar_url)
         `)
-        .eq('creator_id', user.user.id);
+        .eq('creator_id', user.user.id)
+        .order('planned_at', { ascending: true });
 
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 0, // Force fresh data
+    gcTime: 0 // Force cache invalidation
   });
 
   // Fetch invited plans
