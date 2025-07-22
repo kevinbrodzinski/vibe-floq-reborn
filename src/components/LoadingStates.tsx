@@ -45,7 +45,7 @@ interface LoadingSpinnerProps {
   className?: string
 }
 
-const SIZE_CLASSES = {
+const SIZE_CLASSES: Record<'sm' | 'md' | 'lg', string> = {
   sm: 'h-5 w-5',
   md: 'h-7 w-7', 
   lg: 'h-8 w-8'
