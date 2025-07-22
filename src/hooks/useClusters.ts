@@ -60,19 +60,22 @@ export const useClusters = (
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase.functions.invoke("clusters", {
-        body: { bbox: box, precision },
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke("clusters", {
+          body: { bbox: box, precision },
+        });
 
-      if (ac.signal.aborted) return; // obsolete
+        if (ac.signal.aborted) return;
 
-      if (error) {
-        setError(error.message ?? "Edge function failed");
-        setClusters([]);
-      } else {
-        setClusters(data ?? []);
+        if (error) {
+          setError(error.message ?? "Edge function failed");
+          setClusters([]);
+        } else {
+          setClusters(data ?? []);
+        }
+      } finally {
+        if (!ac.signal.aborted) setLoading(false); // ✅ always clear
       }
-      setLoading(false);
     },
     [precision],
   );

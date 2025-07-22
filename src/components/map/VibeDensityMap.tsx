@@ -179,14 +179,22 @@ export const VibeDensityMap = ({
                 : `${clusters.length} energy clusters detected`}
             </p>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onClose}
-            aria-label="Close map"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {isRealTimeConnected && (
+              <span className="flex items-center gap-1 text-xs text-primary">
+                <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
+                Live
+              </span>
+            )}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onClose}
+              aria-label="Close map"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
 
         {/* map container */}
@@ -219,7 +227,7 @@ export const VibeDensityMap = ({
 
           {/* deck.gl */}
           <DeckGL
-            initialViewState={viewState}
+            viewState={viewState}          // ✅ controlled prop
             controller={true}
             views={new MapView({ repeat: false })}
             layers={layers}

@@ -65,7 +65,7 @@ export const VibeScreen = () => {
   
   // Mock bounding box for cluster data
   const bbox = [-122.5, 37.7, -122.3, 37.8] as [number, number, number, number];
-  const { clusters, loading, isRealTimeConnected, lastUpdateTime } = useClusters(bbox, 6);
+  const { clusters, loading, isRealTimeConnected } = useClusters(bbox, 6);
   
   // Smart suggestions based on nearby clusters
   const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions();
@@ -503,30 +503,21 @@ export const VibeScreen = () => {
                   <span className="font-medium text-foreground">{vibes[safeFallbackVibe].label}</span>
                    <div className="text-xs text-muted-foreground">
                      Active for {elapsed}
-                    {clusters.length > 0 && (
-                      <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
-                    )}
-                    {isRealTimeConnected && lastUpdateTime && (
-                      <span className="ml-2 flex items-center text-xs text-emerald-400">
-                        <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
-                        LIVE
-                      </span>
-                    )}
-                    {!isRealTimeConnected && clusters.length > 0 && (
-                      <span className="ml-2 opacity-40 text-xs">
-                        • Cached
-                      </span>
-                    )}
-                    {lastUpdateTime && (
-                      <span className="ml-2 opacity-40 text-[10px]">
-                        {new Intl.DateTimeFormat('en', { 
-                          hour: 'numeric', 
-                          minute: '2-digit',
-                          second: '2-digit'
-                        }).format(lastUpdateTime)}
-                      </span>
-                    )}
-                  </div>
+                     {clusters.length > 0 && (
+                       <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
+                     )}
+                     {isRealTimeConnected && (
+                       <span className="ml-2 flex items-center text-xs text-emerald-400">
+                         <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
+                         LIVE
+                       </span>
+                     )}
+                     {!isRealTimeConnected && clusters.length > 0 && (
+                       <span className="ml-2 opacity-40 text-xs">
+                         • Cached
+                       </span>
+                     )}
+                   </div>
                 </div>
               </div>
               <button 
