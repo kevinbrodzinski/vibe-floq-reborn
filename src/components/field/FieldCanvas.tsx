@@ -7,6 +7,7 @@ import { TileSpritePool } from '@/utils/tileSpritePool';
 import { projectLatLng, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
+import { useFieldHitTest } from '@/hooks/useFieldHitTest';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -71,6 +72,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     const app = new Application();
     appRef.current = app;
 
+    // Set up hit testing hook
+    const hitTest = useFieldHitTest();
+    let onPointerMove: (e: any) => void;
+
     app.init({
       canvas: actualRef.current,
       width: window.innerWidth,
@@ -91,9 +96,25 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // Initialize pools
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
+
+      // Set up hit testing
+      onPointerMove = (e: any) => {
+        hitTest(e.globalX, e.globalY).then(ids => {
+          if (ids.length) {
+            // demo – replace with tooltip / ripple as needed
+            console.log('🖱️ hit tiles ➜', ids);
+          }
+        });
+      };
+
+      app.stage.eventMode = 'static';
+      app.stage.on('pointermove', onPointerMove);
     });
 
     return () => {
+      if (onPointerMove) {
+        app.stage.off('pointermove', onPointerMove);
+      }
       appRef.current?.destroy(true, { children: true, texture: true });
       appRef.current = undefined;
     };
@@ -143,6 +164,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           const [lat, lng] = geohashToCenter(tile.tile_id);
           const { x, y } = projectLatLng(lng, lat);
           return {
+            id: tile.tile_id,                    // new - needed for hit-test
             x,
             y,
             r: crowdCountToRadius(tile.crowd_count),
