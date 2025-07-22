@@ -1,5 +1,7 @@
 // --- Silence mapbox-gl in jsdom test env -------------
 jest.mock('mapbox-gl', () => ({
+  __esModule: true,
+  default: {},
   Map: function () {
     return {
       on: jest.fn(),

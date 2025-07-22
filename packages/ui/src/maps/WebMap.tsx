@@ -1,20 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
-import { supabase } from '../../../src/integrations/supabase/client';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { createClient } from '@supabase/supabase-js';
+import type { BaseMapProps } from './types';
+
+// Create supabase client directly to avoid import path issues
+const supabase = createClient(
+  'https://reztyrrafsmlvvlqvsqt.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck'
+);
 
 // Initialize with a default public token, will be replaced by Supabase secret
 mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-
-export interface BaseMapProps {
-  onRegionChange: (b: {
-    minLat: number;
-    minLng: number;
-    maxLat: number;
-    maxLng: number;
-    zoom: number;
-  }) => void;
-  children?: React.ReactNode;
-}
 
 export const WebMap: React.FC<BaseMapProps> = ({
   onRegionChange,

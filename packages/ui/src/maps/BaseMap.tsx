@@ -1,10 +1,10 @@
 // Platform detection for cross-platform maps
-// For web-first projects, we'll default to WebMap
-// React Native detection can be added later when mobile support is needed
+import React from 'react';
+import type { BaseMapProps } from './types';
 
-// Simple platform detection without react-native dependency
+// Simple platform detection without react-native dependency for web-first apps
 const isWeb = typeof window !== 'undefined';
 
-export const BaseMap = isWeb
+export const BaseMap: React.FC<BaseMapProps> = isWeb
   ? require('./WebMap').WebMap
   : require('./NativeMap').NativeMap;

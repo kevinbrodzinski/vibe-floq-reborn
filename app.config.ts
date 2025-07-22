@@ -8,6 +8,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'Floq',
   slug: 'floq',
+  runtimeVersion: { policy: 'appVersion' },
   plugins: ['@rnmapbox/maps', ...(config.plugins ?? [])],
   extra: {
     ...config.extra,

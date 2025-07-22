@@ -1,23 +1,13 @@
-import { useCallback } from 'react';
-
-interface ViewportBounds {
-  minLat: number;
-  minLng: number;
-  maxLat: number;
-  maxLng: number;
-  zoom: number;
-}
+import { useCallback, useState } from 'react';
+import type { ViewportBounds } from '../../packages/ui/src/maps/types';
 
 export const useFieldViewport = () => {
+  const [, setBounds] = useState<ViewportBounds | null>(null);
+
   const onRegionChange = useCallback((bounds: ViewportBounds) => {
-    // TODO: Connect to field tiles system
-    console.log('Field viewport changed:', bounds);
-    
-    // This will eventually trigger field tile updates
-    // For now, just log the bounds for Phase 2 integration
+    setBounds(bounds);           // keeps state in case other hooks need it soon
+    console.debug('Field viewport changed:', bounds);
   }, []);
 
-  return {
-    onRegionChange,
-  };
+  return { onRegionChange };
 };

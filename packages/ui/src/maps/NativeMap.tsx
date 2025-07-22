@@ -1,30 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import MapboxGL from '@rnmapbox/maps';
+import type { BaseMapProps } from './types';
 
-MapboxGL.setAccessToken(process.env.MAPBOX_ACCESS_TOKEN!);
-
-export interface BaseMapProps {
-  onRegionChange: (b: {
-    minLat: number;
-    minLng: number;
-    maxLat: number;
-    maxLng: number;
-    zoom: number;
-  }) => void;
-  children?: React.ReactNode;
-}
+// Set access token and disable telemetry
+const setupMapbox = () => {
+  const token = process.env.MAPBOX_ACCESS_TOKEN;
+  if (token) {
+    MapboxGL.setAccessToken(token);
+  }
+  MapboxGL.setTelemetryEnabled(false);
+};
 
 export const NativeMap: React.FC<BaseMapProps> = ({
   onRegionChange,
   children,
-}) => (
-  <MapboxGL.MapView
-    style={{ flex: 1 }}
-    styleURL="mapbox://styles/mapbox/dark-v11"
-  >
-    <MapboxGL.Camera
-      zoomLevel={12}
-      followUserLocation
+}) => {
+  useEffect(() => {
+    setupMapbox();
+  }, []);
+
+  return (
+    <MapboxGL.MapView
+      style={{ flex: 1 }}
+      styleURL="mapbox://styles/mapbox/dark-v11"
       onRegionDidChange={(e) => {
         const [[west, south], [east, north]] =
           e.properties.visibleBounds as [
@@ -39,7 +37,12 @@ export const NativeMap: React.FC<BaseMapProps> = ({
           zoom: e.properties.zoom,
         });
       }}
-    />
-    {children}
-  </MapboxGL.MapView>
-);
+    >
+      <MapboxGL.Camera
+        zoomLevel={12}
+        followUserLocation
+      />
+      {children}
+    </MapboxGL.MapView>
+  );
+};
