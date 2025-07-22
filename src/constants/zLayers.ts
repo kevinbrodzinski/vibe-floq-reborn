@@ -1,33 +1,27 @@
+
 /**
- * Centralized Z-Index Layer Management
- * 
- * Creates a deterministic stacking order for all UI elements.
- * Never use raw z-index values - always reference this enum.
+ * Z-Index Layer Constants
+ * Centralized z-index management for consistent layering
  */
 
 export const Z = {
-  // Base map layers
+  // Base layers
   map: 0,
+  mapOverlay: 5,
   
-  // UI overlays
+  // UI elements
   ui: 10,
-  header: 11,        // Z.ui + 1
-  overlay: 12,       // Z.ui + 2
-  controls: 13,      // Z.ui + 3
-  interactive: 14,   // Z.ui + 4
-  timewarp: 31,      // Z.ui + 21 - TimeWarp glass pane
+  header: 20,
+  overlay: 30,
   
-  // Modal layers  
+  // Interactive elements
   modal: 40,
+  sheet: 50,
   
-  // System overlays
-  system: 50,
-  
-  // Navigation (highest - always accessible)
-  navigation: 60,
-  
-  // DM Sheet (above navigation)
-  dmSheet: 70,
+  // System elements (highest priority)
+  system: 60,
+  toast: 70,
+  debug: 100,
 } as const;
 
 export type ZLayer = typeof Z[keyof typeof Z];

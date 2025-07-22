@@ -1,3 +1,4 @@
+
 import { FullscreenFab } from "@/components/map/FullscreenFab";
 import { Z } from "@/constants/zLayers";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
@@ -12,17 +13,9 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
 
   return (
     <>
-      {/* Full-screen toggle FAB */}
-      <div 
-        className="fixed pointer-events-none"
-        style={{ 
-          zIndex: Z.system,
-          inset: 0
-        }}
-      >
-        <div className="pointer-events-auto">
-          <FullscreenFab />
-        </div>
+      {/* Full-screen toggle FAB - positioned with CSS */}
+      <div style={{ zIndex: Z.system }}>
+        <FullscreenFab />
       </div>
 
       {/* Live region for accessibility */}
