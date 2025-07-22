@@ -8,11 +8,6 @@ export const clusterWorker = (() => {
     { type: 'module' },
   );
 
-  // Clean up worker during hot reload
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => worker.terminate());
-  }
-
   return Comlink.wrap<{
     cluster (tiles: RawTile[], zoom?: number): Promise<Cluster[]>;
     hitTest (x: number, y: number, radius?: number): Promise<string[]>;
