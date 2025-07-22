@@ -67,20 +67,20 @@ export const LoadingSpinner = memo(({
 LoadingSpinner.displayName = 'LoadingSpinner'
 
 interface LoadingOverlayProps {
-  loading: boolean
+  isVisible: boolean
   children: React.ReactNode
   className?: string
 }
 
 export const LoadingOverlay = memo(({
-  loading,
+  isVisible,
   children,
   className
 }: LoadingOverlayProps) => {
   return (
     <div className={cn('relative', className)}>
       {children}
-      {loading && (
+      {isVisible && (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-50">
           <LoadingSpinner size="lg" />
         </div>

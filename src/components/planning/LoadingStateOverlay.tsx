@@ -17,7 +17,7 @@ export const LoadingStateOverlay = ({ loadingState, children }: LoadingStateOver
   }
 
   return (
-    <LoadingOverlay loading={loadingState !== 'idle'}>
+    <LoadingOverlay isVisible={loadingState !== 'idle'}>
       {children}
       {loadingState !== 'idle' && (
         <motion.div

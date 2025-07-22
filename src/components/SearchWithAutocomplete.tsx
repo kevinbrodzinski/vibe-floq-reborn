@@ -186,7 +186,6 @@ export const SearchWithAutocomplete: React.FC<SearchWithAutocompleteProps> = ({
                       ${isFocused ? 'bg-accent' : 'hover:bg-accent/50'}
                     `}
                     onClick={() => handleSelect(result)}
-                    whileHover={{ backgroundColor: 'var(--accent)' }}
                   >
                     <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     

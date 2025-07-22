@@ -30,7 +30,7 @@ export function BulkActionsToolbar({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           {...zIndex('toast')}
-          className="fixed bottom-6 left-1/2 transform -translate-x-1/2"
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 pointer-events-auto"
         >
           <div className="bg-card border border-border rounded-2xl shadow-lg p-4 min-w-80">
             <div className="flex items-center justify-between gap-4">
