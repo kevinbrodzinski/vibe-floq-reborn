@@ -2,6 +2,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 import * as React from "react"
+import { Z } from "@/constants/z"
 
 import { cn } from "@/lib/utils"
 
@@ -22,7 +23,7 @@ const SheetOverlay = React.forwardRef<
       "fixed inset-0 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
-    style={{ zIndex: 49 }} // Just below modal layer to prevent conflicts
+    style={{ zIndex: Z.modal - 1 }} // Just below modal layer
     {...props}
     ref={ref}
   />
@@ -62,7 +63,7 @@ const SheetContent = React.forwardRef<
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
       style={{
-        zIndex: 50, // Default z-index for sheet content
+        zIndex: Z.modal, // Use modal layer for sheet content
         ...style
       }}
       {...props}

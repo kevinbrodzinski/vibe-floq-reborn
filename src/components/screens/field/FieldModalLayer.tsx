@@ -1,8 +1,9 @@
+
 import { BannerManager } from "@/components/BannerManager";
 import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { ResizableVenuesSheet } from "@/components/ResizableVenuesSheet";
 import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
-import { Z } from "@/constants/zLayers";
+import { Z } from "@/constants/z";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import type { FieldData } from "./FieldDataProvider";
@@ -26,7 +27,7 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
   return (
     <>
       {/* Banner System */}
-      <div style={{ zIndex: Z.ui }}>
+      <div style={{ zIndex: Z.overlay }}>
         <BannerManager />
       </div>
 

@@ -1,3 +1,4 @@
+
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -27,6 +28,19 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      
+      // Z-index governance rules
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/\\bz-(\\[.*?]|[0-9]+)\\b/]",
+          message: "Hard-coded Tailwind z-index detected. Use Z constants from '@/constants/z' instead."
+        },
+        {
+          selector: "Property[key.name='zIndex'] > Literal[value=/^\\d+$/]",
+          message: "Inline zIndex detected. Use Z.{layer} constants from '@/constants/z' instead."
+        }
+      ],
     },
   }
 );

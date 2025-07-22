@@ -1,7 +1,8 @@
+
 import { NavLink } from 'react-router-dom';
 import { LayoutGrid, Circle, MessageCircle, Star, Calendar, Activity } from "lucide-react";
 import { prefetchTab } from '@/utils/tabPrefetch';
-import { Z } from '@/constants/zLayers';
+import { Z } from '@/constants/z';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useGlobalUnreadCount } from '@/hooks/useUnreadCounts';
 import { useFaviconBadge } from '@/hooks/useFaviconBadge';

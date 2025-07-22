@@ -1,5 +1,7 @@
+
 import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
+import { Z } from '@/constants/z';
 
 /**
  * Centralized portal system for proper layer management
@@ -18,7 +20,7 @@ function getPortalRoot(): HTMLElement {
       portalRoot.style.top = '0';
       portalRoot.style.left = '0';
       portalRoot.style.pointerEvents = 'none';
-      portalRoot.style.zIndex = '1000'; // High base z-index
+      portalRoot.style.zIndex = String(Z.modal); // Use modal layer as base
       document.body.appendChild(portalRoot);
     }
   }
@@ -29,6 +31,13 @@ interface LayersPortalProps {
   children: React.ReactNode;
   layer?: 'sheet' | 'popover' | 'toast' | 'modal';
 }
+
+const LAYER_Z_INDEX = {
+  sheet: Z.modal,
+  modal: Z.modal,
+  popover: Z.modal - 5, // 65 - slightly below modal
+  toast: Z.toast,
+} as const;
 
 export function LayersPortal({ children, layer = 'popover' }: LayersPortalProps) {
   const [mounted, setMounted] = useState(false);
@@ -48,9 +57,7 @@ export function LayersPortal({ children, layer = 'popover' }: LayersPortalProps)
       style={{ 
         pointerEvents: 'auto',
         position: 'relative',
-        zIndex: layer === 'sheet' ? 60 : 
-                layer === 'modal' ? 65 :
-                layer === 'toast' ? 70 : 55
+        zIndex: LAYER_Z_INDEX[layer]
       }}
     >
       {children}
