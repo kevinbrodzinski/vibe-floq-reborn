@@ -21,22 +21,20 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const { onRegionChange } = useFieldViewport();
 
   return (
-    <div className="flex flex-col flex-1 relative">
-      <div style={{ flex: 1 }}>
-        <BaseMap onRegionChange={onRegionChange}>
-          {/* WebGL layer on top, no pointer events so map remains interactive */}
-          <div style={{ pointerEvents: 'none' }}>
-            <FieldCanvas
-              ref={canvasRef}
-              people={people}
-              tileIds={data.tileIds}
-              fieldTiles={data.fieldTiles}
-              viewportGeo={data.viewport}
-              onRipple={onRipple}
-            />
-          </div>
-        </BaseMap>
-      </div>
+    <div className="absolute inset-0">
+      <BaseMap onRegionChange={onRegionChange}>
+        {/* WebGL layer on top, no pointer events so map remains interactive */}
+        <div style={{ pointerEvents: 'none' }}>
+          <FieldCanvas
+            ref={canvasRef}
+            people={people}
+            tileIds={data.tileIds}
+            fieldTiles={data.fieldTiles}
+            viewportGeo={data.viewport}
+            onRipple={onRipple}
+          />
+        </div>
+      </BaseMap>
     </div>
   );
 };
