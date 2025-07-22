@@ -8,12 +8,14 @@ export const FieldScreen = () => {
   useSyncedVisibility(); // Sync visibility across app and devices
 
   return (
-    <FieldDataProvider>
-      {(data) => (
-        <FieldGestureProvider data={data}>
-          <FieldLayout data={data} />
-        </FieldGestureProvider>
-      )}
-    </FieldDataProvider>
+    <div className="flex h-[100dvh] w-full overflow-hidden">
+      <FieldDataProvider>
+        {(data) => (
+          <FieldGestureProvider data={data}>
+            <FieldLayout data={data} />
+          </FieldGestureProvider>
+        )}
+      </FieldDataProvider>
+    </div>
   );
 };
