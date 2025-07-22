@@ -57,10 +57,13 @@ export const ConstellationGestureSystem: React.FC<ConstellationGestureSystemProp
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const scale = useTransform([x, y], ([latestX, latestY]) => {
-    const distance = Math.sqrt((latestX as number) * (latestX as number) + (latestY as number) * (latestY as number));
-    return Math.max(0.8, 1 - distance / 1000);
-  });
+  const scale = useTransform(
+    [x, y],
+    ([latestX, latestY]: [number, number]) => {
+      const distance = Math.hypot(latestX, latestY);
+      return Math.max(0.8, 1 - distance / 1000);
+    }
+  );
 
   const createGesturePoint = useCallback((clientX: number, clientY: number, id: string): GesturePoint => {
     const rect = containerRef.current?.getBoundingClientRect();

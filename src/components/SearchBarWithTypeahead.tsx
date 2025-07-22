@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, X, MapPin, Clock, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -68,14 +68,16 @@ export const SearchBarWithTypeahead: React.FC<SearchBarWithTypeaheadProps> = ({
     }
   }, [controlledValue]);
 
-  const displayResults = query.length > 0 ? results : 
-    (showRecent && recentSearches.length > 0 ? 
-      recentSearches.map(search => ({
-        id: search,
-        type: 'location' as const,
-        title: search,
-        subtitle: 'Recent search'
-      })) : []);
+  const displayResults = useMemo(() => {
+    return query.length > 0 ? results : 
+      (showRecent && recentSearches.length > 0 ? 
+        recentSearches.map(search => ({
+          id: search,
+          type: 'location' as const,
+          title: search,
+          subtitle: 'Recent search'
+        })) : []);
+  }, [query, results, showRecent, recentSearches]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
