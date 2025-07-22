@@ -22,8 +22,10 @@ export const Z = {
   map: 0,
   mapOverlay: 10,
   
-  // UI layers
-  ui: 20,
+  // UI layers (fine-grained)
+  uiInteractive: 20, // carousels, gestures, etc.
+  uiControls: 21,    // Constellation controls, bottom FABs
+  uiHeader: 22,      // Field header + location banner
   overlay: 30,
   timewarp: 40,
   system: 50,

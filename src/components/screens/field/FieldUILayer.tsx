@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { FieldHeader } from "./FieldHeader";
 import { FieldOverlay } from "./FieldOverlay";
@@ -24,8 +24,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   const { isLocationReady, location, lastHeartbeat } = useFieldLocation();
   const { people } = useFieldSocial();
   const locationDisplay = useLocationDisplay(
-    location.lat, 
-    location.lng, 
+    location?.lat ?? null,
+    location?.lng ?? null,
     !!(location.lat && location.lng), // hasPermission approximation
     location.error
   );
@@ -93,20 +93,22 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       <SocialToastProvider />
       
       {/* Header - hidden in full mode */}
-      {!isFull && (
-        <motion.div
-          className="absolute top-0 left-0 right-0 pointer-events-auto"
-          style={{ zIndex: Z.ui }}
-          initial={{ y: 0, opacity: 1 }}
-          exit={{ y: '-100%', opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-        >
-          <FieldHeader 
-            venueCount={nearbyVenues?.length || 0}
-            onOpenVenues={() => setVenuesSheetOpen(true)}
-          />
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {!isFull && (
+          <motion.div
+            className="absolute top-0 left-0 right-0 pointer-events-auto"
+            style={{ zIndex: Z.uiHeader }}
+            initial={{ y: 0, opacity: 1 }}
+            exit={{ y: '-100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          >
+            <FieldHeader 
+              venueCount={nearbyVenues?.length || 0}
+              onOpenVenues={() => setVenuesSheetOpen(true)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Location Display - below header */}
       {!isFull && (
@@ -115,7 +117,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="absolute top-16 left-0 right-0 px-6 pt-2 pointer-events-auto"
-          style={{ zIndex: Z.ui }}
+          style={{ zIndex: Z.uiHeader - 1 }}
         >
           <LocationDisplay
             locationText={locationDisplay.displayText}
@@ -152,7 +154,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {(timeState === 'evening' || timeState === 'night') && !isFull && (
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: Z.ui }}
+          style={{ zIndex: Z.uiControls }}
         >
           <ConstellationControls
             timeState={timeState}
@@ -166,37 +168,41 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       )}
 
       {/* Interactive Elements - hidden in full mode */}
-      {!isFull && (
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{ zIndex: Z.ui }}
-          initial={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-        >
-          {/* Social Gesture Manager */}
-          <SocialGestureManager onSocialAction={handleSocialAction} />
+      <AnimatePresence>
+        {!isFull && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{ zIndex: Z.uiInteractive }}
+            initial={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 35 }}
+          >
+            {/* Social Gesture Manager */}
+            <SocialGestureManager onSocialAction={handleSocialAction} />
 
-          {/* Friend Suggestions Carousel */}
-          <div className="absolute bottom-20 left-0 right-0 px-4 pointer-events-auto">
-            <FriendSuggestionCarousel />
-          </div>
+            {/* Friend Suggestions Carousel */}
+            <div className="absolute bottom-20 left-0 right-0 px-4 pointer-events-auto">
+              <FriendSuggestionCarousel />
+            </div>
 
-          {/* Time Warp Slider */}
-          <TimeWarpSlider 
-            isVisible={showTimeWarp}
-            onClose={() => setShowTimeWarp(false)}
-            onTimeChange={handleTimeWarpChange}
-          />
+            {/* Time Warp Slider */}
+            <div style={{ zIndex: Z.timewarp }}>
+              <TimeWarpSlider 
+                isVisible={showTimeWarp}
+                onClose={() => setShowTimeWarp(false)}
+                onTimeChange={handleTimeWarpChange}
+              />
+            </div>
 
-          {/* Time-Based Bottom Action Card */}
-          <TimeBasedActionCard
-            className="pointer-events-auto"
-            timeState={timeState}
-            onTimeWarpToggle={() => setShowTimeWarp(true)}
-          />
-        </motion.div>
-      )}
+            {/* Time-Based Bottom Action Card */}
+            <TimeBasedActionCard
+              className="pointer-events-auto"
+              timeState={timeState}
+              onTimeWarpToggle={() => setShowTimeWarp(true)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
