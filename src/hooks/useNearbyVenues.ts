@@ -12,10 +12,11 @@ async function needsSync(kind: string, lat: number, lng: number) {
     .select('ts')
     .eq('kind', kind)
     .order('ts', { ascending: false })
-    .limit(1);
+    .limit(1)
+    .maybeSingle();
 
-  if (!data || !data[0]) return true;
-  const last = new Date(data[0].ts).getTime();
+  if (!data) return true;
+  const last = new Date(data.ts).getTime();
   return (Date.now() - last) / 1000 / 60 > SYNC_COOLDOWN_MIN;
 }
 
@@ -43,7 +44,7 @@ export const useNearbyVenues = (
   return useQuery<Venue[]>({
     enabled: lat !== null && lng !== null,
     queryKey: ['nearby-venues', lat && bucket(lat), lng && bucket(lng), km],
-    staleTime: 60_000,   // 1 minute
+    staleTime: 15_000,   // 15 seconds for fresher map markers
     gcTime: 120_000,     // 2 minutes (formerly cacheTime)
     retry: 1,
     queryFn: async () => {
@@ -56,9 +57,14 @@ export const useNearbyVenues = (
         });
         if (!error) {
           // Record the sync so other calls skip
-          await supabase
-            .from('sync_log')
-            .insert({ kind: 'google_places', lat, lng });
+          try {
+            await supabase
+              .from('sync_log')
+              .insert({ kind: 'google_places', lat, lng });
+          } catch (insertError) {
+            // Ignore duplicate errors - race condition is harmless
+            console.debug('Sync log insert (ignored):', insertError);
+          }
         } else {
           console.warn('Places sync error:', error.message);
         }
