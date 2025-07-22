@@ -40,6 +40,9 @@ export const VibeDensityMap = ({
 }: VibeDensityMapProps) => {
   const fallbackUserLocation = useOptimizedGeolocation()
   
+  // Stable vibe preferences object
+  const vibePrefs = useMemo(() => ({}), [])
+  
   // Use provided userLocation or fallback to hook
   const currentUserLocation: Coords = 
     userLocation && userLocation.lat && userLocation.lng
@@ -73,7 +76,7 @@ export const VibeDensityMap = ({
       }))
       setHasCentered(true)
     }
-  }, [hasFix, hasCentered, currentUserLocation?.lat, currentUserLocation?.lng])
+  }, [hasFix, hasCentered])
   
   // Debounce viewport changes to reduce API calls
   const debouncedViewState = useDebounce(viewState, 300)
@@ -163,10 +166,10 @@ export const VibeDensityMap = ({
   }, [])
 
   // Create deck.gl layers
-  const pulseLayer = usePulseLayer(clusters, {})
+  const pulseLayer = usePulseLayer(clusters, vibePrefs)
   const layers = useMemo(() => {
     if (!clusters?.length) return []
-    const densityLayer = createDensityLayer(clusters, {}, handleClusterClick)
+    const densityLayer = createDensityLayer(clusters, vibePrefs, handleClusterClick)
     return [densityLayer, pulseLayer].filter(Boolean)
   }, [clusters, pulseLayer, handleClusterClick])
 
