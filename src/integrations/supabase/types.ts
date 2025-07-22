@@ -2515,6 +2515,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_log: {
+        Row: {
+          id: number
+          kind: string
+          lat: number
+          lng: number
+          ts: string
+        }
+        Insert: {
+          id?: number
+          kind: string
+          lat: number
+          lng: number
+          ts?: string
+        }
+        Update: {
+          id?: number
+          kind?: string
+          lat?: number
+          lng?: number
+          ts?: string
+        }
+        Relationships: []
+      }
       task_queue: {
         Row: {
           created_at: string | null
