@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
-import { Z } from "@/constants/z";
+import { zIndex } from "@/constants/z";
 
 export const FloqsDebugPanel = () => {
   const { data: floqs = [], isLoading, error } = useActiveFloqs({
@@ -14,7 +14,7 @@ export const FloqsDebugPanel = () => {
   const { setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 bg-card/95 backdrop-blur-sm" style={{ zIndex: Z.debug }}>
+    <Card className="fixed bottom-4 right-4 w-80 bg-card/95 backdrop-blur-sm" {...zIndex('debug')}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Debug Panel</CardTitle>

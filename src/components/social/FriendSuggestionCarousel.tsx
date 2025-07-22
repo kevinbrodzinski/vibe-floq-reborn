@@ -3,6 +3,7 @@ import { SuggestionCard } from './SuggestionCard'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Loader2 } from 'lucide-react'
+import { ZFriend, zIndex } from '@/constants/z'
 
 export const FriendSuggestionCarousel: React.FC = () => {
   const { suggestions, loading } = useSocialSuggestions()
@@ -23,7 +24,7 @@ export const FriendSuggestionCarousel: React.FC = () => {
   }
 
   return (
-    <Card className="mb-4 animate-fade-in">
+    <Card className="mb-4 animate-fade-in" {...zIndex('uiInteractive')}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Users className="w-4 h-4" />

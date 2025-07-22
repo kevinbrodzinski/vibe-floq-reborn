@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTimeSyncContext } from './TimeSyncProvider';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { ZConstellation, zIndex } from '@/constants/z';
 
 interface Friend {
   id: string;
@@ -168,7 +169,7 @@ export const FriendConstellation = ({
           <svg
             key={`flow-${index}`}
             className="absolute inset-0 pointer-events-none"
-            style={{ zIndex: 1 }}
+            {...zIndex('uiControls')}
           >
             <defs>
               <linearGradient id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -203,6 +204,7 @@ export const FriendConstellation = ({
             {/* Warmth Ring */}
             <div
               className="absolute animate-pulse"
+              {...zIndex('uiControls')}
               style={{
                 left: `${position.x}%`,
                 top: `${position.y}%`,
@@ -211,13 +213,13 @@ export const FriendConstellation = ({
                 height: `${friend.warmth}px`,
                 border: `2px solid ${friend.color}40`,
                 borderRadius: '50%',
-                zIndex: 2,
               }}
             />
 
             {/* Activity Pulse Ring */}
             <div
               className="absolute animate-ping"
+              {...zIndex('uiControls')}
               style={{
                 left: `${position.x}%`,
                 top: `${position.y}%`,
@@ -226,7 +228,6 @@ export const FriendConstellation = ({
                 height: `${20 + friend.warmth * 0.3}px`,
                 border: `1px solid ${activityColor}`,
                 borderRadius: '50%',
-                zIndex: 3,
                 animationDuration: friend.activity === 'active' ? '1s' : '3s',
               }}
             />
@@ -234,11 +235,11 @@ export const FriendConstellation = ({
             {/* Friend Avatar with Halo */}
             <div
               className="absolute cursor-pointer transition-all duration-300 hover:scale-110"
+              {...zIndex('uiControls')}
               style={{
                 left: `${position.x}%`,
                 top: `${position.y}%`,
                 transform: 'translate(-50%, -50%)',
-                zIndex: 4,
               }}
               onClick={() => handleFriendClick(friend)}
             >
@@ -271,13 +272,13 @@ export const FriendConstellation = ({
             {/* Orbital Ring */}
             <div
               className="absolute border border-primary/20 rounded-full pointer-events-none"
+              {...zIndex('mapOverlay')}
               style={{
                 left: `${centerX}%`,
                 top: `${centerY}%`,
                 transform: 'translate(-50%, -50%)',
                 width: `${position.radius / 2}px`,
                 height: `${position.radius / 2}px`,
-                zIndex: 1,
               }}
             />
           </div>
@@ -298,11 +299,11 @@ export const FriendConstellation = ({
           <div
             key={groupName}
             className="absolute pointer-events-auto cursor-pointer"
+            {...zIndex('uiControls')}
             style={{
               left: `${centerX}%`,
               top: `${centerY}%`,
               transform: 'translate(-50%, -50%)',
-              zIndex: 5,
             }}
             onClick={() => handleConstellationClick(groupName, groupFriends)}
           >

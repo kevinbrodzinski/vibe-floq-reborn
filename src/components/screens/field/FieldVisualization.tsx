@@ -4,6 +4,7 @@ import { AvatarInteractionLayer } from "@/components/AvatarInteractionLayer";
 import { FloqOrb } from "@/components/FloqOrb";
 import { ClusterPin } from "@/components/map/ClusterPin";
 import { VenuePin } from "@/components/map/VenuePin";
+import { Z } from "@/constants/z";
 import { ViewportControls } from "@/components/map/ViewportControls";
 
 import { ClusterVenuesSheet } from "@/components/ClusterVenuesSheet";
@@ -18,7 +19,7 @@ import type { WalkableFloq } from "@/types";
 import { LayersPortal } from "@/components/LayersPortal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 // Removed useStableMemo import - using useMemo instead
-import { Z } from "@/constants/zLayers";
+
 import { getVibeColor } from "@/utils/getVibeColor";
 import { track } from "@/lib/analytics";
 import { useMemo, Fragment } from "react";
@@ -243,7 +244,7 @@ export const FieldVisualization = ({
                             left: personCanvasCoords.x,
                             top: personCanvasCoords.y,
                             transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-                            zIndex: 10, // Z_LAYERS_DETAILED.PEOPLE_DOTS
+                            zIndex: Z.mapOverlay, // Z_LAYERS_DETAILED.PEOPLE_DOTS
                           }}
                         >
                           {/* Phase 2: Dynamic friend halo using CSS custom properties for Tailwind compatibility */}
@@ -323,7 +324,7 @@ export const FieldVisualization = ({
                               left: personCanvasCoords.x,
                               top: personCanvasCoords.y,
                               transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`,
-                              zIndex: 10, // Z_LAYERS_DETAILED.PEOPLE_DOTS
+                              zIndex: Z.mapOverlay, // Z_LAYERS_DETAILED.PEOPLE_DOTS
                             }}
                             onClick={() => onAvatarInteraction?.(person.id)}
                           >
@@ -395,7 +396,7 @@ export const FieldVisualization = ({
                       left: canvasCoords.x,
                       top: canvasCoords.y,
                       transform: 'translate(-50%, -50%) translate(6px, -6px)',
-                      zIndex: 1000
+                      zIndex: Z.mapOverlay
                     }}
                     onClick={() => {
                       // Pass sorted people directly to avoid synthetic object creation
@@ -497,7 +498,7 @@ export const FieldVisualization = ({
               <div
                 key={venue.id || `cluster-${index}`}
                 className={`absolute cursor-pointer transition-all duration-500 pointer-events-auto ${
-                  selectedVenueId === venue.id ? 'z-50' : 'z-40'
+                  selectedVenueId === venue.id ? '' : ''
                 }`}
                 style={{
                   left: canvasCoords.x,

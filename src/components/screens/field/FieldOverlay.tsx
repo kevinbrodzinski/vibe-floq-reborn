@@ -4,6 +4,7 @@ import { TimeStatusIndicator } from "@/components/TimeStatusIndicator";
 import { VibeSummaryCard } from "@/components/vibe/VibeSummaryCard";
 import type { Vibe } from "@/types";
 import isEqual from 'react-fast-compare';
+import { zIndex } from "@/constants/z";
 
 interface FieldOverlayProps {
   isLocationReady: boolean;
@@ -40,18 +41,18 @@ export const FieldOverlay = memo(({
     <div className="absolute inset-0 pointer-events-auto">
       {/* Debug counter */}
       {debug && (
-        <div className="absolute top-2 right-2 z-30 text-xs opacity-60 bg-black/20 px-2 py-1 rounded pointer-events-none">
+        <div className="absolute top-2 right-2 text-xs opacity-60 bg-black/20 px-2 py-1 rounded pointer-events-none" {...zIndex('overlay')}>
           {nearbyUsersCount} people • {walkableFloqsCount} floqs ≤ 1 km
         </div>
       )}
 
       {/* Time Status - Centered above status region */}
-      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+      <div className="absolute top-14 left-1/2 -translate-x-1/2 pointer-events-none" {...zIndex('uiInteractive')}>
         <TimeStatusIndicator />
       </div>
 
       {/* Status Region - Top left under header */}
-      <div className="absolute top-28 left-4 z-50 pointer-events-auto min-h-[44px]">
+      <div className="absolute top-28 left-4 pointer-events-auto min-h-[44px]" {...zIndex('overlay')}>
         <VibeSummaryCard
           currentVibe={currentVibe}
           nearbyUsersCount={nearbyUsersCount}
@@ -64,7 +65,7 @@ export const FieldOverlay = memo(({
       </div>
 
       {/* Controls Region - Right center column */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 pointer-events-auto" {...zIndex('uiInteractive')}>
         {children}
       </div>
     </div>

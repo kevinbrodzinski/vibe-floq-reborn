@@ -4,6 +4,7 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useDebug } from '@/lib/useDebug';
 import { Button } from '@/components/ui/button';
 import { Users, Orbit, Zap, Heart, Sparkles, RotateCcw } from 'lucide-react';
+import { ZConstellation, zIndex } from '@/constants/z';
 
 interface ConstellationAction {
   id: string;
@@ -217,7 +218,7 @@ export const ConstellationGestureSystem = ({
     <>
       {/* Constellation Gesture Status */}
       {isActive && (
-        <div className="fixed top-4 left-4 z-30">
+        <div className="fixed top-4 left-4" {...zIndex('uiControls')}>
           <Button
             variant="ghost"
             size="sm"
@@ -233,7 +234,7 @@ export const ConstellationGestureSystem = ({
 
       {/* Constellation Notification */}
       {notification.visible && (
-        <div className="fixed top-20 right-4 z-40">
+        <div className="fixed top-20 right-4" {...zIndex('uiControls')}>
           <div className={`px-4 py-3 rounded-2xl backdrop-blur-xl border animate-fade-in max-w-xs ${
             notification.type === 'constellation' ? 'bg-primary/20 border-primary/30 text-primary' :
             notification.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
@@ -248,7 +249,7 @@ export const ConstellationGestureSystem = ({
 
       {/* Constellation Action Palette (activated by specific gesture) */}
       {false && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xl flex items-center justify-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-xl flex items-center justify-center" {...zIndex('modal')}>
           <div className="bg-card/95 backdrop-blur-xl rounded-3xl border border-border p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-center mb-4 text-primary">
               🌌 Constellation Controls
@@ -278,7 +279,7 @@ export const ConstellationGestureSystem = ({
 
       {/* Live Gesture Debug */}
       {debug && (
-        <div className="fixed bottom-20 right-4 z-30 max-w-xs">
+        <div className="fixed bottom-20 right-4 max-w-xs" {...zIndex('uiControls')}>
           <div className="bg-card/80 backdrop-blur-xl rounded-lg border border-border/30 p-3">
             <div className="text-xs text-muted-foreground mb-2">Constellation Gestures:</div>
             <div className="text-xs text-foreground/70">

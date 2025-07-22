@@ -4,6 +4,7 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useDebug } from '@/lib/useDebug';
 import { Button } from '@/components/ui/button';
 import { Zap, Users, MessageCircle, MapPin, Smartphone, Sparkles } from 'lucide-react';
+import { ZFriend, zIndex } from '@/constants/z';
 
 interface SocialAction {
   id: string;
@@ -192,7 +193,7 @@ export const SocialGestureManager = ({
     <>
       {/* Gesture Status Indicator */}
       {isActive && (
-        <div className="fixed top-4 right-4 z-30">
+        <div className="fixed top-4 right-4" {...zIndex('uiInteractive')}>
           <Button
             variant="ghost"
             size="sm"
@@ -208,7 +209,7 @@ export const SocialGestureManager = ({
 
       {/* Gesture Notification */}
       {gestureNotification.visible && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-40">
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2" {...zIndex('uiInteractive')}>
           <div className={`px-4 py-3 rounded-2xl backdrop-blur-xl border animate-fade-in ${
             gestureNotification.type === 'success' ? 'bg-primary/20 border-primary/30 text-primary' :
             gestureNotification.type === 'info' ? 'bg-card/90 border-border/30 text-foreground' :
@@ -226,7 +227,7 @@ export const SocialGestureManager = ({
         const [debug] = useDebug();
         if (!debug || recentGestures.length === 0) return null;
         return (
-        <div className="fixed bottom-4 left-4 z-30 max-w-xs">
+        <div className="fixed bottom-4 left-4 max-w-xs" {...zIndex('uiInteractive')}>
           <div className="bg-card/80 backdrop-blur-xl rounded-lg border border-border/30 p-3">
             <div className="text-xs text-muted-foreground mb-2">Recent Gestures:</div>
             {recentGestures.slice(-3).map((gesture, index) => (
@@ -242,7 +243,7 @@ export const SocialGestureManager = ({
       {/* Gesture Palette (activated by specific gesture) */}
       {/* This would be activated by a specific gesture combination */}
       {false && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-xl flex items-center justify-center">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-xl flex items-center justify-center" {...zIndex('modal')}>
           <div className="bg-card/95 backdrop-blur-xl rounded-3xl border border-border p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-semibold text-center mb-4">Social Gestures</h3>
             <div className="grid grid-cols-2 gap-3">

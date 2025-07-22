@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
 import { vibeEmoji } from "@/utils/vibe";
 import { PlaceBanner } from "@/hooks/usePlaceBanners";
+import { zIndex } from "@/constants/z";
 
 interface Props {
   banner: PlaceBanner;
@@ -38,8 +39,9 @@ export const EventBanner = ({
           aria-label="Open event details"
           aria-live="polite"
           onClick={onDetails}
+          {...zIndex('overlay')}
           className={clsx(
-            "fixed bottom-24 left-1/2 -translate-x-1/2 z-30",
+            "fixed bottom-24 left-1/2 -translate-x-1/2",
             "w-[92%] max-w-lg px-4 py-3",
             "rounded-xl border border-white/10 shadow-lg backdrop-blur-sm",
             "bg-gradient-to-r from-violet-500/90 via-indigo-500/90 to-sky-500/90",

@@ -38,5 +38,9 @@ export const Z = {
 
 export type ZKey = keyof typeof Z;
 
+// convenience shorthands for "friend-/gesture-interactive" layers
+export const ZFriend = Z.uiInteractive;        // 20
+export const ZConstellation = Z.uiControls;    // 21
+
 /** Usage: `<div {...zIndex('modal')}>…` */
 export const zIndex = (layer: ZKey) => ({ style: { zIndex: Z[layer] } });
