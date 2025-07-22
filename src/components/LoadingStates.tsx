@@ -1,41 +1,42 @@
-import { memo } from 'react'
+import { memo, forwardRef } from 'react'
 import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, type ButtonProps } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { zIndex } from '@/constants/z'
 
-interface LoadingButtonProps {
+type Variant = ButtonProps['variant']
+type Size = ButtonProps['size']
+
+interface LoadingButtonProps extends Omit<ButtonProps, 'variant' | 'size' | 'ref'> {
   loading?: boolean
-  children: React.ReactNode
-  className?: string
-  disabled?: boolean
-  onClick?: () => void
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
-  size?: 'default' | 'sm' | 'lg' | 'icon'
+  variant?: Variant
+  size?: Size
 }
 
-export const LoadingButton = memo(({
-  loading = false,
-  children,
-  className,
-  disabled,
-  onClick,
-  variant = 'default',
-  size = 'default'
-}: LoadingButtonProps) => {
-  return (
-    <Button
-      variant={variant}
-      size={size}
-      className={cn(className)}
-      disabled={disabled || loading}
-      onClick={onClick}
-    >
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {children}
-    </Button>
+export const LoadingButton = memo(
+  forwardRef<HTMLButtonElement, LoadingButtonProps>(
+    ({
+      loading = false,
+      children,
+      className,
+      disabled,
+      variant = 'default',
+      size = 'default',
+      ...rest
+    }, ref) => (
+      <Button
+        ref={ref}
+        variant={variant}
+        size={size}
+        className={cn(className)}
+        disabled={disabled || loading}
+        {...rest}
+      >
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {children}
+      </Button>
+    )
   )
-})
+)
 
 LoadingButton.displayName = 'LoadingButton'
 
@@ -49,8 +50,8 @@ export const LoadingSpinner = memo(({
   className 
 }: LoadingSpinnerProps) => {
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-6 w-6', 
+    sm: 'h-5 w-5',
+    md: 'h-7 w-7', 
     lg: 'h-8 w-8'
   }
 
@@ -82,8 +83,8 @@ export const LoadingOverlay = memo(({
     <div className={cn('relative', className)}>
       {children}
       {isVisible && (
-        <div {...zIndex('overlay')} className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
-          <LoadingSpinner size="lg" />
+        <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
       )}
     </div>
