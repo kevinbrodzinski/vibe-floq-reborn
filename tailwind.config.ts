@@ -84,16 +84,16 @@ export default {
 				},
 				warning: 'hsl(var(--warning))',
 				vibe: {
-					chill: 'hsl(51 100% 65%)',
-					social: 'hsl(24 100% 67%)', 
-					hype: 'hsl(278 74% 71%)',
-					flowing: 'hsl(174 84% 67%)',
-					romantic: 'hsl(328 79% 70%)',
-					solo: 'hsl(197 100% 50%)',
-					weird: 'hsl(54 100% 67%)',
-					down: 'hsl(220 9% 58%)',
-					open: 'hsl(126 84% 75%)',
-					curious: 'hsl(280 61% 68%)'
+					chill: '51 100% 65%',
+					social: '24 100% 67%', 
+					hype: '278 74% 71%',
+					flowing: '174 84% 67%',
+					romantic: '328 79% 70%',
+					solo: '197 100% 50%',
+					weird: '54 100% 67%',
+					down: '220 9% 58%',
+					open: '126 84% 75%',
+					curious: '280 61% 68%'
 				},
 				neon: 'var(--neon)', // we read this in the component
 				cardBg: 'rgb(var(--card-bg) / <alpha-value>)',

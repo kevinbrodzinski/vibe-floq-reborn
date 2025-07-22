@@ -1,4 +1,3 @@
-
 import { FullscreenFab } from "@/components/map/FullscreenFab";
 import { Z } from "@/constants/zLayers";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
@@ -11,18 +10,19 @@ interface FieldSystemLayerProps {
 export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
   const { liveRef } = useFieldUI();
 
-  console.log('🔧 [FieldSystemLayer] Rendering with z-index:', Z.debug);
-
   return (
     <>
-      {/* Full-screen toggle FAB - positioned at highest z-index */}
+      {/* Full-screen toggle FAB */}
       <div 
+        className="fixed pointer-events-none"
         style={{ 
-          zIndex: Z.debug,
-          '--fab-z-index': Z.debug 
-        } as React.CSSProperties & { '--fab-z-index': number }}
+          zIndex: Z.system,
+          inset: 0
+        }}
       >
-        <FullscreenFab />
+        <div className="pointer-events-auto">
+          <FullscreenFab />
+        </div>
       </div>
 
       {/* Live region for accessibility */}
@@ -30,7 +30,7 @@ export const FieldSystemLayer = ({ data }: FieldSystemLayerProps) => {
         ref={liveRef} 
         className="sr-only" 
         aria-live="polite"
-        style={{ zIndex: Z.debug }}
+        style={{ zIndex: Z.system }}
       />
     </>
   );
