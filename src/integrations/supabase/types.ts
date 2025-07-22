@@ -3026,42 +3026,63 @@ export type Database = {
       }
       venues: {
         Row: {
+          address: string | null
+          categories: string[] | null
           created_at: string | null
           description: string | null
-          geo: unknown | null
+          geom: unknown | null
           id: string
           lat: number
           lng: number
           name: string
+          photo_url: string | null
+          provider: string
+          provider_id: string
           radius_m: number | null
+          rating: number | null
           slug: string | null
           source: string | null
+          updated_at: string | null
           vibe: string | null
         }
         Insert: {
+          address?: string | null
+          categories?: string[] | null
           created_at?: string | null
           description?: string | null
-          geo?: unknown | null
+          geom?: unknown | null
           id?: string
           lat: number
           lng: number
           name: string
+          photo_url?: string | null
+          provider: string
+          provider_id: string
           radius_m?: number | null
+          rating?: number | null
           slug?: string | null
           source?: string | null
+          updated_at?: string | null
           vibe?: string | null
         }
         Update: {
+          address?: string | null
+          categories?: string[] | null
           created_at?: string | null
           description?: string | null
-          geo?: unknown | null
+          geom?: unknown | null
           id?: string
           lat?: number
           lng?: number
           name?: string
+          photo_url?: string | null
+          provider?: string
+          provider_id?: string
           radius_m?: number | null
+          rating?: number | null
           slug?: string | null
           source?: string | null
+          updated_at?: string | null
           vibe?: string | null
         }
         Relationships: []
