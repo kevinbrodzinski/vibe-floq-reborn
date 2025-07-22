@@ -15,13 +15,15 @@ import { ClusterLegend } from './ClusterLegend'
 import { zIndex } from '@/constants/z'
 import { useDebounce } from '@/hooks/useDebounce'
 
-const INITIAL_VIEW_STATE = {
+const DEFAULT_LOCATION = {
   longitude: -118.2437,
   latitude: 34.0522,
   zoom: 10,
   pitch: 0,
   bearing: 0,
 }
+
+type Coords = { lat: number; lng: number }
 
 interface VibeDensityMapProps {
   isOpen: boolean
@@ -39,7 +41,10 @@ export const VibeDensityMap = ({
   const fallbackUserLocation = useOptimizedGeolocation()
   
   // Use provided userLocation or fallback to hook
-  const currentUserLocation = userLocation || fallbackUserLocation
+  const currentUserLocation: Coords = 
+    userLocation && userLocation.lat && userLocation.lng
+      ? userLocation
+      : fallbackUserLocation || { lat: DEFAULT_LOCATION.latitude, lng: DEFAULT_LOCATION.longitude }
 
   // Guard for valid coordinates (avoid Gulf of Guinea)
   const hasFix = !!(currentUserLocation?.lat && currentUserLocation?.lng && 
@@ -47,11 +52,11 @@ export const VibeDensityMap = ({
 
   // Center on user location if available, fallback to LA
   const initialViewState = useMemo(() => ({
-    longitude: hasFix ? currentUserLocation.lng : INITIAL_VIEW_STATE.longitude,
-    latitude: hasFix ? currentUserLocation.lat : INITIAL_VIEW_STATE.latitude,
-    zoom: hasFix ? 14 : INITIAL_VIEW_STATE.zoom,
-    pitch: INITIAL_VIEW_STATE.pitch,
-    bearing: INITIAL_VIEW_STATE.bearing,
+    longitude: hasFix ? currentUserLocation.lng : DEFAULT_LOCATION.longitude,
+    latitude: hasFix ? currentUserLocation.lat : DEFAULT_LOCATION.latitude,
+    zoom: hasFix ? 14 : DEFAULT_LOCATION.zoom,
+    pitch: DEFAULT_LOCATION.pitch,
+    bearing: DEFAULT_LOCATION.bearing,
   }), [hasFix, currentUserLocation?.lat, currentUserLocation?.lng])
 
   const [viewState, setViewState] = useState(initialViewState)
@@ -106,6 +111,11 @@ export const VibeDensityMap = ({
     setViewState(v => ({ ...v, zoom: Math.max(v.zoom - 1, 2) }))
   }, [])
 
+  const handleClusterClick = useCallback((cluster: any) => {
+    // TODO: Implement cluster click behavior
+    console.log('Cluster clicked:', cluster)
+  }, [])
+
   const centerOnUser = useCallback(() => {
     if (hasFix) {
       setViewState(prev => ({
@@ -153,12 +163,12 @@ export const VibeDensityMap = ({
   }, [])
 
   // Create deck.gl layers
+  const pulseLayer = usePulseLayer(clusters, {})
   const layers = useMemo(() => {
     if (!clusters?.length) return []
-    const densityLayer = createDensityLayer(clusters, {}, () => {})
-    const pulseLayer = usePulseLayer(clusters, {})
+    const densityLayer = createDensityLayer(clusters, {}, handleClusterClick)
     return [densityLayer, pulseLayer].filter(Boolean)
-  }, [clusters])
+  }, [clusters, pulseLayer, handleClusterClick])
 
   if (!isOpen) return null
 
@@ -181,10 +191,6 @@ export const VibeDensityMap = ({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-muted-foreground">Live</span>
-          </div>
           <Button
             onClick={onClose}
             variant="ghost"
@@ -298,10 +304,6 @@ export const VibeDensityMap = ({
             <span className="text-muted-foreground">
               {clusters.reduce((sum, c) => sum + c.total, 0)} souls in the field
             </span>
-            <div className="flex items-center gap-1.5 text-xs text-green-600">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-              Pulse synced
-            </div>
           </div>
         </CardContent>
       )}
