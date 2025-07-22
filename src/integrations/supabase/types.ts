@@ -980,6 +980,13 @@ export type Database = {
             referencedRelation: "floq_messages"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "floq_message_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_chat_message"
+            referencedColumns: ["id"]
+          },
         ]
       }
       floq_messages: {
@@ -2680,6 +2687,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "user_notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_chat_message"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_notifications_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
@@ -3363,6 +3377,35 @@ export type Database = {
             foreignKeyName: "vibes_now_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_chat_message: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          delivery_state: string | null
+          emoji: string | null
+          floq_id: string | null
+          id: string | null
+          mentions: Json | null
+          sender_id: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_messages_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },

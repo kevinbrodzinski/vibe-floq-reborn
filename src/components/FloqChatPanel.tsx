@@ -1,6 +1,6 @@
 import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
-import { RichText } from '@/components/chat/RichText'
 import { supabase } from '@/integrations/supabase/client'
+import { highlightMentions } from '@/utils/highlightMentions'
 import clsx from 'clsx'
 import { useEffect, useState } from 'react'
 
@@ -38,30 +38,34 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
             <li
               key={m.id}
               className={clsx(
-                'rounded-xl p-3',
-                mine ? 'bg-primary/10 self-end' : 'bg-border/10'
+                'rounded-xl p-3 max-w-[75%] whitespace-pre-wrap',
+                mine ? 'ml-auto bg-primary/10' : 'bg-border/10'
               )}
             >
-              <div className="mb-1 flex items-center gap-2 text-xs opacity-70">
-                {!mine && (
+              {/* Sender chip */}
+              {!mine && (
+                <div className="mb-1 flex items-center gap-2 text-xs opacity-70">
                   <img
-                    src={m.sender?.avatar_url || '/placeholder.svg'}
+                    src={m.sender?.avatar_url ?? '/placeholder.svg'}
                     alt={name}
                     className="h-4 w-4 rounded-full object-cover"
                   />
-                )}
-                <span>{name}</span>
-                <span className="pl-2">
-                  {new Date(m.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
+                  <span>{name}</span>
+                </div>
+              )}
 
-              <p className="whitespace-pre-line break-words">
-                <RichText text={m.body} />
-              </p>
+              {/* Rich text with mentions */}
+              <p
+                dangerouslySetInnerHTML={{ __html: highlightMentions(m.body) }}
+              />
+
+              {/* Timestamp */}
+              <div className="mt-1 text-[10px] opacity-40">
+                {new Date(m.created_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
             </li>
           )
         })}
