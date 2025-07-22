@@ -2,12 +2,12 @@ begin;
 
 select plan(3);
 
--- seed two vibe rows
+-- seed two vibe rows with correct column names
 insert into public.vibes_now
   (user_id, gh5, vibe_hsv, floq_id)
 values
   ('00000000-0000-0000-0000-000000000001', '9q5cs', '[0.33,0.9,0.8]', null),
-  ('00000000-0000-0000-0000-000000000002', '9q5cs', '[0.66,0.5,0.7]', '42beef');
+  ('00000000-0000-0000-0000-000000000002', '9q5cs', '[0.66,0.5,0.7]', '12345678-1234-5678-1234-123456789abc');
 
 call public.refresh_field_tiles();
 
@@ -20,7 +20,7 @@ select ok(
 -- 2. crowd_count = 2
 select is(
   (select crowd_count from public.field_tiles where tile_id='9q5cs'),
-  2::bigint,
+  2,
   'crowd_count aggregated'
 );
 
