@@ -24,7 +24,7 @@ import { PlanInvite } from "./pages/PlanInvite";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const { isDebugPanelOpen, setIsDebugPanelOpen } = useEnvironmentDebug();
+  const { isDebugPanelOpen, setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
   
   // Auto-join presence channels for all users
   usePresenceChannel();
@@ -85,7 +85,16 @@ const App = () => {
               {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
               <EnvironmentDebugPanel 
                 isOpen={isDebugPanelOpen} 
-                onClose={() => setIsDebugPanelOpen(false)} 
+                onClose={() => setIsDebugPanelOpen(false)}
+                debugConfig={environmentConfig}
+                onConfigChange={(config) => {
+                  // Update environment config - this would typically sync to localStorage
+                  Object.keys(config).forEach(key => {
+                    if (config[key] !== environmentConfig[key]) {
+                      // Handle config changes if needed
+                    }
+                  });
+                }}
               />
             </BrowserRouter>
           </TooltipProvider>

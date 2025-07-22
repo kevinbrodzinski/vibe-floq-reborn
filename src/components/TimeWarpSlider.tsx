@@ -4,21 +4,27 @@ import { Slider } from '@/components/ui/slider';
 import { zIndex } from '@/constants/z';
 
 interface TimeWarpSliderProps {
-  value: number;
-  onChange: (value: number) => void;
+  value?: number;
+  onChange?: (value: number) => void;
   min?: number;
   max?: number;
   step?: number;
   className?: string;
+  isVisible?: boolean;
+  onClose?: () => void;
+  onTimeChange?: () => void;
 }
 
 export const TimeWarpSlider: React.FC<TimeWarpSliderProps> = ({
-  value,
-  onChange,
+  value = 50,
+  onChange = () => {},
   min = 0,
   max = 100,
   step = 1,
-  className = ""
+  className = "",
+  isVisible,
+  onClose,
+  onTimeChange
 }) => {
   return (
     <div 

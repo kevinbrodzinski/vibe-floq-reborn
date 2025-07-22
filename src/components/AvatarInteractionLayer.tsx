@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { zIndex } from '@/constants/z';
 
 interface AvatarInteractionLayerProps {
-  avatars: Array<{
+  avatars?: Array<{
     id: string;
     src?: string;
     fallbackText: string;
@@ -15,19 +15,32 @@ interface AvatarInteractionLayerProps {
     x: number;
     y: number;
   }>;
-  selectedIds: string[];
-  onSelect: (id: string) => void;
-  onContextMenu: (id: string, x: number, y: number) => void;
+  people?: any[];
+  selectedIds?: string[];
+  onSelect?: (id: string) => void;
+  onContextMenu?: (id: string, x: number, y: number) => void;
+  onInteraction?: (interaction: any) => void;
   className?: string;
 }
 
 export const AvatarInteractionLayer: React.FC<AvatarInteractionLayerProps> = ({
-  avatars,
-  selectedIds,
-  onSelect,
-  onContextMenu,
+  avatars = [],
+  people = [],
+  selectedIds = [],
+  onSelect = () => {},
+  onContextMenu = () => {},
+  onInteraction = () => {},
   className = ""
 }) => {
+  // Use people as avatars if avatars not provided
+  const displayAvatars = avatars.length > 0 ? avatars : people.map(person => ({
+    id: person.id,
+    src: person.avatar,
+    fallbackText: person.name?.charAt(0) || 'U',
+    username: person.name || 'Unknown',
+    x: person.x || 50,
+    y: person.y || 50
+  }));
   const [contextMenu, setContextMenu] = useState<{
     id: string;
     x: number;
@@ -73,7 +86,7 @@ export const AvatarInteractionLayer: React.FC<AvatarInteractionLayerProps> = ({
   return (
     <div className={`absolute inset-0 pointer-events-none ${className}`}>
       {/* Avatar markers */}
-      {avatars.map((avatar) => (
+      {displayAvatars.map((avatar) => (
         <div
           key={avatar.id}
           className="absolute pointer-events-auto"
