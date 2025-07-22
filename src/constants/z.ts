@@ -24,6 +24,11 @@ export const Z = {
   uiHeader: 20,      // alias
   uiControls: 20,    // alias  
   uiInteractive: 20, // alias
+
+  /* Floq-specific convenience */
+  uiBadge: 20,       // tiny "LIVE" pill inside headers
+  banner: 30,        // Floq header banners
+
   overlay: 30,
 
   timewarp: 40,
