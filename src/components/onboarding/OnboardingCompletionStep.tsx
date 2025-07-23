@@ -39,7 +39,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: 'user_id,onboarding_version'
+          onConflict: 'user_id'
         });
 
       if (progressError) {

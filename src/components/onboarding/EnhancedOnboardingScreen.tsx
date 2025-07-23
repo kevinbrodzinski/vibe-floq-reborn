@@ -8,11 +8,13 @@ import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
 import { OnboardingLogoutButton } from './OnboardingLogoutButton';
 
 // Import all onboarding steps
-import { OnboardingWelcomeStep } from './steps/OnboardingWelcomeStep';
-import { OnboardingVibeStep } from './steps/OnboardingVibeStep';
-import { OnboardingProfileStep } from './steps/OnboardingProfileStep';
-import { OnboardingAvatarStep } from './steps/OnboardingAvatarStep';
-import { OnboardingFeaturesStep } from './steps/OnboardingFeaturesStep';
+import {
+  OnboardingWelcomeStep,
+  OnboardingVibeStep,
+  OnboardingProfileStep,
+  OnboardingAvatarStep,
+  OnboardingFeaturesStep,
+} from './steps';
 import { OnboardingCompletionStep } from './OnboardingCompletionStep';
 
 interface EnhancedOnboardingScreenProps {
