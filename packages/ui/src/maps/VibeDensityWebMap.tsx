@@ -1,6 +1,6 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
@@ -56,7 +56,11 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         });
         
         mapRef.current = map;
-        setTokenStatus('ready');
+
+        // Set ready status AFTER style loads
+        map.once('load', () => {
+          setTokenStatus('ready');
+        });
 
         // Add navigation controls
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');

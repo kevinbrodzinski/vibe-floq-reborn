@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { FieldWebMap } from '../../../../packages/ui/src/maps';
+import { FieldWebMap } from '@maps/FieldWebMap';
 import { FieldCanvas } from '@/components/field/FieldCanvas';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import type { FieldData } from '../field/FieldDataProvider';

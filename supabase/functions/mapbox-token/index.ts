@@ -25,7 +25,11 @@ serve(async (req: Request): Promise<Response> => {
         JSON.stringify({ error: 'Mapbox access token not configured' }), 
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          } 
         }
       );
     }
@@ -37,7 +41,7 @@ serve(async (req: Request): Promise<Response> => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'max-age=86400'
+          'Cache-Control': 'public, max-age=86400'
         } 
       }
     );
@@ -47,7 +51,11 @@ serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: 'Failed to retrieve Mapbox token' }), 
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        } 
       }
     );
   }

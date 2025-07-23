@@ -1,6 +1,6 @@
 
-export { BaseMap } from '../../../packages/ui/src/maps';
-export { WebMap } from '../../../packages/ui/src/maps';
-export { FieldWebMap } from '../../../packages/ui/src/maps';
-export { VibeDensityWebMap } from '../../../packages/ui/src/maps';
+export { BaseMap } from '@maps/BaseMap';
+export { WebMap } from '@maps/WebMap';
+export { FieldWebMap } from '@maps/FieldWebMap';
+export { VibeDensityWebMap } from '@maps/VibeDensityWebMap';
 export { NativeMap } from './NativeMap';

@@ -1,6 +1,6 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { setMapInstance } from '@/lib/geo/project';
 
 interface Props {
@@ -53,10 +53,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         });
         
         mapRef.current = map;
-        setTokenStatus('ready');
 
-        // Register for projection AFTER style loads
-        map.once('load', () => setMapInstance(map));
+        // Register for projection and set ready status AFTER style loads
+        map.once('load', () => {
+          setMapInstance(map);
+          setTokenStatus('ready');
+        });
 
         // Add navigation controls
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');

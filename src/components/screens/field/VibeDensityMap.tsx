@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { VibeDensityWebMap } from '../../../../packages/ui/src/maps';
+import { VibeDensityWebMap } from '@maps/VibeDensityWebMap';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
@@ -9,8 +9,10 @@ import { ClusterLegend } from '@/components/map/ClusterLegend';
 import DeckGL from '@deck.gl/react';
 import { createDensityLayer } from '@/components/map/DeckLayers';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
-import mapboxgl from 'mapbox-gl';
+import type { ViewState } from '@deck.gl/core';
 import type { Cluster } from '@/hooks/useClusters';
+
+type VibeWeights = Record<string, number>;
 
 export const VibeDensityMap: React.FC = () => {
   const { bounds, onRegionChange } = useFieldViewport();
@@ -54,16 +56,24 @@ export const VibeDensityMap: React.FC = () => {
     const activeVibes = vibeFilterHelpers.activeSet ? 
       Array.from(vibeFilterHelpers.activeSet) : [];
     
+    const weights: VibeWeights = Object.fromEntries(
+      activeVibes.map(vibe => [vibe, 1])
+    );
+    
     const densityLayer = createDensityLayer(
       filteredClusters,
-      Object.fromEntries(
-        activeVibes.map(vibe => [vibe, 1])
-      ),
+      weights,
       handleClusterClick
     );
     
     return densityLayer ? [densityLayer] : [];
   }, [filteredClusters, vibeFilterHelpers.activeSet]);
+
+  const initialViewState: Partial<ViewState> = {
+    latitude: 34.05,
+    longitude: -118.24,
+    zoom: 11
+  };
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -74,21 +84,21 @@ export const VibeDensityMap: React.FC = () => {
         
         {/* Deck.GL Layer */}
         <DeckGL
+          initialViewState={initialViewState}
           layers={layers}
           getTooltip={({ object }) => 
             object && {
-              html: `
-                <div class="bg-background/90 backdrop-blur-sm border rounded-lg p-3 shadow-lg">
-                  <div class="font-semibold">${object.total} people</div>
-                  <div class="text-sm text-muted-foreground">
-                    ${Object.entries(object.vibe_counts || {})
-                      .sort(([,a], [,b]) => (b as number) - (a as number))
-                      .slice(0, 3)
-                      .map(([vibe, count]) => `${vibe}: ${count}`)
-                      .join(', ')}
-                  </div>
-                </div>
-              `,
+              html: 
+                '<div class="bg-background/90 backdrop-blur-sm border rounded-lg p-3 shadow-lg">' +
+                '<div class="font-semibold">' + object.total + ' people</div>' +
+                '<div class="text-sm text-muted-foreground">' +
+                Object.entries(object.vibe_counts || {})
+                  .sort(([,a], [,b]) => (b as number) - (a as number))
+                  .slice(0, 3)
+                  .map(([vibe, count]) => vibe + ': ' + count)
+                  .join(', ') +
+                '</div>' +
+                '</div>',
               style: { pointerEvents: 'none' }
             }
           }
