@@ -1,74 +1,75 @@
-import { useState, useEffect } from "react";
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
+import { useEffect, useState } from "react";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+} from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-/** slider-bias preset −1‥+1 for every vibe we currently support */
-export const defaultPrefs = {
-  chill: 0,
-  curious: 0,
-  down: 0,
-  flowing: 0,
-  hype: 0,
-  open: 0,
-  romantic: 0,
-  social: 0,
-  solo: 0,
-  weird: 0,
-} as const;
-
-export type VibePrefs = Record<keyof typeof defaultPrefs, number>;
+import {
+  ALL_VIBES,
+  type Vibe,
+  type VibeFilterState,
+} from "@/hooks/useVibeFilter";
 
 interface Props {
-  value: VibePrefs;
-  onChange: (v: VibePrefs) => void;
+  value: VibeFilterState;
+  onChange: (v: VibeFilterState) => void;
 }
 
 export const VibeFilterPanel = ({ value, onChange }: Props) => {
-  const [local, setLocal] = useState<VibePrefs>(value);
+  const [local, setLocal] = useState(value);
 
-  /* when parent updates its prefs (eg. Reset), sync the sheet */
+  // sync from parent (Reset, Apply from outside, etc.)
   useEffect(() => setLocal(value), [value]);
 
-  const set = (k: keyof VibePrefs, v: number[]) =>
-    setLocal((p) => ({ ...p, [k]: v[0] }));
+  const toggle = (v: Vibe) =>
+    setLocal((p) => ({ ...p, [v]: !p[v] }));
 
-  const apply  = () => onChange(local);
-  const reset  = () => { setLocal(defaultPrefs); onChange(defaultPrefs); };
+  const apply = () => onChange(local);
+  const reset = () => {
+    const allOn = Object.fromEntries(
+      ALL_VIBES.map((v) => [v, true]),
+    ) as VibeFilterState;
+    setLocal(allOn);
+    onChange(allOn);
+  };
+
+  const activeCount = ALL_VIBES.filter((v) => !local[v]).length;
 
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="secondary" size="sm">
           Filter vibes
+          {activeCount > 0 && (
+            <span className="ml-2 h-2 w-2 rounded-full bg-primary" />
+          )}
         </Button>
       </SheetTrigger>
 
       <SheetContent className="w-80 sm:w-96">
-        <h3 className="mb-4 text-lg font-semibold">Vibe filter</h3>
+        <header className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Vibe filter</h3>
+          {activeCount > 0 && (
+            <Badge variant="outline">{activeCount} hidden</Badge>
+          )}
+        </header>
 
-        <div className="space-y-6 overflow-y-auto pr-2">
-          {(Object.keys(defaultPrefs) as Array<keyof VibePrefs>).map((vibe) => (
-            <div key={vibe}>
-              <div className="mb-1 flex items-center justify-between">
-                <span className="capitalize">{vibe}</span>
-                {Math.abs(local[vibe]) > 0.05 && (
-                  <Badge variant="outline">
-                    {local[vibe] > 0 ? "+" : ""}
-                    {local[vibe].toFixed(1)}
-                  </Badge>
-                )}
-              </div>
-
-              <Slider
-                value={[local[vibe]]}
-                min={-1}
-                max={1}
-                step={0.1}
-                onValueChange={(val) => set(vibe, val)}
+        <div className="space-y-3 overflow-y-auto pr-1">
+          {ALL_VIBES.map((v) => (
+            <label
+              key={v}
+              className="flex cursor-pointer items-center gap-3 capitalize"
+            >
+              <Checkbox
+                checked={local[v]}
+                onCheckedChange={() => toggle(v)}
               />
-            </div>
+              {v}
+            </label>
           ))}
         </div>
 

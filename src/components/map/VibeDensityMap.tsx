@@ -21,10 +21,10 @@ import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
 import { MapErrorBoundary } from "./MapErrorBoundary";
 
 import {
-  VibeFilterPanel,
-  defaultPrefs,
-  type VibePrefs,
-} from "./VibeFilterPanel";
+  useVibeFilter,
+  type VibeFilterState,
+} from "@/hooks/useVibeFilter";
+import { VibeFilterPanel } from "./VibeFilterPanel";
 import type { Cluster } from "@/hooks/useClusters";
 
 /* ------------------------------------------------------------------ */
@@ -113,7 +113,10 @@ export const VibeDensityMap = ({
   } = useClusters(bbox, 6);
 
   /* ──────────────────────────────  prefs / filter  */
-  const [vibePrefs, setVibePrefs] = useState<VibePrefs>(defaultPrefs);
+  const [filterState, filterHelpers] = useVibeFilter();
+
+  // Remove old defaultPrefs since we're using the new filtering system
+  const vibePrefs = {}; // placeholder for color bias (can be re-added later)
 
   /* ──────────────────────────────  deck.gl layers  */
   const handleClusterClick = useCallback((c: Cluster) => {
@@ -121,16 +124,33 @@ export const VibeDensityMap = ({
     console.log("cluster clicked", c);
   }, []);
 
-  const pulseLayer = usePulseLayer(clusters, vibePrefs);
+  /* ──────────────────────────────  cluster filtering  */
+  // apply filter BEFORE feeding clusters to layers
+  const visibleClusters = useMemo(
+    () =>
+      clusters.filter((c) =>
+        // keep cluster if *any* of its dominant vibes is ON
+        Object.keys(c.vibe_counts).some(
+          (v) => filterHelpers.activeSet.has(v as any),
+        ),
+      ),
+    [clusters, filterHelpers.activeSet],
+  );
+
+  const pulseLayer = usePulseLayer(visibleClusters, vibePrefs);
 
   const layers = useMemo(() => {
-    if (!clusters.length) return [];
+    if (!visibleClusters.length) return [];
     return [
-      createDensityLayer(clusters, vibePrefs, handleClusterClick),
-      pulseLayer, // already memoised by react on referential equality
-    ];
+      createDensityLayer(
+        visibleClusters,
+        vibePrefs,
+        handleClusterClick,
+      ),
+      pulseLayer,
+    ].filter(Boolean);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clusters, vibePrefs, handleClusterClick]);
+  }, [visibleClusters, vibePrefs, handleClusterClick]);
 
   /* center helpers --------------------------------------------------- */
   const centerOnUser = useCallback(() => {
@@ -206,7 +226,11 @@ export const VibeDensityMap = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <VibeFilterPanel value={vibePrefs} onChange={setVibePrefs} />
+            {/* trigger shows colored dot when filtered */}
+            <VibeFilterPanel
+              value={filterState}
+              onChange={filterHelpers.replace}
+            />
 
             <Button
               size="icon"
@@ -299,18 +323,18 @@ export const VibeDensityMap = ({
           </div>
 
           {/* legend */}
-          {clusters.length > 0 && (
+          {visibleClusters.length > 0 && (
             <ClusterLegend
-              clusters={clusters}
+              clusters={visibleClusters}
               className="absolute bottom-4 left-4"
             />
           )}
 
           {/* footer stats */}
-          {clusters.length > 0 && (
+          {visibleClusters.length > 0 && (
             <footer className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground">
-              {clusters.length} clusters •{" "}
-              {clusters.reduce((s, c) => s + c.total, 0)} souls in the field
+              {visibleClusters.length} clusters •{" "}
+              {visibleClusters.reduce((s, c) => s + c.total, 0)} souls in the field
               {isRealTimeConnected && (
                 <span className="ml-1 text-green-500">• Live</span>
               )}
