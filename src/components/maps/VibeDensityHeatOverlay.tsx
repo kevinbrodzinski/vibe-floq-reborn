@@ -87,7 +87,7 @@ export const VibeDensityHeatOverlay: React.FC<Props> = ({
       style={{ width: containerWidth, height: containerHeight }}
     >
       {/* ------------------------------------------------------------------ */}
-      {/*  Radial-gradient background "heat" circles                         */}
+      {/*  Radial-gradient background “heat” circles                         */}
       {/* ------------------------------------------------------------------ */}
       <svg
         width={containerWidth}
