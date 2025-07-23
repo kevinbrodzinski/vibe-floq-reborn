@@ -99,45 +99,49 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
           <SheetTitle className="flex-1 text-base">Vibe Density Map</SheetTitle>
 
           {/* LIVE pill */}
-          <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-muted/20 text-muted-foreground select-none">
+          <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full select-none ${
+            realtime ? 'bg-emerald-600/20 text-emerald-400' : 'bg-muted/20 text-muted-foreground'
+          }`}>
             LIVE
           </span>
 
-          {/* active-count badge */}
-          {vibeHelpers.isFiltered && (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/15 text-primary-foreground select-none">
-              {vibeHelpers.activeSet.size}
-            </span>
-          )}
+          {/* Filter chips in header */}
+          <div className="flex gap-1">
+            {Object.entries(vibeState).filter(([, active]) => active).slice(0, 3).map(([vibe]) => (
+              <button
+                key={vibe}
+                onClick={() => vibeHelpers.toggle(vibe as any)}
+                className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-full bg-primary text-primary-foreground"
+              >
+                {vibe}
+              </button>
+            ))}
+            {vibeHelpers.activeSet.size > 3 && (
+              <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-muted/20 text-muted-foreground">
+                +{vibeHelpers.activeSet.size - 3}
+              </span>
+            )}
+          </div>
 
           {/* slide-out trigger */}
-          <SheetTrigger
-            asChild
-            onClick={() => setShowFilter(true)}>
-            <button className="text-[11px] font-medium px-3 py-1 rounded-lg border border-border hover:bg-muted/20 transition-colors">
-              Filter
-            </button>
-          </SheetTrigger>
+          <button
+            onClick={() => setShowFilter(true)}
+            className="text-[11px] font-medium px-3 py-1 rounded-lg border border-border hover:bg-muted/20 transition-colors">
+            Filter vibes
+          </button>
 
           <SheetClose className="sr-only">Close</SheetClose>
         </SheetHeader>
 
         {/* ───────────── filter side-panel (left) ───────────────────── */}
-        {showFilter && (
-          <div className="fixed inset-y-0 left-0 w-64 z-50 bg-background/95 backdrop-blur-md border-r border-border/30 shadow-lg">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-              <h2 className="text-sm font-semibold">Filter vibes</h2>
-              <button
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => setShowFilter(false)}>
-                ✕
-              </button>
-            </div>
-            <div className="p-4 space-y-4 overflow-y-auto">
-              <VibeFilterBar state={vibeState} helpers={vibeHelpers} />
-            </div>
-          </div>
-        )}
+        <Sheet open={showFilter} onOpenChange={setShowFilter}>
+          <SheetContent side="left" className="w-72 sm:w-80">
+            <SheetHeader className="mb-4">
+              <h2 className="text-lg font-semibold">Filter vibes</h2>
+            </SheetHeader>
+            <VibeFilterBar state={vibeState} helpers={vibeHelpers} />
+          </SheetContent>
+        </Sheet>
 
         {/* ───────────────── map / overlay slot ─────────────────────── */}
         <div className="relative flex-1">
