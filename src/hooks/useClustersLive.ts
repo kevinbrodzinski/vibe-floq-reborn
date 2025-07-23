@@ -1,63 +1,42 @@
-import { useEffect, useRef } from 'react'
-import { supabase } from '@/integrations/supabase/client'
-import type { Cluster } from './useClusters'
+import { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Cluster } from './useClusters';
 
+/**
+ * Lightweight helper that keeps a live subscription once the initial
+ * cluster list is in place.  Sent-in callbacks come from parent component.
+ */
 export const useClustersLive = (
   initial: Cluster[],
-  setClusters: (fn: (prev: Cluster[]) => Cluster[]) => void,
-  refetchClusters: () => void
+  setClusters: React.Dispatch<React.SetStateAction<Cluster[]>>,
+  refetch: () => void,
 ) => {
-  const channelRef = useRef<any>(null)
-  const joined = useRef(false)
-  const lastChecksumRef = useRef<string | null>(null)
+  const chanRef        = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const lastChecksum   = useRef<string | null>(null);
 
   useEffect(() => {
-    if (joined.current || initial.length > 300) return // Guard rail: skip for large datasets
-    joined.current = true
+    if (chanRef.current || initial.length > 300) return; // skip very dense maps
 
-    if (import.meta.env.DEV) console.log('[useClustersLive] Starting live subscription')
-
-    const channel = supabase
-      .channel('clusters-updates-live')
-      .on(
-        'broadcast',
-        { event: 'clusters_updated' },
-        (payload) => {
-          try {
-            const { checksum } = payload.payload ?? {}
-            if (checksum && checksum !== lastChecksumRef.current) {
-              lastChecksumRef.current = checksum
-              if (import.meta.env.DEV) {
-                console.log('[useClustersLive] Checksum changed → refetching clusters')
-              }
-              refetchClusters() // Hard refetch when checksum changes
-            }
-          } catch (e) {
-            console.error('[useClustersLive] Error processing broadcast:', e)
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (import.meta.env.DEV) {
-          console.log('[useClustersLive] Subscription status:', status)
+    const ch = supabase
+      .channel('clusters-live')
+      .on('broadcast', { event: 'clusters_updated' }, (payload) => {
+        const checksum = payload.payload?.checksum;
+        if (checksum && checksum !== lastChecksum.current) {
+          lastChecksum.current = checksum;
+          import.meta.env.DEV &&
+            console.log('[LiveClusters] checksum changed → refetch');
+          refetch();
         }
       })
+      .subscribe();
 
-    channelRef.current = channel
+    chanRef.current = ch;
 
     return () => {
-      if (import.meta.env.DEV) console.log('[useClustersLive] Cleaning up subscription')
-      channel.unsubscribe().catch(console.error)
-      joined.current = false
-    }
-  }, [initial.length, refetchClusters])
+      if (chanRef.current) supabase.removeChannel(chanRef.current);
+      chanRef.current = null;
+    };
+  }, [initial.length, refetch]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe().catch(console.error)
-      }
-    }
-  }, [])
-}
+  /* no UI returned */
+};
