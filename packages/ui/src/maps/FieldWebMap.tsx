@@ -57,14 +57,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           zoom: 11,
         });
         
-        console.log('[FieldWebMap] Map created, setting ref and ready status...');
+        console.log('[FieldWebMap] Map created, setting ref...');
         mapRef.current = map;
-        setTokenStatus('ready'); // Set ready immediately after map creation
 
-        // Register for projection AFTER style loads
+        // Register for projection and set ready status AFTER style loads
         map.once('load', () => {
-          console.log('[FieldWebMap] Map style loaded, registering for projection');
+          console.log('[FieldWebMap] Map style loaded → ready');
           setMapInstance(map);
+          setTokenStatus('ready');
         });
 
         // Add navigation controls
