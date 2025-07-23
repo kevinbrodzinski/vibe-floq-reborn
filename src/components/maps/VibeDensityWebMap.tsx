@@ -1,105 +1,115 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  memo,
+} from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
-import { getMapboxToken }       from '@/lib/geo/getMapboxToken';
-import { setMapInstance }       from '@/lib/geo/project';
+import { getMapboxToken }   from '@/lib/geo/getMapboxToken';
+import { setMapInstance }   from '@/lib/geo/project';
 
 registerMapboxWorker();
 
-interface Props{
-  onRegionChange:(b:{
-    minLat:number;minLng:number;maxLat:number;maxLng:number;zoom:number;
-  })=>void;
-  children?:React.ReactNode;
+/* ------------------------------------------------------------------ */
+/* Types                                                               */
+/* ------------------------------------------------------------------ */
+export interface Bounds {
+  minLat: number;
+  minLng: number;
+  maxLat: number;
+  maxLng: number;
+  zoom:   number;
 }
 
-export const VibeDensityWebMap:React.FC<Props>=({onRegionChange,children})=>{
-  const container=useRef<HTMLDivElement>(null);
-  const mapRef   =useRef<mapboxgl.Map|null>(null);
+interface Props {
+  /** Toggle supplied by the wrapper. When `false` we return `null`.   */
+  visible: boolean;
+  onRegionChange: (b: Bounds) => void;
+  children?: React.ReactNode;
+}
 
-  const[status,setStatus]=useState<'loading'|'ready'|'error'>('loading');
-  const[err,setErr]      =useState<string>();
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
+export const VibeDensityWebMap = memo(function VibeDensityWebMap ({
+  visible,
+  onRegionChange,
+  children,
+}: Props) {
+  /* ░░░ Bail out early ░░░ */
+  if (!visible) return null;
 
-  useEffect(()=>{
-    if(!container.current||mapRef.current) return;
-    let dead=false;
-    let fireHandler: (() => void) | null = null;
-    let errorHandler: ((e: any) => void) | null = null;
+  const container = useRef<HTMLDivElement>(null);
+  const mapRef    = useRef<mapboxgl.Map | null>(null);
+  const [ready, setReady] = useState(false);
 
-    (async()=>{
-      try{
-        const{token}=await getMapboxToken();
-        mapboxgl.accessToken=token;
+  /* ────────────────────────────────────────────────────────── */
+  /*  Mount ONCE                                               */
+  /* ────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!container.current || mapRef.current) return;
 
-        const map=new mapboxgl.Map({
-          container:container.current!,
-          style:'mapbox://styles/mapbox/dark-v11',
-          center:[-118.24,34.05],
-          zoom:11
+    let destroyed = false;
+
+    (async () => {
+      try {
+        /* token */
+        const { token } = await getMapboxToken();
+        mapboxgl.accessToken = token;
+
+        /* map */
+        const map = new mapboxgl.Map({
+          container: container.current,
+          style:     'mapbox://styles/mapbox/dark-v11',
+          center:    [-118.24, 34.05],
+          zoom:      11,
         });
-        mapRef.current=map;
+        mapRef.current = map;
 
-        fireHandler=()=>{
-          const b=map.getBounds();
+        /* callback */
+        const fireMove = () => {
+          const b = map.getBounds();
           onRegionChange({
-            minLat:b.getSouth(),minLng:b.getWest(),
-            maxLat:b.getNorth(),maxLng:b.getEast(),
-            zoom:map.getZoom()
+            minLat: b.getSouth(),
+            minLng: b.getWest(),
+            maxLat: b.getNorth(),
+            maxLng: b.getEast(),
+            zoom:   map.getZoom(),
           });
         };
 
-        errorHandler = (e: any) => {
-          if(dead) return;
-          setErr(e.error?.message||'unknown');
-          setStatus('error');
-        };
-
-        map.once('load',()=>{
-          if(dead) return;
+        map.once('load', () => {
+          if (destroyed) return;
           setMapInstance(map);
-          fireHandler!();
-          map.on('moveend',fireHandler!);
-          setStatus('ready');
+          setReady(true);
+          fireMove();
+          map.on('moveend', fireMove);
         });
-
-        map.on('error', errorHandler);
-      }catch(e:any){
-        if(!dead){setErr(e.message);setStatus('error');}
+      } catch (err) {
+        console.error('[VibeDensityWebMap] init failed', err);
       }
     })();
 
-    return()=>{
-      dead=true;
-      if(mapRef.current){
-        // Remove map listeners before destroying
-        if(fireHandler) mapRef.current.off('moveend', fireHandler);
-        if(errorHandler) mapRef.current.off('error', errorHandler);
+    return () => {
+      destroyed = true;
+      if (mapRef.current) {
         mapRef.current.remove();
-        mapRef.current=null;
-        setMapInstance(null);
+        mapRef.current = null;
       }
     };
-  },[onRegionChange]);
+  }, [onRegionChange]);
 
-  return(
+  /* ────────────────────────────────────────────────────────── */
+  /*  Render                                                   */
+  /* ────────────────────────────────────────────────────────── */
+  return (
     <div className="absolute inset-0">
-      <div ref={container} data-map-container className="absolute inset-0"/>
-      {status==='loading'&&(
-        <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
-          <span className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"/>
-        </div>
-      )}
-      {status==='error'&&(
-        <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
-          <div className="text-center">
-            <p className="text-sm text-destructive mb-1">Map error</p>
-            {err&&<p className="text-xs text-muted-foreground">{err}</p>}
-          </div>
-        </div>
-      )}
-      {children}
+      <div ref={container} className="absolute inset-0" />
+      {ready && children /* children only after map is ready */}
     </div>
   );
-};
+});
