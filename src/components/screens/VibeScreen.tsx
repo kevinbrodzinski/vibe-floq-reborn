@@ -464,12 +464,11 @@ export const VibeScreen = () => {
       </div>
 
       {/* Density Map Modal */}
-      {showDensityMap && (
-        <VibeDensityMap
-          userLocation={userLocation}
-          onRequestClose={() => setShowDensityMap(false)}
-        />
-      )}
+      <VibeDensityMap
+        open={showDensityMap}
+        onOpenChange={setShowDensityMap}
+        userLocation={userLocation}
+      />
 
       {/* Enhanced Mini Vibe Card */}
       <div className="fixed bottom-20 left-6 right-6">

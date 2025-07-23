@@ -1,16 +1,13 @@
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
-import { Map } from 'react-map-gl';
 import { Badge } from '@/components/ui/badge';
 import { MapErrorBoundary } from './MapErrorBoundary';
 import { ClusterLegend } from './ClusterLegend';
 import { VibeFilterPanel } from './VibeFilterPanel';
 import { createDensityLayer, usePulseLayer } from './DeckLayers';
 import { useClusters } from '@/hooks/useClusters';
-import { useClustersLive } from '@/hooks/useClustersLive';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
-import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { 
   Sheet, 
   SheetContent, 
@@ -25,31 +22,38 @@ const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 interface VibeDensityMapProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  userLocation: { lat: number; lng: number };
 }
 
-export function VibeDensityMap({ open, onOpenChange }: VibeDensityMapProps) {
-  const { lat, lng, loading: locationLoading, error: locationError } = useOptimizedGeolocation();
+export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensityMapProps) {
   const [vibeFilter, vibeFilterHelpers] = useVibeFilter();
 
   // Calculate viewport from user location
   const initialViewState = useMemo(() => ({
-    latitude: lat || 40.7128,
-    longitude: lng || -74.0060,
+    latitude: userLocation.lat,
+    longitude: userLocation.lng,
     zoom: 12,
     pitch: 0,
     bearing: 0
-  }), [lat, lng]);
+  }), [userLocation.lat, userLocation.lng]);
+
+  // Calculate bbox for clusters
+  const bbox = useMemo(() => {
+    const offset = 0.01; // ~1km
+    return [
+      userLocation.lng - offset,
+      userLocation.lat - offset, 
+      userLocation.lng + offset,
+      userLocation.lat + offset
+    ] as [number, number, number, number];
+  }, [userLocation.lat, userLocation.lng]);
 
   // Fetch clusters
   const { 
-    data: clusters = [], 
-    isLoading: clustersLoading, 
-    error: clustersError,
-    refetch: refetchClusters 
-  } = useClusters(lat, lng);
-
-  // Live updates
-  useClustersLive(clusters, () => {}, refetchClusters);
+    clusters = [], 
+    loading: clustersLoading, 
+    error: clustersError 
+  } = useClusters(bbox);
 
   // Filter clusters by active vibes
   const filteredClusters = useMemo(() => {
@@ -87,7 +91,7 @@ export function VibeDensityMap({ open, onOpenChange }: VibeDensityMapProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onOpenChange]);
 
-  if (locationError) {
+  if (clustersError) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="top" className="h-full">
@@ -96,8 +100,8 @@ export function VibeDensityMap({ open, onOpenChange }: VibeDensityMapProps) {
           </SheetHeader>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <p className="text-muted-foreground">Unable to access location</p>
-              <p className="text-sm text-muted-foreground mt-2">{locationError}</p>
+              <p className="text-muted-foreground">Unable to load clusters</p>
+              <p className="text-sm text-muted-foreground mt-2">{clustersError}</p>
             </div>
           </div>
         </SheetContent>
@@ -130,27 +134,32 @@ export function VibeDensityMap({ open, onOpenChange }: VibeDensityMapProps) {
 
           {/* Map Container */}
           <div className="flex-1 mt-20">
-            {locationLoading ? (
+            {clustersLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                  <p className="text-muted-foreground">Getting your location...</p>
+                  <p className="text-muted-foreground">Loading clusters...</p>
                 </div>
               </div>
             ) : (
               <MapErrorBoundary>
-                <DeckGL
-                  initialViewState={initialViewState}
-                  controller={true}
-                  layers={layers}
-                  style={{ position: 'relative', width: '100%', height: '100%' }}
+                <div 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%',
+                    background: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=${MAPBOX_TOKEN}")`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    position: 'relative'
+                  }} 
                 >
-                  <Map
-                    mapboxAccessToken={MAPBOX_TOKEN}
-                    mapStyle={MAP_STYLE}
-                    style={{ width: '100%', height: '100%' }}
+                  <DeckGL
+                    initialViewState={initialViewState as any}
+                    controller
+                    layers={layers}
+                    style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%' }}
                   />
-                </DeckGL>
+                </div>
               </MapErrorBoundary>
             )}
           </div>
@@ -182,7 +191,7 @@ export function VibeDensityMap({ open, onOpenChange }: VibeDensityMapProps) {
               )}
             </div>
             
-            <ClusterLegend className="mt-3" />
+            <ClusterLegend clusters={filteredClusters} className="mt-3" />
           </div>
         </div>
       </SheetContent>
