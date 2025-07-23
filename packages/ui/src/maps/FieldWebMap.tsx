@@ -46,73 +46,81 @@ const getFieldMapboxToken = async (): Promise<{ token: string; source: string }>
 
 export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef     = useRef<mapboxgl.Map | null>(null);
+
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [tokenSource, setTokenSource] = useState<string>('');
 
+  /* Mount map ONCE -------------------------------------------------- */
   useEffect(() => {
-    if (!container.current || mapRef.current) return;
+    if (!container.current || mapRef.current) return;              // guard
 
-    const initializeMap = async () => {
+    const mount = async () => {
       try {
         const { token, source } = await getFieldMapboxToken();
-        mapboxgl.accessToken = token;
         setTokenSource(source);
-        
+        mapboxgl.accessToken = token;
+
         const map = new mapboxgl.Map({
-          container: container.current!,
-          style: 'mapbox://styles/mapbox/dark-v11',
-          center: [-118.24, 34.05],
-          zoom: 11,
+          container : container.current!,
+          style     : 'mapbox://styles/mapbox/dark-v11',
+          center    : [-118.24, 34.05],
+          zoom      : 11
         });
-        
+
         mapRef.current = map;
-        setTokenStatus('ready');
 
-        // Register for projection AFTER style loads
-        map.once('load', () => setMapInstance(map));
+        /* style & tiles ready ---- */
+        map.once('load', () => {
+          setMapInstance(map);
+          setTokenStatus('ready');
+        });
 
-        // Add navigation controls
+        /* basic controls ---------- */
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-        // Viewport → React
-        const onMove = () => {
+        const handleMoveEnd = () => {
           const b = map.getBounds();
           onRegionChange({
-            minLat: b.getSouth(), minLng: b.getWest(),
-            maxLat: b.getNorth(), maxLng: b.getEast(),
-            zoom: map.getZoom(),
+            minLat: b.getSouth(),
+            minLng: b.getWest(),
+            maxLat: b.getNorth(),
+            maxLng: b.getEast(),
+            zoom  : map.getZoom()
           });
         };
-        map.on('moveend', onMove);
-
-        // Initial bounds callback
-        onMove();
-
-      } catch (error) {
-        console.error('[FieldWebMap] Failed to initialize map:', error);
+        map.on('moveend', handleMoveEnd);
+        handleMoveEnd(); // fire once immediately
+      } catch (err) {
+        console.error('[FieldWebMap] init failed', err);
         setTokenStatus('error');
       }
     };
 
-    initializeMap();
+    mount();
 
-    // Cleanup – prevents _cancelResize crash
     return () => {
       if (mapRef.current) {
-        setMapInstance(null);
-        mapRef.current.remove();
-        mapRef.current = null;
+        try {
+          setMapInstance(null);
+          mapRef.current.remove();
+        } finally {
+          mapRef.current = null;
+          setTokenStatus('loading');
+        }
       }
     };
-  }, [onRegionChange]);
+  }, []); // <- NO deps – runs once
 
+  /* ---------------------------------------------------------------- */
+  /* RENDER                                                           */
+  /* ---------------------------------------------------------------- */
   if (tokenStatus === 'loading') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-sm text-muted-foreground">Loading field map...</p>
+      <div className="absolute inset-0 grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-2">
+          <span className="animate-spin h-8 w-8 rounded-full border-b-2 border-primary" />
+          <span className="text-sm text-muted-foreground">Loading field map…</span>
         </div>
       </div>
     );
@@ -120,29 +128,28 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
 
   if (tokenStatus === 'error') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-sm text-destructive mb-2">Failed to load field map</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="text-xs text-muted-foreground hover:text-foreground"
+      <div className="absolute inset-0 grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-sm text-destructive">Failed to load field map</span>
+          <button
+            className="text-xs underline decoration-dotted"
+            onClick={() => window.location.reload()}
           >
-            Reload page
+            reload
           </button>
         </div>
       </div>
     );
   }
 
+  /* ready ----------------------------------------------------------- */
   return (
     <div className="absolute inset-0">
       <div ref={container} className="absolute inset-0" />
       {children}
-      
-      {/* Debug info in development */}
       {import.meta.env.DEV && (
-        <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm border rounded px-2 py-1 text-xs font-mono">
-          Field Token: {tokenSource}
+        <div className="absolute top-2 left-2 rounded bg-background/80 px-2 py-1 text-xs font-mono">
+          token: {tokenSource}
         </div>
       )}
     </div>

@@ -56,10 +56,12 @@ export const useVibeFilter = (
     ...initial,
   });
 
-  // Memoize the activeSet to prevent recreation on every render
-  const activeSet = useMemo(() => {
-    return new Set(ALL_VIBES.filter((v) => state[v]));
-  }, [state]);
+  /** ⚠️  Stable activeSet - prevents infinite loop in VibeDensityMap */
+  const activeSet = useMemo(() => new Set(
+    Object.entries(state)
+      .filter(([, enabled]) => enabled)
+      .map(([v]) => v as Vibe)
+  ), [state]);             // ← stable across renders while state unchanged
 
   const helpers = useMemo(() => {
     const toggle = (v: Vibe) =>
@@ -81,10 +83,10 @@ export const useVibeFilter = (
         ) as VibeFilterState,
       );
 
-    const isFiltered = activeSet.size !== ALL_VIBES.length;
+    const isFiltered = activeSet.size !== 0 && activeSet.size !== ALL_VIBES.length;
 
     return { toggle, reset, setAll, replace, only, activeSet, isFiltered };
-  }, [state, activeSet]);
+  }, [activeSet]);
 
   return [state, helpers];
 };

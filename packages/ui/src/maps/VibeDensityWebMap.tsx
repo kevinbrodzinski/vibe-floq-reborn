@@ -117,7 +117,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         }
       }
     };
-  }, [onRegionChange]);
+  }, []); // <- NO deps – runs once
 
   if (tokenStatus === 'loading') {
     return (
