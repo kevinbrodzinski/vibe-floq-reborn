@@ -25,9 +25,29 @@ export default defineConfig(({ mode, command }) => ({
       '@deck.gl/react', 
       '@deck.gl/core', 
       '@deck.gl/layers', 
-      '@deck.gl/aggregation-layers',
-      'earcut'
-    ]
+      '@deck.gl/aggregation-layers'
+    ],
+    esbuildOptions: {
+      plugins: [
+        {
+          name: 'fix-earcut',
+          setup(build) {
+            build.onResolve({ filter: /^earcut$/ }, args => ({
+              path: args.path,
+              namespace: 'earcut-wrapper'
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'earcut-wrapper' }, () => ({
+              contents: `
+                import earcut from 'earcut/src/earcut.js';
+                export default earcut;
+                export { earcut };
+              `,
+              loader: 'js'
+            }));
+          }
+        }
+      ]
+    }
   },
   plugins: [
     react(),
