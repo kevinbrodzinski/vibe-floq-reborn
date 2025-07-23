@@ -10,9 +10,12 @@ import { useVibeFilter } from '@/hooks/useVibeFilter';
 import type { Cluster } from '@/hooks/useClusters';
 import { 
   Sheet, 
+  SheetPortal,
+  SheetOverlay,
   SheetContent, 
   SheetHeader, 
-  SheetTitle 
+  SheetTitle,
+  SheetFooter
 } from '@/components/ui/sheet';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZmxvcXZpYmVzIiwiYSI6ImNtNHUwZmx4bzAzZGsya3M5eWZldHBrOTcifQ.VZWx-Bu3wP1iNSyK7bYIUg';
@@ -35,14 +38,17 @@ export function VibeDensityMap({ open, onOpenChange, userLocation, clusters: pro
   if (!userLocation) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-96">
-          <SheetHeader>
-            <SheetTitle>Vibe Density Map</SheetTitle>
-          </SheetHeader>
-          <div className="h-full grid place-items-center text-muted-foreground">
-            🛰️ Unable to determine your location.
-          </div>
-        </SheetContent>
+        <SheetPortal>
+          <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
+          <SheetContent side="bottom" className="h-96">
+            <SheetHeader>
+              <SheetTitle>Vibe Density Map</SheetTitle>
+            </SheetHeader>
+            <div className="h-full grid place-items-center text-muted-foreground">
+              🛰️ Unable to determine your location.
+            </div>
+          </SheetContent>
+        </SheetPortal>
       </Sheet>
     );
   }
@@ -115,49 +121,59 @@ export function VibeDensityMap({ open, onOpenChange, userLocation, clusters: pro
   if (error) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-96">
-          <SheetHeader>
-            <SheetTitle>Vibe Density Map</SheetTitle>
-          </SheetHeader>
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <p className="text-muted-foreground">Unable to load clusters</p>
-              <p className="text-sm text-muted-foreground mt-2">{error}</p>
+        <SheetPortal>
+          <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
+          <SheetContent side="bottom" className="h-96">
+            <SheetHeader>
+              <SheetTitle>Vibe Density Map</SheetTitle>
+            </SheetHeader>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <p className="text-muted-foreground">Unable to load clusters</p>
+                <p className="text-sm text-muted-foreground mt-2">{error}</p>
+              </div>
             </div>
-          </div>
-        </SheetContent>
+          </SheetContent>
+        </SheetPortal>
       </Sheet>
     );
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-4xl p-0">
-        <div className="relative h-full flex flex-col">
+      <SheetPortal>
+        <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
+        
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] flex flex-col px-0 pb-0 pt-4"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-background">
-            <div className="flex items-center gap-3">
-              <SheetTitle className="text-lg font-semibold">
+          <SheetHeader className="px-6 mb-2">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-lg font-semibold flex-1">
                 Vibe Density Map
               </SheetTitle>
-              <Badge variant="secondary" className="animate-pulse">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
-                LIVE
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary" className="animate-pulse">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
+                  LIVE
+                </Badge>
+                <VibeFilterPanel 
+                  value={vibeFilter} 
+                  onChange={vibeFilterHelpers.replace}
+                />
+              </div>
             </div>
-            <VibeFilterPanel 
-              value={vibeFilter} 
-              onChange={vibeFilterHelpers.replace}
-            />
-          </div>
+          </SheetHeader>
 
           {/* Map Container */}
-          <div className="flex-1">
+          <div className="relative flex-1">
             {loading ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="grid h-full place-items-center text-sm text-muted-foreground">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                  <p className="text-muted-foreground">Loading clusters...</p>
+                  <p>Loading clusters...</p>
                 </div>
               </div>
             ) : (
@@ -176,44 +192,40 @@ export function VibeDensityMap({ open, onOpenChange, userLocation, clusters: pro
                     initialViewState={initialViewState as any}
                     controller
                     layers={layers}
-                    style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%' }}
+                    style={{ position: 'absolute', inset: '0' }}
                   />
                 </div>
               </MapErrorBoundary>
             )}
           </div>
 
-          {/* Footer Stats */}
-          <div className="border-t p-4 bg-background">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-4">
-                <div className="text-center">
-                  <div className="text-lg font-semibold">{totalPeople}</div>
-                  <div className="text-xs text-muted-foreground">people</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-semibold">{totalSpots}</div>
-                  <div className="text-xs text-muted-foreground">spots</div>
-                </div>
-              </div>
-              
+          {/* Footer */}
+          <SheetFooter className="px-6 py-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <span>{totalSpots} spots</span>
+              <span>•</span>
+              <span>{totalPeople} people</span>
+              {vibeFilterHelpers.isFiltered && (
+                <>
+                  <span>•</span>
+                  <span>{Object.keys(vibeFilter).filter(v => !vibeFilter[v as keyof typeof vibeFilter]).length} vibes filtered</span>
+                </>
+              )}
               {loading && (
-                <Badge variant="outline" className="animate-pulse">
+                <Badge variant="outline" className="animate-pulse ml-2">
                   Updating...
                 </Badge>
               )}
-              
               {error && (
-                <Badge variant="destructive">
-                  Error loading data
+                <Badge variant="destructive" className="ml-2">
+                  Error
                 </Badge>
               )}
             </div>
-            
-            <ClusterLegend clusters={filteredClusters} className="mt-3" />
-          </div>
-        </div>
-      </SheetContent>
+            <ClusterLegend clusters={filteredClusters} className="mt-2" />
+          </SheetFooter>
+        </SheetContent>
+      </SheetPortal>
     </Sheet>
   );
 }
