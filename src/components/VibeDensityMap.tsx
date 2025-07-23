@@ -61,8 +61,8 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
         {/* map -------------------------------------------------------- */}
         <div className="relative flex-1">
           <VibeDensityWebMap
-            visible={open}            {/* mounts / unmounts safely */}
-            onRegionChange={setBbox}   /* updates bbox for query    */
+            visible={open}
+            onRegionChange={setBbox}
           >
             <VibeDensityHeatOverlay
               vibes={clusters}
