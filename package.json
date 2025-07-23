@@ -108,7 +108,7 @@
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "lucide-react": "^0.462.0",
-    "mapbox-gl": "^3.13.0",
+    "mapbox-gl": "^2.15.0",
     "memoize-one": "^6.0.0",
     "nanoid": "^5.1.5",
     "next-themes": "^0.3.0",
