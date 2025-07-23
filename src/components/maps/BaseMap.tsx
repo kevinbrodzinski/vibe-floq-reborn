@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import { Platform } from 'react-native';
-
 import type { BaseMapProps, ViewportBounds } from 'packages/ui/src/maps/types';
 
 

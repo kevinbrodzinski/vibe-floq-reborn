@@ -54,6 +54,7 @@ export const VibeDensityMap: React.FC = () => {
       <VibeDensityWebMap visible={true} onRegionChange={onRegionChange}>
         <VibeDensityBackground />
 
+        {/* only render deck.gl when layers available */}
         {layers.length > 0 && (
           <DeckGL
             layers={layers}
