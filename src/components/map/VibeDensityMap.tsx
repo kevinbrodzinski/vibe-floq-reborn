@@ -177,8 +177,10 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   /* ──────────────────────────────  debugging  */
   useEffect(() => {
-    if (import.meta.env.DEV && deckRef.current) {
-      (window as any).deck = deckRef.current;
+    if (import.meta.env.DEV && deckRef.current && !('deck' in window)) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      (window as any).deck = deckRef.current.deck; // raw Deck instance
       console.info("🗺️ Deck instance exposed → window.deck");
     }
   }, []);
@@ -188,16 +190,15 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
     console.warn("[VibeDensityMap] no clusters passed - map will be empty");
   }
 
-  // Debug logging
-  if (import.meta.env.DEV) {
-    console.log(
-      "[VibeDensityMap] render:",
+  // Debug logging (gated for dev only)
+  if (import.meta.env.DEV && visibleClusters.length === 0 && clusters.length > 0) {
+    console.warn(
+      "[VibeDensityMap] No visible clusters despite having data:",
       {
-        visibleClusters: visibleClusters.length,
-        layers: layers.length,
         totalClusters: clusters.length,
-        userLocation: currentUserLocation,
-        filterState: filterHelpers.isFiltered ? "filtered" : "all"
+        filterState: filterHelpers.isFiltered ? "filtered" : "all",
+        activeSetSize: activeSet.size,
+        allVibesCount: ALL_VIBES.length
       }
     );
   }
