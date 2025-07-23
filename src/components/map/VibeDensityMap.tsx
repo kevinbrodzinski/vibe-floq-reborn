@@ -19,7 +19,7 @@ import {
   createDensityLayer,
   usePulseLayer,
 } from "./DeckLayers";
-import { useClusters } from "@/hooks/useClusters";
+import { useClusters, type Cluster } from "@/hooks/useClusters";
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
 import { MapErrorBoundary } from "./MapErrorBoundary";
 

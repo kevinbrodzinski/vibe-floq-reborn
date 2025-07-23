@@ -62,7 +62,6 @@ export const useClusters = (
       try {
         const { data, error } = await supabase.functions.invoke("clusters", {
           body: { bbox: box, precision },
-          signal: ac.signal, // ← wire abort
         });
 
         if (ac.signal.aborted) return; // stale
