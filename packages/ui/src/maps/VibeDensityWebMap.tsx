@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
+import { setMapInstance } from '@/lib/geo/project';
 
 interface Props {
   onRegionChange: (b: {
@@ -57,8 +58,9 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         
         mapRef.current = map;
 
-        // Set ready status AFTER style loads
+        // Register for projection and set ready status AFTER style loads
         map.once('load', () => {
+          setMapInstance(map);
           setTokenStatus('ready');
         });
 
@@ -90,6 +92,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
     // Cleanup – prevents _cancelResize crash
     return () => {
       if (mapRef.current) {
+        setMapInstance(null);
         mapRef.current.remove();
         mapRef.current = null;
       }
