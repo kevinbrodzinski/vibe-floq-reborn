@@ -110,7 +110,7 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
         setUser(session?.user ?? null);
         setLoading(false);
         setNetworkError(false);
-
+        
         // Handle session recovery after network reconnection
         if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
           // Invalidate queries to refresh data
@@ -126,6 +126,9 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
       if (error) {
         console.error('Initial session check error:', error);
         setNetworkError(true);
+        // Use navigation helper instead of window.location
+        navigation.replace('/');
+        return;
       }
       setSession(session);
       setUser(session?.user ?? null);

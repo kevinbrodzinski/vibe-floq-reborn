@@ -27,6 +27,7 @@ export function SafeAreaWrapper({
   const safeAreaClasses = isMobile ? `${topPadding} ${bottomPadding}` : '';
   const keyboardClasses = keyboardAware && isMobile ? 'keyboard-aware' : '';
   
+  // For web, just use a regular div - no platform-specific components needed
   return (
     <div className={`${safeAreaClasses} ${keyboardClasses} ${className}`}>
       {children}

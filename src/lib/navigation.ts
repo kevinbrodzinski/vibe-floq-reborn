@@ -18,5 +18,15 @@ export const navigation = {
       // TODO: Add React Navigation support for native
       console.warn('Navigation not implemented for native platform');
     }
+  },
+
+  back: () => {
+    if (typeof window !== 'undefined') {
+      // Web implementation
+      window.history.back();
+    } else {
+      // TODO: Add React Navigation support for native (goBack)
+      console.warn('Navigation not implemented for native platform');
+    }
   }
 };

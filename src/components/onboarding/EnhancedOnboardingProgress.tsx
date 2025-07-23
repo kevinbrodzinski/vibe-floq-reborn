@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EnhancedOnboardingProgressProps {
@@ -45,7 +45,7 @@ export function EnhancedOnboardingProgress({
                 whileTap={isClickable ? { scale: 0.95 } : {}}
               >
                 {isCompleted ? (
-                  <CheckCircle2 className="w-5 h-5" />
+                  <Check className="w-5 h-5" />
                 ) : (
                   <span className="text-sm font-medium">{stepNumber + 1}</span>
                 )}

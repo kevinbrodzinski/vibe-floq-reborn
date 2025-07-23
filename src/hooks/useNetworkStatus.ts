@@ -16,11 +16,11 @@ export function useNetworkStatus(): NetworkStatus {
   useEffect(() => {
     if (typeof navigator === 'undefined') return;
 
+    const connection = (navigator as any).connection || 
+                      (navigator as any).mozConnection || 
+                      (navigator as any).webkitConnection;
+
     const updateNetworkStatus = () => {
-      const connection = (navigator as any).connection || 
-                        (navigator as any).mozConnection || 
-                        (navigator as any).webkitConnection;
-      
       const isSlowConnection = connection ? 
         (connection.effectiveType === 'slow-2g' || 
          connection.effectiveType === '2g' ||
@@ -41,10 +41,6 @@ export function useNetworkStatus(): NetworkStatus {
     window.addEventListener('offline', updateNetworkStatus);
 
     // Listen for connection changes if available
-    const connection = (navigator as any).connection || 
-                      (navigator as any).mozConnection || 
-                      (navigator as any).webkitConnection;
-    
     if (connection && connection.addEventListener) {
       connection.addEventListener('change', updateNetworkStatus);
     }

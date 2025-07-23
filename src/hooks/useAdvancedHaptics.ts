@@ -17,16 +17,18 @@ export type HapticPattern =
 
 export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {}) {
   const lastHapticRef = useRef<number>(0)
+  const audioContextRef = useRef<AudioContext | null>(null)
   const throttleDelay = 100 // Minimum time between haptics
 
   const triggerHaptic = useCallback((pattern: HapticPattern, options?: { force?: boolean }) => {
     if (!enabled && !options?.force) return
     
-    // Check if we're on a mobile platform
+    // Check if we're on a mobile platform with touch support
     const isMobile = typeof window !== 'undefined' && 
       (window.navigator.userAgent.includes('Mobile') || 
        window.navigator.userAgent.includes('Android') ||
-       window.navigator.userAgent.includes('iPhone'));
+       window.navigator.userAgent.includes('iPhone')) &&
+      'ontouchstart' in window;
     
     if (!isMobile) {
       // No-op on non-mobile platforms
@@ -55,10 +57,18 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
       navigator.vibrate(patterns[pattern])
     }
 
-    // Web Audio API for subtle audio cues (if available)
+    // Web Audio API for subtle audio cues (cached singleton)
     if ('AudioContext' in window || 'webkitAudioContext' in window) {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        // Cache AudioContext to avoid hitting Safari's 6-context limit
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        }
+        
+        const audioContext = audioContextRef.current
+        if (audioContext.state === 'suspended') {
+          audioContext.resume()
+        }
         
         const frequencies = {
           light: 800,
