@@ -3,12 +3,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { setMapInstance } from '@/lib/geo/project';
-import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
 import { getMapboxToken } from '@/lib/geo/getMapboxToken';
-import { TimerId } from '@/types/Timer';
 
-// Configure the worker before any map initialization
-registerMapboxWorker();
+// 🔒 works with every 2.x release – falls back gracefully
+let MapboxWorker: any;
+try {
+  MapboxWorker = (await import('mapbox-gl/dist/mapbox-gl.worker.js?worker')).default;
+} catch {
+  MapboxWorker = undefined;                      // older mapbox-gl still OK
+}
+if (MapboxWorker) (mapboxgl as any).workerClass = MapboxWorker;
 
 interface Props {
   onRegionChange: (b: {
@@ -22,187 +26,115 @@ interface Props {
 export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const timeoutRef = useRef<TimerId>();
-  const [tokenStatus, setTokenStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [tokenSource, setTokenSource] = useState<string>('');
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [status, setStatus] = useState<'loading'|'ready'|'error'>('loading');
+  const [errMsg, setErrMsg] = useState<string>();
 
   useEffect(() => {
-    if (!container.current || mapRef.current) return;
+    if (!container.current || mapRef.current) return;           // guard
 
-    const initializeMap = async () => {
+    let destroyed = false;
+
+    (async () => {
       try {
-        console.log('[VibeDensityWebMap] Starting initialization...');
-        
-        // Validate container dimensions
-        const containerRect = container.current?.getBoundingClientRect();
-        console.log('[VibeDensityWebMap] Container dimensions:', {
-          width: containerRect?.width,
-          height: containerRect?.height,
-          visible: containerRect && containerRect.width > 0 && containerRect.height > 0
-        });
-
-        if (!containerRect || containerRect.width === 0 || containerRect.height === 0) {
-          throw new Error('Map container has no dimensions');
-        }
-
-        // Set loading timeout
-        timeoutRef.current = setTimeout(() => {
-          console.error('[VibeDensityWebMap] Map initialization timeout');
-          setErrorMessage('Map loading timeout - please try again');
-          setTokenStatus('error');
-        }, 15000); // 15 second timeout
-
-        const { token, source } = await getMapboxToken();
+        /* ① ─ token ----------------------------------------------------------------- */
+        const { token, source } = await getMapboxToken();       // ← your shared util
         mapboxgl.accessToken = token;
-        setTokenSource(source);
-        
-        console.log('[VibeDensityWebMap] Token acquired from:', source);
-        console.log('[VibeDensityWebMap] Creating map instance...');
-        
+        import.meta.env.DEV && console.log('[VDWebMap] token from', source);
+
+        /* ② ─ map ------------------------------------------------------------------- */
         const map = new mapboxgl.Map({
-          container: container.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
-          center: [-118.24, 34.05],
-          zoom: 11,
-          preserveDrawingBuffer: true,
+          container : container.current!,
+          style     : 'mapbox://styles/mapbox/dark-v11',
+          center    : [-118.24, 34.05],
+          zoom      : 11,
           attributionControl: false
         });
-        
         mapRef.current = map;
-        console.log('[VibeDensityWebMap] Map instance created');
 
-        // Add error handler
-        map.on('error', (e) => {
-          console.error('[VibeDensityWebMap] Map error:', e.error);
-          clearTimeout(timeoutRef.current);
-          setErrorMessage(`Map error: ${e.error?.message || 'Unknown error'}`);
-          setTokenStatus('error');
+        /* ③ ─ dev diagnostics ------------------------------------------------------- */
+        map.on('error', e => {
+          console.error('[VDWebMap] mapbox-error ➜', e.error?.message || e);
+          if (!destroyed) { setStatus('error'); setErrMsg(e.error?.message); }
         });
+        map.on('styleimagemissing', e =>
+          console.warn('[VDWebMap] missing sprite', e.id)
+        );
 
-        // Handler for moveend events
-        const handleMoveEnd = () => {
-          const bb = map.getBounds();
-          console.log('[VibeDensityWebMap] Region changed:', {
-            south: bb.getSouth(),
-            west: bb.getWest(),
-            north: bb.getNorth(),
-            east: bb.getEast(),
-            zoom: map.getZoom()
-          });
+        /* ④ ─ size sanity check ------------------------------------------------------ */
+        const checkSize = () => {
+          const h = container.current?.offsetHeight ?? 0;
+          if (h === 0) {
+            console.warn('[VDWebMap] container height 0 - map cannot render');
+            if (!destroyed) setErrMsg('Map container has zero height');
+          }
+        };
+        checkSize();
+
+        /* ⑤ ─ move handler ---------------------------------------------------------- */
+        const fireMove = () => {
+          const b = map.getBounds();
           onRegionChange({
-            minLat: bb.getSouth(), 
-            minLng: bb.getWest(),
-            maxLat: bb.getNorth(), 
-            maxLng: bb.getEast(),
-            zoom: map.getZoom(),
+            minLat: b.getSouth(), minLng: b.getWest(),
+            maxLat: b.getNorth(), maxLng: b.getEast(),
+            zoom  : map.getZoom()
           });
         };
 
-        // Style load handler with timeout protection
-        const styleLoadPromise = new Promise<void>((resolve, reject) => {
-          const styleTimeout = setTimeout(() => {
-            reject(new Error('Style loading timeout'));
-          }, 10000);
-
-          map.once('styledata', () => {
-            console.log('[VibeDensityWebMap] Style loaded');
-            clearTimeout(styleTimeout);
-            resolve();
-          });
+        /* ⑥ ─ load ------------------------------------------------------------------ */
+        map.once('load', () => {
+          if (destroyed) return;
+          setMapInstance(map);
+          fireMove();
+          map.on('moveend', fireMove);
+          setStatus('ready');
         });
 
-        // Wait for style to load
-        await styleLoadPromise;
-        
-        console.log('[VibeDensityWebMap] Map fully loaded');
-        
-        // Clear timeout and set ready state
-        clearTimeout(timeoutRef.current);
-        setMapInstance(map);
-        setTokenStatus('ready');
-        
-        // Subscribe to moveend events
-        map.on('moveend', handleMoveEnd);
-        
-        // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-        
-        // Fire initial callback
-        handleMoveEnd();
-
-      } catch (error) {
-        console.error('[VibeDensityWebMap] Initialization failed:', error);
-        clearTimeout(timeoutRef.current);
-        setErrorMessage(error instanceof Error ? error.message : 'Unknown initialization error');
-        setTokenStatus('error');
+        /* ⑦ ─ timeout fallback (15 s) ---------------------------------------------- */
+        setTimeout(() => {
+          if (destroyed) return;
+          if (status === 'loading') {
+            setStatus('error');
+            setErrMsg('Map timed-out – check token or network');
+          }
+        }, 15_000);
+      } catch (e: any) {
+        console.error('[VDWebMap] init failed', e);
+        if (!destroyed) { setStatus('error'); setErrMsg(e.message); }
       }
-    };
+    })();
 
-    // Small delay to ensure container is rendered
-    const initTimeout = setTimeout(initializeMap, 100);
-
+    /* ⑧ ─ cleanup ------------------------------------------------------------------ */
     return () => {
-      clearTimeout(initTimeout);
-      clearTimeout(timeoutRef.current);
-      
+      destroyed = true;
       if (mapRef.current) {
-        try {
-          const map = mapRef.current;
-          console.log('[VibeDensityWebMap] Cleaning up map instance');
-          
-          // Remove all event listeners
-          map.off('moveend', () => {});
-          map.off('error', () => {});
-          
-          setMapInstance(null);
-          map.remove();
-          mapRef.current = null;
-          setTokenStatus('loading');
-          setErrorMessage('');
-        } catch (error) {
-          console.warn('[VibeDensityWebMap] Cleanup error (safe to ignore):', error);
-        }
+        mapRef.current.remove();
+        mapRef.current = null;
       }
     };
-  }, []); // No dependencies - runs once
+  }, []);   // ← still runs once
 
-  if (tokenStatus === 'loading') {
+  if (status === 'loading') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-sm text-muted-foreground">Loading vibe density map...</p>
-          <p className="text-xs text-muted-foreground mt-1">Initializing interactive map</p>
+      <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
+        <div className="flex flex-col items-center gap-2">
+          <span className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+          <span className="text-sm text-muted-foreground">Loading vibe map…</span>
         </div>
       </div>
     );
   }
 
-  if (tokenStatus === 'error') {
+  if (status === 'error') {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background">
-        <div className="text-center max-w-sm px-4">
-          <p className="text-sm text-destructive mb-2">Failed to load vibe density map</p>
-          {errorMessage && (
-            <p className="text-xs text-muted-foreground mb-3">{errorMessage}</p>
-          )}
-          <button 
-            onClick={() => {
-              console.log('[VibeDensityWebMap] Retrying initialization...');
-              setTokenStatus('loading');
-              setErrorMessage('');
-              // Force re-mount by clearing and re-running effect
-              if (mapRef.current) {
-                mapRef.current.remove();
-                mapRef.current = null;
-              }
-              // Trigger re-initialization
-              window.location.reload();
-            }} 
-            className="text-xs text-muted-foreground hover:text-foreground underline"
+      <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <span className="text-sm text-destructive">Map error</span>
+          {errMsg && <span className="text-xs text-muted-foreground">{errMsg}</span>}
+          <button
+            className="text-xs underline decoration-dotted mt-1"
+            onClick={() => window.location.reload()}
           >
-            Try again
+            try again
           </button>
         </div>
       </div>
@@ -221,9 +153,8 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
       {/* Debug info in development */}
       {import.meta.env.DEV && (
         <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm border rounded px-2 py-1 text-xs font-mono">
-          <div>Density Token: {tokenSource}</div>
-          <div>Status: {tokenStatus}</div>
-          {errorMessage && <div className="text-destructive">Error: {errorMessage}</div>}
+          <div>Status: {status}</div>
+          {errMsg && <div className="text-destructive">Error: {errMsg}</div>}
         </div>
       )}
     </div>
