@@ -1,43 +1,51 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Vibe, ALL_VIBES } from '@/hooks/useVibeFilter';
-import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { Vibe, ALL_VIBES, VibeFilterState, VibeFilterHelpers } from '@/hooks/useVibeFilter';
 
-export const VibeFilterBar: React.FC = () => {
-  const [state, helpers] = useVibeFilter();
+interface Props {
+  state: VibeFilterState;
+  helpers: VibeFilterHelpers;
+}
 
+export const VibeFilterBar: React.FC<Props> = ({ state, helpers }) => {
   return (
-    <motion.div
-      initial={{ y: -10, opacity: 0 }}
-      animate={{ y: 0,  opacity: 1 }}
-      exit={{   y: -10, opacity: 0 }}
-      transition={{ duration: .25 }}
-      className="absolute top-0 left-1/2 -translate-x-1/2 z-[5]
-                 flex gap-2 bg-background/90 backdrop-blur-sm
-                 border border-border/40 rounded-full px-3 py-2"
-    >
-      {ALL_VIBES.map(v => (
-        <button
-          key={v}
-          onClick={() => helpers.toggle(v)}
-          className={`text-xs uppercase tracking-wide px-2 py-1 rounded-full
-                      transition-colors
-                      ${state[v] ? 'bg-primary text-background'
-                                  : 'bg-muted text-muted-foreground'}`}
-        >
-          {v}
-        </button>
-      ))}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2">
+        {ALL_VIBES.map(v => (
+          <button
+            key={v}
+            onClick={() => helpers.toggle(v)}
+            className={`text-sm capitalize px-3 py-2 rounded-lg border transition-all
+                        ${state[v] 
+                          ? 'bg-primary text-primary-foreground border-primary' 
+                          : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'}`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
 
-      {/* quick-clear */}
-      {helpers.isFiltered && (
+      {/* controls */}
+      <div className="flex gap-2 pt-2">
         <button
           onClick={helpers.reset}
-          className="ml-1 text-xs text-muted-foreground hover:text-foreground"
+          className="flex-1 text-sm text-muted-foreground hover:text-foreground 
+                     py-2 px-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
         >
-          reset
+          Reset all
         </button>
-      )}
-    </motion.div>
+        <button
+          onClick={() => helpers.setAll(false)}
+          className="flex-1 text-sm text-muted-foreground hover:text-foreground 
+                     py-2 px-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+        >
+          Clear all
+        </button>
+      </div>
+
+      {/* active count */}
+      <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/30">
+        {helpers.activeSet.size} of {ALL_VIBES.length} vibes active
+      </div>
+    </div>
   );
 };
