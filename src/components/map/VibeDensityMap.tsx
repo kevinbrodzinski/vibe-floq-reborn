@@ -173,12 +173,22 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
     }
   }, [hasFix, centerOnUser]);
 
+  /* ──────────────────────────────  render  */
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      {/* Map content would go here */}
+    <div className="fixed inset-0 z-50">
+      <DeckGL
+        viewState={viewStateRef.current}
+        controller={true}
+        layers={layers}
+        onViewStateChange={({ viewState }) => {
+          // keep ref in sync without triggering React re-render
+          Object.assign(viewStateRef.current, viewState);
+        }}
+        style={{ position: "absolute", top: "0", left: "0", right: "0", bottom: "0" }}
+      />
       
       {/* Footer with accessibility improvements */}
-      <div className="fixed bottom-4 left-4 right-4">
+      <div className="fixed bottom-4 left-4 right-4 pointer-events-none">
         <div 
           className="bg-card/80 backdrop-blur-xl rounded-lg px-4 py-2 text-sm text-muted-foreground"
           role="status"
@@ -194,7 +204,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
       {onRequestClose && (
         <button 
           onClick={onRequestClose}
-          className="fixed top-4 right-4 p-2 bg-card/80 backdrop-blur-xl rounded-full"
+          className="fixed top-4 right-4 p-2 bg-card/80 backdrop-blur-xl rounded-full pointer-events-auto"
         >
           ✕
         </button>
