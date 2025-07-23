@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -24,6 +25,15 @@ const getVibeDensityMapboxToken = async (): Promise<{ token: string; source: str
     console.warn('[VibeDensityWebMap] Edge function failed:', error);
   } catch (e) {
     console.warn('[VibeDensityWebMap] Edge function unavailable:', e);
+  }
+
+  // Second try: Environment variable MAPBOX_ACCESS_TOKEN
+  const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 
+                   (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : null);
+  
+  if (envToken) {
+    console.log('[VibeDensityWebMap] Using MAPBOX_ACCESS_TOKEN from environment');
+    return { token: envToken, source: 'environment' };
   }
 
   // Final fallback: Public token
@@ -58,12 +68,10 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         
         mapRef.current = map;
 
-        // Set ready status immediately after map creation
-        setTokenStatus('ready');
-
         // Register for projection AFTER style loads
         map.once('load', () => {
           setMapInstance(map);
+          setTokenStatus('ready');
           
           // ➊ Fire the callback immediately after style loads
           const b = map.getBounds();

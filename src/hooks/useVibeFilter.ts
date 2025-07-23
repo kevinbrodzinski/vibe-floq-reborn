@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 
 /** Must match DB enum values and hue-map keys */
@@ -55,6 +56,11 @@ export const useVibeFilter = (
     ...initial,
   });
 
+  // Memoize the activeSet to prevent recreation on every render
+  const activeSet = useMemo(() => {
+    return new Set(ALL_VIBES.filter((v) => state[v]));
+  }, [state]);
+
   const helpers = useMemo(() => {
     const toggle = (v: Vibe) =>
       setState((p) => ({ ...p, [v]: !p[v] }));
@@ -75,14 +81,10 @@ export const useVibeFilter = (
         ) as VibeFilterState,
       );
 
-    const activeSet = new Set(
-      ALL_VIBES.filter((v) => state[v]),
-    );
-
     const isFiltered = activeSet.size !== ALL_VIBES.length;
 
     return { toggle, reset, setAll, replace, only, activeSet, isFiltered };
-  }, [state]);
+  }, [state, activeSet]);
 
   return [state, helpers];
 };

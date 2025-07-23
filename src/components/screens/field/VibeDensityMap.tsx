@@ -33,9 +33,9 @@ export const VibeDensityMap: React.FC = () => {
 
   const { clusters, loading, error, isRealTimeConnected } = useClusters(bbox, 6);
 
-  // Filter clusters based on active vibes
+  // Filter clusters based on active vibes - now using stable activeSet
   const filteredClusters = useMemo(() => {
-    if (!vibeFilterHelpers.activeSet) return clusters;
+    if (!vibeFilterHelpers.activeSet || vibeFilterHelpers.activeSet.size === 0) return clusters;
     
     return clusters.filter(cluster => {
       if (!cluster.vibe_counts) return false;
@@ -52,7 +52,7 @@ export const VibeDensityMap: React.FC = () => {
     console.log('Selected cluster:', cluster);
   };
 
-  // Create deck.gl layers
+  // Create deck.gl layers - now using stable activeSet
   const layers = useMemo<any[]>(() => {
     const activeVibes = vibeFilterHelpers.activeSet ? 
       Array.from(vibeFilterHelpers.activeSet) : [];
@@ -102,16 +102,12 @@ export const VibeDensityMap: React.FC = () => {
           clustersCount={filteredClusters.length}
         />
         
-        {/* Debug Info Overlay */}
+        {/* Simplified Debug Info Overlay - only shows critical info */}
         {import.meta.env.DEV && (
           <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm border rounded-lg p-3 text-xs font-mono">
-            <div>Token: {loading ? 'LOADING' : 'YES'}</div>
-            <div>Layers: {layers.length}</div>
-            <div>All Clusters: {clusters.length}</div>
-            <div>Filtered Clusters: {filteredClusters.length}</div>
+            <div>Clusters: {filteredClusters.length}/{clusters.length}</div>
             <div>Real-time: {isRealTimeConnected ? 'ON' : 'OFF'}</div>
-            <div>Loading: {loading ? 'YES' : 'NO'}</div>
-            <div>BBox: {bbox ? `[${bbox.map(n => n.toFixed(2)).join(',')}]` : 'NULL'}</div>
+            {loading && <div>Loading...</div>}
             {error && <div className="text-destructive">Error: {error}</div>}
           </div>
         )}
