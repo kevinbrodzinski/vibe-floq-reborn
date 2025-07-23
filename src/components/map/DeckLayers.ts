@@ -47,14 +47,25 @@ export const usePulseLayer = (
 
   if (!clusters.length) return null;
 
+  const maxTotal = Math.max(...clusters.map(c => c.total));
+
   return new ScatterplotLayer({
     id: "vibe-pulse",
     data: clusters,
     getPosition: (d) => d.centroid.coordinates,
     getRadius: (d) =>
-      30 + Math.sin(time * 2 * Math.PI) * 20 * (d.total / 20),
+      30 + Math.sin(time * 2 * Math.PI) * 20 * (maxTotal > 0 ? d.total / maxTotal : 0),
     radiusUnits: "meters",
-    getFillColor: (d) => getClusterColor(d.total / 20, d.vibe_counts, prefs),
+    getFillColor: (d) => {
+      try {
+        const normalizedScore = maxTotal > 0 ? d.total / maxTotal : 0;
+        return getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {});
+      } catch (error) {
+        console.warn('Pulse color calculation failed, using fallback:', error);
+        // Fallback to semi-transparent blue
+        return [70, 130, 180, 77]; // 30% opacity
+      }
+    },
     opacity: 0.3,
     pickable: false,
     updateTriggers: { getRadius: time, data: clusters },
