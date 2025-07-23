@@ -3,7 +3,7 @@ import React from 'react';
 
 export const VibeDensityBackground: React.FC = () => {
   return (
-    <div className="absolute inset-0 opacity-20 pointer-events-none">
+    <div className="absolute inset-0 opacity-10 pointer-events-none z-10">
       {/* Subtle grid pattern */}
       <div 
         className="absolute inset-0"

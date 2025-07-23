@@ -39,17 +39,19 @@ export const VibeDensityEmpty: React.FC<VibeDensityEmptyProps> = ({
 
   if (clustersCount === 0) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-        <EmptyState
-          title="No Vibes Detected"
-          description="This area is quiet right now. Try zooming out or moving to a busier location to see live vibes."
-          variant="modal"
-        >
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-            <MapPin className="h-3 w-3" />
-            <span>Pan around the map to explore different areas</span>
-          </div>
-        </EmptyState>
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none">
+        <div className="bg-background/90 backdrop-blur-sm border rounded-lg p-4 text-center max-w-sm">
+          <EmptyState
+            title="No vibes detected here yet"
+            description="Pan around the map to explore different areas"
+            variant="inline"
+          >
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+              <MapPin className="h-3 w-3" />
+              <span>Zoom out to see more activity</span>
+            </div>
+          </EmptyState>
+        </div>
       </div>
     );
   }

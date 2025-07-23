@@ -83,17 +83,19 @@ export const VibeDensityMap: React.FC = () => {
         {/* Background visualization - always visible */}
         <VibeDensityBackground />
         
-        {/* Deck.GL Layer */}
-        <DeckGL
-          initialViewState={initialViewState}
-          layers={layers}
-          getTooltip={({ object }) => 
-            object && {
-              html: renderClusterTooltip(object),
-              style: { pointerEvents: 'none' }
+        {/* Deck.GL Layer - only render if we have data to avoid covering map */}
+        {layers.length > 0 && (
+          <DeckGL
+            initialViewState={initialViewState}
+            layers={layers}
+            getTooltip={({ object }) => 
+              object && {
+                html: renderClusterTooltip(object),
+                style: { pointerEvents: 'none' }
+              }
             }
-          }
-        />
+          />
+        )}
         
         {/* Empty/Loading States */}
         <VibeDensityEmpty 
