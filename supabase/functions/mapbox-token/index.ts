@@ -28,7 +28,11 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ token: mapboxToken }), 
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'max-age=86400'
+        } 
       }
     )
   } catch (error) {

@@ -150,7 +150,7 @@ export function VibeDensityMap({
       >
         <SheetClose
           className="absolute right-4 top-4 z-20 rounded-full p-2 hover:bg-accent/20 transition-colors"
-          aria-label="Close"
+          aria-label="Close map"
         >
           ✕
           <span className="sr-only">Close map</span>
@@ -198,7 +198,7 @@ export function VibeDensityMap({
           )}
 
           {!loading && layers.length === 0 && mapboxToken && (
-            <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
+            <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground pointer-events-none">
               No vibes detected here yet
             </div>
           )}
