@@ -1,12 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
+import { usePreloadOnboarding } from '@/hooks/usePreloadOnboarding';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { SafeAreaWrapper } from '@/components/mobile/SafeAreaWrapper';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { OnboardingLogoutButton } from './OnboardingLogoutButton';
-import { OnboardingProgress } from './OnboardingProgress';
+import { EnhancedOnboardingProgress } from './EnhancedOnboardingProgress';
 
 // Import all onboarding steps
 import {
@@ -43,7 +46,11 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
     trackOnboardingCompleted,
   } = useOnboardingAnalytics();
 
+  const { isOnline, isSlowConnection } = useNetworkStatus();
   const [hasStarted, setHasStarted] = useState(false);
+  
+  // Preload data for better performance
+  usePreloadOnboarding();
 
   // Track onboarding start
   useEffect(() => {
@@ -56,14 +63,27 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   // Don't render until data is loaded
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Loading your onboarding...
+      <SafeAreaWrapper className="min-h-screen flex items-center justify-center bg-background">
+        <LoadingSpinner 
+          size="lg"
+          message={isSlowConnection ? "Loading (slow connection)..." : "Loading your onboarding..."}
+        />
+      </SafeAreaWrapper>
+    );
+  }
+
+  // Show network status warning
+  if (!isOnline) {
+    return (
+      <SafeAreaWrapper className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm">
+          <div className="text-4xl">📡</div>
+          <h2 className="text-lg font-semibold">No Internet Connection</h2>
+          <p className="text-sm text-muted-foreground">
+            Please check your connection and try again.
           </p>
         </div>
-      </div>
+      </SafeAreaWrapper>
     );
   }
 
@@ -155,7 +175,10 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 safe-area-inset">
+    <SafeAreaWrapper 
+      className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5"
+      keyboardAware={true}
+    >
       {/* Header with progress and logout */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50 pt-safe-top">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -201,16 +224,15 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
         </div>
       </div>
 
-      {/* Step indicator dots (except on completion step) */}
+      {/* Enhanced step indicator (except on completion step) */}
       {state.currentStep < TOTAL_STEPS - 1 && (
-        <OnboardingProgress
+        <EnhancedOnboardingProgress
           currentStep={state.currentStep}
           totalSteps={TOTAL_STEPS - 1}
+          onStepClick={goToStep}
+          completedSteps={state.completedSteps}
         />
       )}
-      
-      {/* Bottom safe area padding */}
-      <div className="pb-safe-bottom" />
-    </div>
+    </SafeAreaWrapper>
   );
 }

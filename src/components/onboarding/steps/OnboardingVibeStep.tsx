@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { MobileOptimizedButton } from '@/components/mobile/MobileOptimizedButton';
 
 const VIBE_OPTIONS = [
   { id: 'chill', label: 'Chill', emoji: '😌', description: 'Relaxed and easy-going' },
@@ -55,14 +55,23 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
         ))}
       </div>
       
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={onBack}>
+      <div className="flex justify-between pt-4 gap-3">
+        <MobileOptimizedButton 
+          variant="ghost" 
+          onClick={onBack}
+          hapticType="light"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
-        </Button>
-        <Button onClick={onNext} disabled={!selectedVibe}>
+        </MobileOptimizedButton>
+        <MobileOptimizedButton 
+          onClick={onNext} 
+          disabled={!selectedVibe}
+          hapticType="medium"
+          className="flex-1"
+        >
           Continue
-        </Button>
+        </MobileOptimizedButton>
       </div>
     </motion.div>
   );
