@@ -3,7 +3,6 @@
 // ─────────────────────────────────────────────────────────────
 import { ScatterplotLayer } from "@deck.gl/layers";
 import { getClusterColor } from "@/utils/color";
-import { useDeckTime } from "./useDeckTime";
 import type { Cluster } from "@/hooks/useClusters";
 
 /* Density layer ------------------------------------------------------ */
@@ -44,7 +43,9 @@ export const usePulseLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
 ) => {
-  const timeRef = useDeckTime();
+  // lightweight deck.gl animation helper (no React re-render)
+  const start = Date.now();
+  const getT = () => ((Date.now() - start) % 2000) / 2000; // 0-1 pulse
 
   if (!clusters.length) return null;
 
@@ -55,7 +56,7 @@ export const usePulseLayer = (
     data: clusters,
     getPosition: (d) => d.centroid.coordinates,
     getRadius: (d) => {
-      const t = (timeRef.current % 2000) / 2000;      // 0→1 every 2 s
+      const t = getT();
       return 30 + Math.sin(t * 2 * Math.PI) * 20 * (maxTotal > 0 ? d.total / maxTotal : 0);
     },
     radiusUnits: "meters",

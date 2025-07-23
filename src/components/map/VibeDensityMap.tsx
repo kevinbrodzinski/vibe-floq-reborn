@@ -11,7 +11,7 @@ import { FlyToInterpolator } from "@deck.gl/core";
 import { easeCubic } from "d3-ease";
 import { LngLat } from "mapbox-gl";
 import { createDensityLayer, usePulseLayer } from "./DeckLayers";
-import { useVibeFilter } from "@/components/vibe-filter/VibeFilterProvider";
+import { useVibeFilter } from "@/hooks/useVibeFilter";
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useMapViewport } from "@/hooks/useMapViewport";
@@ -24,20 +24,20 @@ import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import { useFloqActivity } from "@/hooks/useFloqActivity";
 import { useToast } from "@/hooks/use-toast";
-import { ALL_VIBES } from "@/lib/constants";
-import { DEFAULT_PREFS } from "@/utils/vibePrefs";
+import { ALL_VIBES, DEFAULT_PREFS } from "@/utils/vibePrefs";
 import type { Cluster } from "@/hooks/useClusters";
-import type { ViewState } from "@deck.gl/core/lib/deck";
 
 interface VibeDensityMapProps {
+  onRequestClose?: () => void;
   userLocation?: { lat: number; lng: number } | null;
-  clusters: Cluster[];
+  clusters?: Cluster[];
   className?: string;
 }
 
 export const VibeDensityMap: FC<VibeDensityMapProps> = ({
+  onRequestClose,
   userLocation,
-  clusters,
+  clusters = [],
   className = "",
 }: VibeDensityMapProps) => {
   const fallbackUserLocation = useOptimizedGeolocation();
@@ -62,7 +62,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
   const { isDebugPanelOpen } = useEnvironmentDebug();
 
   /* ──────────────────────────────  positioning  */
-  const viewStateRef = useRef<ViewState>({
+  const viewStateRef = useRef({
     latitude: 34.0205,
     longitude: -118.4818,
     zoom: 12,
@@ -74,9 +74,8 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
     transitionInterpolator: null,
   });
 
-  const { viewport, onViewportChange } = useMapViewport({
-    initialViewState: viewStateRef.current,
-  });
+  // Simple viewport handling
+  const viewport = [viewStateRef.current.longitude, viewStateRef.current.latitude] as [number, number];
 
   /* ──────────────────────────────  prefs / filter  */
   const [filterState, filterHelpers] = useVibeFilter();
@@ -111,9 +110,9 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   const visibleClusters = useMemo(
     () => (filterHelpers.isFiltered 
-      ? clusters.filter(c => activeSet.has(c.vibe_counts ? Object.keys(c.vibe_counts)[0] : ''))
+      ? clusters.filter(c => activeSet.has(c.vibe_counts ? Object.keys(c.vibe_counts)[0] as any : ''))
       : clusters),
-    [clusters, activeSet],
+    [clusters, activeSet, filterHelpers.isFiltered],
   );
 
   // NEW – call hook directly (it no longer causes React renders)
@@ -146,7 +145,6 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
   }, [hasFix, currentUserLocation]);
 
   /* ──────────────────────────────  effects  */
-  const { socialHaptics } = useUserSettings();
   const { count: crossedPathsCount } = useCrossedPathsToday();
   useFaviconBadge(crossedPathsCount);
 
@@ -165,10 +163,10 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   // Auto-center on user when location known
   useEffect(() => {
-    if (settings.autoCenter && hasFix) {
+    if (hasFix) {
       centerOnUser();
     }
-  }, [settings.autoCenter, hasFix, centerOnUser]);
+  }, [hasFix, centerOnUser]);
 
   return null;
 };

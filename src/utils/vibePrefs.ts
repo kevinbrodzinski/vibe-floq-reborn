@@ -1,15 +1,13 @@
 // Single source of truth for vibe preferences
-export const DEFAULT_PREFS = {
-  chill: 0,
-  curious: 0,
-  down: 0,
-  flowing: 0,
-  hype: 0,
-  open: 0,
-  romantic: 0,
-  social: 0,
-  solo: 0,
-  weird: 0,
-} as const;
+export const ALL_VIBES = [
+  "chill","curious","down","flowing",
+  "hype","open","romantic","social","solo","weird",
+] as const;
+
+export type Vibe = typeof ALL_VIBES[number];
+
+export const DEFAULT_PREFS: Record<Vibe, number> = Object.fromEntries(
+  ALL_VIBES.map(v => [v, 0]),
+) as any;
 
 export type VibePrefs = typeof DEFAULT_PREFS;
