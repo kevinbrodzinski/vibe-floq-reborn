@@ -1,97 +1,79 @@
-import React, { useMemo } from 'react';
-import DeckGL from '@deck.gl/react';
-import { renderClusterTooltip } from '@/components/screens/field/tooltipHelpers';
-import { createDensityLayer } from '@/components/map/DeckLayers';
+import React, { useMemo, useState, useEffect } from 'react';
+import DeckGL                    from '@deck.gl/react';
+import type { MapViewState }     from '@deck.gl/core';
 
-import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
+import { VibeDensityWebMap }     from '@/components/maps/VibeDensityWebMap';
 import { VibeDensityBackground } from '@/components/map/VibeDensityBackground';
-import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
-import { ClusterLegend } from '@/components/map/ClusterLegend';
-import { useClusters } from '@/hooks/useClusters';
-import { useVibeFilter } from '@/hooks/useVibeFilter';
-import { useFieldViewport } from '@/hooks/useFieldViewport';
+import { VibeDensityEmpty }      from '@/components/map/VibeDensityEmpty';
+import { ClusterLegend }         from '@/components/map/ClusterLegend';
 
-import type { MapViewState } from '@deck.gl/core';
-import type { Cluster } from '@/hooks/useClusters';
+import { useClusters }           from '@/hooks/useClusters';
+import { useFieldViewport }      from '@/hooks/useFieldViewport';
+import { useVibeFilter }         from '@/hooks/useVibeFilter';
+import { createDensityLayer }    from '@/components/map/DeckLayers';
+import { renderClusterTooltip }  from '@/components/screens/field/tooltipHelpers';   // ✅ path fixed
 
-type VibeWeights = Record<string, number>;
+import type { Cluster }          from '@/hooks/useClusters';
+import type { ViewportBounds }   from '@/types';   // adjust if your alias differs
 
 export const VibeDensityMap: React.FC = () => {
   const { bounds, onRegionChange } = useFieldViewport();
-  const { activeSet } = useVibeFilter();
+  const [{ activeSet }, helpers]   = useVibeFilter();     // ✅ destructure state not helpers
+  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
 
-  /* ------------------------------------------------------------------ */
-  /* cluster query ----------------------------------------------------- */
-  const bbox = useMemo<[number, number, number, number]>(() => {
+  /* bbox ------------------------------------------------------------ */
+  const bbox = useMemo<[number,number,number,number]>(() => {
     if (!bounds) return [-118.5, 33.9, -118.0, 34.1];
     return [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat];
   }, [bounds]);
 
+  /* clusters -------------------------------------------------------- */
   const { clusters, loading, error, realtime } = useClusters(bbox, 6);
 
-  /* ------------------------------------------------------------------ */
-  /* filtering --------------------------------------------------------- */
   const filtered = useMemo(() => {
-    if (!activeSet || activeSet.size === 0) return clusters;
-    return clusters.filter((c) =>
-      Object.keys(c.vibe_counts ?? {}).some((v) => activeSet.has(v)),
+    if (!activeSet?.size) return clusters;
+    return clusters.filter(c =>
+      Object.keys(c.vibe_counts || {}).some(v => activeSet.has(v))
     );
   }, [clusters, activeSet]);
 
-  /* ------------------------------------------------------------------ */
-  /* deck.gl layer ----------------------------------------------------- */
+  /* deck.gl layer --------------------------------------------------- */
   const layers = useMemo(() => {
-    const weights: VibeWeights = activeSet
-      ? Object.fromEntries(Array.from(activeSet).map((v) => [v, 1]))
-      : {};
-    const l = createDensityLayer(filtered, weights, () => {});
-    return l ? [l] : [];
+    if (!filtered.length) return [];
+    const weights = Object.fromEntries(
+      (activeSet ? [...activeSet] : []).map(v => [v, 1])
+    );
+    return [createDensityLayer(filtered, weights, setSelectedCluster)];
   }, [filtered, activeSet]);
 
-  const initialViewState: Partial<MapViewState> = {
-    latitude: 34.05,
-    longitude: -118.24,
-    zoom: 11,
-  };
+  const init: Partial<MapViewState> = { latitude: 34.05, longitude: -118.24, zoom: 11 };
 
-  /* ------------------------------------------------------------------ */
-  /* render ------------------------------------------------------------ */
+  /* ---------------------------------------------------------------- */
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0">
       <VibeDensityWebMap visible onRegionChange={onRegionChange}>
         <VibeDensityBackground />
 
         {layers.length > 0 && (
           <DeckGL
             layers={layers}
-            initialViewState={initialViewState}
+            initialViewState={init}
             getTooltip={({ object }) =>
-              object && {
-                html: renderClusterTooltip(object),
-                style: { pointerEvents: 'none' },
-              }
+              object && { html: renderClusterTooltip(object), style: { pointerEvents: 'none' } }
             }
           />
         )}
 
-        <VibeDensityEmpty
-          isLoading={loading}
-          error={error}
-          clustersCount={filtered.length}
-        />
+        <VibeDensityEmpty isLoading={loading} error={error} clustersCount={filtered.length} />
 
         {import.meta.env.DEV && (
-          <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm border rounded-lg p-3 text-xs font-mono">
-            <div>Clusters: {filtered.length}</div>
-            <div>Real-time: {realtime ? 'ON' : 'OFF'}</div>
+          <div className="absolute top-3 left-3 text-[10px] font-mono bg-background/80 backdrop-blur px-2 py-1 rounded">
+            {filtered.length}/{clusters.length} clusters • realtime {realtime ? '🟢' : '⚪'}
           </div>
         )}
 
         {filtered.length > 0 && (
-          <ClusterLegend
-            clusters={filtered}
-            className="absolute bottom-4 right-4"
-          />
+          <ClusterLegend clusters={filtered} className="absolute bottom-4 right-4" />
         )}
       </VibeDensityWebMap>
     </div>
