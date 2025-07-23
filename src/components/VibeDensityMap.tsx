@@ -3,6 +3,7 @@
 /* ------------------------------------------------------------------ */
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import DeckGL from '@deck.gl/react';
 import mapboxgl from 'mapbox-gl';
 import {
   Sheet,
@@ -16,6 +17,7 @@ import {
 import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
 import { VibeDensityHeatOverlay } from '@/components/maps/VibeDensityHeatOverlay';
 import { VibeFilterBar } from '@/components/map/VibeFilterBar';
+import { myLocationLayer } from '@/components/map/layers/MyLocationLayer';
 
 import { useClusters } from '@/hooks/useClusters';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
@@ -119,6 +121,19 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
     type: (Object.keys(c.vibe_counts)[0] as any) || 'chill',
   }));
 
+  /* deck.gl layers --------------------------------------------------- */
+  const deckLayers = useMemo(() => {
+    const layers = [];
+
+    // Add user location layer (on top of heat overlay)
+    const locLayer = myLocationLayer(
+      userLocation ? [userLocation.lng, userLocation.lat] : null,
+    );
+    if (locLayer) layers.push(locLayer);
+
+    return layers;
+  }, [userLocation?.lat, userLocation?.lng]);
+
   /* ------------------------------------------------------------------ */
   /*  Render                                                            */
   /* ------------------------------------------------------------------ */
@@ -195,19 +210,13 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
               onVibeClick={(v) => console.log('clicked', v)}
             />
 
-            {/* user location dot */}
-            {userLocation && (
-              <div
-                className="absolute z-50 pointer-events-none"
-                style={{
-                  left: `${((userLocation.lng + 118.5) / 0.5) * 100}%`,
-                  top: `${((34.1 - userLocation.lat) / 0.1) * 100}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}>
-                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg border-2 border-white">
-                  <div className="absolute inset-0 rounded-full bg-blue-500/40 animate-ping" />
-                </div>
-              </div>
+            {/* deck.gl layers for user location */}
+            {deckLayers.length > 0 && (
+              <DeckGL
+                style={{ position: 'absolute', top: '0', left: '0', right: '0', bottom: '0' }}
+                layers={deckLayers}
+                controller={false}
+              />
             )}
 
             {/* lightweight UI states */}
