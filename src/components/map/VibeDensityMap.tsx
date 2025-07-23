@@ -26,19 +26,18 @@ import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import { useFloqActivity } from "@/hooks/useFloqActivity";
 import { useToast } from "@/hooks/use-toast";
 import { ALL_VIBES, DEFAULT_PREFS } from "@/utils/vibePrefs";
+import { useClusters } from "@/hooks/useClusters";
 import type { Cluster } from "@/hooks/useClusters";
 
 interface VibeDensityMapProps {
   onRequestClose?: () => void;
   userLocation?: { lat: number; lng: number } | null;
-  clusters?: Cluster[];
   className?: string;
 }
 
 export const VibeDensityMap: FC<VibeDensityMapProps> = ({
   onRequestClose,
   userLocation,
-  clusters = [],
   className = "",
 }: VibeDensityMapProps) => {
   const deckRef = useRef<Deck | null>(null);
@@ -78,6 +77,22 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   // Simple viewport handling
   const viewport = [viewStateRef.current.longitude, viewStateRef.current.latitude] as [number, number];
+
+  /* ──────────────────────────────  fetch clusters for current viewport  */
+  const bbox = useMemo<[number, number, number, number]>(() => {
+    const { longitude, latitude, zoom } = viewStateRef.current;
+    const scale = Math.pow(2, 15 - zoom);
+    const latDelta = scale * 0.01;
+    const lngDelta = (scale * 0.01) / Math.cos(latitude * Math.PI / 180);
+    return [
+      longitude - lngDelta,
+      latitude - latDelta,
+      longitude + lngDelta,
+      latitude + latDelta,
+    ];
+  }, [viewStateRef.current.longitude, viewStateRef.current.latitude, viewStateRef.current.zoom]);
+
+  const { clusters, loading, error } = useClusters(bbox, 6);
 
   /* ──────────────────────────────  prefs / filter  */
   const [filterState, filterHelpers] = useVibeFilter();
@@ -227,7 +242,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
       />
 
       {/* Fallback message for empty data */}
-      {!clusters.length && (
+      {!loading && !error && visibleClusters.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-center text-sm text-muted-foreground bg-card/80 backdrop-blur-xl rounded-lg p-4">
             No vibes detected in this area yet.
