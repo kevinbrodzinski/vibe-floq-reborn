@@ -85,16 +85,25 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         // DEBUGGING STEP 1: Add error handler
         map.on('error', (e) => {
           console.error('[FieldWebMap] mapbox-error', e.error);
+          setTokenStatus('error');
+        });
+        
+        // Add style error handling
+        map.on('styleimagemissing', (e) => {
+          console.error('[FieldWebMap] Style image missing:', e.id);
         });
         
         console.log('[FieldWebMap] Map created, setting ref...');
         mapRef.current = map;
+        
+        // FIX: Set status to ready immediately after map creation (like WebMap.tsx)
+        console.log('[FieldWebMap] Setting token status to ready immediately');
+        setTokenStatus('ready');
 
-        // Register for projection and set ready status AFTER style loads
+        // Register for projection AFTER style loads
         map.once('load', () => {
-          console.log('[FieldWebMap] Map style loaded → ready');
+          console.log('[FieldWebMap] Map style loaded → registering for projection');
           setMapInstance(map);
-          setTokenStatus('ready');
         });
 
         // Add navigation controls
