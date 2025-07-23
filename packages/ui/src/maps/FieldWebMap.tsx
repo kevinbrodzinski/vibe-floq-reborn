@@ -134,8 +134,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   }
 
   return (
-    <div className="absolute inset-0">
-      <div ref={container} className="absolute inset-0" />
+    <div className="absolute inset-0 flex flex-col">
+      <div ref={container} className="flex-1" />
       {children}
       
       {/* Debug info in development */}
