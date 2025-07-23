@@ -41,6 +41,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
       /* ② ─ container size check ------------------------------------------------- */
       await new Promise(r => requestAnimationFrame(r));
       const { width, height } = container.current!.getBoundingClientRect();
+      console.log('map container size', width, height);
       if (!width || !height) throw new Error('Map container has no dimensions');
 
       /* ③ ─ map ------------------------------------------------------------------- */
@@ -149,8 +150,8 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
     <div className="absolute inset-0">
       <div 
         ref={container} 
-        className="absolute inset-0" 
-        style={{ minHeight: '300px', minWidth: '300px' }}
+        data-map-container
+        className="absolute inset-0 min-h-[300px] min-w-[300px]"
       />
       {children}
       
