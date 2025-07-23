@@ -37,14 +37,18 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const [tokenSource, setTokenSource] = useState<string>('');
 
   useEffect(() => {
+    console.log('[FieldWebMap] useEffect triggered, container:', !!container.current, 'mapRef:', !!mapRef.current);
     if (!container.current || mapRef.current) return;
 
     const initializeMap = async () => {
       try {
+        console.log('[FieldWebMap] Starting map initialization...');
         const { token, source } = getFieldMapboxToken();
+        console.log('[FieldWebMap] Token obtained:', { source, hasToken: !!token });
         mapboxgl.accessToken = token;
         setTokenSource(source);
         
+        console.log('[FieldWebMap] Creating map with container:', container.current);
         const map = new mapboxgl.Map({
           container: container.current!,
           style: 'mapbox://styles/mapbox/dark-v11',
@@ -52,10 +56,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           zoom: 11,
         });
         
+        console.log('[FieldWebMap] Map created, setting ref...');
         mapRef.current = map;
 
         // Register for projection and set ready status AFTER style loads
         map.once('load', () => {
+          console.log('[FieldWebMap] Map style loaded, setting ready status');
           setMapInstance(map);
           setTokenStatus('ready');
         });
