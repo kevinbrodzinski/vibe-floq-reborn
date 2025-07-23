@@ -1,26 +1,28 @@
 import {
-  Sheet,
-  SheetPortal,
-  SheetOverlay,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
-import DeckGL from "@deck.gl/react";
-import { Badge } from "@/components/ui/badge";
-import { MapErrorBoundary } from "./MapErrorBoundary";
-import { ClusterLegend } from "./ClusterLegend";
-import { VibeFilterPanel } from "./VibeFilterPanel";
-import { createDensityLayer, usePulseLayer } from "./DeckLayers";
-import { useClusters } from "@/hooks/useClusters";
-import { useVibeFilter } from "@/hooks/useVibeFilter";
-import type { Cluster } from "@/hooks/useClusters";
-import { useEffect, useMemo } from "react";
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  type TouchEvent,
+} from 'react';
+import DeckGL from '@deck.gl/react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Sheet, SheetPortal, SheetOverlay, SheetContent,
+  SheetHeader, SheetTitle, SheetFooter,
+} from '@/components/ui/sheet';
+import { VibeFilterPanel } from './VibeFilterPanel';
+import { MapErrorBoundary } from './MapErrorBoundary';
+import { ClusterLegend } from './ClusterLegend';
+import { createDensityLayer, usePulseLayer } from './DeckLayers';
+import { useClusters } from '@/hooks/useClusters';
+import { useVibeFilter } from '@/hooks/useVibeFilter';
+import type { Cluster } from '@/hooks/useClusters';
+import { ALL_VIBES } from '@/utils/vibePrefs';
 
 const MAPBOX_TOKEN =
-  "pk.eyJ1IjoiZmxvcXZpYmVzIiwiYSI6ImNtNHUwZmx4bzAzZGsya3M5eWZldHBrOTcifQ.VZWx-Bu3wP1iNSyK7bYIUg";
+  'pk.eyJ1IjoiZmxvcXZpYmVzIiwiYSI6ImNtNHUwZmx4bzAzZGsya3M5eWZldHBrOTcifQ.VZWx-Bu3wP1iNSyK7bYIUg';
 
 interface Props {
   open: boolean;
@@ -29,165 +31,214 @@ interface Props {
   clusters?: Cluster[];
 }
 
+/* ------------------------------------------------------------------ */
+
 export function VibeDensityMap({
   open,
   onOpenChange,
   userLocation,
-  clusters: propClusters,
+  clusters: preFetched,
 }: Props) {
-  /* ––––– guards ––––––––––––––––––––––––––––––––––––––––––––––– */
-  if (!userLocation) {
+  /* ───────── guard ───────── */
+  if (!userLocation)
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetPortal>
-          <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
-          <SheetContent side="bottom" className="h-96 max-w-[640px] mx-auto">
-            <SheetHeader>
-              <SheetTitle>No location</SheetTitle>
-            </SheetHeader>
-            <p className="h-full grid place-items-center text-muted-foreground">
-              🛰️ Unable to determine your location.
-            </p>
-          </SheetContent>
-        </SheetPortal>
-      </Sheet>
+      <BasicSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Vibe density map"
+      >
+        🛰️ Unable to determine your location.
+      </BasicSheet>
     );
-  }
 
-  /* ––––– data hooks ––––––––––––––––––––––––––––––––––––––––––– */
-  const [prefs, filterHelpers] = useVibeFilter();
-
+  /* ───────── location → viewport & bbox ───────── */
+  const { lat, lng } = userLocation;
+  const initialViewState = useMemo(
+    () => ({ latitude: lat, longitude: lng, zoom: 12, pitch: 0, bearing: 0 }),
+    [lat, lng],
+  );
   const bbox = useMemo(() => {
-    const o = 0.01;
-    return [
-      userLocation.lng - o,
-      userLocation.lat - o,
-      userLocation.lng + o,
-      userLocation.lat + o,
-    ] as [number, number, number, number];
-  }, [userLocation]);
+    const d = 0.01;
+    return [lng - d, lat - d, lng + d, lat + d] as [
+      number,
+      number,
+      number,
+      number,
+    ];
+  }, [lat, lng]);
 
-  const { clusters = [], loading, error } = useClusters(bbox, 6);
-  const all = propClusters?.length ? propClusters : clusters;
+  /* ───────── data ───────── */
+  const {
+    clusters: fetched = [],
+    loading,
+    error,
+  } = useClusters(bbox, 6);
+  const allClusters = preFetched?.length ? preFetched : fetched;
 
-  const visible = useMemo(() => {
-    if (!filterHelpers.isFiltered) return all;
-    return all.filter((c) =>
-      Object.keys(c.vibe_counts).some((v) => filterHelpers.activeSet.has(v as any)),
+  /* ───────── vibe filter state ───────── */
+  const [filter, helpers] = useVibeFilter();
+  const visibleClusters = useMemo(() => {
+    if (!helpers.isFiltered) return allClusters;
+    return allClusters.filter((c) =>
+      Object.keys(c.vibe_counts).some((v) =>
+        helpers.activeSet.has(v as keyof typeof filter),
+      ),
     );
-  }, [all, filterHelpers]);
+  }, [allClusters, helpers.activeSet, helpers.isFiltered, filter]);
 
-  /* ––––– layers ––––––––––––––––––––––––––––––––––––––––––––––– */
-  const density = createDensityLayer(visible, {}, () => {});
-  const pulse = usePulseLayer(visible, {});
-  const layers = [density, pulse].filter(Boolean);
+  /* ───────── deck.gl layers ───────── */
+  const layers = useMemo(() => {
+    const density = createDensityLayer(visibleClusters, {}, () => {});
+    const pulse = usePulseLayer(visibleClusters, {});
+    return [density, pulse].filter(Boolean);
+  }, [visibleClusters]);
 
-  /* ––––– ESC close –––––––––––––––––––––––––––––––––––––––––––– */
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onOpenChange(false);
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open, onOpenChange]);
+  /* ------------------------------------------------------------------ */
+  /*                         bottom-sheet markup                         */
+  /* ------------------------------------------------------------------ */
 
-  const totals = {
-    people: visible.reduce((s, c) => s + c.total, 0),
-    spots: visible.length,
+  /* drag-to-close (mobile) */
+  const startY = useRef<number | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  const onTouchStart = (e: TouchEvent) => {
+    startY.current = e.touches[0].clientY;
+  };
+  const onTouchMove = (e: TouchEvent) => {
+    if (startY.current == null) return;
+    const delta = e.touches[0].clientY - startY.current;
+    if (delta < 0) return; // ignore upward drag
+    sheetRef.current!.style.transform = `translateY(${delta}px)`;
+    if (delta > 64) onOpenChange(false);
+  };
+  const onTouchEnd = () => {
+    startY.current = null;
+    if (sheetRef.current) sheetRef.current.style.transform = '';
   };
 
-  const initialView = {
-    latitude: userLocation.lat,
-    longitude: userLocation.lng,
-    zoom: 12,
-  } as const;
+  const totalPeople = visibleClusters.reduce((s, c) => s + c.total, 0);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetPortal>
-        {/* dimmed background */}
-        <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
+        <SheetOverlay className="bg-black/50 backdrop-blur-sm" />
 
-        {/* FULL-HEIGHT sheet (flush with top) */}
+        {/* ↓ container has horizontal gutter & rounded top */}
         <SheetContent
           side="bottom"
-          className="h-[100dvh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
+          ref={sheetRef}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          className="h-[88vh] max-w-screen-md mx-auto
+                     rounded-t-2xl px-4 pb-safe bg-background
+                     flex flex-col shadow-2xl"
         >
-          {/* swipe-down close button */}
-          <SheetClose
-            className="absolute right-4 top-4 z-10 rounded-full p-2 hover:bg-accent/20 transition-colors"
-            aria-label="Close"
-          >
-            <span aria-hidden>✕</span>
-          </SheetClose>
+          {/* header */}
+          <SheetHeader className="relative z-[2]">
+            <div className="flex items-center justify-between">
+              <SheetTitle>Vibe Density Map</SheetTitle>
 
-          {/* HEADER */}
-          <SheetHeader
-            role="heading"
-            aria-level={2}
-            className="mb-3 flex items-center justify-between gap-3"
-          >
-            <div className="text-lg font-semibold">Vibe Density Map</div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary">
-                <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                LIVE
-              </Badge>
-              <VibeFilterPanel
-                value={prefs}
-                onChange={filterHelpers.replace}
-              />
+              {/* controls */}
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  <div className="h-2 w-2 rounded-full bg-green-500 mr-1" />
+                  LIVE
+                </Badge>
+
+                {/* opens a *second* sheet that slides from right */}
+                <VibeFilterPanel
+                  value={filter}
+                  onChange={helpers.replace}
+                  asSheet
+                />
+              </div>
             </div>
           </SheetHeader>
 
-          {/* MAP AREA */}
-          <div className="relative flex-1">
-            {error ? (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                Error loading clusters
-              </div>
-            ) : loading ? (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                Loading…
-              </div>
-            ) : (
-              <MapErrorBoundary>
-                <div className="absolute inset-0">
-                  {/* optional static fallback image */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=${MAPBOX_TOKEN}")`,
-                    }}
-                  />
-                  <DeckGL
-                    initialViewState={initialView as any}
-                    controller
-                    layers={layers}
-                    style={{ position: "absolute", inset: "0" }}
-                  />
+          {/* map */}
+          <div className="relative flex-1 mt-2 overflow-hidden rounded-xl">
+            <MapErrorBoundary>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${lng},${lat},12,0/600x400@2x?access_token=${MAPBOX_TOKEN}") center/cover`,
+                }}
+              />
+              {!loading && (
+                <DeckGL
+                  initialViewState={initialViewState as any}
+                  controller
+                  layers={layers}
+                  style={{ position: 'absolute', inset: '0' }}
+                />
+              )}
+              {loading && (
+                <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
+                  Loading clusters…
                 </div>
-              </MapErrorBoundary>
-            )}
+              )}
+            </MapErrorBoundary>
           </div>
 
-          {/* FOOTER */}
-          <SheetFooter className="min-h-[3.5rem] px-4 py-2 text-sm text-muted-foreground">
-            <div className="flex flex-wrap items-center gap-2">
-              <span>{totals.spots} spots</span>
-              <span aria-hidden>•</span>
-              <span>{totals.people} people</span>
-              {filterHelpers.isFiltered && (
-                <>
-                  <span aria-hidden>•</span>
-                  <span>
-                    {Object.keys(prefs).length - filterHelpers.activeSet.size}{" "}
-                    vibes off
-                  </span>
-                </>
+          {/* footer */}
+          <SheetFooter className="mt-3 text-xs text-muted-foreground flex justify-between items-center">
+            <span>
+              {visibleClusters.length} spots • {totalPeople} people
+              {helpers.isFiltered && (
+                <> • {ALL_VIBES.length - helpers.activeSet.size} vibes off</>
               )}
-            </div>
-            <ClusterLegend clusters={visible} className="mt-2" />
+            </span>
+            <ClusterLegend clusters={visibleClusters} />
           </SheetFooter>
+
+          {/* close btn sits *outside* header, fixed top-right */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-3 right-3 h-9 w-9 rounded-full
+                       bg-card/70 backdrop-blur-md shadow
+                       hover:bg-card transition-colors flex items-center
+                       justify-center text-xl"
+            aria-label="Close density map"
+          >
+            ×
+          </button>
+        </SheetContent>
+      </SheetPortal>
+    </Sheet>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*   fallback sheet (location error / cluster error) – tiny helper    */
+/* ------------------------------------------------------------------ */
+
+function BasicSheet({
+  open,
+  onOpenChange,
+  title,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetPortal>
+        <SheetOverlay className="bg-black/50 backdrop-blur-sm" />
+        <SheetContent
+          side="bottom"
+          className="h-60 max-w-screen-sm mx-auto rounded-t-2xl
+                     px-6 py-6 bg-background flex flex-col gap-4"
+        >
+          <SheetHeader>
+            <SheetTitle>{title}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 grid place-items-center text-muted-foreground text-center">
+            {children}
+          </div>
         </SheetContent>
       </SheetPortal>
     </Sheet>
