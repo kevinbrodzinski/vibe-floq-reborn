@@ -61,13 +61,11 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
     if ('AudioContext' in window || 'webkitAudioContext' in window) {
       try {
         // Cache AudioContext to avoid hitting Safari's 6-context limit
-        if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
-        }
+        const audioCtx = audioContextRef.current ?? new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContextRef.current = audioCtx;
         
-        const audioContext = audioContextRef.current
-        if (audioContext.state === 'suspended') {
-          audioContext.resume()
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
         }
         
         const frequencies = {
@@ -82,21 +80,21 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
           notification: 850
         }
         
-        const oscillator = audioContext.createOscillator()
-        const gainNode = audioContext.createGain()
+        const oscillator = audioCtx.createOscillator()
+        const gainNode = audioCtx.createGain()
         
         oscillator.connect(gainNode)
-        gainNode.connect(audioContext.destination)
+        gainNode.connect(audioCtx.destination)
         
-        oscillator.frequency.setValueAtTime(frequencies[pattern], audioContext.currentTime)
+        oscillator.frequency.setValueAtTime(frequencies[pattern], audioCtx.currentTime)
         oscillator.type = 'sine'
         
         // Very subtle volume
-        gainNode.gain.setValueAtTime(0.01, audioContext.currentTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05)
+        gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05)
         
-        oscillator.start(audioContext.currentTime)
-        oscillator.stop(audioContext.currentTime + 0.05)
+        oscillator.start(audioCtx.currentTime)
+        oscillator.stop(audioCtx.currentTime + 0.05)
       } catch (e) {
         // Audio context failed, silently continue
       }

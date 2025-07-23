@@ -110,7 +110,7 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
         setUser(session?.user ?? null);
         setLoading(false);
         setNetworkError(false);
-        
+
         // Handle session recovery after network reconnection
         if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
           // Invalidate queries to refresh data

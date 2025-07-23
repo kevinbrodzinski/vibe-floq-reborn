@@ -49,7 +49,9 @@ export function NetworkStatusBanner() {
           <>
             <Wifi className="w-4 h-4" />
             <span>Back Online</span>
-            {isSlowConnection && <span className="text-xs opacity-75 ml-1">(Slow)</span>}
+            {isSlowConnection && (
+              <span className="ml-1 text-[10px]">Slow</span>
+            )}
           </>
         )}
       </div>

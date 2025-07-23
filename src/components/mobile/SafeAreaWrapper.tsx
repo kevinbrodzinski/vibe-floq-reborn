@@ -25,11 +25,11 @@ export function SafeAreaWrapper({
   // On native, this would use React Native SafeAreaView
   
   const safeAreaClasses = isMobile ? `${topPadding} ${bottomPadding}` : '';
-  const keyboardClasses = keyboardAware && isMobile ? 'keyboard-aware' : '';
+  // Remove keyboardAware until RN port - no CSS definition yet
   
   // For web, just use a regular div - no platform-specific components needed
   return (
-    <div className={`${safeAreaClasses} ${keyboardClasses} ${className}`}>
+    <div className={`${safeAreaClasses} ${className}`}>
       {children}
     </div>
   );

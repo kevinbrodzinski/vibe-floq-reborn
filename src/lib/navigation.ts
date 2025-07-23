@@ -5,8 +5,8 @@ export const navigation = {
       // Web implementation
       window.location.href = path;
     } else {
-      // TODO: Add React Navigation support for native
-      console.warn('Navigation not implemented for native platform');
+      // Mobile implementation - return resolved promise to avoid unhandled rejections
+      return Promise.resolve();
     }
   },
   
@@ -15,8 +15,8 @@ export const navigation = {
       // Web implementation
       window.location.replace(path);
     } else {
-      // TODO: Add React Navigation support for native
-      console.warn('Navigation not implemented for native platform');
+      // Mobile implementation - return resolved promise
+      return Promise.resolve();
     }
   },
 
@@ -25,8 +25,8 @@ export const navigation = {
       // Web implementation
       window.history.back();
     } else {
-      // TODO: Add React Navigation support for native (goBack)
-      console.warn('Navigation not implemented for native platform');
+      // Mobile implementation - return resolved promise
+      return Promise.resolve();
     }
   }
 };

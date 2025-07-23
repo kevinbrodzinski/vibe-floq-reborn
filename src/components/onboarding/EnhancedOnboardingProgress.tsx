@@ -1,6 +1,10 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Check } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
+
+// Dynamic import for Check icon to reduce bundle size
+const Check = lazy(() => import('lucide-react').then(m => ({ default: m.Check })));
 
 interface EnhancedOnboardingProgressProps {
   currentStep: number;
@@ -45,7 +49,9 @@ export function EnhancedOnboardingProgress({
                 whileTap={isClickable ? { scale: 0.95 } : {}}
               >
                 {isCompleted ? (
-                  <Check className="w-5 h-5" />
+                  <Suspense fallback={<CheckCircle2 className="w-5 h-5" />}>
+                    <Check className="w-5 h-5" />
+                  </Suspense>
                 ) : (
                   <span className="text-sm font-medium">{stepNumber + 1}</span>
                 )}

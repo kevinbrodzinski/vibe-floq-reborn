@@ -131,35 +131,35 @@ export const storage = {
   /**
    * Get an item from storage
    */
-  async getItem(key: string): Promise<string | null> {
+  getItem(key: string): Promise<string | null> {
     return storageAdapter.getItem(key);
   },
 
   /**
    * Set an item in storage
    */
-  async setItem(key: string, value: string): Promise<void> {
+  setItem(key: string, value: string): Promise<void> {
     return storageAdapter.setItem(key, value);
   },
 
   /**
    * Remove an item from storage
    */
-  async removeItem(key: string): Promise<void> {
+  removeItem(key: string): Promise<void> {
     return storageAdapter.removeItem(key);
   },
 
   /**
    * Get all keys in storage
    */
-  async getAllKeys(): Promise<string[]> {
+  getAllKeys(): Promise<string[]> {
     return storageAdapter.getAllKeys();
   },
 
   /**
    * Clear all items from storage
    */
-  async clear(): Promise<void> {
+  clear(): Promise<void> {
     return storageAdapter.clear();
   },
 
@@ -206,7 +206,7 @@ export const storage = {
   /**
    * Clear auth-related storage (uses Promise.all for performance)
    */
-  async clearAuthStorage(): Promise<void> {
+  clearAuthStorage(): Promise<void> {
     return storageAdapter.clearAuthStorage();
   }
 };
