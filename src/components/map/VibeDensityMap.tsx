@@ -202,7 +202,7 @@ export function VibeDensityMap({
                       initialViewState={initialView as any}
                       controller
                       layers={layers}
-                      style={{ position: "absolute", inset: 0 }}
+                      style={{ position: "absolute", inset: "0" }}
                     />
                   </div>
                 </MapErrorBoundary>
