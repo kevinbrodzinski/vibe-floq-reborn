@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { VibeDensityWebMap } from '@maps/VibeDensityWebMap';
+import { VibeDensityWebMap } from '../../../../packages/ui/src/maps/VibeDensityWebMap';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
@@ -9,7 +9,7 @@ import { ClusterLegend } from '@/components/map/ClusterLegend';
 import DeckGL from '@deck.gl/react';
 import { createDensityLayer } from '@/components/map/DeckLayers';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
-import type { ViewState } from '@deck.gl/core';
+import type { MapViewState } from '@deck.gl/core';
 import type { Cluster } from '@/hooks/useClusters';
 
 type VibeWeights = Record<string, number>;
@@ -69,7 +69,7 @@ export const VibeDensityMap: React.FC = () => {
     return densityLayer ? [densityLayer] : [];
   }, [filteredClusters, vibeFilterHelpers.activeSet]);
 
-  const initialViewState: Partial<ViewState> = {
+  const initialViewState: Partial<MapViewState> = {
     latitude: 34.05,
     longitude: -118.24,
     zoom: 11
