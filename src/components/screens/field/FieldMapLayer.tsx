@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BaseMap } from '../../../../packages/ui/src/maps';
+import { FieldWebMap } from '../../../../packages/ui/src/maps';
 import { FieldCanvas } from '@/components/field/FieldCanvas';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import type { FieldData } from '../field/FieldDataProvider';
@@ -22,7 +22,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
 
   return (
     <div className="absolute inset-0">
-      <BaseMap onRegionChange={onRegionChange}>
+      <FieldWebMap onRegionChange={onRegionChange}>
         {/* WebGL layer on top, no pointer events so map remains interactive */}
         <div style={{ pointerEvents: 'none' }}>
           <FieldCanvas
@@ -34,7 +34,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
             onRipple={onRipple}
           />
         </div>
-      </BaseMap>
+      </FieldWebMap>
     </div>
   );
 };

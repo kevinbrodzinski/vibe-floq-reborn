@@ -1,5 +1,6 @@
+
 import React, { useMemo, useState } from 'react';
-import { BaseMap } from '../../../../packages/ui/src/maps';
+import { VibeDensityWebMap } from '../../../../packages/ui/src/maps';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
@@ -66,8 +67,8 @@ export const VibeDensityMap: React.FC = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Base Map with unified token management */}
-      <BaseMap onRegionChange={onRegionChange}>
+      {/* Vibe Density Map with edge function token */}
+      <VibeDensityWebMap onRegionChange={onRegionChange}>
         {/* Background visualization - always visible */}
         <VibeDensityBackground />
         
@@ -118,7 +119,7 @@ export const VibeDensityMap: React.FC = () => {
             className="absolute bottom-4 right-4"
           />
         )}
-      </BaseMap>
+      </VibeDensityWebMap>
     </div>
   );
 };
