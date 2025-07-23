@@ -143,7 +143,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         }
       }
     };
-  }, [onRegionChange]);
+  }, []); // Remove onRegionChange dependency to prevent render loop
 
   if (tokenStatus === 'loading') {
     return (
