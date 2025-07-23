@@ -77,11 +77,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           zoom: 11,
         });
         
-        // DEBUGGING STEP 1: Add error handler
-        map.on('error', (e) => {
-          console.error('[FieldWebMap] mapbox-error', e.error);
+        // DEBUGGING: Add three deep-dive helpers
+        map.on('render', () => console.log('[FieldWebMap] map.render tick'));
+        map.on('error', e => {
+          console.error('[FieldWebMap] Mapbox error event →', e.error?.message || e);
           setTokenStatus('error');
         });
+        map.on('styledata', () => console.log('[FieldWebMap] styledata event'));
         
         // Add style error handling
         map.on('styleimagemissing', (e) => {
