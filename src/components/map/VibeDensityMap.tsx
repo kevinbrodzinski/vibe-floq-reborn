@@ -6,7 +6,6 @@ import {
   useMemo,
   useCallback,
   useEffect,
-  type MouseEvent,
 } from "react";
 import DeckGL from "@deck.gl/react";
 import { MapView } from "@deck.gl/core";
@@ -114,9 +113,14 @@ export const VibeDensityMap = ({
 
   /* ──────────────────────────────  prefs / filter  */
   const [filterState, filterHelpers] = useVibeFilter();
+  
+  // compute once per render; no need for useMemo
+  const activeSet = filterHelpers.activeSet;
+  const hiddenCount = filterHelpers.isFiltered ? 
+    Object.keys(filterState).length - activeSet.size : 0;
 
-  // Remove old defaultPrefs since we're using the new filtering system
-  const vibePrefs = {}; // placeholder for color bias (can be re-added later)
+  // placeholder for color bias (can be re-added later)
+  const vibePrefs = {};
 
   /* ──────────────────────────────  deck.gl layers  */
   const handleClusterClick = useCallback((c: Cluster) => {
@@ -131,25 +135,18 @@ export const VibeDensityMap = ({
       clusters.filter((c) =>
         // keep cluster if *any* of its dominant vibes is ON
         Object.keys(c.vibe_counts).some(
-          (v) => filterHelpers.activeSet.has(v as any),
+          (v) => activeSet.has(v as any),
         ),
       ),
-    [clusters, filterHelpers.activeSet],
+    [clusters, activeSet],
   );
-
-  const pulseLayer = usePulseLayer(visibleClusters, vibePrefs);
 
   const layers = useMemo(() => {
     if (!visibleClusters.length) return [];
     return [
-      createDensityLayer(
-        visibleClusters,
-        vibePrefs,
-        handleClusterClick,
-      ),
-      pulseLayer,
+      createDensityLayer(visibleClusters, vibePrefs, handleClusterClick),
+      usePulseLayer(visibleClusters, vibePrefs), // inline call to avoid stale deps
     ].filter(Boolean);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleClusters, vibePrefs, handleClusterClick]);
 
   /* center helpers --------------------------------------------------- */
@@ -221,7 +218,7 @@ export const VibeDensityMap = ({
             >
               {loading
                 ? "Sensing the vibe…"
-                : `${clusters.length} energy clusters detected`}
+                : `${visibleClusters.length} clusters detected`}
             </p>
           </div>
 
@@ -337,6 +334,9 @@ export const VibeDensityMap = ({
               {visibleClusters.reduce((s, c) => s + c.total, 0)} souls in the field
               {isRealTimeConnected && (
                 <span className="ml-1 text-green-500">• Live</span>
+              )}
+              {hiddenCount > 0 && (
+                <span className="ml-1 text-muted-foreground">• {hiddenCount} vibes off</span>
               )}
             </footer>
           )}
