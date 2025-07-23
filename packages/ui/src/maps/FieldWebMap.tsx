@@ -88,9 +88,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
     // Cleanup – prevents _cancelResize crash
     return () => {
       if (mapRef.current) {
-        setMapInstance(null);
-        mapRef.current.remove();
-        mapRef.current = null;
+        try {
+          setMapInstance(null);
+          mapRef.current.remove();
+          mapRef.current = null;
+        } catch (error) {
+          console.warn('[FieldWebMap] Cleanup error (safe to ignore):', error);
+        }
       }
     };
   }, [onRegionChange]);

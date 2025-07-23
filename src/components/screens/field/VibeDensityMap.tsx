@@ -9,6 +9,7 @@ import { ClusterLegend } from '@/components/map/ClusterLegend';
 import DeckGL from '@deck.gl/react';
 import { createDensityLayer } from '@/components/map/DeckLayers';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { renderClusterTooltip } from './tooltipHelpers';
 import type { MapViewState } from '@deck.gl/core';
 import type { Cluster } from '@/hooks/useClusters';
 
@@ -52,7 +53,7 @@ export const VibeDensityMap: React.FC = () => {
   };
 
   // Create deck.gl layers
-  const layers = useMemo(() => {
+  const layers = useMemo<any[]>(() => {
     const activeVibes = vibeFilterHelpers.activeSet ? 
       Array.from(vibeFilterHelpers.activeSet) : [];
     
@@ -88,17 +89,7 @@ export const VibeDensityMap: React.FC = () => {
           layers={layers}
           getTooltip={({ object }) => 
             object && {
-              html: 
-                '<div class="bg-background/90 backdrop-blur-sm border rounded-lg p-3 shadow-lg">' +
-                '<div class="font-semibold">' + object.total + ' people</div>' +
-                '<div class="text-sm text-muted-foreground">' +
-                Object.entries(object.vibe_counts || {})
-                  .sort(([,a], [,b]) => (b as number) - (a as number))
-                  .slice(0, 3)
-                  .map(([vibe, count]) => vibe + ': ' + count)
-                  .join(', ') +
-                '</div>' +
-                '</div>',
+              html: renderClusterTooltip(object),
               style: { pointerEvents: 'none' }
             }
           }
