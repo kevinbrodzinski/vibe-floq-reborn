@@ -20,22 +20,7 @@ export default defineConfig(({ mode, command }) => ({
           ? { protocol: 'wss', host: PREVIEW_HMR_HOST, port: 443 }
           : true,
   },
-  optimizeDeps: {
-    exclude: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers']
-  },
-  build: {
-    rollupOptions: {
-      external: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers'],
-      output: {
-        globals: {
-          '@deck.gl/react': 'DeckGL',
-          '@deck.gl/core': 'deck',
-          '@deck.gl/layers': 'deck',
-          '@deck.gl/aggregation-layers': 'deck'
-        }
-      }
-    }
-  },
+  // Remove all deck.gl externalization - just use normal bundling with pinned earcut@2.2.4
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
