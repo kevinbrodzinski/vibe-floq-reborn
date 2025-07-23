@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
 import { VibeDensityMap } from "@/components/map/VibeDensityMap";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
-import { useClusters } from "@/hooks/useClusters";
+
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
@@ -62,17 +62,15 @@ export const VibeScreen = () => {
   
   // Mock user location for demo (replace with real geolocation)
   const userLocation = { lat: 37.7749, lng: -122.4194 };
-  
-  // Mock bounding box for cluster data
-  const bbox = [-122.5, 37.7, -122.3, 37.8] as [number, number, number, number];
-  const { clusters, loading, isRealTimeConnected } = useClusters(bbox, 6);
+
+  // No cluster fetching here; the modal does it
   
   // Smart suggestions based on nearby clusters
   const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions();
   
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
-    clusters,
+    [], // No clusters needed here anymore
     userLocation,
     selectedVibe,
     learningData.preferences
@@ -503,23 +501,9 @@ export const VibeScreen = () => {
                 </div>
                 <div>
                   <span className="font-medium text-foreground">{vibes[safeFallbackVibe].label}</span>
-                   <div className="text-xs text-muted-foreground">
-                     Active for {elapsed}
-                     {clusters.length > 0 && (
-                       <span className="ml-2 opacity-70">• {clusters.length} nearby</span>
-                     )}
-                     {isRealTimeConnected && (
-                       <span className="ml-2 flex items-center text-xs text-emerald-400">
-                         <span className="animate-pulse h-2 w-2 rounded-full bg-emerald-400 mr-1" />
-                         LIVE
-                       </span>
-                     )}
-                     {!isRealTimeConnected && clusters.length > 0 && (
-                       <span className="ml-2 opacity-40 text-xs">
-                         • Cached
-                       </span>
-                     )}
-                   </div>
+                    <div className="text-xs text-muted-foreground">
+                      Active for {elapsed}
+                    </div>
                 </div>
               </div>
               <button 

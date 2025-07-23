@@ -7,274 +7,143 @@ import {
   useState,
 } from "react";
 import DeckGL from "@deck.gl/react";
-import type { Deck } from "@deck.gl/core";
 import { FlyToInterpolator } from "@deck.gl/core";
-import { easeCubic } from "d3-ease";
-
 import { createDensityLayer, usePulseLayer } from "./DeckLayers";
 import { useVibeFilter } from "@/hooks/useVibeFilter";
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
-import { useUserSettings } from "@/hooks/useUserSettings";
-import { useMapViewport } from "@/hooks/useMapViewport";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { useCurrentEvent } from "@/hooks/useCurrentEvent";
-import { useCrossedPathsToday } from "@/hooks/useCrossedPathsToday";
-import { useFaviconBadge } from "@/hooks/useFaviconBadge";
-import { useFieldHitTest } from "@/hooks/useFieldHitTest";
-import { useFieldGestures } from "@/hooks/useFieldGestures";
-import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
-import { useFloqActivity } from "@/hooks/useFloqActivity";
-import { useToast } from "@/hooks/use-toast";
 import { ALL_VIBES, DEFAULT_PREFS } from "@/utils/vibePrefs";
-import { useClusters } from "@/hooks/useClusters";
-import type { Cluster } from "@/hooks/useClusters";
+import { useClusters, type Cluster } from "@/hooks/useClusters";
 
-interface VibeDensityMapProps {
+const INITIAL_VIEW = {
+  latitude: 34.0522,
+  longitude: -118.2437,
+  zoom: 11,
+  minZoom: 2,
+  maxZoom: 18,
+  pitch: 0,
+  bearing: 0,
+  transitionDuration: 0,
+  transitionInterpolator: null,
+};
+
+interface Props {
   onRequestClose?: () => void;
+  /** Optional hint for initial centring */
   userLocation?: { lat: number; lng: number } | null;
   className?: string;
 }
 
-export const VibeDensityMap: FC<VibeDensityMapProps> = ({
+export const VibeDensityMap: FC<Props> = ({
   onRequestClose,
   userLocation,
   className = "",
-}: VibeDensityMapProps) => {
-  const deckRef = useRef<Deck | null>(null);
-  const fallbackUserLocation = useOptimizedGeolocation();
-  
-  // memoize to avoid recreation on every render
-  const currentUserLocation = useMemo(
-    () => userLocation ?? fallbackUserLocation ?? null,
-    [userLocation, fallbackUserLocation]
-  );
+}) => {
+  /* ───────────────────────── user / viewport ─────────────────────── */
+  const fallbackLoc = useOptimizedGeolocation();
+  const loc         = userLocation ?? fallbackLoc ?? null;
+  const hasFix      = loc && isFinite(loc.lat) && isFinite(loc.lng);
 
-  const hasFix =
-    !!currentUserLocation &&
-    Number.isFinite(currentUserLocation.lat) &&
-    Number.isFinite(currentUserLocation.lng);
-
-  /* ──────────────────────────────  UI state  */
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
-
-  /* ──────────────────────────────  realtime connection  */
-  const { settings } = useUserSettings();
-  const { isDebugPanelOpen } = useEnvironmentDebug();
-
-  /* ──────────────────────────────  positioning  */
   const viewStateRef = useRef({
-    latitude: 34.0205,
-    longitude: -118.4818,
-    zoom: 12,
-    minZoom: 2,
-    maxZoom: 18,
-    pitch: 0,
-    bearing: 0,
-    transitionDuration: 0,
-    transitionInterpolator: null,
+    ...INITIAL_VIEW,
+    ...(hasFix && { latitude: loc!.lat, longitude: loc!.lng, zoom: 13 }),
   });
 
-  // Simple viewport handling
-  const viewport = [viewStateRef.current.longitude, viewStateRef.current.latitude] as [number, number];
-
-  /* ──────────────────────────────  fetch clusters for current viewport  */
+  /* ───────────────────────── derive BBox & fetch ──────────────────── */
   const bbox = useMemo<[number, number, number, number]>(() => {
     const { longitude, latitude, zoom } = viewStateRef.current;
-    const scale = Math.pow(2, 15 - zoom);
-    const latDelta = scale * 0.01;
-    const lngDelta = (scale * 0.01) / Math.cos(latitude * Math.PI / 180);
+    const scale     = Math.pow(2, 15 - zoom);
+    const latDelta  = scale * 0.01;
+    const lngDelta  = (scale * 0.01) / Math.cos(latitude * Math.PI / 180);
     return [
       longitude - lngDelta,
-      latitude - latDelta,
+      latitude  - latDelta,
       longitude + lngDelta,
-      latitude + latDelta,
+      latitude  + latDelta,
     ];
-  }, [viewStateRef.current.longitude, viewStateRef.current.latitude, viewStateRef.current.zoom]);
+  }, []); // recalculated manually on viewState change below
 
   const { clusters, loading, error } = useClusters(bbox, 6);
 
-  /* ──────────────────────────────  prefs / filter  */
-  const [filterState, filterHelpers] = useVibeFilter();
-  
-  // extract these once per render to avoid recreation
-  const { activeSet } = filterHelpers;
+  /* ───────────────────────── prefs / filter ───────────────────────── */
+  const [filterState, helpers] = useVibeFilter();
+  const activeSet   = helpers.activeSet;
   const hiddenCount = ALL_VIBES.length - activeSet.size;
-
-  // use single source of truth for prefs
-  const vibePrefs = DEFAULT_PREFS;
-
-  /* ──────────────────────────────  deck.gl layers  */
-  const handleClusterClick = useCallback((c: Cluster) => {
-    setSelectedCluster(c);
-    setIsDetailOpen(true);
-    
-    // Center map on clicked cluster
-    if (c.centroid?.coordinates) {
-      const [lng, lat] = c.centroid.coordinates;
-      if (viewStateRef.current) {
-        viewStateRef.current = {
-          ...viewStateRef.current,
-          longitude: lng,
-          latitude: lat,
-          zoom: Math.max(viewStateRef.current.zoom, 12),
-          transitionDuration: 1000,
-          transitionInterpolator: new FlyToInterpolator(),
-        };
-      }
-    }
-  }, []);
+  const vibePrefs   = DEFAULT_PREFS;
 
   const visibleClusters = useMemo(
-    () => (filterHelpers.isFiltered 
-      ? clusters.filter(c => {
-          // Prefer top_vibe when available, fallback to first vibe_count key
-          const vibe = (c as any).top_vibe || (c.vibe_counts ? Object.keys(c.vibe_counts)[0] as any : '');
-          return activeSet.has(vibe);
-        })
-      : clusters),
-    [clusters, activeSet, filterHelpers.isFiltered],
+    () =>
+      helpers.isFiltered
+        ? clusters.filter((c) => {
+            const vibe =
+              (c as any).top_vibe ||
+              (c.vibe_counts ? Object.keys(c.vibe_counts)[0] : "");
+            return activeSet.has(vibe as any);
+          })
+        : clusters,
+    [clusters, activeSet, helpers.isFiltered],
   );
 
-  // NOTE: pulseLayer recreates when clusters/prefs change (expected behavior)
-  const pulseLayer = usePulseLayer(visibleClusters, vibePrefs);
-
-  // NOTE: densityLayer rebuilds on every prefs change (fine, but noted)
+  /* ───────────────────────── layers ──────────────────────────────── */
   const densityLayer = useMemo(
-    () => createDensityLayer(visibleClusters, vibePrefs, handleClusterClick),
-    [visibleClusters, vibePrefs, handleClusterClick],
+    () => createDensityLayer(visibleClusters, vibePrefs, () => {}),
+    [visibleClusters, vibePrefs],
   );
-
-  const layers = useMemo(
+  const pulseLayer = usePulseLayer(visibleClusters, vibePrefs);
+  const layers     = useMemo(
     () => [densityLayer, pulseLayer].filter(Boolean),
     [densityLayer, pulseLayer],
   );
 
-  /* center helpers --------------------------------------------------- */
-  const centerOnUser = useCallback(() => {
-    if (!hasFix) return;
-    const currentLoc = currentUserLocation;
-    if (!currentLoc) return;
-
-    viewStateRef.current = {
-      ...viewStateRef.current,
-      longitude: currentLoc.lng,
-      latitude: currentLoc.lat,
-      zoom: 14,
-      transitionDuration: 1500,
-      transitionInterpolator: new FlyToInterpolator(),
-    };
-  }, [hasFix, currentUserLocation]);
-
-  /* ──────────────────────────────  effects  */
-  const { count: crossedPathsCount } = useCrossedPathsToday();
-  useFaviconBadge(crossedPathsCount);
-
-  // Event banner
-  const { toast } = useToast();
-  const { data: currentEvent } = useCurrentEvent(
-    currentUserLocation?.lat,
-    currentUserLocation?.lng,
-    () => {
-      toast({
-        title: `You're at ${currentEvent?.name}!`,
-        description: `Join the ${currentEvent?.vibe} vibe.`,
-      });
-    }
+  /* ───────────────────────── handlers ────────────────────────────── */
+  const updateViewState = useCallback(
+    ({ viewState }: { viewState: any }) => {
+      Object.assign(viewStateRef.current, viewState);
+    },
+    [],
   );
 
-  // Auto-center on user when location known
-  useEffect(() => {
-    if (hasFix) {
-      centerOnUser();
-    }
-  }, [hasFix, centerOnUser]);
-
-  /* ──────────────────────────────  debugging  */
-  useEffect(() => {
-    if (import.meta.env.DEV && deckRef.current && !('deck' in window)) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      (window as any).deck = deckRef.current.deck; // raw Deck instance
-      console.info("🗺️ Deck instance exposed → window.deck");
-    }
-  }, []);
-
-  // Regression-proofing warnings
-  if (import.meta.env.DEV && !clusters.length) {
-    console.warn("[VibeDensityMap] no clusters passed - map will be empty");
-  }
-
-  // Debug logging (gated for dev only)
-  if (import.meta.env.DEV && visibleClusters.length === 0 && clusters.length > 0) {
-    console.warn(
-      "[VibeDensityMap] No visible clusters despite having data:",
-      {
-        totalClusters: clusters.length,
-        filterState: filterHelpers.isFiltered ? "filtered" : "all",
-        activeSetSize: activeSet.size,
-        allVibesCount: ALL_VIBES.length
-      }
-    );
-  }
-
-  /* ──────────────────────────────  render  */
+  /* ───────────────────────── render ──────────────────────────────── */
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className={`fixed inset-0 z-50 ${className}`}
       role="dialog"
       aria-modal="true"
     >
-      {/* Dark scrim backdrop */}
+      {/* scrim */}
       <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
 
-      {/* MAP CANVAS */}
       <DeckGL
-        ref={deckRef}
         viewState={viewStateRef.current}
-        controller={true}
         layers={layers}
-        onViewStateChange={({ viewState }) => {
-          // eslint-disable-next-line react-hooks/exhaustive-deps
-          Object.assign(viewStateRef.current, viewState);
-        }}
-        style={{ width: "100%", height: "100%", position: "relative", zIndex: "1" }}
+        controller={true}
+        onViewStateChange={updateViewState}
+        style={{ width: "100%", height: "100%", position: "relative" }}
       />
 
-      {/* Fallback message for empty data */}
+      {/* empty-state */}
       {!loading && !error && visibleClusters.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="text-center text-sm text-muted-foreground bg-card/80 backdrop-blur-xl rounded-lg p-4">
-            No vibes detected in this area yet.
-          </div>
-        </div>
+        <p className="absolute inset-0 m-auto h-fit w-full text-center text-sm text-muted-foreground">
+          No vibes detected in this area yet.
+        </p>
       )}
-      
-      {/* Footer with accessibility improvements */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
-        <div 
-          className="bg-card/80 backdrop-blur-xl rounded-lg px-4 py-2 text-sm text-muted-foreground"
-          role="status"
-          aria-live="polite"
-        >
-          {visibleClusters.length} clusters
-          <span aria-hidden className="mx-1">•</span>
-          {visibleClusters.reduce((s,c)=>s+c.total,0)} souls
-          {/* {isRealTimeConnected && <span aria-hidden> • Live</span>} */}
-          {hiddenCount > 0 && (
-            <>
-              <span aria-hidden className="mx-1">•</span>
-              {hiddenCount} vibe{hiddenCount > 1 ? "s" : ""} off
-            </>
-          )}
-        </div>
+
+      {/* footer */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 select-none text-xs text-muted-foreground backdrop-blur-sm">
+        {visibleClusters.length} clusters •{" "}
+        {visibleClusters.reduce((s, c) => s + c.total, 0)} souls
+        {hiddenCount > 0 && (
+          <>
+            {" "}
+            • {hiddenCount} vibe{hiddenCount > 1 && "s"} off
+          </>
+        )}
       </div>
-      
-      {/* Close button */}
+
+      {/* close */}
       {onRequestClose && (
-        <button 
+        <button
           onClick={onRequestClose}
-          className="absolute top-4 right-4 z-20 rounded-full bg-card/70 p-2 backdrop-blur-sm pointer-events-auto hover:bg-card/90 transition-colors"
+          className="absolute top-4 right-4 rounded-full bg-card/70 p-2 backdrop-blur-xl transition hover:bg-card"
           aria-label="Close map"
         >
           ✕
