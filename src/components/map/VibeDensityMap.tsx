@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +7,7 @@ import { VibeFilterPanel } from './VibeFilterPanel';
 import { createDensityLayer, usePulseLayer } from './DeckLayers';
 import { useClusters } from '@/hooks/useClusters';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
+import type { Cluster } from '@/hooks/useClusters';
 import { 
   Sheet, 
   SheetContent, 
@@ -17,16 +17,35 @@ import {
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZmxvcXZpYmVzIiwiYSI6ImNtNHUwZmx4bzAzZGsya3M5eWZldHBrOTcifQ.VZWx-Bu3wP1iNSyK7bYIUg';
 
-const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
-
 interface VibeDensityMapProps {
+  /** Controls Radix <Sheet> */
   open: boolean;
+  /** Parent toggles open/close */
   onOpenChange: (open: boolean) => void;
-  userLocation: { lat: number; lng: number };
+  /** Centre of the viewport */
+  userLocation: { lat: number; lng: number } | null;
+  /** Optional pre-fetched data (skip network round-trip) */
+  clusters?: Cluster[];
 }
 
-export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensityMapProps) {
+export function VibeDensityMap({ open, onOpenChange, userLocation, clusters: propClusters }: VibeDensityMapProps) {
   const [vibeFilter, vibeFilterHelpers] = useVibeFilter();
+
+  // Guard against missing location
+  if (!userLocation) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-96">
+          <SheetHeader>
+            <SheetTitle>Vibe Density Map</SheetTitle>
+          </SheetHeader>
+          <div className="h-full grid place-items-center text-muted-foreground">
+            🛰️ Unable to determine your location.
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   // Calculate viewport from user location
   const initialViewState = useMemo(() => ({
@@ -48,21 +67,23 @@ export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensity
     ] as [number, number, number, number];
   }, [userLocation.lat, userLocation.lng]);
 
-  // Fetch clusters
+  // Fetch clusters (only if not provided as props)
   const { 
-    clusters = [], 
-    loading: clustersLoading, 
-    error: clustersError 
-  } = useClusters(bbox);
+    clusters: fetched = [], 
+    loading, 
+    error 
+  } = useClusters(bbox, 6);
+  
+  const allClusters = propClusters?.length ? propClusters : fetched;
 
   // Filter clusters by active vibes
   const filteredClusters = useMemo(() => {
-    if (!vibeFilterHelpers.isFiltered) return clusters;
-    return clusters.filter(cluster => {
+    if (!vibeFilterHelpers.isFiltered) return allClusters;
+    return allClusters.filter(cluster => {
       const vibes = Object.keys(cluster.vibe_counts || {});
       return vibes.some(vibe => vibeFilterHelpers.activeSet.has(vibe as any));
     });
-  }, [clusters, vibeFilterHelpers.activeSet, vibeFilterHelpers.isFiltered]);
+  }, [allClusters, vibeFilterHelpers.activeSet, vibeFilterHelpers.isFiltered]);
 
   // Create layers
   const densityLayer = createDensityLayer(
@@ -91,17 +112,17 @@ export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensity
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onOpenChange]);
 
-  if (clustersError) {
+  if (error) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="top" className="h-full">
+        <SheetContent side="right" className="w-96">
           <SheetHeader>
             <SheetTitle>Vibe Density Map</SheetTitle>
           </SheetHeader>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-muted-foreground">Unable to load clusters</p>
-              <p className="text-sm text-muted-foreground mt-2">{clustersError}</p>
+              <p className="text-sm text-muted-foreground mt-2">{error}</p>
             </div>
           </div>
         </SheetContent>
@@ -111,30 +132,28 @@ export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensity
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="top" className="h-full p-0">
+      <SheetContent side="right" className="w-full max-w-4xl p-0">
         <div className="relative h-full flex flex-col">
           {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-b p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <SheetTitle className="text-lg font-semibold">
-                  Vibe Density Map
-                </SheetTitle>
-                <Badge variant="secondary" className="animate-pulse">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
-                  LIVE
-                </Badge>
-              </div>
-              <VibeFilterPanel 
-                value={vibeFilter} 
-                onChange={vibeFilterHelpers.replace}
-              />
+          <div className="flex items-center justify-between p-4 border-b bg-background">
+            <div className="flex items-center gap-3">
+              <SheetTitle className="text-lg font-semibold">
+                Vibe Density Map
+              </SheetTitle>
+              <Badge variant="secondary" className="animate-pulse">
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-1" />
+                LIVE
+              </Badge>
             </div>
+            <VibeFilterPanel 
+              value={vibeFilter} 
+              onChange={vibeFilterHelpers.replace}
+            />
           </div>
 
           {/* Map Container */}
-          <div className="flex-1 mt-20">
-            {clustersLoading ? (
+          <div className="flex-1">
+            {loading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
@@ -165,7 +184,7 @@ export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensity
           </div>
 
           {/* Footer Stats */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm border-t p-4">
+          <div className="border-t p-4 bg-background">
             <div className="flex items-center justify-between">
               <div className="flex gap-4">
                 <div className="text-center">
@@ -178,13 +197,13 @@ export function VibeDensityMap({ open, onOpenChange, userLocation }: VibeDensity
                 </div>
               </div>
               
-              {clustersLoading && (
+              {loading && (
                 <Badge variant="outline" className="animate-pulse">
                   Updating...
                 </Badge>
               )}
               
-              {clustersError && (
+              {error && (
                 <Badge variant="destructive">
                   Error loading data
                 </Badge>
