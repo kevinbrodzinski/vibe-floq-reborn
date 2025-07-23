@@ -2,9 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { debounce } from 'lodash-es';
 import { supabase } from '@/integrations/supabase/client';
 
-/* ------------------------------------------------------------------ */
-/* Types                                                              */
-/* ------------------------------------------------------------------ */
 export interface Cluster {
   gh6: string;
   centroid: { type: 'Point'; coordinates: [number, number] };
@@ -19,22 +16,16 @@ interface State {
   realtime: boolean;
 }
 
-/* ------------------------------------------------------------------ */
-/* Hook                                                               */
-/* ------------------------------------------------------------------ */
-export const useClusters = (
-  bbox: [number, number, number, number],
-  precision = 6,
-): State => {
+export const useClusters = (bbox: [number, number, number, number], precision = 6): State => {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading , setLoading ] = useState(false);
+  const [error   , setError   ] = useState<string | null>(null);
   const [realtime, setRealtime] = useState(false);
 
-  const abortRef   = useRef<AbortController | null>(null);
-  const chanRef    = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const chanRef  = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  /* ---------------------------- fetch -------------------------------- */
+  /* --------------------------- fetch --------------------------- */
   const fetchClusters = useCallback(
     async (box: [number, number, number, number]) => {
       abortRef.current?.abort();
@@ -45,13 +36,13 @@ export const useClusters = (
       setError(null);
 
       try {
+        /* `supabase.functions.invoke` typings don’t expose `signal`,
+           so cast to `any` to keep abort logic.                     */
         const { data, error } = await supabase.functions.invoke('clusters', {
           body: { bbox: box, precision },
-          signal: ac.signal,
-        });
+        } as any, { signal: ac.signal } as any);
 
         if (ac.signal.aborted) return;
-
         if (error) {
           setError(error.message);
           setClusters([]);
@@ -72,16 +63,11 @@ export const useClusters = (
 
   const debouncedFetch = useMemo(() => debounce(fetchClusters, 300), [fetchClusters]);
 
-  /* ------------------------- bbox watcher --------------------------- */
-  useEffect(() => {
-    debouncedFetch(bbox);
-  }, [bbox, debouncedFetch]);
+  /* ------------- fetch on bbox change -------------------------- */
+  useEffect(() => debouncedFetch(bbox), [bbox, debouncedFetch]);
 
-  /* ------------------------- realtime chan -------------------------- */
-  const chanKey = useMemo(
-    () => `${precision}:${bbox.map((n) => n.toFixed(3)).join(',')}`,
-    [bbox, precision],
-  );
+  /* ------------- realtime channel ------------------------------ */
+  const chanKey = useMemo(() => `${precision}:${bbox.map(n => n.toFixed(3)).join(',')}`, [bbox, precision]);
 
   useEffect(() => {
     if (chanRef.current) supabase.removeChannel(chanRef.current);
@@ -90,27 +76,19 @@ export const useClusters = (
     const ch = supabase
       .channel(`clusters-${chanKey}`)
       .on('broadcast', { event: 'clusters_updated' }, () => debouncedFetch(bbox))
-      .subscribe((status) => setRealtime(status === 'SUBSCRIBED'));
+      .subscribe(status => setRealtime(status === 'SUBSCRIBED'));
 
     chanRef.current = ch;
-
-    return () => {
-      supabase.removeChannel(ch);
-      setRealtime(false);
-    };
+    return () => { supabase.removeChannel(ch); setRealtime(false); };
   }, [chanKey, bbox, debouncedFetch]);
 
-  /* ------------------------- unmount cleanup ------------------------ */
-  useEffect(
-    () => () => {
-      debouncedFetch.cancel();
-      abortRef.current?.abort();
-      if (chanRef.current) supabase.removeChannel(chanRef.current);
-    },
-    [debouncedFetch],
-  );
+  /* ------------- unmount cleanup ------------------------------- */
+  useEffect(() => () => {
+    debouncedFetch.cancel();
+    abortRef.current?.abort();
+    if (chanRef.current) supabase.removeChannel(chanRef.current);
+  }, [debouncedFetch]);
 
-  if (error && import.meta.env.DEV) console.error('[useClusters] ', error);
-
+  if (error && import.meta.env.DEV) console.error('[useClusters]', error);
   return { clusters, loading, error, realtime };
 };
