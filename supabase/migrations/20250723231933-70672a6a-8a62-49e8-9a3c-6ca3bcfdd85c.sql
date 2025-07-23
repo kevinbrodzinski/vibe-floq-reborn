@@ -1,58 +1,53 @@
--- 1) Hard-lock RLS
-ALTER TABLE storage.objects
-  ENABLE ROW LEVEL SECURITY,
-  FORCE ROW LEVEL SECURITY;
+-- ===================================================================
+-- Avatar bucket RLS policies     (runs fine under supabase_migrations)
+-- ===================================================================
 
--- 2) Re-create avatar policies
-DO $$
-BEGIN
-  -- Bail early if bucket doesn't exist
-  IF NOT EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'avatars') THEN
-    RAISE NOTICE 'avatars bucket missing – create it first.';
-    RETURN;
-  END IF;
+-- 1) Make sure the avatars bucket exists
+insert into storage.buckets (id, name)
+values ('avatars', 'avatars')
+on conflict (id) do nothing;      -- safe for re-run
 
-  -- Drop old
-  DROP POLICY IF EXISTS "Avatar images public read"    ON storage.objects;
-  DROP POLICY IF EXISTS "Avatar upload own folder"     ON storage.objects;
-  DROP POLICY IF EXISTS "Avatar update own files"      ON storage.objects;
-  DROP POLICY IF EXISTS "Avatar delete own files"      ON storage.objects;
+-- 2) Replace old policies
+drop policy if exists "Avatar images public read"  on storage.objects;
+drop policy if exists "Avatar upload own folder"   on storage.objects;
+drop policy if exists "Avatar update own files"    on storage.objects;
+drop policy if exists "Avatar delete own files"    on storage.objects;
 
-  -- Re-add
-  CREATE POLICY "Avatar images public read"
-    ON storage.objects
-    FOR SELECT
-    USING (bucket_id = 'avatars');
+-- 3) Public read
+create policy "Avatar images public read"
+  on storage.objects
+  for select
+  using (bucket_id = 'avatars');
 
-  CREATE POLICY "Avatar upload own folder"
-    ON storage.objects
-    FOR INSERT
-    WITH CHECK (
-      bucket_id = 'avatars'
-      AND auth.uid()::text = (storage.foldername(name))[1]
-    );
+-- 4) Authenticated CRUD in their own folder
+create policy "Avatar upload own folder"
+  on storage.objects
+  for insert
+  with check (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
 
-  CREATE POLICY "Avatar update own files"
-    ON storage.objects
-    FOR UPDATE
-    USING (
-      bucket_id = 'avatars'
-      AND auth.uid()::text = (storage.foldername(name))[1]
-    )
-    WITH CHECK (   -- after-image must still be owned
-      bucket_id = 'avatars'
-      AND auth.uid()::text = (storage.foldername(name))[1]
-    );
+create policy "Avatar update own files"
+  on storage.objects
+  for update
+  using (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  )
+  with check (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
 
-  CREATE POLICY "Avatar delete own files"
-    ON storage.objects
-    FOR DELETE
-    USING (
-      bucket_id = 'avatars'
-      AND auth.uid()::text = (storage.foldername(name))[1]
-    );
-END $$;
+create policy "Avatar delete own files"
+  on storage.objects
+  for delete
+  using (
+    bucket_id = 'avatars'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
 
--- 3) Keep function search_path pinned
-ALTER FUNCTION public.handle_new_user()          SET search_path = public;
-ALTER FUNCTION public.update_updated_at_column() SET search_path = public;
+-- 4) Keep function search_path pinned (runs fine under migrations role)
+alter function public.handle_new_user()          set search_path = public;
+alter function public.update_updated_at_column() set search_path = public;
