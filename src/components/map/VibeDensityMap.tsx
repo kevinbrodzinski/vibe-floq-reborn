@@ -1,3 +1,8 @@
+
+import React, { useEffect, useMemo, useState } from 'react';
+import DeckGL from '@deck.gl/react';
+import { Map } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import {
   Sheet,
   SheetPortal,
@@ -7,20 +12,18 @@ import {
   SheetTitle,
   SheetFooter,
   SheetClose,
-} from "@/components/ui/sheet";
-import DeckGL from "@deck.gl/react";
-import { Badge } from "@/components/ui/badge";
-import { MapErrorBoundary } from "./MapErrorBoundary";
-import { ClusterLegend } from "./ClusterLegend";
-import { VibeFilterPanel } from "./VibeFilterPanel";
-import { createDensityLayer, usePulseLayer } from "./DeckLayers";
-import { useClusters } from "@/hooks/useClusters";
-import { useVibeFilter } from "@/hooks/useVibeFilter";
-import type { Cluster } from "@/hooks/useClusters";
-import { useEffect, useMemo } from "react";
+} from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { MapErrorBoundary } from './MapErrorBoundary';
+import { ClusterLegend } from './ClusterLegend';
+import { VibeFilterPanel } from './VibeFilterPanel';
+import { createDensityLayer, usePulseLayer } from './DeckLayers';
+import { useClusters } from '@/hooks/useClusters';
+import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { supabase } from '@/integrations/supabase/client';
+import type { Cluster } from '@/hooks/useClusters';
 
-const MAPBOX_TOKEN =
-  "pk.eyJ1IjoiZmxvcXZpYmVzIiwiYSI6ImNtNHUwZmx4bzAzZGsya3M5eWZldHBrOTcifQ.VZWx-Bu3wP1iNSyK7bYIUg";
+const MAPBOX_STYLE = 'mapbox://styles/kevinbrodzinski/cmdfam7kl000501sjbdoz2g4x';
 
 interface Props {
   open: boolean;
@@ -35,7 +38,32 @@ export function VibeDensityMap({
   userLocation,
   clusters: propClusters,
 }: Props) {
-  /* ––––– guards ––––––––––––––––––––––––––––––––––––––––––––––– */
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
+  // Fetch Mapbox token from edge function
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('mapbox-token');
+        if (error) throw error;
+        if (data?.token) {
+          setMapboxToken(data.token);
+        } else {
+          throw new Error('No token returned');
+        }
+      } catch (error) {
+        console.warn('Failed to fetch Mapbox token:', error);
+        setTokenError('Failed to load map token');
+        // Fallback to public token for development
+        setMapboxToken('pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw');
+      }
+    };
+
+    fetchToken();
+  }, []);
+
+  /* ─── guards ─────────────────────────────────────────────── */
   if (!userLocation) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -45,7 +73,7 @@ export function VibeDensityMap({
             <SheetHeader>
               <SheetTitle>No location</SheetTitle>
             </SheetHeader>
-            <p className="h-full grid place-items-center text-muted-foreground">
+            <p className="grid h-full place-items-center text-muted-foreground">
               🛰️ Unable to determine your location.
             </p>
           </SheetContent>
@@ -54,123 +82,123 @@ export function VibeDensityMap({
     );
   }
 
-  /* ––––– data hooks ––––––––––––––––––––––––––––––––––––––––––– */
+  /* ─── user prefs & filters ───────────────────────────────── */
   const [prefs, filterHelpers] = useVibeFilter();
 
+  /* ─── cluster data fetch ─────────────────────────────────── */
   const bbox = useMemo(() => {
-    const o = 0.01;
+    const offset = 0.01;
     return [
-      userLocation.lng - o,
-      userLocation.lat - o,
-      userLocation.lng + o,
-      userLocation.lat + o,
-    ] as [number, number, number, number];
+      userLocation.lng - offset,
+      userLocation.lat - offset,
+      userLocation.lng + offset,
+      userLocation.lat + offset,
+    ] as const;
   }, [userLocation]);
 
   const { clusters = [], loading, error } = useClusters(bbox, 6);
-  const all = propClusters?.length ? propClusters : clusters;
-
-  const visible = useMemo(() => {
-    if (!filterHelpers.isFiltered) return all;
-    return all.filter((c) =>
-      Object.keys(c.vibe_counts).some((v) => filterHelpers.activeSet.has(v as any)),
+  const allClusters = propClusters?.length ? propClusters : clusters;
+  const visibleClusters = useMemo(() => {
+    if (!filterHelpers.isFiltered) return allClusters;
+    return allClusters.filter((cluster) =>
+      Object.keys(cluster.vibe_counts).some((vibe) =>
+        filterHelpers.activeSet.has(vibe as any)
+      )
     );
-  }, [all, filterHelpers]);
+  }, [allClusters, filterHelpers]);
 
-  /* ––––– layers ––––––––––––––––––––––––––––––––––––––––––––––– */
-  const density = createDensityLayer(visible, {}, () => {});
-  const pulse = usePulseLayer(visible, {});
-  const layers = [density, pulse].filter(Boolean);
+  /* ─── deck.gl layers ─────────────────────────────────────── */
+  const densityLayer = createDensityLayer(visibleClusters, prefs, () => {});
+  const pulseLayer = usePulseLayer(visibleClusters, prefs);
+  const layers = [densityLayer, pulseLayer].filter(Boolean);
 
-  /* ––––– ESC close –––––––––––––––––––––––––––––––––––––––––––– */
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: KeyboardEvent) => e.key === "Escape" && onOpenChange(false);
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open, onOpenChange]);
-
+  /* ─── stats ──────────────────────────────────────────────── */
   const totals = {
-    people: visible.reduce((s, c) => s + c.total, 0),
-    spots: visible.length,
+    people: visibleClusters.reduce((sum, cluster) => sum + cluster.total, 0),
+    spots: visibleClusters.length,
   };
 
-  const initialView = {
+  /* ─── view state ─────────────────────────────────────────── */
+  const initialViewState = {
     latitude: userLocation.lat,
     longitude: userLocation.lng,
     zoom: 12,
-  } as const;
+  };
 
+  /* ─── esc-to-close ───────────────────────────────────────── */
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open, onOpenChange]);
+
+  /* ─── render ─────────────────────────────────────────────── */
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetPortal>
-        {/* dimmed background */}
         <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
 
-        {/* FULL-HEIGHT sheet (flush with top) */}
         <SheetContent
           side="bottom"
           className="h-[100dvh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
         >
-          {/* swipe-down close button */}
           <SheetClose
-            className="absolute right-4 top-4 z-10 rounded-full p-2 hover:bg-accent/20 transition-colors"
+            className="absolute right-4 top-4 z-20 rounded-full p-2 hover:bg-accent/20 transition-colors"
             aria-label="Close"
           >
-            <span aria-hidden>✕</span>
+            ✕
           </SheetClose>
 
-          {/* HEADER */}
-          <SheetHeader
-            role="heading"
-            aria-level={2}
-            className="mb-3 flex items-center justify-between gap-3"
-          >
-            <div className="text-lg font-semibold">Vibe Density Map</div>
+          {/* header */}
+          <SheetHeader className="mb-3 flex items-center justify-between gap-3">
+            <SheetTitle className="text-lg font-semibold">
+              Vibe Density Map
+            </SheetTitle>
             <div className="flex items-center gap-3">
               <Badge variant="secondary">
-                <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                <span className="mr-1 h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
                 LIVE
               </Badge>
-              <VibeFilterPanel
-                value={prefs}
-                onChange={filterHelpers.replace}
-              />
+              <VibeFilterPanel value={prefs} onChange={filterHelpers.replace} />
             </div>
           </SheetHeader>
 
-          {/* MAP AREA */}
-          <div className="relative flex-1">
-            {error ? (
+          {/* map area */}
+          <div className="relative flex-1 rounded-xl overflow-hidden">
+            {!mapboxToken ? (
               <div className="grid h-full place-items-center text-muted-foreground">
-                Error loading clusters
-              </div>
-            ) : loading ? (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                Loading…
+                {tokenError ? tokenError : 'Loading map...'}
               </div>
             ) : (
               <MapErrorBoundary>
-                <div className="absolute inset-0">
-                  {/* optional static fallback image */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=${MAPBOX_TOKEN}")`,
-                    }}
+                <DeckGL
+                  initialViewState={initialViewState}
+                  controller={true}
+                  layers={layers}
+                  style={{ position: 'absolute', inset: 0 }}
+                >
+                  <Map
+                    reuseMaps
+                    mapStyle={MAPBOX_STYLE}
+                    mapboxAccessToken={mapboxToken}
+                    attributionControl={false}
+                    interactive={false}
                   />
-                  <DeckGL
-                    initialViewState={initialView as any}
-                    controller
-                    layers={layers}
-                    style={{ position: "absolute", inset: "0" }}
-                  />
-                </div>
+                </DeckGL>
+                
+                {!loading && layers.length === 0 && (
+                  <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">
+                    {error ? 'Map data offline' : 'No vibes detected here yet'}
+                  </div>
+                )}
               </MapErrorBoundary>
             )}
           </div>
 
-          {/* FOOTER */}
+          {/* footer */}
           <SheetFooter className="min-h-[3.5rem] px-4 py-2 text-sm text-muted-foreground">
             <div className="flex flex-wrap items-center gap-2">
               <span>{totals.spots} spots</span>
@@ -180,13 +208,12 @@ export function VibeDensityMap({
                 <>
                   <span aria-hidden>•</span>
                   <span>
-                    {Object.keys(prefs).length - filterHelpers.activeSet.size}{" "}
-                    vibes off
+                    {Object.keys(prefs).length - filterHelpers.activeSet.size} vibes off
                   </span>
                 </>
               )}
             </div>
-            <ClusterLegend clusters={visible} className="mt-2" />
+            <ClusterLegend clusters={visibleClusters} className="mt-2" />
           </SheetFooter>
         </SheetContent>
       </SheetPortal>
