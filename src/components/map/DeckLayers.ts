@@ -46,6 +46,11 @@ export const usePulseLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
 ) => {
+  // Check for reduced motion preference
+  if (typeof window !== 'undefined' && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    return null;
+  }
+
   // Use module-scope timer for stable animation
   const getT = () => ((Date.now() - t0) % 2000) / 2000; // 0-1 pulse
 
@@ -65,6 +70,10 @@ export const usePulseLayer = (
     getFillColor: (d) => {
       try {
         const normalizedScore = maxTotal > 0 ? d.total / maxTotal : 0;
+        // Check for reduced motion preference
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+          return getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {});
+        }
         return getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {});
       } catch (error) {
         console.warn('Pulse color calculation failed, using fallback:', error);

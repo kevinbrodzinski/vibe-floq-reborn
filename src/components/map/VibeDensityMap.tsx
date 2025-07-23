@@ -9,7 +9,7 @@ import {
 import DeckGL from "@deck.gl/react";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { easeCubic } from "d3-ease";
-import { LngLat } from "mapbox-gl";
+
 import { createDensityLayer, usePulseLayer } from "./DeckLayers";
 import { useVibeFilter } from "@/hooks/useVibeFilter";
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
@@ -181,7 +181,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
         controller={true}
         layers={layers}
         onViewStateChange={({ viewState }) => {
-          // keep ref in sync without triggering React re-render
+          // eslint-disable-next-line react-hooks/exhaustive-deps
           Object.assign(viewStateRef.current, viewState);
         }}
         style={{ position: "absolute", top: "0", left: "0", right: "0", bottom: "0" }}
@@ -194,10 +194,16 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
           role="status"
           aria-live="polite"
         >
-          {visibleClusters.length} clusters <span aria-hidden>•</span>{" "}
+          {visibleClusters.length} clusters
+          <span aria-hidden className="mx-1">•</span>
           {visibleClusters.reduce((s,c)=>s+c.total,0)} souls
           {/* {isRealTimeConnected && <span aria-hidden> • Live</span>} */}
-          {hiddenCount>0 && <span aria-hidden> • {hiddenCount} vibes off</span>}
+          {hiddenCount > 0 && (
+            <>
+              <span aria-hidden className="mx-1">•</span>
+              {hiddenCount} vibe{hiddenCount > 1 ? "s" : ""} off
+            </>
+          )}
         </div>
       </div>
       
