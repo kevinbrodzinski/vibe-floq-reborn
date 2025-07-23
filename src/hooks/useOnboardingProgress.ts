@@ -84,9 +84,9 @@ export function useOnboardingProgress() {
     loadInitialProgress();
   }, [user, loadProgress]);
 
-  // Debounced save to prevent excessive writes
+  // Debounced save to prevent excessive writes (fixed double callback wrapping)
   const debouncedSave = useDebouncedCallback(
-    useCallback(async (stateToSave: OnboardingState) => {
+    async (stateToSave: OnboardingState) => {
       if (!userRef.current) return; // Guard against logout
       if (stateToSave.currentStep > 0 || stateToSave.selectedVibe) {
         await storage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
@@ -94,8 +94,8 @@ export function useOnboardingProgress() {
           await saveProgress(stateToSave);
         }
       }
-    }, [user, saveProgress]),
-    1000, // 1 second debounce
+    },
+    1500, // Increased for mobile networks
     { leading: false, trailing: true }
   );
 

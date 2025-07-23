@@ -1,6 +1,25 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
+// Platform detection for React Native compatibility
+const isWeb = typeof window !== 'undefined';
+
+// Safe area and keyboard components (platform-specific)
+const SafeAreaContainer = ({ children, className }: { children: ReactNode; className?: string }) => {
+  if (isWeb) {
+    return <div className={className}>{children}</div>;
+  }
+  // TODO: For React Native, use:
+  // return (
+  //   <SafeAreaView style={{ flex: 1 }}>
+  //     <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+  //       {children}
+  //     </KeyboardAvoidingView>
+  //   </SafeAreaView>
+  // );
+  return <div className={className}>{children}</div>;
+};
+
 interface MobileOnboardingWrapperProps {
   children: ReactNode;
   className?: string;
@@ -15,7 +34,7 @@ export function MobileOnboardingWrapper({
   className = '' 
 }: MobileOnboardingWrapperProps) {
   return (
-    <div className={`
+    <SafeAreaContainer className={`
       min-h-screen 
       w-full 
       relative 
@@ -57,7 +76,7 @@ export function MobileOnboardingWrapper({
           {children}
         </motion.div>
       </div>
-    </div>
+    </SafeAreaContainer>
   );
 }
 
@@ -139,12 +158,12 @@ export function OnboardingProgress({
       py-2
       shadow-lg
     ">
-      {Array.from({ length: totalSteps }, (_, index) => (
+      {Array.from({ length: totalSteps }, (_, step) => (
         <button
-          key={index}
-          onClick={() => onStepClick?.(index)}
-          disabled={index > currentStep}
-          aria-label={`Go to step ${index + 1}`}
+          key={step}
+          onClick={() => step <= currentStep && onStepClick?.(step)}
+          disabled={step > currentStep}
+          aria-label={`Go to step ${step + 1}`}
           className={`
             w-2 
             h-2 
@@ -153,9 +172,9 @@ export function OnboardingProgress({
             rounded-full 
             transition-all 
             duration-200 
-            ${index === currentStep
+            ${step === currentStep
               ? 'bg-primary scale-125 shadow-md'
-              : index < currentStep
+              : step < currentStep
               ? 'bg-primary/60 hover:bg-primary/80 cursor-pointer'
               : 'bg-muted-foreground/30 cursor-not-allowed'
             }

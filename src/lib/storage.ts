@@ -97,18 +97,24 @@ class MemoryStorageAdapter implements StorageAdapter {
   }
 }
 
-// TODO: Add React Native storage adapter when migrating to mobile
-// class ReactNativeStorageAdapter implements StorageAdapter {
-//   async getItem(key: string): Promise<string | null> {
-//     try {
-//       return await AsyncStorage.getItem(key);
-//     } catch (error) {
-//       console.warn(`[Storage] Failed to get item ${key}:`, error);
-//       return null;
-//     }
-//   }
-//   // ... implement other methods with AsyncStorage
-// }
+// React Native storage adapter (throws for now - better than silent data loss)
+class ReactNativeStorageAdapter implements StorageAdapter {
+  async getItem(key: string): Promise<string | null> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+  async setItem(key: string, value: string): Promise<void> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+  async removeItem(key: string): Promise<void> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+  async getAllKeys(): Promise<string[]> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+  async clear(): Promise<void> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+}
 
 // Platform detection and adapter selection
 function createStorageAdapter(): StorageAdapter {
@@ -118,7 +124,7 @@ function createStorageAdapter(): StorageAdapter {
   // }
   
   try {
-    // Test if localStorage is available
+    // Test if localStorage is available (guard window access)
     if (typeof window !== 'undefined' && window.localStorage) {
       const testKey = '__storage_test__';
       localStorage.setItem(testKey, 'test');
@@ -129,6 +135,7 @@ function createStorageAdapter(): StorageAdapter {
     // localStorage not available, use memory fallback
   }
   
+  console.info('[Storage] Using in-memory adapter - data will not persist');
   return new MemoryStorageAdapter();
 }
 
@@ -215,12 +222,14 @@ export const storage = {
   },
 
   /**
-   * Clear auth-related storage
+   * Clear auth-related storage (includes Supabase v2 tokens)
    */
   async clearAuthStorage(): Promise<void> {
     const authPatterns = [
       /^supabase\.auth\./,
       /^sb-/,
+      /^sb-access-token$/,  // Supabase v2 token
+      /^flq_/,  // Use consistent prefix
       /^floq_/,
       /^auth_/
     ];
