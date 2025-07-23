@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DeckGL from '@deck.gl/react';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { supabase } from '@/integrations/supabase/client';
+import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
 import {
   Sheet,
   SheetContent,
@@ -51,46 +51,25 @@ export function VibeDensityMap({
     );
   }
 
-  // Fetch Mapbox token
-  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
-  const [tokenError, setTokenError] = useState(false);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('mapbox-token');
-        if (error) throw error;
-        if (data?.token) {
-          setMapboxToken(data.token);
-        } else {
-          throw new Error('No token in response');
-        }
-      } catch (err) {
-        console.warn('Failed to fetch Mapbox token:', err);
-        console.log('Error details:', err);
-        setTokenError(true);
-        // Fallback to public dev token only in development
-        if (import.meta.env.DEV) {
-          setMapboxToken('pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw');
-        }
-      }
-    };
-    fetchToken();
-  }, []);
+  // Map viewport state
+  const [viewport, setViewport] = useState({
+    minLat: userLocation.lat - 0.01,
+    minLng: userLocation.lng - 0.01,
+    maxLat: userLocation.lat + 0.01,
+    maxLng: userLocation.lng + 0.01,
+    zoom: 12,
+  });
 
   // User preferences and filters
   const [prefs, filterHelpers] = useVibeFilter();
 
-  // Cluster data fetch
-  const bbox = useMemo(() => {
-    const offset = 0.01;
-    return [
-      userLocation.lng - offset,
-      userLocation.lat - offset,
-      userLocation.lng + offset,
-      userLocation.lat + offset,
-    ] as [number, number, number, number];
-  }, [userLocation]);
+  // Cluster data fetch using viewport
+  const bbox = useMemo(() => [
+    viewport.minLng,
+    viewport.minLat,
+    viewport.maxLng,
+    viewport.maxLat,
+  ] as [number, number, number, number], [viewport]);
 
   const { clusters = [], loading, error } = useClusters(bbox, 6);
   const allClusters = propClusters?.length ? propClusters : clusters;
@@ -117,16 +96,10 @@ export function VibeDensityMap({
   const pulseLayer = usePulseLayer(visibleClusters, prefWeights);
   const layers = [densityLayer, pulseLayer].filter(Boolean);
 
-  // Debug logging
-  console.log('VibeDensityMap debug:', {
-    mapboxToken: !!mapboxToken,
-    tokenError,
-    allClusters: allClusters.length,
-    visibleClusters: visibleClusters.length,
-    layers: layers.length,
-    prefs,
-    prefWeights
-  });
+  // Handle region changes from map
+  const handleRegionChange = (bounds: typeof viewport) => {
+    setViewport(bounds);
+  };
 
   // Stats
   const totals = {
@@ -184,54 +157,22 @@ export function VibeDensityMap({
 
         {/* Map area */}
         <div className="relative flex-1 rounded-xl overflow-hidden bg-background">
-          {!mapboxToken ? (
-            <div className="pointer-events-none grid h-full place-items-center text-muted-foreground">
-              {tokenError ? 'Map unavailable' : 'Loading map...'}
-            </div>
-          ) : (
-            <MapErrorBoundary>
+          <MapErrorBoundary>
+            <VibeDensityWebMap onRegionChange={handleRegionChange}>
               <DeckGL
                 initialViewState={initialViewState as any}
                 controller={true}
                 layers={layers}
-                style={{ position: 'absolute', inset: '0', background: '#1a1a1a' }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: '0',
-                    background: `url('https://api.mapbox.com/styles/v1/${MAPBOX_STYLE.replace('mapbox://styles/', '')}/static/${userLocation.lng},${userLocation.lat},12/600x400@2x?access_token=${mapboxToken}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    zIndex: 1,
-                  }}
-                />
-                {/* Debug info */}
-                <div 
-                  style={{ 
-                    position: 'absolute', 
-                    top: '10px', 
-                    left: '10px', 
-                    background: 'rgba(0,0,0,0.7)', 
-                    color: 'white', 
-                    padding: '8px', 
-                    fontSize: '12px',
-                    zIndex: 10 
-                  }}
-                >
-                  Token: {mapboxToken ? 'YES' : 'NO'}<br/>
-                  Layers: {layers.length}<br/>
-                  Clusters: {visibleClusters.length}
+                style={{ position: 'absolute', inset: '0', pointerEvents: 'none' }}
+              />
+              
+              {!loading && layers.length === 0 && (
+                <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground pointer-events-none">
+                  No vibes detected here yet
                 </div>
-              </DeckGL>
-            </MapErrorBoundary>
-          )}
-
-          {!loading && layers.length === 0 && mapboxToken && (
-            <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground pointer-events-none">
-              No vibes detected here yet
-            </div>
-          )}
+              )}
+            </VibeDensityWebMap>
+          </MapErrorBoundary>
         </div>
 
         {/* Footer */}
