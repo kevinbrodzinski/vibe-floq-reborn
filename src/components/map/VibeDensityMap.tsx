@@ -21,9 +21,11 @@ import { MapErrorBoundary } from "./MapErrorBoundary";
 
 import {
   useVibeFilter,
+  ALL_VIBES,
   type VibeFilterState,
 } from "@/hooks/useVibeFilter";
 import { VibeFilterPanel } from "./VibeFilterPanel";
+import { DEFAULT_PREFS } from "@/utils/vibePrefs";
 import type { Cluster } from "@/hooks/useClusters";
 
 /* ------------------------------------------------------------------ */
@@ -68,7 +70,12 @@ export const VibeDensityMap = ({
   className = "",
 }: VibeDensityMapProps) => {
   const fallbackUserLocation = useOptimizedGeolocation();
-  const currentUserLocation = userLocation ?? fallbackUserLocation ?? null;
+  
+  // memoize to avoid recreation on every render
+  const currentUserLocation = useMemo(
+    () => userLocation ?? fallbackUserLocation ?? null,
+    [userLocation, fallbackUserLocation]
+  );
 
   const hasFix =
     !!currentUserLocation &&
@@ -114,13 +121,12 @@ export const VibeDensityMap = ({
   /* ──────────────────────────────  prefs / filter  */
   const [filterState, filterHelpers] = useVibeFilter();
   
-  // compute once per render; no need for useMemo
-  const activeSet = filterHelpers.activeSet;
-  const hiddenCount = filterHelpers.isFiltered ? 
-    Object.keys(filterState).length - activeSet.size : 0;
+  // extract these once per render to avoid recreation
+  const { activeSet } = filterHelpers;
+  const hiddenCount = ALL_VIBES.length - activeSet.size;
 
-  // placeholder for color bias (can be re-added later)
-  const vibePrefs = {};
+  // use single source of truth for prefs
+  const vibePrefs = DEFAULT_PREFS;
 
   /* ──────────────────────────────  deck.gl layers  */
   const handleClusterClick = useCallback((c: Cluster) => {
@@ -141,13 +147,19 @@ export const VibeDensityMap = ({
     [clusters, activeSet],
   );
 
+  // stabilize pulseLayer to avoid recreation on every render
+  const pulseLayer = useMemo(
+    () => usePulseLayer(visibleClusters, vibePrefs),
+    [visibleClusters, vibePrefs]
+  );
+
   const layers = useMemo(() => {
     if (!visibleClusters.length) return [];
     return [
       createDensityLayer(visibleClusters, vibePrefs, handleClusterClick),
-      usePulseLayer(visibleClusters, vibePrefs), // inline call to avoid stale deps
+      pulseLayer,
     ].filter(Boolean);
-  }, [visibleClusters, vibePrefs, handleClusterClick]);
+  }, [visibleClusters, vibePrefs, handleClusterClick, pulseLayer]);
 
   /* center helpers --------------------------------------------------- */
   const centerOnUser = useCallback(() => {
@@ -330,13 +342,17 @@ export const VibeDensityMap = ({
           {/* footer stats */}
           {visibleClusters.length > 0 && (
             <footer className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground">
-              {visibleClusters.length} clusters •{" "}
+              {visibleClusters.length} clusters <span aria-hidden>•</span>{" "}
               {visibleClusters.reduce((s, c) => s + c.total, 0)} souls in the field
               {isRealTimeConnected && (
-                <span className="ml-1 text-green-500">• Live</span>
+                <span className="ml-1 text-green-500">
+                  <span aria-hidden>•</span> Live
+                </span>
               )}
               {hiddenCount > 0 && (
-                <span className="ml-1 text-muted-foreground">• {hiddenCount} vibes off</span>
+                <span className="ml-1 text-muted-foreground">
+                  <span aria-hidden>•</span> {hiddenCount} vibes off
+                </span>
               )}
             </footer>
           )}
