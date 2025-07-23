@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 import { ScatterplotLayer } from "@deck.gl/layers";
 import { getClusterColor } from "@/utils/color";
+import { useDeckTime } from "./useDeckTime";
 import type { Cluster } from "@/hooks/useClusters";
 
 /* Density layer ------------------------------------------------------ */
@@ -43,7 +44,7 @@ export const usePulseLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
 ) => {
-  const time = (Date.now() % 2000) / 2000; // 0-1 loop
+  const timeRef = useDeckTime();
 
   if (!clusters.length) return null;
 
@@ -53,8 +54,10 @@ export const usePulseLayer = (
     id: "vibe-pulse",
     data: clusters,
     getPosition: (d) => d.centroid.coordinates,
-    getRadius: (d) =>
-      30 + Math.sin(time * 2 * Math.PI) * 20 * (maxTotal > 0 ? d.total / maxTotal : 0),
+    getRadius: (d) => {
+      const t = (timeRef.current % 2000) / 2000;      // 0→1 every 2 s
+      return 30 + Math.sin(t * 2 * Math.PI) * 20 * (maxTotal > 0 ? d.total / maxTotal : 0);
+    },
     radiusUnits: "meters",
     getFillColor: (d) => {
       try {
@@ -68,7 +71,8 @@ export const usePulseLayer = (
     },
     opacity: 0.3,
     pickable: false,
-    updateTriggers: { getRadius: time, data: clusters },
+    // time is read from ref, so no trigger required
+    updateTriggers: { getRadius: [clusters, prefs], data: clusters },
   });
 };
 
