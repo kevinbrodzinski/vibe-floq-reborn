@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { VibeDensityWebMap } from '../../../../packages/ui/src/maps/VibeDensityWebMap';
+import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
 import { VibeDensityEmpty } from '@/components/map/VibeDensityEmpty';
@@ -49,7 +49,9 @@ export const VibeDensityMap: React.FC = () => {
 
   const handleClusterClick = (cluster: Cluster) => {
     setSelectedCluster(cluster);
-    console.log('Selected cluster:', cluster);
+    if (import.meta.env.DEV) {
+      console.log('Selected cluster:', cluster);
+    }
   };
 
   // Create deck.gl layers - now using stable activeSet

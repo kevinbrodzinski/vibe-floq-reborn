@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { FloqNavigation } from "./FloqNavigation";
@@ -27,13 +28,19 @@ export const FloqApp = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-
   // Deep-link support for full-screen mode
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('full') === '1') {
       useFullscreenMap.getState().setMode('full')
     }
   }, [])
+
+  // Debug logging
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[FloqApp] Component mounted, current route:', window.location.pathname);
+    }
+  }, []);
 
   return (
     <ErrorBoundary>
