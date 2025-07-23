@@ -346,10 +346,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // 1️⃣ empty the pool first (all Graphics still have a context)
+      graphicsPoolRef.current?.releaseAll();
+      
+      // 2️⃣ THEN destroy containers and clean up
       heatContainerRef.current?.removeChildren();
       peopleContainerRef.current?.removeChildren();
       tilePoolRef.current?.clearAll();
-      graphicsPoolRef.current?.releaseAll();
     };
   }, []);
 

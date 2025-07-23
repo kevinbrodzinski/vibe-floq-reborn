@@ -16,14 +16,22 @@ export class GraphicsPool {
   release(graphics: Graphics): void {
     if (this.active.has(graphics)) {
       this.active.delete(graphics);
-      graphics.clear();
+      // don't clear if the renderer (webGL context) is gone
+      if (!graphics.destroyed && (graphics as any)._webGL) {
+        graphics.clear();
+      }
+      graphics.removeFromParent();
       this.pool.push(graphics);
     }
   }
 
   releaseAll(): void {
     this.active.forEach(graphics => {
-      graphics.clear();
+      // don't clear if the renderer (webGL context) is gone
+      if (!graphics.destroyed && (graphics as any)._webGL) {
+        graphics.clear();
+      }
+      graphics.removeFromParent();
       this.pool.push(graphics);
     });
     this.active.clear();
