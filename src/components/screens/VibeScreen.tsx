@@ -468,6 +468,8 @@ export const VibeScreen = () => {
       {/* Density Map Modal */}
       {showDensityMap && (
         <VibeDensityMap
+          clusters={clusters}
+          userLocation={userLocation}
           onRequestClose={() => setShowDensityMap(false)}
         />
       )}
