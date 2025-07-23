@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useAuth } from "@/providers/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
-import { VibeDensityMap } from "@/components/map/VibeDensityMap";
+import { VibeDensityModal } from "@/components/screens/VibeDensityModal";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
 
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
@@ -464,10 +464,12 @@ export const VibeScreen = () => {
       </div>
 
       {/* Density Map Modal */}
-      <VibeDensityMap
-        open={showDensityMap}
-        onOpenChange={setShowDensityMap}
-      />
+      {showDensityMap && (
+        <VibeDensityModal
+          open={showDensityMap}
+          onOpenChange={setShowDensityMap}
+        />
+      )}
 
       {/* Enhanced Mini Vibe Card */}
       <div className="fixed bottom-20 left-6 right-6">
