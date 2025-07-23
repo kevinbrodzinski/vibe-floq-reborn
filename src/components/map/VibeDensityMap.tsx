@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DeckGL from '@deck.gl/react';
-import { Map } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -147,14 +146,14 @@ export function VibeDensityMap({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[100dvh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
+        className="h-screen max-h-[100dvh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
       >
         <SheetClose
           className="absolute right-4 top-4 z-20 rounded-full p-2 hover:bg-accent/20 transition-colors"
           aria-label="Close"
         >
           ✕
-          <span className="sr-only">Close</span>
+          <span className="sr-only">Close map</span>
         </SheetClose>
 
         {/* Header */}
@@ -174,22 +173,25 @@ export function VibeDensityMap({
         {/* Map area */}
         <div className="relative flex-1 rounded-xl overflow-hidden">
           {!mapboxToken ? (
-            <div className="grid h-full place-items-center text-muted-foreground">
+            <div className="pointer-events-none grid h-full place-items-center text-muted-foreground">
               {tokenError ? 'Map unavailable' : 'Loading map...'}
             </div>
           ) : (
             <MapErrorBoundary>
               <DeckGL
-                initialViewState={initialViewState}
+                initialViewState={initialViewState as any}
                 controller={true}
                 layers={layers}
                 style={{ position: 'absolute', inset: '0' }}
               >
-                <Map
-                  reuseMaps
-                  mapStyle={MAPBOX_STYLE}
-                  mapboxAccessToken={mapboxToken}
-                  attributionControl={false}
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: '0',
+                    background: `url('https://api.mapbox.com/styles/v1/${MAPBOX_STYLE.replace('mapbox://styles/', '')}/static/${userLocation.lng},${userLocation.lat},12/600x400@2x?access_token=${mapboxToken}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
                 />
               </DeckGL>
             </MapErrorBoundary>
