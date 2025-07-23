@@ -175,7 +175,15 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   /* ──────────────────────────────  render  */
   return (
-    <div className="fixed inset-0 z-50">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      {/* Dark scrim backdrop */}
+      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+
+      {/* MAP CANVAS */}
       <DeckGL
         viewState={viewStateRef.current}
         controller={true}
@@ -184,11 +192,11 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
           // eslint-disable-next-line react-hooks/exhaustive-deps
           Object.assign(viewStateRef.current, viewState);
         }}
-        style={{ position: "absolute", top: "0", left: "0", right: "0", bottom: "0" }}
+        style={{ width: "100%", height: "100%", position: "relative", zIndex: "1" }}
       />
       
       {/* Footer with accessibility improvements */}
-      <div className="fixed bottom-4 left-4 right-4 pointer-events-none">
+      <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
         <div 
           className="bg-card/80 backdrop-blur-xl rounded-lg px-4 py-2 text-sm text-muted-foreground"
           role="status"
@@ -207,10 +215,12 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
         </div>
       </div>
       
+      {/* Close button */}
       {onRequestClose && (
         <button 
           onClick={onRequestClose}
-          className="fixed top-4 right-4 p-2 bg-card/80 backdrop-blur-xl rounded-full pointer-events-auto"
+          className="absolute top-4 right-4 z-20 rounded-full bg-card/70 p-2 backdrop-blur-sm pointer-events-auto hover:bg-card/90 transition-colors"
+          aria-label="Close map"
         >
           ✕
         </button>
