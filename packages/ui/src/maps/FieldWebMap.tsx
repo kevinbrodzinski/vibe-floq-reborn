@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxWorker from 'mapbox-gl/dist/mapbox-gl.worker.js?worker';
 import { setMapInstance } from '@/lib/geo/project';
 
 interface Props {
@@ -66,8 +67,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         mapboxgl.accessToken = token;
         setTokenSource(source);
         
-        // Skip worker setup for now - test if map loads without it
-        console.log('[FieldWebMap] DEBUG 2: Skipping worker setup, testing basic map load');
+        // Apply worker fix - must run before new Map()
+        (mapboxgl as any).workerClass = MapboxWorker;
+        console.log('[FieldWebMap] DEBUG 2: Worker class set, count:', (mapboxgl as any).getWorkerCount?.() || 'getWorkerCount undefined');
         
         console.log('[FieldWebMap] Creating map with container:', container.current);
         const map = new mapboxgl.Map({
