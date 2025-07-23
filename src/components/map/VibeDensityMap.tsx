@@ -110,14 +110,19 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   const visibleClusters = useMemo(
     () => (filterHelpers.isFiltered 
-      ? clusters.filter(c => activeSet.has(c.vibe_counts ? Object.keys(c.vibe_counts)[0] as any : ''))
+      ? clusters.filter(c => {
+          // Prefer top_vibe when available, fallback to first vibe_count key
+          const vibe = (c as any).top_vibe || (c.vibe_counts ? Object.keys(c.vibe_counts)[0] as any : '');
+          return activeSet.has(vibe);
+        })
       : clusters),
     [clusters, activeSet, filterHelpers.isFiltered],
   );
 
-  // NEW – call hook directly (it no longer causes React renders)
+  // NOTE: pulseLayer recreates when clusters/prefs change (expected behavior)
   const pulseLayer = usePulseLayer(visibleClusters, vibePrefs);
 
+  // NOTE: densityLayer rebuilds on every prefs change (fine, but noted)
   const densityLayer = useMemo(
     () => createDensityLayer(visibleClusters, vibePrefs, handleClusterClick),
     [visibleClusters, vibePrefs, handleClusterClick],
@@ -168,5 +173,32 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
     }
   }, [hasFix, centerOnUser]);
 
-  return null;
+  return (
+    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Map content would go here */}
+      
+      {/* Footer with accessibility improvements */}
+      <div className="fixed bottom-4 left-4 right-4">
+        <div 
+          className="bg-card/80 backdrop-blur-xl rounded-lg px-4 py-2 text-sm text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
+          {visibleClusters.length} clusters <span aria-hidden>•</span>{" "}
+          {visibleClusters.reduce((s,c)=>s+c.total,0)} souls
+          {/* {isRealTimeConnected && <span aria-hidden> • Live</span>} */}
+          {hiddenCount>0 && <span aria-hidden> • {hiddenCount} vibes off</span>}
+        </div>
+      </div>
+      
+      {onRequestClose && (
+        <button 
+          onClick={onRequestClose}
+          className="fixed top-4 right-4 p-2 bg-card/80 backdrop-blur-xl rounded-full"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
 };

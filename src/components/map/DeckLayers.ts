@@ -5,6 +5,9 @@ import { ScatterplotLayer } from "@deck.gl/layers";
 import { getClusterColor } from "@/utils/color";
 import type { Cluster } from "@/hooks/useClusters";
 
+// Module-scope timer to avoid re-evaluation on hot-reload
+const t0 = Date.now();
+
 /* Density layer ------------------------------------------------------ */
 export const createDensityLayer = (
   clusters: Cluster[],
@@ -43,9 +46,8 @@ export const usePulseLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
 ) => {
-  // lightweight deck.gl animation helper (no React re-render)
-  const start = Date.now();
-  const getT = () => ((Date.now() - start) % 2000) / 2000; // 0-1 pulse
+  // Use module-scope timer for stable animation
+  const getT = () => ((Date.now() - t0) % 2000) / 2000; // 0-1 pulse
 
   if (!clusters.length) return null;
 
