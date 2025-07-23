@@ -177,11 +177,16 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
   /* ──────────────────────────────  debugging  */
   useEffect(() => {
-    if (deckRef.current) {
+    if (import.meta.env.DEV && deckRef.current) {
       (window as any).deck = deckRef.current;
-      if (import.meta.env.DEV) console.info("🗺️ Deck instance exposed → window.deck");
+      console.info("🗺️ Deck instance exposed → window.deck");
     }
   }, []);
+
+  // Regression-proofing warnings
+  if (import.meta.env.DEV && !clusters.length) {
+    console.warn("[VibeDensityMap] no clusters passed - map will be empty");
+  }
 
   // Debug logging
   if (import.meta.env.DEV) {
@@ -219,6 +224,15 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
         }}
         style={{ width: "100%", height: "100%", position: "relative", zIndex: "1" }}
       />
+
+      {/* Fallback message for empty data */}
+      {!clusters.length && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="text-center text-sm text-muted-foreground bg-card/80 backdrop-blur-xl rounded-lg p-4">
+            No vibes detected in this area yet.
+          </div>
+        </div>
+      )}
       
       {/* Footer with accessibility improvements */}
       <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
