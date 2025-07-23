@@ -48,6 +48,8 @@ export default defineConfig(({ mode, command }) => ({
       'react-native': 'react-native-web',
       // Stub native-only libs so Roll-up doesn't bundle them
       '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      // Fix earcut default export for deck.gl compatibility
+      'earcut': path.resolve(__dirname, 'src/shims/earcut-default.ts'),
     },
     dedupe: ['react', 'react-dom', 'react-native-web'],
   },
