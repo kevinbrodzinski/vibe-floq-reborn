@@ -77,8 +77,10 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
   /* slide-out panel state ------------------------------------------- */
   const [showFilter, setShowFilter] = useState(false);
 
-  /* user location marker --------------------------------------------- */
-  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  /* user location state ---------------------------------------------- */
+  const [userLocation, setUserLocation] = useState<{
+    lat: number; lng: number;
+  } | null>(null);
 
   /* user location tracking ------------------------------------------- */
   useEffect(() => {
@@ -87,22 +89,10 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
 
     const watch = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        const { longitude, latitude } = coords;
-        const mapInstance = getMapInstance();
-        
-        if (!mapInstance) return;
-
-        // Create or update marker
-        if (!userMarkerRef.current) {
-          userMarkerRef.current = new mapboxgl.Marker({
-            color: '#3B82F6', // blue-500
-            scale: 0.8,
-          })
-            .setLngLat([longitude, latitude])
-            .addTo(mapInstance);
-        } else {
-          userMarkerRef.current.setLngLat([longitude, latitude]);
-        }
+        setUserLocation({
+          lat: coords.latitude,
+          lng: coords.longitude,
+        });
       },
       (error) => {
         console.warn('Geolocation error:', error.message);
@@ -116,8 +106,7 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
 
     return () => {
       navigator.geolocation.clearWatch(watch);
-      userMarkerRef.current?.remove();
-      userMarkerRef.current = null;
+      setUserLocation(null);
     };
   }, [open]);
 
@@ -174,7 +163,8 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
           {/* slide-out trigger */}
           <button
             onClick={() => setShowFilter(true)}
-            className="text-[11px] font-medium px-3 py-1 rounded-lg border border-border hover:bg-muted/20 transition-colors">
+            className="text-[11px] font-medium px-3 py-1 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+            aria-label="Open vibe filters">
             Filter vibes
           </button>
 
@@ -204,6 +194,21 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
               interactive
               onVibeClick={(v) => console.log('clicked', v)}
             />
+
+            {/* user location dot */}
+            {userLocation && (
+              <div
+                className="absolute z-50 pointer-events-none"
+                style={{
+                  left: `${((userLocation.lng + 118.5) / 0.5) * 100}%`,
+                  top: `${((34.1 - userLocation.lat) / 0.1) * 100}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}>
+                <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg border-2 border-white">
+                  <div className="absolute inset-0 rounded-full bg-blue-500/40 animate-ping" />
+                </div>
+              </div>
+            )}
 
             {/* lightweight UI states */}
             {loading && (
