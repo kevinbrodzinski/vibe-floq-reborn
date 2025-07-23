@@ -1,5 +1,7 @@
 import { Graphics } from 'pixi.js';
 
+const MAX_SIZE = 200;
+
 export class GraphicsPool {
   private pool: Graphics[] = [];
   private active = new Set<Graphics>();
@@ -21,7 +23,13 @@ export class GraphicsPool {
         graphics.clear();
       }
       graphics.removeFromParent();
-      this.pool.push(graphics);
+      
+      // Cap pool size to prevent unbounded growth
+      if (this.pool.length > MAX_SIZE) {
+        graphics.destroy(true);
+      } else {
+        this.pool.push(graphics);
+      }
     }
   }
 
@@ -32,8 +40,11 @@ export class GraphicsPool {
         graphics.clear();
       }
       graphics.removeFromParent();
-      // prevent duplicate pooling
-      if (!this.pool.includes(graphics)) {
+      
+      // Cap pool size and prevent duplicate pooling
+      if (this.pool.length > MAX_SIZE) {
+        graphics.destroy(true);
+      } else if (!this.pool.includes(graphics)) {
         this.pool.push(graphics);
       }
     });

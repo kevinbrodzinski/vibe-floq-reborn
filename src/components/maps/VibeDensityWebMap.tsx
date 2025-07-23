@@ -25,6 +25,8 @@ export const VibeDensityWebMap:React.FC<Props>=({onRegionChange,children})=>{
   useEffect(()=>{
     if(!container.current||mapRef.current) return;
     let dead=false;
+    let fireHandler: (() => void) | null = null;
+    let errorHandler: ((e: any) => void) | null = null;
 
     (async()=>{
       try{
@@ -39,7 +41,7 @@ export const VibeDensityWebMap:React.FC<Props>=({onRegionChange,children})=>{
         });
         mapRef.current=map;
 
-        const fire=()=>{
+        fireHandler=()=>{
           const b=map.getBounds();
           onRegionChange({
             minLat:b.getSouth(),minLng:b.getWest(),
@@ -48,19 +50,21 @@ export const VibeDensityWebMap:React.FC<Props>=({onRegionChange,children})=>{
           });
         };
 
-        map.once('load',()=>{
-          if(dead) return;
-          setMapInstance(map);
-          fire();
-          map.on('moveend',fire);
-          setStatus('ready');
-        });
-
-        map.on('error',e=>{
+        errorHandler = (e: any) => {
           if(dead) return;
           setErr(e.error?.message||'unknown');
           setStatus('error');
+        };
+
+        map.once('load',()=>{
+          if(dead) return;
+          setMapInstance(map);
+          fireHandler!();
+          map.on('moveend',fireHandler!);
+          setStatus('ready');
         });
+
+        map.on('error', errorHandler);
       }catch(e:any){
         if(!dead){setErr(e.message);setStatus('error');}
       }
@@ -69,6 +73,9 @@ export const VibeDensityWebMap:React.FC<Props>=({onRegionChange,children})=>{
     return()=>{
       dead=true;
       if(mapRef.current){
+        // Remove map listeners before destroying
+        if(fireHandler) mapRef.current.off('moveend', fireHandler);
+        if(errorHandler) mapRef.current.off('error', errorHandler);
         mapRef.current.remove();
         mapRef.current=null;
         setMapInstance(null);
