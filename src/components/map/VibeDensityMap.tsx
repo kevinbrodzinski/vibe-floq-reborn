@@ -1,3 +1,4 @@
+
 import {
   Sheet, SheetPortal, SheetOverlay, SheetContent,
   SheetHeader, SheetTitle, SheetFooter, SheetClose,
@@ -10,10 +11,11 @@ import { VibeFilterPanel } from "./VibeFilterPanel";
 import { createDensityLayer, usePulseLayer } from "./DeckLayers";
 import { useClusters } from "@/hooks/useClusters";
 import { useVibeFilter } from "@/hooks/useVibeFilter";
+import { motion } from "framer-motion";
+import Map from "react-map-gl";
+import { supabase } from "@/integrations/supabase/client";
 import type { Cluster } from "@/hooks/useClusters";
-import { useEffect, useMemo } from "react";
-
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN!;
+import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   open: boolean;
@@ -22,12 +24,31 @@ interface Props {
   clusters?: Cluster[];
 }
 
+// Token management - similar to WebMap implementation
+const loadMapboxToken = async (): Promise<string> => {
+  try {
+    const { data } = await supabase.functions.invoke('mapbox-token');
+    if (data?.token) return data.token;
+  } catch (e) {
+    console.warn('[VibeDensityMap] token fetch failed, using fallback', e);
+  }
+  // Fallback to default token
+  return 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+};
+
 export function VibeDensityMap({
   open,
   onOpenChange,
   userLocation,
   clusters: propClusters,
 }: Props) {
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+
+  // Load Mapbox token on mount
+  useEffect(() => {
+    loadMapboxToken().then(setMapboxToken);
+  }, []);
+
   /* ————————————————— guard ————————————————— */
   if (!userLocation) {
     return (
@@ -102,84 +123,108 @@ export function VibeDensityMap({
 
         <SheetContent
           side="top"
-          className="h-[92vh] max-w-[640px] mx-auto
-                     flex flex-col rounded-b-2xl shadow-xl
-                     px-4 pb-0 pt-4"
+          className="h-[92vh] max-w-[640px] mx-auto flex flex-col
+                     rounded-b-2xl shadow-xl px-4 pb-0 pt-4"
+          asChild
         >
-          {/* manual close button */}
-          <SheetClose
-            className="absolute right-4 top-4 z-10 rounded-full p-2
-                       hover:bg-accent/20 transition-colors"
-            aria-label="Close"
+          <motion.div
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 80) onOpenChange(false);
+            }}
           >
-            <span aria-hidden>✕</span>
-          </SheetClose>
+            {/* manual close button */}
+            <SheetClose
+              className="absolute right-4 top-4 z-10 rounded-full p-2
+                         hover:bg-white/[0.08] transition-colors"
+              aria-label="Close"
+            >
+              <span aria-hidden>✕</span>
+            </SheetClose>
 
-          {/* —— header —— */}
-          <SheetHeader className="mb-3 flex items-center justify-between gap-3">
-            <SheetTitle className="text-lg font-semibold">
-              Vibe Density Map
-            </SheetTitle>
+            {/* —— header —— */}
+            <SheetHeader className="mb-3 flex items-center justify-between gap-3 pt-[env(safe-area-inset-top)]">
+              <SheetTitle className="text-lg font-semibold">
+                Vibe Density Map
+              </SheetTitle>
 
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary">
-                <span className="mr-1 block h-2 w-2 animate-ping rounded-full bg-green-400" />
-                LIVE
-              </Badge>
-              <VibeFilterPanel value={prefs} onChange={helpers.replace} />
-            </div>
-          </SheetHeader>
-
-          {/* —— map —— */}
-          <div className="relative flex-1">
-            {error && (
-              <div className="grid h-full place-items-center text-destructive">
-                Failed to load clusters
+              <div className="flex items-center gap-3 z-20">
+                <Badge variant="secondary">
+                  <span className="mr-1 block h-2 w-2 animate-ping rounded-full bg-green-400" />
+                  LIVE
+                </Badge>
+                <VibeFilterPanel value={prefs} onChange={helpers.replace} />
               </div>
-            )}
+            </SheetHeader>
 
-            {loading && !error && (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                Loading…
-              </div>
-            )}
-
-            {!loading && !error && (
-              <MapErrorBoundary>
-                <div className="absolute inset-0">
-                  {/* static backdrop map */}
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                      backgroundImage: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=${MAPBOX_TOKEN}")`,
-                    }}
-                  />
-                  <DeckGL
-                    initialViewState={initialView as any}
-                    controller
-                    layers={layers}
-                    style={{ position: "absolute", inset: "0" }}
-                  />
+            {/* —— map —— */}
+            <div className="relative flex-1 overflow-hidden rounded-xl">
+              {error && (
+                <div className="grid h-full place-items-center text-destructive">
+                  Failed to load clusters
                 </div>
-              </MapErrorBoundary>
-            )}
-          </div>
+              )}
 
-          {/* —— footer —— */}
-          <SheetFooter className="px-4 py-2 text-sm text-muted-foreground">
-            <div className="flex flex-wrap items-center gap-2">
-              <span>{totalSpots} spots</span>
-              <span aria-hidden>•</span>
-              <span>{totalPeople} people</span>
-              {helpers.isFiltered && (
-                <>
-                  <span aria-hidden>•</span>
-                  <span>{vibesOff} vibes off</span>
-                </>
+              {loading && !error && (
+                <div className="grid h-full place-items-center text-muted-foreground">
+                  Loading…
+                </div>
+              )}
+
+              {!loading && !error && (
+                <MapErrorBoundary>
+                  <div className="absolute inset-0">
+                    {/* Interactive Mapbox background */}
+                    {mapboxToken ? (
+                      <Map
+                        mapboxAccessToken={mapboxToken}
+                        initialViewState={initialView}
+                        reuseMaps
+                        mapStyle="mapbox://styles/mapbox/dark-v11" // Will be updated to custom style
+                        attributionControl={false}
+                        interactive={false}
+                        style={{ position: 'absolute', inset: 0 }}
+                      />
+                    ) : (
+                      /* Fallback static image while token loads */
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{
+                          backgroundImage: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw")`,
+                        }}
+                      />
+                    )}
+                    
+                    {/* DeckGL overlay */}
+                    <DeckGL
+                      initialViewState={initialView as any}
+                      controller
+                      layers={layers}
+                      style={{ position: "absolute", inset: 0 }}
+                    />
+                  </div>
+                </MapErrorBoundary>
               )}
             </div>
-            <ClusterLegend clusters={visible} className="mt-2" />
-          </SheetFooter>
+
+            {/* —— footer —— */}
+            <SheetFooter className="px-4 py-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2">
+                <span>{totalSpots} spots</span>
+                <span aria-hidden>•</span>
+                <span>{totalPeople} people</span>
+                {helpers.isFiltered && (
+                  <>
+                    <span aria-hidden>•</span>
+                    <span>{vibesOff} vibes off</span>
+                  </>
+                )}
+              </div>
+              <ClusterLegend clusters={visible} className="mt-2" />
+            </SheetFooter>
+          </motion.div>
         </SheetContent>
       </SheetPortal>
     </Sheet>
