@@ -1,390 +1,218 @@
-import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, MapPin, Users, Sparkles, Heart, User } from 'lucide-react';
-import { VibeSelectionStep } from './VibeSelectionStep';
-import { ProfileSetupStep } from './ProfileSetupStep';
-import { AvatarSelectionStep } from './AvatarSelectionStep';
-import { OnboardingProgress } from './OnboardingProgress';
-import { OnboardingCelebration } from './OnboardingCelebration';
-import { ProgressResumePrompt } from './ProgressResumePrompt';
-import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
-import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
-import { useUpdateUserPreferences } from '@/hooks/useUserPreferences';
-import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
-import { useAuth } from '@/providers/AuthProvider';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { type Vibe } from '@/types/enums/vibes';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
+import { OnboardingLogoutButton } from './OnboardingLogoutButton';
+
+// Import all onboarding steps
+import { OnboardingWelcomeStep } from './steps/OnboardingWelcomeStep';
+import { OnboardingVibeStep } from './steps/OnboardingVibeStep';
+import { OnboardingProfileStep } from './steps/OnboardingProfileStep';
+import { OnboardingAvatarStep } from './steps/OnboardingAvatarStep';
+import { OnboardingFeaturesStep } from './steps/OnboardingFeaturesStep';
+import { OnboardingCompletionStep } from './OnboardingCompletionStep';
 
 interface EnhancedOnboardingScreenProps {
   onComplete: () => void;
 }
 
-interface ProfileData {
-  username: string;
-  display_name: string;
-  bio?: string;
-  interests?: string[];
-}
-
-const ONBOARDING_STEPS = [
-  { 
-    id: 'welcome', 
-    title: 'Welcome', 
-    icon: Sparkles,
-    description: 'Welcome to Floq'
-  },
-  { 
-    id: 'vibe', 
-    title: 'Your Vibe', 
-    icon: Heart,
-    description: 'Choose your primary vibe'
-  },
-  { 
-    id: 'profile', 
-    title: 'Profile', 
-    icon: User,
-    description: 'Set up your profile'
-  },
-  { 
-    id: 'avatar', 
-    title: 'Photo', 
-    icon: User,
-    description: 'Add your photo'
-  },
-  { 
-    id: 'features', 
-    title: 'Features', 
-    icon: MapPin,
-    description: 'Discover what you can do'
-  },
-  { 
-    id: 'complete', 
-    title: 'Ready', 
-    icon: CheckCircle,
-    description: 'You\'re all set!'
-  },
-];
-
-const FEATURE_HIGHLIGHTS = [
-  {
-    icon: MapPin,
-    title: "Discover Your Vibe",
-    description: "Find and create moments that match your energy in real-time",
-  },
-  {
-    icon: Users,
-    title: "Connect with Your People",
-    description: "Join floqs and build meaningful connections with like-minded people",
-  },
-  {
-    icon: Sparkles,
-    title: "Create Lasting Memories",
-    description: "Document your experiences and reflect on your journey with Afterglow",
-  },
-];
-
-const ENHANCED_ONBOARDING_VERSION = 'v2';
+const TOTAL_STEPS = 6;
 
 export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScreenProps) {
-  const { user } = useAuth();
-  const { markCompleted } = useOnboardingStatus();
-  const { toast } = useToast();
-  const progress = useOnboardingProgress();
-  const analytics = useOnboardingAnalytics();
-  
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [showResumePrompt, setShowResumePrompt] = useState(progress.hasProgress);
-  const [showSuccess, setShowSuccess] = useState(false);
-  
-  // Initialize from saved progress
-  const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(progress.state.selectedVibe || null);
-  const [profileData, setProfileData] = useState<ProfileData | null>(progress.state.profileData || null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(progress.state.avatarUrl || null);
+  const { 
+    state, 
+    nextStep, 
+    prevStep, 
+    goToStep,
+    setVibe, 
+    setProfile, 
+    setAvatar,
+    markComplete,
+    isLoaded 
+  } = useOnboardingProgress();
 
-  const handleNext = () => {
-    const currentStep = progress.state.currentStep;
-    const stepName = ONBOARDING_STEPS[currentStep]?.id || 'unknown';
-    analytics.trackStepCompleted(currentStep, stepName);
-    progress.nextStep();
-  };
+  const {
+    trackOnboardingStart,
+    trackStepCompleted,
+    trackOnboardingCompleted,
+  } = useOnboardingAnalytics();
 
-  const handleBack = () => {
-    progress.prevStep();
-  };
+  const [hasStarted, setHasStarted] = useState(false);
 
-  const handleVibeSelected = (vibe: Vibe) => {
-    setSelectedVibe(vibe);
-    progress.setVibe(vibe);
-    analytics.trackStepCompleted(1, 'vibe_selection', { selected_vibe: vibe });
-    progress.nextStep();
-  };
+  // Track onboarding start
+  useEffect(() => {
+    if (isLoaded && !hasStarted) {
+      trackOnboardingStart();
+      setHasStarted(true);
+    }
+  }, [isLoaded, hasStarted, trackOnboardingStart]);
 
-  const handleProfileSubmitted = async (data: ProfileData) => {
-    setProfileData(data);
-    progress.setProfile(data);
-    analytics.trackStepCompleted(2, 'profile_setup', { 
-      has_bio: !!data.bio,
-      interests_count: data.interests?.length || 0
-    });
-    analytics.trackUsernameCreated(data.username);
-    progress.nextStep();
-  };
+  // Don't render until data is loaded
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Loading your onboarding...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleAvatarSelected = (url: string | null) => {
-    setAvatarUrl(url);
-    progress.setAvatar(url);
-    handleNext();
-  };
+  const progressPercentage = ((state.currentStep + 1) / TOTAL_STEPS) * 100;
 
-  const handleResumeProgress = () => {
-    setShowResumePrompt(false);
-  };
-
-  const handleRestartOnboarding = () => {
-    progress.clearProgress();
-    setSelectedVibe(null);
-    setProfileData(null);
-    setAvatarUrl(null);
-    setShowResumePrompt(false);
-  };
-
-  const handleComplete = async () => {
-    if (!user || !selectedVibe || !profileData) return;
-
-    try {
-      setIsCompleting(true);
-
-      // Check username availability
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', profileData.username)
-        .neq('id', user.id)
-        .maybeSingle();
-
-      if (existingUser) {
-        toast({
-          title: "Username taken",
-          description: "Please choose a different username.",
-          variant: "destructive",
-        });
-        progress.goToStep(2); // Go back to profile step
-        return;
-      }
-
-      // Generate default avatar if none provided
-      const defaultAvatar = `https://api.dicebear.com/7.x/shapes/svg?seed=${profileData.username}`;
-
-      // Update user preferences
-      const { mutateAsync: updatePreferences } = useUpdateUserPreferences();
-      await updatePreferences({
-        preferred_vibe: selectedVibe,
-        vibe_color: selectedVibe,
-        onboarding_version: ENHANCED_ONBOARDING_VERSION,
-        onboarding_completed_at: new Date().toISOString(),
-      });
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          username: profileData.username,
-          display_name: profileData.display_name,
-          bio: profileData.bio || null,
-          interests: profileData.interests || [],
-           avatar_url: avatarUrl || defaultAvatar,
-        })
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-        throw profileError;
-      }
-
-      // Mark onboarding as complete in database
-      await progress.markComplete();
-      
-      // Track completion
-      analytics.trackOnboardingCompleted({
-        selected_vibe: selectedVibe,
-        has_avatar: !!avatarUrl,
-        profile_completeness: {
-          has_bio: !!profileData.bio,
-          interests_count: profileData.interests?.length || 0
-        }
-      });
-      
-      // Clear local progress
-      progress.clearProgress();
-
-      setShowSuccess(true);
-      
-      setTimeout(() => {
-        toast({
-          title: "Welcome to Floq!",
-          description: `You're all set up with your ${selectedVibe} vibe!`,
-        });
-        onComplete();
-      }, 1500);
-
-    } catch (error) {
-      console.error('Failed to complete onboarding:', error);
-      toast({
-        title: "Welcome to Floq!",
-        description: "Let's get started!",
-        variant: "default",
-      });
-      // Still proceed to app even if saving fails
-      onComplete();
-    } finally {
-      setIsCompleting(false);
+  const handleStepComplete = (stepData?: any) => {
+    trackStepCompleted(state.currentStep, `step-${state.currentStep}`, stepData);
+    
+    if (state.currentStep < TOTAL_STEPS - 1) {
+      nextStep();
     }
   };
 
-  // Show loading while onboarding progress is being loaded
-  if (!progress.isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleOnboardingComplete = async () => {
+    console.log('🎯 Enhanced onboarding completion triggered');
+    
+    try {
+      // Mark progress as complete
+      await markComplete();
+      
+      // Track completion
+      trackOnboardingCompleted({
+        total_steps: TOTAL_STEPS,
+        selected_vibe: state.selectedVibe,
+        profile_completed: !!state.profileData
+      });
+      
+      console.log('✅ Enhanced onboarding completion successful, calling onComplete');
+      onComplete();
+      
+    } catch (error) {
+      console.error('💥 Error in enhanced onboarding completion:', error);
+      // Still try to complete even if tracking fails
+      onComplete();
+    }
+  };
 
-  if (showSuccess) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <div className="text-center animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-12 h-12 text-primary animate-scale-in" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">You're all set! ✨</h2>
-          <p className="text-muted-foreground">Welcome to your personalized Floq experience</p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentStep = progress.state.currentStep;
-  const stepTitles = ONBOARDING_STEPS.map(step => step.title);
-
-  // Show resume prompt if user has previous progress
-  if (showResumePrompt) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-        <ProgressResumePrompt
-          onResume={handleResumeProgress}
-          onRestart={handleRestartOnboarding}
-          progressPercentage={progress.progressPercentage}
-          lastStep={ONBOARDING_STEPS[progress.state.currentStep]?.title || 'Profile setup'}
-        />
-      </div>
-    );
-  }
+  const renderCurrentStep = () => {
+    switch (state.currentStep) {
+      case 0:
+        return (
+          <OnboardingWelcomeStep 
+            onNext={() => handleStepComplete()} 
+          />
+        );
+      case 1:
+        return (
+          <OnboardingVibeStep
+            selectedVibe={state.selectedVibe}
+            onVibeSelect={setVibe}
+            onNext={() => handleStepComplete({ vibe: state.selectedVibe })}
+            onBack={prevStep}
+          />
+        );
+      case 2:
+        return (
+          <OnboardingProfileStep
+            profileData={state.profileData}
+            onProfileUpdate={setProfile}
+            onNext={() => handleStepComplete({ profile: state.profileData })}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
+          <OnboardingAvatarStep
+            avatarUrl={state.avatarUrl}
+            onAvatarSelect={setAvatar}
+            onNext={() => handleStepComplete({ avatar_set: !!state.avatarUrl })}
+            onBack={prevStep}
+          />
+        );
+      case 4:
+        return (
+          <OnboardingFeaturesStep
+            onNext={() => handleStepComplete()}
+            onBack={prevStep}
+          />
+        );
+      case 5:
+        return (
+          <OnboardingCompletionStep 
+            onDone={handleOnboardingComplete}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-      <div className="w-full max-w-2xl">
-        <div className="mb-8">
-          <OnboardingProgress 
-            currentStep={currentStep} 
-            totalSteps={ONBOARDING_STEPS.length}
-            stepTitles={stepTitles}
-          />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+      {/* Header with progress and logout */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 flex-1">
+              <h1 className="text-lg font-semibold text-foreground">
+                Welcome to Floq
+              </h1>
+              {state.currentStep < TOTAL_STEPS - 1 && (
+                <div className="flex items-center gap-3 flex-1 max-w-md">
+                  <Progress value={progressPercentage} className="flex-1" />
+                  <span className="text-sm text-muted-foreground font-medium min-w-[60px]">
+                    {state.currentStep + 1} / {TOTAL_STEPS}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <OnboardingLogoutButton />
+          </div>
         </div>
-
-        <Card className="min-h-[500px]">
-          <CardContent className="p-8">
-            {currentStep === 0 && (
-              <div className="text-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                  <Sparkles className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Welcome to Floq</h1>
-                  <p className="text-muted-foreground text-lg">
-                    Let's set up your personalized experience in just a few steps
-                  </p>
-                </div>
-                <Button onClick={handleNext} size="lg" className="px-8">
-                  Get Started
-                </Button>
-              </div>
-            )}
-
-            {currentStep === 1 && (
-              <VibeSelectionStep 
-                onNext={handleVibeSelected}
-                onBack={handleBack}
-              />
-            )}
-
-            {currentStep === 2 && (
-              <ProfileSetupStep 
-                onNext={handleProfileSubmitted}
-                onBack={handleBack}
-              />
-            )}
-
-            {currentStep === 3 && (
-              <AvatarSelectionStep 
-                onNext={handleAvatarSelected}
-                onBack={handleBack}
-                currentAvatarUrl={avatarUrl}
-                displayName={profileData?.display_name}
-              />
-            )}
-
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold mb-2">Discover What You Can Do</h2>
-                  <p className="text-muted-foreground">
-                    Floq helps you find your people and create meaningful connections
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {FEATURE_HIGHLIGHTS.map((feature, index) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div key={index} className="flex items-start space-x-4 p-4 rounded-lg bg-muted/50">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold mb-1">{feature.title}</h3>
-                          <p className="text-sm text-muted-foreground">{feature.description}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={handleBack} className="flex-1">
-                    Back
-                  </Button>
-                  <Button onClick={handleNext} className="flex-1">
-                    Continue
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {currentStep === 5 && (
-              <OnboardingCelebration
-                onComplete={handleComplete}
-                onBack={handleBack}
-                userName={profileData?.display_name}
-                selectedVibe={selectedVibe || undefined}
-                isCompleting={isCompleting}
-              />
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Main content area */}
+      <div className="container mx-auto px-4 py-8">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={state.currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full"
+          >
+            {renderCurrentStep()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Step indicator dots (except on completion step) */}
+      {state.currentStep < TOTAL_STEPS - 1 && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
+          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2">
+            {Array.from({ length: TOTAL_STEPS - 1 }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => goToStep(index)}
+                disabled={index > state.currentStep}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === state.currentStep
+                    ? 'bg-primary scale-125'
+                    : index < state.currentStep
+                    ? 'bg-primary/60 hover:bg-primary/80'
+                    : 'bg-muted-foreground/30'
+                } ${index <= state.currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

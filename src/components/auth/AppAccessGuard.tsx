@@ -5,7 +5,7 @@ import { AuthScreen } from '@/components/auth/AuthScreen';
 import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboardingScreen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
@@ -22,59 +22,86 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const { getItem, setItem } = useSafeStorage();
   const location = useLocation();
 
-  const hasCompleted = preferences?.onboarding_version === ONBOARDING_VERSION;
-
   // Check if user is visiting a shared plan route (bypass onboarding)
   const isSharedPlanRoute = location.pathname.startsWith('/share/');
   const isDirectPlanRoute = location.pathname.startsWith('/plan/');
 
-  // Cached onboarding status check  
+  // Enhanced onboarding completion check with debug logging
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
     queryKey: ['onboarding-complete', user?.id ?? 'anon'],
     queryFn: async () => {
-      if (!user) return false;
+      if (!user) {
+        console.log('🔍 No user found, onboarding incomplete');
+        return false;
+      }
+
+      console.log('🔍 Checking onboarding completion for user:', user.id);
 
       try {
-        // Check database first
-        const { data } = await supabase
+        // Check database first - look for completed onboarding progress
+        const { data: progressData, error: progressError } = await supabase
           .from('user_onboarding_progress')
-          .select('completed_at')
+          .select('completed_at, onboarding_version')
           .eq('user_id', user.id)
           .eq('onboarding_version', ONBOARDING_VERSION)
           .maybeSingle();
 
-        if (data?.completed_at) {
-          setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+        if (progressError) {
+          console.error('❌ Error checking onboarding progress:', progressError);
+        } else {
+          console.log('📊 Onboarding progress data:', progressData);
+        }
+
+        // Check if onboarding is marked as completed in progress table
+        if (progressData?.completed_at) {
+          console.log('✅ Onboarding completed in progress table at:', progressData.completed_at);
+          await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
           return true;
         }
 
-        // Fallback to preferences and localStorage
-        if (hasCompleted) {
-          setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+        // Fallback to preferences table check
+        console.log('🔄 Checking user preferences...', preferences);
+        const hasCompletedPreferences = preferences?.onboarding_version === ONBOARDING_VERSION;
+        
+        if (hasCompletedPreferences) {
+          console.log('✅ Onboarding completed in preferences table');
+          await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
           return true;
         }
 
+        // Final fallback to localStorage
         const stored = await getItem(ONBOARDING_KEY);
-        return stored === ONBOARDING_VERSION;
+        const localStorageComplete = stored === ONBOARDING_VERSION;
+        
+        console.log('💾 Local storage onboarding status:', localStorageComplete);
+        
+        return localStorageComplete;
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
+        console.error('💥 Error checking onboarding status:', error);
+        
+        // Fallback to localStorage only on error
         const stored = await getItem(ONBOARDING_KEY);
-        return stored === ONBOARDING_VERSION;
+        const fallbackComplete = stored === ONBOARDING_VERSION;
+        console.log('🆘 Fallback check result:', fallbackComplete);
+        return fallbackComplete;
       }
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30000, // 30 seconds - reduced for more responsive updates
+    gcTime: 60000, // 1 minute
   });
 
-  // Debug logging
+  // Debug logging with more detail
   console.log('[AppAccessGuard Debug]', {
     user: !!user,
-    preferences,
+    userId: user?.id,
+    preferences: !!preferences,
+    preferencesVersion: preferences?.onboarding_version,
     onboardingVersion: ONBOARDING_VERSION,
-    hasCompleted,
     onboardingComplete,
-    currentDbVersion: preferences?.onboarding_version
+    isSharedRoute: isSharedPlanRoute,
+    isDirectRoute: isDirectPlanRoute,
+    currentPath: location.pathname
   });
 
   if (loading || (user && loadingPrefs) || onboardingLoading) {
@@ -94,44 +121,48 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
 
   // Allow access to shared routes without authentication
   if (!user && isSharedPlanRoute) {
+    console.log('🔓 Allowing access to shared route without auth');
     return <>{children}</>;
   }
 
-  if (!user) return <AuthScreen />;
+  if (!user) {
+    console.log('🚪 No user, showing auth screen');
+    return <AuthScreen />;
+  }
 
   // Skip onboarding for shared plan routes or if already completed
   if (!onboardingComplete && !isSharedPlanRoute && !isDirectPlanRoute) {
+    console.log('📝 Showing onboarding screen');
     return (
       <EnhancedOnboardingScreen
         onComplete={async () => {
-          // Mark as complete in database
-          if (user) {
-            await supabase
-              .from('user_onboarding_progress')
-              .upsert({
-                user_id: user.id,
-                onboarding_version: ONBOARDING_VERSION,
-                current_step: 6,
-                completed_steps: [0, 1, 2, 3, 4, 5],
-                completed_at: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,onboarding_version'
-              });
-          }
-
-          await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
-          await queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
-          await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
-
-          const redirect = await getRedirectPath();
-          if (redirect) {
-            await clearRedirectPath();
-            window.location.href = redirect;
+          console.log('🎯 Onboarding completion callback triggered');
+          
+          try {
+            // Clear any stale local storage
+            await setItem(ONBOARDING_KEY, ONBOARDING_VERSION);
+            
+            // Invalidate queries to refresh state
+            await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+            await queryClient.invalidateQueries({ queryKey: ['onboarding-complete', user?.id] });
+            
+            // Handle redirect
+            const redirect = await getRedirectPath();
+            if (redirect) {
+              await clearRedirectPath();
+              console.log('🔄 Redirecting to:', redirect);
+              window.location.href = redirect;
+            } else {
+              console.log('🏠 No redirect, staying on current page');
+            }
+          } catch (error) {
+            console.error('💥 Error in onboarding completion callback:', error);
           }
         }}
       />
     );
   }
 
+  console.log('✅ Onboarding complete, showing main app');
   return <>{children}</>;
 }
