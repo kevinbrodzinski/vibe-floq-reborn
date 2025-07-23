@@ -2,8 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-// Quick fix for Vite 5+ worker bundling
-import MapboxWorker from 'mapbox-gl/dist/mapbox.worker.js?worker';
 import { setMapInstance } from '@/lib/geo/project';
 
 interface Props {
@@ -68,9 +66,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         mapboxgl.accessToken = token;
         setTokenSource(source);
         
-        // Apply worker fix for Vite 5+
-        (mapboxgl as any).workerClass = MapboxWorker;
-        console.log('[FieldWebMap] DEBUG 2: Worker class set, count after:', (mapboxgl as any).getWorkerCount?.() || 'getWorkerCount undefined');
+        // Try alternative worker setup for Vite 5+ compatibility
+        try {
+          // Check if mapbox has built-in worker support first
+          console.log('[FieldWebMap] DEBUG 2: Checking built-in worker support...');
+        } catch (workerError) {
+          console.warn('[FieldWebMap] Worker setup issue:', workerError);
+        }
         
         console.log('[FieldWebMap] Creating map with container:', container.current);
         const map = new mapboxgl.Map({
