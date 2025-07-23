@@ -13,12 +13,23 @@ export const createDensityLayer = (
 ) => {
   if (!clusters.length) return null;
 
+  const maxTotal = Math.max(...clusters.map(c => c.total));
+
   return new ScatterplotLayer({
     id: "vibe-density",
     data: clusters,
     getPosition: (d) => d.centroid.coordinates,
     getRadius: (d) => Math.max(50, Math.sqrt(d.total) * 10),
-    getFillColor: (d) => getClusterColor(d.total / 20, d.vibe_counts, prefs),
+    getFillColor: (d) => {
+      try {
+        const normalizedScore = maxTotal > 0 ? d.total / maxTotal : 0;
+        return getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {});
+      } catch (error) {
+        console.warn('Color calculation failed, using fallback:', error);
+        // Fallback to blue
+        return [70, 130, 180];
+      }
+    },
     radiusUnits: "meters",
     opacity: 0.6,
     pickable: true,
