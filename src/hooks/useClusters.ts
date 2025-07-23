@@ -91,6 +91,7 @@ export const useClusters = (
     chanRef.current = ch;
     return () => {
       if (chanRef.current) supabase.removeChannel(chanRef.current);
+      setRealtime(false);
     };
   }, [chanKey, bbox, debouncedFetch]);
 

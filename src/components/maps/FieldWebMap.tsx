@@ -13,9 +13,10 @@ interface Props {
     minLat:number; minLng:number; maxLat:number; maxLng:number; zoom:number;
   })=>void;
   children?:React.ReactNode;
+  visible?: boolean;
 }
 
-export const FieldWebMap:React.FC<Props> = ({ onRegionChange, children })=>{
+export const FieldWebMap:React.FC<Props> = ({ onRegionChange, children, visible = true })=>{
   const container = useRef<HTMLDivElement>(null);
   const mapRef    = useRef<mapboxgl.Map|null>(null);
 

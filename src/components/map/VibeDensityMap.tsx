@@ -11,7 +11,7 @@ import { useClusters }           from '@/hooks/useClusters';
 import { useFieldViewport }      from '@/hooks/useFieldViewport';
 import { useVibeFilter }         from '@/hooks/useVibeFilter';
 import { createDensityLayer }    from '@/components/map/DeckLayers';
-import { renderClusterTooltip }  from '@/components/screens/field/tooltipHelpers';
+import { renderClusterTooltip }  from '@/components/map/tooltipHelpers';
 
 import type { Cluster }          from '@/hooks/useClusters';
 import type { ViewportBounds }   from 'packages/ui/src/maps/types';

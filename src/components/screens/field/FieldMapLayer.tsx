@@ -22,7 +22,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
 
   return (
     <div className="absolute inset-0">
-      <FieldWebMap onRegionChange={onRegionChange}>
+      <FieldWebMap visible={true} onRegionChange={onRegionChange}>
         {/* WebGL layer on top, no pointer events so map remains interactive */}
         <div style={{ pointerEvents: 'none' }}>
           <FieldCanvas

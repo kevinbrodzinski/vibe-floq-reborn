@@ -1,12 +1,8 @@
 import React, { Suspense } from 'react';
 import { Platform } from 'react-native';
 
-import type { ViewportBounds } from 'packages/ui/src/maps/types';
+import type { BaseMapProps, ViewportBounds } from 'packages/ui/src/maps/types';
 
-/* ------------------------------------------------------------------ */
-/* Props                                                              */
-/* ------------------------------------------------------------------ */
-import type { BaseMapProps } from 'packages/ui/src/maps/types';
 
 /* ------------------------------------------------------------------ */
 /*  Platform-split (lazy)                                             */
