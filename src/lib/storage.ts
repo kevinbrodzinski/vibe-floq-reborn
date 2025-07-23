@@ -74,8 +74,8 @@ class WebStorageAdapter implements StorageAdapter {
 
   async clearAuthStorage(): Promise<void> {
     const keys = await this.getAllKeys();
-    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
-    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
+    const authPattern = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
+    await Promise.all(keys.filter(k => authPattern.test(k)).map(k => this.removeItem(k)));
   }
 }
 
@@ -101,17 +101,15 @@ class MemoryStorageAdapter implements StorageAdapter {
 
   async clear(): Promise<void> {
     this.storage.clear();
+    console.info('[Storage] Using in-memory adapter');
   }
 
   async clearAuthStorage(): Promise<void> {
     const keys = await this.getAllKeys();
-    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
-    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
-    console.info('[Storage] Using in-memory adapter');
+    const authPattern = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
+    await Promise.all(keys.filter(k => authPattern.test(k)).map(k => this.removeItem(k)));
   }
 }
-
-// Remove the React Native adapter class since we're using memory fallback
 
 // Platform detection and adapter selection
 function createStorageAdapter(): StorageAdapter {
@@ -209,58 +207,6 @@ export const storage = {
    * Clear auth-related storage (uses Promise.all for performance)
    */
   async clearAuthStorage(): Promise<void> {
-    const keys = await this.getAllKeys();
-    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
-    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
-  }
-};
-
-/**
- * Platform-safe navigation utilities
- */
-export const navigation = {
-  /**
-   * Navigate to a URL (web) or route (mobile)
-   */
-  navigate(path: string): void {
-    try {
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.href = path;
-      }
-      // TODO: Add React Native navigation when implementing mobile
-      // Use React Navigation: navigationRef.navigate(path);
-    } catch (error) {
-      console.warn('[Navigation] Failed to navigate to:', path, error);
-    }
-  },
-
-  /**
-   * Reload the current page/screen
-   */
-  reload(): void {
-    try {
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.reload();
-      }
-      // TODO: Add React Native screen refresh when implementing mobile
-      // Use navigation reset or refresh action
-    } catch (error) {
-      console.warn('[Navigation] Failed to reload:', error);
-    }
-  },
-
-  /**
-   * Get current URL (web only)
-   */
-  getCurrentURL(): string {
-    try {
-      if (typeof window !== 'undefined' && window.location) {
-        return window.location.href;
-      }
-      return '';
-    } catch (error) {
-      console.warn('[Navigation] Failed to get current URL:', error);
-      return '';
-    }
+    return storageAdapter.clearAuthStorage();
   }
 };

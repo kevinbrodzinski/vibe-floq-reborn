@@ -10,6 +10,7 @@ import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
+import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
 
@@ -70,6 +71,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <NetworkStatusBanner />
             <BrowserRouter>
               <PlanInviteProvider />
               <Routes>

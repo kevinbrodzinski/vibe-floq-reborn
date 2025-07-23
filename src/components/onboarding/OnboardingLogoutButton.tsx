@@ -4,7 +4,8 @@ import { LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { storage, navigation } from '@/lib/storage';
+import { storage } from '@/lib/storage';
+import { navigation } from '@/lib/navigation';
 
 interface OnboardingLogoutButtonProps {
   className?: string;

@@ -41,16 +41,20 @@ export function useNetworkStatus(): NetworkStatus {
     window.addEventListener('offline', updateNetworkStatus);
 
     // Listen for connection changes if available
-    if ((navigator as any).connection) {
-      (navigator as any).connection.addEventListener('change', updateNetworkStatus);
+    const connection = (navigator as any).connection || 
+                      (navigator as any).mozConnection || 
+                      (navigator as any).webkitConnection;
+    
+    if (connection && connection.addEventListener) {
+      connection.addEventListener('change', updateNetworkStatus);
     }
 
     return () => {
       window.removeEventListener('online', updateNetworkStatus);
       window.removeEventListener('offline', updateNetworkStatus);
       
-      if ((navigator as any).connection) {
-        (navigator as any).connection.removeEventListener('change', updateNetworkStatus);
+      if (connection && connection.removeEventListener) {
+        connection.removeEventListener('change', updateNetworkStatus);
       }
     };
   }, []);

@@ -22,6 +22,17 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
   const triggerHaptic = useCallback((pattern: HapticPattern, options?: { force?: boolean }) => {
     if (!enabled && !options?.force) return
     
+    // Check if we're on a mobile platform
+    const isMobile = typeof window !== 'undefined' && 
+      (window.navigator.userAgent.includes('Mobile') || 
+       window.navigator.userAgent.includes('Android') ||
+       window.navigator.userAgent.includes('iPhone'));
+    
+    if (!isMobile) {
+      // No-op on non-mobile platforms
+      return;
+    }
+    
     const now = Date.now()
     if (now - lastHapticRef.current < throttleDelay && !options?.force) return
     

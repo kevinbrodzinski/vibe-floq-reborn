@@ -4,8 +4,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUserProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { usePreloadOnboarding } from '@/hooks/usePreloadOnboarding';
 import { supabase } from '@/integrations/supabase/client';
 import { storage } from '@/lib/storage';
+import { navigation } from '@/lib/navigation';
 
 interface AuthContextType {
   user: User | null;
@@ -42,6 +44,9 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
   const { toast } = useToast();
   const { isOnline } = useNetworkStatus();
 
+  // Preload user data after authentication
+  usePreloadOnboarding();
+
   // Enhanced sign out with proper cleanup
   const signOut = useCallback(async () => {
     try {
@@ -66,12 +71,12 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
       }
       
       // Force a page refresh to ensure clean state
-      window.location.href = '/';
+      navigation.navigate('/');
       
     } catch (error) {
       console.error('Enhanced sign out error:', error);
       // Force refresh even on error to ensure clean state
-      window.location.href = '/';
+      navigation.navigate('/');
     }
   }, [queryClient, toast]);
 
