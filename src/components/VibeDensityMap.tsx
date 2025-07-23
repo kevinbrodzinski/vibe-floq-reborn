@@ -2,7 +2,8 @@
 /*  VibeDensityMap – pop-up sheet with Deck.GL heat-overlay & filter  */
 /* ------------------------------------------------------------------ */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';
 import {
   Sheet,
   SheetContent,
@@ -18,6 +19,7 @@ import { VibeFilterBar } from '@/components/map/VibeFilterBar';
 
 import { useClusters } from '@/hooks/useClusters';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { getMapInstance } from '@/lib/geo/project';
 
 /* ------------------------------------------------------------------ */
 /*  Types & props                                                     */
@@ -75,6 +77,50 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
   /* slide-out panel state ------------------------------------------- */
   const [showFilter, setShowFilter] = useState(false);
 
+  /* user location marker --------------------------------------------- */
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
+
+  /* user location tracking ------------------------------------------- */
+  useEffect(() => {
+    if (!open) return;
+    if (!navigator.geolocation) return;
+
+    const watch = navigator.geolocation.watchPosition(
+      ({ coords }) => {
+        const { longitude, latitude } = coords;
+        const mapInstance = getMapInstance();
+        
+        if (!mapInstance) return;
+
+        // Create or update marker
+        if (!userMarkerRef.current) {
+          userMarkerRef.current = new mapboxgl.Marker({
+            color: '#3B82F6', // blue-500
+            scale: 0.8,
+          })
+            .setLngLat([longitude, latitude])
+            .addTo(mapInstance);
+        } else {
+          userMarkerRef.current.setLngLat([longitude, latitude]);
+        }
+      },
+      (error) => {
+        console.warn('Geolocation error:', error.message);
+      },
+      { 
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watch);
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
+    };
+  }, [open]);
+
   /* convert clusters to VibeData for overlay ------------------------- */
   const vibePoints = filteredClusters.map((c) => ({
     id: c.gh6,
@@ -105,23 +151,25 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
             LIVE
           </span>
 
-          {/* Filter chips in header */}
-          <div className="flex gap-1">
-            {Object.entries(vibeState).filter(([, active]) => active).slice(0, 3).map(([vibe]) => (
-              <button
-                key={vibe}
-                onClick={() => vibeHelpers.toggle(vibe as any)}
-                className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-full bg-primary text-primary-foreground"
-              >
-                {vibe}
-              </button>
-            ))}
-            {vibeHelpers.activeSet.size > 3 && (
-              <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-muted/20 text-muted-foreground">
-                +{vibeHelpers.activeSet.size - 3}
-              </span>
-            )}
-          </div>
+          {/* Filter chips in header - only show when filtered */}
+          {vibeHelpers.isFiltered && (
+            <div className="flex gap-1">
+              {Object.entries(vibeState).filter(([, active]) => active).slice(0, 3).map(([vibe]) => (
+                <button
+                  key={vibe}
+                  onClick={() => vibeHelpers.toggle(vibe as any)}
+                  className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-full bg-primary text-primary-foreground"
+                >
+                  {vibe}
+                </button>
+              ))}
+              {vibeHelpers.activeSet.size > 3 && (
+                <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-muted/20 text-muted-foreground">
+                  +{vibeHelpers.activeSet.size - 3}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* slide-out trigger */}
           <button
