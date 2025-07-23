@@ -17,10 +17,9 @@ import {
 interface Props {
   value: VibeFilterState;
   onChange: (v: VibeFilterState) => void;
-  asSheet?: boolean;
 }
 
-export const VibeFilterPanel = ({ value, onChange, asSheet = false }: Props) => {
+export const VibeFilterPanel = ({ value, onChange }: Props) => {
   const [local, setLocal] = useState(value);
 
   // sync from parent (Reset, Apply from outside, etc.)
@@ -51,7 +50,7 @@ export const VibeFilterPanel = ({ value, onChange, asSheet = false }: Props) => 
         </Button>
       </SheetTrigger>
 
-      <SheetContent side={asSheet ? "right" : "bottom"} className="w-80 sm:w-96">
+      <SheetContent className="w-80 sm:w-96">
         <header className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Vibe filter</h3>
           {activeCount > 0 && (
