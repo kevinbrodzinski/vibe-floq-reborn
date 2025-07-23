@@ -1,165 +1,104 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react';
 
-export interface HapticFeedbackOptions {
-  enabled?: boolean
-}
+export type HapticPattern =
+  | 'light' | 'medium' | 'heavy'
+  | 'success' | 'warning' | 'error'
+  | 'selection' | 'impact' | 'notification';
 
-export type HapticPattern = 
-  | 'light' 
-  | 'medium' 
-  | 'heavy'
-  | 'success'
-  | 'warning' 
-  | 'error'
-  | 'selection'
-  | 'impact'
-  | 'notification'
+interface Options { enabled?: boolean; throttle?: number; }
 
-export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {}) {
-  const lastHapticRef = useRef<number>(0)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const throttleDelay = 100 // Minimum time between haptics
+/* Simple UA helper reused elsewhere */
+const isMobile = () =>
+  typeof navigator !== 'undefined' &&
+  (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 'ontouchstart' in window);
 
-  const triggerHaptic = useCallback((pattern: HapticPattern, options?: { force?: boolean }) => {
-    if (!enabled && !options?.force) return
-    
-    // Check if we're on a mobile platform with touch support
-    const isMobile = typeof window !== 'undefined' && 
-      (window.navigator.userAgent.includes('Mobile') || 
-       window.navigator.userAgent.includes('Android') ||
-       window.navigator.userAgent.includes('iPhone')) &&
-      'ontouchstart' in window;
-    
-    if (!isMobile) {
-      // No-op on non-mobile platforms
-      return;
+export function useAdvancedHaptics({ enabled = true, throttle = 100 }: Options = {}) {
+  const last = useRef<number>(0);
+  const ctxRef = useRef<AudioContext | null>(null);
+
+  /* ensure single AudioContext */
+  const getCtx = () => {
+    if (!ctxRef.current) {
+      try { ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)(); }
+      catch { /* ignore */ }
     }
-    
-    const now = Date.now()
-    if (now - lastHapticRef.current < throttleDelay && !options?.force) return
-    
-    lastHapticRef.current = now
+    return ctxRef.current;
+  };
 
-    // Native haptic feedback for supported devices
-    if ('vibrate' in navigator) {
-      const patterns = {
-        light: [10],
-        medium: [20],
-        heavy: [30],
-        success: [10, 20, 10],
-        warning: [15, 10, 15],
-        error: [50, 20, 50],
-        selection: [5],
-        impact: [25],
-        notification: [10, 10, 10, 10, 10]
+  const triggerHaptic = useCallback(
+    (pattern: HapticPattern) => {
+      if (!enabled || !isMobile()) return;
+      const now = Date.now();
+      if (now - last.current < throttle) return;
+      last.current = now;
+
+      /* --- native Vibration API ------------------------------------ */
+      if ('vibrate' in navigator) {
+        const map: Record<HapticPattern, number | number[]> = {
+          light: 10, medium: 20, heavy: 40,
+          success: [10, 50, 10], warning: [20, 100, 20], error: [50, 50, 50],
+          selection: 5, impact: 25, notification: [10, 30, 10, 30, 10]
+        };
+        navigator.vibrate(map[pattern] ?? 10);
       }
-      
-      navigator.vibrate(patterns[pattern])
-    }
 
-    // Web Audio API for subtle audio cues (cached singleton)
-    if ('AudioContext' in window || 'webkitAudioContext' in window) {
+      /* --- subtle audio cue (Safari / iOS PWAs) -------------------- */
+      const ctx = getCtx();
+      if (!ctx) return;
       try {
-        // Cache AudioContext to avoid hitting Safari's 6-context limit
-        const audioCtx = audioContextRef.current ?? new (window.AudioContext || (window as any).webkitAudioContext)();
-        audioContextRef.current = audioCtx;
-        
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        
-        const frequencies = {
-          light: 800,
-          medium: 600,
-          heavy: 400,
-          success: 900,
-          warning: 700,
-          error: 300,
-          selection: 1000,
-          impact: 500,
-          notification: 850
-        }
-        
-        const oscillator = audioCtx.createOscillator()
-        const gainNode = audioCtx.createGain()
-        
-        oscillator.connect(gainNode)
-        gainNode.connect(audioCtx.destination)
-        
-        oscillator.frequency.setValueAtTime(frequencies[pattern], audioCtx.currentTime)
-        oscillator.type = 'sine'
-        
-        // Very subtle volume
-        gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05)
-        
-        oscillator.start(audioCtx.currentTime)
-        oscillator.stop(audioCtx.currentTime + 0.05)
-      } catch (e) {
-        // Audio context failed, silently continue
-      }
-    }
-  }, [enabled, throttleDelay])
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-  // Timeline-specific haptic patterns
-  const timelineHaptics = {
-    stopDragStart: () => triggerHaptic('light'),
-    stopDragEnd: () => triggerHaptic('medium'),
-    stopSnap: () => triggerHaptic('success'),
-    stopResize: () => triggerHaptic('selection'),
-    stopConflict: () => triggerHaptic('warning'),
-    stopDelete: () => triggerHaptic('error'),
-    stopCreate: () => triggerHaptic('impact'),
-    collaborationJoin: () => triggerHaptic('notification'),
-    collaborationEdit: () => triggerHaptic('light'),
-    autoSave: () => triggerHaptic('success', { force: false }),
-    networkReconnect: () => triggerHaptic('success'),
-    bulkAction: () => triggerHaptic('heavy')
-  }
+        const freq: Record<HapticPattern, number> =
+          { light: 900, medium: 700, heavy: 500, success: 1000,
+            warning: 800, error: 300, selection: 1100, impact: 600, notification: 950 };
 
-  // Gesture-based haptics
-  const gestureHaptics = {
-    longPress: () => triggerHaptic('medium'),
-    doubleClick: () => triggerHaptic('light'),
-    multiSelect: () => triggerHaptic('selection'),
-    swipe: () => triggerHaptic('light'),
-    pinch: () => triggerHaptic('light'),
-    hover: () => triggerHaptic('light', { force: false })
-  }
+        osc.frequency.value = freq[pattern] ?? 800;
+        gain.gain.setValueAtTime(0.02, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
 
-  // Contextual feedback
-  const contextualHaptics = {
-    confirmation: () => triggerHaptic('success'),
-    cancellation: () => triggerHaptic('warning'),
-    validation: () => triggerHaptic('error'),
-    loading: () => triggerHaptic('light'),
-    complete: () => triggerHaptic('impact'),
-    planCompletion: () => triggerHaptic('heavy'),
-    planExecutionStart: () => triggerHaptic('impact')
-  }
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+      } catch { /* ignore */ }
+    },
+    [enabled, throttle]
+  );
 
-  // Cleanup AudioContext on page unload
+  /* cleanup */
   useEffect(() => {
-    const clearCtx = () => {
-      audioContextRef.current?.close();
-      audioContextRef.current = null;
-    };
-    window.addEventListener('pagehide', clearCtx);
-    return () => window.removeEventListener('pagehide', clearCtx);
+    const clear = () => { ctxRef.current?.close().catch(() => {}); ctxRef.current = null; };
+    window.addEventListener('pagehide', clear);
+    return () => window.removeEventListener('pagehide', clear);
   }, []);
 
-  return {
+  return { 
     triggerHaptic,
-    timelineHaptics,
-    gestureHaptics,
-    contextualHaptics,
-    
-    // Convenience methods
+    // Convenience methods to maintain backward compatibility
+    light: () => triggerHaptic('light'),
+    medium: () => triggerHaptic('medium'),
+    heavy: () => triggerHaptic('heavy'),
     success: () => triggerHaptic('success'),
     warning: () => triggerHaptic('warning'),
     error: () => triggerHaptic('error'),
-    light: () => triggerHaptic('light'),
-    medium: () => triggerHaptic('medium'),
-    heavy: () => triggerHaptic('heavy')
-  }
+    // Legacy API compatibility
+    timelineHaptics: {
+      start: () => triggerHaptic('light'),
+      stop: () => triggerHaptic('medium'),
+      change: () => triggerHaptic('selection'),
+      stopDragStart: () => triggerHaptic('light'),
+      stopResize: () => triggerHaptic('selection'),
+      stopDragEnd: () => triggerHaptic('medium'),
+      stopCreate: () => triggerHaptic('success'),
+      stopConflict: () => triggerHaptic('warning')
+    },
+    contextualHaptics: {
+      plan: () => triggerHaptic('success'),
+      error: () => triggerHaptic('error'),
+      complete: () => triggerHaptic('success'),
+      confirmation: () => triggerHaptic('success'),
+      cancellation: () => triggerHaptic('warning')
+    }
+  };
 }

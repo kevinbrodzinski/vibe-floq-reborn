@@ -1,39 +1,29 @@
-import { ReactNode } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React from 'react';
 
 interface SafeAreaWrapperProps {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
-  /** Enable keyboard avoidance for forms */
-  keyboardAware?: boolean;
-  /** Custom padding for top safe area */
-  topPadding?: string;
-  /** Custom padding for bottom safe area */
-  bottomPadding?: string;
+  keyboardAware?: boolean;  // Keep for backward compatibility
+  topPadding?: string;      // tailwind utility e.g. 'pt-safe-top'
+  bottomPadding?: string;   // tailwind utility e.g. 'pb-safe-bottom'
 }
 
-export function SafeAreaWrapper({ 
-  children, 
+export function SafeAreaWrapper({
+  children,
   className = '',
-  keyboardAware = false,
+  keyboardAware = false,  // Accept but ignore for now
   topPadding = 'pt-safe-top',
   bottomPadding = 'pb-safe-bottom'
 }: SafeAreaWrapperProps) {
   const hasTouch = typeof window !== 'undefined' && 'ontouchstart' in window;
-  const isMobileUA = typeof navigator !== 'undefined' && 
-                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  
+  const isMobileUA =
+    typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const isMobile = hasTouch && isMobileUA;
-  
-  // On web, use CSS safe area insets
-  // On native, this would use React Native SafeAreaView
-  
-  const safeAreaClasses = isMobile ? `${topPadding} ${bottomPadding}` : '';
-  // Remove keyboardAware until RN port - no CSS definition yet
-  
-  // For web, just use a regular div - no platform-specific components needed
+  const safeClass = isMobile ? `${topPadding} ${bottomPadding}` : '';
+
   return (
-    <div className={`${safeAreaClasses} ${className}`}>
+    <div className={`${safeClass} ${className}`}>
       {children}
     </div>
   );

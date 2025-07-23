@@ -1,57 +1,36 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Wifi, WifiOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 export function NetworkStatusBanner() {
   const { isOnline, isSlowConnection } = useNetworkStatus();
   const [showOffline, setShowOffline] = useState(false);
-  const [showReconnected, setShowReconnected] = useState(false);
+  const [showBack, setShowBack]       = useState(false);
 
+  /* transitions ---------------------------------------------------- */
   useEffect(() => {
     if (!isOnline) {
       setShowOffline(true);
-      setShowReconnected(false);
+      setShowBack(false);
     } else if (showOffline) {
-      // Coming back online
       setShowOffline(false);
-      setShowReconnected(true);
-      
-      // Hide reconnected message after 3 seconds
-      const timeout = setTimeout(() => {
-        setShowReconnected(false);
-      }, 3000);
-      
-      return () => clearTimeout(timeout);
+      setShowBack(true);
+      const t = setTimeout(() => setShowBack(false), 3000);
+      return () => clearTimeout(t);
     }
   }, [isOnline, showOffline]);
 
-  if (!showOffline && !showReconnected) return null;
+  if (!showOffline && !showBack) return null;
 
   return (
-    <motion.div
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: -100, opacity: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 p-3 text-center text-sm font-medium ${
-        showOffline 
-          ? 'bg-destructive text-destructive-foreground' 
-          : 'bg-green-500 text-white'
-      }`}
-    >
-      <div className="flex items-center justify-center gap-2">
+    <div className="fixed top-0 inset-x-0 z-[9999] flex justify-center">
+      <div className="m-2 px-4 py-1 rounded-full text-xs font-medium
+                      backdrop-blur-sm bg-background/80 border border-border">
         {showOffline ? (
-          <>
-            <WifiOff className="w-4 h-4" />
-            <span>No Internet Connection</span>
-          </>
+          <>📡 No Internet Connection</>
         ) : (
-          <>
-            <Wifi className="w-4 h-4" />
-            <span>Back Online{isSlowConnection && <span className="italic ml-1">(Slow)</span>}</span>
-          </>
+          <>✅ Back Online{isSlowConnection && <span className="ml-1 text-warning-500">(Slow)</span>}</>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
