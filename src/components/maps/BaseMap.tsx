@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { Platform } from 'react-native';
 
-import type { ViewportBounds } from '@/maps/types';        // ← your shared types
+import type { ViewportBounds } from 'packages/ui/src/maps/types';
 
 /* ------------------------------------------------------------------ */
 /* Props                                                              */

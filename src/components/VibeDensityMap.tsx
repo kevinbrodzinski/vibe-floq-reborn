@@ -55,12 +55,18 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
             visible={open}            /* required prop */
             onRegionChange={setBbox}
           >
-            {/* Heat overlay expects clusters, not VibeData ------------- */}
+            {/* Heat overlay expects vibes, not clusters ------------- */}
             <VibeDensityHeatOverlay
-              clusters={clusters}
-              width={window.innerWidth}
-              height={window.innerHeight * 0.85}
-              onClusterClick={c => console.log('clicked', c)}
+              vibes={clusters.map(c => ({
+                id: c.gh6,
+                x: ((c.centroid.coordinates[0] + 118.5) / 0.5) * 100,
+                y: ((34.1 - c.centroid.coordinates[1]) / 0.1) * 100,
+                intensity: Math.min(1, c.total / 50),
+                type: Object.keys(c.vibe_counts)[0] as any || 'chill'
+              }))}
+              containerWidth={window.innerWidth}
+              containerHeight={window.innerHeight * 0.85}
+              onVibeClick={v => console.log('clicked', v)}
             />
           </VibeDensityWebMap>
 

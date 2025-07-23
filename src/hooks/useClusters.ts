@@ -89,7 +89,9 @@ export const useClusters = (
       .subscribe((status) => setRealtime(status === 'SUBSCRIBED'));
 
     chanRef.current = ch;
-    return () => supabase.removeChannel(ch);
+    return () => {
+      if (chanRef.current) supabase.removeChannel(chanRef.current);
+    };
   }, [chanKey, bbox, debouncedFetch]);
 
   /* cleanup */

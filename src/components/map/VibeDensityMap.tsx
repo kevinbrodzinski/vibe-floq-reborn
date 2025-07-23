@@ -14,11 +14,11 @@ import { createDensityLayer }    from '@/components/map/DeckLayers';
 import { renderClusterTooltip }  from '@/components/screens/field/tooltipHelpers';   // ✅ path fixed
 
 import type { Cluster }          from '@/hooks/useClusters';
-import type { ViewportBounds }   from '@/types';   // adjust if your alias differs
+import type { ViewportBounds }   from 'packages/ui/src/maps/types';
 
 export const VibeDensityMap: React.FC = () => {
   const { bounds, onRegionChange } = useFieldViewport();
-  const [{ activeSet }, helpers]   = useVibeFilter();     // ✅ destructure state not helpers
+  const [vibeFilterState, { activeSet }] = useVibeFilter();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
 
   /* bbox ------------------------------------------------------------ */
@@ -33,7 +33,7 @@ export const VibeDensityMap: React.FC = () => {
   const filtered = useMemo(() => {
     if (!activeSet?.size) return clusters;
     return clusters.filter(c =>
-      Object.keys(c.vibe_counts || {}).some(v => activeSet.has(v))
+      Object.keys(c.vibe_counts || {}).some(v => activeSet.has(v as any))
     );
   }, [clusters, activeSet]);
 
@@ -51,7 +51,7 @@ export const VibeDensityMap: React.FC = () => {
   /* ---------------------------------------------------------------- */
   return (
     <div className="absolute inset-0">
-      <VibeDensityWebMap visible onRegionChange={onRegionChange}>
+      <VibeDensityWebMap visible={true} onRegionChange={onRegionChange}>
         <VibeDensityBackground />
 
         {layers.length > 0 && (

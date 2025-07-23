@@ -41,7 +41,7 @@ export const VibeDensityMap: React.FC = () => {
     ] as [number, number, number, number];
   }, [bounds]);
 
-  const { clusters, loading, error, isRealTimeConnected } = useClusters(bbox, 6);
+  const { clusters, loading, error, realtime } = useClusters(bbox, 6);
 
   // Filter clusters based on active vibes - now using stable activeSet
   const filteredClusters = useMemo(() => {
@@ -93,7 +93,7 @@ export const VibeDensityMap: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Vibe Density Map with edge function token */}
-      <VibeDensityWebMap onRegionChange={onRegionChange}>
+      <VibeDensityWebMap visible={true} onRegionChange={onRegionChange}>
         {/* Background visualization - always visible */}
         <VibeDensityBackground />
         
@@ -122,7 +122,7 @@ export const VibeDensityMap: React.FC = () => {
         {import.meta.env.DEV && (
           <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm border rounded-lg p-3 text-xs font-mono">
             <div>Clusters: {filteredClusters.length}/{clusters.length}</div>
-            <div>Real-time: {isRealTimeConnected ? 'ON' : 'OFF'}</div>
+            <div>Real-time: {realtime ? 'ON' : 'OFF'}</div>
             {loading && <div>Loading...</div>}
             {error && <div className="text-destructive">Error: {error}</div>}
           </div>
