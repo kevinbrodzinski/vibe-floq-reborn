@@ -35,6 +35,8 @@ export function VibeDensityMap({
   userLocation,
   clusters: propClusters,
 }: Props) {
+  console.log('[VibeDensityMap] Rendering with:', { open, userLocation: !!userLocation });
+  
   // Guards
   if (!userLocation) {
     return (

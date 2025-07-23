@@ -19,6 +19,8 @@ interface Props {
 }
 
 export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
+  console.log('[VibeDensityWebMap] Component rendering...');
+  
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
