@@ -1,23 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetClose,
   SheetTrigger,
+  SheetClose,
 } from '@/components/ui/sheet';
 
-import { VibeDensityWebMap }    from '@/components/maps/VibeDensityWebMap';
+import { VibeDensityWebMap }   from '@/components/maps/VibeDensityWebMap';
 import { VibeDensityHeatOverlay } from '@/components/maps/VibeDensityHeatOverlay';
-import { VibeDensityShell }     from '@/components/map/VibeDensityShell';
-import { VibeFilterBar }        from '@/components/map/VibeFilterBar';
-import { useClusters }          from '@/hooks/useClusters';
-import { useVibeFilter }        from '@/hooks/useVibeFilter';
+import { VibeFilterBar }       from '@/components/map/VibeFilterBar';
 
-/* ------------------------------------------------------------------ */
-/* Types & props                                                      */
-/* ------------------------------------------------------------------ */
+import { useClusters }         from '@/hooks/useClusters';
+import { useVibeFilter }       from '@/hooks/useVibeFilter';
+
+import type { Cluster }        from '@/hooks/useClusters';
+import type { VibeData }       from '@/components/maps/VibeDensityHeatOverlay';
+
+/* —————————————————————————————————————————— */
+/* helper: turn backend cluster → heat overlay */
+const clusterToVibe = (c: Cluster): VibeData => ({
+  id:        c.gh6,
+  // crude lon/lat → % conversion for demo; tweak to taste
+  x:         ((c.centroid.coordinates[0] + 118.5) / 0.5) * 100,
+  y:         ((34.1 - c.centroid.coordinates[1])  / 0.1) * 100,
+  intensity: Math.min(1, c.total / 50),
+  type:      (Object.keys(c.vibe_counts)[0] as any) || 'chill',
+});
+/* —————————————————————————————————————————— */
 
 interface Props {
   open: boolean;
@@ -25,7 +36,7 @@ interface Props {
 }
 
 export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
-  /* viewport state comes from the map */
+  /* viewport bounds that come back from the map component */
   const [bbox, setBbox] = useState({
     minLat: 34.0,
     minLng: -118.5,
@@ -34,97 +45,100 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
     zoom:   11,
   });
 
-  /* vibe filtering -------------------------------------------------- */
-  const [vibeFilterState, vibeFilterHelpers] = useVibeFilter();
+  /* vibe filter local-only state */
+  const [vibeState, vibeHelpers] = useVibeFilter();
 
-  /* cluster query --------------------------------------------------- */
+  /* show / hide the left filter sheet */
+  const [showFilter, setShowFilter] = useState(false);
+
+  /* clusters fetched for current viewport */
   const {
-    clusters      = [],
+    clusters   = [],
     loading,
     error,
-    realtime,                      // renamed   (was isRealTimeConnected)
+    realtime,            // renamed in the hook
   } = useClusters(
     [bbox.minLng, bbox.minLat, bbox.maxLng, bbox.maxLat],
     Math.round(bbox.zoom)
   );
 
-  /* filter clusters based on active vibes -------------------------- */
-  const filteredClusters = React.useMemo(() => {
-    if (!vibeFilterHelpers.activeSet?.size) return clusters;
+  /* filter clusters by active vibes */
+  const filteredClusters = useMemo(() => {
+    if (!vibeHelpers.activeSet?.size) return clusters;
     return clusters.filter(c =>
-      Object.keys(c.vibe_counts || {}).some(v => vibeFilterHelpers.activeSet.has(v as any))
+      Object.keys(c.vibe_counts || {}).some(v =>
+        vibeHelpers.activeSet.has(v as string)
+      )
     );
-  }, [clusters, vibeFilterHelpers.activeSet]);
+  }, [clusters, vibeHelpers.activeSet]);
 
-  /* calculate people count ------------------------------------------ */
-  const totalPeople = React.useMemo(() => 
-    filteredClusters.reduce((sum, c) => sum + c.total, 0), 
+  /* derive numbers for footer */
+  const totalPeople = useMemo(
+    () => filteredClusters.reduce((sum, c) => sum + c.total, 0),
     [filteredClusters]
   );
 
+  /** clusters → vibe-data which the heat overlay expects  */
+  const vibes: VibeData[] = useMemo(
+    () => filteredClusters.map(clusterToVibe),
+    [filteredClusters]
+  );
+
+  /* ————————————————— render ———————————————— */
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="p-0 h-[85vh] sm:h-[90vh] flex flex-col">
-        
-        <VibeDensityShell
-          realtime={realtime}
-          spots={filteredClusters.length}
-          people={totalPeople}
-          onClose={() => onOpenChange(false)}
-        >
-          {/* ──────────────────────────────────────────────────────────────── */}
-          {/* FILTER PANEL  – slides in from the left                      */}
-          {/* ──────────────────────────────────────────────────────────────── */}
-          <Sheet>
-            {/* the chip that lives in the header */}
-            <SheetTrigger asChild>
-              <button className="inline-flex items-center gap-2 rounded-full bg-muted/30 px-4 py-1 text-sm font-medium hover:bg-muted/40 transition">
-                Filter vibes
-                {/* tiny chevron icon – optional */}
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                  <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2"
-                        strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </SheetTrigger>
+      <SheetContent
+        side="bottom"
+        className="p-0 h-[85vh] sm:h-[90vh] flex flex-col"
+      >
+        {/* ── header bar ─────────────────────── */}
+        <SheetHeader className="border-b border-border/40 px-4 py-3 flex items-center gap-4">
+          <SheetTitle className="flex-1">Vibe Density Map</SheetTitle>
 
-            {/* the actual side panel */}
-            <SheetContent side="left" className="w-72 sm:w-80">
-              <SheetHeader className="mb-4">
-                <h2 className="text-lg font-semibold">Filter vibes</h2>
-              </SheetHeader>
+          {/* LIVE pill */}
+          <span
+            className="text-xs font-medium px-3 py-1 rounded-full bg-muted/30
+                       text-muted-foreground select-none"
+          >
+            LIVE
+          </span>
 
-              {/* everything that was inside <VibeFilterBar … /> goes here */}
-              <VibeFilterBar
-                state={vibeFilterState}
-                helpers={vibeFilterHelpers}
-              />
-            </SheetContent>
-          </Sheet>
+          {/* filter-vibe chips (always visible) */}
+          <div className="flex-1 overflow-x-auto">
+            <VibeFilterBar state={vibeState} helpers={vibeHelpers} />
+          </div>
 
+          {/* button that opens the side sheet */}
+          <SheetTrigger asChild onClick={() => setShowFilter(true)}>
+            <button
+              className="ml-2 text-xs px-3 py-1 rounded-lg border border-border
+                         hover:bg-muted/20 transition-colors"
+            >
+              Filter
+            </button>
+          </SheetTrigger>
+
+          <SheetClose className="sr-only">Close</SheetClose>
+        </SheetHeader>
+
+        {/* ── the map itself ─────────────────── */}
+        <div className="relative flex-1">
           <VibeDensityWebMap
-            visible={open}            /* required prop */
+            visible={open}
             onRegionChange={setBbox}
           >
-            {/* Heat overlay expects vibes, not clusters ------------- */}
             <VibeDensityHeatOverlay
-              vibes={filteredClusters.map(c => ({
-                id: c.gh6,
-                x: ((c.centroid.coordinates[0] + 118.5) / 0.5) * 100,
-                y: ((34.1 - c.centroid.coordinates[1]) / 0.1) * 100,
-                intensity: Math.min(1, c.total / 50),
-                type: Object.keys(c.vibe_counts)[0] as any || 'chill'
-              }))}
+              vibes={vibes}
               containerWidth={window.innerWidth}
               containerHeight={window.innerHeight * 0.85}
-              onVibeClick={v => console.log('clicked', v)}
+              onVibeClick={(v) => console.log('clicked', v)}
             />
           </VibeDensityWebMap>
 
-          {/* lightweight UI states ----------------------------------- */}
+          {/* lightweight ui states */}
           {loading && (
             <div className="absolute inset-0 grid place-items-center pointer-events-none">
-              <span className="animate-spin h-6 w-6 rounded-full border-b-2 border-primary" />
+              <span className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full"/>
             </div>
           )}
           {error && (
@@ -132,13 +146,43 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
               Failed to load vibe data
             </div>
           )}
+
+          {/* dev overlay */}
           {import.meta.env.DEV && (
-            <div className="absolute top-3 left-3 rounded bg-background/80 backdrop-blur px-2 py-1 text-[10px] font-mono">
-              {filteredClusters.length}/{clusters.length} clusters • realtime {realtime ? '🟢' : '⚪'}
+            <div className="absolute top-4 left-4 bg-background/90
+                            backdrop-blur-sm border rounded-lg py-1.5 px-3 text-xs font-mono">
+              {filteredClusters.length}/{clusters.length} clusters&nbsp;•&nbsp;
+              realtime {realtime ? '🟢' : '⚪'}
             </div>
           )}
-        </VibeDensityShell>
+        </div>
 
+        {/* footer stats */}
+        <div className="text-sm text-muted-foreground py-2 px-4 border-t border-border/40">
+          {filteredClusters.length} spots&nbsp;•&nbsp;{totalPeople} people
+        </div>
+
+        {/* ── side-sheet filter panel ────────── */}
+        <Sheet open={showFilter} onOpenChange={setShowFilter}>
+          <SheetContent side="left" className="w-[85vw] max-w-xs p-6">
+            <SheetHeader className="mb-4">
+              <SheetTitle>Filter vibes</SheetTitle>
+            </SheetHeader>
+
+            <VibeFilterBar state={vibeState} helpers={vibeHelpers} />
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="text-sm font-medium px-4 py-2 rounded-lg
+                           bg-primary text-primary-foreground hover:bg-primary/90
+                           transition-colors"
+                onClick={() => setShowFilter(false)}
+              >
+                Apply
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </SheetContent>
     </Sheet>
   );
