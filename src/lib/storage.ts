@@ -124,9 +124,6 @@ function createStorageAdapter(): StorageAdapter {
 // Singleton storage instance
 const storageAdapter = createStorageAdapter();
 
-/**
- * Cross-platform storage API
- */
 export const storage = {
   /**
    * Get an item from storage

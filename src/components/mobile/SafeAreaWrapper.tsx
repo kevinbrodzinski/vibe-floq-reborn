@@ -19,7 +19,11 @@ export function SafeAreaWrapper({
   topPadding = 'pt-safe-top',
   bottomPadding = 'pb-safe-bottom'
 }: SafeAreaWrapperProps) {
-  const isMobile = typeof window === 'undefined' || 'ontouchstart' in window;
+  const hasTouch = typeof window !== 'undefined' && 'ontouchstart' in window;
+  const isMobileUA = typeof navigator !== 'undefined' && 
+                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  
+  const isMobile = hasTouch && isMobileUA;
   
   // On web, use CSS safe area insets
   // On native, this would use React Native SafeAreaView

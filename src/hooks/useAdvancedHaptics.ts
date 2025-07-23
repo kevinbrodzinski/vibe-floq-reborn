@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 
 export interface HapticFeedbackOptions {
   enabled?: boolean
@@ -137,6 +137,16 @@ export function useAdvancedHaptics({ enabled = true }: HapticFeedbackOptions = {
     planCompletion: () => triggerHaptic('heavy'),
     planExecutionStart: () => triggerHaptic('impact')
   }
+
+  // Cleanup AudioContext on page unload
+  useEffect(() => {
+    const clearCtx = () => {
+      audioContextRef.current?.close();
+      audioContextRef.current = null;
+    };
+    window.addEventListener('pagehide', clearCtx);
+    return () => window.removeEventListener('pagehide', clearCtx);
+  }, []);
 
   return {
     triggerHaptic,

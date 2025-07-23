@@ -4,7 +4,7 @@ import { lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 
 // Dynamic import for Check icon to reduce bundle size
-const Check = lazy(() => import('lucide-react').then(m => ({ default: m.Check })));
+const CheckIcon = lazy(() => import('lucide-react').then(m => ({ default: m.Check })));
 
 interface EnhancedOnboardingProgressProps {
   currentStep: number;
@@ -49,8 +49,8 @@ export function EnhancedOnboardingProgress({
                 whileTap={isClickable ? { scale: 0.95 } : {}}
               >
                 {isCompleted ? (
-                  <Suspense fallback={<CheckCircle2 className="w-5 h-5" />}>
-                    <Check className="w-5 h-5" />
+                  <Suspense fallback={<CheckCircle2 className="w-3 h-3" />}>
+                    <CheckIcon className="w-3 h-3 text-primary" />
                   </Suspense>
                 ) : (
                   <span className="text-sm font-medium">{stepNumber + 1}</span>

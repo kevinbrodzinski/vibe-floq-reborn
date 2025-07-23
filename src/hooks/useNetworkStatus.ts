@@ -16,20 +16,20 @@ export function useNetworkStatus(): NetworkStatus {
   useEffect(() => {
     if (typeof navigator === 'undefined') return;
 
-    const connection = (navigator as any).connection || 
-                      (navigator as any).mozConnection || 
-                      (navigator as any).webkitConnection;
+    const connection: any = 
+      (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
 
     const updateNetworkStatus = () => {
-      const isSlowConnection = connection ? 
-        (connection.effectiveType === 'slow-2g' || 
+      const isSlow = 
+        connection &&
+        (connection.effectiveType === 'slow-2g' ||
          connection.effectiveType === '2g' ||
-         connection.downlink < 1) : false;
+         connection.downlink < 1);
 
       setNetworkStatus({
         isOnline: navigator.onLine,
-        isSlowConnection,
-        connectionType: connection?.effectiveType || 'unknown'
+        isSlowConnection: Boolean(isSlow),
+        connectionType: connection?.effectiveType ?? 'unknown'
       });
     };
 
