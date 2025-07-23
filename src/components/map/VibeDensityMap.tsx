@@ -12,7 +12,7 @@ import { createDensityLayer, usePulseLayer } from "./DeckLayers";
 import { useClusters } from "@/hooks/useClusters";
 import { useVibeFilter } from "@/hooks/useVibeFilter";
 import { motion } from "framer-motion";
-import Map from "react-map-gl";
+// import Map from "react-map-gl"; // Temporarily removed due to import issues
 import { supabase } from "@/integrations/supabase/client";
 import type { Cluster } from "@/hooks/useClusters";
 import { useEffect, useMemo, useState } from "react";
@@ -176,26 +176,15 @@ export function VibeDensityMap({
               {!loading && !error && (
                 <MapErrorBoundary>
                   <div className="absolute inset-0">
-                    {/* Interactive Mapbox background */}
-                    {mapboxToken ? (
-                      <Map
-                        mapboxAccessToken={mapboxToken}
-                        initialViewState={initialView}
-                        reuseMaps
-                        mapStyle="mapbox://styles/mapbox/dark-v11" // Will be updated to custom style
-                        attributionControl={false}
-                        interactive={false}
-                        style={{ position: 'absolute', inset: 0 }}
-                      />
-                    ) : (
-                      /* Fallback static image while token loads */
-                      <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{
-                          backgroundImage: `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw")`,
-                        }}
-                      />
-                    )}
+                    {/* Static Mapbox background - will be replaced with interactive map */}
+                    <div
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{
+                        backgroundImage: mapboxToken 
+                          ? `url("https://api.mapbox.com/styles/v1/floq-prod-2025/floq-density-dark/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=${mapboxToken}")`
+                          : `url("https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${userLocation.lng},${userLocation.lat},12,0/600x400@2x?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw")`,
+                      }}
+                    />
                     
                     {/* DeckGL overlay */}
                     <DeckGL
