@@ -38,7 +38,7 @@ export interface VibeFilterHelpers {
   /** quick set – ON for exactly these vibes */
   only: (vv: Vibe[]) => void;
   /** derived set of active vibes (fast membership check) */
-  activeSet: Set<Vibe>;
+  activeSet: Set<string>;
   /** At least one vibe switched OFF? */
   isFiltered: boolean;
 }
