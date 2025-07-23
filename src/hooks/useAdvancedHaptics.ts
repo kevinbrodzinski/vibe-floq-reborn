@@ -10,7 +10,8 @@ interface Options { enabled?: boolean; throttle?: number; }
 /* Simple UA helper reused elsewhere */
 const isMobile = () =>
   typeof navigator !== 'undefined' &&
-  (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 'ontouchstart' in window);
+  (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+   (typeof window !== 'undefined' && 'ontouchstart' in window));
 
 export function useAdvancedHaptics({ enabled = true, throttle = 100 }: Options = {}) {
   const last = useRef<number>(0);

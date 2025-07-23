@@ -4,8 +4,8 @@ interface SafeAreaWrapperProps {
   children: React.ReactNode;
   className?: string;
   keyboardAware?: boolean;  // Keep for backward compatibility
-  topPadding?: string;      // tailwind utility e.g. 'pt-safe-top'
-  bottomPadding?: string;   // tailwind utility e.g. 'pb-safe-bottom'
+  topPadding?: string;
+  bottomPadding?: string;
 }
 
 export function SafeAreaWrapper({

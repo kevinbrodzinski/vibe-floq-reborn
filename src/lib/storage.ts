@@ -72,11 +72,11 @@ const storageAdapter: StorageAdapter =
 
 export const storage = {
   /* primitives --------------------------------------------------------- */
-  getItem(key: string)             { return storageAdapter.getItem(key); },
-  setItem(key: string, v: string)  { return storageAdapter.setItem(key, v); },
-  removeItem(key: string)          { return storageAdapter.removeItem(key); },
-  getAllKeys()                     { return storageAdapter.getAllKeys(); },
-  clear()                          { return storageAdapter.clear(); },
+  getItem(key: string): Promise<string | null> { return storageAdapter.getItem(key); },
+  setItem(key: string, v: string): Promise<void> { return storageAdapter.setItem(key, v); },
+  removeItem(key: string): Promise<void> { return storageAdapter.removeItem(key); },
+  getAllKeys(): Promise<string[]> { return storageAdapter.getAllKeys(); },
+  clear(): Promise<void> { return storageAdapter.clear(); },
 
   /* helpers ------------------------------------------------------------ */
   async getJSON<T>(key: string): Promise<T | null> {
