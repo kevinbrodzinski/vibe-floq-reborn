@@ -21,32 +21,19 @@ export default defineConfig(({ mode, command }) => ({
           : true,
   },
   optimizeDeps: {
-    include: [
-      '@deck.gl/react', 
-      '@deck.gl/core', 
-      '@deck.gl/layers', 
-      '@deck.gl/aggregation-layers'
-    ],
-    esbuildOptions: {
-      plugins: [
-        {
-          name: 'fix-earcut',
-          setup(build) {
-            build.onResolve({ filter: /^earcut$/ }, args => ({
-              path: args.path,
-              namespace: 'earcut-wrapper'
-            }));
-            build.onLoad({ filter: /.*/, namespace: 'earcut-wrapper' }, () => ({
-              contents: `
-                import earcut from 'earcut/src/earcut.js';
-                export default earcut;
-                export { earcut };
-              `,
-              loader: 'js'
-            }));
-          }
+    exclude: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers']
+  },
+  build: {
+    rollupOptions: {
+      external: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers'],
+      output: {
+        globals: {
+          '@deck.gl/react': 'DeckGL',
+          '@deck.gl/core': 'deck',
+          '@deck.gl/layers': 'deck',
+          '@deck.gl/aggregation-layers': 'deck'
         }
-      ]
+      }
     }
   },
   plugins: [
