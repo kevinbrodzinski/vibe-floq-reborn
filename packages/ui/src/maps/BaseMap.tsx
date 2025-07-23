@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Platform } from 'react-native';
-import type { ViewportBounds } from './types';
+import type { BaseMapProps } from '../../../packages/ui/src/maps/types';
 
 interface BaseMapProps {
   onRegionChange: (b: ViewportBounds) => void;
