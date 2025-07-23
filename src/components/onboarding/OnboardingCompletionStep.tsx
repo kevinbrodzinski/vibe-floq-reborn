@@ -39,7 +39,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: 'user_id'
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         });
 
       if (progressError) {
@@ -55,7 +56,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           onboarding_version: 'v2',
           onboarding_completed_at: completionTime,
         }, {
-          onConflict: 'user_id'
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         });
 
       if (preferencesError) {
@@ -76,6 +78,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       // 4. Invalidate queries to refresh auth state
       await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
       await queryClient.invalidateQueries({ queryKey: ['onboarding-complete'] });
+      await queryClient.invalidateQueries({ queryKey: ['onboarding-progress', session.user.id] });
 
       // 5. Show success message
       toast.success('Welcome to Floq! 🎉');

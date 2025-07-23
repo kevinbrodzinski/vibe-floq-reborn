@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ArrowLeft } from 'lucide-react';
 
 const VIBE_OPTIONS = [
@@ -40,7 +39,9 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
             key={vibe.id}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => onVibeSelect(vibe.id)}
+            onClick={() => {
+              if (selectedVibe !== vibe.id) onVibeSelect(vibe.id);
+            }}
             className={`p-4 rounded-lg border-2 transition-all ${
               selectedVibe === vibe.id
                 ? 'border-primary bg-primary/10'
