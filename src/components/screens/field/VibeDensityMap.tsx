@@ -13,36 +13,36 @@ import mapboxgl from 'mapbox-gl';
 import type { Cluster } from '@/hooks/useClusters';
 
 export const VibeDensityMap: React.FC = () => {
-  const { viewport, onRegionChange } = useFieldViewport();
+  const { bounds, onRegionChange } = useFieldViewport();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
-  const [vibeFilter] = useVibeFilter();
+  const [vibeFilterState, vibeFilterHelpers] = useVibeFilter();
   
-  // Convert viewport to bbox format for clusters hook
+  // Convert bounds to bbox format for clusters hook
   const bbox = useMemo(() => {
-    if (!viewport) return [-118.5, 33.9, -118.0, 34.1]; // Default LA area
+    if (!bounds) return [-118.5, 33.9, -118.0, 34.1] as [number, number, number, number];
     return [
-      viewport.minLng,
-      viewport.minLat, 
-      viewport.maxLng,
-      viewport.maxLat
+      bounds.minLng,
+      bounds.minLat, 
+      bounds.maxLng,
+      bounds.maxLat
     ] as [number, number, number, number];
-  }, [viewport]);
+  }, [bounds]);
 
   const { clusters, loading, error, isRealTimeConnected } = useClusters(bbox, 6);
 
   // Filter clusters based on active vibes
   const filteredClusters = useMemo(() => {
-    if (!vibeFilter) return clusters;
+    if (!vibeFilterHelpers.activeSet) return clusters;
     
     return clusters.filter(cluster => {
       if (!cluster.vibe_counts) return false;
       
       // Check if cluster has any of the active vibes
       return Object.keys(cluster.vibe_counts).some(vibe => 
-        vibeFilter.activeSet.has(vibe as any)
+        vibeFilterHelpers.activeSet.has(vibe as any)
       );
     });
-  }, [clusters, vibeFilter]);
+  }, [clusters, vibeFilterHelpers.activeSet]);
 
   const handleClusterClick = (cluster: Cluster) => {
     setSelectedCluster(cluster);
@@ -51,16 +51,19 @@ export const VibeDensityMap: React.FC = () => {
 
   // Create deck.gl layers
   const layers = useMemo(() => {
+    const activeVibes = vibeFilterHelpers.activeSet ? 
+      Array.from(vibeFilterHelpers.activeSet) : [];
+    
     const densityLayer = createDensityLayer(
       filteredClusters,
       Object.fromEntries(
-        Array.from(vibeFilter?.activeSet || []).map(vibe => [vibe, 1])
+        activeVibes.map(vibe => [vibe, 1])
       ),
       handleClusterClick
     );
     
     return densityLayer ? [densityLayer] : [];
-  }, [filteredClusters, vibeFilter]);
+  }, [filteredClusters, vibeFilterHelpers.activeSet]);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -79,7 +82,7 @@ export const VibeDensityMap: React.FC = () => {
                   <div class="font-semibold">${object.total} people</div>
                   <div class="text-sm text-muted-foreground">
                     ${Object.entries(object.vibe_counts || {})
-                      .sort(([,a], [,b]) => b - a)
+                      .sort(([,a], [,b]) => (b as number) - (a as number))
                       .slice(0, 3)
                       .map(([vibe, count]) => `${vibe}: ${count}`)
                       .join(', ')}
