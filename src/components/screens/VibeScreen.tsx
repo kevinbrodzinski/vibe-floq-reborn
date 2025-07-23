@@ -467,7 +467,6 @@ export const VibeScreen = () => {
       <VibeDensityMap
         open={showDensityMap}
         onOpenChange={setShowDensityMap}
-        userLocation={userLocation}
       />
 
       {/* Enhanced Mini Vibe Card */}
