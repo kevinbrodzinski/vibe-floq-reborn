@@ -1,83 +1,68 @@
-// ─────────────────────────────────────────────────────────────
-// src/hooks/useClusters.ts
-// ─────────────────────────────────────────────────────────────
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { debounce } from "lodash-es";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { debounce } from 'lodash-es';
+import { supabase } from '@/integrations/supabase/client';
 
 /* ------------------------------------------------------------------ */
-/* Types                                                               */
+/* Types                                                              */
 /* ------------------------------------------------------------------ */
-
 export interface Cluster {
   gh6: string;
-  centroid: { type: "Point"; coordinates: [number, number] };
+  centroid: { type: 'Point'; coordinates: [number, number] };
   total: number;
   vibe_counts: Record<string, number>;
 }
 
-interface UseClustersReturn {
+interface State {
   clusters: Cluster[];
   loading: boolean;
   error: string | null;
-  isRealTimeConnected: boolean;
+  realtime: boolean;
 }
 
 /* ------------------------------------------------------------------ */
-/* Hook                                                                 */
+/* Hook                                                               */
 /* ------------------------------------------------------------------ */
-
 export const useClusters = (
   bbox: [number, number, number, number],
   precision = 6,
-): UseClustersReturn => {
+): State => {
   const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [realtime, setRealtime] = useState(false);
 
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const abortRef   = useRef<AbortController | null>(null);
+  const chanRef    = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  /* ------------------------------------------------------------------ */
-  /* Debounced fetch                                                     */
-  /* ------------------------------------------------------------------ */
-
+  /* ---------------------------- fetch -------------------------------- */
   const fetchClusters = useCallback(
     async (box: [number, number, number, number]) => {
-      // cancel any in-flight request
-      abortControllerRef.current?.abort();
+      abortRef.current?.abort();
       const ac = new AbortController();
-      abortControllerRef.current = ac;
+      abortRef.current = ac;
 
       setLoading(true);
       setError(null);
 
       try {
-        const { data, error } = await supabase.functions.invoke("clusters", {
+        const { data, error } = await supabase.functions.invoke('clusters', {
           body: { bbox: box, precision },
+          signal: ac.signal,
         });
 
-        if (ac.signal.aborted) return; // stale
+        if (ac.signal.aborted) return;
 
         if (error) {
-          setError(error.message ?? "Edge function failed");
+          setError(error.message);
           setClusters([]);
         } else {
           setClusters(data ?? []);
         }
-      } catch (err: unknown) {
-        if (ac.signal.aborted) return; // aborted; ignore
-        setError(
-          err instanceof Error ? err.message : "Unknown network error",
-        );
-        setClusters([]);
+      } catch (e) {
+        if (!ac.signal.aborted) {
+          setError(e instanceof Error ? e.message : 'Network error');
+          setClusters([]);
+        }
       } finally {
         if (!ac.signal.aborted) setLoading(false);
       }
@@ -85,70 +70,47 @@ export const useClusters = (
     [precision],
   );
 
-  const debouncedFetch = useMemo(
-    () => debounce(fetchClusters, 300),
-    [fetchClusters],
-  );
+  const debouncedFetch = useMemo(() => debounce(fetchClusters, 300), [fetchClusters]);
 
-  /* ------------------------------------------------------------------ */
-  /* Effect: fetch on bbox change                                        */
-  /* ------------------------------------------------------------------ */
-
+  /* ------------------------- bbox watcher --------------------------- */
   useEffect(() => {
     debouncedFetch(bbox);
   }, [bbox, debouncedFetch]);
 
-  /* ------------------------------------------------------------------ */
-  /* Realtime channel                                                    */
-  /* ------------------------------------------------------------------ */
-
-  const channelKey = useMemo(
-    () => `${precision}:${bbox.map((n) => n.toFixed(3)).join(",")}`,
+  /* ------------------------- realtime chan -------------------------- */
+  const chanKey = useMemo(
+    () => `${precision}:${bbox.map((n) => n.toFixed(3)).join(',')}`,
     [bbox, precision],
   );
 
   useEffect(() => {
-    // tear down existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      setIsRealTimeConnected(false);
-    }
+    if (chanRef.current) supabase.removeChannel(chanRef.current);
+    setRealtime(false);
 
     const ch = supabase
-      .channel(`clusters-${channelKey}`)
-      .on("broadcast", { event: "clusters_updated" }, () =>
-        debouncedFetch(bbox),
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") setIsRealTimeConnected(true);
-        if (["CLOSED", "TIMED_OUT", "CHANNEL_ERROR"].includes(status))
-          setIsRealTimeConnected(false);
-      });
+      .channel(`clusters-${chanKey}`)
+      .on('broadcast', { event: 'clusters_updated' }, () => debouncedFetch(bbox))
+      .subscribe((status) => setRealtime(status === 'SUBSCRIBED'));
 
-    channelRef.current = ch;
+    chanRef.current = ch;
 
     return () => {
       supabase.removeChannel(ch);
-      setIsRealTimeConnected(false);
+      setRealtime(false);
     };
-  }, [channelKey, bbox, debouncedFetch]);
+  }, [chanKey, bbox, debouncedFetch]);
 
-  /* ------------------------------------------------------------------ */
-  /* Cleanup                                                             */
-  /* ------------------------------------------------------------------ */
-
+  /* ------------------------- unmount cleanup ------------------------ */
   useEffect(
     () => () => {
       debouncedFetch.cancel();
-      abortControllerRef.current?.abort();
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      abortRef.current?.abort();
+      if (chanRef.current) supabase.removeChannel(chanRef.current);
     },
     [debouncedFetch],
   );
 
-  // Add error logging
-  if (error) console.error('[useClusters] fetch error:', error);
-  
-  return { clusters, loading, error, isRealTimeConnected };
+  if (error && import.meta.env.DEV) console.error('[useClusters] ', error);
+
+  return { clusters, loading, error, realtime };
 };
