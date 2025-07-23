@@ -6,16 +6,7 @@ import type { ViewportBounds } from 'packages/ui/src/maps/types';
 /* ------------------------------------------------------------------ */
 /* Props                                                              */
 /* ------------------------------------------------------------------ */
-export interface BaseMapProps {
-  /** Fires every time the user pans / zooms */
-  onRegionChange: (b: ViewportBounds) => void;
-  children?: React.ReactNode;
-  /**
-   * When `false` the map doesn't mount at-all (useful for hidden sheets or
-   * off-screen tabs).  **Optional** so existing call-sites keep compiling.
-   */
-  visible?: boolean;
-}
+import type { BaseMapProps } from 'packages/ui/src/maps/types';
 
 /* ------------------------------------------------------------------ */
 /*  Platform-split (lazy)                                             */

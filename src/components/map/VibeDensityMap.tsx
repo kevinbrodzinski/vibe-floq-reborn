@@ -11,14 +11,14 @@ import { useClusters }           from '@/hooks/useClusters';
 import { useFieldViewport }      from '@/hooks/useFieldViewport';
 import { useVibeFilter }         from '@/hooks/useVibeFilter';
 import { createDensityLayer }    from '@/components/map/DeckLayers';
-import { renderClusterTooltip }  from '@/components/screens/field/tooltipHelpers';   // ✅ path fixed
+import { renderClusterTooltip }  from '@/components/screens/field/tooltipHelpers';
 
 import type { Cluster }          from '@/hooks/useClusters';
 import type { ViewportBounds }   from 'packages/ui/src/maps/types';
 
 export const VibeDensityMap: React.FC = () => {
   const { bounds, onRegionChange } = useFieldViewport();
-  const [vibeFilterState, { activeSet }] = useVibeFilter();
+  const [vibeFilterState, vibeFilterHelpers] = useVibeFilter();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
 
   /* bbox ------------------------------------------------------------ */
@@ -31,20 +31,20 @@ export const VibeDensityMap: React.FC = () => {
   const { clusters, loading, error, realtime } = useClusters(bbox, 6);
 
   const filtered = useMemo(() => {
-    if (!activeSet?.size) return clusters;
+    if (!vibeFilterHelpers.activeSet?.size) return clusters;
     return clusters.filter(c =>
-      Object.keys(c.vibe_counts || {}).some(v => activeSet.has(v as any))
+      Object.keys(c.vibe_counts || {}).some(v => vibeFilterHelpers.activeSet.has(v as any))
     );
-  }, [clusters, activeSet]);
+  }, [clusters, vibeFilterHelpers.activeSet]);
 
   /* deck.gl layer --------------------------------------------------- */
   const layers = useMemo(() => {
     if (!filtered.length) return [];
     const weights = Object.fromEntries(
-      (activeSet ? [...activeSet] : []).map(v => [v, 1])
+      (vibeFilterHelpers.activeSet ? [...vibeFilterHelpers.activeSet] : []).map(v => [v, 1])
     );
     return [createDensityLayer(filtered, weights, setSelectedCluster)];
-  }, [filtered, activeSet]);
+  }, [filtered, vibeFilterHelpers.activeSet]);
 
   const init: Partial<MapViewState> = { latitude: 34.05, longitude: -118.24, zoom: 11 };
 

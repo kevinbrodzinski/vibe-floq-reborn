@@ -93,7 +93,10 @@ export const VibeDensityMap: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Vibe Density Map with edge function token */}
-      <VibeDensityWebMap visible={true} onRegionChange={onRegionChange}>
+      <VibeDensityWebMap
+        visible={true}
+        onRegionChange={onRegionChange}
+      >
         {/* Background visualization - always visible */}
         <VibeDensityBackground />
         

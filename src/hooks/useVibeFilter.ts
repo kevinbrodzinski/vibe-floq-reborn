@@ -29,28 +29,27 @@ const DEFAULT_STATE: VibeFilterState = Object.fromEntries(
 /* Hook                                                                */
 /* ------------------------------------------------------------------ */
 
+export interface VibeFilterHelpers {
+  toggle: (v: Vibe) => void;
+  reset: () => void;
+  setAll: (on: boolean) => void;
+  /** Set from panel "Apply" */
+  replace: (next: VibeFilterState) => void;
+  /** quick set – ON for exactly these vibes */
+  only: (vv: Vibe[]) => void;
+  /** derived set of active vibes (fast membership check) */
+  activeSet: Set<Vibe>;
+  /** At least one vibe switched OFF? */
+  isFiltered: boolean;
+}
+
 /**
  * Local-only vibe filter for the map.
  * Returns [state, helpers].
  */
 export const useVibeFilter = (
   initial: Partial<VibeFilterState> = {},
-): [
-  VibeFilterState,
-  {
-    toggle: (v: Vibe) => void;
-    reset: () => void;
-    setAll: (on: boolean) => void;
-    /** Set from panel "Apply" */
-    replace: (next: VibeFilterState) => void;
-    /** quick set – ON for exactly these vibes */
-    only: (vv: Vibe[]) => void;
-    /** derived set of active vibes (fast membership check) */
-    activeSet: Set<Vibe>;
-    /** At least one vibe switched OFF? */
-    isFiltered: boolean;
-  },
-] => {
+): [VibeFilterState, VibeFilterHelpers] => {
   const [state, setState] = useState<VibeFilterState>({
     ...DEFAULT_STATE,
     ...initial,
@@ -86,7 +85,7 @@ export const useVibeFilter = (
     const isFiltered = activeSet.size !== 0 && activeSet.size !== ALL_VIBES.length;
 
     return { toggle, reset, setAll, replace, only, activeSet, isFiltered };
-  }, [activeSet]);
+  }, [activeSet]) as VibeFilterHelpers;
 
   return [state, helpers];
 };
