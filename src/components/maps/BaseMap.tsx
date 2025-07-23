@@ -1,39 +1,28 @@
 import React, { Suspense } from 'react';
-import { Platform } from 'react-native';
+import { Platform }         from 'react-native';
+import type { ViewportBounds } from 'packages/ui/src/maps/types';  // 🔗 path to the file you showed
 
-import type {
-  ViewportBounds,
-  BaseMapProps as SharedBaseMapProps,
-} from 'packages/ui/src/maps/types';
-
-/** Local addon: let parents mount / unmount the map */
-export interface BaseMapProps extends SharedBaseMapProps {
-  /** When false the map never mounts (great for hidden sheets). */
-  visible?: boolean;
+export interface BaseMapProps {
+  onRegionChange: (b: ViewportBounds) => void;
+  children?: React.ReactNode;
+  visible?: boolean;      // new optional prop
 }
 
-/* lazy-split per platform ------------------------------------------------- */
-const WebMapLazy = React.lazy(() =>
-  import('./WebMap').then((m) => ({ default: m.WebMap })),
-);
-const NativeMapLazy = React.lazy(() =>
-  import('./NativeMap').then((m) => ({ default: m.NativeMap })),
-);
+/* platform-split --------------------------------------------------- */
+const WebMapLazy   = React.lazy(() => import('./WebMap').then(m => ({ default: m.WebMap })));
+const NativeMapLazy = React.lazy(() => import('./NativeMap').then(m => ({ default: m.NativeMap })));
 
-/* wrapper ----------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
 export const BaseMap: React.FC<BaseMapProps> = ({
   visible = true,
   ...rest
 }) => {
-  if (!visible) return null; // guard
-
+  if (!visible) return null;
   return (
     <Suspense fallback={null}>
-      {Platform.OS === 'web' ? (
-        <WebMapLazy {...rest} />
-      ) : (
-        <NativeMapLazy {...rest} />
-      )}
+      {Platform.OS === 'web'
+        ? <WebMapLazy   {...rest} />
+        : <NativeMapLazy {...rest} />}
     </Suspense>
   );
 };
