@@ -105,10 +105,13 @@ export const VibeDensityMap: React.FC = () => {
         {/* Debug Info Overlay */}
         {import.meta.env.DEV && (
           <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm border rounded-lg p-3 text-xs font-mono">
+            <div>Token: {loading ? 'LOADING' : 'YES'}</div>
             <div>Layers: {layers.length}</div>
-            <div>Clusters: {filteredClusters.length}</div>
+            <div>All Clusters: {clusters.length}</div>
+            <div>Filtered Clusters: {filteredClusters.length}</div>
             <div>Real-time: {isRealTimeConnected ? 'ON' : 'OFF'}</div>
             <div>Loading: {loading ? 'YES' : 'NO'}</div>
+            <div>BBox: {bbox ? `[${bbox.map(n => n.toFixed(2)).join(',')}]` : 'NULL'}</div>
             {error && <div className="text-destructive">Error: {error}</div>}
           </div>
         )}

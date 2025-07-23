@@ -147,5 +147,8 @@ export const useClusters = (
     [debouncedFetch],
   );
 
+  // Add error logging
+  if (error) console.error('[useClusters] fetch error:', error);
+  
   return { clusters, loading, error, isRealTimeConnected };
 };

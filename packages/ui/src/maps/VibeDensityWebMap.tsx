@@ -58,28 +58,36 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         
         mapRef.current = map;
 
-        // Register for projection and set ready status AFTER style loads
+        // Set ready status immediately after map creation
+        setTokenStatus('ready');
+
+        // Register for projection AFTER style loads
         map.once('load', () => {
           setMapInstance(map);
-          setTokenStatus('ready');
-        });
-
-        // Add navigation controls
-        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-        // Viewport → React
-        const onMove = () => {
+          
+          // ➊ Fire the callback immediately after style loads
           const b = map.getBounds();
+          console.log('[VibeDensityWebMap] Initial bbox =>', b);
           onRegionChange({
             minLat: b.getSouth(), minLng: b.getWest(),
             maxLat: b.getNorth(), maxLng: b.getEast(),
             zoom: map.getZoom(),
           });
-        };
-        map.on('moveend', onMove);
 
-        // Initial bounds callback
-        onMove();
+          // ➋ Then subscribe for future moves
+          map.on('moveend', () => {
+            const bb = map.getBounds();
+            console.log('[VibeDensityWebMap] bbox =>', bb);
+            onRegionChange({
+              minLat: bb.getSouth(), minLng: bb.getWest(),
+              maxLat: bb.getNorth(), maxLng: bb.getEast(),
+              zoom: map.getZoom(),
+            });
+          });
+        });
+
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       } catch (error) {
         console.error('[VibeDensityWebMap] Failed to initialize map:', error);
