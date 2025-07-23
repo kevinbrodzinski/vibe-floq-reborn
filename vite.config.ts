@@ -21,17 +21,18 @@ export default defineConfig(({ mode, command }) => ({
           : true,
   },
   optimizeDeps: {
-    exclude: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers']
+    exclude: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers', 'earcut']
   },
   build: {
     rollupOptions: {
-      external: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers'],
+      external: ['@deck.gl/react', '@deck.gl/core', '@deck.gl/layers', '@deck.gl/aggregation-layers', 'earcut'],
       output: {
         globals: {
           '@deck.gl/react': 'DeckGL',
           '@deck.gl/core': 'deck',
           '@deck.gl/layers': 'deck',
-          '@deck.gl/aggregation-layers': 'deck'
+          '@deck.gl/aggregation-layers': 'deck',
+          'earcut': 'earcut'
         }
       }
     }

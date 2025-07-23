@@ -20,7 +20,8 @@
 
   <body>
     <div id="root"></div>
-    <!-- Load deck.gl from CDN to avoid bundling timeout -->
+    <!-- Load dependencies from CDN to avoid bundling timeout -->
+    <script src="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js"></script>
     <script src="https://unpkg.com/deck.gl@9.1.13/dist.min.js"></script>
     <script type="module" src="/src/main.web.tsx"></script>
   </body>
