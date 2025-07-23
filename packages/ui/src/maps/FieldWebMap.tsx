@@ -2,6 +2,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+// Quick fix for Vite 5+ worker bundling
+import MapboxWorker from 'mapbox-gl/dist/mapbox.worker.js?worker';
 import { setMapInstance } from '@/lib/geo/project';
 
 interface Props {
@@ -44,10 +46,31 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
     const initializeMap = async () => {
       try {
         console.log('[FieldWebMap] Starting map initialization...');
+        
+        // DEBUGGING STEP 1: Check Mapbox errors
+        console.log('[FieldWebMap] DEBUG 1: Setting up error handler');
+        
+        // DEBUGGING STEP 2: Check worker registration
+        console.log('[FieldWebMap] DEBUG 2: Worker count before:', (mapboxgl as any).getWorkerCount?.() || 'getWorkerCount undefined');
+        
+        // DEBUGGING STEP 4: Check WebGL support
+        console.log('[FieldWebMap] DEBUG 4: WebGL supported:', mapboxgl.supported());
+        
+        // DEBUGGING STEP 5: Check container visibility
+        if (container.current) {
+          const computedStyle = getComputedStyle(container.current);
+          console.log('[FieldWebMap] DEBUG 5: Container height:', computedStyle.height);
+          console.log('[FieldWebMap] DEBUG 5: Container width:', computedStyle.width);
+        }
+        
         const { token, source } = getFieldMapboxToken();
         console.log('[FieldWebMap] Token obtained:', { source, hasToken: !!token });
         mapboxgl.accessToken = token;
         setTokenSource(source);
+        
+        // Apply worker fix for Vite 5+
+        (mapboxgl as any).workerClass = MapboxWorker;
+        console.log('[FieldWebMap] DEBUG 2: Worker class set, count after:', (mapboxgl as any).getWorkerCount?.() || 'getWorkerCount undefined');
         
         console.log('[FieldWebMap] Creating map with container:', container.current);
         const map = new mapboxgl.Map({
@@ -55,6 +78,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           style: 'mapbox://styles/mapbox/dark-v11',
           center: [-118.24, 34.05],
           zoom: 11,
+        });
+        
+        // DEBUGGING STEP 1: Add error handler
+        map.on('error', (e) => {
+          console.error('[FieldWebMap] mapbox-error', e.error);
         });
         
         console.log('[FieldWebMap] Map created, setting ref...');
@@ -72,6 +100,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
 
         // Viewport → React
         const onMove = () => {
+          // DEBUGGING STEP 6: Check if moveend fires
+          console.log('[FieldWebMap] moveend');
           const b = map.getBounds();
           onRegionChange({
             minLat: b.getSouth(), minLng: b.getWest(),
@@ -82,6 +112,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         map.on('moveend', onMove);
 
         // Initial bounds callback
+        console.log('[FieldWebMap] DEBUG 6: Calling initial onMove()');
         onMove();
 
       } catch (error) {
