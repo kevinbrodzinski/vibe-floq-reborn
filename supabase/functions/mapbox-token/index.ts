@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const mapboxToken = Deno.env.get('MAPBOX_ACCESS_TOKEN')
+    const mapboxToken = Deno.env.get('floq-prod-2025')
     
     if (!mapboxToken) {
       return new Response(
