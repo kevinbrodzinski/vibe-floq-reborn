@@ -65,14 +65,14 @@ export const getClusterColor = (
 
 // Updated hue palette to match actual vibe enum values from database
 const vibeHueMap: Record<string, number> = {
-  hype: 300,        // purple-ish
   chill: 200,       // blue
-  social: 30,       // orange
   curious: 180,     // cyan
-  flowing: 100,     // green  
-  solo: 220,        // blue-purple
-  romantic: 330,    // pink
-  weird: 260,       // purple
   down: 240,        // dark blue
-  open: 60          // yellow-green
+  flowing: 100,     // green  
+  hype: 300,        // purple-ish
+  open: 60,         // yellow-green
+  romantic: 330,    // pink
+  social: 30,       // orange
+  solo: 220,        // blue-purple
+  weird: 260        // purple
 }

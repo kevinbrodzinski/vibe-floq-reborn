@@ -6,16 +6,16 @@ import { Badge } from "@/components/ui/badge";
 
 /** slider-bias preset −1‥+1 for every vibe we currently support */
 export const defaultPrefs = {
-  hype: 0,
   chill: 0,
-  social: 0,
   curious: 0,
-  flowing: 0,
-  solo: 0,
-  romantic: 0,
-  weird: 0,
   down: 0,
+  flowing: 0,
+  hype: 0,
   open: 0,
+  romantic: 0,
+  social: 0,
+  solo: 0,
+  weird: 0,
 } as const;
 
 export type VibePrefs = Record<keyof typeof defaultPrefs, number>;
@@ -35,7 +35,7 @@ export const VibeFilterPanel = ({ value, onChange }: Props) => {
     setLocal((p) => ({ ...p, [k]: v[0] }));
 
   const apply  = () => onChange(local);
-  const reset  = () => { onChange(defaultPrefs); setLocal(defaultPrefs); };
+  const reset  = () => { setLocal(defaultPrefs); onChange(defaultPrefs); };
 
   return (
     <Sheet>
@@ -53,7 +53,7 @@ export const VibeFilterPanel = ({ value, onChange }: Props) => {
             <div key={vibe}>
               <div className="mb-1 flex items-center justify-between">
                 <span className="capitalize">{vibe}</span>
-                {local[vibe] !== 0 && (
+                {Math.abs(local[vibe]) > 0.05 && (
                   <Badge variant="outline">
                     {local[vibe] > 0 ? "+" : ""}
                     {local[vibe].toFixed(1)}

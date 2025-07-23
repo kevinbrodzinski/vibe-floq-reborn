@@ -125,13 +125,12 @@ export const VibeDensityMap = ({
 
   const layers = useMemo(() => {
     if (!clusters.length) return [];
-    const densityLayer = createDensityLayer(
-      clusters,
-      vibePrefs,
-      handleClusterClick,
-    );
-    return [densityLayer, pulseLayer].filter(Boolean);
-  }, [clusters, pulseLayer, handleClusterClick, vibePrefs]);
+    return [
+      createDensityLayer(clusters, vibePrefs, handleClusterClick),
+      pulseLayer, // already memoised by react on referential equality
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusters, vibePrefs, handleClusterClick]);
 
   /* center helpers --------------------------------------------------- */
   const centerOnUser = useCallback(() => {
@@ -312,7 +311,9 @@ export const VibeDensityMap = ({
             <footer className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground">
               {clusters.length} clusters •{" "}
               {clusters.reduce((s, c) => s + c.total, 0)} souls in the field
-              {isRealTimeConnected && <span className="ml-1 text-green-500">• Live</span>}
+              {isRealTimeConnected && (
+                <span className="ml-1 text-green-500">• Live</span>
+              )}
             </footer>
           )}
         </div>
