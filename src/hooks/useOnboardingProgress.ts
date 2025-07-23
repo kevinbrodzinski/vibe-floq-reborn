@@ -3,6 +3,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { type Vibe } from '@/types/vibes';
 import { useOnboardingDatabase, ONBOARDING_VERSION } from './useOnboardingDatabase';
 import { useAuth } from '@/providers/AuthProvider';
+import { storage } from '@/lib/storage';
 
 interface OnboardingState {
   currentStep: number;
@@ -54,8 +55,8 @@ export function useOnboardingProgress() {
         }
       }
       
-      // Fallback to localStorage
-      const savedProgress = localStorage.getItem(STORAGE_KEY);
+      // Fallback to unified storage
+      const savedProgress = await storage.getItem(STORAGE_KEY);
       if (savedProgress) {
         try {
           const parsed: OnboardingState = JSON.parse(savedProgress);
@@ -70,11 +71,11 @@ export function useOnboardingProgress() {
             setState(parsed);
           } else {
             // Clear expired progress
-            localStorage.removeItem(STORAGE_KEY);
+            await storage.removeItem(STORAGE_KEY);
           }
         } catch (error) {
           console.error('Failed to parse onboarding progress:', error);
-          localStorage.removeItem(STORAGE_KEY);
+          await storage.removeItem(STORAGE_KEY);
         }
       }
       setIsLoaded(true);
@@ -85,12 +86,12 @@ export function useOnboardingProgress() {
 
   // Debounced save to prevent excessive writes
   const debouncedSave = useDebouncedCallback(
-    useCallback((stateToSave: OnboardingState) => {
+    useCallback(async (stateToSave: OnboardingState) => {
       if (!userRef.current) return; // Guard against logout
       if (stateToSave.currentStep > 0 || stateToSave.selectedVibe) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+        await storage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
         if (userRef.current) {
-          saveProgress(stateToSave);
+          await saveProgress(stateToSave);
         }
       }
     }, [user, saveProgress]),
@@ -123,7 +124,7 @@ export function useOnboardingProgress() {
   }, []);
 
   const clearProgress = useCallback(async () => {
-    localStorage.removeItem(STORAGE_KEY);
+    await storage.removeItem(STORAGE_KEY);
     if (user) {
       await clearDbProgress();
     }

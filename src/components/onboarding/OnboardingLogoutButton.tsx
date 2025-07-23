@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { storage, navigation } from '@/lib/storage';
 
 interface OnboardingLogoutButtonProps {
   className?: string;
@@ -22,21 +23,8 @@ export function OnboardingLogoutButton({
     try {
       console.log('🚪 Logging out from onboarding');
       
-      // Clear all auth-related storage
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith('supabase.auth.') || key.includes('sb-') || key.includes('floq_'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => {
-        try {
-          localStorage.removeItem(key);
-        } catch (e) {
-          console.warn('Failed to remove storage key:', key, e);
-        }
-      });
+      // Clear all auth-related storage using unified storage
+      await storage.clearAuthStorage();
 
       // Sign out from Supabase
       await supabase.auth.signOut({ scope: 'global' });
@@ -46,14 +34,14 @@ export function OnboardingLogoutButton({
       
       toast.success('Logged out successfully');
       
-      // Force page reload to ensure clean state
-      window.location.href = '/';
+      // Navigate to home using platform-safe navigation
+      navigation.navigate('/');
       
     } catch (error) {
       console.error('Error logging out:', error);
       toast.error('Failed to log out');
-      // Force reload anyway to clear state
-      window.location.href = '/';
+      // Force navigate anyway to clear state
+      navigation.navigate('/');
     }
   };
 
@@ -65,7 +53,7 @@ export function OnboardingLogoutButton({
       className={className}
     >
       <LogOut className="w-4 h-4 mr-2" />
-      Log Out
+      <span className="sr-only sm:not-sr-only">Log Out</span>
     </Button>
   );
 }

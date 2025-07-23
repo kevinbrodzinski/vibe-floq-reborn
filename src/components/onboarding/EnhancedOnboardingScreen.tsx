@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
 import { OnboardingLogoutButton } from './OnboardingLogoutButton';
+import { OnboardingProgress } from './MobileOnboardingWrapper';
 
 // Import all onboarding steps
 import {
@@ -154,67 +155,63 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 safe-area-inset">
       {/* Header with progress and logout */}
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              <h1 className="text-lg font-semibold text-foreground">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50 pt-safe-top">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold text-foreground truncate">
                 Welcome to Floq
               </h1>
               {state.currentStep < TOTAL_STEPS - 1 && (
-                <div className="flex items-center gap-3 flex-1 max-w-md">
-                  <Progress value={progressPercentage} className="flex-1" />
-                  <span className="text-sm text-muted-foreground font-medium min-w-[60px]">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-sm sm:max-w-md">
+                  <Progress value={progressPercentage} className="flex-1 h-2" />
+                  <span className="text-xs sm:text-sm text-muted-foreground font-medium whitespace-nowrap">
                     {state.currentStep + 1} / {TOTAL_STEPS}
                   </span>
                 </div>
               )}
             </div>
             
-            <OnboardingLogoutButton />
+            <OnboardingLogoutButton 
+              variant="ghost" 
+              size="sm"
+              className="shrink-0"
+            />
           </div>
         </div>
       </div>
 
       {/* Main content area */}
-      <div className="container mx-auto px-4 py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="w-full"
-          >
-            {renderCurrentStep()}
-          </motion.div>
-        </AnimatePresence>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="max-w-lg mx-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={state.currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full"
+            >
+              {renderCurrentStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Step indicator dots (except on completion step) */}
       {state.currentStep < TOTAL_STEPS - 1 && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2">
-          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2">
-            {Array.from({ length: TOTAL_STEPS - 1 }, (_, index) => (
-              <button
-                key={index}
-                onClick={() => goToStep(index)}
-                disabled={index > state.currentStep}
-                className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                  index === state.currentStep
-                    ? 'bg-primary scale-125'
-                    : index < state.currentStep
-                    ? 'bg-primary/60 hover:bg-primary/80'
-                    : 'bg-muted-foreground/30'
-                } ${index <= state.currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-              />
-            ))}
-          </div>
-        </div>
+        <OnboardingProgress
+          currentStep={state.currentStep}
+          totalSteps={TOTAL_STEPS - 1}
+          onStepClick={(step) => step <= state.currentStep && goToStep(step)}
+        />
       )}
+      
+      {/* Bottom safe area padding */}
+      <div className="pb-safe-bottom" />
     </div>
   );
 }

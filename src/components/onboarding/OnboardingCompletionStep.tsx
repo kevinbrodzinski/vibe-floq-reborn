@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { storage, navigation } from '@/lib/storage';
 
 interface OnboardingCompletionStepProps {
   onDone: () => void;
@@ -69,8 +70,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       // 3. Clear local storage to prevent stale state
       try {
-        localStorage.removeItem('floq_onboarding_complete');
-        localStorage.removeItem('floq_onboarding_progress');
+        await storage.removeItem('floq_onboarding_complete');
+        await storage.removeItem('floq_onboarding_progress');
       } catch (storageError) {
         console.warn('Warning: Failed to clear local storage:', storageError);
       }
@@ -98,15 +99,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
     try {
       console.log('🚪 Logging out from onboarding completion step');
       
-      // Clear all auth-related storage
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith('supabase.auth.') || key.includes('sb-'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      // Clear all auth-related storage using unified storage
+      await storage.clearAuthStorage();
 
       // Sign out from Supabase
       await supabase.auth.signOut({ scope: 'global' });
@@ -116,14 +110,14 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       
       toast.success('Logged out successfully');
       
-      // Force page reload to ensure clean state
-      window.location.href = '/';
+      // Navigate to home using platform-safe navigation
+      navigation.navigate('/');
       
     } catch (error) {
       console.error('Error logging out:', error);
       toast.error('Failed to log out');
-      // Force reload anyway to clear state
-      window.location.href = '/';
+      // Force navigate anyway to clear state
+      navigation.navigate('/');
     }
   };
 
