@@ -353,6 +353,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       heatContainerRef.current?.removeChildren();
       peopleContainerRef.current?.removeChildren();
       tilePoolRef.current?.clearAll();
+      
+      // 3️⃣ Destroy the PIXI Application after cleanup
+      appRef.current?.destroy(true, {
+        children: true,
+        texture: true,
+      });
+      appRef.current = undefined;
     };
   }, []);
 

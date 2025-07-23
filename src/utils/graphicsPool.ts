@@ -32,7 +32,10 @@ export class GraphicsPool {
         graphics.clear();
       }
       graphics.removeFromParent();
-      this.pool.push(graphics);
+      // prevent duplicate pooling
+      if (!this.pool.includes(graphics)) {
+        this.pool.push(graphics);
+      }
     });
     this.active.clear();
   }
