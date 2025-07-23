@@ -2,13 +2,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-// Import the worker for Vite
-import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker.js?worker';
-import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
+import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
+import { getMapboxToken } from '@/lib/geo/getMapboxToken';
 
 // Configure the worker before any map initialization
-(mapboxgl as any).workerClass = MapboxWorker;
+registerMapboxWorker();
 
 interface Props {
   onRegionChange: (b: {
@@ -21,30 +20,6 @@ interface Props {
   children?: React.ReactNode;
 }
 
-/* ------------------------------------------------------------------ */
-/*  TOKEN RESOLVER                                                    */
-/* ------------------------------------------------------------------ */
-async function getFieldMapboxToken(): Promise<{ token: string; source: string }> {
-  /* 1 — edge function (FLOQ_PROD_2025) */
-  try {
-    const { data, error } = await supabase.functions.invoke('mapbox-token');
-    if (data?.token && !error) {
-      return { token: data.token, source: 'edge-function' };
-    }
-  } catch {/* swallow */ }
-
-  /* 2 — env */
-  const envToken =
-    import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ??
-    (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : undefined);
-  if (envToken) return { token: envToken, source: 'env' };
-
-  /* 3 — public fallback */
-  return {
-    token: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
-    source: 'fallback'
-  };
-}
 
 /* ------------------------------------------------------------------ */
 /*  COMPONENT                                                         */
@@ -62,27 +37,22 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
 
     const mount = async () => {
       try {
-        const { token, source } = await getFieldMapboxToken();
+        const { token, source } = await getMapboxToken();
         setTokenSource(source);
         mapboxgl.accessToken = token;
 
-        console.log('[FieldWebMap] Initializing map with token from:', source);
+        if (import.meta.env.DEV) {
+          console.log('[FieldWebMap] Initializing map with token from:', source);
+        }
 
         const map = new mapboxgl.Map({
-          container : container.current!,
-          style     : 'mapbox://styles/mapbox/dark-v11',
-          center    : [-118.24, 34.05],
-          zoom      : 11
+          container: container.current,
+          style: 'mapbox://styles/mapbox/dark-v11',
+          center: [-118.24, 34.05],
+          zoom: 11
         });
 
         mapRef.current = map;
-
-        /* style & tiles ready ---- */
-        map.once('load', () => {
-          console.log('[FieldWebMap] Map loaded successfully');
-          setMapInstance(map);
-          setTokenStatus('ready');
-        });
 
         /* basic controls ---------- */
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -94,11 +64,23 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
             minLng: b.getWest(),
             maxLat: b.getNorth(),
             maxLng: b.getEast(),
-            zoom  : map.getZoom()
+            zoom: map.getZoom()
           });
         };
+
+        /* style & tiles ready ---- */
+        map.once('load', () => {
+          if (import.meta.env.DEV) {
+            console.log('[FieldWebMap] Map loaded successfully');
+          }
+          setMapInstance(map);
+          setTokenStatus('ready');
+          
+          // Fire once immediately after load
+          handleMoveEnd();
+        });
+
         map.on('moveend', handleMoveEnd);
-        handleMoveEnd(); // fire once immediately
       } catch (err) {
         console.error('[FieldWebMap] init failed', err);
         setTokenStatus('error');
@@ -110,8 +92,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
     return () => {
       if (mapRef.current) {
         try {
+          // Remove moveend listener if it exists
+          const map = mapRef.current;
+          map.off('moveend', () => {});
+          
           setMapInstance(null);
-          mapRef.current.remove();
+          map.remove();
         } finally {
           mapRef.current = null;
           setTokenStatus('loading');
@@ -141,9 +127,17 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           <span className="text-sm text-destructive">Failed to load field map</span>
           <button
             className="text-xs underline decoration-dotted"
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setTokenStatus('loading');
+              // Trigger re-initialization by clearing and re-running effect
+              if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+              }
+              window.location.reload();
+            }}
           >
-            reload
+            Try again
           </button>
         </div>
       </div>

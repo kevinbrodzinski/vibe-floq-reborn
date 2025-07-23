@@ -1,14 +1,12 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-// Import the worker for Vite
-import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker.js?worker';
-import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
+import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
+import { getMapboxToken } from '@/lib/geo/getMapboxToken';
 
 // Configure the worker before any map initialization
-(mapboxgl as any).workerClass = MapboxWorker;
+registerMapboxWorker();
 
 interface Props {
   onRegionChange: (b: {
@@ -18,36 +16,6 @@ interface Props {
   }) => void;
   children?: React.ReactNode;
 }
-
-const getVibeDensityMapboxToken = async (): Promise<{ token: string; source: string }> => {
-  // Use edge function with FLOQ_PROD_2025 token for Vibe Density Map
-  try {
-    const { data, error } = await supabase.functions.invoke('mapbox-token');
-    if (data?.token && !error) {
-      console.log('[VibeDensityWebMap] Using FLOQ_PROD_2025 token from edge function');
-      return { token: data.token, source: 'edge-function' };
-    }
-    console.warn('[VibeDensityWebMap] Edge function failed:', error);
-  } catch (e) {
-    console.warn('[VibeDensityWebMap] Edge function unavailable:', e);
-  }
-
-  // Second try: Environment variable MAPBOX_ACCESS_TOKEN
-  const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 
-                   (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : null);
-  
-  if (envToken) {
-    console.log('[VibeDensityWebMap] Using MAPBOX_ACCESS_TOKEN from environment');
-    return { token: envToken, source: 'environment' };
-  }
-
-  // Final fallback: Public token
-  console.warn('[VibeDensityWebMap] Using fallback public token');
-  return { 
-    token: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
-    source: 'fallback'
-  };
-};
 
 export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const container = useRef<HTMLDivElement>(null);
@@ -60,14 +28,16 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
 
     const initializeMap = async () => {
       try {
-        const { token, source } = await getVibeDensityMapboxToken();
+        const { token, source } = await getMapboxToken();
         mapboxgl.accessToken = token;
         setTokenSource(source);
         
-        console.log('[VibeDensityWebMap] Initializing map with token from:', source);
+        if (import.meta.env.DEV) {
+          console.log('[VibeDensityWebMap] Initializing map with token from:', source);
+        }
         
         const map = new mapboxgl.Map({
-          container: container.current!,
+          container: container.current,
           style: 'mapbox://styles/mapbox/dark-v11',
           center: [-118.24, 34.05],
           zoom: 11,
@@ -75,31 +45,34 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         
         mapRef.current = map;
 
+        // Handler for moveend events
+        const handleMoveEnd = () => {
+          const bb = map.getBounds();
+          if (import.meta.env.DEV) {
+            console.log('[VibeDensityWebMap] bbox =>', bb);
+          }
+          onRegionChange({
+            minLat: bb.getSouth(), 
+            minLng: bb.getWest(),
+            maxLat: bb.getNorth(), 
+            maxLng: bb.getEast(),
+            zoom: map.getZoom(),
+          });
+        };
+
         // Register for projection AFTER style loads
         map.once('load', () => {
-          console.log('[VibeDensityWebMap] Map loaded successfully');
+          if (import.meta.env.DEV) {
+            console.log('[VibeDensityWebMap] Map loaded successfully');
+          }
           setMapInstance(map);
           setTokenStatus('ready');
           
           // Fire the callback immediately after style loads
-          const b = map.getBounds();
-          console.log('[VibeDensityWebMap] Initial bbox =>', b);
-          onRegionChange({
-            minLat: b.getSouth(), minLng: b.getWest(),
-            maxLat: b.getNorth(), maxLng: b.getEast(),
-            zoom: map.getZoom(),
-          });
+          handleMoveEnd();
 
           // Then subscribe for future moves
-          map.on('moveend', () => {
-            const bb = map.getBounds();
-            console.log('[VibeDensityWebMap] bbox =>', bb);
-            onRegionChange({
-              minLat: bb.getSouth(), minLng: bb.getWest(),
-              maxLat: bb.getNorth(), maxLng: bb.getEast(),
-              zoom: map.getZoom(),
-            });
-          });
+          map.on('moveend', handleMoveEnd);
         });
 
         // Add navigation controls
@@ -117,8 +90,12 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
     return () => {
       if (mapRef.current) {
         try {
+          // Remove moveend listener if it exists
+          const map = mapRef.current;
+          map.off('moveend', () => {});
+          
           setMapInstance(null);
-          mapRef.current.remove();
+          map.remove();
           mapRef.current = null;
           setTokenStatus('loading');
         } catch (error) {
@@ -145,10 +122,18 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         <div className="text-center">
           <p className="text-sm text-destructive mb-2">Failed to load vibe density map</p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => {
+              setTokenStatus('loading');
+              // Trigger re-initialization by clearing and re-running effect
+              if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
+              }
+              window.location.reload();
+            }} 
             className="text-xs text-muted-foreground hover:text-foreground"
           >
-            Reload page
+            Try again
           </button>
         </div>
       </div>

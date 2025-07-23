@@ -83,7 +83,7 @@ export const VibeDensityMap: React.FC = () => {
         {/* Background visualization - always visible */}
         <VibeDensityBackground />
         
-        {/* Deck.GL Layer - only render if we have data to avoid covering map */}
+        {/* Deck.GL Layer - only render if we have layers to avoid empty canvas covering map */}
         {layers.length > 0 && (
           <DeckGL
             initialViewState={initialViewState}
