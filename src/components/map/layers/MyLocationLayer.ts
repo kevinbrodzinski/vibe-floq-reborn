@@ -22,6 +22,6 @@ export const myLocationLayer = (
         lineWidthMinPixels: 1.5,
 
         pickable: false,
-        parameters: { depthMask: false },
+        parameters: { depthTest: false },
       } as ScatterplotLayerProps)
     : null;

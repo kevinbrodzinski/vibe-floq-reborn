@@ -125,14 +125,17 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
   const deckLayers = useMemo(() => {
     const layers = [];
 
-    // Add user location layer (on top of heat overlay)
+    // TODO: Add density layer here when migrating from SVG/Canvas to Deck.GL
+    // layers.push(densityLayer);
+
+    // Add user location layer (last so it's on top)
     const locLayer = myLocationLayer(
       userLocation ? [userLocation.lng, userLocation.lat] : null,
     );
     if (locLayer) layers.push(locLayer);
 
     return layers;
-  }, [userLocation?.lat, userLocation?.lng]);
+  }, [userLocation ? `${userLocation.lat},${userLocation.lng}` : null]);
 
   /* ------------------------------------------------------------------ */
   /*  Render                                                            */
