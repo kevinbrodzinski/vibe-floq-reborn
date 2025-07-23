@@ -104,23 +104,23 @@ export function VibeDensityMap({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetPortal>
+        {/* dimmed background */}
         <SheetOverlay className="bg-background/60 backdrop-blur-sm" />
 
-        {/* modal */}
+        {/* FULL-HEIGHT sheet (flush with top) */}
         <SheetContent
           side="bottom"
-          className="h-[85vh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
+          className="h-[100dvh] max-w-[640px] mx-auto flex flex-col px-4 pb-0 pt-4"
         >
-          {/* close */}
+          {/* swipe-down close button */}
           <SheetClose
             className="absolute right-4 top-4 z-10 rounded-full p-2 hover:bg-accent/20 transition-colors"
             aria-label="Close"
           >
             <span aria-hidden>✕</span>
-            <span className="sr-only">Close map</span>
           </SheetClose>
 
-          {/* header */}
+          {/* HEADER */}
           <SheetHeader
             role="heading"
             aria-level={2}
@@ -139,7 +139,7 @@ export function VibeDensityMap({
             </div>
           </SheetHeader>
 
-          {/* map area */}
+          {/* MAP AREA */}
           <div className="relative flex-1">
             {error ? (
               <div className="grid h-full place-items-center text-muted-foreground">
@@ -152,7 +152,7 @@ export function VibeDensityMap({
             ) : (
               <MapErrorBoundary>
                 <div className="absolute inset-0">
-                  {/* optional static image fallback */}
+                  {/* optional static fallback image */}
                   <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{
@@ -170,7 +170,7 @@ export function VibeDensityMap({
             )}
           </div>
 
-          {/* footer */}
+          {/* FOOTER */}
           <SheetFooter className="min-h-[3.5rem] px-4 py-2 text-sm text-muted-foreground">
             <div className="flex flex-wrap items-center gap-2">
               <span>{totals.spots} spots</span>
