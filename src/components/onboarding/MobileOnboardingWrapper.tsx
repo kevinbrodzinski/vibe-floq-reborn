@@ -44,7 +44,7 @@ export function MobileOnboardingWrapper({
       ${className}
     `}>
       {/* Keyboard avoidance space */}
-      <div className="
+      <div className={`
         flex 
         flex-col 
         min-h-screen 
@@ -53,14 +53,14 @@ export function MobileOnboardingWrapper({
         px-4 
         sm:px-6 
         lg:px-8
-      ">
+      `}>
         {/* Content container with proper spacing */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="
+          className={`
             flex-1 
             flex 
             flex-col 
@@ -71,7 +71,7 @@ export function MobileOnboardingWrapper({
             max-w-lg 
             mx-auto 
             w-full
-          "
+          `}
         >
           {children}
         </motion.div>
@@ -137,7 +137,7 @@ export function OnboardingProgress({
   onStepClick 
 }: OnboardingProgressProps) {
   return (
-    <div className="
+    <div className={`
       flex 
       items-center 
       justify-center 
@@ -157,7 +157,7 @@ export function OnboardingProgress({
       px-4 
       py-2
       shadow-lg
-    ">
+    `}>
       {Array.from({ length: totalSteps }, (_, step) => (
         <button
           key={step}

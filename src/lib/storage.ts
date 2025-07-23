@@ -73,18 +73,9 @@ class WebStorageAdapter implements StorageAdapter {
   }
 
   async clearAuthStorage(): Promise<void> {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const keys = Object.keys(localStorage);
-      const authKeys = keys.filter(key => 
-        key.startsWith('sb-') || 
-        key.includes('auth') || 
-        key.includes('session') ||
-        key.includes('sb-access-token') ||
-        key.startsWith('floq_auth') ||
-        key.startsWith('floq_onboarding')
-      );
-      authKeys.forEach(key => localStorage.removeItem(key));
-    }
+    const keys = await this.getAllKeys();
+    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
+    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
   }
 }
 
@@ -113,62 +104,22 @@ class MemoryStorageAdapter implements StorageAdapter {
   }
 
   async clearAuthStorage(): Promise<void> {
-    const keys = Array.from(this.storage.keys());
-    const authKeys = keys.filter(key => 
-      key.startsWith('sb-') || 
-      key.includes('auth') || 
-      key.includes('session') ||
-      key.includes('sb-access-token') ||
-      key.startsWith('floq_auth') ||
-      key.startsWith('floq_onboarding')
-    );
-    authKeys.forEach(key => this.storage.delete(key));
+    const keys = await this.getAllKeys();
+    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
+    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
     console.info('[Storage] Using in-memory adapter');
   }
 }
 
-// React Native storage adapter (throws for now - better than silent data loss)
-class ReactNativeStorageAdapter implements StorageAdapter {
-  async getItem(key: string): Promise<string | null> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-  async setItem(key: string, value: string): Promise<void> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-  async removeItem(key: string): Promise<void> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-  async getAllKeys(): Promise<string[]> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-  async clear(): Promise<void> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-  async clearAuthStorage(): Promise<void> {
-    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
-  }
-}
+// Remove the React Native adapter class since we're using memory fallback
 
 // Platform detection and adapter selection
 function createStorageAdapter(): StorageAdapter {
-  // TODO: Add React Native detection when implementing mobile
-  // if (Platform.OS === 'ios' || Platform.OS === 'android') {
-  //   return new ReactNativeStorageAdapter();
-  // }
-  
-  try {
-    // Test if localStorage is available (guard window access)
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const testKey = '__storage_test__';
-      localStorage.setItem(testKey, 'test');
-      localStorage.removeItem(testKey);
-      return new WebStorageAdapter();
-    }
-  } catch {
-    // localStorage not available, use memory fallback
-  }
-  
-  console.info('[Storage] Using in-memory adapter - data will not persist');
+  // If you're already on web just return WebStorageAdapter
+  if (typeof window !== 'undefined') return new WebStorageAdapter();
+
+  // RN fallback – until SecureStore adapter is coded, use memory adapter
+  console.warn('[Storage] Falling back to in-memory adapter on native');
   return new MemoryStorageAdapter();
 }
 
@@ -255,21 +206,12 @@ export const storage = {
   },
 
   /**
-   * Clear auth-related storage (includes Supabase v2 tokens)
+   * Clear auth-related storage (uses Promise.all for performance)
    */
   async clearAuthStorage(): Promise<void> {
-    const authPatterns = [
-      /^supabase\.auth\./,
-      /^sb-/,
-      /^sb-access-token$/,  // Supabase v2 token
-      /^flq_/,  // Use consistent prefix
-      /^floq_/,
-      /^auth_/
-    ];
-
-    for (const pattern of authPatterns) {
-      await this.removeByPattern(pattern);
-    }
+    const keys = await this.getAllKeys();
+    const pat = /^(sb-|.*auth.*|.*session.*|sb-access-token|floq_)/;
+    await Promise.all(keys.filter(k => pat.test(k)).map(k => this.removeItem(k)));
   }
 };
 
@@ -286,10 +228,7 @@ export const navigation = {
         window.location.href = path;
       }
       // TODO: Add React Native navigation when implementing mobile
-      // else if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      //   // Use React Navigation
-      //   navigationRef.navigate(path);
-      // }
+      // Use React Navigation: navigationRef.navigate(path);
     } catch (error) {
       console.warn('[Navigation] Failed to navigate to:', path, error);
     }
@@ -304,6 +243,7 @@ export const navigation = {
         window.location.reload();
       }
       // TODO: Add React Native screen refresh when implementing mobile
+      // Use navigation reset or refresh action
     } catch (error) {
       console.warn('[Navigation] Failed to reload:', error);
     }
