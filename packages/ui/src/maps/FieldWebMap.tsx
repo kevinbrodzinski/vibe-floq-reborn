@@ -2,48 +2,53 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+// Import the worker for Vite
+import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker.js?worker';
 import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
 
+// Configure the worker before any map initialization
+(mapboxgl as any).workerClass = MapboxWorker;
+
 interface Props {
   onRegionChange: (b: {
-    minLat: number; minLng: number;
-    maxLat: number; maxLng: number;
+    minLat: number;
+    minLng: number;
+    maxLat: number;
+    maxLng: number;
     zoom: number;
   }) => void;
   children?: React.ReactNode;
 }
 
-const getFieldMapboxToken = async (): Promise<{ token: string; source: string }> => {
-  // First try: Edge function with FLOQ_PROD_2025 token
+/* ------------------------------------------------------------------ */
+/*  TOKEN RESOLVER                                                    */
+/* ------------------------------------------------------------------ */
+async function getFieldMapboxToken(): Promise<{ token: string; source: string }> {
+  /* 1 — edge function (FLOQ_PROD_2025) */
   try {
     const { data, error } = await supabase.functions.invoke('mapbox-token');
     if (data?.token && !error) {
-      console.log('[FieldWebMap] Using FLOQ_PROD_2025 token from edge function');
       return { token: data.token, source: 'edge-function' };
     }
-    console.warn('[FieldWebMap] Edge function failed:', error);
-  } catch (e) {
-    console.warn('[FieldWebMap] Edge function unavailable:', e);
-  }
+  } catch {/* swallow */ }
 
-  // Second try: Environment variable MAPBOX_ACCESS_TOKEN
-  const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 
-                   (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : null);
-  
-  if (envToken) {
-    console.log('[FieldWebMap] Using MAPBOX_ACCESS_TOKEN from environment');
-    return { token: envToken, source: 'environment' };
-  }
+  /* 2 — env */
+  const envToken =
+    import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ??
+    (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : undefined);
+  if (envToken) return { token: envToken, source: 'env' };
 
-  // Final fallback: Public token
-  console.warn('[FieldWebMap] Using fallback public token');
-  return { 
+  /* 3 — public fallback */
+  return {
     token: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
     source: 'fallback'
   };
-};
+}
 
+/* ------------------------------------------------------------------ */
+/*  COMPONENT                                                         */
+/* ------------------------------------------------------------------ */
 export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const container = useRef<HTMLDivElement>(null);
   const mapRef     = useRef<mapboxgl.Map | null>(null);
@@ -61,6 +66,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         setTokenSource(source);
         mapboxgl.accessToken = token;
 
+        console.log('[FieldWebMap] Initializing map with token from:', source);
+
         const map = new mapboxgl.Map({
           container : container.current!,
           style     : 'mapbox://styles/mapbox/dark-v11',
@@ -72,6 +79,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
 
         /* style & tiles ready ---- */
         map.once('load', () => {
+          console.log('[FieldWebMap] Map loaded successfully');
           setMapInstance(map);
           setTokenStatus('ready');
         });

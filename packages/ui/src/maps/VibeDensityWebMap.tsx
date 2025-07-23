@@ -2,8 +2,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+// Import the worker for Vite
+import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker.js?worker';
 import { supabase } from '@/integrations/supabase/client';
 import { setMapInstance } from '@/lib/geo/project';
+
+// Configure the worker before any map initialization
+(mapboxgl as any).workerClass = MapboxWorker;
 
 interface Props {
   onRegionChange: (b: {
@@ -59,6 +64,8 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
         mapboxgl.accessToken = token;
         setTokenSource(source);
         
+        console.log('[VibeDensityWebMap] Initializing map with token from:', source);
+        
         const map = new mapboxgl.Map({
           container: container.current!,
           style: 'mapbox://styles/mapbox/dark-v11',
@@ -70,10 +77,11 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
 
         // Register for projection AFTER style loads
         map.once('load', () => {
+          console.log('[VibeDensityWebMap] Map loaded successfully');
           setMapInstance(map);
           setTokenStatus('ready');
           
-          // ➊ Fire the callback immediately after style loads
+          // Fire the callback immediately after style loads
           const b = map.getBounds();
           console.log('[VibeDensityWebMap] Initial bbox =>', b);
           onRegionChange({
@@ -82,7 +90,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
             zoom: map.getZoom(),
           });
 
-          // ➋ Then subscribe for future moves
+          // Then subscribe for future moves
           map.on('moveend', () => {
             const bb = map.getBounds();
             console.log('[VibeDensityWebMap] bbox =>', bb);
@@ -112,6 +120,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
           setMapInstance(null);
           mapRef.current.remove();
           mapRef.current = null;
+          setTokenStatus('loading');
         } catch (error) {
           console.warn('[VibeDensityWebMap] Cleanup error (safe to ignore):', error);
         }
