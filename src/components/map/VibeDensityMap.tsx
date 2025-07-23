@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import DeckGL from "@deck.gl/react";
+import type { Deck } from "@deck.gl/core";
 import { FlyToInterpolator } from "@deck.gl/core";
 import { easeCubic } from "d3-ease";
 
@@ -40,6 +41,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
   clusters = [],
   className = "",
 }: VibeDensityMapProps) => {
+  const deckRef = useRef<Deck | null>(null);
   const fallbackUserLocation = useOptimizedGeolocation();
   
   // memoize to avoid recreation on every render
@@ -173,6 +175,28 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
     }
   }, [hasFix, centerOnUser]);
 
+  /* ──────────────────────────────  debugging  */
+  useEffect(() => {
+    if (deckRef.current) {
+      (window as any).deck = deckRef.current;
+      if (import.meta.env.DEV) console.info("🗺️ Deck instance exposed → window.deck");
+    }
+  }, []);
+
+  // Debug logging
+  if (import.meta.env.DEV) {
+    console.log(
+      "[VibeDensityMap] render:",
+      {
+        visibleClusters: visibleClusters.length,
+        layers: layers.length,
+        totalClusters: clusters.length,
+        userLocation: currentUserLocation,
+        filterState: filterHelpers.isFiltered ? "filtered" : "all"
+      }
+    );
+  }
+
   /* ──────────────────────────────  render  */
   return (
     <div
@@ -185,6 +209,7 @@ export const VibeDensityMap: FC<VibeDensityMapProps> = ({
 
       {/* MAP CANVAS */}
       <DeckGL
+        ref={deckRef}
         viewState={viewStateRef.current}
         controller={true}
         layers={layers}
