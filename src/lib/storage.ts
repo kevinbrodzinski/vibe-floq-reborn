@@ -9,6 +9,7 @@ interface StorageAdapter {
   removeItem(key: string): Promise<void>;
   getAllKeys(): Promise<string[]>;
   clear(): Promise<void>;
+  clearAuthStorage(): Promise<void>;
 }
 
 class WebStorageAdapter implements StorageAdapter {
@@ -70,6 +71,21 @@ class WebStorageAdapter implements StorageAdapter {
       console.warn('[Storage] Failed to clear storage:', error);
     }
   }
+
+  async clearAuthStorage(): Promise<void> {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const keys = Object.keys(localStorage);
+      const authKeys = keys.filter(key => 
+        key.startsWith('sb-') || 
+        key.includes('auth') || 
+        key.includes('session') ||
+        key.includes('sb-access-token') ||
+        key.startsWith('floq_auth') ||
+        key.startsWith('floq_onboarding')
+      );
+      authKeys.forEach(key => localStorage.removeItem(key));
+    }
+  }
 }
 
 // Memory fallback for when storage is unavailable
@@ -95,6 +111,20 @@ class MemoryStorageAdapter implements StorageAdapter {
   async clear(): Promise<void> {
     this.storage.clear();
   }
+
+  async clearAuthStorage(): Promise<void> {
+    const keys = Array.from(this.storage.keys());
+    const authKeys = keys.filter(key => 
+      key.startsWith('sb-') || 
+      key.includes('auth') || 
+      key.includes('session') ||
+      key.includes('sb-access-token') ||
+      key.startsWith('floq_auth') ||
+      key.startsWith('floq_onboarding')
+    );
+    authKeys.forEach(key => this.storage.delete(key));
+    console.info('[Storage] Using in-memory adapter');
+  }
 }
 
 // React Native storage adapter (throws for now - better than silent data loss)
@@ -112,6 +142,9 @@ class ReactNativeStorageAdapter implements StorageAdapter {
     throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
   }
   async clear(): Promise<void> {
+    throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
+  }
+  async clearAuthStorage(): Promise<void> {
     throw new Error('React Native storage not implemented yet. Use expo-secure-store.');
   }
 }

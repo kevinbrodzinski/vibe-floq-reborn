@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useOnboardingAnalytics } from '@/hooks/useOnboardingAnalytics';
 import { OnboardingLogoutButton } from './OnboardingLogoutButton';
-import { OnboardingProgress } from './MobileOnboardingWrapper';
+import { OnboardingProgress } from './OnboardingProgress';
 
 // Import all onboarding steps
 import {
@@ -206,7 +206,6 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
         <OnboardingProgress
           currentStep={state.currentStep}
           totalSteps={TOTAL_STEPS - 1}
-          onStepClick={(step) => step <= state.currentStep && goToStep(step)}
         />
       )}
       
