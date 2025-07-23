@@ -63,14 +63,16 @@ export const getClusterColor = (
   return blendHue([base.r, base.g, base.b], biasHue, 0.2)
 }
 
-// simple static hue palette – change to suit your branding
+// Updated hue palette to match actual vibe enum values from database
 const vibeHueMap: Record<string, number> = {
-  hype: 300,
-  chill: 200,
-  social: 30,
-  focus: 180,
-  explore: 100,
-  create: 50,
-  relax: 220,
-  exercise: 0
+  hype: 300,        // purple-ish
+  chill: 200,       // blue
+  social: 30,       // orange
+  curious: 180,     // cyan
+  flowing: 100,     // green  
+  solo: 220,        // blue-purple
+  romantic: 330,    // pink
+  weird: 260,       // purple
+  down: 240,        // dark blue
+  open: 60          // yellow-green
 }
