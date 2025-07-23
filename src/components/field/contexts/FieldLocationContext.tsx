@@ -1,6 +1,8 @@
+
 import { createContext, useContext } from 'react';
 import { useOptimizedGeolocation } from '@/hooks/useOptimizedGeolocation';
 import { useBucketedPresence } from '@/hooks/useBucketedPresence';
+import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
 
 interface FieldLocationContextValue {
   location: ReturnType<typeof useOptimizedGeolocation>;
@@ -16,7 +18,7 @@ interface FieldLocationProviderProps {
   friendIds: string[];
 }
 
-export const FieldLocationProvider = ({ children, friendIds }: FieldLocationProviderProps) => {
+const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProviderProps) => {
   const location = useOptimizedGeolocation();
   const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.lat, location.lng, friendIds);
   const isLocationReady = !!(location.lat && location.lng);
@@ -32,6 +34,16 @@ export const FieldLocationProvider = ({ children, friendIds }: FieldLocationProv
     <FieldLocationContext.Provider value={value}>
       {children}
     </FieldLocationContext.Provider>
+  );
+};
+
+export const FieldLocationProvider = ({ children, friendIds }: FieldLocationProviderProps) => {
+  return (
+    <PresenceErrorBoundary>
+      <FieldLocationProviderInner friendIds={friendIds}>
+        {children}
+      </FieldLocationProviderInner>
+    </PresenceErrorBoundary>
   );
 };
 

@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { VibeDensityWebMap } from '@/components/maps/VibeDensityWebMap';
 import { useClusters } from '@/hooks/useClusters';
 import { useFieldViewport } from '@/hooks/useFieldViewport';
@@ -16,9 +16,19 @@ import type { Cluster } from '@/hooks/useClusters';
 type VibeWeights = Record<string, number>;
 
 export const VibeDensityMap: React.FC = () => {
+  console.log('[VibeDensityMap] Component mounted and rendering');
+  
   const { bounds, onRegionChange } = useFieldViewport();
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [vibeFilterState, vibeFilterHelpers] = useVibeFilter();
+  
+  // Add effect to log when component mounts/unmounts
+  useEffect(() => {
+    console.log('[VibeDensityMap] Component mounted');
+    return () => {
+      console.log('[VibeDensityMap] Component unmounted');
+    };
+  }, []);
   
   // Convert bounds to bbox format for clusters hook
   const bbox = useMemo(() => {
@@ -77,6 +87,8 @@ export const VibeDensityMap: React.FC = () => {
     longitude: -118.24,
     zoom: 11
   };
+
+  console.log('[VibeDensityMap] Rendering map component');
 
   return (
     <div className="absolute inset-0 overflow-hidden">

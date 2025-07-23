@@ -30,25 +30,40 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
   const [errMsg, setErrMsg] = useState<string>();
 
   const initializeMap = async () => {
-    if (!container.current || mapRef.current) return;
+    console.log('[VibeDensityWebMap] Starting map initialization...');
+    
+    if (!container.current || mapRef.current) {
+      console.log('[VibeDensityWebMap] Container or map already exists, skipping init');
+      return;
+    }
 
     let destroyed = false;
 
     try {
       /* ① ─ token ----------------------------------------------------------------- */
+      console.log('[VibeDensityWebMap] Getting Mapbox token...');
       const { token, source } = await getMapboxToken();
       mapboxgl.accessToken = token;
-      import.meta.env.DEV && console.log('[VDWebMap] token from', source);
+      console.log('[VDWebMap] token from', source);
 
       /* ② ─ container size check ------------------------------------------------- */
       await new Promise(r => requestAnimationFrame(r));
-      const { width, height } = container.current!.getBoundingClientRect();
-      console.log('map container size', width, height);
-      if (!width || !height) throw new Error('Map container has no dimensions');
+      
+      if (!container.current) {
+        throw new Error('Container ref lost during initialization');
+      }
+      
+      const { width, height } = container.current.getBoundingClientRect();
+      console.log('[VibeDensityWebMap] Container size:', width, height);
+      
+      if (!width || !height) {
+        throw new Error(`Map container has no dimensions: ${width}x${height}`);
+      }
 
       /* ③ ─ map ------------------------------------------------------------------- */
+      console.log('[VibeDensityWebMap] Creating Mapbox map...');
       const map = new mapboxgl.Map({
-        container : container.current!,
+        container : container.current,
         style     : 'mapbox://styles/mapbox/dark-v11',
         center    : [-118.24, 34.05],
         zoom      : 11,
@@ -63,6 +78,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
       };
 
       moveRef.current = () => {
+        if (!map) return;
         const b = map.getBounds();
         onRegionChange({
           minLat: b.getSouth(), minLng: b.getWest(),
@@ -77,33 +93,44 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
       );
 
       /* ⑤ ─ load ------------------------------------------------------------------ */
+      console.log('[VibeDensityWebMap] Waiting for map to load...');
       await new Promise<void>((res, rej) => {
-        const t = setTimeout(() => rej(new Error('Style load timeout')), 10_000);
+        const t = setTimeout(() => rej(new Error('Style load timeout')), 15_000); // Increased timeout
         map.once('load', () => { 
+          console.log('[VibeDensityWebMap] Map loaded successfully!');
           clearTimeout(t); 
           res(); 
         });
       });
 
-      if (destroyed) return;
+      if (destroyed) {
+        console.log('[VibeDensityWebMap] Component destroyed during load, cleaning up');
+        return;
+      }
       
       setMapInstance(map);
       moveRef.current(); // Fire initial callback
       map.on('moveend', moveRef.current);
       setStatus('ready');
+      console.log('[VibeDensityWebMap] Map initialization complete!');
 
     } catch (e: any) {
       console.error('[VDWebMap] init failed', e);
       if (!destroyed) { setStatus('error'); setErrMsg(e.message); }
     }
 
-    return () => { destroyed = true; };
+    return () => { 
+      console.log('[VibeDensityWebMap] Cleanup function called');
+      destroyed = true; 
+    };
   };
 
   useEffect(() => {
+    console.log('[VibeDensityWebMap] useEffect running...');
     initializeMap();
 
     return () => {
+      console.log('[VibeDensityWebMap] Cleanup effect running...');
       clearTimeout(timeoutRef.current);
       
       if (mapRef.current) {
@@ -117,6 +144,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
   }, []);
 
   if (status === 'loading') {
+    console.log('[VibeDensityWebMap] Rendering loading state');
     return (
       <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
         <div className="flex flex-col items-center gap-2">
@@ -128,6 +156,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
   }
 
   if (status === 'error') {
+    console.log('[VibeDensityWebMap] Rendering error state:', errMsg);
     return (
       <div className="absolute inset-0 grid place-items-center bg-background/80 z-50">
         <div className="flex flex-col items-center gap-2 text-center">
@@ -136,6 +165,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
           <button
             className="text-xs underline decoration-dotted mt-1"
             onClick={() => {
+              console.log('[VibeDensityWebMap] Retry button clicked');
               setStatus('loading');
               setErrMsg('');
               initializeMap();
@@ -148,6 +178,7 @@ export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children })
     );
   }
 
+  console.log('[VibeDensityWebMap] Rendering ready state with map container');
   return (
     <div className="absolute inset-0">
       <div 
