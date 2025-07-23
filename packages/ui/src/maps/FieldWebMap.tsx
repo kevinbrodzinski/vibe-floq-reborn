@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -56,14 +57,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
           zoom: 11,
         });
         
-        console.log('[FieldWebMap] Map created, setting ref...');
+        console.log('[FieldWebMap] Map created, setting ref and ready status...');
         mapRef.current = map;
+        setTokenStatus('ready'); // Set ready immediately after map creation
 
-        // Register for projection and set ready status AFTER style loads
+        // Register for projection AFTER style loads
         map.once('load', () => {
-          console.log('[FieldWebMap] Map style loaded, setting ready status');
+          console.log('[FieldWebMap] Map style loaded, registering for projection');
           setMapInstance(map);
-          setTokenStatus('ready');
         });
 
         // Add navigation controls
