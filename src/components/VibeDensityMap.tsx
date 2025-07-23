@@ -9,6 +9,7 @@ import {
 
 import { VibeDensityWebMap }    from '@/components/maps/VibeDensityWebMap';
 import { VibeDensityHeatOverlay } from '@/components/maps/VibeDensityHeatOverlay';
+import { VibeFilterBar }        from '@/components/map/VibeFilterBar';
 import { useClusters }            from '@/hooks/useClusters';
 
 /* ------------------------------------------------------------------ */
@@ -51,6 +52,8 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
 
         {/* Map -------------------------------------------------------- */}
         <div className="relative flex-1">
+          {/* 🔹 NEW – filter chips */}
+          <VibeFilterBar />
           <VibeDensityWebMap
             visible={open}            /* required prop */
             onRegionChange={setBbox}
