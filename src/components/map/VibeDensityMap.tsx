@@ -15,13 +15,17 @@ import { X, LocateFixed, ZoomIn, ZoomOut } from "lucide-react";
 import { zIndex } from "@/constants/z";
 import { Button } from "@/components/ui/button";
 import { ClusterLegend } from "./ClusterLegend";
-import {
-  createDensityLayer,
-  usePulseLayer,
-} from "./DeckLayers";
-import { useClusters, type Cluster } from "@/hooks/useClusters";
+import { createDensityLayer, usePulseLayer } from "./DeckLayers";
+import { useClusters } from "@/hooks/useClusters";
 import { useOptimizedGeolocation } from "@/hooks/useOptimizedGeolocation";
 import { MapErrorBoundary } from "./MapErrorBoundary";
+
+import {
+  VibeFilterPanel,
+  defaultPrefs,
+  type VibePrefs,
+} from "./VibeFilterPanel";
+import type { Cluster } from "@/hooks/useClusters";
 
 /* ------------------------------------------------------------------ */
 /* Types & constants                                                   */
@@ -108,26 +112,26 @@ export const VibeDensityMap = ({
     isRealTimeConnected,
   } = useClusters(bbox, 6);
 
-  /* layers ----------------------------------------------------------- */
-  const vibePrefs = useMemo(() => ({}), []); // placeholder
+  /* ──────────────────────────────  prefs / filter  */
+  const [vibePrefs, setVibePrefs] = useState<VibePrefs>(defaultPrefs);
 
-  const handleClusterClick = useCallback(
-    (c: Cluster, _e?: MouseEvent) => {
-      /* TODO: side-panel */
-      console.log("cluster clicked", c);
-    },
-    [],
-  );
+  /* ──────────────────────────────  deck.gl layers  */
+  const handleClusterClick = useCallback((c: Cluster) => {
+    /* TODO: open side-panel with cluster stats */
+    console.log("cluster clicked", c);
+  }, []);
 
   const pulseLayer = usePulseLayer(clusters, vibePrefs);
 
   const layers = useMemo(() => {
     if (!clusters.length) return [];
-    return [
-      createDensityLayer(clusters, vibePrefs, handleClusterClick),
-      pulseLayer,
-    ].filter(Boolean);
-  }, [clusters, pulseLayer, handleClusterClick]);
+    const densityLayer = createDensityLayer(
+      clusters,
+      vibePrefs,
+      handleClusterClick,
+    );
+    return [densityLayer, pulseLayer].filter(Boolean);
+  }, [clusters, pulseLayer, handleClusterClick, vibePrefs]);
 
   /* center helpers --------------------------------------------------- */
   const centerOnUser = useCallback(() => {
@@ -202,18 +206,14 @@ export const VibeDensityMap = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isRealTimeConnected && (
-              <span className="flex items-center gap-1 text-xs text-primary">
-                <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
-                Live
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <VibeFilterPanel value={vibePrefs} onChange={setVibePrefs} />
+
             <Button
               size="icon"
               variant="ghost"
-              onClick={onClose}
               aria-label="Close map"
+              onClick={onClose}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -312,6 +312,7 @@ export const VibeDensityMap = ({
             <footer className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground">
               {clusters.length} clusters •{" "}
               {clusters.reduce((s, c) => s + c.total, 0)} souls in the field
+              {isRealTimeConnected && <span className="ml-1 text-green-500">• Live</span>}
             </footer>
           )}
         </div>
