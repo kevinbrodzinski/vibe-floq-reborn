@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { setMapInstance } from '@/lib/geo/project';
 import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
 import { getMapboxToken } from '@/lib/geo/getMapboxToken';
+import { TimerId } from '@/types/Timer';
 
 // Configure the worker before any map initialization
 registerMapboxWorker();
@@ -21,7 +22,7 @@ interface Props {
 export const VibeDensityWebMap: React.FC<Props> = ({ onRegionChange, children }) => {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<TimerId>();
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [tokenSource, setTokenSource] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
