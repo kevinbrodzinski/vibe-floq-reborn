@@ -122,7 +122,6 @@ export function NewPlanWizard() {
       const finalPayload = {
         ...details,
         ...timeRange,
-        duration_hours: durationHours,
         linkedFloqId: details.floqId, // Pass the selected floq ID
         floqSelections: floqSelections,
       }

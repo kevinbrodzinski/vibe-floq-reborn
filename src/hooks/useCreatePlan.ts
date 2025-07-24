@@ -41,7 +41,6 @@ interface CreatePlanPayload {
   vibe_tag?: string
   start: string
   end: string
-  duration_hours: number
   invitedUserIds: string[]
   floqSelections: FloqSelection[] // ← new!
 }
@@ -74,7 +73,6 @@ export function useCreatePlan() {
           planned_at: startISO,
           start_time: isoToPgTime(startISO),
           end_time: isoToPgTime(endISO),
-          duration_hours: payload.duration_hours,
           creator_id: session.user.id,
           plan_mode: 'draft'
         })
