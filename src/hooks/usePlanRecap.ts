@@ -46,7 +46,7 @@ export function useUserLocation() {
       const batch = bufferRef.current.splice(0, bufferRef.current.length)
       
       const { error } = await supabase.functions.invoke('record_locations', {
-        body: { user_id: user.id, batch }
+        body: { batch }  // ✅ No user_id - edge function gets it from JWT
       })
 
       if (error) {

@@ -13,7 +13,19 @@ export default async (req: Request) => {
   }
 
   try {
-    const { user_id, batch } = await req.json() as { user_id: string; batch: Ping[] };
+    // ⚠️ SECURITY: Get authenticated user, don't trust body
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      req.headers.get('Authorization') ?? ''
+    );
+    
+    if (authError || !user) {
+      return new Response('Unauthorized', { 
+        status: 401,
+        headers: corsHeaders 
+      });
+    }
+
+    const { batch } = await req.json() as { batch: Ping[] };
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -21,7 +33,7 @@ export default async (req: Request) => {
     );
 
     const rows = batch.map(p => ({
-      user_id,
+      user_id: user.id,  // ✅ Use authenticated user ID
       captured_at: p.ts,
       lat: p.lat,
       lng: p.lng,
@@ -40,7 +52,7 @@ export default async (req: Request) => {
       });
     }
 
-    console.log(`Successfully inserted ${rows.length} location pings for user ${user_id}`);
+    console.log(`Successfully inserted ${rows.length} location pings for user ${user.id}`);
     
     return new Response(JSON.stringify({ inserted: rows.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
