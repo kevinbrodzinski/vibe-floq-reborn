@@ -14,8 +14,9 @@ import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
 
-import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
-import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
+// Remove development-only debug panel
+// import { EnvironmentDebugPanel } from "@/components/EnvironmentDebugPanel";
+// import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
@@ -25,7 +26,8 @@ import { PlanInvite } from "./pages/PlanInvite";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const { isDebugPanelOpen, setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
+  // Remove development-only debug panel
+  // const { isDebugPanelOpen, setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
   
   // Auto-join presence channels for all users
   usePresenceChannel();
@@ -84,20 +86,7 @@ const App = () => {
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}
                 <Route path="/*" element={<Index />} />
               </Routes>
-              {/* Environment Debug Panel - Ctrl+Shift+E to toggle */}
-              <EnvironmentDebugPanel 
-                isOpen={isDebugPanelOpen} 
-                onClose={() => setIsDebugPanelOpen(false)}
-                debugConfig={environmentConfig}
-                onConfigChange={(config) => {
-                  // Update environment config - this would typically sync to localStorage
-                  Object.keys(config).forEach(key => {
-                    if (config[key] !== environmentConfig[key]) {
-                      // Handle config changes if needed
-                    }
-                  });
-                }}
-              />
+              {/* Remove development-only environment debug panel for TestFlight */}
             </BrowserRouter>
           </TooltipProvider>
         </BannerProvider>
