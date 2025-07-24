@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useRealtimeAfterglowData } from './useRealtimeAfterglowData'
 
 export interface DailyAfterglowData {
   id: string
@@ -20,59 +20,25 @@ export interface DailyAfterglowData {
   is_pinned: boolean
 }
 
-export function useAfterglowData(date?: string) {
-  const [afterglowData, setAfterglowData] = useState<DailyAfterglowData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export function useAfterglowData(date: string) {
+  const { afterglow, isGenerating, refresh } = useRealtimeAfterglowData(date);
 
-  useEffect(() => {
-    if (!date) return
+  const generateAfterglow = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    const fetchAfterglowData = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+    await supabase.functions.invoke('generate-intelligence', {
+      body: { mode: 'daily', user_id: user.id, date, force_regenerate: true }
+    });
+  };
 
-        const { data, error: fetchError } = await supabase
-          .from('daily_afterglow')
-          .select('*')
-          .eq('date', date)
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-          .maybeSingle()
-
-        if (fetchError) throw fetchError
-
-        if (data) {
-          // Properly map the database row to our domain type
-          const mappedData: DailyAfterglowData = {
-            ...data,
-            updated_at: (data as any).updated_at || data.created_at,
-            emotion_journey: Array.isArray(data.emotion_journey) ? data.emotion_journey.map(String) : [],
-            moments: Array.isArray(data.moments) ? data.moments : [],
-            vibe_path: Array.isArray(data.vibe_path) ? data.vibe_path.map(String) : []
-          }
-          setAfterglowData(mappedData)
-        } else {
-          setAfterglowData(null)
-        }
-      } catch (err) {
-        console.error('Error fetching afterglow data:', err)
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchAfterglowData()
-  }, [date])
-
-  return { 
-    afterglow: afterglowData,
-    isGenerating: isLoading,
+  return {
+    afterglow: afterglow as DailyAfterglowData | null,
+    afterglowData: afterglow as DailyAfterglowData | null,
+    isGenerating,
+    isLoading: isGenerating,
+    generateAfterglow,
     generationProgress: 0,
-    generateAfterglow: () => {},
-    afterglowData, 
-    isLoading, 
-    error 
-  }
+    error: null
+  };
 }
