@@ -1440,6 +1440,27 @@ export type Database = {
           },
         ]
       }
+      friend_share_pref: {
+        Row: {
+          friend_id: string
+          is_live: boolean
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          friend_id: string
+          is_live?: boolean
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          friend_id?: string
+          is_live?: boolean
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friend_trails: {
         Row: {
           lat: number
@@ -5561,6 +5582,10 @@ export type Database = {
       set_limit: {
         Args: { "": number }
         Returns: number
+      }
+      set_live_share: {
+        Args: { _friend: string; _on?: boolean }
+        Returns: undefined
       }
       set_participant_role: {
         Args: { p_floq_id: string; p_user_id: string; p_new_role: string }

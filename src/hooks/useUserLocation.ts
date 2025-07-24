@@ -29,6 +29,7 @@ export function useUserLocation() {
   const bufferRef = useRef<LocationPing[]>([])
   const watchIdRef = useRef<number | null>(null)
   const flushIntervalRef = useRef<number | null>(null)
+  const lastPresenceBroadcast = useRef<number>(0)
   const { toast } = useToast()
 
   // Also provide the simplified pos interface for the FieldCanvas
@@ -113,6 +114,38 @@ export function useUserLocation() {
           }
 
           bufferRef.current.push(newPing)
+
+          // Presence broadcast (throttled to every 10 seconds)
+          const now = Date.now()
+          if (now - lastPresenceBroadcast.current > 10000) {
+            // Check if user has enabled live sharing with any friends
+            const broadcastPresence = async () => {
+              try {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                  const { data } = await supabase
+                    .from('friend_share_pref')
+                    .select('is_live')
+                    .eq('is_live', true)
+                    .limit(1)
+                    .maybeSingle()
+                  
+                  if (data?.is_live) {
+                    supabase.channel(`presence_${user.id}`)
+                      .send({
+                        type: 'broadcast',
+                        event: 'live_pos',
+                        payload: { lat, lng, acc, ts: now }
+                      })
+                    lastPresenceBroadcast.current = now
+                  }
+                }
+              } catch (error) {
+                console.error('Error broadcasting presence:', error)
+              }
+            }
+            broadcastPresence()
+          }
           
           if (!isTracking) {
             setIsTracking(true)
