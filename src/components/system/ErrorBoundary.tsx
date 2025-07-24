@@ -1,4 +1,5 @@
 import React from 'react'
+import { trackError } from '@/lib/trackError'
 
 export class ErrorBoundary extends React.Component<
   {children: React.ReactNode; fallback?: React.ReactNode}, {error?: Error}
@@ -12,6 +13,12 @@ export class ErrorBoundary extends React.Component<
   componentDidCatch(e: Error, info: React.ErrorInfo) {
     // eslint-disable-next-line no-console
     console.error('💥 Uncaught React error:', e, info)
+    
+    // Track to Sentry and analytics
+    trackError(e, {
+      componentStack: info.componentStack,
+      errorBoundary: 'SystemErrorBoundary'
+    })
   }
 
   render() {

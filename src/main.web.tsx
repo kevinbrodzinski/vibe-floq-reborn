@@ -11,6 +11,20 @@ if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
   (window as any).ResizeObserver = require('resize-observer-polyfill').default;
 }
 
+// Initialize Sentry for web
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN
+if (sentryDsn) {
+  import('@sentry/react').then((Sentry) => {
+    Sentry.init({
+      dsn: sentryDsn,
+      tracesSampleRate: 1.0,
+      environment: import.meta.env.DEV ? 'development' : 'production',
+    })
+  }).catch((err) => {
+    console.warn('Sentry web initialization failed:', err)
+  })
+}
+
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'

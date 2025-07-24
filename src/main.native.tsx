@@ -9,6 +9,22 @@ import App from './App.tsx';
 import './index.css';
 import { DebugProvider } from '@/lib/useDebug';
 import { ErrorBoundary } from '@/components/system/ErrorBoundary';
+
+// Initialize Sentry for mobile
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN
+if (sentryDsn) {
+  try {
+    const Sentry = require('@sentry/react-native');
+    Sentry.init({
+      dsn: sentryDsn,
+      enableInExpoDevelopment: true,
+      debug: process.env.NODE_ENV === 'development',
+      tracesSampleRate: 1.0,
+    });
+  } catch (err) {
+    console.warn('Sentry native initialization failed:', err)
+  }
+}
 // Initialize PostHog for mobile (conditional import)
 const posthogKey = process.env.POSTHOG_MOBILE_KEY
 if (posthogKey) {
