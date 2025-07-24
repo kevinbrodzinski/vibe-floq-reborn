@@ -4120,7 +4120,7 @@ export type Database = {
       }
       build_daily_afterglow: {
         Args: { _day: string }
-        Returns: undefined
+        Returns: Json
       }
       bulk_upsert_relationships: {
         Args: { relationship_pairs: Json }
