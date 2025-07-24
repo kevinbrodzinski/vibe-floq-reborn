@@ -1466,18 +1466,21 @@ export type Database = {
       }
       friend_share_pref: {
         Row: {
+          ends_at: string | null
           friend_id: string
           is_live: boolean
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          ends_at?: string | null
           friend_id: string
           is_live?: boolean
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          ends_at?: string | null
           friend_id?: string
           is_live?: boolean
           updated_at?: string | null
@@ -4032,10 +4035,26 @@ export type Database = {
           },
         ]
       }
+      v_encounter_heat: {
+        Row: {
+          geom: unknown | null
+          hits: number | null
+          last_seen: string | null
+          venue_id: string | null
+        }
+        Relationships: []
+      }
       v_friend_last_seen: {
         Row: {
           age: unknown | null
           last_seen_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_friend_sparkline: {
+        Row: {
+          points: Json | null
           user_id: string | null
         }
         Relationships: []
@@ -5288,6 +5307,10 @@ export type Database = {
       invite_friends: {
         Args: { p_plan_id: string; p_user_ids: string[] }
         Returns: Json
+      }
+      is_live_now: {
+        Args: { uid: string }
+        Returns: boolean
       }
       join_floq: {
         Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
