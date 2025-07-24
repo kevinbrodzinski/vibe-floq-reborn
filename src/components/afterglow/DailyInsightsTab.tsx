@@ -11,8 +11,12 @@ export default function DailyInsightsTab({ afterglowId, aiSummary }: DailyInsigh
   const { generateSummary, isGenerating } = useAISummary();
 
   const handleGenerate = async () => {
-    console.log('Generating AI summary for afterglow:', afterglowId);
-    await generateSummary(afterglowId);
+    try {
+      console.log('Generating AI summary for afterglow:', afterglowId);
+      await generateSummary(afterglowId);
+    } catch (error) {
+      console.error('Failed to generate AI summary:', error);
+    }
   };
 
   return (
@@ -33,33 +37,33 @@ export default function DailyInsightsTab({ afterglowId, aiSummary }: DailyInsigh
             variant="outline"
             size="sm"
             className="w-full mt-4"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Regenerating...
-              </>
-            ) : (
-              'Regenerate Summary'
-            )}
-          </Button>
-        </div>
-      ) : (
-        <Button 
-          onClick={handleGenerate} 
-          disabled={isGenerating || !afterglowId}
-          className="w-full"
         >
           {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating insights...
+              Regenerating...
             </>
           ) : (
-            'Generate AI Summary'
+            'Regenerate Summary'
           )}
         </Button>
-      )}
+      </div>
+    ) : (
+      <Button 
+        onClick={handleGenerate} 
+        disabled={isGenerating || !afterglowId}
+        className="w-full"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Generating insights...
+          </>
+        ) : (
+          'Generate AI Summary'
+        )}
+      </Button>
+    )}
       
       <p className="text-sm text-muted-foreground text-center">
         AI-powered analysis of your day's activities, connections, and vibes.

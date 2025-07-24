@@ -6,7 +6,7 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
 };
 
 // Updated type unions
-export type PlanMode = 'draft' | 'finalized' | 'done';
+export type PlanMode = 'draft' | 'finalized' | 'executing' | 'completed' | 'done';
 export type FloqParticipantRole = 'creator' | 'admin' | 'member';
 
 // Domain types for UI components

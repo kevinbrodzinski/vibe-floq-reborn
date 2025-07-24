@@ -62,7 +62,7 @@ export function useAISummary() {
   });
 
   return {
-    generateSummary: summaryMutation.mutate,
+    generateSummary: (id: string) => summaryMutation.mutateAsync(id),
     isGenerating: summaryMutation.isPending
   };
 }

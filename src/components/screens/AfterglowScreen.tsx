@@ -360,32 +360,51 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               Generate Timeline
             </Button>
           </div>
-        ) : afterglow?.moments && Array.isArray(afterglow.moments) && afterglow.moments.length ? (
-          /* Use real afterglow moments when available */
-          <EnhancedTimeline moments={afterglow.moments.map((momentStr: string, index: number) => {
-            try {
-              const moment = JSON.parse(momentStr);
-              return {
-                id: moment.id || `moment-${index}`,
-                timestamp: moment.timestamp,
-                title: moment.title || 'Moment',
-                description: moment.description,
-                color: moment.color || '#3b82f6',
-                moment_type: moment.moment_type || 'personal',
-                metadata: moment.metadata || {}
-              };
-            } catch (e) {
-              console.error('Failed to parse moment:', momentStr, e);
-              return {
-                id: `fallback-${index}`,
-                timestamp: new Date().toISOString(),
-                title: 'Moment',
-                color: '#3b82f6',
-                moment_type: 'personal',
-                metadata: {}
-              };
+        ) : afterglow?.moments ? (
+          (() => {
+            const moments = afterglow?.moments ?? [];
+            
+            // Type guard to ensure moments is an array
+            if (Array.isArray(moments) && moments.length > 0) {
+              // Use real afterglow moments when available
+              return (
+                <EnhancedTimeline moments={moments.map((momentStr: any, index: number) => {
+                  try {
+                    // Handle both string and object formats
+                    const moment = typeof momentStr === 'string' ? JSON.parse(momentStr) : momentStr;
+                    return {
+                      id: moment.id || `moment-${index}`,
+                      timestamp: moment.timestamp,
+                      title: moment.title || 'Moment',
+                      description: moment.description,
+                      color: moment.color || '#3b82f6',
+                      moment_type: moment.moment_type || 'personal',
+                      metadata: moment.metadata || {}
+                    };
+                  } catch (e) {
+                    console.error('Failed to parse moment:', momentStr, e);
+                    return {
+                      id: `fallback-${index}`,
+                      timestamp: new Date().toISOString(),
+                      title: 'Moment',
+                      color: '#3b82f6',
+                      moment_type: 'personal',
+                      metadata: {}
+                    };
+                  }
+                })} />
+              );
+            } else {
+              // Empty state for no moments
+              return (
+                <div className="text-center py-12">
+                  <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+                  <p className="text-muted-foreground">No timeline moments yet</p>
+                  <p className="text-sm text-muted-foreground mt-2">Your moments will appear here as your day unfolds</p>
+                </div>
+              );
             }
-          })} />
+          })()
         ) : (
           /* Show sample moments for demo */
           <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 2)} />

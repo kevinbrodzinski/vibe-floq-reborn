@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { Database } from '@/integrations/supabase/types'
 import { useToast } from '@/hooks/use-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
 type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];
 
@@ -16,73 +17,113 @@ interface GenerationProgress {
 export function useRealtimeAfterglowData(date: string) {
   const { user } = useAuth()
   const { toast } = useToast()
+  const queryClient = useQueryClient()
   const [afterglow, setAfterglow] = useState<DailyAfterglowRow | null>(null)
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
+  // Hoist generateAfterglowData function
+  const generateAfterglowData = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      console.log('Calling generate-intelligence with daily mode')
+      setIsGenerating(true)
+      setGenerationProgress({
+        step: 'Starting',
+        progress: 10,
+        status: 'in_progress',
+        message: 'Initializing afterglow generation...'
+      })
+
+      const { data: result, error } = await supabase.functions.invoke('generate-intelligence', {
+        body: { mode: 'daily', user_id: user.id, date }
+      })
+
+      if (error) {
+        console.error('Error generating afterglow:', error)
+        setGenerationProgress({
+          step: 'Error',
+          progress: 0,
+          status: 'error',
+          message: 'Failed to generate afterglow'
+        })
+        toast({
+          title: "Generation Failed",
+          description: "Failed to generate afterglow. Please try again.",
+          variant: "destructive"
+        })
+      } else {
+        console.log('Afterglow generation triggered:', result)
+        setGenerationProgress({
+          step: 'Processing',
+          progress: 50,
+          status: 'in_progress',
+          message: 'Processing your day...'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to trigger afterglow generation:', error)
+      setIsGenerating(false)
+      setGenerationProgress(null)
+    }
+  }, [user, date, toast])
+
+  // Initial data fetch with debounced fetch helper
+  const debouncedFetch = useCallback(async () => {
+    if (!user) return;
+    
+    console.log('Fetching afterglow data for date:', date)
+    try {
+      const { data, error } = await supabase
+        .from('daily_afterglow')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', date)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching afterglow:', error)
+      } else if (data) {
+        console.log('Found existing afterglow:', data)
+        setAfterglow(data)
+        setIsGenerating(false)
+        setGenerationProgress(null)
+      } else {
+        console.log('No afterglow found, triggering generation...')
+        await generateAfterglowData()
+      }
+    } catch (err) {
+      console.error('Failed to fetch afterglow:', err)
+      setIsGenerating(false)
+    }
+  }, [user, date, generateAfterglowData])
+
   // Initial data fetch
   useEffect(() => {
+    let mounted = true;
+    
     if (!user || !date) return
 
     const fetchInitialData = async () => {
-      console.log('Fetching initial afterglow data for date:', date)
-      setIsGenerating(true)
-      
-      try {
-        const { data, error } = await supabase
-          .from('daily_afterglow')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('date', date)
-          .maybeSingle()
-
-        if (error) {
-          console.error('Error fetching afterglow:', error)
-        } else if (data) {
-          console.log('Found existing afterglow:', data)
-          setAfterglow(data)
-        } else {
-          console.log('No afterglow found, triggering generation...')
-          // No data exists, trigger generation
-          await generateAfterglowData()
-        }
-      } catch (err) {
-        console.error('Failed to fetch afterglow:', err)
-      }
-      
-      setIsGenerating(false)
-    }
-
-    const generateAfterglowData = async () => {
-      try {
-        console.log('Calling generate-intelligence with daily mode')
-        const { data: result, error } = await supabase.functions.invoke('generate-intelligence', {
-          body: { mode: 'daily', user_id: user.id, date }
-        })
-
-        if (error) {
-          console.error('Error generating afterglow:', error)
-          toast({
-            title: "Generation Failed",
-            description: "Failed to generate afterglow. Please try again.",
-            variant: "destructive"
-          })
-        } else {
-          console.log('Afterglow generation triggered:', result)
-        }
-      } catch (error) {
-        console.error('Failed to trigger afterglow generation:', error)
+      if (mounted) {
+        await debouncedFetch()
       }
     }
 
     fetchInitialData()
-  }, [user?.id, date])
+    
+    return () => {
+      mounted = false;
+    }
+  }, [user?.id, date, debouncedFetch])
 
   // Real-time subscriptions
   useEffect(() => {
+    let mounted = true;
     if (!user || !date) return
 
-    // Subscribe to daily_afterglow changes
+    // Subscribe to daily_afterglow changes with specific filter
     const afterglowChannel = supabase
       .channel(`afterglow-${user.id}`)
       .on(
@@ -91,15 +132,28 @@ export function useRealtimeAfterglowData(date: string) {
           event: '*',
           schema: 'public',
           table: 'daily_afterglow',
-          filter: `user_id=eq.${user.id}`
+          filter: `date=eq.${date},user_id=eq.${user.id}`
         },
         (payload) => {
-          if ((payload.new as any)?.date !== date) return // Secondary filter for date
-          
+          if (!mounted) return;
           console.log('Afterglow changed:', payload)
           setAfterglow(payload.new as DailyAfterglowRow)
           setIsGenerating(false)
-          setGenerationProgress(null)
+          setGenerationProgress({
+            step: 'Complete',
+            progress: 100,
+            status: 'completed',
+            message: 'Afterglow ready!'
+          })
+          
+          // Invalidate queries
+          queryClient.invalidateQueries({ queryKey: ['afterglow', date, user.id] })
+          
+          setTimeout(() => {
+            if (mounted) {
+              setGenerationProgress(null)
+            }
+          }, 2000)
           
           if (payload.eventType === 'INSERT') {
             toast({
@@ -123,13 +177,18 @@ export function useRealtimeAfterglowData(date: string) {
         'broadcast',
         { event: 'afterglow_progress' },
         (payload) => {
+          if (!mounted) return;
           const progress = payload.payload as GenerationProgress
           console.log('Generation progress:', progress)
           setGenerationProgress(progress)
           
           if (progress.status === 'completed') {
             setIsGenerating(false)
-            setGenerationProgress(null)
+            setTimeout(() => {
+              if (mounted) {
+                setGenerationProgress(null)
+              }
+            }, 2000)
           } else if (progress.status === 'error') {
             setIsGenerating(false)
             setGenerationProgress(null)
@@ -145,6 +204,7 @@ export function useRealtimeAfterglowData(date: string) {
         'broadcast',
         { event: 'ai_summary_generated' },
         (payload) => {
+          if (!mounted) return;
           console.log('AI summary generated:', payload)
           
           // Update the afterglow with the new AI summary
@@ -158,6 +218,7 @@ export function useRealtimeAfterglowData(date: string) {
       .subscribe()
 
     return () => {
+      mounted = false;
       afterglowChannel && void supabase.removeChannel(afterglowChannel)
       progressChannel && void supabase.removeChannel(progressChannel)
     }
@@ -165,6 +226,7 @@ export function useRealtimeAfterglowData(date: string) {
 
   // Separate effect for moments subscription that depends on afterglow.id
   useEffect(() => {
+    let mounted = true;
     if (!afterglow?.id) return
 
     const momentsChannel = supabase
@@ -178,6 +240,7 @@ export function useRealtimeAfterglowData(date: string) {
           filter: `daily_afterglow_id=eq.${afterglow.id}`
         },
         (payload) => {
+          if (!mounted) return;
           console.log('New moment added:', payload)
           setAfterglow(prev => {
             if (!prev) return prev
@@ -197,6 +260,7 @@ export function useRealtimeAfterglowData(date: string) {
       .subscribe()
 
     return () => {
+      mounted = false;
       momentsChannel && void supabase.removeChannel(momentsChannel)
     }
   }, [afterglow?.id, toast])
