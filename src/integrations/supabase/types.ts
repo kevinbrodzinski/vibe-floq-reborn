@@ -340,6 +340,36 @@ export type Database = {
         }
         Relationships: []
       }
+      crossed_paths: {
+        Row: {
+          created_at: string | null
+          encounter_date: string
+          id: number
+          ts: string
+          user_a: string
+          user_b: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          encounter_date: string
+          id?: number
+          ts: string
+          user_a: string
+          user_b: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string | null
+          encounter_date?: string
+          id?: number
+          ts?: string
+          user_a?: string
+          user_b?: string
+          venue_id?: string
+        }
+        Relationships: []
+      }
       daily_afterglow: {
         Row: {
           ai_summary: string | null
@@ -4285,6 +4315,10 @@ export type Database = {
         Args: { p_floq_id: string }
         Returns: Json
       }
+      detect_crossed_paths: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       disablelongtransactions: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -5107,6 +5141,10 @@ export type Database = {
       }
       match_locations_batch: {
         Args: { _since: string }
+        Returns: number
+      }
+      merge_venue_visits: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       path: {
