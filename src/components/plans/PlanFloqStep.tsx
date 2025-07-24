@@ -31,27 +31,19 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
-        // Fetch floqs user participates in (both created and joined)
-        const { data, error } = await supabase
+        // Two-step fetch to avoid deep recursion
+        const { data: ids } = await supabase
           .from('floq_participants')
-          .select(`
-            floq:floqs!inner(
-              id, 
-              title, 
-              name
-            )
-          `)
-          .eq('user_id', user.user.id)
-          .is('floq.deleted_at', null);
+          .select('floq_id')
+          .eq('user_id', user.user.id);
+        
+        const { data: floqs } = ids?.length ? await supabase
+          .from('floqs')
+          .select('id, title, name')
+          .in('id', ids.map(r => r.floq_id))
+          .is('deleted_at', null) : { data: [] };
 
-        if (error) {
-          console.error('Error fetching floqs:', error);
-          return;
-        }
-
-        // Transform the data to get the floq objects
-        const floqs = data?.map(item => item.floq).filter(Boolean) || [];
-        setMyFloqs(floqs);
+        setMyFloqs(floqs ?? []);
       } catch (error) {
         console.error('Error in fetchMyFloqs:', error);
       } finally {

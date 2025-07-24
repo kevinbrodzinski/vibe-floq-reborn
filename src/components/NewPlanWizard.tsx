@@ -110,14 +110,14 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
 
         {/* Step content */}
         <div className="mt-6">
-          {currentStep === 'details' && (
+          {step === 0 && (
             <PlanDetailsForm
               onSubmit={handleDetailsSubmit}
               onCancel={handleClose}
             />
           )}
 
-          {currentStep === 'invites' && (
+          {step === 1 && (
             <InviteFriendsModal
               floqId={floqId}
               onClose={() => setStep(0)}
@@ -126,7 +126,7 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
             />
           )}
 
-          {currentStep === 'complete' && planDetails && (
+          {step === 2 && planDetails && (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="w-8 h-8 text-primary" />

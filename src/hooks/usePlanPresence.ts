@@ -73,28 +73,30 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
     // Initial fetch
     debouncedFetchParticipants();
 
-    // Set up real-time subscription
-    const channel = supabase
-      .channel(`plan-participants-${planId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'plan_participants',
-        filter: `plan_id=eq.${planId}`
-      }, () => {
-        const handleRealTimeUpdate = () => {
-          debouncedFetchParticipants();
-        };
-        handleRealTimeUpdate();
-      })
-      .subscribe((status) => {
-        setIsConnected(status === 'SUBSCRIBED');
-      });
+    // Set up real-time subscription but respect silent mode
+    if (!options.silent) {
+      const channel = supabase
+        .channel(`plan-participants-${planId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'plan_participants',
+          filter: `plan_id=eq.${planId}`
+        }, () => {
+          const handleRealTimeUpdate = () => {
+            debouncedFetchParticipants();
+          };
+          handleRealTimeUpdate();
+        })
+        .subscribe((status) => {
+          setIsConnected(status === 'SUBSCRIBED');
+        });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [planId, debouncedFetchParticipants]);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [planId, debouncedFetchParticipants, options.silent]);
 
   const updateActivity = async (activity: ParticipantPresence['currentActivity']) => {
     if (options.silent) return; // Don't broadcast when silent
