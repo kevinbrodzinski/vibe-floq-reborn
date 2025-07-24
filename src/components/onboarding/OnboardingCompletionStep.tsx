@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { useSession } from '@/hooks/useSession';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { storage } from '@/lib/storage';
 import { navigation } from '@/lib/navigation';
+import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
 
 interface OnboardingCompletionStepProps {
   onDone: () => void;
@@ -15,12 +16,17 @@ interface OnboardingCompletionStepProps {
 export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepProps) {
   const session = useSession();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isCompleting, setIsCompleting] = useState(false);
 
   const handleFinish = async () => {
     if (!session?.user?.id) {
       console.error('No authenticated user found');
-      toast.error('Authentication error. Please try logging in again.');
+      toast({
+        variant: 'destructive',
+        title: 'Authentication error',
+        description: 'Please try logging in again.',
+      });
       return;
     }
 
@@ -36,12 +42,12 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         .from('user_onboarding_progress')
         .upsert({
           user_id: session.user.id,
-          onboarding_version: 'v2',
+          onboarding_version: CURRENT_ONBOARDING_VERSION,
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: 'user_id,onboarding_version',
+          onConflict: ONBOARDING_CONFLICT_COLUMNS,
           ignoreDuplicates: false
         });
 
@@ -53,6 +59,11 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           hint: progressError.hint,
           code: progressError.code 
         });
+        toast({
+          variant: 'destructive',
+          title: 'Onboarding save failed',
+          description: progressError.details || progressError.message,
+        });
         throw new Error(`Failed to update onboarding progress: ${progressError.message}`);
       }
 
@@ -61,7 +72,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         .from('user_preferences')
         .upsert({
           user_id: session.user.id,
-          onboarding_version: 'v2',
+          onboarding_version: CURRENT_ONBOARDING_VERSION,
           onboarding_completed_at: completionTime,
         }, {
           onConflict: 'user_id',
@@ -75,6 +86,11 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           details: preferencesError.details,
           hint: preferencesError.hint,
           code: preferencesError.code 
+        });
+        toast({
+          variant: 'destructive',
+          title: 'User preferences save failed',
+          description: preferencesError.details || preferencesError.message,
         });
         throw new Error(`Failed to update user preferences: ${preferencesError.message}`);
       }
@@ -95,7 +111,10 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       await queryClient.invalidateQueries({ queryKey: ['onboarding-progress', session.user.id] });
 
       // 5. Show success message
-      toast.success('Welcome to Floq! 🎉');
+      toast({
+        title: 'Welcome to Floq! 🎉',
+        description: 'You\'re all set up and ready to explore.',
+      });
 
       // 6. Complete onboarding flow
       console.log('🚀 Calling onDone to complete onboarding');
@@ -104,7 +123,11 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
     } catch (error) {
       console.error('💥 Error completing onboarding:', error);
       setIsCompleting(false);
-      toast.error('Failed to complete onboarding. Please try again.');
+      toast({
+        variant: 'destructive',
+        title: 'Failed to complete onboarding',
+        description: 'Please try again.',
+      });
     }
   };
 
@@ -121,14 +144,19 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       // Clear query cache
       await queryClient.clear();
       
-      toast.success('Logged out successfully');
+      toast({
+        title: 'Logged out successfully',
+      });
       
       // Navigate to home using platform-safe navigation
       navigation.navigate('/');
       
     } catch (error) {
       console.error('Error logging out:', error);
-      toast.error('Failed to log out');
+      toast({
+        variant: 'destructive',
+        title: 'Failed to log out',
+      });
       // Force navigate anyway to clear state
       navigation.navigate('/');
     }

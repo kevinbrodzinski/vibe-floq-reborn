@@ -3,8 +3,7 @@ import { useUserPreferences, useUpdateUserPreferences } from './useUserPreferenc
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-
-const CURRENT_ONBOARDING_VERSION = 'v2';
+import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
 
 export interface OnboardingStatus {
   needsOnboarding: boolean;
@@ -73,7 +72,7 @@ export function useOnboardingStatus(): OnboardingStatus {
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: 'user_id,onboarding_version'
+          onConflict: ONBOARDING_CONFLICT_COLUMNS
         }),
         
         updatePreferences({
