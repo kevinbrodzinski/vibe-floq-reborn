@@ -49,7 +49,7 @@ export default function AfterglowDetailPage() {
   // Enable smart focus styles once per app
   useFocusVisible();
   const prefersReduced = usePrefersReducedMotion();
-  const { mutate: generateSummary, isPending: isGeneratingSummary } = useAISummary(afterglowId || '');
+  const { generateSummary, isGenerating: isGeneratingSummary } = useAISummary();
   
   if (!afterglowId) {
     return (
@@ -76,7 +76,7 @@ export default function AfterglowDetailPage() {
 
   const handleGenerateSummary = async () => {
     if (!data?.afterglow) return
-    generateSummary()
+    await generateSummary(data.afterglow.id)
   }
 
   const handleMomentClick = (moment: AfterglowMoment) => {

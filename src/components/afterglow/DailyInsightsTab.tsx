@@ -8,11 +8,11 @@ interface DailyInsightsTabProps {
 }
 
 export default function DailyInsightsTab({ afterglowId, aiSummary }: DailyInsightsTabProps) {
-  const { mutate: generateSummary, isPending: isGenerating } = useAISummary(afterglowId);
+  const { generateSummary, isGenerating } = useAISummary();
 
   const handleGenerate = async () => {
     console.log('Generating AI summary for afterglow:', afterglowId);
-    generateSummary();
+    await generateSummary(afterglowId);
   };
 
   return (
