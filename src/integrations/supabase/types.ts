@@ -2616,6 +2616,7 @@ export type Database = {
         Row: {
           accuracy_m: number | null
           captured_at: string
+          geohash5: string | null
           geom: unknown | null
           id: number
           user_id: string
@@ -2623,6 +2624,7 @@ export type Database = {
         Insert: {
           accuracy_m?: number | null
           captured_at: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id: string
@@ -2630,6 +2632,7 @@ export type Database = {
         Update: {
           accuracy_m?: number | null
           captured_at?: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id?: string
@@ -2640,6 +2643,7 @@ export type Database = {
         Row: {
           accuracy_m: number | null
           captured_at: string
+          geohash5: string | null
           geom: unknown | null
           id: number
           user_id: string
@@ -2647,6 +2651,7 @@ export type Database = {
         Insert: {
           accuracy_m?: number | null
           captured_at: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id: string
@@ -2654,6 +2659,7 @@ export type Database = {
         Update: {
           accuracy_m?: number | null
           captured_at?: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id?: string
@@ -2664,6 +2670,7 @@ export type Database = {
         Row: {
           accuracy_m: number | null
           captured_at: string
+          geohash5: string | null
           geom: unknown | null
           id: number
           user_id: string
@@ -2671,6 +2678,7 @@ export type Database = {
         Insert: {
           accuracy_m?: number | null
           captured_at: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id: string
@@ -2678,6 +2686,7 @@ export type Database = {
         Update: {
           accuracy_m?: number | null
           captured_at?: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id?: string
@@ -2688,6 +2697,7 @@ export type Database = {
         Row: {
           accuracy_m: number | null
           captured_at: string
+          geohash5: string | null
           geom: unknown | null
           id: number
           user_id: string
@@ -2695,6 +2705,7 @@ export type Database = {
         Insert: {
           accuracy_m?: number | null
           captured_at: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id: string
@@ -2702,6 +2713,7 @@ export type Database = {
         Update: {
           accuracy_m?: number | null
           captured_at?: string
+          geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id?: string
@@ -4306,6 +4318,10 @@ export type Database = {
       }
       enqueue_afterglow_cron: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      ensure_location_partition: {
+        Args: { _yyyymm: string }
         Returns: undefined
       }
       equals: {
