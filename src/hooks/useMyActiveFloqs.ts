@@ -30,7 +30,7 @@ export function useMyActiveFloqs() {
       if (idErr) throw idErr;
       if (!ids?.length) return [];
 
-      // ② Pull the actual floq rows with member counts in a single query
+      // ② Pull the actual floq rows with member counts using foreign table syntax
       const { data: floqs, error: floqErr } = await supabase
         .from('floqs')
         .select(`
@@ -38,7 +38,7 @@ export function useMyActiveFloqs() {
           title, 
           name, 
           primary_vibe,
-          (select count(*) from floq_participants fp where fp.floq_id = floqs.id) as member_count
+          floq_participants(count)
         `)
         .in('id', ids.map(r => r.floq_id))
         .is('deleted_at', null)
@@ -48,7 +48,16 @@ export function useMyActiveFloqs() {
 
       if (floqErr) throw floqErr;
       
-      return floqs ?? [];
+      // Transform the data to match ActiveFloq interface
+      const transformedFloqs = (floqs ?? []).map(floq => ({
+        id: floq.id,
+        title: floq.title,
+        name: floq.name,
+        primary_vibe: floq.primary_vibe,
+        member_count: floq.floq_participants?.[0]?.count || 0
+      }));
+      
+      return transformedFloqs;
     },
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
