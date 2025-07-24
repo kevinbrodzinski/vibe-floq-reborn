@@ -4,6 +4,9 @@ project_id = "reztyrrafsmlvvlqvsqt"
 [functions.generate-plan-recap]
 verify_jwt = true
 
+[functions.generate-year-recap]
+verify_jwt = true
+
 [functions.get_field_tiles]
 verify_jwt = false
 
