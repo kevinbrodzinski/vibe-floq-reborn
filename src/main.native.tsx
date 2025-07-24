@@ -9,6 +9,10 @@ import App from './App.tsx';
 import './index.css';
 import { DebugProvider } from '@/lib/useDebug';
 import { ErrorBoundary } from '@/components/system/ErrorBoundary';
+import { initPostHog } from '@/lib/posthog'
+
+// Initialize PostHog
+initPostHog()
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

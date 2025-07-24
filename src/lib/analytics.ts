@@ -1,5 +1,7 @@
 
-// Analytics utilities with fallbacks for mobile and web
+// Analytics utilities with PostHog integration and fallbacks for mobile and web
+
+import { posthog } from './posthog'
 
 // Extend Window interface for Capacitor
 declare global {
@@ -25,7 +27,11 @@ export function track(event: string, ...rest: any[]) {
   
   try {
     console.log('📊 Track event:', event, props)
-    // Add actual analytics implementation here (e.g., Mixpanel, Amplitude)
+    
+    // Send to PostHog if available
+    if (typeof window !== 'undefined' && posthog && posthog.__loaded) {
+      posthog.capture(event, props)
+    }
   } catch (error) {
     console.warn('Analytics tracking failed:', error)
   }
