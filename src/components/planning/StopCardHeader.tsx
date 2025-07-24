@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { PresenceBadge } from '@/components/ui/PresenceBadge';
+import type { StopStatus } from '@/hooks/usePlanVenuePresence';
 
 interface StopCardHeaderProps {
   stop: {
@@ -31,6 +33,7 @@ interface StopCardHeaderProps {
   dragProps: any
   compact?: boolean
   venueStatus?: 'enroute' | 'arrived' | 'departed'
+  status?: StopStatus
 }
 
 export const StopCardHeader = memo(({
@@ -39,8 +42,10 @@ export const StopCardHeader = memo(({
   onDelete,
   dragProps,
   compact = false,
-  venueStatus = 'enroute'
+  venueStatus = 'enroute',
+  status
 }: StopCardHeaderProps) => {
+  const effectiveStatus = status || venueStatus;
   // Memoized time formatting
   const formattedStartTime = useMemo(() => {
     const [hours, minutes] = stop.start_time.split(':')
@@ -87,7 +92,11 @@ export const StopCardHeader = memo(({
           </motion.button>
           
           <div className="flex-1">
-            <h3 className="font-medium text-sm leading-tight">{stop.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-sm leading-tight">{stop.title}</h3>
+              {effectiveStatus === 'arrived' && <PresenceBadge kind="arrived" />}
+              {effectiveStatus === 'enroute' && <PresenceBadge kind="enroute" />}
+            </div>
             {stop.venue && (
               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                 <MapPin className="h-3 w-3" />

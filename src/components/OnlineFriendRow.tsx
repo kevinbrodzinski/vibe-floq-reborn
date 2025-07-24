@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfileCache';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
-import { MapPin } from 'lucide-react';
+import { MapPin, CheckCircle } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Badge } from '@/components/ui/badge';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
@@ -11,6 +11,7 @@ import { FriendRowSkeleton } from '@/components/skeletons';
 import { UserTag } from '@/components/ui/user-tag';
 import { useLongPress } from '@/hooks/useLongPress';
 import { useLastSeen } from '@/hooks/useLastSeen';
+import { PresenceBadge } from '@/components/ui/PresenceBadge';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -106,13 +107,11 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
           )}
         </div>
 
-      <div className="flex-1 min-w-0">
-        <UserTag profile={p} className="flex-col items-start sm:flex-row sm:items-center" />
-        {lastSeen && (
-          <div className="text-xs text-muted-foreground mt-0.5">
-            Last seen {dayjs(lastSeen).fromNow()}
-          </div>
-        )}
+      <div className="flex items-center gap-2 min-w-0">
+        <UserTag profile={p} className="truncate" />
+        {online
+          ? <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+          : lastSeen && <PresenceBadge kind="lastSeen" ts={lastSeen} />}
       </div>
 
       {isNearby && (

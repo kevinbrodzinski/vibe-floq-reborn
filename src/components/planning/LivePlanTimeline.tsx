@@ -2,6 +2,8 @@ import { useState, useCallback, useMemo } from 'react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { useVenueStaysChannel, type StayEvent } from '@/hooks/useVenueStaysChannel'
 import { usePlanCheckinToast } from '@/hooks/usePlanCheckinToast'
+import { useAutoCheckInListener } from '@/hooks/useAutoCheckInListener'
+import { usePlanVenuePresence } from '@/hooks/usePlanVenuePresence'
 import { useToast } from '@/hooks/use-toast'
 import { DraggableStopCard } from './DraggableStopCard'
 import { Badge } from '@/components/ui/badge'
@@ -16,9 +18,11 @@ export function LivePlanTimeline({ planId, className }: LivePlanTimelineProps) {
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { toast } = useToast()
   const [venueStatuses, setVenueStatuses] = useState<Record<string, 'enroute' | 'arrived' | 'departed'>>({})
+  const presenceMap = usePlanVenuePresence(planId)
 
-  // Initialize checkin toast listener
+  // Initialize listeners
   usePlanCheckinToast(planId)
+  useAutoCheckInListener(planId)
 
   // Handle venue stay events
   const handleStayEvent = useCallback((event: StayEvent) => {
@@ -56,9 +60,12 @@ export function LivePlanTimeline({ planId, className }: LivePlanTimelineProps) {
   // Subscribe to venue stays channel
   useVenueStaysChannel(handleStayEvent)
 
-  // Memoized stops with status
+  // Memoized stops with status - combine local state and presence map
   const stopsWithStatus = useMemo(() => {
-    return stops.map(stop => {
+    return stops.map((stop: any) => {
+      const venueId = typeof stop.venue === 'string' ? stop.venue : stop.venue?.id
+      const combinedStatus = presenceMap[venueId || ''] || venueStatuses[stop.id] || 'enroute'
+      
       // Transform the stop data to match DraggableStopCard interface
       return {
         id: stop.id,
@@ -71,10 +78,10 @@ export function LivePlanTimeline({ planId, className }: LivePlanTimelineProps) {
         venue: typeof stop.venue === 'string' ? 
           { id: stop.venue, name: stop.venue } : 
           stop.venue || undefined,
-        venueStatus: venueStatuses[stop.id] || 'enroute'
+        venueStatus: combinedStatus
       }
     })
-  }, [stops, venueStatuses])
+  }, [stops, venueStatuses, presenceMap])
 
   if (isLoading) {
     return (

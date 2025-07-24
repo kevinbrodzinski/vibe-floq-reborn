@@ -5,6 +5,8 @@ import { Z } from '@/constants/z';
 
 import { useDMThread } from '@/hooks/useDMThread';
 import { useProfile } from '@/hooks/useProfile';
+import { useFriendsPresence } from '@/hooks/useFriendsPresence';
+import { useLastSeen } from '@/hooks/useLastSeen';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { MessageBubble } from '@/components/MessageBubble';
 import { UserTag } from '@/components/ui/user-tag';
@@ -22,6 +24,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl } from '@/lib/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -47,8 +51,14 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     onSwipeDown: () => onOpenChange(false)
   });
   
-  // Get friend profile
+  // Get friend profile and presence
   const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
+  const presence = useFriendsPresence()[friendId || ''];
+  const online = presence?.status === 'online' && presence?.visible;
+  const lastSeenTs = useLastSeen(friendId || '');
+
+  // Initialize dayjs plugin
+  dayjs.extend(relativeTime);
 
   // Get current user ID and mark as read when sheet opens
   useEffect(() => {
@@ -147,6 +157,14 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
                   </AvatarFallback>
                 </Avatar>
                 <UserTag profile={friend} showUsername={true} className="flex-1" />
+                {online
+                  ? <span className="ml-2 text-xs text-green-400">● Online</span>
+                  : lastSeenTs && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {dayjs(lastSeenTs).fromNow(true)}
+                      </span>
+                    )
+                }
               </>
             ) : (
               <>
