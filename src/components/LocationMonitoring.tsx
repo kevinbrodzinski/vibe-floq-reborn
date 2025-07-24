@@ -21,18 +21,18 @@ export function LocationMonitoring() {
     setLoading(true)
     try {
       // Query recent location pings (last 24h by hour)
-      const { data: pings } = await supabase.rpc('monitoring_recent_pings')
+      const { data: pings } = await supabase.rpc('monitoring_recent_pings' as any)
       
       // Query recent venue visits (last 14 days)  
-      const { data: visits } = await supabase.rpc('monitoring_recent_visits')
+      const { data: visits } = await supabase.rpc('monitoring_recent_visits' as any)
       
       // Query system health
-      const { data: health } = await supabase.rpc('monitoring_system_health')
+      const { data: health } = await supabase.rpc('monitoring_system_health' as any)
 
       setData({
-        recentPings: pings || [],
-        recentVisits: visits || [],
-        systemHealth: health?.[0] || { stagingCount: 0, mainCount: 0, venueCount: 0 }
+        recentPings: (pings as Array<{ hour: string; count: number }>) || [],
+        recentVisits: (visits as Array<{ day_key: string; count: number }>) || [],
+        systemHealth: (health as any)?.[0] || { stagingCount: 0, mainCount: 0, venueCount: 0 }
       })
     } catch (error) {
       console.error('Failed to fetch monitoring data:', error)
