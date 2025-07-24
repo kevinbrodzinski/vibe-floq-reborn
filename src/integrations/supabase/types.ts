@@ -1398,6 +1398,30 @@ export type Database = {
           },
         ]
       }
+      friend_last_points: {
+        Row: {
+          accuracy_m: number | null
+          captured_at: string | null
+          geom: unknown | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          captured_at?: string | null
+          geom?: unknown | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          captured_at?: string | null
+          geom?: unknown | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friend_requests: {
         Row: {
           created_at: string | null
@@ -3063,6 +3087,7 @@ export type Database = {
       user_encounter: {
         Row: {
           created_at: string | null
+          distance_m: number | null
           first_seen: string
           id: number
           last_seen: string
@@ -3072,6 +3097,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          distance_m?: number | null
           first_seen: string
           id?: number
           last_seen: string
@@ -3081,6 +3107,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          distance_m?: number | null
           first_seen?: string
           id?: number
           last_seen?: string
@@ -3818,15 +3845,6 @@ export type Database = {
         Row: {
           metric: string | null
           value: string | null
-        }
-        Relationships: []
-      }
-      friend_last_points: {
-        Row: {
-          captured_at: string | null
-          lat: number | null
-          lng: number | null
-          user_id: string | null
         }
         Relationships: []
       }
