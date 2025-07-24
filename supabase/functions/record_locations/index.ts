@@ -13,6 +13,13 @@ export default async (req: Request) => {
   }
 
   try {
+    // ⚡ Initialize Supabase client first
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } }
+    );
+
     // ⚠️ SECURITY: Get authenticated user, don't trust body
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       req.headers.get('Authorization') ?? ''
@@ -32,11 +39,6 @@ export default async (req: Request) => {
     if (batch.length > MAX_CHUNK_SIZE) {
       console.log(`Large batch detected (${batch.length} pings), chunking into ${MAX_CHUNK_SIZE} per chunk`);
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     let totalInserted = 0;
 
