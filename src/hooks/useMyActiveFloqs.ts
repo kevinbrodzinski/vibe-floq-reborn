@@ -25,8 +25,6 @@ export function useMyActiveFloqs() {
         `)
         .eq('user_id', session.user.id)
         .is('floq.deleted_at', null)
-        .is('floq.archived_at', null)
-        // Fix the disband_at query - use current timestamp string instead of now()
         .or(`floq.disband_at.is.null,floq.disband_at.gt.${new Date().toISOString()}`);
 
       if (error) throw error;
