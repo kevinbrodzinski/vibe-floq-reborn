@@ -119,14 +119,15 @@ export function NewPlanWizard() {
 
   const handleCreate = async () => {
     try {
-      const planData: PlanDraft = {
+      const finalPayload = {
         ...details,
         ...timeRange,
         duration_hours: durationHours,
-        floqId: details.floqId
+        invitedUserIds: details.invitedUserIds,
+        floqSelections: floqSelections,
       }
       
-      const planData_result = await createPlan(planData)
+      const planData_result = await createPlan(finalPayload)
       navigate(`/plan/${planData_result.id}`, { replace: true })
     } catch (error) {
       console.error('Failed to create plan:', error)
