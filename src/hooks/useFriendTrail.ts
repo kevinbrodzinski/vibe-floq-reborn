@@ -11,7 +11,7 @@ export function useFriendTrail(friendId: string) {
   const { data } = useQuery({
     queryKey: ['friend-trail', friendId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_friend_trail', {
+      const { data, error } = await supabase.rpc('get_friend_trail' as any, {
         friend_user_id: friendId,
         hours_back: 24,
         point_limit: 50
