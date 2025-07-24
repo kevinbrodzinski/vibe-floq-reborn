@@ -16,19 +16,29 @@ export function useMyActiveFloqs() {
     queryFn: async (): Promise<ActiveFloq[]> => {
       if (!session?.user?.id) return [];
 
-      const { data, error } = await supabase
-        .from('floq_participants')
-        .select(`
-          floq:floqs!inner(
-            id, title, name
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .is('floq.deleted_at', null)
-        .or(`floq.disband_at.is.null,floq.disband_at.gt.${new Date().toISOString()}`);
+      // ISO string *once* – avoids drifting between async calls
+      const nowISO = new Date().toISOString();
 
-      if (error) throw error;
-      return (data ?? []).map(r => r.floq);
+      // ① Get the floq ids the user belongs to
+      const { data: ids, error: idErr } = await supabase
+        .from('floq_participants')
+        .select('floq_id')
+        .eq('user_id', session.user.id);
+
+      if (idErr) throw idErr;
+      if (!ids?.length) return [];
+
+      // ② Pull the actual floq rows, filtering for "active"
+      const { data: floqs, error: floqErr } = await supabase
+        .from('floqs')
+        .select('id, title, name')
+        .in('id', ids.map(r => r.floq_id))
+        .is('deleted_at', null)
+        // disband_at is either NULL **or** in the future
+        .or(`disband_at.is.null,disband_at.gt.${nowISO}`);
+
+      if (floqErr) throw floqErr;
+      return floqs ?? [];
     },
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
