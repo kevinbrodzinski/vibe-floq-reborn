@@ -98,7 +98,8 @@ BEGIN
 
   -- add creator
   INSERT INTO floq_participants(floq_id, user_id, role)
-  VALUES(target_floq_id, _creator, 'creator');
+  VALUES(target_floq_id, _creator, 'creator')
+  ON CONFLICT (floq_id, user_id) DO NOTHING;
 
   ----------------------------------------------------------------
   -- 3a. iterate through selections
@@ -122,7 +123,8 @@ BEGIN
        RETURNING id INTO new_floq_id;
 
        INSERT INTO floq_participants(floq_id, user_id, role)
-       VALUES(new_floq_id, _creator, 'creator');
+       VALUES(new_floq_id, _creator, 'creator')
+       ON CONFLICT (floq_id, user_id) DO NOTHING;
 
        INSERT INTO plan_floqs(plan_id, floq_id, auto_disband)
        VALUES(_plan_id, new_floq_id, (s->>'autoDisband')::boolean);

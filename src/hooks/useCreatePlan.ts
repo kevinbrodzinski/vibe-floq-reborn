@@ -95,7 +95,7 @@ export function useCreatePlan() {
       /* 2 ─ call finalize_plan RPC (Phase 2) ------------------------------ */
       const { error: finalizeErr } = await supabase.rpc('finalize_plan', {
         _plan_id: planId,
-        _selections: JSON.stringify(payload.floqSelections),
+        _selections: payload.floqSelections,
         _creator: session.user.id,
       })
 
