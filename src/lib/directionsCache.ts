@@ -16,14 +16,13 @@ export async function getETA(
   const fallback = () => {
     const dx = (from[0] - to[0]) * 111_000;
     const dy = (from[1] - to[1]) * 111_000;
-    return Math.sqrt(dx * dx + dy * dy) / 1.4;
+    return dx === 0 && dy === 0 ? 0 : Math.sqrt(dx * dx + dy * dy) / 1.4;
   };
 
   try {
-    const mbx = await import('@mapbox/mapbox-sdk/services/directions');
-    const directions = mbx({ accessToken: import.meta.env.VITE_MAPBOX_TOKEN })
-      .getDirections;
-    const { body } = await directions({
+    const { default: Directions } = await import('@mapbox/mapbox-sdk/services/directions');
+    const directions = Directions({ accessToken: import.meta.env.VITE_MAPBOX_TOKEN });
+    const { body } = await directions.getDirections({
       profile: 'mapbox/driving',
       waypoints: [
         { coordinates: from },

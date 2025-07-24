@@ -11,18 +11,23 @@ export function useLiveETA(
   useEffect(() => {
     if (!from || !to) return;
     let mounted = true;
+    let freshTimeout: number | null = null;
 
     const fetchETA = async () => {
       const s = await getETA(from, to);
       if (!mounted) return;
       setSecs(Math.round(s ?? 0));
       setFresh(true);
-      setTimeout(() => setFresh(false), 30_000);
+      freshTimeout = window.setTimeout(() => setFresh(false), 30_000);
     };
     fetchETA();
     const id = setInterval(fetchETA, 30_000);   // every 30 s
-    return () => { mounted = false; clearInterval(id); };
-  }, [from?.join(','), to?.join(',')]);
+    return () => { 
+      mounted = false; 
+      clearInterval(id);
+      if (freshTimeout) window.clearTimeout(freshTimeout);
+    };
+  }, [from?.toString(), to?.toString()]);
 
   return { secs, isFresh: fresh };
 }
