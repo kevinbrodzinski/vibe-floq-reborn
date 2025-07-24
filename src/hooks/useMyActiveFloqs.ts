@@ -30,14 +30,15 @@ export function useMyActiveFloqs() {
       if (idErr) throw idErr;
       if (!ids?.length) return [];
 
-      // ② Pull the actual floq rows, filtering for "active"
+      // ② Pull the actual floq rows with member counts in a single query
       const { data: floqs, error: floqErr } = await supabase
         .from('floqs')
         .select(`
           id, 
           title, 
           name, 
-          primary_vibe
+          primary_vibe,
+          (select count(*) from floq_participants fp where fp.floq_id = floqs.id) as member_count
         `)
         .in('id', ids.map(r => r.floq_id))
         .is('deleted_at', null)
@@ -47,22 +48,7 @@ export function useMyActiveFloqs() {
 
       if (floqErr) throw floqErr;
       
-      // Get member counts for each floq
-      const floqsWithCounts = await Promise.all(
-        (floqs ?? []).map(async (floq) => {
-          const { count } = await supabase
-            .from('floq_participants')
-            .select('*', { count: 'exact', head: true })
-            .eq('floq_id', floq.id);
-            
-          return {
-            ...floq,
-            member_count: count || 0
-          };
-        })
-      );
-      
-      return floqsWithCounts;
+      return floqs ?? [];
     },
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, startTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,11 +28,13 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
     const exists = value.find((v) => v.type === 'existing' && v.floqId === floq.id);
     const displayName = floq.title || floq.name || 'Untitled Floq';
     
-    onChange(
-      exists
-        ? value.filter((v) => !(v.type === 'existing' && v.floqId === floq.id))
-        : [...value, { type: 'existing', floqId: floq.id, name: displayName, autoDisband: false }]
-    );
+    startTransition(() => {
+      onChange(
+        exists
+          ? value.filter((v) => !(v.type === 'existing' && v.floqId === floq.id))
+          : [...value, { type: 'existing', floqId: floq.id, name: displayName, autoDisband: false }]
+      );
+    });
   };
 
   const addNew = () => {
