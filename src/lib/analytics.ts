@@ -42,13 +42,28 @@ declare global {
   }
 }
 
+import type { PosthogEvent } from '@/types/posthogEventTypes'
+
 export type TrackProps = Record<string, unknown>
 
-// Overloaded track function - supports both object and rest param styles
+// Type-safe track function for PostHog events
+export function track<E extends PosthogEvent>(event: E): void
+// Legacy overloaded track function - supports both object and rest param styles
 export function track(event: string, props?: TrackProps): void
 export function track(event: string, ...args: unknown[]): void
-export function track(event: string, ...rest: any[]) {
-  // Object form or convert positional args to object
+export function track(event: any, ...rest: any[]) {
+  // Handle typed PosthogEvent objects
+  if (typeof event === 'object' && event.name && event.props) {
+    try {
+      console.log('📊 Track event:', event.name, event.props)
+      capture(event.name, event.props)
+    } catch (error) {
+      console.warn('Analytics tracking failed:', error)
+    }
+    return
+  }
+
+  // Legacy string-based tracking
   const props: TrackProps = 
     rest.length === 1 && typeof rest[0] === 'object'
       ? rest[0] as TrackProps
