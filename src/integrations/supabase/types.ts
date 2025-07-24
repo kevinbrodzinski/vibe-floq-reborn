@@ -3060,6 +3060,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_encounter: {
+        Row: {
+          created_at: string | null
+          first_seen: string
+          id: number
+          last_seen: string
+          user_a: string
+          user_b: string
+          venue_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          first_seen: string
+          id?: number
+          last_seen: string
+          user_a: string
+          user_b: string
+          venue_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          first_seen?: string
+          id?: number
+          last_seen?: string
+          user_a?: string
+          user_b?: string
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       user_floq_activity_tracking: {
         Row: {
           created_at: string
@@ -3791,6 +3821,15 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_last_points: {
+        Row: {
+          captured_at: string | null
+          lat: number | null
+          lng: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -4373,6 +4412,10 @@ export type Database = {
           _metadata?: Json
         }
         Returns: string
+      }
+      cross_path_scan: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       delete_floq: {
         Args: { p_floq_id: string }
@@ -5449,6 +5492,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_field_tiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      refresh_friend_last_points: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
