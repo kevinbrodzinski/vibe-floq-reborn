@@ -61,17 +61,18 @@ export default async (req: Request) => {
 
     console.log(`Recording ${batch.length} location pings for user ${user.id}`);
 
-    // Convert batch to database rows - never trust body.user_id
+    // Convert batch to staging table rows - never trust body.user_id
     const rows = batch.map((ping: LocationPing) => ({
       user_id: user.id,  // always use authenticated user ID
       captured_at: ping.ts,
-      geom: `SRID=4326;POINT(${ping.lng} ${ping.lat})`,
-      accuracy_m: ping.acc ?? null
+      lat: ping.lat,
+      lng: ping.lng,
+      acc: ping.acc ?? null
     }));
 
-    // Bulk insert location data
+    // Bulk insert into staging table (fast UNLOGGED)
     const { error } = await supabaseAdmin
-      .from('raw_locations')
+      .from('raw_locations_staging')
       .insert(rows);
 
     if (error) {
