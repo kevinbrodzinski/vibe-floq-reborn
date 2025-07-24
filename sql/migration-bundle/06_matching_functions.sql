@@ -25,6 +25,7 @@ BEGIN
           ON  rl.geohash5 = v.geohash5              -- ⚡ bucket pre-filter
          AND ST_DWithin(rl.geom, v.geom, v.radius_m) -- exact check
     WHERE rl.captured_at >= now() - _since
+      AND rl.acc <= 50                              -- ⚡ GPS accuracy filter
   )
   INSERT INTO public.venue_visits(user_id, venue_id, arrived_at, distance_m)
   SELECT user_id, venue_id, captured_at, dist

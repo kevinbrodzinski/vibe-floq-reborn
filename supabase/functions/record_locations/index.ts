@@ -27,34 +27,50 @@ export default async (req: Request) => {
 
     const { batch } = await req.json() as { batch: Ping[] };
 
+    // ⚡ Payload chunking for high-volume users
+    const MAX_CHUNK_SIZE = 500;
+    if (batch.length > MAX_CHUNK_SIZE) {
+      console.log(`Large batch detected (${batch.length} pings), chunking into ${MAX_CHUNK_SIZE} per chunk`);
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const rows = batch.map(p => ({
-      user_id: user.id,  // ✅ Use authenticated user ID
-      captured_at: p.ts,
-      lat: p.lat,
-      lng: p.lng,
-      acc: p.acc ?? null
-    }));
+    let totalInserted = 0;
 
-    const { error } = await supabase
-      .from("raw_locations_staging")
-      .insert(rows);
+    // Process in chunks
+    for (let i = 0; i < batch.length; i += MAX_CHUNK_SIZE) {
+      const chunk = batch.slice(i, i + MAX_CHUNK_SIZE);
+      
+      const rows = chunk.map(p => ({
+        user_id: user.id,  // ✅ Use authenticated user ID
+        captured_at: p.ts,
+        lat: p.lat,
+        lng: p.lng,
+        acc: p.acc ?? null
+      }));
 
-    if (error) {
-      console.error('Database insert error:', error);
-      return new Response(JSON.stringify(error), { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      const { error } = await supabase
+        .from("raw_locations_staging")
+        .insert(rows);
+
+      if (error) {
+        console.error(`Database insert error for chunk ${Math.floor(i/MAX_CHUNK_SIZE) + 1}:`, error);
+        return new Response(JSON.stringify(error), { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      totalInserted += rows.length;
+      console.log(`Chunk ${Math.floor(i/MAX_CHUNK_SIZE) + 1}: inserted ${rows.length} pings`);
     }
 
-    console.log(`Successfully inserted ${rows.length} location pings for user ${user.id}`);
+    console.log(`Successfully inserted ${totalInserted} location pings for user ${user.id}`);
     
-    return new Response(JSON.stringify({ inserted: rows.length }), {
+    return new Response(JSON.stringify({ inserted: totalInserted }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
