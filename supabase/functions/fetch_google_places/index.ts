@@ -33,24 +33,18 @@ serve(async (req) => {
       );
     }
 
-    // Get user's Google API key
-    const { data: cred } = await supabase
-      .from('integrations.user_credential')
-      .select('api_key')
-      .eq('user_id', user_id)
-      .eq('provider_id', 1)
-      .maybeSingle();
-
-    if (!cred) {
+    // Get Google API key from secrets
+    const googleApiKey = Deno.env.get('GOOGLE_PLACES_KEY');
+    if (!googleApiKey) {
       return new Response(
-        JSON.stringify({ error: 'No Google API key found for user' }),
-        { status: 400, headers: corsHeaders }
+        JSON.stringify({ error: 'Google Places API key not configured' }),
+        { status: 500, headers: corsHeaders }
       );
     }
 
     // Call Google Places API
     const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-    url.searchParams.set('key', cred.api_key);
+    url.searchParams.set('key', googleApiKey);
     url.searchParams.set('location', `${lat},${lng}`);
     url.searchParams.set('radius', '150');
     url.searchParams.set('type', 'point_of_interest');

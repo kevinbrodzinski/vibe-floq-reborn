@@ -33,18 +33,12 @@ serve(async (req) => {
       );
     }
 
-    // Get user's Foursquare API key
-    const { data: cred } = await supabase
-      .from('integrations.user_credential')
-      .select('api_key')
-      .eq('user_id', user_id)
-      .eq('provider_id', 2)
-      .maybeSingle();
-
-    if (!cred) {
+    // Get Foursquare API key from secrets
+    const foursquareApiKey = Deno.env.get('FOURSQUARE_ADMIN_API');
+    if (!foursquareApiKey) {
       return new Response(
-        JSON.stringify({ error: 'No Foursquare API key found for user' }),
-        { status: 400, headers: corsHeaders }
+        JSON.stringify({ error: 'Foursquare API key not configured' }),
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -56,7 +50,7 @@ serve(async (req) => {
 
     const response = await fetch(url, {
       headers: {
-        'Authorization': cred.api_key,
+        'Authorization': foursquareApiKey,
         'Accept': 'application/json'
       }
     });
