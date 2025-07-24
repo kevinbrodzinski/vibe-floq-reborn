@@ -176,8 +176,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     /* ---------- cleanup ---------- */
     return () => {
       if (onPointerMove) app.stage.off('pointermove', onPointerMove);
-      appRef.current?.destroy(true, { children: true, texture: true });
-      appRef.current = undefined;
+      if (appRef.current) {
+        appRef.current.destroy(true, { children: true, texture: true });
+        appRef.current = null;
+      }
     };
   }, [hitTest]);        // ← dependency is safe (stable useCallback)
 
@@ -355,11 +357,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       tilePoolRef.current?.clearAll();
       
       // 3️⃣ Destroy the PIXI Application after cleanup
-      appRef.current?.destroy(true, {
-        children: true,
-        texture: true,
-      });
-      appRef.current = undefined;
+      if (appRef.current) {
+        appRef.current.destroy(true, {
+          children: true,
+          texture: true
+        });
+        appRef.current = null;
+      }
     };
   }, []);
 
