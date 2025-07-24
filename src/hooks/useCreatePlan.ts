@@ -93,15 +93,15 @@ export function useCreatePlan() {
       const planId = planRow.id as string
 
       /* 2 ─ call finalize_plan RPC (Phase 2) ------------------------------ */
-      const { error: finalizeErr } = await supabase.rpc('finalize_plan', {
+      const { data: rpcResult, error: finalizeErr } = await supabase.rpc('finalize_plan', {
         _plan_id: planId,
-        _selections: payload.floqSelections,
+        _selections: payload.floqSelections as any, // passes jsonb
         _creator: session.user.id,
       })
 
       if (finalizeErr) {
         console.error(finalizeErr)
-        throw new Error('Failed to link Floqs / finalise plan')
+        throw new Error(finalizeErr.message || 'Failed to link Floqs / finalise plan')
       }
 
       /* 3 ─ handle invited friends on client (post-RPC) ------------------ */
@@ -116,12 +116,21 @@ export function useCreatePlan() {
 
         // 2) Bulk-insert all invited users into every linked floq:
         if (linkedFloqIds.length) {
+          // De-duplicate (floq_id, user_id) pairs
+          const uniquePairs = new Set<string>();
           const rows = linkedFloqIds.flatMap(floqId =>
-            payload.invitedUserIds.map(userId => ({
-              floq_id: floqId,
-              user_id: userId,
-              role: 'member' as const,
-            }))
+            payload.invitedUserIds
+              .filter(userId => {
+                const key = `${floqId}_${userId}`;
+                if (uniquePairs.has(key)) return false;
+                uniquePairs.add(key);
+                return true;
+              })
+              .map(userId => ({
+                floq_id: floqId,
+                user_id: userId,
+                role: 'member' as const,
+              }))
           );
 
           const { error: inviteErr } = await supabase
