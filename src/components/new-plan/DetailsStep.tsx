@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Users, Tag, X, Globe, Plus } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
 import { useFriends } from '@/hooks/useFriends'
-import { useMyFloqs } from '@/hooks/useMyFloqs'
+import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs'
 
 interface PlanDetails {
   title: string
@@ -44,7 +44,7 @@ export function DetailsStep({ draft, onChange, onNext, onBack, onCreateFloq }: P
   const [details, setDetails] = useState(draft)
   const [pickerOpen, setPickerOpen] = useState(false)
   const { profiles } = useFriends()
-  const { data: floqs = [], isLoading: floqsLoading } = useMyFloqs()
+  const { data: floqs = [], isLoading: floqsLoading } = useMyActiveFloqs()
 
   const updateField = <K extends keyof PlanDetails>(field: K, value: PlanDetails[K]) => {
     const updated = { ...details, [field]: value }
