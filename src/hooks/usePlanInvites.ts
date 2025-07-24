@@ -144,10 +144,13 @@ export function usePlanInvites() {
       }
 
       // Use bulk invite utility after finalize_plan returns
+      // TODO: Get the actual floq_id from finalize_plan response when super-floq is implemented
+      const targetFloqId = planId; // For now, use planId but should be from finalize_plan response
+      
       const { data, error } = await supabase
         .from('floq_participants')
         .upsert(guests.map(g => ({
-          floq_id: planId, // This should be the floq_id from finalize_plan
+          floq_id: targetFloqId,
           user_id: g.id,
           role: 'member' as const
         })))
