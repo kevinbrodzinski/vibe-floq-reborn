@@ -5,6 +5,10 @@ export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
   venue?: Database['public']['Tables']['venues']['Row'];
 };
 
+// Updated type unions
+export type PlanMode = 'draft' | 'finalized' | 'done';
+export type FloqParticipantRole = 'creator' | 'admin' | 'member';
+
 // Domain types for UI components
 export interface PlanStopUi {
   id: string
@@ -88,7 +92,7 @@ export interface PlanParticipant {
   status: 'confirmed' | 'pending' | 'declined'
   isEditing?: boolean
   lastActivity?: number
-  role?: string
+  role?: FloqParticipantRole
   checkInStatus?: 'checked-in' | 'checked-out'
 }
 

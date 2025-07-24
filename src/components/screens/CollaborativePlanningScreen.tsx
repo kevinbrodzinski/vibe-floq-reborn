@@ -32,7 +32,7 @@ import { PlanSummaryEditModal } from "@/components/plan/PlanSummaryEditModal";
 import { PlanStatusBadge } from "@/components/plans/PlanStatusBadge";
 import { PlanStatusActions } from "@/components/plans/PlanStatusActions";
 import { usePlanStatusValidation } from "@/hooks/usePlanStatusValidation";
-import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
+import { useRealtimePlanSync } from "@/hooks/useRealtimePlanSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
 import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
@@ -233,37 +233,24 @@ export const CollaborativePlanningScreen = () => {
   });
 
   // Real-time sync hook for live collaboration
-  const { isConnected, participantCount, planMode: syncedPlanMode, activeParticipants, updatePlanMode } = usePlanRealTimeSync(plan.id, {
-    onParticipantJoin: (participant) => {
+  const sync = useRealtimePlanSync({
+    plan_id: plan.id,
+    onParticipantJoined: (participant) => {
       console.log('Participant joined:', participant);
     },
-    onVoteUpdate: (voteData) => {
+    onVoteCast: (voteData) => {
       console.log('Vote update:', voteData);
       showOverlay('vote', 'Vote submitted ✓');
     },
-    onStopUpdate: (stopData) => {
+    onStopUpdated: (stopData) => {
       console.log('Stop update:', stopData);
+      showOverlay('stop-action', 'Timeline updated');
     },
-    onChatMessage: (message) => {
-      console.log('New chat message:', message);
-      setChatMessages(prev => [...prev, {
-        id: message.id,
-        userId: message.user_id,
-        userName: 'User', // Would come from profiles join
-        userAvatar: '',
-        content: message.content,
-        timestamp: new Date(message.created_at),
-        type: 'message'
-      }]);
-    },
-    onRSVPUpdate: (rsvpData) => {
-      console.log('RSVP update:', rsvpData);
-      showOverlay('rsvp', 'RSVP updated!');
-    },
-    onPlanModeChange: (mode) => {
-      setPlanMode(mode);
-    }
   });
+  
+  const isConnected = sync.isConnected;
+  const activeParticipants = [];
+  const syncedPlanMode = planMode;
 
   // Overlay feedback helper with auto-dismiss
   const showOverlay = useCallback(

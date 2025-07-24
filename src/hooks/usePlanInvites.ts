@@ -143,19 +143,14 @@ export function usePlanInvites() {
         return { sent: 0, details: [] }
       }
 
-      // Call the edge function to send actual invites
-      const { data, error } = await supabase.functions.invoke('send-guest-invites', {
-        body: {
-          planId,
-          guests: guests.map(g => ({
-            id: g.id,
-            name: g.guest_name,
-            email: g.guest_email,
-            phone: g.guest_phone
-          })),
-          customMessage
-        }
-      })
+      // Use bulk invite utility after finalize_plan returns
+      const { data, error } = await supabase
+        .from('floq_participants')
+        .insert(guests.map(g => ({
+          floq_id: planId, // This should be the floq_id from finalize_plan
+          user_id: g.id,
+          role: 'member' as const
+        })))
 
       if (error) throw error
 

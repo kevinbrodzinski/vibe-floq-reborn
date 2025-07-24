@@ -102,96 +102,89 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
     [fetchActiveParticipants]
   );
 
+  const handlePresenceSync = useCallback(() => {
+    const channel = channelRef.current;
+    if (!channel) return;
+    
+    const state = channel.presenceState() as Record<string, PresencePayload[]>;
+    const presenceList = Object.values(state).flat().map(raw => ({
+      userId: raw.user_id,
+      username: raw.username,
+      displayName: raw.display_name,
+      avatarUrl: raw.avatar_url,
+      isOnline: true,
+      lastSeen: new Date(),
+      currentActivity: raw.activity as ParticipantPresence['currentActivity'],
+      checkInStatus: raw.check_in_status as ParticipantPresence['checkInStatus'],
+    }));
+    
+    // Merge presence data with SQL participants
+    const mergedParticipants = participants.map(p => {
+      const presenceData = presenceList.find(pr => pr.userId === p.userId);
+      return presenceData ? {
+        ...p,
+        isOnline: presenceData.isOnline,
+        lastSeen: presenceData.lastSeen,
+        currentActivity: presenceData.currentActivity,
+        checkInStatus: presenceData.checkInStatus
+      } : p;
+    });
+
+    setParticipants(mergedParticipants);
+    options.onPresenceUpdate?.(mergedParticipants);
+  }, [participants, options]);
+
+  /* ----- create + subscribe once ----- */
   useEffect(() => {
     if (!planId || options.silent) return;
 
     // Initial fetch
     debouncedFetchParticipants();
 
-    // tear-down any previous channel
+    // cleanup previous
     if (channelRef.current) supabase.removeChannel(channelRef.current);
 
-    // ensure channel exists with presence config
-    const channel = supabase
-      .channel(`plan-presence-${planId}`, { 
-        config: { presence: { key: session?.user?.id ?? '' } } 
-      })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'plan_participants', filter: `plan_id=eq.${planId}` },
-        debouncedFetchParticipants
-      )
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState() as Record<string, PresencePayload[]>;
-        const presenceList = Object.values(state).flat().map(raw => ({
-          userId: raw.user_id,
-          username: raw.username,
-          displayName: raw.display_name,
-          avatarUrl: raw.avatar_url,
-          isOnline: true,
-          lastSeen: new Date(),
-          currentActivity: raw.activity as ParticipantPresence['currentActivity'],
-          checkInStatus: raw.check_in_status as ParticipantPresence['checkInStatus'],
-        }));
-        
-        // Merge presence data with SQL participants
-        const mergedParticipants = participants.map(p => {
-          const presenceData = presenceList.find(pr => pr.userId === p.userId);
-          return presenceData ? {
-            ...p,
-            isOnline: presenceData.isOnline,
-            lastSeen: presenceData.lastSeen,
-            currentActivity: presenceData.currentActivity,
-            checkInStatus: presenceData.checkInStatus
-          } : p;
-        });
-        
-        setParticipants(mergedParticipants);
-        options.onPresenceUpdate?.(mergedParticipants);
-      })
+    const ch = supabase.channel(
+      `plan-presence-${planId}`,
+      { config: { presence: { key: session?.user?.id ?? '' } } }
+    )
+      // Postgres changes for join/leave
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public',
+        table: 'plan_participants',
+        filter: `plan_id=eq.${planId}` 
+      }, debouncedFetchParticipants)
+      // Presence sync for cursor / typing, etc.
+      .on('presence', { event: 'sync' }, handlePresenceSync)
       .subscribe(status => setIsConnected(status === 'SUBSCRIBED'));
 
-    channelRef.current = channel;
+    channelRef.current = ch;
+    return () => { supabase.removeChannel(ch); };
+  }, [planId, options.silent, session?.user?.id, debouncedFetchParticipants, handlePresenceSync]);
 
-    return () => { supabase.removeChannel(channel); };
-  }, [planId, debouncedFetchParticipants, options.silent, session?.user?.id]);
-
-  const updateActivity = async (activity?: ParticipantPresence['currentActivity']) => {
+  const broadcastPresence = useCallback(async (patch: Partial<PresencePayload>) => {
     if (options.silent || !session?.user) return;
-
-    const ch = channelRef.current ?? supabase
-      .channel(`plan-presence-${planId}`, { config: { presence: { key: session.user.id } } });
-
-    // store for re-use
-    if (!channelRef.current) channelRef.current = ch;
-
+    const ch = channelRef.current;
+    if (!ch) return;
+    
     await ch.track({
       user_id: session.user.id,
-      username: session.user.user_metadata?.username || session.user.email,
-      display_name: session.user.user_metadata?.display_name || session.user.email,
-      avatar_url: session.user.user_metadata?.avatar_url || '',
-      activity: activity ?? 'timeline',
-      check_in_status: 'online',
+      username: session.user.user_metadata?.username ?? session.user.email ?? 'Anonymous',
+      display_name: session.user.user_metadata?.display_name ?? session.user.user_metadata?.username ?? session.user.email ?? 'Anonymous',
+      avatar_url: session.user.user_metadata?.avatar_url ?? '',
+      activity: patch.activity ?? 'timeline',
+      check_in_status: patch.check_in_status ?? 'online',
+      expires_at: Date.now() + 60_000 // 60-s TTL
     });
+  }, [options.silent, session?.user]);
+
+  const updateActivity = async (activity?: ParticipantPresence['currentActivity']) => {
+    await broadcastPresence({ activity });
   };
 
   const updateCheckInStatus = async (status: ParticipantPresence['checkInStatus']) => {
-    if (options.silent || !session?.user) return;
-
-    const ch = channelRef.current ?? supabase
-      .channel(`plan-presence-${planId}`, { config: { presence: { key: session.user.id } } });
-
-    // store for re-use
-    if (!channelRef.current) channelRef.current = ch;
-
-    await ch.track({
-      user_id: session.user.id,
-      username: session.user.user_metadata?.username || session.user.email,
-      display_name: session.user.user_metadata?.display_name || session.user.email,
-      avatar_url: session.user.user_metadata?.avatar_url || '',
-      activity: 'timeline',
-      check_in_status: status
-    });
+    await broadcastPresence({ check_in_status: status });
   };
 
   return {

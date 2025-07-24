@@ -8,9 +8,11 @@ interface FinalizePlanParams {
 }
 
 interface FinalizePlanResponse {
-  success: true
-  plan: any
-  final_stops: any[]
+  success: boolean
+  plan?: any
+  final_stops?: any[]
+  floq_id?: string
+  kind?: string
 }
 
 export function useFinalizePlan() {
@@ -19,17 +21,22 @@ export function useFinalizePlan() {
 
   return useMutation<FinalizePlanResponse, Error, FinalizePlanParams>({
     mutationFn: async (params: FinalizePlanParams) => {
-      const { data, error } = await supabase.functions.invoke('finalize-plan', {
-        body: params
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Authentication required')
+      
+      const { data, error } = await supabase.rpc('finalize_plan', {
+        _plan_id: params.plan_id,
+        _selections: '[]',
+        _creator: user.id
       })
       
       if (error) {
         console.error('Plan finalization error:', error)
-        const message = error?.message ?? error?.error?.message ?? 'Something went wrong on the server'
+        const message = error?.message ?? 'Something went wrong on the server'
         throw new Error(message)
       }
       
-      return data
+      return data ? (data as unknown as FinalizePlanResponse) : { success: false }
     },
     onSuccess: (data, variables) => {
       // Invalidate all plan-related queries

@@ -49,13 +49,16 @@ export function useUpdatePlanStatus() {
       // Special handling for draft → finalized transition
       if (status === 'finalized') {
         try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) throw new Error('Authentication required')
+          
           await finalizePlan.mutateAsync({ 
             plan_id: planId, 
             force_finalize: forceFinalize 
           })
           return // Return void to match mutation type
         } catch (error) {
-          console.error('Plan finalization via edge function failed:', error)
+          console.error('Plan finalization via RPC failed:', error)
           throw error
         }
       }

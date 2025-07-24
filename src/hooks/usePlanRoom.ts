@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePlanPresence } from '@/hooks/usePlanPresence';
-import { usePlanRealTimeSync } from '@/hooks/usePlanRealTimeSync';
+import { useRealtimePlanSync } from '@/hooks/useRealtimePlanSync';
 import { usePlanParticipants } from '@/hooks/usePlanParticipants';
 
 /**
@@ -14,24 +14,22 @@ export function usePlanRoom(planId: string) {
   const presence = usePlanPresence(planId);
   const participantsQuery = usePlanParticipants(planId);
   
-  const sync = usePlanRealTimeSync(planId, {
-    onParticipantJoin: (participant) => {
+  const sync = useRealtimePlanSync({
+    plan_id: planId,
+    onParticipantJoined: (participant) => {
       console.log('Participant joined:', participant);
     },
-    onVoteUpdate: (voteData) => {
+    onVoteCast: (voteData) => {
       console.log('Vote update:', voteData);
     },
-    onStopUpdate: (stopData) => {
+    onStopUpdated: (stopData) => {
       console.log('Stop update:', stopData);
     },
-    onChatMessage: (message) => {
-      console.log('New chat message:', message);
+    onStopAdded: (stopData) => {
+      console.log('Stop added:', stopData);
     },
-    onRSVPUpdate: (rsvpData) => {
-      console.log('RSVP update:', rsvpData);
-    },
-    onPlanModeChange: (mode) => {
-      setPlanMode(mode);
+    onPlanFinalized: (plan) => {
+      setPlanMode('executing');
     }
   });
 
@@ -51,15 +49,12 @@ export function usePlanRoom(planId: string) {
 
   const updatePlanMode = useCallback(async (mode: 'planning' | 'executing') => {
     setPlanMode(mode);
-    if (sync.updatePlanMode) {
-      await sync.updatePlanMode(mode);
-    }
-  }, [sync.updatePlanMode]);
+  }, []);
 
   return {
     // Participant data
     participants: allParticipants,
-    participantCount: sync.participantCount || allParticipants.length,
+    participantCount: allParticipants.length,
     
     // Connection status
     isConnected: presence.isConnected && sync.isConnected,
@@ -69,11 +64,8 @@ export function usePlanRoom(planId: string) {
     updateCheckInStatus: presence.updateCheckInStatus,
     
     // Plan state
-    planMode: sync.planMode || planMode,
+    planMode,
     updatePlanMode,
-    
-    // Active editing participants
-    activeParticipants: sync.activeParticipants || [],
     
     // Loading states
     isLoading: participantsQuery.isLoading,
