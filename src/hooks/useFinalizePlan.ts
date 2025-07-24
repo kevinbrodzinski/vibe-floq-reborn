@@ -26,7 +26,7 @@ export function useFinalizePlan() {
       
       const { data, error } = await supabase.rpc('finalize_plan', {
         _plan_id: params.plan_id,
-        _selections: '[]',
+        _selections: [],
         _creator: user.id
       })
       

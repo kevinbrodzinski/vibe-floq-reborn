@@ -146,7 +146,7 @@ export function usePlanInvites() {
       // Use bulk invite utility after finalize_plan returns
       const { data, error } = await supabase
         .from('floq_participants')
-        .insert(guests.map(g => ({
+        .upsert(guests.map(g => ({
           floq_id: planId, // This should be the floq_id from finalize_plan
           user_id: g.id,
           role: 'member' as const
