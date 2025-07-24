@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { WizardPortal } from '@/components/WizardPortal'
 import { TimeDialStep } from '@/components/new-plan/TimeDialStep'
 import { DetailsStep } from '@/components/new-plan/DetailsStep'
 import { ReviewStep } from '@/components/new-plan/ReviewStep'
@@ -143,12 +143,12 @@ export function NewPlanWizard() {
   }
 
   return (
-    <Dialog open={true} onOpenChange={handleClose}>
-      <DialogContent 
-        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+    <WizardPortal onBackdropClick={handleClose}>
+      <div 
+        className="bg-background border rounded-lg shadow-xl max-w-2xl w-full overflow-hidden"
         style={{ paddingBottom: gap }}
       >
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-1">
@@ -181,7 +181,7 @@ export function NewPlanWizard() {
           </div>
 
           {/* Step Content */}
-          <div className="min-h-[400px]">
+          <div className="min-h-[400px] max-h-[60vh] overflow-y-auto">
             {step === 0 && (
               <TimeDialStep
                 initialRange={timeRange}
@@ -222,7 +222,7 @@ export function NewPlanWizard() {
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </WizardPortal>
   )
 }
