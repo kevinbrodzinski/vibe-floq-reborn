@@ -18,13 +18,6 @@ interface Props {
   onNext: () => void;
 }
 
-/**
- * Step UI:
- * 1. List user's Floqs with checkboxes
- * 2. "+ New Floq" input
- * 3. If >1 selected → ask for super-Floq name
- * 4. Auto-disband toggle (per newly-created or super-Floq)
- */
 export function PlanFloqStep({ value, onChange, onNext }: Props) {
   const [myFloqs, setMyFloqs] = useState<ExistingFloq[]>([]);
   const [newName, setNewName] = useState('');
@@ -32,7 +25,6 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  /* fetch user floqs once */
   useEffect(() => {
     const fetchMyFloqs = async () => {
       try {
@@ -61,7 +53,6 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
     fetchMyFloqs();
   }, []);
 
-  /* helpers */
   const toggleExisting = (f: ExistingFloq) => {
     const exists = value.find((v) => v.type === 'existing' && v.floqId === f.id);
     const displayName = f.title || f.name || 'Untitled Floq';
@@ -85,8 +76,13 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
     onChange(newValue);
   };
 
+  const updateAutoDisband = (index: number, autoDisband: boolean) => {
+    const newValue = [...value];
+    newValue[index] = { ...newValue[index], autoDisband };
+    onChange(newValue);
+  };
+
   const handleNext = () => {
-    /* require super-Floq name if >1 selected */
     const selCount = value.length;
     if (selCount === 0) {
       alert('Please select at least one Floq or create a new one');
@@ -100,34 +96,24 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
     onNext();
   };
 
-  const updateAutoDisband = (index: number, autoDisband: boolean) => {
-    const newValue = [...value];
-    newValue[index] = { ...newValue[index], autoDisband };
-    onChange(newValue);
-  };
-
   if (loading) {
     return (
-      <div className="flex flex-1 justify-center items-center p-6">
+      <div className="flex-1 flex justify-center items-center p-6">
         <p className="text-muted-foreground">Loading your Floqs...</p>
       </div>
     );
   }
 
-  /* UI */
   return (
     <div className="overflow-auto max-h-screen">
       <div className="space-y-6 p-6">
-        <div>
-          <h2 className="text-2xl font-semibold text-foreground mb-2">
-            Choose the Floq(s) for this Plan
-          </h2>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold text-foreground">Choose the Floq(s) for this Plan</h2>
           <p className="text-sm text-muted-foreground">
             Select existing Floqs or create new ones. Everyone invited to the plan will be added to these Floqs.
           </p>
         </div>
 
-        {/* existing floqs */}
         {myFloqs.length > 0 && (
           <div className="space-y-4">
             <h3 className="font-medium text-foreground">Your Existing Floqs</h3>
@@ -137,10 +123,7 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
               
               return (
                 <div key={f.id} className="flex items-center space-x-3 py-2">
-                  <Checkbox 
-                    checked={checked} 
-                    onCheckedChange={() => toggleExisting(f)} 
-                  />
+                  <Checkbox checked={checked} onCheckedChange={() => toggleExisting(f)} />
                   <Label className="flex-1">{displayName}</Label>
                 </div>
               );
@@ -148,7 +131,6 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
           </div>
         )}
 
-        {/* add new floq */}
         <Separator />
         <div className="space-y-4">
           <h3 className="font-medium text-foreground">Create a New Floq</h3>
@@ -159,17 +141,10 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
               onChange={(e) => setNewName(e.target.value)}
               className="flex-1"
             />
-            <Button 
-              size="sm" 
-              onClick={addNew}
-              disabled={!newName.trim()}
-            >
-              Add
-            </Button>
+            <Button size="sm" onClick={addNew} disabled={!newName.trim()}>Add</Button>
           </div>
         </div>
 
-        {/* show current selections */}
         {value.length > 0 && (
           <div className="space-y-4">
             <Separator />
@@ -177,10 +152,8 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
             {value.map((selection, idx) => (
               <div key={idx} className="flex items-center space-x-3 py-2">
                 <p className="flex-1 text-muted-foreground">
-                  {selection.name}
-                  {selection.type === 'new' && ' (New)'}
+                  {selection.name}{selection.type === 'new' && ' (New)'}
                 </p>
-                
                 {selection.type === 'new' && (
                   <div className="flex items-center space-x-2">
                     <Label className="text-xs text-muted-foreground">Disband after?</Label>
@@ -190,20 +163,12 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
                     />
                   </div>
                 )}
-                
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => removeSelection(idx)}
-                >
-                  Remove
-                </Button>
+                <Button size="sm" variant="outline" onClick={() => removeSelection(idx)}>Remove</Button>
               </div>
             ))}
           </div>
         )}
 
-        {/* if multiple selections → need super floq name */}
         {value.length > 1 && (
           <div className="space-y-4">
             <Separator />
@@ -219,7 +184,6 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
           </div>
         )}
 
-        {/* Next button */}
         <Button
           className="w-full mt-6"
           disabled={value.length === 0 || submitting || (value.length > 1 && !superName.trim())}

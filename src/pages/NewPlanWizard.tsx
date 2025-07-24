@@ -33,6 +33,8 @@ type FloqSelection =
   | { type: 'existing'; floqId: string; name: string; autoDisband: boolean }
   | { type: 'new'; name: string; autoDisband: boolean };
 
+type Step = 0 | 1 | 2 | 3;
+
 interface NavigationState {
   floqId?: string
   floqTitle?: string
@@ -48,7 +50,7 @@ export function NewPlanWizard() {
   // Get floq context from navigation state
   const navigationState = location.state as NavigationState | undefined
   
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
+  const [step, setStep] = useState<Step>(0)
   const [timeRange, setTimeRange] = useState<TimeRange>({ start: '18:00', end: '00:00' })
   const [durationHours, setDurationHours] = useState<4 | 6 | 8 | 12>(6)
   const [details, setDetails] = useState<PlanDetails>({
@@ -100,13 +102,13 @@ export function NewPlanWizard() {
 
   const handleNext = () => {
     if (step < 3) {
-      setStep(prev => (prev + 1) as 1 | 2 | 3)
+      setStep(prev => Math.min(prev + 1, 3) as Step)
     }
   }
   
   const handleBack = () => {
     if (step > 0) {
-      setStep(prev => (prev - 1) as 0 | 1 | 2)
+      setStep(prev => Math.max(prev - 1, 0) as Step)
     }
   }
 
