@@ -16,17 +16,9 @@ export function usePlansData() {
   const { data: userPlans = [], isLoading: isLoadingUserPlans } = useQuery({
     queryKey: ['user-floq-plans'],
     queryFn: async () => {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return [];
-
       const { data, error } = await supabase
-        .from('floq_plans')
-        .select(`
-          *,
-          floqs(title, creator_id, location),
-          creator:profiles!creator_id(id, display_name, username, avatar_url)
-        `)
-        .eq('creator_id', user.user.id)
+        .from('v_user_plans')
+        .select('*')
         .order('planned_at', { ascending: true });
 
       if (error) throw error;
@@ -66,7 +58,7 @@ export function usePlansData() {
   // Combine and categorize plans
   const categorizedPlans = useMemo(() => {
     const draft = userPlans.filter(plan => plan.status === 'draft');
-    const active = userPlans.filter(plan => plan.status === 'active');
+    const active = userPlans.filter(plan => plan.status === 'finalized');
     const completed = userPlans.filter(plan => plan.status === 'completed');
     const invited = invitedPlans;
 

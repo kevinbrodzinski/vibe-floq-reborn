@@ -151,6 +151,8 @@ export function useCreatePlan() {
     onSuccess: () => {
       toast.success('Plan created!')
       queryClient.invalidateQueries({ queryKey: ['user-plans'] })
+      queryClient.invalidateQueries({ queryKey: ['user-floq-plans'] })
+      queryClient.invalidateQueries({ queryKey: ['my-active-floqs'] })
     },
 
     onError: (err: unknown) => {

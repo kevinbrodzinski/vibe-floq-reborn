@@ -39,7 +39,9 @@ export function useUserPlans() {
     queryKey: ['user-plans'],
     staleTime: 60 * 1000, // 1 minute
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_user_accessible_plans')
+      const { data, error } = await supabase
+        .from('v_user_plans')
+        .select('*')
       
       if (error) {
         console.error('Failed to fetch user plans:', error)

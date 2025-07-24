@@ -745,6 +745,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "floq_activity_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       floq_afterglow: {
@@ -1597,6 +1604,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_activities_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_afterglow: {
@@ -1647,6 +1661,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_plan_afterglow_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_ai_summaries: {
@@ -1683,6 +1704,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: true
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_ai_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -1730,6 +1758,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_check_ins_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -1784,6 +1819,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plan_comments_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
@@ -1835,6 +1877,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_drafts_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_feedback: {
@@ -1873,6 +1922,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_feedback_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_floqs: {
@@ -1907,6 +1963,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_floqs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -1962,6 +2025,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_invitations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_invites: {
@@ -1992,6 +2062,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_invites_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -2077,6 +2154,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       plan_share_links: {
@@ -2146,6 +2230,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_stop_comments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -2263,6 +2354,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_stops_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plan_stops_venue_id_fkey"
             columns: ["venue_id"]
             isOneToOne: false
@@ -2302,6 +2400,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -2362,6 +2467,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_transit_cache_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plan_transit_cache_to_stop_id_fkey"
             columns: ["to_stop_id"]
             isOneToOne: false
@@ -2413,6 +2525,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_votes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -2578,6 +2697,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snap_suggestion_logs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -2820,6 +2946,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3540,6 +3673,30 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_user_plans: {
+        Row: {
+          archived_at: string | null
+          current_stop_id: string | null
+          execution_started_at: string | null
+          id: string | null
+          participant_count: number | null
+          plan_mode: Database["public"]["Enums"]["plan_mode"] | null
+          planned_at: string | null
+          status: Database["public"]["Enums"]["plan_mode"] | null
+          stops_count: number | null
+          title: string | null
+          vibe_tag: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_plans_current_stop_id_fkey"
+            columns: ["current_stop_id"]
+            isOneToOne: false
+            referencedRelation: "plan_stops"
             referencedColumns: ["id"]
           },
         ]
