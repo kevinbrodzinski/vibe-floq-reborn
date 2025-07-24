@@ -41,10 +41,28 @@ serve(async (req) => {
   }
 
   try {
-    // Get user from JWT instead of request body (security fix)
+    // Get JWT token from the Authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response('Authorization header required', { status: 401, headers: corsHeaders })
+    }
+
+    // Create a client with the user's JWT for auth context
+    const token = authHeader.replace('Bearer ', '')
+    const userSupabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
+    )
+
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await userSupabase.auth.getUser(token)
+    
     if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders })
 
     const { planId, selections, combinedName }: { 

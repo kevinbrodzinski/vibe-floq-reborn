@@ -6,6 +6,8 @@ export interface ActiveFloq {
   id: string;
   title: string;
   name?: string;
+  primary_vibe?: string;
+  member_count?: number;
 }
 
 export function useMyActiveFloqs() {
@@ -31,7 +33,12 @@ export function useMyActiveFloqs() {
       // ② Pull the actual floq rows, filtering for "active"
       const { data: floqs, error: floqErr } = await supabase
         .from('floqs')
-        .select('id, title, name')
+        .select(`
+          id, 
+          title, 
+          name, 
+          primary_vibe
+        `)
         .in('id', ids.map(r => r.floq_id))
         .is('deleted_at', null)
         .is('archived_at', null)                // new guard for archived floqs
@@ -39,7 +46,23 @@ export function useMyActiveFloqs() {
         .or(`ends_at.is.null,ends_at.gt.${nowISO}`);
 
       if (floqErr) throw floqErr;
-      return floqs ?? [];
+      
+      // Get member counts for each floq
+      const floqsWithCounts = await Promise.all(
+        (floqs ?? []).map(async (floq) => {
+          const { count } = await supabase
+            .from('floq_participants')
+            .select('*', { count: 'exact', head: true })
+            .eq('floq_id', floq.id);
+            
+          return {
+            ...floq,
+            member_count: count || 0
+          };
+        })
+      );
+      
+      return floqsWithCounts;
     },
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes

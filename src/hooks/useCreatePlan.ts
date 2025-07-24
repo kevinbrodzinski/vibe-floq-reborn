@@ -48,11 +48,11 @@ interface CreatePlanPayload {
 
 export function useCreatePlan() {
   const queryClient = useQueryClient()
-  const session = useSession()
+  const currentSession = useSession()
 
   return useMutation({
     mutationFn: async (payload: CreatePlanPayload) => {
-      if (!session?.user) throw new Error('not-signed-in')
+      if (!currentSession?.user) throw new Error('not-signed-in')
       
       // Map vibe_tag to valid enum value
       const primaryVibe = validVibes.includes(payload.vibe_tag?.toLowerCase() as any) 
@@ -74,7 +74,7 @@ export function useCreatePlan() {
           planned_at: startISO,
           start_time: isoToPgTime(startISO),
           end_time: isoToPgTime(endISO),
-          creator_id: session.user.id,
+          creator_id: currentSession.user.id,
           plan_mode: 'draft'
         })
         .select('id')
@@ -82,8 +82,14 @@ export function useCreatePlan() {
 
       if (planError) throw planError
 
-      // Edge function -> create/link floqs, merge members (no userId in body - derived from JWT)
+      // Get current session and pass authorization header explicitly  
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // Edge function -> create/link floqs, merge members
       const { error: linkError } = await supabase.functions.invoke('ensure_floq_links', {
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : {},
         body: {
           planId: planData.id,
           selections: payload.floqSelections,

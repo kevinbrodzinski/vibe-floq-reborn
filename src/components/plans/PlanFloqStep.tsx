@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
+import { FloqCardMini } from './FloqCardMini';
 import { toast } from 'sonner';
 
 type Selection =
@@ -86,30 +86,21 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
         </p>
       </div>
 
-      {/* Your Active Floqs - 3 Column Grid */}
+      {/* Your Active Floqs - Card Grid */}
       {myFloqs.length > 0 ? (
         <div className="space-y-4">
           <h4 className="font-medium">Your Active Floqs</h4>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {myFloqs.map((floq) => {
               const isSelected = !!value.find((v) => v.type === 'existing' && v.floqId === floq.id);
-              const displayName = floq.title || floq.name || 'Untitled Floq';
               
               return (
-                <div
+                <FloqCardMini
                   key={floq.id}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    isSelected 
-                      ? 'border-primary bg-primary/5' 
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  onClick={() => toggleExisting(floq)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Checkbox checked={isSelected} />
-                    <span className="text-sm font-medium truncate">{displayName}</span>
-                  </div>
-                </div>
+                  floq={floq}
+                  selected={isSelected}
+                  onToggle={() => toggleExisting(floq)}
+                />
               );
             })}
           </div>
