@@ -14,12 +14,15 @@ import { ErrorBoundary } from '@/components/system/ErrorBoundary';
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN
 if (sentryDsn) {
   try {
-    const Sentry = require('@sentry/react-native');
+    const Sentry = require('sentry-expo');
     Sentry.init({
       dsn: sentryDsn,
       enableInExpoDevelopment: true,
       debug: process.env.NODE_ENV === 'development',
+      sendDefaultPii: true,
       tracesSampleRate: 1.0,
+      profilesSampleRate: 1.0,
+      release: 'floq@1.0.0',
     });
   } catch (err) {
     console.warn('Sentry native initialization failed:', err)

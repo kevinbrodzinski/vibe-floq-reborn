@@ -16,7 +16,7 @@ export function trackError(error: unknown, context?: Record<string, any>) {
     } else {
       // Native environment
       try {
-        const { captureException } = require('@sentry/react-native')
+        const { captureException } = require('sentry-expo')
         captureException(err, { extra: context })
       } catch {
         console.warn('Sentry native not available')

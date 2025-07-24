@@ -18,7 +18,9 @@ if (sentryDsn) {
     Sentry.init({
       dsn: sentryDsn,
       tracesSampleRate: 1.0,
+      sendDefaultPii: true,
       environment: import.meta.env.DEV ? 'development' : 'production',
+      release: 'floq@1.0.0',
     })
   }).catch((err) => {
     console.warn('Sentry web initialization failed:', err)
