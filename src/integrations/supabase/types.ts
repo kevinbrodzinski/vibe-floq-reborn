@@ -2644,6 +2644,7 @@ export type Database = {
       }
       raw_locations: {
         Row: {
+          acc: number | null
           accuracy_m: number | null
           captured_at: string
           geohash5: string | null
@@ -2652,6 +2653,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at: string
           geohash5?: string | null
@@ -2660,6 +2662,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at?: string
           geohash5?: string | null
@@ -2671,6 +2674,7 @@ export type Database = {
       }
       raw_locations_202507: {
         Row: {
+          acc: number | null
           accuracy_m: number | null
           captured_at: string
           geohash5: string | null
@@ -2679,6 +2683,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at: string
           geohash5?: string | null
@@ -2687,6 +2692,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at?: string
           geohash5?: string | null
@@ -2698,6 +2704,7 @@ export type Database = {
       }
       raw_locations_202508: {
         Row: {
+          acc: number | null
           accuracy_m: number | null
           captured_at: string
           geohash5: string | null
@@ -2706,6 +2713,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at: string
           geohash5?: string | null
@@ -2714,6 +2722,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at?: string
           geohash5?: string | null
@@ -2725,6 +2734,7 @@ export type Database = {
       }
       raw_locations_202509: {
         Row: {
+          acc: number | null
           accuracy_m: number | null
           captured_at: string
           geohash5: string | null
@@ -2733,6 +2743,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at: string
           geohash5?: string | null
@@ -2741,12 +2752,37 @@ export type Database = {
           user_id: string
         }
         Update: {
+          acc?: number | null
           accuracy_m?: number | null
           captured_at?: string
           geohash5?: string | null
           geom?: unknown | null
           id?: never
           user_id?: string
+        }
+        Relationships: []
+      }
+      raw_locations_staging: {
+        Row: {
+          acc: number | null
+          captured_at: string | null
+          lat: number | null
+          lng: number | null
+          user_id: string | null
+        }
+        Insert: {
+          acc?: number | null
+          captured_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          acc?: number | null
+          captured_at?: string | null
+          lat?: number | null
+          lng?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -3482,6 +3518,8 @@ export type Database = {
           categories: string[] | null
           created_at: string | null
           description: string | null
+          external_id: string | null
+          geohash5: string | null
           geom: unknown | null
           id: string
           lat: number
@@ -3502,6 +3540,8 @@ export type Database = {
           categories?: string[] | null
           created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          geohash5?: string | null
           geom?: unknown | null
           id?: string
           lat: number
@@ -3522,6 +3562,8 @@ export type Database = {
           categories?: string[] | null
           created_at?: string | null
           description?: string | null
+          external_id?: string | null
+          geohash5?: string | null
           geom?: unknown | null
           id?: string
           lat?: number
@@ -5141,6 +5183,10 @@ export type Database = {
       }
       match_locations_batch: {
         Args: { _since: string }
+        Returns: number
+      }
+      match_unmatched_pings: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       merge_venue_visits: {
