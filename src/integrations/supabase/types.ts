@@ -2019,7 +2019,7 @@ export type Database = {
           responded_at: string | null
           role: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           guest_email?: string | null
@@ -2036,7 +2036,7 @@ export type Database = {
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           guest_email?: string | null
@@ -2053,7 +2053,7 @@ export type Database = {
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2202,6 +2202,7 @@ export type Database = {
           duration_minutes: number
           end_time: string | null
           estimated_cost_per_person: number | null
+          estimated_duration_minutes: number | null
           id: string
           location: unknown | null
           plan_id: string
@@ -2221,6 +2222,7 @@ export type Database = {
           duration_minutes?: number
           end_time?: string | null
           estimated_cost_per_person?: number | null
+          estimated_duration_minutes?: number | null
           id?: string
           location?: unknown | null
           plan_id: string
@@ -2240,6 +2242,7 @@ export type Database = {
           duration_minutes?: number
           end_time?: string | null
           estimated_cost_per_person?: number | null
+          estimated_duration_minutes?: number | null
           id?: string
           location?: unknown | null
           plan_id?: string
@@ -6484,12 +6487,14 @@ export type Database = {
         | "plan_created"
         | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
+      floq_participant_role_enum: "creator" | "admin" | "member"
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
       mention_permissions_enum: "all" | "co-admins" | "host"
       mention_target: "user" | "venue" | "plan"
       onboarding_version_enum: "v1" | "v2"
       plan_mode: "draft" | "finalized" | "executing" | "completed"
+      plan_mode_enum: "draft" | "finalized" | "done"
       plan_role_enum: "participant" | "organizer"
       plan_status_enum:
         | "draft"
@@ -6710,12 +6715,14 @@ export const Constants = {
         "invited",
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
+      floq_participant_role_enum: ["creator", "admin", "member"],
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
       mention_permissions_enum: ["all", "co-admins", "host"],
       mention_target: ["user", "venue", "plan"],
       onboarding_version_enum: ["v1", "v2"],
       plan_mode: ["draft", "finalized", "executing", "completed"],
+      plan_mode_enum: ["draft", "finalized", "done"],
       plan_role_enum: ["participant", "organizer"],
       plan_status_enum: [
         "draft",
