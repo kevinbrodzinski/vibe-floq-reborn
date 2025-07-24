@@ -22,7 +22,6 @@ export interface PlanDetails {
   description?: string
   vibe_tag?: string
   invitedUserIds: string[]
-  floqId?: string | null
 }
 
 export interface PlanDraft extends PlanDetails, TimeRange {
@@ -57,8 +56,7 @@ export function NewPlanWizard() {
     title: '',
     description: '',
     vibe_tag: '',
-    invitedUserIds: [],
-    floqId: navigationState?.floqId || null
+    invitedUserIds: []
   })
   const [floqSelections, setFloqSelections] = useState<FloqSelection[]>([])
   const [combinedFloqName, setCombinedFloqName] = useState('')
@@ -85,8 +83,7 @@ export function NewPlanWizard() {
       setDetails(prev => ({
         ...prev,
         title: templateTitles[templateType] || '',
-        description: templateDescriptions[templateType] || '',
-        floqId: navigationState.floqId || null
+        description: templateDescriptions[templateType] || ''
       }))
     }
   }, [navigationState])
@@ -123,9 +120,9 @@ export function NewPlanWizard() {
       const finalPayload = {
         ...details,
         ...timeRange,
-        linkedFloqId: details.floqId, // Pass the selected floq ID
         floqSelections: floqSelections,
         combinedName: floqSelections.length > 1 ? combinedFloqName.trim() : null,
+        invitedUserIds: details.invitedUserIds,
       }
       
       const planData_result = await createPlan(finalPayload)

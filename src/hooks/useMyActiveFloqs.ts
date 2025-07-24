@@ -35,8 +35,8 @@ export function useMyActiveFloqs() {
         .in('id', ids.map(r => r.floq_id))
         .is('deleted_at', null)
         .is('archived_at', null)                // new guard for archived floqs
-        // disband_at is either NULL **or** in the future
-        .or(`disband_at.is.null,disband_at.gt.${nowISO}`);
+        // ends_at is either NULL **or** in the future (floqs use ends_at, not disband_at)
+        .or(`ends_at.is.null,ends_at.gt.${nowISO}`);
 
       if (floqErr) throw floqErr;
       return floqs ?? [];

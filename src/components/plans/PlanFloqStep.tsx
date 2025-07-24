@@ -59,12 +59,7 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   };
 
   const handleNext = () => {
-    // Case validation
-    if (value.length === 0) {
-      toast.error('Pick or create a floq');
-      return;
-    }
-    
+    // Allow proceeding with 0 selections for solo plans
     if (value.length > 1 && !combinedName.trim()) {
       toast.error('Name your combined floq');
       return;
@@ -85,14 +80,14 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Choose Floqs</h3>
+        <h3 className="text-xl font-semibold">Choose Floqs (Optional)</h3>
         <p className="text-muted-foreground">
-          Which Floqs should this plan be linked to?
+          Link this plan to existing Floqs or leave empty for a solo plan
         </p>
       </div>
 
       {/* Your Active Floqs - 3 Column Grid */}
-      {myFloqs.length > 0 && (
+      {myFloqs.length > 0 ? (
         <div className="space-y-4">
           <h4 className="font-medium">Your Active Floqs</h4>
           <div className="grid grid-cols-3 gap-3">
@@ -118,6 +113,13 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
               );
             })}
           </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h4 className="font-medium">Your Active Floqs</h4>
+          <p className="text-sm text-muted-foreground">
+            You haven't joined any Floqs yet. Create a new one below or proceed with a solo plan.
+          </p>
         </div>
       )}
 
@@ -187,9 +189,9 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
       <Button
         className="w-full"
         onClick={handleNext}
-        disabled={value.length === 0 || (value.length > 1 && !combinedName.trim())}
+        disabled={value.length > 1 && !combinedName.trim()}
       >
-        Continue
+        {value.length === 0 ? 'Create Solo Plan' : 'Continue'}
       </Button>
     </div>
   );
