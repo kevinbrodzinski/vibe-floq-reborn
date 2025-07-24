@@ -319,6 +319,27 @@ export type Database = {
           },
         ]
       }
+      app_user_notification: {
+        Row: {
+          created_at: string | null
+          id: number
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          payload: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_afterglow: {
         Row: {
           ai_summary: string | null
