@@ -5,6 +5,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { TimeDialStep } from '@/components/new-plan/TimeDialStep'
 import { DetailsStep } from '@/components/new-plan/DetailsStep'
 import { ReviewStep } from '@/components/new-plan/ReviewStep'
+import { PlanFloqStep } from '@/components/plans/PlanFloqStep'
 import { useCreatePlan } from '@/hooks/useCreatePlan'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,10 @@ export interface PlanDraft extends PlanDetails, TimeRange {
   duration_hours: number
 }
 
+type FloqSelection =
+  | { type: 'existing'; floqId: string; name: string; autoDisband: boolean }
+  | { type: 'new'; name: string; autoDisband: boolean };
+
 interface NavigationState {
   floqId?: string
   floqTitle?: string
@@ -43,7 +48,7 @@ export function NewPlanWizard() {
   // Get floq context from navigation state
   const navigationState = location.state as NavigationState | undefined
   
-  const [step, setStep] = useState<0 | 1 | 2>(0)
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
   const [timeRange, setTimeRange] = useState<TimeRange>({ start: '18:00', end: '00:00' })
   const [durationHours, setDurationHours] = useState<4 | 6 | 8 | 12>(6)
   const [details, setDetails] = useState<PlanDetails>({
@@ -53,6 +58,7 @@ export function NewPlanWizard() {
     invitedUserIds: [],
     floqId: navigationState?.floqId || null
   })
+  const [floqSelections, setFloqSelections] = useState<FloqSelection[]>([])
 
   // Set initial plan details based on template type and floq context
   useEffect(() => {
@@ -82,24 +88,25 @@ export function NewPlanWizard() {
     }
   }, [navigationState])
 
-  const totalSteps = 3
+  const totalSteps = 4
   const progress = ((step + 1) / totalSteps) * 100
 
   const steps = [
     { title: 'Set Time Window', description: 'When will your plan happen?' },
     { title: 'Plan Details', description: 'Tell us about your plan' },
+    { title: 'Choose Floqs', description: 'Which Floqs should this plan be linked to?' },
     { title: 'Review & Create', description: 'Ready to make it happen?' }
   ]
 
   const handleNext = () => {
-    if (step < 2) {
-      setStep(prev => prev + 1 as 1 | 2)
+    if (step < 3) {
+      setStep(prev => (prev + 1) as 1 | 2 | 3)
     }
   }
   
   const handleBack = () => {
     if (step > 0) {
-      setStep(prev => prev - 1 as 0 | 1)
+      setStep(prev => (prev - 1) as 0 | 1 | 2)
     }
   }
 
@@ -192,6 +199,14 @@ export function NewPlanWizard() {
             )}
             
             {step === 2 && (
+              <PlanFloqStep
+                value={floqSelections}
+                onChange={setFloqSelections}
+                onNext={handleNext}
+              />
+            )}
+            
+            {step === 3 && (
               <ReviewStep
                 draft={{
                   ...details,

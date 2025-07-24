@@ -32,6 +32,8 @@ export type FloqMessageRow = Database['public']['Tables']['floq_messages']['Row'
 
 export type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow']['Row']
 
+export type PlanFloqRow = Database['public']['Tables']['plan_floqs']['Row']
+
 // Helper types for JSON fields
 export type JsonArray = Array<any>
 export type JsonObject = { [key: string]: any }

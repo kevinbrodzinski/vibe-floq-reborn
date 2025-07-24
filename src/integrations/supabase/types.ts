@@ -1831,6 +1831,42 @@ export type Database = {
           },
         ]
       }
+      plan_floqs: {
+        Row: {
+          auto_disband: boolean
+          created_at: string
+          floq_id: string
+          plan_id: string
+        }
+        Insert: {
+          auto_disband?: boolean
+          created_at?: string
+          floq_id: string
+          plan_id: string
+        }
+        Update: {
+          auto_disband?: boolean
+          created_at?: string
+          floq_id?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_floqs_floq_id_fkey"
+            columns: ["floq_id"]
+            isOneToOne: false
+            referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_floqs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_invitations: {
         Row: {
           archived: boolean | null
@@ -6276,6 +6312,10 @@ export type Database = {
       }
       user_is_floq_participant: {
         Args: { p_floq_id: string; p_user_id?: string }
+        Returns: boolean
+      }
+      user_is_member_of_floq: {
+        Args: { _floq_id: string }
         Returns: boolean
       }
       user_is_plan_participant: {
