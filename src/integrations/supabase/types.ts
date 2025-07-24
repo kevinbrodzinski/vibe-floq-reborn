@@ -1240,7 +1240,7 @@ export type Database = {
           geo: unknown | null
           id: string
           last_activity_at: string | null
-          location: unknown
+          location: unknown | null
           max_participants: number | null
           name: string | null
           parent_flock_id: string | null
@@ -1272,7 +1272,7 @@ export type Database = {
           geo?: unknown | null
           id?: string
           last_activity_at?: string | null
-          location: unknown
+          location?: unknown | null
           max_participants?: number | null
           name?: string | null
           parent_flock_id?: string | null
@@ -1304,7 +1304,7 @@ export type Database = {
           geo?: unknown | null
           id?: string
           last_activity_at?: string | null
-          location?: unknown
+          location?: unknown | null
           max_participants?: number | null
           name?: string | null
           parent_flock_id?: string | null
