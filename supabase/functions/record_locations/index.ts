@@ -1,100 +1,56 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type': 'application/json',
-};
-
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-);
-
-interface LocationPing {
-  ts: string;
-  lat: number;
-  lng: number;
-  acc?: number;
 }
 
-interface RequestBody {
-  user_id: string;
-  batch: LocationPing[];
-}
+type Ping = { ts: string; lat: number; lng: number; acc?: number };
 
 export default async (req: Request) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response('POST only', { status: 405, headers: corsHeaders });
-  }
-
   try {
-    // Secure & throttle the record_locations edge-function
-    const { data: { user } } = await supabaseAdmin.auth.getUser();
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }), 
-        { status: 401, headers: corsHeaders }
-      );
-    }
+    const { user_id, batch } = await req.json() as { user_id: string; batch: Ping[] };
 
-    const { batch } = await req.json();
-    
-    if (!Array.isArray(batch) || batch.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Bad payload - batch array required' }), 
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    if (batch.length > 300) {
-      return new Response(
-        JSON.stringify({ error: 'Batch too large - max 300 items' }), 
-        { status: 413, headers: corsHeaders }
-      );
-    }
-
-    console.log(`Recording ${batch.length} location pings for user ${user.id}`);
-
-    // Convert batch to staging table rows - never trust body.user_id
-    const rows = batch.map((ping: LocationPing) => ({
-      user_id: user.id,  // always use authenticated user ID
-      captured_at: ping.ts,
-      lat: ping.lat,
-      lng: ping.lng,
-      acc: ping.acc ?? null
+    const rows = batch.map(p => ({
+      user_id,
+      captured_at: p.ts,
+      lat: p.lat,
+      lng: p.lng,
+      acc: p.acc ?? null
     }));
 
-    // Bulk insert into staging table (fast UNLOGGED)
-    const { error } = await supabaseAdmin
-      .from('raw_locations_staging')
+    const { error } = await supabase
+      .from("raw_locations_staging")
       .insert(rows);
 
     if (error) {
       console.error('Database insert error:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to insert location data' }), 
-        { status: 500, headers: corsHeaders }
-      );
+      return new Response(JSON.stringify(error), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`Successfully inserted ${rows.length} location records`);
+    console.log(`Successfully inserted ${rows.length} location pings for user ${user_id}`);
+    
+    return new Response(JSON.stringify({ inserted: rows.length }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
-    return new Response(
-      JSON.stringify({ ok: true, inserted: rows.length }), 
-      { headers: corsHeaders }
-    );
-
-  } catch (err) {
-    console.error('record_locations error:', err);
-    return new Response(
-      JSON.stringify({ error: err.message }), 
-      { status: 500, headers: corsHeaders }
-    );
+  } catch (error) {
+    console.error('Edge function error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 };

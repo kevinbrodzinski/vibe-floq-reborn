@@ -37,12 +37,15 @@ const distanceInMeters = (lat1: number, lng1: number, lat2: number, lng2: number
 };
 
 let lastPing: LocationPing | null = null;
+let watchId: number | null = null;
+let flushInterval: number | null = null;
 
 export const useUserLocation = () => {
   const { user } = useAuth();
   const [location, setLocation] = useState<LocationData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
 
   // Also provide the simplified pos interface for the FieldCanvas
   const pos = location ? {
@@ -51,19 +54,21 @@ export const useUserLocation = () => {
     accuracy: location.coords.accuracy,
   } : null;
 
-  useEffect(() => {
+  const startTracking = () => {
     if (!('geolocation' in navigator)) {
       setError('Geolocation not supported');
-      setLoading(false);
       return;
     }
 
     if (!user) {
-      setLoading(false);
+      setError('User not authenticated');
       return;
     }
 
-    const watchId = navigator.geolocation.watchPosition(
+    setLoading(true);
+    setError(null);
+
+    watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
         const geohash = ngeohash.encode(coords.latitude, coords.longitude, 7);
         const locationData = {
@@ -78,8 +83,9 @@ export const useUserLocation = () => {
         setLocation(locationData);
         setLoading(false);
         setError(null);
+        setIsTracking(true);
 
-        // Front-end location throttle - ignore tiny jitter
+        // Front-end location throttle - improved logic
         const newPing: LocationPing = {
           ts: new Date().toISOString(),
           lat: coords.latitude,
@@ -87,10 +93,11 @@ export const useUserLocation = () => {
           acc: coords.accuracy
         };
 
-        if (lastPing &&
-            distanceInMeters(coords.latitude, coords.longitude, lastPing.lat, lastPing.lng) < 20 &&
-            Date.now() - new Date(lastPing.ts).valueOf() < 20_000) {
-          return; // ignore tiny jitter
+        // Skip if too close to last ping
+        if (locationBuffer.length &&
+            Math.abs(coords.latitude - locationBuffer.at(-1)!.lat) < 0.00005 &&
+            Date.now() - Date.parse(locationBuffer.at(-1)!.ts) < 12_000) {
+          return; // skip duplicate
         }
 
         // Add to buffer for venue matching
@@ -100,6 +107,7 @@ export const useUserLocation = () => {
       err => {
         setError(err.message);
         setLoading(false);
+        setIsTracking(false);
       },
       {
         enableHighAccuracy: true,
@@ -109,7 +117,7 @@ export const useUserLocation = () => {
     );
 
     // Flush location buffer every 15 seconds
-    const flushInterval = setInterval(async () => {
+    flushInterval = window.setInterval(async () => {
       if (locationBuffer.length === 0 || !user) return;
 
       const batch = locationBuffer.splice(0, locationBuffer.length);
@@ -127,12 +135,35 @@ export const useUserLocation = () => {
         }
       }
     }, 15_000);
+  };
 
-    return () => {
+  const stopTracking = () => {
+    if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    if (flushInterval !== null) {
       clearInterval(flushInterval);
-    };
-  }, [user]);
+      flushInterval = null;
+    }
+    setIsTracking(false);
+    setLoading(false);
+  };
 
-  return { location, loading, error, pos };
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopTracking();
+    };
+  }, []);
+
+  return { 
+    location, 
+    loading, 
+    error, 
+    pos, 
+    isTracking, 
+    startTracking, 
+    stopTracking 
+  };
 };
