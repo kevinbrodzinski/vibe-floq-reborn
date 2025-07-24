@@ -97,6 +97,8 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
   }, [planId, debouncedFetchParticipants]);
 
   const updateActivity = async (activity: ParticipantPresence['currentActivity']) => {
+    if (options.silent) return; // Don't broadcast when silent
+    
     const channel = supabase.channel(`plan-presence-${planId}`);
     const { data: { user } } = await supabase.auth.getUser();
     

@@ -33,7 +33,7 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
 
         // Fetch floqs user participates in (both created and joined)
         const { data, error } = await supabase
-          .from('floq_participants')
+          .from('floq_members')
           .select(`
             floq:floqs!inner(
               id, 
@@ -76,9 +76,10 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
   const addNew = () => {
     if (!newName.trim()) return;
     
-    // Check for duplicates
-    const nameExists = myFloqs.some(f => (f.title || f.name) === newName.trim()) ||
-                      value.some(v => v.type === 'new' && v.name === newName.trim());
+    // Case-insensitive name check
+    const nameLC = newName.trim().toLowerCase();
+    const nameExists = myFloqs.some(f => (f.title || f.name)?.toLowerCase() === nameLC) ||
+                      value.some(v => v.type === 'new' && v.name.toLowerCase() === nameLC);
     
     if (nameExists) {
       alert('A Floq with this name already exists');
@@ -108,11 +109,15 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
       return;
     }
     
+    // Final de-dupe: const deduped = value.filter((v,i,a) => i === a.findIndex(x => x.type === v.type && x.name.toLowerCase() === v.name.toLowerCase())); onChange(deduped);
+    const deduped = value.filter((v, i, a) => i === a.findIndex(x => x.type === v.type && x.name.toLowerCase() === v.name.toLowerCase()));
+    onChange(deduped);
+    
     // Add super-Floq as a new selection if multiple floqs selected
     if (selCount > 1 && superName.trim()) {
-      const hasSuperFloq = value.some(v => v.type === 'new' && v.name === superName.trim());
+      const hasSuperFloq = deduped.some(v => v.type === 'new' && v.name.toLowerCase() === superName.trim().toLowerCase());
       if (!hasSuperFloq) {
-        onChange([...value, { type: 'new', name: superName.trim(), autoDisband: false }]);
+        onChange([...deduped, { type: 'new', name: superName.trim(), autoDisband: false }]);
       }
     } else if (selCount > 1 && !superName.trim()) {
       alert('Please name your combined Floq');

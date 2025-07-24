@@ -18,10 +18,8 @@ export interface PlanWizardData {
   invitedParticipants: string[];
 }
 
-type WizardStep = 'details' | 'invites' | 'complete';
-
 export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWizardProps) => {
-  const [currentStep, setCurrentStep] = useState<WizardStep>('details');
+  const [step, setStep] = useState<number>(0);
   const [isCreating, setIsCreating] = useState(false);
   const [planDetails, setPlanDetails] = useState<PlanDetails | null>(null);
   const [invitedParticipants, setInvitedParticipants] = useState<string[]>([]);
@@ -32,12 +30,12 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
     { id: 'complete', title: 'Ready!', description: 'Plan created successfully' }
   ];
 
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
-  const progress = ((currentStepIndex + 1) / steps.length) * 100;
+  const progress = ((step + 1) / steps.length) * 100;
+  const currentStep = steps[step]?.id;
 
   const handleDetailsSubmit = (details: PlanDetails) => {
     setPlanDetails(details);
-    setCurrentStep('invites');
+    setStep(1);
   };
 
   const handleInvitesComplete = async (participants: string[]) => {
@@ -50,7 +48,7 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
           details: planDetails,
           invitedParticipants: participants
         });
-        setCurrentStep('complete');
+        setStep(2);
       }
     } finally {
       setIsCreating(false);
@@ -59,17 +57,17 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
 
   const handleClose = () => {
     if (isCreating) return; // Prevent closing during creation
-    setCurrentStep('details');
+    setStep(0);
     setPlanDetails(null);
     setInvitedParticipants([]);
     onClose();
   };
 
-  const getStepIcon = (step: typeof steps[0], index: number) => {
-    if (index < currentStepIndex) {
+  const getStepIcon = (stepItem: typeof steps[0], index: number) => {
+    if (index < step) {
       return <Check className="w-4 h-4 text-primary" />;
     }
-    if (index === currentStepIndex) {
+    if (index === step) {
       return (
         <div className="w-4 h-4 rounded-full bg-primary animate-pulse" />
       );
@@ -97,7 +95,7 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
                 <div>
                   <div className={cn(
                     "font-medium",
-                    index <= currentStepIndex ? "text-foreground" : "text-muted-foreground"
+                    index <= step ? "text-foreground" : "text-muted-foreground"
                   )}>
                     {step.title}
                   </div>
@@ -122,7 +120,7 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
           {currentStep === 'invites' && (
             <InviteFriendsModal
               floqId={floqId}
-              onClose={() => setCurrentStep('details')}
+              onClose={() => setStep(0)}
               onComplete={handleInvitesComplete}
               inline={true}
             />
