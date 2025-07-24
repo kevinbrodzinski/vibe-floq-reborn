@@ -39,7 +39,7 @@ export default function ProfileInsights() {
     )
   }
 
-  const chartData = data?.timeData.map(d => ({
+  const chartData = data?.timeData?.map(d => ({
     day: format(parseISO(d.day), 'MMM dd'),
     minutes: Math.round(d.minutes_spent || 0),
     date: d.day
