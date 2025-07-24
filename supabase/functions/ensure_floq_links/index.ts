@@ -47,61 +47,134 @@ serve(async (req) => {
     } = await supabase.auth.getUser()
     if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders })
 
-    const { planId, selections }: { planId: string; selections: Selection[] } =
-      await req.json()
+    const { planId, selections, combinedName }: { 
+      planId: string; 
+      selections: Selection[]; 
+      combinedName?: string 
+    } = await req.json()
 
     const userId = user.id
 
-    console.log('Processing Floq links for plan:', planId, 'selections:', selections)
+    console.log('Processing Floq links for plan:', planId, 'selections:', selections, 'combinedName:', combinedName)
 
-    /* Step 1 — create any NEW floqs */
-    const newSelections = selections.filter((s): s is SelectionNew => s.type === 'new')
-    const createdIds: Record<string, string> = {}
+    const existing = selections.filter((s): s is SelectionExisting => s.type === 'existing')
+    const newNamed = selections.filter((s): s is SelectionNew => s.type === 'new')
 
-    if (newSelections.length) {
-      const rows = newSelections.map((s) => ({
-        id: nanoid(),
-        title: s.name,
-        description: `Created for plan`,
-        creator_id: userId,
-        location: 'POINT(0 0)', // Default location
-        primary_vibe: 'social',
-        visibility: 'private',
-        flock_type: 'momentary'
-      }))
-      
-      const { data: createdFloqs, error: newErr } = await supabase
-        .from('floqs')
-        .insert(rows)
-        .select('id, title')
-      
-      throwIf(newErr, 'Failed to create new floqs')
-      
-      // Map created floqs by name
-      newSelections.forEach((selection, idx) => {
-        if (createdFloqs && createdFloqs[idx]) {
-          createdIds[selection.name] = createdFloqs[idx].id
-        }
+    // Case C: Zero floqs selected (solo plan)
+    if (!existing.length && !newNamed.length) {
+      console.log('Case C: Solo plan, no floqs to link')
+      return new Response(JSON.stringify({ ok: true }), { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
 
-      // Add creator as participant to new floqs
-      if (createdFloqs) {
-        const participantRows = createdFloqs.map(floq => ({
-          floq_id: floq.id,
-          user_id: userId,
-          role: 'creator'
-        }))
+    // Case A: Single existing floq
+    if (existing.length === 1 && !combinedName && !newNamed.length) {
+      console.log('Case A: Single existing floq')
+      const { error: linkErr } = await supabase
+        .from('plan_floqs')
+        .insert({
+          plan_id: planId,
+          floq_id: existing[0].floqId,
+          auto_disband: existing[0].autoDisband,
+        })
+      
+      throwIf(linkErr, 'Failed to link existing floq to plan')
+      
+      console.log('Successfully linked existing floq to plan:', planId)
+      return new Response(JSON.stringify({ ok: true }), { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Case B: Multiple floqs or new floqs (need to create new floqs)
+    console.log('Case B: Creating new floqs and linking')
+    const createdIds: string[] = []
+
+    // 1. Create every "new" floq the user typed
+    for (const newFloq of newNamed) {
+      const { data: created, error: createErr } = await supabase
+        .from('floqs')
+        .insert({
+          id: nanoid(),
+          title: newFloq.name,
+          description: 'Created for plan',
+          creator_id: userId,
+          location: 'POINT(0 0)',
+          primary_vibe: 'social',
+          visibility: 'private',
+          flock_type: 'momentary'
+        })
+        .select('id')
+        .single()
+      
+      throwIf(createErr, `Failed to create new floq: ${newFloq.name}`)
+      
+      if (created) {
+        createdIds.push(created.id)
         
-        const { error: participantErr } = await supabase.from('floq_participants').insert(participantRows)
+        // Add creator as participant
+        const { error: participantErr } = await supabase
+          .from('floq_participants')
+          .insert({
+            floq_id: created.id,
+            user_id: userId,
+            role: 'creator'
+          })
+        
         throwIf(participantErr, 'Failed to add creator as participant')
       }
     }
 
-    /* Step 2 — upsert into plan_floqs */
-    const links = selections.map((s) => ({
+    // 2. If combinedName present → create super floq
+    let superId: string | undefined
+    if (combinedName) {
+      const { data: superFloq, error: superErr } = await supabase
+        .from('floqs')
+        .insert({
+          id: nanoid(),
+          title: combinedName,
+          description: 'Combined floq for plan',
+          creator_id: userId,
+          location: 'POINT(0 0)',
+          primary_vibe: 'social',
+          visibility: 'private',
+          flock_type: 'momentary'
+        })
+        .select('id')
+        .single()
+      
+      throwIf(superErr, 'Failed to create super floq')
+      
+      if (superFloq) {
+        superId = superFloq.id
+        createdIds.push(superId)
+        
+        // Add creator as participant
+        const { error: participantErr } = await supabase
+          .from('floq_participants')
+          .insert({
+            floq_id: superId,
+            user_id: userId,
+            role: 'creator'
+          })
+        
+        throwIf(participantErr, 'Failed to add creator as participant to super floq')
+      }
+    }
+
+    // 3. Link everything that now exists
+    const allIds = [
+      ...existing.map(e => e.floqId),
+      ...createdIds
+    ]
+
+    const links = allIds.map(floqId => ({
       plan_id: planId,
-      floq_id: s.type === 'existing' ? s.floqId : createdIds[s.name],
-      auto_disband: s.autoDisband,
+      floq_id: floqId,
+      auto_disband: false // Set based on your logic
     }))
 
     const { error: linkErr } = await supabase
@@ -109,33 +182,6 @@ serve(async (req) => {
       .upsert(links, { onConflict: 'plan_id,floq_id' })
     
     throwIf(linkErr, 'Failed to link floqs to plan')
-
-    /* Step 3 — add all plan participants to these floqs */
-    const { data: participants } = await supabase
-      .from('plan_participants')
-      .select('user_id')
-      .eq('plan_id', planId)
-
-    if (participants && participants.length > 0) {
-      const memberRows = links.flatMap((l) =>
-        participants.map((p) => ({
-          floq_id: l.floq_id,
-          user_id: p.user_id,
-          role: 'member'
-        }))
-      )
-
-      if (memberRows.length) {
-        const { error: memberErr } = await supabase
-          .from('floq_participants')
-          .upsert(memberRows, {
-            onConflict: 'floq_id,user_id',
-            ignoreDuplicates: true,
-          })
-        
-        throwIf(memberErr, 'Failed to add participants to floqs')
-      }
-    }
 
     console.log('Successfully processed Floq links for plan:', planId)
     return new Response(JSON.stringify({ ok: true }), { 
