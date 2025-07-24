@@ -1,4 +1,4 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 const Check = lazy(() => import('lucide-react').then(m => ({ default: m.Check })));
 
@@ -39,7 +39,9 @@ export function EnhancedOnboardingProgress({
                 'bg-muted text-muted-foreground'}
               `}
             >
-              {done ? <Check className="w-3 h-3" /> : i + 1}
+              <Suspense fallback={null}>
+                {done ? <Check size={12} /> : i + 1}
+              </Suspense>
             </motion.button>
           );
         })}

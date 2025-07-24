@@ -28,7 +28,7 @@ export function NetworkStatusBanner() {
         {showOffline ? (
           <>📡 No Internet Connection</>
         ) : (
-          <>✅ Back Online{isSlowConnection && <span className="ml-1 text-warning-500">(Slow)</span>}</>
+          <>✅ Back Online{isSlowConnection && <span className="ml-1 text-xs text-amber-400">Slow</span>}</>
         )}
       </div>
     </div>

@@ -8,10 +8,11 @@ export type HapticPattern =
 interface Options { enabled?: boolean; throttle?: number; }
 
 /* Simple UA helper reused elsewhere */
-const isMobile = () =>
-  typeof navigator !== 'undefined' &&
-  (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-   (typeof window !== 'undefined' && 'ontouchstart' in window));
+const isMobile = () => {
+  if (typeof navigator === 'undefined') return false;
+  const uaMatch = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return uaMatch || (typeof window !== 'undefined' && 'ontouchstart' in window);
+};
 
 export function useAdvancedHaptics({ enabled = true, throttle = 100 }: Options = {}) {
   const last = useRef<number>(0);
@@ -52,9 +53,10 @@ export function useAdvancedHaptics({ enabled = true, throttle = 100 }: Options =
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        const freq: Record<HapticPattern, number> =
-          { light: 900, medium: 700, heavy: 500, success: 1000,
-            warning: 800, error: 300, selection: 1100, impact: 600, notification: 950 };
+        const freq: Record<HapticPattern, number> = {
+          light: 900, medium: 700, heavy: 500, success: 1000,
+          warning: 800, error: 300, selection: 1100, impact: 600, notification: 950
+        };
 
         osc.frequency.value = freq[pattern] ?? 800;
         gain.gain.setValueAtTime(0.02, ctx.currentTime);
