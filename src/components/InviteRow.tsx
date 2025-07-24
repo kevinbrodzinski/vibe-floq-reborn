@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlanCardCompact } from '@/components/PlanCardCompact';
+import { PlanCardCompact } from '@/components/plans/PlanCardCompact';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 

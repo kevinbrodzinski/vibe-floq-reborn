@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUserInvitations } from '@/hooks/useUserInvitations';
-import { PlanCardCompact } from '@/components/PlanCardCompact';
+import { PlanCardCompact } from '@/components/plans/PlanCardCompact';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

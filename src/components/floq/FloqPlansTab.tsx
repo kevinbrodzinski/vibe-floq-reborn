@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Plus, MapPin, Clock, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFloqPlans } from '@/hooks/useFloqPlans';
-import { PlanCard } from '@/components/floq/PlanCard';
+import { PlanCard } from '@/components/plans/PlanCardFloq';
 import type { FloqDetails } from '@/hooks/useFloqDetails';
 
 interface FloqPlansTabProps {

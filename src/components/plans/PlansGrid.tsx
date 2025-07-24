@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PlanCard } from './PlanCard';
+import { PlanCard } from './PlanCardLarge';
 import { PlanStatus } from '@/types/enums/planStatus';
 
 interface PlansGridProps {
