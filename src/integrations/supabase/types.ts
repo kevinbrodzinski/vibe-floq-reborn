@@ -4364,7 +4364,7 @@ export type Database = {
       }
       generate_daily_afterglow_sql: {
         Args: { p_user_id: string; p_date: string }
-        Returns: string
+        Returns: Json
       }
       generate_floq_suggestions: {
         Args: {
