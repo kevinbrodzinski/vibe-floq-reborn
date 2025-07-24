@@ -1086,10 +1086,14 @@ export type Database = {
           end_at: string | null
           end_time: string | null
           execution_started_at: string | null
+          finalized_by: string | null
           floq_id: string | null
           id: string
           location: unknown | null
+          locked_at: string | null
           max_participants: number | null
+          plan_mode: Database["public"]["Enums"]["plan_mode"]
+          plan_summary: string | null
           planned_at: string
           start_time: string | null
           status: Database["public"]["Enums"]["plan_status_enum"] | null
@@ -1111,10 +1115,14 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           execution_started_at?: string | null
+          finalized_by?: string | null
           floq_id?: string | null
           id?: string
           location?: unknown | null
+          locked_at?: string | null
           max_participants?: number | null
+          plan_mode?: Database["public"]["Enums"]["plan_mode"]
+          plan_summary?: string | null
           planned_at: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
@@ -1136,10 +1144,14 @@ export type Database = {
           end_at?: string | null
           end_time?: string | null
           execution_started_at?: string | null
+          finalized_by?: string | null
           floq_id?: string | null
           id?: string
           location?: unknown | null
+          locked_at?: string | null
           max_participants?: number | null
+          plan_mode?: Database["public"]["Enums"]["plan_mode"]
+          plan_summary?: string | null
           planned_at?: string
           start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
@@ -2113,6 +2125,7 @@ export type Database = {
           id: string
           location: unknown | null
           plan_id: string
+          sort_order: number
           start_time: string | null
           stop_order: number
           stop_type: string | null
@@ -2131,6 +2144,7 @@ export type Database = {
           id?: string
           location?: unknown | null
           plan_id: string
+          sort_order?: number
           start_time?: string | null
           stop_order: number
           stop_type?: string | null
@@ -2149,6 +2163,7 @@ export type Database = {
           id?: string
           location?: unknown | null
           plan_id?: string
+          sort_order?: number
           start_time?: string | null
           stop_order?: number
           stop_type?: string | null
@@ -3647,6 +3662,10 @@ export type Database = {
             }
         Returns: string
       }
+      assert_plan_is_draft: {
+        Args: { _plan_id: string }
+        Returns: undefined
+      }
       attempt_claim_username: {
         Args: { desired: string } | { desired: string }
         Returns: boolean
@@ -4934,7 +4953,7 @@ export type Database = {
       }
       reorder_plan_stops: {
         Args:
-          | { p_plan_id: string; p_stop_ids: string[] }
+          | { _plan_id: string; _ordered_stop_ids: string[] }
           | { p_plan_id: string; p_stop_orders: Json }
         Returns: undefined
       }
@@ -6378,6 +6397,7 @@ export type Database = {
       mention_permissions_enum: "all" | "co-admins" | "host"
       mention_target: "user" | "venue" | "plan"
       onboarding_version_enum: "v1" | "v2"
+      plan_mode: "draft" | "finalized" | "executing" | "completed"
       plan_role_enum: "participant" | "organizer"
       plan_status_enum:
         | "draft"
@@ -6603,6 +6623,7 @@ export const Constants = {
       mention_permissions_enum: ["all", "co-admins", "host"],
       mention_target: ["user", "venue", "plan"],
       onboarding_version_enum: ["v1", "v2"],
+      plan_mode: ["draft", "finalized", "executing", "completed"],
       plan_role_enum: ["participant", "organizer"],
       plan_status_enum: [
         "draft",
