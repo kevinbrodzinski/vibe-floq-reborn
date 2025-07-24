@@ -28,13 +28,17 @@ import { NewPlanWizard } from '@/pages/NewPlanWizard';
 import FloqPlan from '@/pages/FloqPlan';
 import SharedPlan from '@/pages/SharedPlan';
 import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
+import DailyRecapGate from '@/pages/DailyRecapGate';
+import RecapActionSheet from '@/pages/RecapActionSheet';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
   
   return (
   <Routes>
-    <Route path="/" element={<FieldScreen />} />
+    <Route path="/" element={<DailyRecapGate />} />
+    <Route path="/home" element={<FieldScreen />} />
+    <Route path="/recap-actions" element={<RecapActionSheet />} />
     <Route path="/field" element={<LegacyRedirect />} />
     <Route path="/floqs" element={<FlocksHome />} />
     <Route path="/floqs/:floqId" element={<FloqDetail />} />

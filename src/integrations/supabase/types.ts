@@ -442,6 +442,27 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_recap_cache: {
+        Row: {
+          created_at: string | null
+          day: string
+          payload: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day: string
+          payload: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day?: string
+          payload?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           content: string
@@ -4058,6 +4079,14 @@ export type Database = {
         }
         Relationships: []
       }
+      v_time_in_venue_daily: {
+        Row: {
+          day: string | null
+          minutes_spent: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       v_user_plans: {
         Row: {
           archived_at: string | null
@@ -4334,6 +4363,10 @@ export type Database = {
       }
       build_daily_afterglow: {
         Args: { _day: string }
+        Returns: Json
+      }
+      build_daily_recap: {
+        Args: { uid: string; d: string }
         Returns: Json
       }
       bulk_upsert_relationships: {
@@ -5269,6 +5302,14 @@ export type Database = {
           participant_count: number
           distance_meters: number
           starts_at: string
+        }[]
+      }
+      get_yearly_stats: {
+        Args: { uid: string; yyyy: number }
+        Returns: {
+          year: number
+          total_venues: number
+          total_minutes: number
         }[]
       }
       gettransactionid: {
@@ -6886,6 +6927,10 @@ export type Database = {
       update_username: {
         Args: { p_username: string }
         Returns: Json
+      }
+      update_venue_popularity: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       updategeometrysrid: {
         Args: {
