@@ -123,6 +123,7 @@ export function NewPlanWizard() {
         ...details,
         ...timeRange,
         duration_hours: durationHours,
+        linkedFloqId: details.floqId, // Pass the selected floq ID
         floqSelections: floqSelections,
       }
       
@@ -197,6 +198,7 @@ export function NewPlanWizard() {
                 onChange={setDetails}
                 onNext={handleNext}
                 onBack={handleBack}
+                onCreateFloq={() => setStep(2)} // Skip to floq creation step
               />
             )}
             

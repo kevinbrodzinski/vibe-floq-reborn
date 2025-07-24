@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { VibePill } from '@/components/floq/VibePill'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Users, Tag, X, Globe } from 'lucide-react'
+import { Users, Tag, X, Globe, Plus } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
 import { useFriends } from '@/hooks/useFriends'
 import { useMyFloqs } from '@/hooks/useMyFloqs'
@@ -24,6 +24,7 @@ interface Props {
   onChange: (details: PlanDetails) => void
   onNext: () => void
   onBack?: () => void
+  onCreateFloq?: () => void
 }
 
 const vibeOptions = [
@@ -39,7 +40,7 @@ const vibeOptions = [
   { label: 'Open', value: 'open' },
 ]
 
-export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
+export function DetailsStep({ draft, onChange, onNext, onBack, onCreateFloq }: Props) {
   const [details, setDetails] = useState(draft)
   const [pickerOpen, setPickerOpen] = useState(false)
   const { profiles } = useFriends()
@@ -112,7 +113,13 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
         </Label>
         <Select 
           value={details.floqId || 'none'} 
-          onValueChange={(value) => updateField('floqId', value === 'none' ? null : value)}
+          onValueChange={(value) => {
+            if (value === '__create__') {
+              onCreateFloq?.()
+            } else {
+              updateField('floqId', value === 'none' ? null : value)
+            }
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select a floq or create solo plan" />
@@ -124,6 +131,12 @@ export function DetailsStep({ draft, onChange, onNext, onBack }: Props) {
                 {floq.title || floq.name || 'Untitled Floq'}
               </SelectItem>
             ))}
+            <SelectItem value="__create__">
+              <div className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                + New Floq
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
         <p className="text-sm text-muted-foreground">
