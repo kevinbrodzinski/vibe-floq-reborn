@@ -61,6 +61,7 @@ export function NewPlanWizard() {
     floqId: navigationState?.floqId || null
   })
   const [floqSelections, setFloqSelections] = useState<FloqSelection[]>([])
+  const [combinedFloqName, setCombinedFloqName] = useState('')
 
   // Set initial plan details based on template type and floq context
   useEffect(() => {
@@ -124,6 +125,7 @@ export function NewPlanWizard() {
         ...timeRange,
         linkedFloqId: details.floqId, // Pass the selected floq ID
         floqSelections: floqSelections,
+        combinedName: floqSelections.length > 1 ? combinedFloqName.trim() : null,
       }
       
       const planData_result = await createPlan(finalPayload)
@@ -206,6 +208,8 @@ export function NewPlanWizard() {
                 value={floqSelections}
                 onChange={setFloqSelections}
                 onNext={handleNext}
+                combinedName={combinedFloqName}
+                onCombinedNameChange={setCombinedFloqName}
               />
             )}
             
@@ -219,6 +223,8 @@ export function NewPlanWizard() {
                 onCreate={handleCreate}
                 isCreating={isPending}
                 onBack={handleBack}
+                floqSelections={floqSelections}
+                combinedFloqName={combinedFloqName}
               />
             )}
           </div>

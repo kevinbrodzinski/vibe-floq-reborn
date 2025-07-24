@@ -42,7 +42,8 @@ interface CreatePlanPayload {
   start: string
   end: string
   invitedUserIds: string[]
-  floqSelections: FloqSelection[] // ← new!
+  floqSelections: FloqSelection[]
+  combinedName?: string | null
 }
 
 export function useCreatePlan() {
@@ -85,7 +86,8 @@ export function useCreatePlan() {
       const { error: linkError } = await supabase.functions.invoke('ensure_floq_links', {
         body: {
           planId: planData.id,
-          selections: payload.floqSelections
+          selections: payload.floqSelections,
+          combinedName: payload.combinedName
         }
       })
 

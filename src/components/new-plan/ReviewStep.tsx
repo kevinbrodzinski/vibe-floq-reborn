@@ -14,20 +14,34 @@ interface PlanDraft {
   duration_hours: number
 }
 
+interface FloqSelection {
+  type: 'existing' | 'new'
+  name: string
+  floqId?: string
+  autoDisband?: boolean
+}
+
 interface Props {
   draft: PlanDraft
   onCreate: () => void
   isCreating: boolean
   onBack?: () => void
+  floqSelections?: FloqSelection[]
+  combinedFloqName?: string
 }
 
-export function ReviewStep({ draft, onCreate, isCreating, onBack }: Props) {
+export function ReviewStep({ draft, onCreate, isCreating, onBack, floqSelections = [], combinedFloqName }: Props) {
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number)
     const date = new Date()
     date.setHours(hours, minutes, 0, 0)
     return format(date, 'h:mm a')
   }
+
+  // Logic for showing floq information based on selection count
+  const shouldShowFloqCard = floqSelections.length > 1 || floqSelections.some(s => s.type === 'new')
+  const totalMembers = draft.invitedUserIds.length + 1 // +1 for creator
+  const autoDisband = floqSelections.some(s => s.autoDisband)
 
   return (
     <div className="space-y-6">
@@ -85,6 +99,22 @@ export function ReviewStep({ draft, onCreate, isCreating, onBack }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Linked Floq Card - only show for Case B/C */}
+      {shouldShowFloqCard && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Linked Floq</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="font-medium">{combinedFloqName || 'New Combined Floq'}</p>
+            <p className="text-sm text-muted-foreground">Members added: {totalMembers}</p>
+            <p className="text-sm text-muted-foreground">
+              Disbands after plan? {autoDisband ? 'Yes' : 'No'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Button 
         onClick={onCreate} 

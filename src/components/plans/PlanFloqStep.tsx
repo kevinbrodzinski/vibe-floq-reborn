@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
+import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
+import { toast } from 'sonner';
 
-type ExistingFloq = { id: string; title: string; name?: string };
 type Selection =
   | { type: 'existing'; floqId: string; name: string; autoDisband: boolean }
   | { type: 'new'; name: string; autoDisband: boolean };
@@ -16,65 +16,35 @@ interface Props {
   value: Selection[];
   onChange: (v: Selection[]) => void;
   onNext: () => void;
+  combinedName: string;
+  onCombinedNameChange: (name: string) => void;
 }
 
-export function PlanFloqStep({ value, onChange, onNext }: Props) {
-  const [myFloqs, setMyFloqs] = useState<ExistingFloq[]>([]);
+export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombinedNameChange }: Props) {
+  const { data: myFloqs = [], isLoading } = useMyActiveFloqs();
   const [newName, setNewName] = useState('');
-  const [superName, setSuperName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchMyFloqs = async () => {
-      try {
-        const { data: user } = await supabase.auth.getUser();
-        if (!user.user) return;
-
-        // Two-step fetch to avoid deep recursion
-        const { data: ids } = await supabase
-          .from('floq_participants')
-          .select('floq_id')
-          .eq('user_id', user.user.id);
-        
-        const { data: floqs } = ids?.length ? await supabase
-          .from('floqs')
-          .select('id, title, name')
-          .in('id', ids.map(r => r.floq_id))
-          .is('deleted_at', null) : { data: [] };
-
-        setMyFloqs(floqs ?? []);
-      } catch (error) {
-        console.error('Error in fetchMyFloqs:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMyFloqs();
-  }, []);
-
-  const toggleExisting = (f: ExistingFloq) => {
-    const exists = value.find((v) => v.type === 'existing' && v.floqId === f.id);
-    const displayName = f.title || f.name || 'Untitled Floq';
+  const toggleExisting = (floq: any) => {
+    const exists = value.find((v) => v.type === 'existing' && v.floqId === floq.id);
+    const displayName = floq.title || floq.name || 'Untitled Floq';
     
     onChange(
       exists
-        ? value.filter((v) => !(v.type === 'existing' && v.floqId === f.id))
-        : [...value, { type: 'existing', floqId: f.id, name: displayName, autoDisband: false }]
+        ? value.filter((v) => !(v.type === 'existing' && v.floqId === floq.id))
+        : [...value, { type: 'existing', floqId: floq.id, name: displayName, autoDisband: false }]
     );
   };
 
   const addNew = () => {
     if (!newName.trim()) return;
     
-    // Case-insensitive name check
+    // Check for duplicate names
     const nameLC = newName.trim().toLowerCase();
     const nameExists = myFloqs.some(f => (f.title || f.name)?.toLowerCase() === nameLC) ||
-                      value.some(v => v.type === 'new' && v.name.toLowerCase() === nameLC);
+                      value.some(v => v.name.toLowerCase() === nameLC);
     
     if (nameExists) {
-      alert('A Floq with this name already exists');
+      toast.error('A Floq with this name already exists');
       return;
     }
     
@@ -88,41 +58,23 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
     onChange(newValue);
   };
 
-  const updateAutoDisband = (index: number, autoDisband: boolean) => {
-    const newValue = [...value];
-    newValue[index] = { ...newValue[index], autoDisband };
-    onChange(newValue);
-  };
-
   const handleNext = () => {
-    const selCount = value.length;
-    if (selCount === 0) {
-      alert('Please select at least one Floq or create a new one');
+    // Case validation
+    if (value.length === 0) {
+      toast.error('Pick or create a floq');
       return;
     }
     
-    // Final de-dupe: const deduped = value.filter((v,i,a) => i === a.findIndex(x => x.type === v.type && x.name.toLowerCase() === v.name.toLowerCase())); onChange(deduped);
-    const deduped = value.filter((v, i, a) => i === a.findIndex(x => x.type === v.type && x.name.toLowerCase() === v.name.toLowerCase()));
-    onChange(deduped);
-    
-    // Add super-Floq as a new selection if multiple floqs selected
-    if (selCount > 1 && superName.trim()) {
-      const hasSuperFloq = deduped.some(v => v.type === 'new' && v.name.toLowerCase() === superName.trim().toLowerCase());
-      if (!hasSuperFloq) {
-        onChange([...deduped, { type: 'new', name: superName.trim(), autoDisband: false }]);
-      }
-    } else if (selCount > 1 && !superName.trim()) {
-      alert('Please name your combined Floq');
+    if (value.length > 1 && !combinedName.trim()) {
+      toast.error('Name your combined floq');
       return;
     }
     
-    setSubmitting(true);
     onNext();
-    // Reset submitting after a brief delay to prevent UI issues
-    setTimeout(() => setSubmitting(false), 100);
   };
 
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="flex-1 flex justify-center items-center p-6">
         <p className="text-muted-foreground">Loading your Floqs...</p>
@@ -131,93 +83,114 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
   }
 
   return (
-    <div className="overflow-auto max-h-screen">
-      <div className="space-y-6 p-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold text-foreground">Choose the Floq(s) for this Plan</h2>
-          <p className="text-sm text-muted-foreground">
-            Select existing Floqs or create new ones. Everyone invited to the plan will be added to these Floqs.
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h3 className="text-xl font-semibold">Choose Floqs</h3>
+        <p className="text-muted-foreground">
+          Which Floqs should this plan be linked to?
+        </p>
+      </div>
 
-        {myFloqs.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="font-medium text-foreground">Your Existing Floqs</h3>
-            {myFloqs.map((f) => {
-              const checked = !!value.find((v) => v.type === 'existing' && v.floqId === f.id);
-              const displayName = f.title || f.name || 'Untitled Floq';
+      {/* Your Active Floqs - 3 Column Grid */}
+      {myFloqs.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium">Your Active Floqs</h4>
+          <div className="grid grid-cols-3 gap-3">
+            {myFloqs.map((floq) => {
+              const isSelected = !!value.find((v) => v.type === 'existing' && v.floqId === floq.id);
+              const displayName = floq.title || floq.name || 'Untitled Floq';
               
               return (
-                <div key={f.id} className="flex items-center space-x-3 py-2">
-                  <Checkbox checked={checked} onCheckedChange={() => toggleExisting(f)} />
-                  <Label className="flex-1">{displayName}</Label>
+                <div
+                  key={floq.id}
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    isSelected 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  onClick={() => toggleExisting(floq)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Checkbox checked={isSelected} />
+                    <span className="text-sm font-medium truncate">{displayName}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
-        )}
+        </div>
+      )}
 
-        <Separator />
-        <div className="space-y-4">
-          <h3 className="font-medium text-foreground">Create a New Floq</h3>
-          <div className="flex items-center space-x-3">
-            <Input
-              placeholder="New Floq name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex-1"
-            />
-            <Button size="sm" onClick={addNew} disabled={!newName.trim()}>Add</Button>
+      {/* Create a new floq */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          <span className="font-medium">Create a new floq</span>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Input
+            placeholder="New name"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="flex-1"
+            onKeyDown={(e) => e.key === 'Enter' && addNew()}
+          />
+          <Button size="sm" onClick={addNew} disabled={!newName.trim()}>
+            Add
+          </Button>
+        </div>
+      </div>
+
+      {/* Selected (chips) */}
+      {value.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="font-medium">Selected</h4>
+          <div className="flex flex-wrap gap-2">
+            {value.map((selection, idx) => (
+              <Badge
+                key={idx}
+                variant="secondary"
+                className="flex items-center gap-2 px-3 py-1"
+              >
+                {selection.name}
+                {selection.type === 'new' && ' (New)'}
+                <button
+                  onClick={() => removeSelection(idx)}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+            {value.length > 1 && (
+              <Badge variant="outline" className="px-3 py-1">
+                +{value.length - 1} more
+              </Badge>
+            )}
           </div>
         </div>
+      )}
 
-        {value.length > 0 && (
-          <div className="space-y-4">
-            <Separator />
-            <h3 className="font-medium text-foreground">Selected Floqs</h3>
-            {value.map((selection, idx) => (
-              <div key={idx} className="flex items-center space-x-3 py-2">
-                <p className="flex-1 text-muted-foreground">
-                  {selection.name}{selection.type === 'new' && ' (New)'}
-                </p>
-                {selection.type === 'new' && (
-                  <div className="flex items-center space-x-2">
-                    <Label className="text-xs text-muted-foreground">Disband after?</Label>
-                    <Switch
-                      checked={selection.autoDisband}
-                      onCheckedChange={(checked) => updateAutoDisband(idx, checked)}
-                    />
-                  </div>
-                )}
-                <Button size="sm" variant="outline" onClick={() => removeSelection(idx)}>Remove</Button>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Combined Floq Name - only show when >1 selected */}
+      {value.length > 1 && (
+        <div className="space-y-3">
+          <Label htmlFor="combined-name">Combined Floq Name</Label>
+          <Input
+            id="combined-name"
+            placeholder="e.g. Weekend Warriors Planning"
+            value={combinedName}
+            onChange={(e) => onCombinedNameChange(e.target.value)}
+          />
+        </div>
+      )}
 
-        {value.length > 1 && (
-          <div className="space-y-4">
-            <Separator />
-            <h3 className="font-medium text-foreground">Combined Floq Name</h3>
-            <p className="text-xs text-muted-foreground">
-              Since you've selected multiple Floqs, give your combined group a name:
-            </p>
-            <Input
-              placeholder="e.g., 'Weekend Warriors Planning Group'"
-              value={superName}
-              onChange={(e) => setSuperName(e.target.value)}
-            />
-          </div>
-        )}
-
-        <Button
-          className="w-full mt-6"
-          disabled={value.length === 0 || submitting || (value.length > 1 && !superName.trim())}
-          onClick={handleNext}
-        >
-          {submitting ? 'Processing...' : 'Continue'}
-        </Button>
-      </div>
+      <Button
+        className="w-full"
+        onClick={handleNext}
+        disabled={value.length === 0 || (value.length > 1 && !combinedName.trim())}
+      >
+        Continue
+      </Button>
     </div>
   );
 }
