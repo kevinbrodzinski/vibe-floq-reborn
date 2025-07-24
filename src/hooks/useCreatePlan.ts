@@ -82,25 +82,21 @@ export function useCreatePlan() {
 
       if (planError) throw planError
 
-      // Get current session and pass authorization header explicitly  
+      // Get current session for user ID
       const { data: { session } } = await supabase.auth.getSession()
       
-      // Edge function -> create/link floqs, merge members
-      const { error: linkError } = await supabase.functions.invoke('ensure_floq_links', {
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`
-        } : {},
-        body: {
-          planId: planData.id,
-          selections: payload.floqSelections,
-          combinedName: payload.combinedName,
-          invitedIds: payload.invitedUserIds
-        }
+      if (!session?.user) throw new Error('No session found')
+      
+      // Use RPC function to finalize the plan
+      const { error: finalizeErr } = await supabase.rpc('finalize_plan', {
+        _plan_id: planData.id,
+        _selections: payload.floqSelections,   // full JSON array from wizard
+        _creator: session.user.id,
       })
 
-      if (linkError) {
-        console.error('Failed to link floqs:', linkError)
-        throw new Error('Failed to link floqs to plan')
+      if (finalizeErr) {
+        console.error('Failed to finalize plan:', finalizeErr)
+        throw finalizeErr
       }
 
       // Send invitations if there are any

@@ -3988,6 +3988,10 @@ export type Database = {
           status: string
         }[]
       }
+      finalize_plan: {
+        Args: { _plan_id: string; _selections: Json; _creator: string }
+        Returns: Json
+      }
       find_or_create_dm: {
         Args: { a: string; b: string; p_use_demo?: boolean }
         Returns: string

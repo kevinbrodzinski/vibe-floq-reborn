@@ -4,8 +4,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { WizardPortal } from '@/components/WizardPortal'
 import { TimeDialStep } from '@/components/new-plan/TimeDialStep'
 import { DetailsStep } from '@/components/new-plan/DetailsStep'
-import { ReviewStep } from '@/components/new-plan/ReviewStep'
 import { PlanFloqStep } from '@/components/plans/PlanFloqStep'
+import PlanReviewStep from '@/components/plans/PlanReviewStep'
 import { useCreatePlan } from '@/hooks/useCreatePlan'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
@@ -31,7 +31,7 @@ type FloqSelection =
   | { type: 'existing'; floqId: string; name: string; autoDisband: boolean }
   | { type: 'new'; name: string; autoDisband: boolean };
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3 | 4;
 
 interface NavigationState {
   floqId?: string
@@ -87,19 +87,20 @@ export function NewPlanWizard() {
     }
   }, [navigationState])
 
-  const totalSteps = 4
+  const totalSteps = 5
   const progress = ((step + 1) / totalSteps) * 100
 
   const steps = [
     { title: 'Set Time Window', description: 'When will your plan happen?' },
     { title: 'Plan Details', description: 'Tell us about your plan' },
     { title: 'Choose Floqs', description: 'Which Floqs should this plan be linked to?' },
-    { title: 'Review & Create', description: 'Ready to make it happen?' }
+    { title: 'Review', description: 'Double-check everything' },
+    { title: 'All Done!', description: 'Your plan has been created' }
   ]
 
   const handleNext = () => {
-    if (step < 3) {
-      setStep(prev => Math.min(prev + 1, 3) as Step)
+    if (step < 4) {
+      setStep(prev => Math.min(prev + 1, 4) as Step)
     }
   }
   
@@ -114,31 +115,18 @@ export function NewPlanWizard() {
     setDurationHours(duration)
   }
 
-  const handleCreate = async () => {
+  const handleReviewSubmit = async () => {
     try {
-      // Tighten the combined-name guard
-      const needsSuper = floqSelections.length > 1 || 
-        invitedUserIds.some(uid => 
-          floqSelections.some(sel => 
-            sel.type === 'existing' 
-            // Note: We could add membershipMap check here when available
-          )
-        )
-
-      if (needsSuper && !combinedFloqName.trim()) {
-        return // Let the UI handle validation in PlanFloqStep
-      }
-
       const finalPayload = {
         ...details,
         ...timeRange,
         floqSelections: floqSelections,
-        combinedName: needsSuper ? combinedFloqName.trim() : null,
+        combinedName: combinedFloqName.trim() || null,
         invitedUserIds: invitedUserIds,
       }
       
       const planData_result = await createPlan(finalPayload)
-      navigate(`/plan/${planData_result.id}`, { replace: true })
+      setStep(4) // Go to success step
     } catch (error) {
       console.error('Failed to create plan:', error)
     }
@@ -225,19 +213,31 @@ export function NewPlanWizard() {
             )}
             
             {step === 3 && (
-              <ReviewStep
-                draft={{
-                  ...details,
-                  ...timeRange,
-                  duration_hours: durationHours,
-                  invitedUserIds: invitedUserIds
-                }}
-                onCreate={handleCreate}
-                isCreating={isPending}
+              <PlanReviewStep
+                title={details.title}
+                description={details.description}
+                start={timeRange.start}
+                end={timeRange.end}
+                selections={floqSelections}
+                combinedName={combinedFloqName}
+                invitedIds={invitedUserIds}
                 onBack={handleBack}
-                floqSelections={floqSelections}
-                combinedFloqName={combinedFloqName}
+                onSubmit={handleReviewSubmit}
+                isCreating={isPending}
               />
+            )}
+            
+            {step === 4 && (
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <div className="w-8 h-8 text-green-600">✓</div>
+                </div>
+                <h3 className="text-xl font-semibold">Plan Created!</h3>
+                <p className="text-muted-foreground">
+                  Your plan has been created successfully. You can view it in your plans list.
+                </p>
+                <Button onClick={handleClose}>Close</Button>
+              </div>
             )}
           </div>
         </div>

@@ -68,20 +68,24 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   };
 
   const handleNext = () => {
-    // Tighten the combined-name guard
-    const needsSuper = value.length > 1 || 
-      invitedIds.some(uid => 
-        value.some(sel => 
-          sel.type === 'existing' 
-          // Note: We could add membershipMap check here when available
-        )
-      )
-
-    if (needsSuper && !combinedName.trim()) {
-      toast.error('Give your new group a name')
+    // Validation rules per Phase 2 spec
+    const isSolo = value.length === 0
+    const isSingleExisting = value.length === 1 && value[0].type === 'existing'
+    const hasInvites = invitedIds.length > 0
+    
+    // Case: Single existing + invites (disallow - forces combined floq)
+    if (isSingleExisting && hasInvites) {
+      toast.error("You invited friends that aren't in the selected Floq – please add them as a new group or remove the Floq.")
       return
     }
     
+    // Case: Multiple or new floqs (require combined name)
+    const needsSuper = value.length > 1 || value.some(sel => sel.type === 'new')
+    if (needsSuper && (!combinedName || !combinedName.trim())) {
+      toast.error('Give your new group a name')
+      return
+    }
+
     onNext()
   }
 
