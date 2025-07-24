@@ -32,8 +32,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
   useEffect(() => {
     return () => {
       toastIdsRef.current.forEach(id => {
-        if (typeof id === 'string') {
-          dismiss(id);
+        if (id && typeof (id as any) === 'string') {
+          dismiss(id as string);
         }
       });
     };
