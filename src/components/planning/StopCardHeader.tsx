@@ -150,18 +150,7 @@ export const StopCardHeader = memo(({
           </Badge>
         )}
 
-        {/* Venue status badge */}
-        <Badge 
-          variant={venueStatus === 'arrived' ? 'default' : 'outline'}
-          className={cn(
-            "text-xs flex items-center gap-1",
-            venueStatus === 'arrived' && "bg-green-500 text-white border-green-500",
-            venueStatus === 'departed' && "bg-orange-500 text-white border-orange-500"
-          )}
-        >
-          {venueStatus === 'arrived' && <CheckCircle2 className="h-3 w-3" />}
-          {venueStatus === 'arrived' ? 'Arrived' : venueStatus === 'departed' ? 'Departed' : 'En-route'}
-        </Badge>
+        {/* Venue status badge - show only at stop level if needed */}
       </div>
 
       {/* Cost */}

@@ -3,6 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type StopStatus = 'enroute' | 'arrived' | 'departed';
 
+interface VenueStay {
+  id: string;
+  user_id: string;
+  venue_id: string;
+  arrived_at: string;
+  departed_at: string | null;
+  plan_id: string | null;
+  stop_id: string | null;
+}
+
 export function usePlanVenuePresence(planId: string) {
   const [map, setMap] = useState<Record<string, StopStatus>>({});
 
@@ -15,7 +25,7 @@ export function usePlanVenuePresence(planId: string) {
         table: 'venue_stays',
         filter: `plan_id=eq.${planId}`
       }, (payload) => {
-        const row = payload.new as any;
+        const row = payload.new as VenueStay;
         if (row && row.venue_id) {
           setMap(m => ({
             ...m,

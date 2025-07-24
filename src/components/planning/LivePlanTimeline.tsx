@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast'
 import { DraggableStopCard } from './DraggableStopCard'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import type { PlanStop } from '@/types/plan'
 
 interface LivePlanTimelineProps {
   planId: string
