@@ -31,18 +31,27 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
         const { data: user } = await supabase.auth.getUser();
         if (!user.user) return;
 
+        // Fetch floqs user participates in (both created and joined)
         const { data, error } = await supabase
-          .from('floqs')
-          .select('id, title, name')
-          .eq('creator_id', user.user.id)
-          .is('deleted_at', null);
+          .from('floq_participants')
+          .select(`
+            floq:floqs!inner(
+              id, 
+              title, 
+              name
+            )
+          `)
+          .eq('user_id', user.user.id)
+          .is('floq.deleted_at', null);
 
         if (error) {
           console.error('Error fetching floqs:', error);
           return;
         }
 
-        setMyFloqs(data || []);
+        // Transform the data to get the floq objects
+        const floqs = data?.map(item => item.floq).filter(Boolean) || [];
+        setMyFloqs(floqs);
       } catch (error) {
         console.error('Error in fetchMyFloqs:', error);
       } finally {
@@ -66,6 +75,16 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
 
   const addNew = () => {
     if (!newName.trim()) return;
+    
+    // Check for duplicates
+    const nameExists = myFloqs.some(f => (f.title || f.name) === newName.trim()) ||
+                      value.some(v => v.type === 'new' && v.name === newName.trim());
+    
+    if (nameExists) {
+      alert('A Floq with this name already exists');
+      return;
+    }
+    
     onChange([...value, { type: 'new', name: newName.trim(), autoDisband: true }]);
     setNewName('');
   };
@@ -88,12 +107,22 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
       alert('Please select at least one Floq or create a new one');
       return;
     }
-    if (selCount > 1 && !superName.trim()) {
+    
+    // Add super-Floq as a new selection if multiple floqs selected
+    if (selCount > 1 && superName.trim()) {
+      const hasSuperFloq = value.some(v => v.type === 'new' && v.name === superName.trim());
+      if (!hasSuperFloq) {
+        onChange([...value, { type: 'new', name: superName.trim(), autoDisband: false }]);
+      }
+    } else if (selCount > 1 && !superName.trim()) {
       alert('Please name your combined Floq');
       return;
     }
+    
     setSubmitting(true);
     onNext();
+    // Reset submitting after a brief delay to prevent UI issues
+    setTimeout(() => setSubmitting(false), 100);
   };
 
   if (loading) {
