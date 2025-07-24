@@ -3552,6 +3552,44 @@ export type Database = {
           },
         ]
       }
+      venue_stays: {
+        Row: {
+          arrived_at: string
+          created_at: string | null
+          departed_at: string | null
+          distance_m: number | null
+          id: number
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          arrived_at: string
+          created_at?: string | null
+          departed_at?: string | null
+          distance_m?: number | null
+          id?: number
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          arrived_at?: string
+          created_at?: string | null
+          departed_at?: string | null
+          distance_m?: number | null
+          id?: number
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_stays_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_visits: {
         Row: {
           arrived_at: string
@@ -3993,6 +4031,14 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      v_friend_last_seen: {
+        Row: {
+          age: unknown | null
+          last_seen_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
       }
       v_user_plans: {
         Row: {
@@ -5020,6 +5066,18 @@ export type Database = {
           friend_avatar_url: string
         }[]
       }
+      get_friend_trail: {
+        Args: {
+          friend_user_id: string
+          hours_back?: number
+          point_limit?: number
+        }
+        Returns: {
+          lat: number
+          lng: number
+          captured_at: string
+        }[]
+      }
       get_friends_list: {
         Args: { _uid?: string }
         Returns: {
@@ -5273,6 +5331,10 @@ export type Database = {
       }
       merge_venue_visits: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      merge_visits_into_stays: {
+        Args: { _lookback?: unknown }
         Returns: number
       }
       path: {

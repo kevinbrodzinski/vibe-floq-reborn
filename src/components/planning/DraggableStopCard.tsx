@@ -35,6 +35,7 @@ interface DraggableStopCardProps {
       name: string
       address?: string
     }
+    venueStatus?: 'enroute' | 'arrived' | 'departed'
   }
   planId: string
   onEdit?: (stop: any) => void
@@ -164,6 +165,7 @@ const DraggableStopCardComponent = ({
               onDragEnd: handleDragEnd
             }}
             compact={compact}
+            venueStatus={stop.venueStatus}
           />
 
           {/* Description */}

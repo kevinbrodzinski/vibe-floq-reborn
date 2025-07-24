@@ -10,13 +10,19 @@ import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { FriendRowSkeleton } from '@/components/skeletons';
 import { UserTag } from '@/components/ui/user-tag';
 import { useLongPress } from '@/hooks/useLongPress';
+import { useLastSeen } from '@/hooks/useLastSeen';
 import { supabase } from '@/integrations/supabase/client';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
 interface OnlineFriendRowProps {
   userId: string;
   isNearby?: boolean;
   distance?: number;
 }
+
+// Initialize dayjs plugin
+dayjs.extend(relativeTime);
 
 export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFriendRowProps) => {
   const navigate = useNavigate();
@@ -25,6 +31,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   const status = statusMap[userId];
   const online = status?.status === 'online' && status?.visible;
   const [dmOpen, setDmOpen] = useState(false);
+  const lastSeen = useLastSeen(userId);
   
   // Get current user ID for unread counts
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -101,6 +108,11 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
 
       <div className="flex-1 min-w-0">
         <UserTag profile={p} className="flex-col items-start sm:flex-row sm:items-center" />
+        {lastSeen && (
+          <div className="text-xs text-muted-foreground mt-0.5">
+            Last seen {dayjs(lastSeen).fromNow()}
+          </div>
+        )}
       </div>
 
       {isNearby && (

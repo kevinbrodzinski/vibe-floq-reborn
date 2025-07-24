@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, DollarSign, Edit, Trash2, GripVertical, MoreVertical } from 'lucide-react'
+import { Clock, MapPin, DollarSign, Edit, Trash2, GripVertical, MoreVertical, CheckCircle2 } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,7 @@ interface StopCardHeaderProps {
   onDelete?: (stopId: string) => void
   dragProps: any
   compact?: boolean
+  venueStatus?: 'enroute' | 'arrived' | 'departed'
 }
 
 export const StopCardHeader = memo(({
@@ -37,7 +38,8 @@ export const StopCardHeader = memo(({
   onEdit,
   onDelete,
   dragProps,
-  compact = false
+  compact = false,
+  venueStatus = 'enroute'
 }: StopCardHeaderProps) => {
   // Memoized time formatting
   const formattedStartTime = useMemo(() => {
@@ -138,6 +140,19 @@ export const StopCardHeader = memo(({
             {durationText}
           </Badge>
         )}
+
+        {/* Venue status badge */}
+        <Badge 
+          variant={venueStatus === 'arrived' ? 'default' : 'outline'}
+          className={cn(
+            "text-xs flex items-center gap-1",
+            venueStatus === 'arrived' && "bg-green-500 text-white border-green-500",
+            venueStatus === 'departed' && "bg-orange-500 text-white border-orange-500"
+          )}
+        >
+          {venueStatus === 'arrived' && <CheckCircle2 className="h-3 w-3" />}
+          {venueStatus === 'arrived' ? 'Arrived' : venueStatus === 'departed' ? 'Departed' : 'En-route'}
+        </Badge>
       </div>
 
       {/* Cost */}
