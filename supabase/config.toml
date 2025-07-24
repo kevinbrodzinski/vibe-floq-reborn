@@ -1,7 +1,8 @@
 
 project_id = "reztyrrafsmlvvlqvsqt"
 
-[functions]
+[functions."daily-recap-builder"]
+verify_jwt = false
 memory = 256
 
 [functions.generate-plan-recap]
@@ -87,6 +88,3 @@ verify_jwt = false
 
 [functions.get-transit]
 verify_jwt = true
-
-[functions.daily-recap-builder]
-verify_jwt = false

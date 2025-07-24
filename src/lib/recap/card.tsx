@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, MapPin, Users, TrendingUp } from 'lucide-react'
 import { RecapData } from './index'
@@ -6,15 +6,12 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { track } from '@/lib/analytics'
 import dayjs from 'dayjs'
 
-// Lazy import confetti for performance
-const confetti = lazy(() => import('canvas-confetti'))
-
 interface DailyRecapCardProps {
   data: RecapData
 }
 
 export default function DailyRecapCard({ data }: DailyRecapCardProps) {
-  const hasTrackedRef = useRef<string | false>(false)
+  const hasTrackedRef = useRef<string | null>(null)
   
   const timelineData = data.timeline?.map(t => ({
     hour: t.hour,
