@@ -1087,6 +1087,7 @@ export type Database = {
           end_time: string | null
           execution_started_at: string | null
           finalized_by: string | null
+          finished_at: string | null
           floq_id: string | null
           id: string
           location: unknown | null
@@ -1116,6 +1117,7 @@ export type Database = {
           end_time?: string | null
           execution_started_at?: string | null
           finalized_by?: string | null
+          finished_at?: string | null
           floq_id?: string | null
           id?: string
           location?: unknown | null
@@ -1145,6 +1147,7 @@ export type Database = {
           end_time?: string | null
           execution_started_at?: string | null
           finalized_by?: string | null
+          finished_at?: string | null
           floq_id?: string | null
           id?: string
           location?: unknown | null
@@ -1641,6 +1644,44 @@ export type Database = {
             foreignKeyName: "fk_plan_afterglow_plan"
             columns: ["plan_id"]
             isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_ai_summaries: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          plan_id: string
+          status: string
+          suggestions: Json | null
+          summary_md: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          plan_id: string
+          status?: string
+          suggestions?: Json | null
+          summary_md?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          plan_id?: string
+          status?: string
+          suggestions?: Json | null
+          summary_md?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_ai_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: true
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
@@ -3995,6 +4036,10 @@ export type Database = {
       find_or_create_dm: {
         Args: { a: string; b: string; p_use_demo?: boolean }
         Returns: string
+      }
+      finish_plan: {
+        Args: { p_plan_id: string; p_user_id: string }
+        Returns: Json
       }
       friend_count: {
         Args: Record<PropertyKey, never>
