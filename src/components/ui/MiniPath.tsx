@@ -16,7 +16,12 @@ export const MiniPath = ({ pts = [] }: { pts: [number, number][] }) => {
     return `${x},${10 - y}`;
   }).join(' ');
   return (
-    <svg width={56} height={10} viewBox="0 0 56 10" className="absolute bottom-0 left-0 z-0">
+    <svg 
+      width={56} 
+      height={10} 
+      viewBox="0 0 56 10" 
+      className="absolute bottom-0 left-0 z-0 pointer-events-none"
+    >
       <title>Recent movement path</title>
       <polyline
         points={path}
@@ -24,6 +29,7 @@ export const MiniPath = ({ pts = [] }: { pts: [number, number][] }) => {
         strokeWidth={1}
         fill="none"
         opacity={0.6}
+        strokeLinecap="round"
       />
     </svg>
   );

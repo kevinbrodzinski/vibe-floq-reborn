@@ -4,8 +4,8 @@ import { getETA } from '@/lib/directionsCache';
 export function useLiveETA(
   from: [number, number] | null,
   to:   [number, number] | null,
-) {
-  const [secs, setSecs]   = useState<number | null>(null);
+): { secs: number | null; isFresh: boolean } {
+  const [secs, setSecs] = useState<number | null>(null);
   const [fresh, setFresh] = useState(false);
 
   useEffect(() => {
@@ -28,9 +28,9 @@ export function useLiveETA(
       if (freshTimeout) clearTimeout(freshTimeout);
     };
   }, [
-    // Use JSON.stringify to avoid array instance changes causing re-fetches
-    from ? JSON.stringify([from[0], from[1]]) : null,
-    to ? JSON.stringify([to[0], to[1]]) : null
+    // Use join for better performance and referential equality
+    from?.join('|') || null,
+    to?.join('|') || null
   ]);
 
   return { secs, isFresh: fresh };

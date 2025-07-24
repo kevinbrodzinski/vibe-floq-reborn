@@ -13,10 +13,13 @@ interface VenueStay {
   stop_id: string | null;
 }
 
-export function usePlanVenuePresence(planId: string) {
+export function usePlanVenuePresence(planId: string): Record<string, StopStatus> {
   const [map, setMap] = useState<Record<string, StopStatus>>({});
 
   useEffect(() => {
+    // Clear previous state when planId changes
+    setMap({});
+    
     const channel = supabase
       .channel(`plan_presence_${planId}`)
       .on('postgres_changes', {
@@ -41,7 +44,7 @@ export function usePlanVenuePresence(planId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [planId]);
+  }, [planId]); // planId dependency ensures cleanup on change
 
   return map; // { venue_id : 'arrived' | … }
 }
