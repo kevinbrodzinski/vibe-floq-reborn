@@ -17,10 +17,17 @@ import App from './App.tsx'
 import './index.css'
 import { DebugProvider } from '@/lib/useDebug';
 import { ErrorBoundary } from '@/components/system/ErrorBoundary'
-import { initPostHog } from '@/lib/posthog'
+import posthog from 'posthog-js'
 
-// Initialize PostHog
-initPostHog()
+// Initialize PostHog for web
+const posthogKey = import.meta.env.VITE_POSTHOG_API_KEY
+if (posthogKey) {
+  posthog.init(posthogKey, {
+    api_host: 'https://eu.posthog.com',
+    autocapture: false,
+    capture_pageview: false,
+  })
+}
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

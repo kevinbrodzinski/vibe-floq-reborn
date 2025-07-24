@@ -9,10 +9,20 @@ import App from './App.tsx';
 import './index.css';
 import { DebugProvider } from '@/lib/useDebug';
 import { ErrorBoundary } from '@/components/system/ErrorBoundary';
-import { initPostHog } from '@/lib/posthog'
-
-// Initialize PostHog
-initPostHog()
+// Initialize PostHog for mobile (conditional import)
+const posthogKey = process.env.POSTHOG_MOBILE_KEY
+if (posthogKey) {
+  try {
+    const posthog = require('@posthog/react-native').default;
+    posthog.init(posthogKey, {
+      host: 'https://eu.posthog.com',
+      captureScreenViews: true,
+      enableSessionRecording: false,
+    })
+  } catch (err) {
+    console.warn('PostHog mobile not available:', err)
+  }
+}
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

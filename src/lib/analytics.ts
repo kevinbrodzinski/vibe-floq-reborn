@@ -1,7 +1,39 @@
 
-// Analytics utilities with PostHog integration and fallbacks for mobile and web
+// Analytics utilities with PostHog integration - lean cross-platform approach
 
-import { posthog } from './posthog'
+const isWeb = typeof window !== 'undefined';
+
+// PostHog capture function - handles both web and mobile
+export const capture = (event: string, props?: Record<string, any>) => {
+  try {
+    if (isWeb) {
+      import('posthog-js').then((ph) => {
+        ph.default?.capture(event, props);
+      });
+    } else {
+      const posthog = require('@posthog/react-native').default;
+      posthog.capture(event, props);
+    }
+  } catch (err) {
+    console.warn('[PostHog] capture failed:', err);
+  }
+};
+
+// PostHog identify function
+export const identify = (userId: string, traits?: Record<string, any>) => {
+  try {
+    if (isWeb) {
+      import('posthog-js').then((ph) => {
+        ph.default?.identify(userId, traits);
+      });
+    } else {
+      const posthog = require('@posthog/react-native').default;
+      posthog.identify(userId, traits);
+    }
+  } catch (err) {
+    console.warn('[PostHog] identify failed:', err);
+  }
+};
 
 // Extend Window interface for Capacitor
 declare global {
@@ -27,11 +59,8 @@ export function track(event: string, ...rest: any[]) {
   
   try {
     console.log('📊 Track event:', event, props)
-    
-    // Send to PostHog if available
-    if (typeof window !== 'undefined' && posthog && posthog.__loaded) {
-      posthog.capture(event, props)
-    }
+    // Send to PostHog via shared capture function
+    capture(event, props)
   } catch (error) {
     console.warn('Analytics tracking failed:', error)
   }
