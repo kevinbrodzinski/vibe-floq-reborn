@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useAuth } from '@/providers/AuthProvider';
+import { Badge } from '@/components/ui/badge';
 
 export function LocationTracker() {
   const { user } = useAuth();
@@ -45,11 +46,17 @@ export function LocationTracker() {
           )}
         </div>
         
-        {location && (
-          <div className="text-xs text-muted-foreground mt-1">
-            Accuracy: ±{Math.round(location.coords.accuracy)}m
-          </div>
-        )}
+        <div className="flex items-center gap-2 mt-2">
+          {loading && <Badge variant="outline">Getting location…</Badge>}
+          {error && <Badge variant="destructive">GPS error</Badge>}
+          {!loading && !error && <Badge variant="outline">Tracking ON</Badge>}
+          
+          {location && (
+            <div className="text-xs text-muted-foreground">
+              ±{Math.round(location.coords.accuracy)}m
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

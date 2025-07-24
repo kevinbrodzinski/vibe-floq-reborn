@@ -34,20 +34,36 @@ export default async (req: Request) => {
   }
 
   try {
-    const { user_id, batch }: RequestBody = await req.json();
-    
-    if (!user_id || !batch || !Array.isArray(batch)) {
+    // Secure & throttle the record_locations edge-function
+    const { data: { user } } = await supabaseAdmin.auth.getUser();
+    if (!user) {
       return new Response(
-        JSON.stringify({ error: 'user_id and batch array required' }), 
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    const { batch } = await req.json();
+    
+    if (!Array.isArray(batch) || batch.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Bad payload - batch array required' }), 
         { status: 400, headers: corsHeaders }
       );
     }
 
-    console.log(`Recording ${batch.length} location pings for user ${user_id}`);
+    if (batch.length > 300) {
+      return new Response(
+        JSON.stringify({ error: 'Batch too large - max 300 items' }), 
+        { status: 413, headers: corsHeaders }
+      );
+    }
 
-    // Convert batch to database rows
+    console.log(`Recording ${batch.length} location pings for user ${user.id}`);
+
+    // Convert batch to database rows - never trust body.user_id
     const rows = batch.map((ping: LocationPing) => ({
-      user_id,
+      user_id: user.id,  // always use authenticated user ID
       captured_at: ping.ts,
       geom: `SRID=4326;POINT(${ping.lng} ${ping.lat})`,
       accuracy_m: ping.acc ?? null
