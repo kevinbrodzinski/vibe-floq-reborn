@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { storage } from '@/lib/storage';
 
 interface ExecutionState {
   isExecuting: boolean;
@@ -34,27 +35,29 @@ export function useExecutionState({
 
   const { toast } = useToast();
 
-  // Persist state to localStorage
+  // Persist state to storage
   useEffect(() => {
-    const saved = localStorage.getItem(`execution-state-${planId}`);
-    if (saved) {
+    const loadState = async () => {
       try {
-        const parsedState = JSON.parse(saved);
-        setState(prev => ({
-          ...prev,
-          ...parsedState,
-          executionStartTime: parsedState.executionStartTime ? new Date(parsedState.executionStartTime) : undefined,
-          estimatedEndTime: parsedState.estimatedEndTime ? new Date(parsedState.estimatedEndTime) : undefined,
-        }));
+        const parsedState = await storage.getJSON<ExecutionState>(`execution-state-${planId}`);
+        if (parsedState) {
+          setState(prev => ({
+            ...prev,
+            ...parsedState,
+            executionStartTime: parsedState.executionStartTime ? new Date(parsedState.executionStartTime) : undefined,
+            estimatedEndTime: parsedState.estimatedEndTime ? new Date(parsedState.estimatedEndTime) : undefined,
+          }));
+        }
       } catch (error) {
         console.error('Failed to parse execution state:', error);
       }
-    }
+    };
+    loadState();
   }, [planId]);
 
   // Save state changes
   useEffect(() => {
-    localStorage.setItem(`execution-state-${planId}`, JSON.stringify(state));
+    storage.setJSON(`execution-state-${planId}`, state).catch(console.error);
     onStateChange?.(state);
   }, [state, planId, onStateChange]);
 
@@ -162,7 +165,7 @@ export function useExecutionState({
       participantCheckIns: {},
     });
     
-    localStorage.removeItem(`execution-state-${planId}`);
+    storage.removeItem(`execution-state-${planId}`).catch(console.error);
     
     toast({
       title: "Execution Reset",

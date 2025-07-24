@@ -4,6 +4,7 @@ import { Search, Plus, Coffee, MessageCircle, Users, MapPin, Clock, UserPlus } f
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getEnvironmentConfig } from "@/lib/environment";
+import { storage } from "@/lib/storage";
 import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
@@ -227,9 +228,9 @@ export const FloqsScreen = () => {
   const [userGeo, setUserGeo] = useState<{ lat: number; lng: number } | null>(null);
   
   // Get stored radius preference or default to 0.5km
-  const getStoredRadius = () => {
+  const getStoredRadius = async () => {
     try {
-      const stored = localStorage.getItem('floq-radius-km');
+      const stored = await storage.getItem('floq-radius-km');
       if (!stored) return 0.5;
       const parsed = parseFloat(stored);
       return isNaN(parsed) ? 0.5 : parsed;
@@ -238,7 +239,12 @@ export const FloqsScreen = () => {
     }
   };
 
-  const [radiusKm, setRadiusKm] = useState(getStoredRadius);
+  const [radiusKm, setRadiusKm] = useState(0.5);
+  
+  // Load stored radius on mount
+  useEffect(() => {
+    getStoredRadius().then(setRadiusKm);
+  }, []);
   const { data: floqs = [], isLoading, error } = useActiveFloqs({
     limit: 50,
     includeDistance: true
@@ -276,11 +282,7 @@ export const FloqsScreen = () => {
 
   // Persist radius preference
   useEffect(() => {
-    try {
-      localStorage.setItem('floq-radius-km', radiusKm.toString());
-    } catch {
-      // Ignore localStorage errors
-    }
+    storage.setItem('floq-radius-km', radiusKm.toString()).catch(console.error);
   }, [radiusKm]);
 
   // Action handlers

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { useCurrentVibe } from '@/lib/store/useVibe'
+import { storage } from '@/lib/storage'
 import ngeohash from 'ngeohash'
 
 interface CachedCoords {
@@ -24,23 +25,22 @@ export const usePresencePublisher = (isActive: boolean) => {
       longitude: coords.longitude,
       timestamp: Date.now()
     }
-    localStorage.setItem('lastCoords', JSON.stringify(cached))
+    storage.setJSON('lastCoords', cached).catch(console.error);
   }
 
-  const getCachedCoordinates = (): CachedCoords | null => {
+  const getCachedCoordinates = async (): Promise<CachedCoords | null> => {
     try {
-      const cached = localStorage.getItem('lastCoords')
-      if (!cached) return null
+      const coords = await storage.getJSON<CachedCoords>('lastCoords');
+      if (!coords) return null;
       
-      const coords = JSON.parse(cached) as CachedCoords
       // Use cached coordinates if they're less than 10 minutes old
       if (Date.now() - coords.timestamp < 10 * 60 * 1000) {
-        return coords
+        return coords;
       }
     } catch (error) {
-      console.warn('[PRESENCE_PUBLISHER] Failed to parse cached coordinates:', error)
+      console.warn('[PRESENCE_PUBLISHER] Failed to parse cached coordinates:', error);
     }
-    return null
+    return null;
   }
 
   useEffect(() => {
@@ -102,8 +102,8 @@ export const usePresencePublisher = (isActive: boolean) => {
       })
       
       // Try to use cached coordinates as fallback
-      const cached = getCachedCoordinates()
-      if (cached) {
+      getCachedCoordinates().then(cached => {
+        if (cached) {
         console.log('[PRESENCE_PUBLISHER] Using cached coordinates as fallback')
         const fallbackPosition = {
           coords: {
@@ -117,8 +117,9 @@ export const usePresencePublisher = (isActive: boolean) => {
           },
           timestamp: cached.timestamp
         } as GeolocationPosition
-        publishPresence(fallbackPosition)
-      }
+        publishPresence(fallbackPosition);
+        }
+      }).catch(console.error);
     }
 
     // Start watching position with increased timeout

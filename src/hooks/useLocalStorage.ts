@@ -27,16 +27,17 @@ export function useLocalStorage<T>(
   }, [key]);
 
   // Return a wrapped version of useState's setter function that persists the new value to storage
-  const setValue = async (value: T | ((val: T) => T)) => {
+  const setValue = (value: T | ((val: T) => T)) => {
     try {
       // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       // Save state
       setStoredValue(valueToStore);
-      // Save to storage
-      await storage.setJSON(key, valueToStore);
+      // Save to storage (fire-and-forget)
+      storage.setJSON(key, valueToStore).catch(error => {
+        console.error(`Error setting storage key "${key}":`, error);
+      });
     } catch (error) {
-      // A more advanced implementation would handle the error case
       console.error(`Error setting storage key "${key}":`, error);
     }
   };

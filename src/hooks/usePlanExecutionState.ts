@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePlanStops } from './usePlanStops'
+import { storage } from '@/lib/storage'
 
 interface PlanExecutionState {
   currentStopIndex: number
@@ -22,25 +23,27 @@ export function usePlanExecutionState(planId: string) {
     progress: 0,
   })
 
-  // Load state from localStorage on mount
+  // Load state from storage on mount
   useEffect(() => {
-    const savedState = localStorage.getItem(`plan-execution-${planId}`)
-    if (savedState) {
+    const loadState = async () => {
       try {
-        const parsed = JSON.parse(savedState)
-        setState(prev => ({
-          ...prev,
-          ...parsed,
-        }))
+        const parsed = await storage.getJSON<PlanExecutionState>(`plan-execution-${planId}`);
+        if (parsed) {
+          setState(prev => ({
+            ...prev,
+            ...parsed,
+          }));
+        }
       } catch (error) {
-        console.error('Error parsing saved execution state:', error)
+        console.error('Error parsing saved execution state:', error);
       }
-    }
+    };
+    loadState();
   }, [planId])
 
-  // Save state to localStorage whenever it changes
+  // Save state to storage whenever it changes
   useEffect(() => {
-    localStorage.setItem(`plan-execution-${planId}`, JSON.stringify(state))
+    storage.setJSON(`plan-execution-${planId}`, state).catch(console.error);
   }, [planId, state])
 
   // Calculate derived values
@@ -88,7 +91,7 @@ export function usePlanExecutionState(planId: string) {
       isExecutionComplete: false,
       progress: 0,
     })
-    localStorage.removeItem(`plan-execution-${planId}`)
+    storage.removeItem(`plan-execution-${planId}`).catch(console.error);
   }, [planId])
 
   const snoozeAfterglow = useCallback((minutes: number) => {
