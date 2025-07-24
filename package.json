@@ -33,6 +33,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@expo/cli": "^0.24.20",
     "@hookform/resolvers": "^3.9.0",
+    "@mapbox/mapbox-sdk": "^0.16.1",
     "@mui/lab": "^7.0.0-beta.14",
     "@pixi/filter-blur": "^7.4.3",
     "@pixi/filter-color-matrix": "^7.4.3",
