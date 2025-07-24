@@ -3,7 +3,7 @@ import { useUserPreferences, useUpdateUserPreferences } from './useUserPreferenc
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
+import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants';
 
 export interface OnboardingStatus {
   needsOnboarding: boolean;
