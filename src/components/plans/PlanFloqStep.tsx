@@ -33,7 +33,7 @@ export function PlanFloqStep({ value, onChange, onNext }: Props) {
 
         // Fetch floqs user participates in (both created and joined)
         const { data, error } = await supabase
-          .from('floq_members')
+          .from('floq_participants')
           .select(`
             floq:floqs!inner(
               id, 

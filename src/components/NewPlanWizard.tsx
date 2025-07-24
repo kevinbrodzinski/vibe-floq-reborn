@@ -89,18 +89,18 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
           <Progress value={progress} className="h-2" />
           
           <div className="flex justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center space-x-2 text-sm">
-                {getStepIcon(step, index)}
+            {steps.map((stepItem, index) => (
+              <div key={stepItem.id} className="flex items-center space-x-2 text-sm">
+                {getStepIcon(stepItem, index)}
                 <div>
                   <div className={cn(
                     "font-medium",
                     index <= step ? "text-foreground" : "text-muted-foreground"
                   )}>
-                    {step.title}
+                    {stepItem.title}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {step.description}
+                    {stepItem.description}
                   </div>
                 </div>
               </div>
