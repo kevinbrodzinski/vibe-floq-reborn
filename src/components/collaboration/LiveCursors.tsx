@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Edit3 } from 'lucide-react'
-import { useLiveCursors, type LiveCursor } from '@/hooks/useLiveCursors'
+import { usePlanPresence, type ParticipantPresence } from '@/hooks/usePlanPresence'
 import { zIndex } from '@/constants/z'
 
 interface LiveCursorsProps {
@@ -9,13 +9,13 @@ interface LiveCursorsProps {
 }
 
 export function LiveCursors({ planId, enabled = true }: LiveCursorsProps) {
-  const { cursors } = useLiveCursors({ planId, enabled })
+  const { participants } = usePlanPresence(planId, { silent: !enabled })
 
   return (
     <div {...zIndex('system')} className="fixed inset-0 pointer-events-none">
       <AnimatePresence>
-        {cursors.map((cursor) => (
-          <CursorIndicator key={cursor.userId} cursor={cursor} />
+        {participants.filter(p => p.isOnline).map((participant) => (
+          <CursorIndicator key={participant.userId} participant={participant} />
         ))}
       </AnimatePresence>
     </div>
@@ -23,11 +23,11 @@ export function LiveCursors({ planId, enabled = true }: LiveCursorsProps) {
 }
 
 interface CursorIndicatorProps {
-  cursor: LiveCursor
+  participant: ParticipantPresence
 }
 
-function CursorIndicator({ cursor }: CursorIndicatorProps) {
-  const cursorColor = getUserColor(cursor.userId)
+function CursorIndicator({ participant }: CursorIndicatorProps) {
+  const cursorColor = getUserColor(participant.userId)
   
   return (
     <motion.div
@@ -35,8 +35,8 @@ function CursorIndicator({ cursor }: CursorIndicatorProps) {
       animate={{ 
         opacity: 1, 
         scale: 1,
-        x: cursor.x,
-        y: cursor.y
+        x: Math.random() * 100 + 50, // Simple positioning - you can enhance this
+        y: Math.random() * 100 + 50
       }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ 
@@ -52,12 +52,12 @@ function CursorIndicator({ cursor }: CursorIndicatorProps) {
       <motion.div
         className="relative"
         animate={{
-          rotate: cursor.isEditing ? [0, -5, 5, 0] : 0
+          rotate: participant.currentActivity === 'timeline' ? [0, -5, 5, 0] : 0
         }}
         transition={{
           rotate: {
             duration: 0.5,
-            repeat: cursor.isEditing ? Infinity : 0,
+            repeat: participant.currentActivity === 'timeline' ? Infinity : 0,
             ease: 'easeInOut'
           }
         }}
@@ -77,8 +77,8 @@ function CursorIndicator({ cursor }: CursorIndicatorProps) {
           />
         </svg>
         
-        {/* Editing indicator */}
-        {cursor.isEditing && (
+        {/* Activity indicator */}
+        {participant.currentActivity === 'timeline' && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -99,9 +99,9 @@ function CursorIndicator({ cursor }: CursorIndicatorProps) {
         style={{ backgroundColor: cursorColor }}
       >
         <User className="w-3 h-3 inline mr-1" />
-        {cursor.username}
-        {cursor.isEditing && cursor.editingStopId && (
-          <span className="ml-1 opacity-75">editing stop</span>
+        {participant.displayName}
+        {participant.currentActivity === 'timeline' && (
+          <span className="ml-1 opacity-75">editing</span>
         )}
       </motion.div>
     </motion.div>

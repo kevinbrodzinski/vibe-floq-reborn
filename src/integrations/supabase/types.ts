@@ -3398,16 +3398,6 @@ export type Database = {
         }
         Relationships: []
       }
-      friend_presence: {
-        Row: {
-          friend: string | null
-          location: unknown | null
-          me: string | null
-          started_at: string | null
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
-        }
-        Relationships: []
-      }
       geography_columns: {
         Row: {
           coord_dimension: number | null

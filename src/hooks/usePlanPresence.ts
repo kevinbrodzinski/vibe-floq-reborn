@@ -30,7 +30,7 @@ export type PresencePayload = {
   check_in_status: string;
 };
 
-interface ParticipantPresence {
+export interface ParticipantPresence {
   userId: string;
   username: string;
   displayName: string;

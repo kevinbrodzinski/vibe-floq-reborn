@@ -1,9 +1,12 @@
-import { Users, Settings, MessageCircle, Calendar, Clock } from "lucide-react";
+import { Users, Settings, MessageCircle, Calendar, Clock, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { UserAvatarGroup } from "./UserAvatarGroup";
 import { PlanStatusTag } from "./PlanStatusTag";
 import { type PlanStatus } from "@/lib/planStatusConfig";
+import { usePlanPresence } from "@/hooks/usePlanPresence";
 
 interface PlanHeaderProps {
+  planId?: string; // Add planId for presence tracking
   title: string;
   date: string;
   startTime?: string;
@@ -32,6 +35,7 @@ const formatTime = (time: string) => {
 };
 
 export const PlanHeader = ({ 
+  planId,
   title, 
   date, 
   startTime,
@@ -42,6 +46,8 @@ export const PlanHeader = ({
   onChatToggle,
   onSettingsClick 
 }: PlanHeaderProps) => {
+  const { participants: presenceParticipants } = usePlanPresence(planId || '', { silent: !planId });
+  const onlineCount = presenceParticipants.filter(p => p.isOnline).length;
   return (
     <div className="p-6 pt-16">
       <div className="flex justify-between items-start mb-6">
@@ -87,7 +93,14 @@ export const PlanHeader = ({
         </div>
         
         <div className="flex items-center space-x-2">
-          <button 
+          {planId && onlineCount > 0 && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              {onlineCount} viewing
+            </Badge>
+          )}
+          
+          <button
             onClick={onChatToggle}
             className={`p-3 rounded-xl transition-all duration-300 ${
               showChat 

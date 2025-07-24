@@ -1,8 +1,9 @@
-import { ChevronLeft, Share2 } from 'lucide-react'
+import { ChevronLeft, Share2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useNavigate } from 'react-router-dom'
+import { usePlanPresence } from '@/hooks/usePlanPresence'
 import type { Database } from '@/integrations/supabase/types'
 import type { FloqDetails } from '@/hooks/useFloqDetails'
 
@@ -30,6 +31,8 @@ function getStatusBadgeProps(status: string) {
 
 export function PlanHeader({ floq, plan }: Props) {
   const navigate = useNavigate()
+  const { participants: presenceParticipants } = usePlanPresence(plan.id, { silent: false })
+  const onlineCount = presenceParticipants.filter(p => p.isOnline).length
   const { color, label } = getStatusBadgeProps(plan.status || 'draft')
 
   return (
@@ -56,6 +59,13 @@ export function PlanHeader({ floq, plan }: Props) {
           {floq.title}
         </p>
       </div>
+
+      {onlineCount > 0 && (
+        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+          <Eye className="w-3 h-3" />
+          {onlineCount}
+        </Badge>
+      )}
 
       <Badge variant="secondary" className={`${color} text-white text-xs`}>
         {label}
