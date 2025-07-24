@@ -7,6 +7,8 @@ import { MapPin, CheckCircle } from 'lucide-react';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
 import { Badge } from '@/components/ui/badge';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { useFriendSparkline } from '@/hooks/useFriendSparkline';
+import { MiniPath } from '@/components/ui/MiniPath';
 import { FriendRowSkeleton } from '@/components/skeletons';
 import { UserTag } from '@/components/ui/user-tag';
 import { useLongPress } from '@/hooks/useLongPress';
@@ -29,6 +31,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
   const navigate = useNavigate();
   const { data: p, isLoading, isError } = useProfile(userId);
   const statusMap = useFriendsPresence();
+  const sparklineData = useFriendSparkline(userId);
   const status = statusMap[userId];
   const online = status?.status === 'online' && status?.visible;
   const [dmOpen, setDmOpen] = useState(false);
@@ -105,6 +108,7 @@ export const OnlineFriendRow = memo(({ userId, isNearby, distance }: OnlineFrien
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
+          {sparklineData && <MiniPath pts={sparklineData} />}
         </div>
 
       <div className="flex items-center gap-2 min-w-0">
