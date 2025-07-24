@@ -18,15 +18,15 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
   const reorderMutation = useReorderPlanStops()
   const { data: stops = [], isLoading } = usePlanStops(planId)
 
-  // Reset optimistic state when stops change
+  // Initialize optimistic order from stops on mount and when stops change
   useEffect(() => {
-    if (!isReordering && stops.length > 0) {
+    if (stops.length > 0) {
       const currentOrder = stops
         .sort((a, b) => (a.stop_order || 0) - (b.stop_order || 0))
         .map(stop => stop.id)
       setOptimisticOrder(currentOrder)
     }
-  }, [stops, isReordering])
+  }, [stops])
 
   // Real-time subscription for collaborative changes
   useEffect(() => {
@@ -66,56 +66,7 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
     }
   }, [planId, enabled])
 
-  const handleStopReorder = useCallback(async (stopId: string, newIndex: number) => {
-    if (isReordering) return
-
-    setIsReordering(true)
-    setSaving('pending')
-    
-    try {
-      // Optimistic update
-      const newOrder = [...optimisticOrder]
-      const currentIndex = newOrder.findIndex(id => id === stopId)
-      
-      if (currentIndex !== -1) {
-        newOrder.splice(currentIndex, 1)
-        newOrder.splice(newIndex, 0, stopId)
-        setOptimisticOrder(newOrder)
-      }
-
-      // Build reorder data
-      const stopOrders = newOrder.map((id, index) => ({
-        id,
-        stop_order: index + 1
-      }))
-
-      await reorderMutation.mutateAsync({
-        planId,
-        stopOrders
-      })
-
-      setSaving('done')
-      setTimeout(() => setSaving('idle'), 1500)
-
-    } catch (error) {
-      console.error('Reorder failed:', error)
-      setSaving('idle')
-      
-      // Revert optimistic update
-      const revertOrder = stops
-        .sort((a, b) => (a.stop_order || 0) - (b.stop_order || 0))
-        .map(stop => stop.id)
-      setOptimisticOrder(revertOrder)
-      
-      toast({
-        title: 'Reorder failed',
-        description: 'Failed to update stop order. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsReordering(false)
-    }
-  }, [planId, optimisticOrder, stops, isReordering, reorderMutation, toast])
+  // Remove legacy handleStopReorder - keeping only the new reorder method
 
   // New reorder method that takes ordered stop IDs directly
   const reorder = useCallback(async (orderedIds: string[]) => {
@@ -168,7 +119,6 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
     stops: orderedStops,
     isLoading,
     isReordering,
-    handleStopReorder,
     reorder,
     optimisticOrder,
     saving,

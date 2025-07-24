@@ -31,7 +31,7 @@ export function FloqPlanTab() {
     stops,
     isLoading: stopsLoading,
     isReordering,
-    handleStopReorder
+    reorder
   } = useCollaborativeState({ planId: plan?.id || '', enabled: !!plan?.id })
 
   // Cleanup timer on unmount
@@ -99,11 +99,16 @@ export function FloqPlanTab() {
             stops={stops}
             onAddStop={handleAddStop}
             onStopReorder={(activeId: string, overId: string) => {
-              // Convert overId to index for handleStopReorder
+              // Convert to ordered array for reorder function
               const stopsArray = stops || []
+              const activeIndex = stopsArray.findIndex(stop => stop.id === activeId)
               const overIndex = stopsArray.findIndex(stop => stop.id === overId)
-              if (overIndex !== -1) {
-                handleStopReorder(activeId, overIndex)
+              
+              if (activeIndex !== -1 && overIndex !== -1) {
+                const newOrder = [...stopsArray]
+                const [removed] = newOrder.splice(activeIndex, 1)
+                newOrder.splice(overIndex, 0, removed)
+                reorder(newOrder.map(stop => stop.id))
               }
             }}
             onStopSelect={(stopId) => console.log('Selected stop:', stopId)}

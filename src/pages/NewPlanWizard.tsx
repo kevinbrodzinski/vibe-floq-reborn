@@ -123,7 +123,6 @@ export function NewPlanWizard() {
         ...details,
         ...timeRange,
         duration_hours: durationHours,
-        invitedUserIds: details.invitedUserIds,
         floqSelections: floqSelections,
       }
       

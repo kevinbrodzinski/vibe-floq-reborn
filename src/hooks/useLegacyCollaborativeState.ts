@@ -5,7 +5,7 @@ import { useCollaborativeState } from './useCollaborativeState'
 import { useAddStop, useRemoveStop, useVoteOnStop } from './usePlanActions'
 
 export function useLegacyCollaborativeState(planId: string) {
-  const { stops, isLoading, isReordering, handleStopReorder } = useCollaborativeState({ 
+  const { stops, isLoading, isReordering, reorder } = useCollaborativeState({ 
     planId, 
     enabled: !!planId 
   })
@@ -32,10 +32,11 @@ export function useLegacyCollaborativeState(planId: string) {
   const reorderStops = async (fromIndex: number, toIndex: number) => {
     if (stops.length === 0) return
     
-    const stopId = stops[fromIndex]?.id
-    if (!stopId) return
+    const newOrder = [...stops]
+    const [removed] = newOrder.splice(fromIndex, 1)
+    newOrder.splice(toIndex, 0, removed)
     
-    return handleStopReorder(stopId, toIndex)
+    return reorder(newOrder.map(stop => stop.id))
   }
 
   const voteOnStop = async (stopId: string, voteType: 'up' | 'down' | 'maybe', emojiReaction?: string) => {
@@ -55,6 +56,6 @@ export function useLegacyCollaborativeState(planId: string) {
     removeStop,
     reorderStops,
     voteOnStop,
-    handleStopReorder
+    reorder
   }
 }

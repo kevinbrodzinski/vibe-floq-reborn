@@ -5,6 +5,7 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { Plus, Wifi, WifiOff, AlertTriangle } from 'lucide-react'
 import { usePlanStops } from '@/hooks/usePlanStops'
 import { usePlanSync } from '@/hooks/usePlanSync'
+import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import { useHapticFeedback } from '@/hooks/useHapticFeedback'
 import { useStopConflictChecker } from '@/hooks/useStopConflictChecker'
 import { useErrorBoundary } from '@/hooks/useErrorBoundary'
@@ -55,6 +56,7 @@ export function TimelineGrid({
   const [conflictData, setConflictData] = useState<any>(null)
   const { data: stops = [], isLoading } = usePlanStops(planId)
   const { mutate: syncChanges } = usePlanSync()
+  const { reorder } = useCollaborativeState({ planId })
   const { socialHaptics } = useHapticFeedback()
   const { conflicts, hasConflicts, isStopConflicting } = useStopConflictChecker(stops)
   const { withErrorHandling } = useErrorBoundary()
@@ -141,21 +143,7 @@ export function TimelineGrid({
         timelineAudio.stopDrop()
         
         // Use collaborative state reorder function
-        // reorder(orderedIds) // Note: This would require adding useCollaborativeState to this component
-        
-        // For now, keep the existing sync method but could be updated later
-        syncChanges({
-          plan_id: planId,
-          changes: {
-            type: 'reorder_stops',
-            data: {
-              updates: newStops.map((stop, index) => ({
-                id: (stop as PlanStop).id,
-                stop_order: index
-              }))
-            }
-          }
-        })
+        reorder(orderedIds)
         
         toastSuccess('Schedule updated')
       }
