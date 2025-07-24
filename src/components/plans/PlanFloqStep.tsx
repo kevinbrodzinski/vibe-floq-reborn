@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus } from 'lucide-react';
+import { Plus, Users, X } from 'lucide-react';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { FloqCardMini } from './FloqCardMini';
+import { FriendPicker } from '@/components/new-plan/FriendPicker';
+import { useFriends } from '@/hooks/useFriends';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
 type Selection =
@@ -18,11 +21,15 @@ interface Props {
   onNext: () => void;
   combinedName: string;
   onCombinedNameChange: (name: string) => void;
+  invitedIds: string[];
+  onInvitedChange: (ids: string[]) => void;
 }
 
-export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombinedNameChange }: Props) {
+export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombinedNameChange, invitedIds, onInvitedChange }: Props) {
   const { data: myFloqs = [], isLoading } = useMyActiveFloqs();
+  const { profiles } = useFriends();
   const [newName, setNewName] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const toggleExisting = (floq: any) => {
     const exists = value.find((v) => v.type === 'existing' && v.floqId === floq.id);
@@ -61,14 +68,31 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   };
 
   const handleNext = () => {
-    // Allow proceeding with 0 selections for solo plans
-    if (value.length > 1 && !combinedName.trim()) {
-      toast.error('Name your combined floq');
-      return;
+    // Tighten the combined-name guard
+    const needsSuper = value.length > 1 || 
+      invitedIds.some(uid => 
+        value.some(sel => 
+          sel.type === 'existing' 
+          // Note: We could add membershipMap check here when available
+        )
+      )
+
+    if (needsSuper && !combinedName.trim()) {
+      toast.error('Give your new group a name')
+      return
     }
     
-    onNext();
-  };
+    onNext()
+  }
+
+  const removeFriend = (friendId: string) => {
+    const updated = invitedIds.filter(id => id !== friendId)
+    onInvitedChange(updated)
+  }
+
+  const getInvitedFriends = () => {
+    return profiles.filter(profile => invitedIds.includes(profile.id))
+  }
 
 
   if (isLoading) {
@@ -115,6 +139,62 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
           </p>
         </div>
       )}
+
+      {/* Invite Friends Section */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium flex items-center gap-2">
+          <Users className="w-4 h-4" />
+          Invite friends to this plan
+        </Label>
+        <div className="rounded-xl border border-dashed border-muted p-4">
+          {invitedIds.length === 0 ? (
+            <p className="text-sm text-muted-foreground mb-3">
+              Nobody invited yet – add friends below
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {getInvitedFriends().map((friend) => (
+                <div
+                  key={friend.id}
+                  className="flex items-center gap-2 bg-accent rounded-full pl-1 pr-3 py-1"
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={friend.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs">
+                      {friend.display_name?.charAt(0)?.toUpperCase() || friend.username?.charAt(0)?.toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium">
+                    {friend.display_name || friend.username}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive/20"
+                    onClick={() => removeFriend(friend.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setPickerOpen(true)}
+          >
+            + Invite friends
+          </Button>
+        </div>
+      </div>
+
+      <FriendPicker
+        open={pickerOpen}
+        initial={invitedIds}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={onInvitedChange}
+      />
 
       {/* Create a new floq */}
       <div className="space-y-3">
@@ -166,23 +246,30 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
         </div>
       )}
 
-      {/* Combined Floq Name - only show when >1 selected */}
-      {value.length > 1 && (
+      {/* Combined Floq Name - show when >1 floqs OR invites with existing floqs */}
+      {(value.length > 1 || invitedIds.some(uid => 
+        value.some(sel => sel.type === 'existing')
+      )) && (
         <div className="space-y-3">
-          <Label htmlFor="combined-name">Combined Floq Name</Label>
+          <Label htmlFor="combined-name">Combined Floq Name *</Label>
           <Input
             id="combined-name"
             placeholder="e.g. Weekend Warriors Planning"
             value={combinedName}
             onChange={(e) => onCombinedNameChange(e.target.value)}
           />
+          <p className="text-sm text-muted-foreground">
+            Required when linking multiple floqs or inviting people outside existing floqs
+          </p>
         </div>
       )}
 
       <Button
         className="w-full"
         onClick={handleNext}
-        disabled={value.length > 1 && !combinedName.trim()}
+        disabled={(value.length > 1 || invitedIds.some(uid => 
+          value.some(sel => sel.type === 'existing')
+        )) && !combinedName.trim()}
       >
         {value.length === 0 ? 'Create Solo Plan' : 'Continue'}
       </Button>

@@ -93,7 +93,8 @@ export function useCreatePlan() {
         body: {
           planId: planData.id,
           selections: payload.floqSelections,
-          combinedName: payload.combinedName
+          combinedName: payload.combinedName,
+          invitedIds: payload.invitedUserIds
         }
       })
 

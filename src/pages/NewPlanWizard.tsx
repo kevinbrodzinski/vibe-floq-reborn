@@ -21,7 +21,6 @@ export interface PlanDetails {
   title: string
   description?: string
   vibe_tag?: string
-  invitedUserIds: string[]
 }
 
 export interface PlanDraft extends PlanDetails, TimeRange {
@@ -55,9 +54,9 @@ export function NewPlanWizard() {
   const [details, setDetails] = useState<PlanDetails>({
     title: '',
     description: '',
-    vibe_tag: '',
-    invitedUserIds: []
+    vibe_tag: ''
   })
+  const [invitedUserIds, setInvitedUserIds] = useState<string[]>([])
   const [floqSelections, setFloqSelections] = useState<FloqSelection[]>([])
   const [combinedFloqName, setCombinedFloqName] = useState('')
 
@@ -117,12 +116,25 @@ export function NewPlanWizard() {
 
   const handleCreate = async () => {
     try {
+      // Tighten the combined-name guard
+      const needsSuper = floqSelections.length > 1 || 
+        invitedUserIds.some(uid => 
+          floqSelections.some(sel => 
+            sel.type === 'existing' 
+            // Note: We could add membershipMap check here when available
+          )
+        )
+
+      if (needsSuper && !combinedFloqName.trim()) {
+        return // Let the UI handle validation in PlanFloqStep
+      }
+
       const finalPayload = {
         ...details,
         ...timeRange,
         floqSelections: floqSelections,
-        combinedName: floqSelections.length > 1 ? combinedFloqName.trim() : null,
-        invitedUserIds: details.invitedUserIds,
+        combinedName: needsSuper ? combinedFloqName.trim() : null,
+        invitedUserIds: invitedUserIds,
       }
       
       const planData_result = await createPlan(finalPayload)
@@ -207,6 +219,8 @@ export function NewPlanWizard() {
                 onNext={handleNext}
                 combinedName={combinedFloqName}
                 onCombinedNameChange={setCombinedFloqName}
+                invitedIds={invitedUserIds}
+                onInvitedChange={setInvitedUserIds}
               />
             )}
             
@@ -215,7 +229,8 @@ export function NewPlanWizard() {
                 draft={{
                   ...details,
                   ...timeRange,
-                  duration_hours: durationHours
+                  duration_hours: durationHours,
+                  invitedUserIds: invitedUserIds
                 }}
                 onCreate={handleCreate}
                 isCreating={isPending}

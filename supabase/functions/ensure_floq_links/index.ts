@@ -65,15 +65,16 @@ serve(async (req) => {
     
     if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders })
 
-    const { planId, selections, combinedName }: { 
+    const { planId, selections, combinedName, invitedIds }: { 
       planId: string; 
       selections: Selection[]; 
-      combinedName?: string 
+      combinedName?: string;
+      invitedIds?: string[]
     } = await req.json()
 
     const userId = user.id
 
-    console.log('Processing Floq links for plan:', planId, 'selections:', selections, 'combinedName:', combinedName)
+    console.log('Processing Floq links for plan:', planId, 'selections:', selections, 'combinedName:', combinedName, 'invitedIds:', invitedIds)
 
     const existing = selections.filter((s): s is SelectionExisting => s.type === 'existing')
     const newNamed = selections.filter((s): s is SelectionNew => s.type === 'new')
@@ -200,6 +201,29 @@ serve(async (req) => {
       .upsert(links, { onConflict: 'plan_id,floq_id' })
     
     throwIf(linkErr, 'Failed to link floqs to plan')
+
+    // 4. Handle invited users - add them to each linked floq
+    if (invitedIds?.length && allIds.length) {
+      for (const floqId of allIds) {
+        for (const invitedUserId of invitedIds) {
+          // UPSERT participant (ignore if already exists)
+          const { error: participantErr } = await supabase
+            .from('floq_participants')
+            .upsert({
+              floq_id: floqId,
+              user_id: invitedUserId,
+              role: 'member'
+            }, { 
+              onConflict: 'floq_id,user_id' 
+            })
+          
+          // Log but don't fail if participant already exists
+          if (participantErr) {
+            console.log(`Warning: Could not add participant ${invitedUserId} to floq ${floqId}:`, participantErr)
+          }
+        }
+      }
+    }
 
     console.log('Successfully processed Floq links for plan:', planId)
     return new Response(JSON.stringify({ ok: true }), { 

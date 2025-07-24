@@ -1,5 +1,3 @@
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Users, Check } from 'lucide-react';
 import { VibePill } from '@/components/floq/VibePill';
 import type { ActiveFloq } from '@/hooks/useMyActiveFloqs';
@@ -14,29 +12,25 @@ export function FloqCardMini({ floq, selected, onToggle }: FloqCardMiniProps) {
   const displayName = floq.title || floq.name || 'Untitled Floq';
   
   return (
-    <Card
+    <div
       onClick={onToggle}
-      className={`relative p-3 cursor-pointer transition-all duration-200 hover:shadow-md ${
-        selected 
-          ? 'ring-2 ring-primary bg-primary/5 border-primary' 
-          : 'hover:border-primary/50'
-      }`}
+      className={`rounded-xl p-4 flex flex-col cursor-pointer transition-all duration-200 relative
+        ${selected ? 'ring-2 ring-primary/80 bg-primary/10' : 'hover:bg-muted/20 border border-border/30'}
+      `}
     >
       {/* Floq Name */}
-      <div className="font-medium text-sm mb-2 line-clamp-2">
-        {displayName}
-      </div>
-
+      <span className="font-medium truncate">{displayName}</span>
+      
       {/* Member Count */}
-      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-        <Users className="w-3 h-3" />
-        <span>{floq.member_count || 0} member{(floq.member_count || 0) !== 1 ? 's' : ''}</span>
-      </div>
-
+      <span className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+        <Users className="w-3 h-3" /> 
+        {floq.member_count || 0} member{(floq.member_count || 0) !== 1 ? 's' : ''}
+      </span>
+      
       {/* Vibe Badge */}
       {floq.primary_vibe && (
-        <div className="pointer-events-none">
-          <VibePill vibe={floq.primary_vibe as any} />
+        <div className="mt-auto self-start">
+          <VibePill className="mt-auto self-start" vibe={floq.primary_vibe as any} />
         </div>
       )}
 
@@ -46,6 +40,6 @@ export function FloqCardMini({ floq, selected, onToggle }: FloqCardMiniProps) {
           <Check className="w-3 h-3" />
         </div>
       )}
-    </Card>
+    </div>
   );
 }
