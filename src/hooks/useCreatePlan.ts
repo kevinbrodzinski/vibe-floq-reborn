@@ -74,6 +74,7 @@ export function useCreatePlan() {
           planned_at: startISO,
           start_time: isoToPgTime(startISO),
           end_time: isoToPgTime(endISO),
+          duration_hours: payload.duration_hours,
           creator_id: session.user.id,
           plan_mode: 'draft'
         })
@@ -82,12 +83,11 @@ export function useCreatePlan() {
 
       if (planError) throw planError
 
-      // Edge function -> create/link floqs, merge members
+      // Edge function -> create/link floqs, merge members (no userId in body - derived from JWT)
       const { error: linkError } = await supabase.functions.invoke('ensure_floq_links', {
         body: {
           planId: planData.id,
-          selections: payload.floqSelections,
-          userId: session.user.id
+          selections: payload.floqSelections
         }
       })
 

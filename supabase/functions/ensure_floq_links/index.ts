@@ -26,6 +26,14 @@ interface SelectionNew {
 
 type Selection = SelectionExisting | SelectionNew
 
+// Error helper
+function throwIf(error: any, message?: string) {
+  if (error) {
+    console.error(message || 'Database error:', error)
+    throw error
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -33,8 +41,16 @@ serve(async (req) => {
   }
 
   try {
-    const { planId, selections, userId }: { planId: string; selections: Selection[]; userId: string } =
+    // Get user from JWT instead of request body (security fix)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders })
+
+    const { planId, selections }: { planId: string; selections: Selection[] } =
       await req.json()
+
+    const userId = user.id
 
     console.log('Processing Floq links for plan:', planId, 'selections:', selections)
 
@@ -59,10 +75,7 @@ serve(async (req) => {
         .insert(rows)
         .select('id, title')
       
-      if (newErr) {
-        console.error('Error creating new floqs:', newErr)
-        throw newErr
-      }
+      throwIf(newErr, 'Failed to create new floqs')
       
       // Map created floqs by name
       newSelections.forEach((selection, idx) => {
@@ -79,7 +92,8 @@ serve(async (req) => {
           role: 'creator'
         }))
         
-        await supabase.from('floq_participants').insert(participantRows)
+        const { error: participantErr } = await supabase.from('floq_participants').insert(participantRows)
+        throwIf(participantErr, 'Failed to add creator as participant')
       }
     }
 
@@ -94,10 +108,7 @@ serve(async (req) => {
       .from('plan_floqs')
       .upsert(links, { onConflict: 'plan_id,floq_id' })
     
-    if (linkErr) {
-      console.error('Error linking floqs to plan:', linkErr)
-      throw linkErr
-    }
+    throwIf(linkErr, 'Failed to link floqs to plan')
 
     /* Step 3 — add all plan participants to these floqs */
     const { data: participants } = await supabase
@@ -122,10 +133,7 @@ serve(async (req) => {
             ignoreDuplicates: true,
           })
         
-        if (memberErr) {
-          console.error('Error adding participants to floqs:', memberErr)
-          // Don't throw here - plan was created successfully
-        }
+        throwIf(memberErr, 'Failed to add participants to floqs')
       }
     }
 
