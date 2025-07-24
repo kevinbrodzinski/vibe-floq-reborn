@@ -8,30 +8,33 @@ export function useLiveETA(
   const [secs, setSecs] = useState<number | null>(null);
   const [fresh, setFresh] = useState(false);
 
+  // Memoize keys to avoid allocation on every render
+  const keyFrom = from ? from.join('|') : '';
+  const keyTo = to ? to.join('|') : '';
+
   useEffect(() => {
-    if (!from || !to) return;
-    let mounted = true;
+    if (!keyFrom || !keyTo) return;
+    
+    let cancelled = false;
     let freshTimeout: number | null = null;
 
     const fetchETA = async () => {
-      const s = await getETA(from, to);
-      if (!mounted) return;
+      const s = await getETA(from!, to!);
+      if (cancelled) return;
       setSecs(Math.round(s ?? 0));
       setFresh(true);
       freshTimeout = window.setTimeout(() => setFresh(false), 30_000);
     };
+
     fetchETA();
-    const id = setInterval(fetchETA, 30_000);   // every 30 s
+    const id = window.setInterval(fetchETA, 30_000);
+    
     return () => { 
-      mounted = false; 
-      clearInterval(id);
-      if (freshTimeout) clearTimeout(freshTimeout);
+      cancelled = true;
+      window.clearInterval(id);
+      if (freshTimeout) window.clearTimeout(freshTimeout);
     };
-  }, [
-    // Use join for better performance and referential equality
-    from?.join('|') || null,
-    to?.join('|') || null
-  ]);
+  }, [keyFrom, keyTo]);
 
   return { secs, isFresh: fresh };
 }

@@ -29,7 +29,8 @@ export function usePlanVenuePresence(planId: string): Record<string, StopStatus>
         filter: `plan_id=eq.${planId}`
       }, (payload) => {
         const row = payload.new as VenueStay;
-        if (row && row.venue_id) {
+        // Race condition safety: ensure callback matches current plan
+        if (row && row.venue_id && row.plan_id === planId) {
           setMap(m => ({
             ...m,
             [row.venue_id]:

@@ -21,6 +21,7 @@ export const MiniPath = ({ pts = [] }: { pts: [number, number][] }) => {
       height={10} 
       viewBox="0 0 56 10" 
       className="absolute bottom-0 left-0 z-0 pointer-events-none"
+      focusable="false"
     >
       <title>Recent movement path</title>
       <polyline

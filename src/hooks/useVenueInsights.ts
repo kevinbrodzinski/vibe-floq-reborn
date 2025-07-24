@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { QK } from '@/constants/queryKeys'
 
 interface PopularVenue {
   id: string
@@ -14,7 +15,7 @@ interface TimeData {
 
 export const useVenueInsights = () => {
   return useQuery({
-    queryKey: ['venue-insights'],
+    queryKey: QK.VenueInsights(),
     queryFn: async () => {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
