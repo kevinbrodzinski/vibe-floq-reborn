@@ -9,12 +9,14 @@ interface AfterglowInsightsModalProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   afterglowId?: string;
+  aiSummary?: string | null;
 }
 
 export default function AfterglowInsightsModal({ 
   open, 
   onOpenChange, 
-  afterglowId 
+  afterglowId,
+  aiSummary 
 }: AfterglowInsightsModalProps) {
   const [tab, setTab] = useState('weekly');
 
@@ -47,7 +49,7 @@ export default function AfterglowInsightsModal({
           
           <TabsContent value="daily">
             {afterglowId ? (
-              <DailyInsightsTab id={afterglowId} />
+              <DailyInsightsTab afterglowId={afterglowId} aiSummary={aiSummary} />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No afterglow data available for AI insights.</p>

@@ -8,9 +8,9 @@ export function useAISummary() {
   const queryClient = useQueryClient();
 
   const summaryMutation = useMutation({
-    mutationFn: async (planId: string) => {
-      if (!planId) {
-        throw new Error("Plan ID is required");
+    mutationFn: async (afterglowId: string) => {
+      if (!afterglowId) {
+        throw new Error("Afterglow ID is required");
       }
 
       // Add 10s timeout for OpenAI
@@ -19,7 +19,7 @@ export function useAISummary() {
 
       try {
         const { data, error } = await supabase.functions.invoke('generate-intelligence', {
-          body: { mode: 'plan-summary', plan_id: planId }
+          body: { mode: 'afterglow', afterglow_id: afterglowId }
         });
 
         clearTimeout(timeoutId);
@@ -29,11 +29,11 @@ export function useAISummary() {
           throw new Error('Unable to generate AI summary');
         }
 
-        if (!data?.success || !data?.summary) {
+        if (!data?.ai_summary) {
           throw new Error('Invalid response from AI service');
         }
 
-        return data.summary;
+        return data.ai_summary;
       } catch (error) {
         clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
@@ -42,15 +42,15 @@ export function useAISummary() {
         throw error;
       }
     },
-    onSuccess: (summary, planId) => {
+    onSuccess: (summary, afterglowId) => {
       toast({
         title: "Summary Generated",
-        description: "AI summary has been created for your plan!",
+        description: "AI summary has been created for your afterglow!",
       });
       
-      // Invalidate plan queries to refresh UI
-      queryClient.invalidateQueries({ queryKey: ['plan', planId] });
-      queryClient.invalidateQueries({ queryKey: ['plan-summaries'] });
+      // Invalidate afterglow queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['afterglow', afterglowId] });
+      queryClient.invalidateQueries({ queryKey: ['daily-afterglow'] });
     },
     onError: (error) => {
       toast({

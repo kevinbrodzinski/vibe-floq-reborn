@@ -20,6 +20,65 @@ export function useRealtimeAfterglowData(date: string) {
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
+  // Initial data fetch
+  useEffect(() => {
+    if (!user || !date) return
+
+    const fetchInitialData = async () => {
+      console.log('Fetching initial afterglow data for date:', date)
+      setIsGenerating(true)
+      
+      try {
+        const { data, error } = await supabase
+          .from('daily_afterglow')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', date)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error fetching afterglow:', error)
+        } else if (data) {
+          console.log('Found existing afterglow:', data)
+          setAfterglow(data)
+        } else {
+          console.log('No afterglow found, triggering generation...')
+          // No data exists, trigger generation
+          await generateAfterglowData()
+        }
+      } catch (err) {
+        console.error('Failed to fetch afterglow:', err)
+      }
+      
+      setIsGenerating(false)
+    }
+
+    const generateAfterglowData = async () => {
+      try {
+        console.log('Calling generate-intelligence with daily mode')
+        const { data: result, error } = await supabase.functions.invoke('generate-intelligence', {
+          body: { mode: 'daily', user_id: user.id, date }
+        })
+
+        if (error) {
+          console.error('Error generating afterglow:', error)
+          toast({
+            title: "Generation Failed",
+            description: "Failed to generate afterglow. Please try again.",
+            variant: "destructive"
+          })
+        } else {
+          console.log('Afterglow generation triggered:', result)
+        }
+      } catch (error) {
+        console.error('Failed to trigger afterglow generation:', error)
+      }
+    }
+
+    fetchInitialData()
+  }, [user?.id, date])
+
+  // Real-time subscriptions
   useEffect(() => {
     if (!user || !date) return
 
@@ -161,11 +220,12 @@ export function useRealtimeAfterglowData(date: string) {
     
     try {
       const { data: result, error } = await supabase.functions.invoke('generate-intelligence', {
-        body: { mode: 'daily-afterglow', user_id: user.id, date, force_regenerate: true }
+        body: { mode: 'daily', user_id: user.id, date, force_regenerate: true }
       });
 
       if (error) {
         console.error('Error generating afterglow:', error);
+        setIsGenerating(false);
         toast({
           title: "Generation Failed",
           description: "Failed to generate afterglow. Please try again.",
@@ -180,6 +240,7 @@ export function useRealtimeAfterglowData(date: string) {
       }
     } catch (error) {
       console.error('Failed to trigger afterglow generation:', error);
+      setIsGenerating(false);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

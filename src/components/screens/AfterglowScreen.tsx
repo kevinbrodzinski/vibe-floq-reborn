@@ -361,8 +361,31 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
             </Button>
           </div>
         ) : afterglow?.moments && Array.isArray(afterglow.moments) && afterglow.moments.length ? (
-          /* Always use Enhanced Timeline - no more flags */
-          <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 3)} />
+          /* Use real afterglow moments when available */
+          <EnhancedTimeline moments={afterglow.moments.map((momentStr: string, index: number) => {
+            try {
+              const moment = JSON.parse(momentStr);
+              return {
+                id: moment.id || `moment-${index}`,
+                timestamp: moment.timestamp,
+                title: moment.title || 'Moment',
+                description: moment.description,
+                color: moment.color || '#3b82f6',
+                moment_type: moment.moment_type || 'personal',
+                metadata: moment.metadata || {}
+              };
+            } catch (e) {
+              console.error('Failed to parse moment:', momentStr, e);
+              return {
+                id: `fallback-${index}`,
+                timestamp: new Date().toISOString(),
+                title: 'Moment',
+                color: '#3b82f6',
+                moment_type: 'personal',
+                metadata: {}
+              };
+            }
+          })} />
         ) : (
           /* Show sample moments for demo */
           <EnhancedTimeline moments={sampleMomentsWithMetadata.slice(0, 2)} />
@@ -449,7 +472,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
         <AfterglowInsightsModal 
           open={insightsOpen} 
           onOpenChange={setInsightsOpen} 
-          afterglowId={afterglow.id} 
+          afterglowId={afterglow.id}
+          aiSummary={afterglow.ai_summary}
         />
       )}
       
