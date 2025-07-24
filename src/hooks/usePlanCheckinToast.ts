@@ -12,7 +12,7 @@ export function usePlanCheckinToast(planId?:string){
         if(payload.plan_id === planId){
           toast({
             title:'Checked-in ✅',
-            description:'You were automatically checked-in to this stop'
+            description: payload.title ? `Auto-checked in at ${payload.title}` : 'You were automatically checked-in to this stop'
           });
         }
       })

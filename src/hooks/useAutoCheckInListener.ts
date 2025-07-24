@@ -12,7 +12,7 @@ export function useAutoCheckInListener(planId: string) {
         if (payload.plan_id !== planId) return;
         toast({
           title: '✓ Checked in',
-          description: `Automatically checked in at stop`
+          description: payload.title ? `Automatically checked in at ${payload.title}` : 'Automatically checked in at stop'
         });
       })
       .subscribe();
