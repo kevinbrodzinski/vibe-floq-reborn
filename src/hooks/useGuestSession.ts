@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { storage } from '@/lib/storage'
 
 interface GuestSession {
   guestId: string
@@ -14,12 +15,12 @@ export function useGuestSession() {
 
   // Initialize guest session
   useEffect(() => {
-    const initializeGuestSession = () => {
+    const initializeGuestSession = async () => {
       try {
         // Check for existing session first
-        const stored = localStorage.getItem('floq_guest_session')
-        const oldName = localStorage.getItem('floq_guest_name')
-        const oldId = localStorage.getItem('guest_participant_id')
+        const stored = await storage.getItem('floq_guest_session')
+        const oldName = await storage.getItem('floq_guest_name')
+        const oldId = await storage.getItem('guest_participant_id')
         
         if (stored) {
           const parsed = JSON.parse(stored)
@@ -43,9 +44,9 @@ export function useGuestSession() {
             createdAt: new Date().toISOString(),
             isAnonymous: true
           }
-          localStorage.setItem('floq_guest_session', JSON.stringify(migratedSession))
-          localStorage.removeItem('floq_guest_name')
-          localStorage.removeItem('guest_participant_id')
+          await storage.setJSON('floq_guest_session', migratedSession)
+          await storage.removeItem('floq_guest_name')
+          await storage.removeItem('guest_participant_id')
           setGuestSession(migratedSession)
           setIsLoading(false)
           return
@@ -59,7 +60,7 @@ export function useGuestSession() {
           isAnonymous: true
         }
 
-        localStorage.setItem('floq_guest_session', JSON.stringify(newSession))
+        await storage.setJSON('floq_guest_session', newSession)
         setGuestSession(newSession)
         setIsLoading(false)
       } catch (error) {
@@ -84,24 +85,24 @@ export function useGuestSession() {
   }
 
   // Update guest name
-  const updateGuestName = useCallback((newName: string) => {
+  const updateGuestName = useCallback(async (newName: string) => {
     if (!guestSession) return
 
     const updated = { ...guestSession, guestName: newName }
     setGuestSession(updated)
-    localStorage.setItem('floq_guest_session', JSON.stringify(updated))
+    await storage.setJSON('floq_guest_session', updated)
   }, [guestSession])
 
   // Clear guest session
-  const clearGuestSession = useCallback(() => {
-    localStorage.removeItem('floq_guest_session')
-    localStorage.removeItem('floq_guest_name')
-    localStorage.removeItem('guest_participant_id')
+  const clearGuestSession = useCallback(async () => {
+    await storage.removeItem('floq_guest_session')
+    await storage.removeItem('floq_guest_name')
+    await storage.removeItem('guest_participant_id')
     setGuestSession(null)
   }, [])
 
   // Regenerate guest session
-  const regenerateGuestSession = useCallback(() => {
+  const regenerateGuestSession = useCallback(async () => {
     const newSession: GuestSession = {
       guestId: uuidv4(),
       guestName: generateGuestName(),
@@ -109,17 +110,17 @@ export function useGuestSession() {
       isAnonymous: true
     }
 
-    localStorage.setItem('floq_guest_session', JSON.stringify(newSession))
+    await storage.setJSON('floq_guest_session', newSession)
     setGuestSession(newSession)
   }, [])
 
   // Legacy setGuestName for compatibility
-  const setGuestName = useCallback((name: string) => {
-    updateGuestName(name)
+  const setGuestName = useCallback(async (name: string) => {
+    await updateGuestName(name)
   }, [updateGuestName])
 
   // Legacy saveGuestSession for compatibility
-  const saveGuestSession = useCallback((participantId: string, name: string) => {
+  const saveGuestSession = useCallback(async (participantId: string, name: string) => {
     const newSession: GuestSession = {
       guestId: participantId,
       guestName: name,
@@ -127,7 +128,7 @@ export function useGuestSession() {
       isAnonymous: true
     }
     
-    localStorage.setItem('floq_guest_session', JSON.stringify(newSession))
+    await storage.setJSON('floq_guest_session', newSession)
     setGuestSession(newSession)
   }, [])
 

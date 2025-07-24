@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useFloqUI } from '@/contexts/FloqUIContext';
+import { storage } from '@/lib/storage';
 
 export function useNavigation() {
   const navigate = useNavigate();
@@ -64,13 +65,16 @@ export function useNavigation() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [selectedFloqId, setSelectedFloqId, navigate]);
 
-  // Sync selected floq to localStorage for cross-tab communication
+  // Sync selected floq to storage for cross-tab communication
   useEffect(() => {
-    if (selectedFloqId) {
-      localStorage.setItem('floq_selected_id', selectedFloqId);
-    } else {
-      localStorage.removeItem('floq_selected_id');
-    }
+    const syncStorage = async () => {
+      if (selectedFloqId) {
+        await storage.setItem('floq_selected_id', selectedFloqId);
+      } else {
+        await storage.removeItem('floq_selected_id');
+      }
+    };
+    syncStorage();
   }, [selectedFloqId]);
 
   return {

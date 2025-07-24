@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useMemoryOptimization } from '@/hooks/useMemoryOptimization';
+import { storage } from '@/lib/storage';
 
 interface QueuedAction {
   id: string;
@@ -17,29 +18,29 @@ export function useOfflineQueue() {
   const { toast } = useToast();
   const { addCleanup } = useMemoryOptimization();
 
-  // Store queued actions in localStorage
-  const getQueuedActions = (): QueuedAction[] => {
+  // Store queued actions in storage
+  const getQueuedActions = async (): Promise<QueuedAction[]> => {
     try {
-      const stored = localStorage.getItem('floq_offline_queue');
-      return stored ? JSON.parse(stored) : [];
+      const actions = await storage.getJSON<QueuedAction[]>('floq_offline_queue');
+      return actions || [];
     } catch {
       return [];
     }
   };
 
-  const setQueuedActions = (actions: QueuedAction[]) => {
-    localStorage.setItem('floq_offline_queue', JSON.stringify(actions));
+  const setQueuedActions = async (actions: QueuedAction[]) => {
+    await storage.setJSON('floq_offline_queue', actions);
   };
 
-  const addToQueue = (action: Omit<QueuedAction, 'id' | 'timestamp'>) => {
+  const addToQueue = async (action: Omit<QueuedAction, 'id' | 'timestamp'>) => {
     const queuedAction: QueuedAction = {
       ...action,
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
     };
     
-    const current = getQueuedActions();
-    setQueuedActions([...current, queuedAction]);
+    const current = await getQueuedActions();
+    await setQueuedActions([...current, queuedAction]);
     
     toast({
       title: "Action queued",
@@ -49,7 +50,7 @@ export function useOfflineQueue() {
   };
 
   const processQueue = async () => {
-    const queue = getQueuedActions();
+    const queue = await getQueuedActions();
     if (queue.length === 0) return;
 
     const processed: string[] = [];
@@ -77,7 +78,7 @@ export function useOfflineQueue() {
     // Remove successfully processed actions
     if (processed.length > 0) {
       const remaining = queue.filter(action => !processed.includes(action.id));
-      setQueuedActions(remaining);
+      await setQueuedActions(remaining);
       
       // Refresh all queries after processing
       queryClient.invalidateQueries();
@@ -100,7 +101,7 @@ export function useOfflineQueue() {
       } catch (error) {
         // If offline, add to queue
         if (!navigator.onLine) {
-          addToQueue({ type: 'join', floqId });
+          await addToQueue({ type: 'join', floqId });
           return { success: true, queued: true };
         }
         throw error;
@@ -157,7 +158,7 @@ export function useOfflineQueue() {
       } catch (error) {
         // If offline, add to queue
         if (!navigator.onLine) {
-          addToQueue({ type: 'leave', floqId });
+          await addToQueue({ type: 'leave', floqId });
           return { success: true, queued: true };
         }
         throw error;
@@ -230,6 +231,6 @@ export function useOfflineQueue() {
     joinFloq: joinFloqOffline,
     leaveFloq: leaveFloqOffline,
     processQueue,
-    queueLength: getQueuedActions().length,
+    getQueueLength: async () => (await getQueuedActions()).length,
   };
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { storage } from '@/lib/storage';
 
 /**
  * Custom hook for localStorage with type safety and synchronization
@@ -8,42 +9,48 @@ export function useLocalStorage<T>(
   initialValue: T
 ): [T, (value: T | ((val: T) => T)) => void] {
   // State to store our value
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    try {
-      // Get from local storage by key
-      const item = window.localStorage.getItem(key);
-      // Parse stored json or if none return initialValue
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      // If error also return initialValue
-      console.warn(`Error reading localStorage key "${key}":`, error);
-      return initialValue;
-    }
-  });
+  const [storedValue, setStoredValue] = useState<T>(initialValue);
 
-  // Return a wrapped version of useState's setter function that persists the new value to localStorage
-  const setValue = (value: T | ((val: T) => T)) => {
+  // Initialize from storage
+  useEffect(() => {
+    const initValue = async () => {
+      try {
+        const item = await storage.getJSON<T>(key);
+        if (item !== null) {
+          setStoredValue(item);
+        }
+      } catch (error) {
+        console.warn(`Error reading storage key "${key}":`, error);
+      }
+    };
+    initValue();
+  }, [key]);
+
+  // Return a wrapped version of useState's setter function that persists the new value to storage
+  const setValue = async (value: T | ((val: T) => T)) => {
     try {
       // Allow value to be a function so we have the same API as useState
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       // Save state
       setStoredValue(valueToStore);
-      // Save to local storage
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      // Save to storage
+      await storage.setJSON(key, valueToStore);
     } catch (error) {
       // A more advanced implementation would handle the error case
-      console.error(`Error setting localStorage key "${key}":`, error);
+      console.error(`Error setting storage key "${key}":`, error);
     }
   };
 
-  // Listen for changes to this key from other tabs/windows
+  // Listen for changes to this key from other tabs/windows (web only)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue !== null) {
         try {
           setStoredValue(JSON.parse(e.newValue));
         } catch (error) {
-          console.warn(`Error parsing localStorage value for key "${key}":`, error);
+          console.warn(`Error parsing storage value for key "${key}":`, error);
         }
       }
     };
