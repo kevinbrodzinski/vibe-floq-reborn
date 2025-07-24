@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import debounce from 'lodash.debounce'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { Database } from '@/integrations/supabase/types'
@@ -55,12 +56,17 @@ export function useRealtimeAfterglowData(date: string) {
         })
       } else {
         console.log('Afterglow generation triggered:', result)
-        setGenerationProgress({
-          step: 'Processing',
-          progress: 50,
-          status: 'in_progress',
-          message: 'Processing your day...'
-        })
+        // Merge backend progress if available
+        if (result?.progress) {
+          setGenerationProgress(result)
+        } else {
+          setGenerationProgress({
+            step: 'Processing',
+            progress: 50,
+            status: 'in_progress',
+            message: 'Processing your day...'
+          })
+        }
       }
     } catch (error) {
       console.error('Failed to trigger afterglow generation:', error)
@@ -69,8 +75,8 @@ export function useRealtimeAfterglowData(date: string) {
     }
   }, [user, date, toast])
 
-  // Initial data fetch with debounced fetch helper
-  const debouncedFetch = useCallback(async () => {
+  // Fetch afterglow data helper
+  const fetchAfterglow = useCallback(async () => {
     if (!user) return;
     
     console.log('Fetching afterglow data for date:', date)
@@ -86,7 +92,15 @@ export function useRealtimeAfterglowData(date: string) {
         console.error('Error fetching afterglow:', error)
       } else if (data) {
         console.log('Found existing afterglow:', data)
-        setAfterglow(data)
+        // Parse moments once on arrival
+        const moments = Array.isArray(data.moments) ? data.moments : []
+        const parsedData = {
+          ...data,
+          moments: moments.map((m: any) => 
+            typeof m === 'string' ? JSON.parse(m) : m
+          )
+        }
+        setAfterglow(parsedData)
         setIsGenerating(false)
         setGenerationProgress(null)
       } else {
@@ -99,6 +113,11 @@ export function useRealtimeAfterglowData(date: string) {
     }
   }, [user, date, generateAfterglowData])
 
+  // Debounced version for realtime updates
+  const debouncedFetch = useMemo(() => 
+    debounce(fetchAfterglow, 300), [fetchAfterglow]
+  )
+
   // Initial data fetch
   useEffect(() => {
     let mounted = true;
@@ -107,7 +126,7 @@ export function useRealtimeAfterglowData(date: string) {
 
     const fetchInitialData = async () => {
       if (mounted) {
-        await debouncedFetch()
+        await fetchAfterglow()
       }
     }
 
@@ -116,7 +135,7 @@ export function useRealtimeAfterglowData(date: string) {
     return () => {
       mounted = false;
     }
-  }, [user?.id, date, debouncedFetch])
+  }, [user?.id, date, fetchAfterglow])
 
   // Real-time subscriptions
   useEffect(() => {
@@ -125,7 +144,7 @@ export function useRealtimeAfterglowData(date: string) {
 
     // Subscribe to daily_afterglow changes with specific filter
     const afterglowChannel = supabase
-      .channel(`afterglow-${user.id}`)
+      .channel(`afterglow-data-${user.id}-${date}`)
       .on(
         'postgres_changes',
         {
@@ -134,45 +153,13 @@ export function useRealtimeAfterglowData(date: string) {
           table: 'daily_afterglow',
           filter: `date=eq.${date},user_id=eq.${user.id}`
         },
-        (payload) => {
-          if (!mounted) return;
-          console.log('Afterglow changed:', payload)
-          setAfterglow(payload.new as DailyAfterglowRow)
-          setIsGenerating(false)
-          setGenerationProgress({
-            step: 'Complete',
-            progress: 100,
-            status: 'completed',
-            message: 'Afterglow ready!'
-          })
-          
-          // Invalidate queries
-          queryClient.invalidateQueries({ queryKey: ['afterglow', date, user.id] })
-          
-          setTimeout(() => {
-            if (mounted) {
-              setGenerationProgress(null)
-            }
-          }, 2000)
-          
-          if (payload.eventType === 'INSERT') {
-            toast({
-              title: "Afterglow Ready! ✨",
-              description: "Your daily afterglow has been generated and is ready to view.",
-            })
-          } else if (payload.eventType === 'UPDATE' && payload.new.regenerated_at !== payload.old?.regenerated_at) {
-            toast({
-              title: "Afterglow Updated! 🔄",
-              description: "Your afterglow has been refreshed with new data.",
-            })
-          }
-        }
+        () => debouncedFetch()
       )
       .subscribe()
 
-    // Subscribe to generation progress updates
+    // Subscribe to generation progress updates  
     const progressChannel = supabase
-      .channel(`progress-${user.id}`)
+      .channel(`afterglow-progress-${user.id}`)
       .on(
         'broadcast',
         { event: 'afterglow_progress' },
@@ -184,11 +171,13 @@ export function useRealtimeAfterglowData(date: string) {
           
           if (progress.status === 'completed') {
             setIsGenerating(false)
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
               if (mounted) {
                 setGenerationProgress(null)
               }
             }, 2000)
+            
+            return () => clearTimeout(timeoutId)
           } else if (progress.status === 'error') {
             setIsGenerating(false)
             setGenerationProgress(null)
@@ -222,7 +211,7 @@ export function useRealtimeAfterglowData(date: string) {
       afterglowChannel && void supabase.removeChannel(afterglowChannel)
       progressChannel && void supabase.removeChannel(progressChannel)
     }
-  }, [user?.id, date, toast])
+  }, [user?.id, date, toast, debouncedFetch])
 
   // Separate effect for moments subscription that depends on afterglow.id
   useEffect(() => {
@@ -230,7 +219,7 @@ export function useRealtimeAfterglowData(date: string) {
     if (!afterglow?.id) return
 
     const momentsChannel = supabase
-      .channel(`moments-${afterglow.id}`)
+      .channel(`afterglow-moments-${afterglow.id}`)
       .on(
         'postgres_changes',
         {
@@ -242,12 +231,14 @@ export function useRealtimeAfterglowData(date: string) {
         (payload) => {
           if (!mounted) return;
           console.log('New moment added:', payload)
+          // Parse moment once on arrival
+          const newMoment = typeof payload.new === 'string' ? JSON.parse(payload.new) : payload.new
           setAfterglow(prev => {
             if (!prev) return prev
             const currentMoments = Array.isArray(prev.moments) ? prev.moments : [];
             return {
               ...prev,
-              moments: [...currentMoments, JSON.stringify(payload.new)]
+              moments: [...currentMoments, newMoment]
             }
           })
           

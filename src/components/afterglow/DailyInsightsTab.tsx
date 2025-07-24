@@ -16,6 +16,7 @@ export default function DailyInsightsTab({ afterglowId, aiSummary }: DailyInsigh
       await generateSummary(afterglowId);
     } catch (error) {
       console.error('Failed to generate AI summary:', error);
+      // Error handling is done in the hook's onError callback
     }
   };
 

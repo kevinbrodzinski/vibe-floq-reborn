@@ -37,6 +37,11 @@ export function useAISummary() {
       } catch (error) {
         clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
+          toast({
+            title: "Timed out",
+            description: "OpenAI took too long. Try again.",
+            variant: "destructive"
+          });
           throw new Error('Request timeout - please try again');
         }
         throw error;
@@ -48,9 +53,8 @@ export function useAISummary() {
         description: "AI summary has been created for your afterglow!",
       });
       
-      // Invalidate afterglow queries to refresh UI
-      queryClient.invalidateQueries({ queryKey: ['afterglow', afterglowId] });
-      queryClient.invalidateQueries({ queryKey: ['daily-afterglow'] });
+      // Invalidate afterglow queries using consistent key format
+      queryClient.invalidateQueries({ queryKey: ['afterglow'] });
     },
     onError: (error) => {
       toast({
