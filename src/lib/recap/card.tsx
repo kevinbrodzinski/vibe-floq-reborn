@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, MapPin, Users, TrendingUp } from 'lucide-react'
 import { RecapData } from './index'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+
+// Lazy import confetti for performance
+const confetti = lazy(() => import('canvas-confetti'))
 
 interface DailyRecapCardProps {
   data: RecapData
@@ -17,6 +20,19 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
 
   const totalHours = Math.floor(data.totalMins / 60)
   const remainingMins = data.totalMins % 60
+
+  // Trigger confetti for exceptional days
+  React.useEffect(() => {
+    if (data.totalMins > 300) { // 5+ hours out
+      import('canvas-confetti').then(confetti => {
+        confetti.default({
+          particleCount: 50,
+          spread: 70,
+          origin: { y: 0.6 }
+        })
+      })
+    }
+  }, [data.totalMins])
 
   return (
     <Card className="w-full max-w-md mx-auto bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
@@ -56,7 +72,11 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
             <h4 className="text-sm font-medium text-foreground">Daily Timeline</h4>
             <div className="h-20 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={timelineData}>
+                <BarChart 
+                  data={timelineData}
+                  role="img"
+                  aria-label={`Timeline of minutes spent out between ${timelineData[0]?.label || '12AM'} and ${timelineData[timelineData.length - 1]?.label || '11PM'}`}
+                >
                   <XAxis 
                     dataKey="hour" 
                     tick={{ fontSize: 10 }}

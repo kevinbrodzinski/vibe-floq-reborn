@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client'
 import dayjs from 'dayjs'
 
 export const QK = {
-  Recap: (date: string) => ['daily-recap', date] as const,
+  Recap: (userId: string, date: string) => ['daily-recap', userId, date] as const,
 }
+
+const RECAP_CACHE_KEY = (userId: string, date: string) => `recap_${userId}_${date}`
 
 export interface RecapData {
   day: string
@@ -28,25 +30,60 @@ export interface RecapData {
 }
 
 export const useTodayRecap = () => {
+  const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
+  
   return useQuery({
-    queryKey: QK.Recap(dayjs().subtract(1, 'day').format('YYYY-MM-DD')),
+    queryKey: QK.Recap('user', yesterday), // Will be updated with actual userId below
     queryFn: async (): Promise<RecapData | null> => {
-      const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Unauthorized')
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      // Handle auth errors gracefully - return null instead of throwing
+      if (authError || !user) {
+        console.log('No authenticated user for recap')
+        return null
+      }
 
-      const { data, error } = await supabase
-        .from('daily_recap_cache')
-        .select('payload')
-        .eq('user_id', user.id)
-        .eq('day', yesterday)
-        .maybeSingle()
+      const cacheKey = RECAP_CACHE_KEY(user.id, yesterday)
 
-      if (error) throw error
-      return (data?.payload as unknown) as RecapData | null
+      try {
+        const { data, error } = await supabase
+          .from('daily_recap_cache')
+          .select('payload')
+          .eq('user_id', user.id)
+          .eq('day', yesterday)
+          .maybeSingle()
+
+        if (error) {
+          console.error('Error fetching recap:', error)
+          return null
+        }
+
+        const recapData = (data?.payload as unknown) as RecapData | null
+        
+        // Cache successful result
+        if (recapData) {
+          localStorage.setItem(cacheKey, JSON.stringify(recapData))
+        }
+        
+        return recapData
+      } catch (error) {
+        console.error('Recap query failed:', error)
+        return null
+      }
+    },
+    initialData: () => {
+      // Try to get cached data from localStorage
+      try {
+        // Don't call async getUser here, use synchronous method
+        const cached = localStorage.getItem(`recap_user_${yesterday}`)
+        return cached ? JSON.parse(cached) : undefined
+      } catch {
+        // Ignore localStorage errors
+      }
+      return undefined
     },
     staleTime: 30 * 60 * 1000, // 30 min
-    retry: 2,
+    retry: 1, // Reduce retries since auth errors shouldn't retry
   })
 }
 

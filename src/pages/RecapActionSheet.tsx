@@ -2,37 +2,50 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, MessageCircle, MapPin, Home, Share } from 'lucide-react'
+import { useFeatureFlag } from '@/hooks/useFeatureFlag'
+import { track } from '@/lib/analytics'
 
 export default function RecapActionSheet() {
   const navigate = useNavigate()
+  const exploreBeta = useFeatureFlag('EXPLORE')
 
+  const handleAction = (action: string, path: string) => {
+    track('recap_action', { action })
+    navigate(path, { replace: true })
+  }
+
+  // Build actions array with feature flag guard
   const actions = [
     {
       icon: Calendar,
       label: "View today's plans",
       description: "See what's coming up",
-      onClick: () => navigate('/plans'),
+      action: 'view_plans',
+      path: '/plans',
       variant: 'default' as const
     },
     {
       icon: MessageCircle,
       label: "Check messages",
       description: "Catch up with your floqs",
-      onClick: () => navigate('/messages'),
+      action: 'check_messages',
+      path: '/messages',
       variant: 'outline' as const
     },
-    {
+    ...(exploreBeta ? [{
       icon: MapPin,
       label: "Explore nearby",
       description: "Discover trending spots",
-      onClick: () => navigate('/explore'),
+      action: 'explore_nearby',
+      path: '/explore',
       variant: 'outline' as const
-    },
+    }] : []),
     {
       icon: Share,
       label: "Share yesterday",
       description: "Tell your story",
-      onClick: () => navigate('/afterglow'),
+      action: 'share_recap',
+      path: '/afterglow',
       variant: 'outline' as const
     }
   ]
@@ -51,7 +64,7 @@ export default function RecapActionSheet() {
           {actions.map((action, index) => (
             <Button
               key={index}
-              onClick={action.onClick}
+              onClick={() => handleAction(action.action, action.path)}
               variant={action.variant}
               className="w-full justify-start h-auto p-4"
             >
@@ -67,7 +80,10 @@ export default function RecapActionSheet() {
         </div>
 
         <Button 
-          onClick={() => navigate('/home')}
+          onClick={() => {
+            track('recap_action', { action: 'go_home' })
+            navigate('/home', { replace: true })
+          }}
           variant="ghost" 
           className="w-full"
         >

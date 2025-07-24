@@ -21,70 +21,150 @@ serve(async (req) => {
 
     console.log('Daily recap builder started')
 
-    // Get users who were active yesterday (have raw_locations)
-    const yesterday = new Date(Date.now() - 24 * 3600 * 1000)
-    const twoDaysAgo = new Date(Date.now() - 48 * 3600 * 1000)
+    const targetDay = new Date(Date.now() - 24 * 3600 * 1000).toISOString().slice(0, 10) // yyyy-mm-dd
     
-    const { data: activeUsers, error: usersError } = await admin
-      .from('raw_locations')
-      .select('user_id')
-      .gte('captured_at', twoDaysAgo.toISOString())
-      .lte('captured_at', yesterday.toISOString())
-      .neq('user_id', null)
-      .limit(10000) // safeguard
+    // Check if we've already processed recaps for this day
+    const { count: existingCount } = await admin
+      .from('daily_recap_cache')
+      .select('*', { count: 'exact', head: true })
+      .eq('day', targetDay)
 
-    if (usersError) {
-      console.error('Error fetching active users:', usersError)
-      throw usersError
+    if (existingCount && existingCount > 0) {
+      console.log(`Recaps for ${targetDay} already exist (${existingCount} users), skipping`)
+      return new Response(
+        JSON.stringify({ 
+          ok: true, 
+          date: targetDay,
+          message: 'Already processed',
+          existing: existingCount 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const uniqueUsers = [...new Set((activeUsers || []).map(u => u.user_id))]
-    const targetDay = yesterday.toISOString().slice(0, 10) // yyyy-mm-dd
+    // Use keyset pagination to get all active users efficiently
+    let allUsers: string[] = []
+    let lastUserId = ''
+    let hasMore = true
+    const batchSize = 5000
 
-    console.log(`Processing ${uniqueUsers.length} users for ${targetDay}`)
+    while (hasMore) {
+      const query = admin
+        .from('raw_locations')
+        .select('user_id')
+        .gte('captured_at', `${targetDay}T00:00:00Z`)
+        .lte('captured_at', `${targetDay}T23:59:59Z`)
+        .neq('user_id', null)
+        .order('user_id')
+        .limit(batchSize)
 
-    let processed = 0
-    for (const userId of uniqueUsers) {
-      try {
-        // Call the build_daily_recap function
-        const { data: payload, error: recapError } = await admin.rpc('build_daily_recap', {
-          uid: userId,
-          d: targetDay
-        })
+      if (lastUserId) {
+        query.gt('user_id', lastUserId)
+      }
 
-        if (recapError) {
-          console.error(`Error building recap for user ${userId}:`, recapError)
-          continue
-        }
+      const { data: batchUsers, error: usersError } = await query
 
-        // Upsert into cache
-        const { error: upsertError } = await admin
-          .from('daily_recap_cache')
-          .upsert({ 
-            user_id: userId, 
-            day: targetDay, 
-            payload 
-          })
+      if (usersError) {
+        console.error('Error fetching active users:', usersError)
+        throw usersError
+      }
 
-        if (upsertError) {
-          console.error(`Error upserting recap for user ${userId}:`, upsertError)
-          continue
-        }
+      if (!batchUsers || batchUsers.length === 0) {
+        hasMore = false
+        break
+      }
 
-        processed++
-      } catch (error) {
-        console.error(`Failed to process user ${userId}:`, error)
+      const uniqueBatchUsers = [...new Set(batchUsers.map(u => u.user_id))]
+      allUsers.push(...uniqueBatchUsers)
+      
+      if (batchUsers.length < batchSize) {
+        hasMore = false
+      } else {
+        lastUserId = batchUsers[batchUsers.length - 1].user_id
       }
     }
 
-    console.log(`Successfully processed ${processed}/${uniqueUsers.length} recaps`)
+    console.log(`Processing ${allUsers.length} users for ${targetDay}`)
+
+    // Process users in parallel batches
+    const concurrency = 20
+    let processed = 0
+    let errors = 0
+
+    for (let i = 0; i < allUsers.length; i += concurrency) {
+      const batch = allUsers.slice(i, i + concurrency)
+      
+      const promises = batch.map(async (userId) => {
+        try {
+          // Check if recap already exists for this user
+          const { data: existing } = await admin
+            .from('daily_recap_cache')
+            .select('user_id')
+            .eq('user_id', userId)
+            .eq('day', targetDay)
+            .maybeSingle()
+
+          if (existing) {
+            return { success: true, skipped: true }
+          }
+
+          // Call the build_daily_recap function
+          const { data: payload, error: recapError } = await admin.rpc('build_daily_recap', {
+            uid: userId,
+            d: targetDay
+          })
+
+          if (recapError) {
+            console.error(`Error building recap for user ${userId}:`, recapError)
+            return { success: false, error: recapError }
+          }
+
+          // Upsert into cache
+          const { error: upsertError } = await admin
+            .from('daily_recap_cache')
+            .upsert({ 
+              user_id: userId, 
+              day: targetDay, 
+              payload 
+            })
+
+          if (upsertError) {
+            console.error(`Error upserting recap for user ${userId}:`, upsertError)
+            return { success: false, error: upsertError }
+          }
+
+          return { success: true }
+        } catch (error) {
+          console.error(`Failed to process user ${userId}:`, error)
+          return { success: false, error }
+        }
+      })
+
+      const results = await Promise.all(promises)
+      
+      results.forEach(result => {
+        if (result.success) {
+          processed++
+        } else {
+          errors++
+        }
+      })
+
+      // Small delay between batches to avoid overwhelming the DB
+      if (i + concurrency < allUsers.length) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+
+    console.log(`Successfully processed ${processed}/${allUsers.length} recaps (${errors} errors)`)
 
     return new Response(
       JSON.stringify({ 
         ok: true, 
         date: targetDay,
-        totalUsers: uniqueUsers.length,
-        processed 
+        totalUsers: allUsers.length,
+        processed,
+        errors
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
