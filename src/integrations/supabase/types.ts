@@ -4046,7 +4046,6 @@ export type Database = {
       }
       v_friend_last_seen: {
         Row: {
-          age: unknown | null
           last_seen_at: string | null
           user_id: string | null
         }
