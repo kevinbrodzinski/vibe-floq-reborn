@@ -20,18 +20,43 @@ export const useVenueInsights = () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Fetch popular venues - use basic venues for now since popularity column might not be in types
-      const { data: venues, error: venueError } = await supabase
-        .from('venues')
-        .select('id, name')
-        .limit(10)
+      // Fetch popular venues - try with popularity, fallback to basic list
+      let popularVenues: PopularVenue[] = []
+      
+      try {
+        const { data: venuesWithPop, error: popError } = await supabase
+          .from('venues')
+          .select('id, name, popularity')
+          .order('popularity', { ascending: false })
+          .limit(10)
 
-      if (venueError) throw venueError
+        if (!popError && venuesWithPop) {
+          // Guard against null popularity values
+          popularVenues = venuesWithPop.map((v: any) => ({ 
+            id: v.id,
+            name: v.name,
+            popularity: v.popularity ?? 0 
+          }))
+        } else {
+          throw popError || new Error('No venues found')
+        }
+      } catch (venueError) {
+        console.warn('Popular venues query failed, using fallback:', venueError)
+        // Fallback to basic venue list
+        const { data: fallbackVenues } = await supabase
+          .from('venues')
+          .select('id, name')
+          .limit(10)
+        
+        popularVenues = fallbackVenues?.map(v => ({ 
+          id: v.id,
+          name: v.name,
+          popularity: 0 
+        })) || []
+      }
 
-      // Transform to include popularity (will be 0 until types are updated)
-      const popularVenues: PopularVenue[] = venues?.map(v => ({ ...v, popularity: 0 })) || []
-
-      // For time data, use venue_visits as a fallback until materialized view is in types
+      // TODO: Replace with v_time_in_venue_daily when materialized view is in types
+      // For now, use venue_visits as fallback with 30 min estimate per visit
       const { data: visits, error: visitsError } = await supabase
         .from('venue_visits')
         .select('arrived_at')
@@ -39,9 +64,12 @@ export const useVenueInsights = () => {
         .gte('arrived_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('arrived_at', { ascending: true })
 
-      if (visitsError) throw visitsError
+      if (visitsError) {
+        console.warn('Time data query failed:', visitsError)
+        return { popularVenues, timeData: [] }
+      }
 
-      // Group by day and count visits (simplified version)
+      // Group by day and estimate time (simplified version)
       const timeData: TimeData[] = visits?.reduce((acc: TimeData[], visit) => {
         const day = new Date(visit.arrived_at).toISOString().split('T')[0]
         const existing = acc.find(item => item.day === day)

@@ -25,9 +25,13 @@ export function useLiveETA(
     return () => { 
       mounted = false; 
       clearInterval(id);
-      if (freshTimeout) window.clearTimeout(freshTimeout);
+      if (freshTimeout) clearTimeout(freshTimeout);
     };
-  }, [from?.toString(), to?.toString()]);
+  }, [
+    // Use JSON.stringify to avoid array instance changes causing re-fetches
+    from ? JSON.stringify([from[0], from[1]]) : null,
+    to ? JSON.stringify([to[0], to[1]]) : null
+  ]);
 
   return { secs, isFresh: fresh };
 }
