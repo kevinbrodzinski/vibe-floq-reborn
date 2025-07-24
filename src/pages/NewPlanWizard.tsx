@@ -121,7 +121,7 @@ export function NewPlanWizard() {
         ...details,
         ...timeRange,
         floqSelections: floqSelections,
-        combinedName: combinedFloqName.trim() || null,
+        combinedName: (combinedFloqName ?? '').trim() || undefined,
         invitedUserIds: invitedUserIds,
       }
       

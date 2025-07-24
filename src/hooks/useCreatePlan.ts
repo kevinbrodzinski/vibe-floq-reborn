@@ -104,16 +104,35 @@ export function useCreatePlan() {
         throw new Error('Failed to link Floqs / finalise plan')
       }
 
-      /* 3 ─ send plan invites (adds participants to plan) ----------------- */
+      /* 3 ─ handle invited friends on client (post-RPC) ------------------ */
       if (payload.invitedUserIds.length) {
-        const { error: inviteErr } = await supabase.rpc('invite_friends', {
-          p_plan_id: planId,
-          p_user_ids: payload.invitedUserIds,
-        })
-        if (inviteErr) {
-          // non-fatal – plan is finalised, only invites failed
-          console.warn(inviteErr)
-          toast.error('Plan saved, but some invites failed.')
+        // 1) Collect every floq_id we just linked:
+        const { data: linked } = await supabase
+          .from('plan_floqs')
+          .select('floq_id')
+          .eq('plan_id', planId);
+
+        const linkedFloqIds: string[] = linked?.map(r => r.floq_id) ?? [];
+
+        // 2) Bulk-insert all invited users into every linked floq:
+        if (linkedFloqIds.length) {
+          const rows = linkedFloqIds.flatMap(floqId =>
+            payload.invitedUserIds.map(userId => ({
+              floq_id: floqId,
+              user_id: userId,
+              role: 'member' as const,
+            }))
+          );
+
+          const { error: inviteErr } = await supabase
+            .from('floq_participants')
+            .insert(rows);
+
+          if (inviteErr) {
+            // non-fatal – plan is finalised, only invites failed
+            console.warn(inviteErr)
+            toast.error('Plan saved, but some invites failed.')
+          }
         }
       }
 

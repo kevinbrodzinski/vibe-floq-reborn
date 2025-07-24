@@ -250,10 +250,8 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
         </div>
       )}
 
-      {/* Combined Floq Name - show when >1 floqs OR invites with existing floqs */}
-      {(value.length > 1 || invitedIds.some(uid => 
-        value.some(sel => sel.type === 'existing')
-      )) && (
+      {/* Combined Floq Name - show when >1 floqs OR any new floqs */}
+      {(value.length > 1 || value.some(sel => sel.type === 'new')) && (
         <div className="space-y-3">
           <Label htmlFor="combined-name">Combined Floq Name *</Label>
           <Input
@@ -271,9 +269,7 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
       <Button
         className="w-full"
         onClick={handleNext}
-        disabled={(value.length > 1 || invitedIds.some(uid => 
-          value.some(sel => sel.type === 'existing')
-        )) && !combinedName.trim()}
+        disabled={(value.length > 1 || value.some(sel => sel.type === 'new')) && !(combinedName ?? '').trim()}
       >
         {value.length === 0 ? 'Create Solo Plan' : 'Continue'}
       </Button>
