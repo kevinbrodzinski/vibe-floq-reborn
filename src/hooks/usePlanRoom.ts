@@ -40,7 +40,9 @@ export function usePlanRoom(planId: string) {
     ...(presence.participants || []),
     ...(participantsQuery.data || [])
   ].filter((participant, index, self) => 
-    index === self.findIndex(p => p.user_id === participant.user_id)
+    index === self.findIndex(p => 
+      ('userId' in p ? p.userId : p.user_id) === ('userId' in participant ? participant.userId : participant.user_id)
+    )
   );
 
   const updatePresence = useCallback(async (activity: 'timeline' | 'chat' | 'venues' | 'idle') => {

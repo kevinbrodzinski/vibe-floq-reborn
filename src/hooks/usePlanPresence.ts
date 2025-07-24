@@ -11,6 +11,25 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
   }) as T;
 }
 
+export type DBParticipant = {
+  user_id: string;
+  profiles: {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
+export type PresencePayload = {
+  user_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string;
+  activity: string;
+  check_in_status: string;
+};
+
 interface ParticipantPresence {
   userId: string;
   username: string;
@@ -41,7 +60,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
         .from('plan_participants')
         .select(`
           user_id,
-          profiles:user_id!inner (
+          profiles:profiles!user_id (
             id,
             username,
             display_name,
@@ -53,16 +72,16 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
       if (error) throw error;
 
       // Transform and remove duplicates
-      const transformedParticipants = data?.map(participant => ({
+      const transformedParticipants = (data as DBParticipant[] ?? []).map(participant => ({
         userId: participant.user_id,
-        username: participant.profiles?.username || 'Unknown',
-        displayName: participant.profiles?.display_name || 'Unknown',
-        avatarUrl: participant.profiles?.avatar_url || '',
+        username: participant.profiles?.username ?? 'Unknown',
+        displayName: participant.profiles?.display_name ?? participant.profiles?.username ?? 'Unknown',
+        avatarUrl: participant.profiles?.avatar_url ?? '',
         isOnline: false,
         lastSeen: new Date(),
         currentActivity: 'timeline' as const,
         checkInStatus: 'offline' as const
-      })) || [];
+      }));
 
       const uniqueParticipants = transformedParticipants.reduce((acc, participant) => {
         if (!acc.find(p => p.userId === participant.userId)) {
@@ -103,7 +122,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
         debouncedFetchParticipants
       )
       .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState() as Record<string, any[]>;
+        const state = channel.presenceState() as Record<string, PresencePayload[]>;
         const presenceList = Object.values(state).flat().map(raw => ({
           userId: raw.user_id,
           username: raw.username,
@@ -111,8 +130,8 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
           avatarUrl: raw.avatar_url,
           isOnline: true,
           lastSeen: new Date(),
-          currentActivity: raw.activity,
-          checkInStatus: raw.check_in_status,
+          currentActivity: raw.activity as ParticipantPresence['currentActivity'],
+          checkInStatus: raw.check_in_status as ParticipantPresence['checkInStatus'],
         }));
         
         // Merge presence data with SQL participants
@@ -134,7 +153,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
 
     channelRef.current = channel;
 
-    return () => supabase.removeChannel(channel);
+    return () => { supabase.removeChannel(channel); };
   }, [planId, debouncedFetchParticipants, options.silent, session?.user?.id]);
 
   const updateActivity = async (activity?: ParticipantPresence['currentActivity']) => {
