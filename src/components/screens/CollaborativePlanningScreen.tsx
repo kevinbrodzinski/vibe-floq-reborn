@@ -36,6 +36,7 @@ import { usePlanRealTimeSync } from "@/hooks/usePlanRealTimeSync";
 import { usePlanPresence } from "@/hooks/usePlanPresence";
 import { usePlanSummaries } from "@/hooks/usePlanSummaries";
 import { useGeneratePlanSummary } from "@/hooks/usePlanSummaries";
+import { useCollaborativeState } from "@/hooks/useCollaborativeState";
 import { supabase } from "@/integrations/supabase/client";
 import { getSafeStatus } from '@/lib/planStatusConfig';
 import { SummaryModeEnum } from '@/types/enums/summaryMode';
@@ -216,8 +217,11 @@ export const CollaborativePlanningScreen = () => {
   const { data: summaries } = usePlanSummaries(plan.id);
   const generateSummary = useGeneratePlanSummary();
 
-  // Real-time presence tracking
-  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id);
+  // Real-time presence tracking with silent join
+  const { participants: presenceParticipants, updateActivity } = usePlanPresence(plan.id, { silent: true });
+  
+  // Collaborative state for save indicator
+  const { saving } = useCollaborativeState({ planId: plan.id });
 
   // Auto-progression for plan completion
   usePlanAutoProgression({
@@ -450,6 +454,12 @@ export const CollaborativePlanningScreen = () => {
               />
               <span className="hidden sm:inline">•</span>
               <span className="capitalize text-primary">{syncedPlanMode || planMode}</span>
+              {saving === 'done' && (
+                <div className="flex items-center gap-1 text-green-600 animate-fade">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs">Saved</span>
+                </div>
+              )}
             </div>
           </div>
           

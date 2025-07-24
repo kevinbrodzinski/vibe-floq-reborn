@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { StopCard } from '@/components/StopCard'
 import { AddStopButton } from '@/components/AddStopButton'
 import { useTimelineGridLogic } from '@/hooks/useTimelineGridLogic'
+import { useCollaborativeState } from '@/hooks/useCollaborativeState'
 import type { PlanStop } from '@/types/plan'
 
 interface MobileTimelineGridProps {
@@ -35,6 +36,9 @@ export function MobileTimelineGrid({
 }: MobileTimelineGridProps) {
   const [currentDragStopId, setCurrentDragStopId] = useState<string | undefined>()
   const [dragOverTimeSlot, setDragOverTimeSlot] = useState<string | null>(null)
+  
+  // Use collaborative state for reordering
+  const { reorder } = useCollaborativeState({ planId })
 
   // Use the timeline grid logic hook
   const timelineStops = useTimelineGridLogic(stops, currentDragStopId, planId)
@@ -80,7 +84,17 @@ export function MobileTimelineGrid({
 
     // Handle reordering between stops
     if (over.id !== active.id && typeof over.id === 'string' && !over.id.startsWith('timeslot-')) {
-      onStopReorder(active.id as string, over.id as string)
+      const oldIndex = stops.findIndex(s => s.id === active.id)
+      const newIndex = stops.findIndex(s => s.id === over.id)
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = [...stops]
+        const [movedStop] = newOrder.splice(oldIndex, 1)
+        newOrder.splice(newIndex, 0, movedStop)
+        
+        // Use collaborative state reorder
+        reorder(newOrder.map(s => s.id))
+      }
     }
   }
 

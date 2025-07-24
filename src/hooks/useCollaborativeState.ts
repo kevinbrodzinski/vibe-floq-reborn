@@ -12,6 +12,7 @@ interface CollaborativeStateOptions {
 export function useCollaborativeState({ planId, enabled = true }: CollaborativeStateOptions) {
   const [isReordering, setIsReordering] = useState(false)
   const [optimisticOrder, setOptimisticOrder] = useState<string[]>([])
+  const [saving, setSaving] = useState<'idle' | 'pending' | 'done'>('idle')
   
   const { toast } = useToast()
   const reorderMutation = useReorderPlanStops()
@@ -69,6 +70,7 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
     if (isReordering) return
 
     setIsReordering(true)
+    setSaving('pending')
     
     try {
       // Optimistic update
@@ -92,8 +94,12 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
         stopOrders
       })
 
+      setSaving('done')
+      setTimeout(() => setSaving('idle'), 1500)
+
     } catch (error) {
       console.error('Reorder failed:', error)
+      setSaving('idle')
       
       // Revert optimistic update
       const revertOrder = stops
@@ -111,6 +117,48 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
     }
   }, [planId, optimisticOrder, stops, isReordering, reorderMutation, toast])
 
+  // New reorder method that takes ordered stop IDs directly
+  const reorder = useCallback(async (orderedIds: string[]) => {
+    if (isReordering) return
+
+    setIsReordering(true)
+    setSaving('pending')
+    
+    try {
+      // Optimistic update
+      setOptimisticOrder(orderedIds)
+
+      // Call RPC directly
+      const { error } = await supabase.rpc('reorder_plan_stops', {
+        _plan_id: planId,
+        _ordered_stop_ids: orderedIds,
+      })
+
+      if (error) throw error
+
+      setSaving('done')
+      setTimeout(() => setSaving('idle'), 1500)
+
+    } catch (error) {
+      console.error('Reorder failed:', error)
+      setSaving('idle')
+      
+      // Revert optimistic update
+      const revertOrder = stops
+        .sort((a, b) => (a.stop_order || 0) - (b.stop_order || 0))
+        .map(stop => stop.id)
+      setOptimisticOrder(revertOrder)
+      
+      toast({
+        title: 'Reorder failed',
+        description: 'Failed to update stop order. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsReordering(false)
+    }
+  }, [planId, stops, isReordering, toast])
+
   // Get stops in optimistic order
   const orderedStops = optimisticOrder
     .map(id => stops.find(stop => stop.id === id))
@@ -121,6 +169,8 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
     isLoading,
     isReordering,
     handleStopReorder,
+    reorder,
     optimisticOrder,
+    saving,
   }
 }

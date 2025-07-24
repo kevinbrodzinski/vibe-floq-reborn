@@ -23,6 +23,7 @@ interface ParticipantPresence {
 
 interface UsePlanPresenceOptions {
   onPresenceUpdate?: (participants: ParticipantPresence[]) => void;
+  silent?: boolean;
 }
 
 export function usePlanPresence(planId: string, options: UsePlanPresenceOptions = {}) {

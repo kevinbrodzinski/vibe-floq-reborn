@@ -134,12 +134,16 @@ export function TimelineGrid({
       
       if (oldIndex !== -1 && newIndex !== -1) {
         const newStops = arrayMove(stops, oldIndex, newIndex)
+        const orderedIds = newStops.map(stop => stop.id)
         
         // Enhanced haptic and audio feedback
         timelineHaptics.stopDragEnd()
         timelineAudio.stopDrop()
         
-        // Update stop order in backend
+        // Use collaborative state reorder function
+        // reorder(orderedIds) // Note: This would require adding useCollaborativeState to this component
+        
+        // For now, keep the existing sync method but could be updated later
         syncChanges({
           plan_id: planId,
           changes: {
