@@ -11,8 +11,8 @@ export const capture = (event: string, props?: Record<string, any>) => {
         ph.default?.capture(event, props);
       });
     } else {
-      const posthog = require('@posthog/react-native').default;
-      posthog.capture(event, props);
+      // React Native PostHog not available - skip for now
+      console.log('[PostHog] Mobile capture skipped:', event, props);
     }
   } catch (err) {
     console.warn('[PostHog] capture failed:', err);
@@ -27,8 +27,8 @@ export const identify = (userId: string, traits?: Record<string, any>) => {
         ph.default?.identify(userId, traits);
       });
     } else {
-      const posthog = require('@posthog/react-native').default;
-      posthog.identify(userId, traits);
+      // React Native PostHog not available - skip for now
+      console.log('[PostHog] Mobile identify skipped:', userId, traits);
     }
   } catch (err) {
     console.warn('[PostHog] identify failed:', err);

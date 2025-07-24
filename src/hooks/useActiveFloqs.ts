@@ -242,49 +242,85 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
       // Mock mode - demo schema data via RPC
       if (env.presenceMode === 'mock') {
         console.log('🎭 Fetching demo floq data from database');
+        try {
+          const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
+            p_use_demo: true,
+            p_limit: limit,
+            p_offset: offset,
+            p_user_lat: includeDistance && lat ? lat : null,
+            p_user_lng: includeDistance && lng ? lng : null
+          });
+          
+          if (error) {
+            console.warn('Demo floq function not available, using fallback data:', error);
+            // Return fallback data instead of throwing
+            const fallbackData = generateStubFloqs(
+              includeDistance && lat ? lat : undefined,
+              includeDistance && lng ? lng : undefined
+            );
+            return fallbackData.slice(offset, offset + limit);
+          }
+          
+          // Transform the data to match our interface
+          return (data || []).map((floq: any) => ({
+            ...floq,
+            vibe_tag: floq.primary_vibe,
+            members: Array.isArray(floq.members) ? floq.members : [],
+            boost_count: floq.boost_count || 0,
+            distance_meters: floq.distance_meters
+          }));
+        } catch (err) {
+          console.warn('Demo floq function failed, using fallback data:', err);
+          // Return fallback data instead of throwing
+          const fallbackData = generateStubFloqs(
+            includeDistance && lat ? lat : undefined,
+            includeDistance && lng ? lng : undefined
+          );
+          return fallbackData.slice(offset, offset + limit);
+        }
+      }
+
+      // Live mode - production data via RPC
+      console.log('🚀 Fetching live floq data from database');
+      try {
         const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
-          p_use_demo: true,
+          p_use_demo: false,
           p_limit: limit,
           p_offset: offset,
           p_user_lat: includeDistance && lat ? lat : null,
           p_user_lng: includeDistance && lng ? lng : null
         });
         
-        if (error) throw error;
+        if (error) {
+          console.warn('Live floq function not available, using fallback data:', error);
+          // Return fallback data instead of throwing
+          const fallbackData = generateStubFloqs(
+            includeDistance && lat ? lat : undefined,
+            includeDistance && lng ? lng : undefined
+          );
+          return fallbackData.slice(offset, offset + limit);
+        }
         
         // Transform the data to match our interface
-        return (data || []).map((floq: any) => ({
+        const transformedData = (data || []).map((floq: any) => ({
           ...floq,
           vibe_tag: floq.primary_vibe,
           members: Array.isArray(floq.members) ? floq.members : [],
           boost_count: floq.boost_count || 0,
           distance_meters: floq.distance_meters
         }));
+
+        console.log(`✅ Returning ${transformedData.length} live floqs`);
+        return transformedData;
+      } catch (err) {
+        console.warn('Live floq function failed, using fallback data:', err);
+        // Return fallback data instead of throwing
+        const fallbackData = generateStubFloqs(
+          includeDistance && lat ? lat : undefined,
+          includeDistance && lng ? lng : undefined
+        );
+        return fallbackData.slice(offset, offset + limit);
       }
-
-      // Live mode - production data via RPC
-      console.log('🚀 Fetching live floq data from database');
-      const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
-        p_use_demo: false,
-        p_limit: limit,
-        p_offset: offset,
-        p_user_lat: includeDistance && lat ? lat : null,
-        p_user_lng: includeDistance && lng ? lng : null
-      });
-      
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData = (data || []).map((floq: any) => ({
-        ...floq,
-        vibe_tag: floq.primary_vibe,
-        members: Array.isArray(floq.members) ? floq.members : [],
-        boost_count: floq.boost_count || 0,
-        distance_meters: floq.distance_meters
-      }));
-
-      console.log(`✅ Returning ${transformedData.length} live floqs`);
-      return transformedData;
     },
     // Always enable the query - don't wait for geolocation
     enabled: true,

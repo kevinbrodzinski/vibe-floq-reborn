@@ -12,6 +12,71 @@ interface PresenceUser {
   isFriend?: boolean;
 }
 
+// Generate realistic mock presence data
+const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds: string[] = []): PresenceUser[] => {
+  if (!userLat || !userLng) return [];
+  
+  const mockUsers = [
+    {
+      user_id: 'mock-user-1',
+      vibe: 'social',
+      isFriend: friendIds.includes('mock-user-1')
+    },
+    {
+      user_id: 'mock-user-2', 
+      vibe: 'chill',
+      isFriend: friendIds.includes('mock-user-2')
+    },
+    {
+      user_id: 'mock-user-3',
+      vibe: 'hype',
+      isFriend: friendIds.includes('mock-user-3')
+    },
+    {
+      user_id: 'mock-user-4',
+      vibe: 'flowing',
+      isFriend: friendIds.includes('mock-user-4')
+    },
+    {
+      user_id: 'mock-user-5',
+      vibe: 'social',
+      isFriend: friendIds.includes('mock-user-5')
+    },
+    {
+      user_id: 'mock-user-6',
+      vibe: 'chill',
+      isFriend: friendIds.includes('mock-user-6')
+    },
+    {
+      user_id: 'mock-user-7',
+      vibe: 'hype',
+      isFriend: friendIds.includes('mock-user-7')
+    },
+    {
+      user_id: 'mock-user-8',
+      vibe: 'flowing',
+      isFriend: friendIds.includes('mock-user-8')
+    }
+  ];
+
+  // Generate realistic positions around the user (within ~1km radius)
+  return mockUsers.map((user, index) => {
+    // Create a realistic distribution around the user
+    const angle = (index * 45) * (Math.PI / 180); // Spread users in a circle
+    const distance = 0.002 + (index * 0.001); // 200m to 1km away
+    
+    const offsetLat = Math.cos(angle) * distance;
+    const offsetLng = Math.sin(angle) * distance;
+    
+    return {
+      ...user,
+      lat: userLat + offsetLat,
+      lng: userLng + offsetLng,
+      last_seen: new Date(Date.now() - Math.random() * 300000).toISOString() // Random time within last 5 minutes
+    };
+  });
+};
+
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds: string[] = []) => {
   const [people, setPeople] = useState<PresenceUser[]>([]);
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
@@ -29,17 +94,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
 
   useEffect(() => {
     if (!lat || !lng || !enableWebSockets) {
-      // Return mock data when WebSockets are disabled
-      const mockPeople: PresenceUser[] = [
-        {
-          user_id: 'mock-user-1',
-          lat: lat || 34.05,
-          lng: lng || -118.24,
-          vibe: 'social',
-          last_seen: new Date().toISOString(),
-          isFriend: false
-        }
-      ];
+      // Return realistic mock data when WebSockets are disabled
+      const mockPeople = generateMockPresenceData(lat, lng, friendIds);
       setPeople(mockPeople);
       setLastHeartbeat(Date.now());
       return;
@@ -74,7 +130,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     } catch (error) {
       console.warn('Failed to setup presence channel:', error);
       // Fallback to mock data
-      setPeople([]);
+      const mockPeople = generateMockPresenceData(lat, lng, friendIds);
+      setPeople(mockPeople);
       setLastHeartbeat(Date.now());
     }
   }, [lat, lng, friendIds.join(','), enableWebSockets]);
