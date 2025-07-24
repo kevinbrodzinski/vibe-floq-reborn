@@ -91,8 +91,9 @@ export const storage = {
   /* helpers ------------------------------------------------------------ */
   async getJSON<T>(key: string): Promise<T | null> {
     const raw = await storageAdapter.getItem(key);
+    if (!raw) return null;
     try { 
-      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      const parsed: unknown = JSON.parse(raw);
       return parsed as T;
     }
     catch (e) { console.warn('[Storage] JSON parse failed', e); return null; }

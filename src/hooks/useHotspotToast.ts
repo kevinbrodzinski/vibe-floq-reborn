@@ -4,6 +4,7 @@ import { useHotspots } from './useHotspots'
 import { useUserLocation } from './useUserLocation'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { getEnvironmentConfig } from '@/lib/environment'
+import { storage } from '@/lib/storage'
 
 // Haversine distance calculation
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -22,16 +23,16 @@ const TOAST_DISMISS_KEY = 'hotspot_toast_dismissed'
 const DISMISS_DURATION = 90 * 60 * 1000 // 90 minutes in milliseconds
 const PROXIMITY_THRESHOLD = 300 // 300 meters
 
-function isDismissedRecently(): boolean {
-  const dismissedTime = localStorage.getItem(TOAST_DISMISS_KEY)
-  if (!dismissedTime) return false
+async function isDismissedRecently(): Promise<boolean> {
+  const dismissedTime = await storage.getItem(TOAST_DISMISS_KEY);
+  if (!dismissedTime) return false;
   
-  const timeDiff = Date.now() - parseInt(dismissedTime, 10)
-  return timeDiff < DISMISS_DURATION
+  const timeDiff = Date.now() - parseInt(dismissedTime, 10);
+  return timeDiff < DISMISS_DURATION;
 }
 
 function markAsDismissed(): void {
-  localStorage.setItem(TOAST_DISMISS_KEY, Date.now().toString())
+  storage.setItem(TOAST_DISMISS_KEY, Date.now().toString()).catch(console.error);
 }
 
 export const useHotspotToast = () => {
@@ -46,63 +47,63 @@ export const useHotspotToast = () => {
       return
     }
 
-    // Don't show toast if recently dismissed
-    if (isDismissedRecently()) {
-      return
-    }
+    // Don't show toast if recently dismissed  
+    isDismissedRecently().then(dismissed => {
+      if (dismissed) return;
 
-    // Find nearest hotspot
-    const userLat = location.coords.latitude
-    const userLng = location.coords.longitude
-    
-    let nearestHotspot = null
-    let nearestDistance = Infinity
-
-    for (const hotspot of hotspots) {
-      const [hotspotLng, hotspotLat] = hotspot.centroid.coordinates
-      const distance = getDistance(userLat, userLng, hotspotLat, hotspotLng)
+      // Find nearest hotspot
+      const userLat = location.coords.latitude
+      const userLng = location.coords.longitude
       
-      if (distance < nearestDistance) {
-        nearestDistance = distance
-        nearestHotspot = hotspot
+      let nearestHotspot = null
+      let nearestDistance = Infinity
+
+      for (const hotspot of hotspots) {
+        const [hotspotLng, hotspotLat] = hotspot.centroid.coordinates
+        const distance = getDistance(userLat, userLng, hotspotLat, hotspotLng)
+        
+        if (distance < nearestDistance) {
+          nearestDistance = distance
+          nearestHotspot = hotspot
+        }
       }
-    }
 
-    // Show toast if within proximity threshold
-    if (nearestHotspot && nearestDistance <= PROXIMITY_THRESHOLD) {
-      const distanceM = Math.round(nearestDistance)
-      const toastId = `${nearestHotspot.gh6}-${nearestHotspot.delta}`
-      
-      // Avoid duplicate toasts
-      if (lastToastRef.current === toastId) {
-        return
-      }
-      
-      lastToastRef.current = toastId
+      // Show toast if within proximity threshold
+      if (nearestHotspot && nearestDistance <= PROXIMITY_THRESHOLD) {
+        const distanceM = Math.round(nearestDistance)
+        const toastId = `${nearestHotspot.gh6}-${nearestHotspot.delta}`
+        
+        // Avoid duplicate toasts
+        if (lastToastRef.current === toastId) {
+          return
+        }
+        
+        lastToastRef.current = toastId
 
-      const peopleCount = nearestHotspot.user_cnt || nearestHotspot.total_now || 0
-      const vibeText = nearestHotspot.dom_vibe
-      const deltaText = nearestHotspot.delta
+        const peopleCount = nearestHotspot.user_cnt || nearestHotspot.total_now || 0
+        const vibeText = nearestHotspot.dom_vibe
+        const deltaText = nearestHotspot.delta
 
-      toast(`🔥 ${peopleCount} people vibing ${vibeText}`, {
-        description: `${distanceM}m away • +${deltaText} in 5min • tap to open map`,
-        action: {
-          label: 'Open Map',
-          onClick: () => {
-            // Navigate to field view - this would need to be implemented based on your routing
-            window.location.hash = '#/field'
+        toast(`🔥 ${peopleCount} people vibing ${vibeText}`, {
+          description: `${distanceM}m away • +${deltaText} in 5min • tap to open map`,
+          action: {
+            label: 'Open Map',
+            onClick: () => {
+              // Navigate to field view - this would need to be implemented based on your routing
+              window.location.hash = '#/field'
+              markAsDismissed()
+            }
+          },
+          duration: 8000,
+          onDismiss: () => {
             markAsDismissed()
           }
-        },
-        duration: 8000,
-        onDismiss: () => {
-          markAsDismissed()
-        }
-      })
+        })
 
-      if (import.meta.env.DEV) {
-        console.log(`[useHotspotToast] Showing toast for hotspot at ${distanceM}m: ${peopleCount} people, +${deltaText} surge`)
+        if (import.meta.env.DEV) {
+          console.log(`[useHotspotToast] Showing toast for hotspot at ${distanceM}m: ${peopleCount} people, +${deltaText} surge`)
+        }
       }
-    }
+    }).catch(console.error);
   }, [hotspots, location, currentVibe, env.hotSpotHalos])
 }

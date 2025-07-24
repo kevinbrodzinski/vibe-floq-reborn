@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Vibe } from '@/types/vibes';
 import { VibeAnalysisEngine, type SensorData, type VibeAnalysisResult } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 import { UserLearningSystem } from '@/lib/vibeAnalysis/UserLearningSystem';
+import { storage } from '@/lib/storage';
 
 interface VibeDetection {
   suggestedVibe: Vibe;
@@ -138,13 +139,15 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
         let audioLevel = Math.min(100, (average / 255) * 100);
         
-        // Persist mic baseline in localStorage
+        // Persist mic baseline in storage
         if (micBaselineRef.current === null && audioLevel > 5) {
           micBaselineRef.current = average;
-          localStorage.setItem('micBaseline', String(micBaselineRef.current));
+          storage.setItem('micBaseline', String(micBaselineRef.current)).catch(console.error);
         } else if (micBaselineRef.current === null) {
-          const stored = Number(localStorage.getItem('micBaseline'));
-          if (!Number.isNaN(stored)) micBaselineRef.current = stored;
+          storage.getItem('micBaseline').then(stored => {
+            const parsed = Number(stored);
+            if (!Number.isNaN(parsed)) micBaselineRef.current = parsed;
+          }).catch(console.error);
         }
         
         if (micBaselineRef.current !== null) {
@@ -393,7 +396,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       // Persist learning data cache with schema versioning
       try {
         const versionedData = { schema: 1, data: newLearningData };
-        localStorage.setItem('vibe_learning_v1', JSON.stringify(versionedData));
+        await storage.setJSON('vibe_learning_v1', versionedData);
       } catch (error) {
         console.warn('Failed to cache learning data:', error);
       }
@@ -407,11 +410,10 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     const loadLearningData = async () => {
       try {
         // Try to load cached data first with schema versioning
-        const cached = localStorage.getItem('vibe_learning_v1');
-        if (cached) {
-          const parsedData = JSON.parse(cached);
+        const cachedData = await storage.getJSON<{schema: number, data: any} | any>('vibe_learning_v1');
+        if (cachedData) {
           // Support both old format and new schema-versioned format
-          setLearningData(parsedData.schema ? parsedData.data : parsedData);
+          setLearningData(cachedData.schema ? cachedData.data : cachedData);
         }
         
         const now = new Date();
@@ -449,8 +451,9 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
         
         // Update cache if we got new data with schema versioning
         const versionedData = { schema: 1, data: newLearningData };
-        if (!cached || JSON.stringify(versionedData) !== cached) {
-          localStorage.setItem('vibe_learning_v1', JSON.stringify(versionedData));
+        const currentCached = await storage.getJSON('vibe_learning_v1');
+        if (!currentCached || JSON.stringify(versionedData) !== JSON.stringify(currentCached)) {
+          await storage.setJSON('vibe_learning_v1', versionedData);
         }
       } catch (error) {
         console.error('Failed to load learning data:', error);

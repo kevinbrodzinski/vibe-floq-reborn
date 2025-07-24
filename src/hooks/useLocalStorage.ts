@@ -33,8 +33,8 @@ export function useLocalStorage<T>(
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       // Save state
       setStoredValue(valueToStore);
-      // Save to storage (fire-and-forget)
-      storage.setJSON(key, valueToStore).catch(error => {
+      // Save to storage (fire-and-forget with proper error handling)
+      void storage.setJSON(key, valueToStore).catch(error => {
         console.error(`Error setting storage key "${key}":`, error);
       });
     } catch (error) {

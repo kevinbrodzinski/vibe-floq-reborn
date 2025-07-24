@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { storage } from '@/lib/storage';
 
 interface LoginToJoinModalProps {
   open: boolean;
@@ -14,7 +15,7 @@ export function LoginToJoinModal({ open, onClose, planTitle }: LoginToJoinModalP
   const handleLoginRedirect = () => {
     // Save current path for redirect after login
     const currentPath = window.location.pathname;
-    localStorage.setItem('floq_redirect_path', currentPath);
+    storage.setItem('floq_redirect_path', currentPath).catch(console.error);
     
     // Redirect to home page which will show auth screen
     window.location.href = '/';

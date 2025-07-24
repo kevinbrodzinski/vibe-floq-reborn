@@ -7,6 +7,7 @@ import React, {
   Dispatch,
   SetStateAction,
 } from 'react';
+import { storage } from '@/lib/storage';
 
 type Ctx = [boolean, Dispatch<SetStateAction<boolean>>];
 const DebugCtx = createContext<Ctx>([false, () => {}]);
@@ -15,24 +16,22 @@ export const DebugProvider = ({ children }: { children: ReactNode }) => {
   const prod = import.meta.env.MODE === 'production';
   
   // Safer initialization of debug state
-  const [debug, setDebug] = useState<boolean>(() => {
-    try {
-      return !prod && typeof localStorage !== 'undefined' && localStorage.getItem('showDebug') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [debug, setDebug] = useState<boolean>(false);
+  
+  // Load debug state on mount
+  useEffect(() => {
+    if (prod) return;
+    storage.getItem('showDebug').then(stored => {
+      setDebug(stored === 'true');
+    }).catch(() => setDebug(false));
+  }, [prod]);
 
   /* persist */
   useEffect(() => {
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('showDebug', String(debug));
-      }
-    } catch {
-      // localStorage not available or blocked
+    if (!prod) {
+      storage.setItem('showDebug', String(debug)).catch(console.error);
     }
-  }, [debug]);
+  }, [debug, prod]);
 
   /* ⌥+D shortcut (dev only) */
   useEffect(() => {
