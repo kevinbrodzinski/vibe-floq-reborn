@@ -6,7 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+const SOFT_TIMEOUT_MS = 10_000 // 10 seconds
+
+function timeoutGuard(signal: AbortSignal) {
+  return new Promise((_, rej) => {
+    const id = setTimeout(() => {
+      rej(new Error('cold-start timeout'))
+    }, SOFT_TIMEOUT_MS)
+    signal.addEventListener('abort', () => clearTimeout(id))
+  })
+}
+
+async function handleRequest(req: Request): Promise<Response> {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -171,7 +182,6 @@ serve(async (req) => {
         status: 200 
       }
     )
-
   } catch (error) {
     console.error('Daily recap builder error:', error)
     
@@ -185,5 +195,23 @@ serve(async (req) => {
         status: 500 
       }
     )
+  }
+}
+
+serve(async (req) => {
+  const controller = new AbortController()
+  const guard = timeoutGuard(controller.signal)
+
+  try {
+    const main = handleRequest(req)
+    const result = await Promise.race([main, guard])
+    controller.abort() // cancel guard
+    return result as Response
+  } catch (err) {
+    console.error('Edge function failed:', err)
+    return new Response('Server busy, try again', { 
+      status: 503,
+      headers: corsHeaders 
+    })
   }
 })

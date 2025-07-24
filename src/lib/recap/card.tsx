@@ -1,8 +1,10 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, MapPin, Users, TrendingUp } from 'lucide-react'
 import { RecapData } from './index'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
+import { track } from '@/lib/analytics'
+import dayjs from 'dayjs'
 
 // Lazy import confetti for performance
 const confetti = lazy(() => import('canvas-confetti'))
@@ -12,6 +14,8 @@ interface DailyRecapCardProps {
 }
 
 export default function DailyRecapCard({ data }: DailyRecapCardProps) {
+  const hasTrackedRef = useRef<string | false>(false)
+  
   const timelineData = data.timeline?.map(t => ({
     hour: t.hour,
     mins: t.mins,
@@ -20,6 +24,15 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
 
   const totalHours = Math.floor(data.totalMins / 60)
   const remainingMins = data.totalMins % 60
+
+  // Track "recap_seen" only once per calendar day
+  useEffect(() => {
+    const todayKey = dayjs().format('YYYY-MM-DD')
+    if (hasTrackedRef.current === todayKey) return
+
+    track('recap_seen', { day: todayKey })
+    hasTrackedRef.current = todayKey
+  }, [])
 
   // Trigger confetti for exceptional days
   React.useEffect(() => {
@@ -123,10 +136,14 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
             <h4 className="text-sm font-medium text-foreground">Your Hotspots</h4>
             <div className="space-y-2">
               {data.topVenues.slice(0, 3).map((venue, idx) => (
-                <div key={venue.id} className="flex items-center justify-between p-2 rounded bg-background/30">
+                <div 
+                  key={venue.id} 
+                  className="flex items-center justify-between p-2 rounded bg-background/30"
+                  dir="auto"
+                >
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="text-sm text-foreground">{venue.name}</span>
+                    <span className="text-sm text-foreground" dir="auto">{venue.name}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">{venue.mins}m</span>
                 </div>
