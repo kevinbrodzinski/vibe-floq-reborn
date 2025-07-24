@@ -34,21 +34,24 @@ export function useCrossedPathsToday() {
       
       if (!user?.id) return [];
       
-      const { data, error } = await supabase.rpc('people_crossed_paths_today', {
-        in_me: user.id,
-        proximity_meters: 25
-      });
-
-      if (error) {
-        console.error('Failed to load crossed paths:', error);
-        toast({
-          title: "Failed to load crossed paths",
-          description: "There was a problem loading your recent encounters. Please try again.",
-          variant: "destructive",
+      try {
+        // Try to call the SQL function (may not exist yet)
+        const { data, error } = await supabase.rpc('people_crossed_paths_today', {
+          in_me: user.id,
+          proximity_meters: 25
         });
-        throw error;
+
+        if (error) {
+          console.warn('Crossed paths function not available yet:', error);
+          // Return empty array instead of throwing - this prevents UI from breaking
+          return [] as CrossedPath[];
+        }
+        return (data || []) as unknown as CrossedPath[];
+      } catch (err) {
+        console.warn('Crossed paths function not implemented yet:', err);
+        // Return empty array to prevent UI from breaking
+        return [] as CrossedPath[];
       }
-      return (data || []) as unknown as CrossedPath[];
     },
     enabled: !!user?.id && !OFFLINE_MODE,
     staleTime: 60 * 1000,

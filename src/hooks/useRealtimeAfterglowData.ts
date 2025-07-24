@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { Database } from '@/integrations/supabase/types'
 import { useToast } from '@/hooks/use-toast'
-import { useQueryClient } from '@tanstack/react-query'
 
 type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];
 
@@ -18,12 +17,54 @@ interface GenerationProgress {
 export function useRealtimeAfterglowData(date: string) {
   const { user } = useAuth()
   const { toast } = useToast()
-  const queryClient = useQueryClient()
   const [afterglow, setAfterglow] = useState<DailyAfterglowRow | null>(null)
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  // Hoist generateAfterglowData function
+  // Fetch afterglow data helper
+  const fetchAfterglow = useCallback(async () => {
+    if (!user) return;
+    
+    console.log('Fetching afterglow data for date:', date)
+    try {
+      const { data, error } = await supabase
+        .from('daily_afterglow')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', date)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching afterglow:', error)
+        // Don't trigger generation on fetch error - just show empty state
+        setAfterglow(null)
+        setIsGenerating(false)
+        return
+      } else if (data) {
+        console.log('Found existing afterglow:', data)
+        // Parse moments once on arrival
+        const moments = Array.isArray(data.moments) ? data.moments : []
+        const parsedData = {
+          ...data,
+          moments: moments.map((m: any) => 
+            typeof m === 'string' ? JSON.parse(m) : m
+          )
+        }
+        setAfterglow(parsedData)
+        setIsGenerating(false)
+        setGenerationProgress(null)
+      } else {
+        console.log('No afterglow found, triggering generation...')
+        await generateAfterglowData()
+      }
+    } catch (err) {
+      console.error('Failed to fetch afterglow:', err)
+      setIsGenerating(false)
+      setAfterglow(null)
+    }
+  }, [user, date])
+
+  // Generate afterglow data function
   const generateAfterglowData = useCallback(async () => {
     if (!user) return;
     
@@ -54,18 +95,33 @@ export function useRealtimeAfterglowData(date: string) {
           description: "Failed to generate afterglow. Please try again.",
           variant: "destructive"
         })
+        setIsGenerating(false)
       } else {
         console.log('Afterglow generation triggered:', result)
-        // Merge backend progress if available
-        if (result?.progress) {
-          setGenerationProgress(result)
+        
+        // Handle the SQL function response properly
+        if (result?.success) {
+          // SQL function succeeded, now fetch the generated data
+          setTimeout(() => {
+            fetchAfterglow()
+          }, 1000) // Give SQL function time to complete
         } else {
-          setGenerationProgress({
-            step: 'Processing',
-            progress: 50,
-            status: 'in_progress',
-            message: 'Processing your day...'
-          })
+          // Handle error response from SQL function
+          console.error('SQL function failed:', result)
+          
+          // If no venue visits exist, create a basic afterglow entry
+          if (result?.message?.includes('venue') || result?.message?.includes('no data')) {
+            console.log('Creating fallback afterglow data for empty day')
+            await createFallbackAfterglow()
+          } else {
+            setGenerationProgress({
+              step: 'Error',
+              progress: 0,
+              status: 'error',
+              message: result?.message || 'Failed to generate afterglow'
+            })
+            setIsGenerating(false)
+          }
         }
       }
     } catch (error) {
@@ -73,45 +129,59 @@ export function useRealtimeAfterglowData(date: string) {
       setIsGenerating(false)
       setGenerationProgress(null)
     }
-  }, [user, date, toast])
+  }, [user, date, toast, fetchAfterglow])
 
-  // Fetch afterglow data helper
-  const fetchAfterglow = useCallback(async () => {
+  // Create fallback afterglow data when no venue visits exist
+  const createFallbackAfterglow = useCallback(async () => {
     if (!user) return;
     
-    console.log('Fetching afterglow data for date:', date)
     try {
+      const fallbackData = {
+        user_id: user.id,
+        date: date,
+        energy_score: 25,
+        social_intensity: 15,
+        total_venues: 0,
+        total_floqs: 0,
+        crossed_paths_count: 0,
+        dominant_vibe: 'chill',
+        summary_text: 'A quiet day at home',
+        vibe_path: ['chill'],
+        emotion_journey: [{
+          timestamp: `${date}T18:00:00Z`,
+          vibe: 'chill',
+          intensity: 25
+        }],
+        moments: []
+      };
+
       const { data, error } = await supabase
         .from('daily_afterglow')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', date)
-        .maybeSingle()
+        .upsert(fallbackData, { onConflict: 'user_id,date' })
+        .select()
+        .single();
 
       if (error) {
-        console.error('Error fetching afterglow:', error)
-      } else if (data) {
-        console.log('Found existing afterglow:', data)
-        // Parse moments once on arrival
-        const moments = Array.isArray(data.moments) ? data.moments : []
-        const parsedData = {
-          ...data,
-          moments: moments.map((m: any) => 
-            typeof m === 'string' ? JSON.parse(m) : m
-          )
-        }
-        setAfterglow(parsedData)
+        console.error('Failed to create fallback afterglow:', error)
+        setGenerationProgress({
+          step: 'Error',
+          progress: 0,
+          status: 'error',
+          message: 'Failed to create afterglow data'
+        })
+        setIsGenerating(false)
+      } else {
+        console.log('Created fallback afterglow:', data)
+        setAfterglow(data)
         setIsGenerating(false)
         setGenerationProgress(null)
-      } else {
-        console.log('No afterglow found, triggering generation...')
-        await generateAfterglowData()
       }
     } catch (err) {
-      console.error('Failed to fetch afterglow:', err)
+      console.error('Failed to create fallback afterglow:', err)
       setIsGenerating(false)
+      setGenerationProgress(null)
     }
-  }, [user, date, generateAfterglowData])
+  }, [user, date])
 
   // Debounced version for realtime updates
   const debouncedFetch = useMemo(() => 
