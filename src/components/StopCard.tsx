@@ -5,46 +5,55 @@ import { StopCardActions } from "./StopCardActions";
 import { getGradientClasses } from "@/lib/utils/getGradientClasses";
 import { StopKind, VibeTag } from "@/lib/theme/stopColours";
 import { type PlanStop } from "@/types/plan";
+import { cn } from "@/lib/utils";
 
 interface StopCardProps {
   stop: PlanStop;
-  isSelected: boolean;
-  isDragOver: boolean;
-  onSelect: () => void;
+  isSelected?: boolean;
+  isDragOver?: boolean;
+  onSelect?: () => void;
   onEdit?: () => void;
-  onRemove: () => void;
-  onVote: (voteType: 'yes' | 'no' | 'maybe') => void;
-  onDragStart: (e: React.DragEvent) => void;
+  onRemove?: () => void;
+  onVote?: (voteType: 'yes' | 'no' | 'maybe') => void;
+  onDragStart?: (e: React.DragEvent) => void;
   draggable?: boolean;
+  editable?: boolean;
+  votingEnabled?: boolean;
+  showActions?: boolean;
   className?: string;
 }
 
 export const StopCard = ({
   stop,
-  isSelected,
-  isDragOver,
+  isSelected = false,
+  isDragOver = false,
   onSelect,
   onEdit,
   onRemove,
   onVote,
   onDragStart,
   draggable = true,
+  editable = true,
+  votingEnabled = true,
+  showActions = true,
   className = ""
 }: StopCardProps) => {
   const gradient = getGradientClasses(stop.kind, stop.vibe_tag);
 
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
+      draggable={draggable && editable}
+      onDragStart={editable ? onDragStart : undefined}
       onClick={onSelect}
-      className={`
-        gradient-border ${gradient} p-4 backdrop-blur-xl bg-card/75 
-        cursor-grab transition-all duration-300 hover:-translate-y-0.5
-        ${isSelected ? 'ring-2 ring-primary -translate-y-1' : ''}
-        ${isDragOver ? 'ring-2 ring-accent' : ''}
-        ${className}
-      `}
+      className={cn(
+        "gradient-border p-4 backdrop-blur-xl bg-card/75 transition-all duration-300",
+        gradient,
+        editable && draggable && "cursor-grab hover:-translate-y-0.5",
+        !editable && "opacity-60 cursor-default",
+        isSelected && "ring-2 ring-primary -translate-y-1",
+        isDragOver && "ring-2 ring-accent",
+        className
+      )}
       role="listitem"
       aria-label={`Stop: ${stop.title}`}
     >
@@ -65,19 +74,29 @@ export const StopCard = ({
           />
         </div>
         
-        <StopCardActions
-          vibeMatch={stop.vibeMatch}
-          onRemove={onRemove}
-        />
+        {showActions && editable && onRemove && (
+          <StopCardActions
+            vibeMatch={stop.vibeMatch}
+            onRemove={onRemove}
+          />
+        )}
       </div>
       
       {/* Voting interface */}
-      {isSelected && (
+      {isSelected && votingEnabled && editable && (
         <div className="mt-4 pt-4 border-t border-border/30">
           <VotePanel
             planId={stop.plan_id || ""}
             stopId={stop.id}
           />
+        </div>
+      )}
+      
+      {/* Finalized indicator */}
+      {!editable && (
+        <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          Finalized
         </div>
       )}
     </div>
