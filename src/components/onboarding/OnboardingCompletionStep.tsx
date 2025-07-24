@@ -41,13 +41,19 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           completed_steps: [0, 1, 2, 3, 4, 5],
           completed_at: completionTime
         }, {
-          onConflict: 'user_id',
+          onConflict: 'user_id,onboarding_version',
           ignoreDuplicates: false
         });
 
       if (progressError) {
         console.error('❌ Error updating onboarding progress:', progressError);
-        throw new Error('Failed to update onboarding progress');
+        console.error('Progress Error Details:', { 
+          message: progressError.message, 
+          details: progressError.details,
+          hint: progressError.hint,
+          code: progressError.code 
+        });
+        throw new Error(`Failed to update onboarding progress: ${progressError.message}`);
       }
 
       // 2. Update user preferences
@@ -64,7 +70,13 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (preferencesError) {
         console.error('❌ Error updating user preferences:', preferencesError);
-        throw new Error('Failed to update user preferences');
+        console.error('Preferences Error Details:', { 
+          message: preferencesError.message, 
+          details: preferencesError.details,
+          hint: preferencesError.hint,
+          code: preferencesError.code 
+        });
+        throw new Error(`Failed to update user preferences: ${preferencesError.message}`);
       }
 
       console.log('✅ Onboarding completion successful');
