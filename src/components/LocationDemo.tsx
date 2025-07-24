@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LocationStatusChip } from '@/components/LocationStatusChip'
-import { useUserLocation, useAfterglowNotifications } from '@/hooks/usePlanRecap'
+import { useUserLocation } from '@/hooks/useUserLocation'
+import { useAfterglowNotifications } from '@/hooks/usePlanRecap'
 
 export function LocationDemo() {
   const { isTracking, loading, error, startTracking, stopTracking } = useUserLocation()

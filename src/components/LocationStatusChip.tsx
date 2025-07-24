@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import { useUserLocation } from '@/hooks/usePlanRecap'
+import { useUserLocation } from '@/hooks/useUserLocation'
 
 export function LocationStatusChip() {
   const { isTracking, loading, error } = useUserLocation()
