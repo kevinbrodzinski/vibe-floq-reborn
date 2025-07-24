@@ -1226,6 +1226,7 @@ export type Database = {
       floqs: {
         Row: {
           activity_score: number
+          archived_at: string | null
           auto_created: boolean | null
           catchment_area: unknown | null
           created_at: string | null
@@ -1257,6 +1258,7 @@ export type Database = {
         }
         Insert: {
           activity_score?: number
+          archived_at?: string | null
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
@@ -1288,6 +1290,7 @@ export type Database = {
         }
         Update: {
           activity_score?: number
+          archived_at?: string | null
           auto_created?: boolean | null
           catchment_area?: unknown | null
           created_at?: string | null
