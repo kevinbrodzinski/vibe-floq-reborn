@@ -3684,7 +3684,6 @@ export type Database = {
           execution_started_at: string | null
           id: string | null
           participant_count: number | null
-          plan_mode: Database["public"]["Enums"]["plan_mode"] | null
           planned_at: string | null
           status: Database["public"]["Enums"]["plan_mode"] | null
           stops_count: number | null

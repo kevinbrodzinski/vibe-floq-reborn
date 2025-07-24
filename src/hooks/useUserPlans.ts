@@ -38,6 +38,7 @@ export function useUserPlans() {
   const { data, isLoading, error: queryError } = useQuery({
     queryKey: ['user-plans'],
     staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       const { data, error } = await supabase
         .from('v_user_plans')

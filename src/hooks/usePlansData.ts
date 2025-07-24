@@ -24,8 +24,8 @@ export function usePlansData() {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 0, // Force fresh data
-    gcTime: 0 // Force cache invalidation
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000 // 5 minutes
   });
 
   // Fetch invited plans
