@@ -2591,6 +2591,102 @@ export type Database = {
         }
         Relationships: []
       }
+      raw_locations: {
+        Row: {
+          accuracy_m: number | null
+          captured_at: string
+          geom: unknown | null
+          id: number
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          captured_at: string
+          geom?: unknown | null
+          id?: never
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          captured_at?: string
+          geom?: unknown | null
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
+      raw_locations_202507: {
+        Row: {
+          accuracy_m: number | null
+          captured_at: string
+          geom: unknown | null
+          id: number
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          captured_at: string
+          geom?: unknown | null
+          id?: never
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          captured_at?: string
+          geom?: unknown | null
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
+      raw_locations_202508: {
+        Row: {
+          accuracy_m: number | null
+          captured_at: string
+          geom: unknown | null
+          id: number
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          captured_at: string
+          geom?: unknown | null
+          id?: never
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          captured_at?: string
+          geom?: unknown | null
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
+      raw_locations_202509: {
+        Row: {
+          accuracy_m: number | null
+          captured_at: string
+          geom: unknown | null
+          id: number
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          captured_at: string
+          geom?: unknown | null
+          id?: never
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          captured_at?: string
+          geom?: unknown | null
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
       refresh_metrics: {
         Row: {
           created_at: string
@@ -3279,6 +3375,44 @@ export type Database = {
           },
         ]
       }
+      venue_visits: {
+        Row: {
+          arrived_at: string
+          day_key: string
+          departed_at: string | null
+          distance_m: number | null
+          id: number
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          arrived_at: string
+          day_key: string
+          departed_at?: string | null
+          distance_m?: number | null
+          id?: never
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          arrived_at?: string
+          day_key?: string
+          departed_at?: string | null
+          distance_m?: number | null
+          id?: never
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_visits_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string | null
@@ -3950,6 +4084,10 @@ export type Database = {
       box3dtobox: {
         Args: { "": unknown }
         Returns: unknown
+      }
+      build_daily_afterglow: {
+        Args: { _day: string }
+        Returns: undefined
       }
       bulk_upsert_relationships: {
         Args: { relationship_pairs: Json }
@@ -4928,6 +5066,10 @@ export type Database = {
       }
       mark_notifications_read: {
         Args: { notification_ids?: string[]; mark_all_for_user?: boolean }
+        Returns: number
+      }
+      match_locations_batch: {
+        Args: { _since: string }
         Returns: number
       }
       path: {
