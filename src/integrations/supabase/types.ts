@@ -3141,6 +3141,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          description: string | null
+          image_url: string | null
+          item_id: string
+          item_type: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          image_url?: string | null
+          item_id: string
+          item_type: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          image_url?: string | null
+          item_id?: string
+          item_type?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_floq_activity_tracking: {
         Row: {
           created_at: string
@@ -3449,6 +3479,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_watchlist: {
+        Row: {
+          created_at: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watchlist_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_watchlist_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_clusters: {
         Row: {
           active_hours: unknown | null
@@ -3729,6 +3792,50 @@ export type Database = {
           vibe_score?: number | null
         }
         Relationships: []
+      }
+      venues_near_me: {
+        Row: {
+          category: string | null
+          distance_m: number
+          last_updated: string
+          lat: number
+          lng: number
+          name: string
+          user_id: string
+          venue_id: string
+          vibe_score: number
+        }
+        Insert: {
+          category?: string | null
+          distance_m: number
+          last_updated?: string
+          lat: number
+          lng: number
+          name: string
+          user_id: string
+          venue_id: string
+          vibe_score?: number
+        }
+        Update: {
+          category?: string | null
+          distance_m?: number
+          last_updated?: string
+          lat?: number
+          lng?: number
+          name?: string
+          user_id?: string
+          venue_id?: string
+          vibe_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venues_near_me_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vibe_clusters_checksum: {
         Row: {
@@ -5033,6 +5140,7 @@ export type Database = {
           max_lng: number
           max_lat: number
           cursor_popularity?: number
+          cursor_id?: string
           limit_rows?: number
         }
         Returns: {
@@ -5043,7 +5151,7 @@ export type Database = {
           lng: number
           vibe_score: number
           live_count: number
-          check_ins: number
+          popularity: number
         }[]
       }
       get_compat_clusters: {
