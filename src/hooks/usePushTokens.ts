@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import '@/types/supabase-rpc'; // Import RPC type extensions
 
 export async function storePushToken(
   deviceId: string,

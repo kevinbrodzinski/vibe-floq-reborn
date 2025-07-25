@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import '@/types/supabase-rpc'; // Import RPC type extensions
 
 export function usePushToken() {
   const { user } = useAuth();
 
   useEffect(() => {
+    // SSR guard – Notification API undefined on Node
+    if (typeof window === 'undefined') return;
     if (!user) return;
 
     let cancelled = false;

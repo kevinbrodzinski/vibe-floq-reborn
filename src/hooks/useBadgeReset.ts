@@ -6,6 +6,8 @@ export function useBadgeReset() {
   const { user } = useAuth();
 
   useEffect(() => {
+    // SSR guard – Notification API undefined on Node
+    if (typeof document === 'undefined') return;
     if (!user) return;
 
     const handleVisibilityChange = async () => {

@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
+import { useAuth } from '@/providers/AuthProvider';
+
+interface EventNotification {
+  id: string;
+  user_id: string;
+  kind: string;
+  payload: { plan_id?: string };
+  created_at: string;
+  seen_at?: string;
+}
 
 type PlanBadges = Record<string /*plan_id*/, number>;
 
@@ -14,6 +23,7 @@ const PlanNotifCtx = createContext<Ctx | undefined>(undefined);
 const LS_KEY = 'plan_badges_v1';
 
 export const PlanNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [badges, setBadges] = useState<PlanBadges>(() => {
     // hydrate from localStorage once
     try {
@@ -28,43 +38,66 @@ export const PlanNotificationProvider: React.FC<{ children: React.ReactNode }> =
     localStorage.setItem(LS_KEY, JSON.stringify(badges));
   }, [badges]);
 
-  // realtime subscription
-  const channelRef = useRef<ReturnType<typeof supabase.channel>>();
-
+  // Subscribe to new notifications
   useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
-      .channel('plan-events')
-      .on<RealtimePostgresInsertPayload<{
-        kind: string;
-        payload: { plan_id: string };
-        user_id: string;
-      }>>(
+      .channel(`plan-events:${user.id}`)
+      .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'event_notifications',
-          filter: 'kind=in.(plan_comment_new,plan_checkin)',
+          filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          // payload.new has the notification data
-          const notification = payload.new as any;
-          const planId = notification.payload?.plan_id;
-          if (!planId) return;
-
-          setBadges((prev) => ({
-            ...prev,
-            [planId]: (prev[planId] || 0) + 1,
-          }));
+        ({ new: row }) => {
+          const notif = row as { kind: string; payload: { plan_id?: string } };
+          if (
+            notif.kind === 'plan_comment_new' ||
+            notif.kind === 'plan_checkin'
+          ) {
+            const planId = notif.payload?.plan_id;
+            if (!planId) return;
+            setBadges(prev => ({ ...prev, [planId]: (prev[planId] || 0) + 1 }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'event_notifications',
+          filter: `user_id=eq.${user.id}`,
         },
+        ({ new: row }) => {
+          const notification = row as EventNotification;
+          if (notification.seen_at) {
+            setBadges(prev => {
+              if (notification.kind === 'plan_comment_new' || notification.kind === 'plan_checkin') {
+                const planId = notification.payload?.plan_id;
+                if (planId && prev[planId]) {
+                  const newCount = Math.max(0, prev[planId] - 1);
+                  if (newCount === 0) {
+                    const { [planId]: _, ...rest } = prev;
+                    return rest;
+                  }
+                  return { ...prev, [planId]: newCount };
+                }
+              }
+              return prev;
+            });
+          }
+        }
       )
       .subscribe();
 
-    channelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user?.id]);
 
   const clearPlan = (planId: string) => {
     setBadges((prev) => {

@@ -13,3 +13,5 @@ export interface SupabaseRPCTypes {
     Returns: { ok: boolean };
   };
 }
+
+// Note: These types will be used via 'as any' until official types are regenerated

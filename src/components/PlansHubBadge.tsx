@@ -9,7 +9,8 @@ export const PlansHubBadge: React.FC = () => {
   return (
     <Badge
       variant="destructive"
-      className="absolute -top-1 -right-1 text-[10px] leading-none px-1.5 py-0.5 rounded-full">
+      className="absolute -top-1 -right-1 text-[10px] leading-none px-1.5 py-0.5 rounded-full"
+      aria-label="unread plan activity">
       {total}
     </Badge>
   );
