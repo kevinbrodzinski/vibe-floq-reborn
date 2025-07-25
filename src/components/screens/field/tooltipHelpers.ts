@@ -9,7 +9,8 @@ export const renderClusterTooltip = (cluster: any): string => {
 
   return [
     '<div class="bg-background/90 backdrop-blur-sm border rounded-lg p-3 shadow-lg">',
-    `<div class="font-semibold">${cluster.total} people</div>`,
+    `<div class="font-semibold">${cluster.member_count || cluster.total} people</div>`,
+    cluster.vibe_mode ? `<div class="text-sm font-medium">${cluster.vibe_mode}</div>` : '',
     `<div class="text-sm text-muted-foreground">${vibeEntries}</div>`,
     '</div>'
   ].join('');

@@ -18,7 +18,8 @@ export const renderClusterTooltip = (cluster: any): string => {
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     ">`,
     `<div style="font-weight: 600; margin-bottom: 4px;">Cluster ${cluster.gh6}</div>`,
-    `<div style="margin-bottom: 2px;">Total: ${cluster.total}</div>`,
+    `<div style="margin-bottom: 2px;">Total: ${cluster.member_count || cluster.total}</div>`,
+    cluster.vibe_mode ? `<div style="margin-bottom: 2px;">Dominant vibe: ${cluster.vibe_mode}</div>` : '',
     vibeEntries ? `<div>Top vibes: ${vibeEntries}</div>` : '',
     `</div>`
   ].filter(Boolean).join('');

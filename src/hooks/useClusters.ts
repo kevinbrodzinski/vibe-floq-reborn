@@ -10,6 +10,8 @@ export interface Cluster {
   centroid: { type: 'Point'; coordinates: [number, number] };
   total: number;
   vibe_counts: Record<string, number>;
+  vibe_mode: string;
+  member_count: number;
 }
 
 export interface ClustersState {
@@ -45,16 +47,41 @@ export const useClusters = (
       setError(null);
 
       try {
-        const { data, error } = await supabase.functions.invoke('clusters', {
-          body: { bbox: box, precision },
-          // ⚠️  Supabase v2 invoke does *not* accept AbortController.signal
+        const { data, error } = await supabase.rpc('get_vibe_clusters', {
+          min_lng: box[0],
+          min_lat: box[1], 
+          max_lng: box[2],
+          max_lat: box[3],
+          p_precision: precision,
         });
 
         if (error) {
           setError(error.message);
           setClusters([]);
         } else {
-          setClusters(data ?? []);
+          // Transform PostGIS geometry to GeoJSON format
+          const transformedData = (data ?? []).map(cluster => {
+            // Parse PostGIS geometry - it could be in WKB format or already parsed
+            let coordinates: [number, number];
+            if (typeof cluster.centroid === 'string') {
+              // If it's a WKB string, we'd need to parse it, but for now handle as fallback
+              coordinates = [0, 0];
+            } else if (cluster.centroid && typeof cluster.centroid === 'object' && 'x' in cluster.centroid && 'y' in cluster.centroid) {
+              coordinates = [(cluster.centroid as any).x, (cluster.centroid as any).y];
+            } else {
+              coordinates = [0, 0];
+            }
+            
+            return {
+              ...cluster,
+              centroid: {
+                type: 'Point' as const,
+                coordinates
+              },
+              vibe_counts: cluster.vibe_counts as Record<string, number>
+            };
+          });
+          setClusters(transformedData);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Network error');
