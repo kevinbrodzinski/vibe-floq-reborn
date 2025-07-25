@@ -9,7 +9,7 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
-import { PlanBadgeProvider } from "@/providers/PlanBadgeProvider";
+import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
@@ -72,9 +72,9 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <EventNotificationsProvider>
-          <VibeRealtime />
-          <BannerProvider>
-            <PlanBadgeProvider>
+          <PlanNotificationProvider>
+            <VibeRealtime />
+            <BannerProvider>
               <TooltipProvider>
                 <Toaster />
                 <Sonner />
@@ -95,8 +95,8 @@ const App = () => {
                   {/* Remove development-only environment debug panel for TestFlight */}
                 </BrowserRouter>
               </TooltipProvider>
-            </PlanBadgeProvider>
-          </BannerProvider>
+            </BannerProvider>
+          </PlanNotificationProvider>
         </EventNotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>

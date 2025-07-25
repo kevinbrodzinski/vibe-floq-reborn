@@ -15,6 +15,9 @@ interface EventNotificationsContextType {
   unseen: EventNotification[];
   markAsSeen: (ids: string[]) => void;
   markAllSeen: (kinds?: string[]) => void;
+  getCountByPlan: (planId: string) => number;
+  getTotalPlanBadges: () => number;
+  clearPlan: (planId: string) => void;
 }
 
 const EventNotificationsContext = createContext<EventNotificationsContextType | undefined>(undefined);
@@ -81,7 +84,8 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
         },
         (payload) => {
           const notification = payload.new as EventNotification;
-          if (SUB_KINDS.includes(notification.kind as any)) {
+          // Double-check user_id for security
+          if (notification.user_id === user.id && SUB_KINDS.includes(notification.kind as any)) {
             setUnseen(prev => [notification, ...prev]);
           }
         }
@@ -96,7 +100,8 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
         },
         (payload) => {
           const notification = payload.new as EventNotification;
-          if (notification.seen_at) {
+          // Double-check user_id for security
+          if (notification.user_id === user.id && notification.seen_at) {
             setUnseen(prev => prev.filter(n => n.id !== notification.id));
           }
         }
@@ -142,8 +147,26 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
     }
   };
 
+  const getCountByPlan = (planId: string) =>
+    unseen.filter(n => n.payload?.plan_id === planId && (n.kind === 'plan_comment_new' || n.kind === 'plan_checkin')).length;
+
+  const getTotalPlanBadges = () =>
+    unseen.filter(n => n.kind === 'plan_comment_new' || n.kind === 'plan_checkin').length;
+
+  const clearPlan = async (planId: string) => {
+    if (!user) return;
+    
+    const planNotifications = unseen.filter(n => 
+      n.payload?.plan_id === planId && (n.kind === 'plan_comment_new' || n.kind === 'plan_checkin')
+    );
+    
+    if (planNotifications.length > 0) {
+      await markAsSeen(planNotifications.map(n => n.id));
+    }
+  };
+
   return (
-    <EventNotificationsContext.Provider value={{ unseen, markAsSeen, markAllSeen }}>
+    <EventNotificationsContext.Provider value={{ unseen, markAsSeen, markAllSeen, getCountByPlan, getTotalPlanBadges, clearPlan }}>
       {children}
     </EventNotificationsContext.Provider>
   );

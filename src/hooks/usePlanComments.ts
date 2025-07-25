@@ -69,7 +69,7 @@ export function usePlanComments(planId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('plan_comments' as any)
-        .select('*, profiles!plan_comments_user_id_fkey(username, avatar_url)')
+        .select('*, profiles(username, avatar_url)')
         .eq('plan_id', planId!)
         .order('created_at', { ascending: false });
 

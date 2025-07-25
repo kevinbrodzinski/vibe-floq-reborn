@@ -34,6 +34,15 @@ export type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow'][
 
 export type PlanFloqRow = Database['public']['Tables']['plan_floqs']['Row']
 
+export type EventNotificationRow = {
+  id: string;
+  user_id: string;
+  kind: string;
+  payload: any;
+  seen_at: string | null;
+  created_at: string;
+}
+
 // Helper types for JSON fields
 export type JsonArray = Array<any>
 export type JsonObject = { [key: string]: any }
