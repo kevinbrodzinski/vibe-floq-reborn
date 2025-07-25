@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useClusterVenues } from '@/hooks/useClusterVenues';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
@@ -20,13 +20,15 @@ const createWrapper = () => {
   );
 };
 
-test('returns array even when bounds undefined', () => {
+test('returns array even when bounds undefined', async () => {
   const { result } = renderHook(() => useClusterVenues(null), {
     wrapper: createWrapper(),
   });
   
-  expect(Array.isArray(result.current.data)).toBe(true);
-  expect(result.current.data).toEqual([]);
+  await waitFor(() => {
+    expect(Array.isArray(result.current.data)).toBe(true);
+    expect(result.current.data).toEqual([]);
+  });
 });
 
 test('handles valid bounds input', () => {

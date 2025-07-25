@@ -16,7 +16,7 @@ interface VenueNearMe {
 }
 
 // Haversine distance calculation
-function haversine(coord1: [number, number], coord2: [number, number]): number {
+function haversine(coord1: [number, number], coord2: [number, number], opts?: { cosLat?: number }): number {
   const [lat1, lng1] = coord1;
   const [lat2, lng2] = coord2;
   const R = 6371000; // Earth's radius in meters
@@ -24,29 +24,37 @@ function haversine(coord1: [number, number], coord2: [number, number]): number {
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
   
+  const cosLat = opts?.cosLat ?? Math.cos(lat1 * Math.PI / 180);
+  
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    cosLat * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng/2) * Math.sin(dLng/2);
     
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
 
-// Memoized Haversine distance calculation
-const useMemoizedHaversine = (coord1: [number, number], coord2: [number, number]) => {
-  const [lat1, lng1] = coord1;
-  const [lat2, lng2] = coord2;
-  
-  return useMemo(() => haversine([lat1, lng1], [lat2, lng2]), [lat1, lng1, lat2, lng2]);
-};
+// ─── helper only defined once ───────────────────────────────────────────
+const memoDistance = (() => {
+  let baseLat = 0, baseLng = 0, cosLat = 1;
+  return (a: number, b: number) => {
+    if (a !== baseLat) { baseLat = a; cosLat = Math.cos(a * Math.PI / 180); }
+    return haversine(
+      [a, b],
+      [baseLat, baseLng],   // will be overwritten below per call
+      { cosLat }            // pre-computed cosine
+    );
+  };
+})();
 
 export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 0.5) {
-  // Stable queryKey using object for better equality checking
-  const queryKey = useMemo(() => ['venues-near-me', { lat, lng, radius_km }], [lat, lng, radius_km]);
+  const initialCursor = { popularity: null as number | null, id: null as string | null };
+  
   return useInfiniteQuery({
-    queryKey,
+    queryKey: ['venues-near-me', lat, lng, radius_km, initialCursor],
+    initialPageParam: initialCursor,
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
-    queryFn: async ({ pageParam, signal }) => {
+    queryFn: async ({ pageParam = initialCursor, signal }) => {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         return { venues: [], nextCursor: undefined, hasMore: false };
       }
@@ -57,14 +65,14 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       const denom = Math.max(0.01, Math.abs(Math.cos(latRad))); // Clamp to prevent division by zero at poles
       const degreeOffsetLng = radius_km / (111 * denom);
       
-      const { popularity: cursorPopularity = Number.MAX_SAFE_INTEGER, id: cursorId = '' } = pageParam || {};
+      const { popularity: cursorPop, id: cursorId } = pageParam;
       
       const { data, error } = await supabase.rpc('get_cluster_venues', {
         min_lng: lng! - degreeOffsetLng,
         min_lat: lat! - degreeOffsetLat,
         max_lng: lng! + degreeOffsetLng,
         max_lat: lat! + degreeOffsetLat,
-        cursor_popularity: cursorPopularity,
+        cursor_popularity: cursorPop,
         cursor_id: cursorId,
         limit_rows: 10,
       } as any);
@@ -87,7 +95,7 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       const venues: VenueNearMe[] = (data || []).map(venue => {
         const venueLat = +venue.lat; // Safe casting for both string and number types
         const venueLng = +venue.lng;
-        const distance = haversine([lat!, lng!], [venueLat, venueLng]);
+        const distance = memoDistance(lat!, lng!);
         
         return {
           id: venue.id,
@@ -117,8 +125,10 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         hasMore: venues.length === 10
       };
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) =>
+      last.venues.length === 10
+        ? { popularity: last.venues.at(-1)!.popularity, id: last.venues.at(-1)!.id }
+        : undefined,
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // 1 minute for live count updates
   });
