@@ -19,7 +19,10 @@ import { ProfileHero } from '@/components/profile/ProfileHero';
 import { ConnectionInsights } from '@/components/ConnectionInsights';
 import { AboutMeEditor } from '@/components/profile/AboutMeEditor';
 import { PresenceSettings } from '@/components/profile/PresenceSettings';
-import { AchievementsSection } from '@/components/profile/AchievementsSection';
+
+import { RelationshipStrengthSummary } from '@/components/ui/RelationshipStrengthSummary';
+import { ProfileSmartDiscovery } from '@/components/ui/ProfileSmartDiscovery';
+import { ProfileAchievements } from '@/components/ui/ProfileAchievements';
 import { useProfile } from '@/hooks/useProfile';
 import { useUsername } from '@/hooks/useUsername';
 import { useAuth } from '@/providers/AuthProvider';
@@ -28,6 +31,7 @@ import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRelationshipStrength } from '@/hooks/useRelationshipStrength';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -39,6 +43,7 @@ const Profile = () => {
   const { data: profile } = useProfile(user?.id);
   const avatarMgr = useAvatarManager();
   const queryClient = useQueryClient();
+  const { relationships } = useRelationshipStrength();
 
   // Initialize state from profile data
   useEffect(() => {
@@ -145,10 +150,25 @@ const Profile = () => {
 
           <Separator />
 
+          {/* Relationship Strength Summary */}
+          <div className="space-y-4">
+            <RelationshipStrengthSummary relationships={relationships} />
+          </div>
+
+          <Separator />
+
+          {/* Smart Discovery */}
+          <div className="space-y-4">
+            <h2 className="text-base font-medium">Discover</h2>
+            <ProfileSmartDiscovery />
+          </div>
+
+          <Separator />
+
           {/* Achievements Section */}
           <div className="space-y-4">
             <h2 className="text-base font-medium">Achievements</h2>
-            <AchievementsSection />
+            <ProfileAchievements />
           </div>
 
           <Separator />

@@ -1,20 +1,51 @@
 import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
+import type { FloqMessage } from '@/hooks/useFloqMessages'
 import { supabase } from '@/integrations/supabase/client'
 import { highlightMentions } from '@/utils/highlightMentions'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useMentionPopover } from '@/hooks/useMentionPopover'
 import { MentionPopover } from '@/components/chat/MentionPopover'
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete'
 import { MentionAutocompleteMenu } from '@/components/chat/MentionAutocompleteMenu'
-import clsx from 'clsx'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { 
+  Send, 
+  Smile, 
+  Image, 
+  MapPin, 
+  Heart, 
+  ThumbsUp, 
+  MessageCircle,
+  Check,
+  CheckCheck,
+  Clock,
+  Reply,
+  MoreHorizontal,
+  X
+} from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
-  const { data, fetchNextPage, hasNextPage } = useFloqMessages(floqId)
+  const { 
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    typingUsers, 
+    readReceipts, 
+    messageReactions,
+    sendTypingIndicator,
+    sendReaction,
+    sendReadReceipt
+  } = useFloqMessages(floqId)
   const { mutate: send } = useSendFloqMessage()
   
   // Get current user for styling own messages
   const [me, setMe] = useState<string | null>(null)
+  const [replyingTo, setReplyingTo] = useState<FloqMessage | null>(null)
+  const [showThread, setShowThread] = useState<string | null>(null)
   
   useEffect(() => {
     const getUser = async () => {
@@ -31,11 +62,34 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
 
   // Autocomplete state
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const [inputValue, setInputValue] = useState('')
+  const [isComposing, setIsComposing] = useState(false)
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
 
-  // Autocomplete hook
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (msgs.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        const messagesContainer = document.querySelector('.messages-container')
+        if (messagesContainer) {
+          messagesContainer.scrollTop = 0 // Since we use flex-col-reverse, scrollTop 0 shows latest messages
+        }
+      }, 100)
+    }
+  }, [msgs.length])
+
+  const scrollToBottom = () => {
+    const messagesContainer = document.querySelector('.messages-container')
+    if (messagesContainer) {
+      messagesContainer.scrollTop = 0
+    }
+  }
+
   const ac = useMentionAutocomplete({
-    onInsert: c => {
+    onInsert: (candidate) => {
       if (!inputRef.current) return
       const i = inputRef.current
       const { selectionStart } = i
@@ -46,128 +100,408 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
       const start = match.index
       const before = text.slice(0, start)
       const after = text.slice(selectionStart ?? 0)
-      i.value = `${before}@${c.tag} ${after}`
+      i.value = `${before}@${candidate.tag} ${after}`
       /* move caret */
-      const pos = before.length + c.tag.length + 2
+      const pos = before.length + candidate.tag.length + 2
       i.setSelectionRange(pos, pos)
+      setInputValue(i.value)
       ac.close()
     },
   })
 
-  // Track cursor position to position the menu
   const updateMenuPos = () => {
     if (!inputRef.current) return
-    const { top, left } = inputRef.current.getBoundingClientRect()
-    setMenuPos({ top: top - 8, left: left + 8 }) // tweak offsets
+    const rect = inputRef.current.getBoundingClientRect()
+    setMenuPos({ top: rect.bottom + 4, left: rect.left })
+  }
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setInputValue(value)
+    
+    // Send typing indicator
+    if (value.length > 0 && !isComposing) {
+      sendTypingIndicator(true)
+      setTimeout(() => sendTypingIndicator(false), 3000)
+    }
+    
+    // Mention autocomplete
+    const sel = e.target.selectionStart ?? 0
+    const match = /@([\w-]*)$/.exec(value.slice(0, sel))
+    if (match) {
+      ac.setQuery(match[1])
+      updateMenuPos()
+    } else {
+      ac.setQuery('')
+      ac.close()
+    }
+  }
+
+  // Handle message reactions
+  const handleReaction = (messageId: string, reaction: string) => {
+    if (!me) return
+    
+    const currentReactions = messageReactions[messageId] || []
+    const hasReacted = currentReactions.includes(me)
+    
+    sendReaction(messageId, reaction, !hasReacted)
+  }
+
+  // Handle reply to message
+  const handleReply = (message: FloqMessage) => {
+    setReplyingTo(message)
+    inputRef.current?.focus()
+  }
+
+  // Cancel reply
+  const cancelReply = () => {
+    setReplyingTo(null)
+  }
+
+  // Format timestamp
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 1) return 'now'
+    if (diffMins < 60) return `${diffMins}m`
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`
+    return date.toLocaleDateString()
+  }
+
+  // Get read receipt status
+  const getReadStatus = (messageId: string, isOwn: boolean) => {
+    if (!isOwn) return null
+    
+    const reads = readReceipts[messageId] || []
+    const totalMembers = 5 // This should come from floq data
+    
+    if (reads.length === 0) return <Clock className="w-3 h-3 text-muted-foreground" />
+    if (reads.length < totalMembers) return <Check className="w-3 h-3 text-blue-500" />
+    return <CheckCheck className="w-3 h-3 text-blue-500" />
+  }
+
+  // Mark message as read when it comes into view
+  useEffect(() => {
+    if (!me || msgs.length === 0) return
+    
+    const lastMessage = msgs[0] // Messages are in reverse order
+    if (lastMessage && lastMessage.sender_id !== me) {
+      sendReadReceipt(lastMessage.id)
+    }
+  }, [msgs, me, sendReadReceipt])
+
+  // Render reply preview
+  const renderReplyPreview = () => {
+    if (!replyingTo) return null
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="bg-muted/50 border-l-4 border-primary p-3 rounded-lg mb-3"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Reply className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Replying to {replyingTo.sender?.display_name || replyingTo.sender?.username || 'Someone'}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={cancelReply}
+            className="h-6 w-6 p-0"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1 truncate">
+          {replyingTo.body}
+        </p>
+      </motion.div>
+    )
+  }
+
+  // Render message with reply context
+  const renderMessage = (m: FloqMessage) => {
+    const mine = m.sender_id === me
+    const name = m.sender?.display_name || m.sender?.username || 'Someone'
+    const reactions = messageReactions[m.id] || []
+
+    return (
+      <motion.li
+        key={m.id}
+        className={cn(
+          'group relative',
+          mine ? 'ml-auto' : 'mr-auto'
+        )}
+      >
+        <div className={cn(
+          'flex gap-3 max-w-[75%]',
+          mine && 'flex-row-reverse'
+        )}>
+          {!mine && (
+            <Avatar className="w-8 h-8 flex-shrink-0">
+              <AvatarImage src={m.sender?.avatar_url} />
+              <AvatarFallback className="text-xs">
+                {name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          )}
+          
+          <div className={cn(
+            'flex flex-col',
+            mine && 'items-end'
+          )}>
+            {!mine && (
+              <span className="text-xs text-muted-foreground mb-1 px-1">
+                {name}
+              </span>
+            )}
+            
+            {/* Reply context */}
+            {m.reply_to && (
+              <div className={cn(
+                'text-xs text-muted-foreground mb-1 px-1 border-l-2 border-muted pl-2',
+                mine && 'text-right'
+              )}>
+                Replying to {m.reply_to.sender?.display_name || m.reply_to.sender?.username || 'Someone'}
+              </div>
+            )}
+            
+            <div className={cn(
+              'relative rounded-2xl px-4 py-2 break-words max-w-full',
+              mine 
+                ? 'bg-primary text-primary-foreground rounded-br-md' 
+                : 'bg-muted rounded-bl-md'
+            )}>
+              {/* Rich text with mentions */}
+              <p
+                className="text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: highlightMentions(m.body) }}
+              />
+              
+              {/* Message footer */}
+              <div className={cn(
+                'flex items-center gap-1 mt-1',
+                mine ? 'justify-end' : 'justify-start'
+              )}>
+                <span className="text-[10px] opacity-60">
+                  {formatTime(m.created_at)}
+                </span>
+                {getReadStatus(m.id, mine)}
+              </div>
+            </div>
+            
+            {/* Reactions */}
+            {reactions.length > 0 && (
+              <div className={cn(
+                'flex gap-1 mt-1',
+                mine ? 'justify-end' : 'justify-start'
+              )}>
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  ❤️ {reactions.length}
+                </Badge>
+              </div>
+            )}
+
+            {/* Thread indicator */}
+            {m.thread_count && m.thread_count > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground mt-1"
+                onClick={() => setShowThread(showThread === m.id ? null : m.id)}
+              >
+                {m.thread_count} replies
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Message actions (hover) */}
+        <div className={cn(
+          'absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+          mine ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'
+        )}>
+          <div className="flex gap-1 bg-background border rounded-full p-1 shadow-lg">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={() => handleReply(m)}
+            >
+              <Reply className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={() => handleReaction(m.id, 'heart')}
+            >
+              ❤️
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={() => handleReaction(m.id, 'thumbsup')}
+            >
+              👍
+            </Button>
+          </div>
+        </div>
+      </motion.li>
+    )
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* ---------- list ---------- */}
-      <ul
-        className="flex flex-1 flex-col-reverse gap-3 overflow-y-auto p-4"
-        onClick={(e) => {
-          const el = e.target as HTMLElement;
-          const tag = el.dataset.tag;
-          if (tag) {
-            open({ tag, x: e.clientX, y: e.clientY });
-          }
-        }}
-        onScroll={(e) => {
-          if (e.currentTarget.scrollTop === 0 && hasNextPage) fetchNextPage()
-        }}
-      >
-        {msgs.map((m) => {
-          const mine = m.sender_id === me
-          const name = m.sender?.display_name || m.sender?.username || 'Someone'
-
-          return (
-            <li
-              key={m.id}
-              className={clsx(
-                'rounded-xl p-3 max-w-[75%] whitespace-pre-wrap',
-                mine ? 'ml-auto bg-primary/10' : 'bg-border/10'
-              )}
-            >
-              {/* Sender chip */}
-              {!mine && (
-                <div className="mb-1 flex items-center gap-2 text-xs opacity-70">
-                  <img
-                    src={m.sender?.avatar_url ?? '/placeholder.svg'}
-                    alt={name}
-                    className="h-4 w-4 rounded-full object-cover"
-                  />
-                  <span>{name}</span>
-                </div>
-              )}
-
-              {/* Rich text with mentions */}
-              <p
-                dangerouslySetInnerHTML={{ __html: highlightMentions(m.body) }}
-              />
-
-              {/* Timestamp */}
-              <div className="mt-1 text-[10px] opacity-40">
-                {new Date(m.created_at).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-
-      {/* ---------- composer ---------- */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          const textarea = inputRef.current
-          if (!textarea) return
-          const body = textarea.value.trim()
-          if (body) send({ floqId, body })
-          textarea.value = ''
-          ac.close()
-        }}
-        className="flex border-t border-border"
-      >
-        <div className="relative flex-1">
-          <textarea
-            ref={inputRef}
-            rows={1}
-            placeholder="message…"
-            className="min-h-[40px] max-h-36 w-full resize-none bg-transparent p-3 outline-none"
-            onKeyDown={ac.onKeyDown}
-            onInput={e => {
-              const val = (e.target as HTMLTextAreaElement).value
-              const sel = (e.target as HTMLTextAreaElement).selectionStart ?? 0
-              const match = /@([\w-]*)$/.exec(val.slice(0, sel))
-              if (match) {
-                ac.setQuery(match[1])
-                updateMenuPos()
-              } else {
-                ac.setQuery('')
-                ac.close()
-              }
-            }}
-          />
-
-          <MentionAutocompleteMenu
-            open={ac.open}
-            top={menuPos.top}
-            left={menuPos.left}
-            items={ac.items}
-            highlight={ac.index}
-            onSelect={ac.onInsert}
-          />
-        </div>
-        <button
-          type="submit"
-          className="px-4 font-semibold text-primary hover:opacity-80"
+      {/* ---------- messages container ---------- */}
+      <div className="flex-1 overflow-hidden relative">
+        <ul
+          className="messages-container h-full flex flex-col-reverse gap-3 overflow-y-auto p-4 pb-6"
+          onClick={(e) => {
+            const el = e.target as HTMLElement;
+            const tag = el.dataset.tag;
+            if (tag) {
+              open({ tag, x: e.clientX, y: e.clientY });
+            }
+          }}
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            // Show scroll-to-bottom button if scrolled up (scrollTop > 100)
+            setShowScrollToBottom(target.scrollTop > 100);
+            
+            if (target.scrollTop === 0 && hasNextPage) fetchNextPage()
+          }}
         >
-          Send
-        </button>
-      </form>
+          {msgs.map(renderMessage)}
+          
+          {/* Typing indicators */}
+          <AnimatePresence>
+            {typingUsers.size > 0 && (
+              <motion.li
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="flex gap-3 max-w-[75%]"
+              >
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarFallback className="text-xs">?</AvatarFallback>
+                </Avatar>
+                <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                </div>
+              </motion.li>
+            )}
+          </AnimatePresence>
+        </ul>
+
+        {/* Scroll to bottom button */}
+        <AnimatePresence>
+          {showScrollToBottom && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={scrollToBottom}
+              className="absolute bottom-4 right-4 h-10 w-10 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ---------- composer (fixed at bottom) ---------- */}
+      <div className="border-t border-border bg-background shadow-lg">
+        {/* Reply preview */}
+        <AnimatePresence>
+          {renderReplyPreview()}
+        </AnimatePresence>
+        
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const textarea = inputRef.current
+            if (!textarea) return
+            const body = textarea.value.trim()
+            if (body) {
+              send({ 
+                floqId, 
+                body
+              })
+              textarea.value = ''
+              setInputValue('')
+              setReplyingTo(null)
+              sendTypingIndicator(false)
+            }
+            ac.close()
+          }}
+          className="flex p-3 gap-2 bg-background"
+        >
+          <div className="relative flex-1">
+            <textarea
+              ref={inputRef}
+              rows={1}
+              placeholder={replyingTo ? `Reply to ${replyingTo.sender?.display_name || replyingTo.sender?.username || 'Someone'}...` : "Message..."}
+              value={inputValue}
+              onChange={handleInputChange}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
+              className="min-h-[40px] max-h-36 w-full resize-none bg-transparent outline-none text-sm"
+              onKeyDown={ac.onKeyDown}
+            />
+
+            <MentionAutocompleteMenu
+              open={ac.open}
+              top={menuPos.top}
+              left={menuPos.left}
+              items={ac.items}
+              highlight={ac.index}
+              onSelect={ac.onInsert}
+            />
+          </div>
+          
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-10 w-10 p-0"
+            >
+              <Smile className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-10 w-10 p-0"
+            >
+              <Image className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              type="submit"
+              size="sm"
+              className="h-10 w-10 p-0 bg-primary text-primary-foreground"
+              disabled={!inputValue.trim()}
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
+        </form>
+      </div>
 
       {/* Mention popover portal */}
       <AnimatePresence>

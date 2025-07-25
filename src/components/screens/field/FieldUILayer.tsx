@@ -74,24 +74,6 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
                 onOpenVenues={() => setVenuesSheetOpen(true)}
               />
             </motion.div>
-
-            {/* Location banner */}
-            <motion.div
-              key="location-banner"
-              {...zIndex("uiHeader")}
-              className="absolute inset-x-0 top-14 px-6 pointer-events-auto"
-              initial={{ y: -8, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -8, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <LocationDisplay
-                locationText={locDisp.displayText}
-                isReady={locDisp.isReady}
-                isLoading={locDisp.isLoading}
-                lastHeartbeat={lastHeartbeat}
-              />
-            </motion.div>
           </>
         )}
       </AnimatePresence>
@@ -100,7 +82,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
       {!isFull && route !== "/vibe" && (
         <motion.div
           {...zIndex("overlay")}
-          className="absolute inset-0 top-12"
+          className="absolute inset-0 top-12 pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

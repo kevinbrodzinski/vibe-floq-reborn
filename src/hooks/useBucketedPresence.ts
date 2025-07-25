@@ -2,11 +2,11 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
+import type { GeometryPoint } from '@/lib/types/geometry';
 
 interface PresenceUser {
   user_id: string;
-  lat: number;
-  lng: number;
+  location: GeometryPoint;
   vibe: string;
   last_seen: string;
   isFriend?: boolean;
@@ -68,10 +68,15 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
     const offsetLat = Math.cos(angle) * distance;
     const offsetLng = Math.sin(angle) * distance;
     
+    const lat = userLat + offsetLat;
+    const lng = userLng + offsetLng;
+    
     return {
       ...user,
-      lat: userLat + offsetLat,
-      lng: userLng + offsetLng,
+      location: {
+        type: 'Point' as const,
+        coordinates: [lng, lat] as [number, number] // [longitude, latitude]
+      },
       last_seen: new Date(Date.now() - Math.random() * 300000).toISOString() // Random time within last 5 minutes
     };
   });

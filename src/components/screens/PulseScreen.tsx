@@ -1,229 +1,572 @@
-import { useState } from "react";
-import { Mic, Search, MapPin, Clock, Target, Sparkles } from "lucide-react";
+import React, { useState, useMemo } from 'react';
+import { Search, Filter, MapPin, Users, Clock, Star, TrendingUp, Sparkles, Flame, Activity, Coffee, Zap } from 'lucide-react';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { useActiveFloqs } from '@/hooks/useActiveFloqs';
+import { useNearbyVenues } from '@/hooks/useNearbyVenues';
+import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
+// import { useWeeklyAI } from '@/hooks/useWeeklyAI';
+import { useSocialSuggestions } from '@/hooks/useSocialSuggestions';
+import { useTrendingVenues } from '@/hooks/useTrendingVenues';
+import { useLiveActivities } from '@/hooks/useLiveActivities';
+import { useAuth } from '@/providers/AuthProvider';
+import { TrendingVenueCard } from '@/components/ui/TrendingVenueCard';
+import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
+import { VoiceSearchButton } from '@/components/ui/VoiceSearchButton';
+import { WeatherAwareSuggestion } from '@/components/ui/WeatherAwareSuggestion';
+import { AISuggestionCard } from '@/components/ui/AISuggestionCard';
+import { AISummaryCollapsible } from '@/components/ui/AISummaryCollapsible';
+import { HeartbeatPulseIcon } from '@/components/ui/HeartbeatPulseIcon';
+import { SmartDiscoveryModal } from '@/components/ui/SmartDiscoveryModal';
+import { useNavigate } from 'react-router-dom';
+import { EnhancedRecommendationCard } from '@/components/ui/EnhancedRecommendationCard';
+import { AvatarStack } from '@/components/ui/AvatarStack';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useVibeMatch } from '@/hooks/useVibeMatch';
+
+// Minimal brain outline SVG
+const BrainOutlineIcon = ({ className = '', size = 24, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 4a4 4 0 0 0-4 4v8a4 4 0 0 0 4 4m0-16v16m0-16a4 4 0 0 1 4-4 4 4 0 0 1 4 4v16a4 4 0 0 1-4 4 4 4 0 0 1-4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M16 4a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 
 interface PulseRecommendation {
   id: string;
-  type: "venue" | "floq" | "person";
   title: string;
-  subtitle: string;
-  description: string;
-  location?: string;
-  time?: string;
-  vibeMatch?: number;
+  type: 'venue' | 'floq' | 'plan';
+  distance?: string | number;
+  distance_meters?: number;
+  vibe?: string;
   participants?: number;
+  participant_count?: number;
+  maxParticipants?: number;
+  starts_at?: string;
+  ends_at?: string;
+  startTime?: string;
+  endTime?: string;
   status?: string;
-  color: string;
-  mutuals?: number;
+  description?: string;
+  address?: string;
+  live_count?: number;
+  venue_id?: string;
+  tags?: string[];
+  friends_going_names?: string[];
+  friends_going_avatars?: string[];
+  friends?: string[];
+  host?: {
+    name: string;
+    avatar?: string;
+  };
+  category?: string;
 }
 
-export const PulseScreen = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(["Venue"]);
-  
-  const vibeFilters = ["Chill", "Hype", "Romantic", "Weird", "Solo"];
-  const radiusFilters = ["Walking", "Driving", "All LA"];
-  const timeFilters = ["Now", "Later", "Afterparty"];
-  const energyFilters = ["High Motion", "Social Flow", "Lurking"];
-  
-  const allFilters = ["Venue", "Chill", "Walking", "Now", "Social Flow"];
-  
-  const [recommendations] = useState<PulseRecommendation[]>([
-    {
-      id: "1",
-      type: "venue",
-      title: "Chill drinks at Echo Rooftop",
-      subtitle: "Good vibes • 22 people • Open group",
-      description: "Echo Park • Starts at 9:30 • Vibe Match: 88%",
-      location: "Echo Park",
-      time: "Starts at 9:30",
-      vibeMatch: 88,
-      participants: 22,
-      status: "Open group",
-      color: "hsl(200 70% 60%)",
-      mutuals: 2
-    },
-    {
-      id: "2", 
-      type: "floq",
-      title: "Vinyl lounge session",
-      subtitle: "Karaoke • 10 going • Open group",
-      description: "Eastside Vibes • Starts in 1 hr",
-      location: "Eastside Vibes",
-      time: "Starts in 1 hr",
-      participants: 10,
-      status: "Open group",
-      color: "hsl(280 70% 60%)"
-    },
-    {
-      id: "3",
-      type: "person",
-      title: "Eli and Jackie at Highlands",
-      subtitle: "Vibe: Chill • 3 going • 3 miles away",
-      description: "Perfect match for your current energy",
-      participants: 3,
-      color: "hsl(30 70% 60%)"
-    }
-  ]);
+export const PulseScreen: React.FC = () => {
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [showAIInsights, setShowAIInsights] = useState(true);
+  const [timeFilter, setTimeFilter] = useState<'now' | 'tonight' | 'weekend'>('now');
+  const [showIndoorOnly, setShowIndoorOnly] = useState(false);
+  const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
+  const [showAISummary, setShowAISummary] = useState(false);
+  const navigate = useNavigate();
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false);
+  const [modalFriends, setModalFriends] = useState<{name: string, avatar?: string}[]>([]);
 
-  const quickSuggestions = [
-    { text: "Good music + low-key crowd" },
-    { text: "Open plans nearby" },
-    { text: "Where's the energy flowing?" }
-  ];
+  
+  // Mock weather data - in production this would come from a weather API
+  const weather = {
+    condition: 'sunny' as const,
+    temperature: 72,
+    isIndoor: showIndoorOnly
+  };
+
+  // Mock gamification data - in production this would come from user profile
+  const gamificationData = {
+    badges: [
+      {
+        id: '1',
+        name: 'Venue Explorer',
+        description: 'Visit 10 different venues',
+        icon: <MapPin className="w-4 h-4" />,
+        progress: 7,
+        maxProgress: 10,
+        isUnlocked: false,
+        color: 'from-blue-500/20 to-blue-600/20'
+      },
+      {
+        id: '2',
+        name: 'Social Butterfly',
+        description: 'Join 5 floqs',
+        icon: <Users className="w-4 h-4" />,
+        progress: 3,
+        maxProgress: 5,
+        isUnlocked: false,
+        color: 'from-purple-500/20 to-purple-600/20'
+      },
+      {
+        id: '3',
+        name: 'Coffee Connoisseur',
+        description: 'Visit 3 coffee shops',
+        icon: <Coffee className="w-4 h-4" />,
+        progress: 3,
+        maxProgress: 3,
+        isUnlocked: true,
+        color: 'from-orange-500/20 to-orange-600/20'
+      }
+    ],
+    totalPoints: 1250,
+    level: 8,
+    streak: 3
+  };
+
+  // Data fetching hooks
+  const { coords } = useGeolocation();
+  const { data: activeFloqs = [] } = useActiveFloqs({ limit: 50 });
+  const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);
+  const { data: myFloqs = [] } = useMyActiveFloqs();
+  // const { suggestion: aiSuggestion, loading: aiLoading, refetch: refetchAI, source: aiSource } = useWeeklyAI();
+  const { suggestions: socialSuggestions = [] } = useSocialSuggestions(1000);
+  const { venues: trendingVenues = [] } = useTrendingVenues(coords?.lat ?? 0, coords?.lng ?? 0, 1000);
+  const { activities: liveActivities = [] } = useLiveActivities(coords?.lat ?? 0, coords?.lng ?? 0, 1000);
+
+  // Loading and error states
+  const isLoading = !activeFloqs.length && !nearbyVenues.length;
+  const hasError = false; // Add error handling if needed
+
+  // Transform data into recommendations
+  const recommendations = useMemo(() => {
+    const venueRecommendations: PulseRecommendation[] = nearbyVenues.map(venue => ({
+      id: venue.id,
+      title: venue.name,
+      type: 'venue' as const,
+      distance: venue.distance_m ? `${(venue.distance_m / 1000).toFixed(1)}km` : 'Nearby',
+      vibe: venue.vibe || 'Venue',
+      category: venue.categories?.[0],
+      rating: venue.rating,
+      address: venue.address,
+      live_count: venue.live_count,
+      venue_id: venue.id
+    }));
+
+    const floqRecommendations: PulseRecommendation[] = activeFloqs.map(floq => ({
+      id: floq.id,
+      title: floq.title,
+      type: 'floq' as const,
+      distance: floq.distance_meters ? `${(floq.distance_meters / 1000).toFixed(1)}km` : 'Nearby',
+      vibe: floq.primary_vibe || 'social',
+      participants: floq.participant_count,
+      category: 'Floq',
+      venue_id: floq.id
+    }));
+
+    return [...venueRecommendations, ...floqRecommendations];
+  }, [nearbyVenues, activeFloqs]);
+
+  // Filter recommendations based on search and filters
+  const filteredRecommendations = useMemo(() => {
+    let filtered = recommendations;
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(rec => 
+        rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rec.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rec.vibe.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Selected filters
+    if (selectedFilters.length > 0) {
+      filtered = filtered.filter(rec => {
+        if (selectedFilters.includes('Walking distance') && parseFloat(String(rec.distance)) > 1) return false;
+        if (selectedFilters.includes('High energy') && (rec.live_count || 0) < 10) return false;
+        if (selectedFilters.includes('Social vibes') && !['social', 'hype', 'open'].includes(rec.vibe)) return false;
+        if (selectedFilters.includes('My floqs') && rec.type === 'floq' && !myFloqs.some(f => f.id === rec.id)) return false;
+        return true;
+      });
+    }
+
+    // Time filter
+    if (timeFilter === 'tonight') {
+      filtered = filtered.filter(rec => 
+        rec.category === 'Floq' || 
+        ['bar', 'restaurant', 'nightclub'].includes(rec.category?.toLowerCase() || '')
+      );
+    } else if (timeFilter === 'weekend') {
+      filtered = filtered.filter(rec => 
+        rec.category === 'Floq' || 
+        ['park', 'museum', 'cafe', 'restaurant'].includes(rec.category?.toLowerCase() || '')
+      );
+    }
+
+    return filtered;
+  }, [recommendations, searchQuery, selectedFilters, timeFilter, myFloqs]);
+
+  // Dynamic quick suggestions based on real data
+  const quickSuggestions = useMemo(() => {
+    const suggestions = [];
+
+    if (activeFloqs.length > 0) {
+      suggestions.push({
+        label: `${activeFloqs.length} active floqs nearby`,
+        filter: 'Active floqs'
+      });
+    }
+
+    if (nearbyVenues.length > 0) {
+      suggestions.push({
+        label: `${nearbyVenues.length} venues discovered`,
+        filter: 'Venues'
+      });
+    }
+
+    if (myFloqs.length > 0) {
+      suggestions.push({
+        label: `${myFloqs.length} of your floqs`,
+        filter: 'My floqs'
+      });
+    }
+
+    if (socialSuggestions.length > 0) {
+      suggestions.push({
+        label: `${socialSuggestions.length} friends nearby`,
+        filter: 'Friends nearby'
+      });
+    }
+
+    return suggestions;
+  }, [activeFloqs.length, nearbyVenues.length, myFloqs.length, socialSuggestions.length]);
+
+  // Get vibe match data for all recommendations
+  const { vibeMatch: globalVibeMatch } = useVibeMatch();
+
+  // Helper function to get vibe match for a specific recommendation
+  const getVibeMatchForRecommendation = (rec: PulseRecommendation) => {
+    // For now, use global vibe match or fallback to random
+    return globalVibeMatch?.matchPercentage || Math.floor(Math.random() * 40) + 60;
+  };
+
+  const handleQuickSuggestionClick = (filter: string) => {
+    if (selectedFilters.includes(filter)) {
+      setSelectedFilters(selectedFilters.filter(f => f !== filter));
+    } else {
+      setSelectedFilters([...selectedFilters, filter]);
+    }
+  };
+
+  const toggleFilter = (filter: string) => {
+    setSelectedFilters(prev => 
+      prev.includes(filter) 
+        ? prev.filter(f => f !== filter)
+        : [...prev, filter]
+    );
+  };
+
+  // Helper to extract city from address
+  const getCityFromAddress = (address?: string | null) => {
+    if (!address || typeof address !== 'string') return '';
+    const parts = address.split(',').map(s => s.trim());
+    if (parts.length >= 2) return parts[parts.length - 2];
+    return parts[0];
+  };
 
   return (
     <div className="min-h-screen bg-gradient-field">
       {/* Top Bar */}
       <div className="flex justify-between items-center p-6 pt-16">
-        <button className="p-2 rounded-full hover:bg-secondary/20 transition-colors">
-          <div className="w-6 h-6 rounded-full bg-gradient-secondary flex items-center justify-center">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
-          </div>
+        <button
+          className="p-2 rounded-full hover:bg-secondary/20 transition-colors"
+          onClick={() => setShowDiscoveryModal(true)}
+          aria-label="Open Smart Discovery Modal"
+        >
+          <MapPin className="h-6 w-6 text-white/80" />
         </button>
-        
-        <h1 className="text-3xl font-light bg-gradient-secondary bg-clip-text text-transparent animate-pulse-glow">
-          pulse
-        </h1>
-        
-        <button className="p-2 rounded-full hover:bg-secondary/20 transition-colors">
-          <Mic className="w-6 h-6 text-muted-foreground" />
+        <div className="relative flex flex-col items-center justify-center w-full">
+          {/* Animated gradient wave background */}
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-[220px] h-12 pointer-events-none z-0 animate-pulse-wave">
+            <svg viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <defs>
+                <linearGradient id="pulseWaveGradient" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#a5b4fc" />
+                  <stop offset="0.5" stop-color="#f472b6" />
+                  <stop offset="1" stop-color="#facc15" />
+                </linearGradient>
+              </defs>
+              <path d="M0 24 Q 55 0 110 24 T 220 24 Q 165 48 110 24 T 0 24" stroke="url(#pulseWaveGradient)" stroke-width="6" fill="none" opacity="0.18"/>
+            </svg>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-indigo-300 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg z-10">
+            pulse
+          </h1>
+          <p className="text-base md:text-lg text-white/70 font-medium z-10">Discovering around you</p>
+        </div>
+        <button
+          className="p-2 rounded-full hover:bg-secondary/20 transition-colors"
+          onClick={() => setShowAISummary((v) => !v)}
+          aria-label="Show AI Insights"
+        >
+          <Zap className="h-6 w-6 text-white/80" />
         </button>
       </div>
 
-      <div className="px-6 pb-24">
-        {/* Ask Pulse Input */}
-        <div className="mb-6">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="What's the move tonight?"
-              className="w-full bg-card/90 backdrop-blur-xl border-2 border-border/30 rounded-3xl py-4 px-6 pr-14 text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary/50 focus:glow-primary transition-all duration-300"
+      {/* Smart Discovery Modal */}
+      <SmartDiscoveryModal
+        isOpen={showDiscoveryModal}
+        onClose={() => setShowDiscoveryModal(false)}
+        userLocation={coords ? { lat: coords.lat, lng: coords.lng } : undefined}
+      />
+
+      {/* AI Summary Collapsible (controlled) */}
+      <div className="px-6">
+        {showAISummary && <AISummaryCollapsible />}
+      </div>
+
+      {/* Search Bar */}
+      <div className="px-6 mb-4">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
+          <input
+            type="text"
+            placeholder="Search venues, vibes, or floqs..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-20 py-4 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 text-white placeholder-white/50 focus:outline-none focus:border-white/40 focus:glow-secondary transition-all duration-300"
+          />
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+            <VoiceSearchButton
+              onVoiceInput={(text) => setSearchQuery(text)}
+              disabled={false}
             />
-            <button className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-full hover:bg-primary/10 transition-colors">
-              <Search className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-          
-          {/* Quick Suggestions */}
-          <div className="mt-4 space-y-2">
-            {quickSuggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                className="block w-full text-left bg-card/60 backdrop-blur-xl border border-border/20 rounded-2xl py-3 px-4 text-sm text-muted-foreground transition-all duration-300 hover:bg-card/80 hover:text-foreground hover:scale-[1.02]"
-              >
-                {suggestion.text}
-              </button>
-            ))}
           </div>
         </div>
+      </div>
 
-        {/* Dynamic Filters Bar */}
-        <div className="mb-8">
-          <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-            {allFilters.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => {
-                  if (selectedFilters.includes(filter)) {
-                    setSelectedFilters(selectedFilters.filter(f => f !== filter));
-                  } else {
-                    setSelectedFilters([...selectedFilters, filter]);
-                  }
-                }}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
-                  selectedFilters.includes(filter)
-                    ? "bg-gradient-primary text-primary-foreground glow-primary"
-                    : "bg-secondary/30 text-secondary-foreground hover:bg-secondary/50 border border-border/30"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Feed of Recommendations */}
-        <div className="space-y-6">
-          {recommendations.map((rec, index) => (
-            <div
-              key={rec.id}
-              className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 border border-border/30 transition-all duration-500 hover:scale-[1.02] hover:glow-secondary animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}
+      {/* Time Filters - Right under search */}
+      <div className="px-6 mb-4">
+        <div className="flex gap-2">
+          {(['now', 'tonight', 'weekend'] as const).map((time) => (
+            <button
+              key={time}
+              onClick={() => setTimeFilter(time)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                timeFilter === time
+                  ? 'bg-white text-gray-900 shadow-lg'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+              }`}
             >
-              {/* Pulse Signature */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-secondary/40 text-secondary-foreground px-3 py-1 rounded-full text-xs font-medium capitalize">
-                  {rec.type}
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Suggested for you just now</span>
-                </div>
-              </div>
-              
-              {/* Content */}
-              <div className="mb-4">
-                <h3 className="text-xl font-bold mb-2 text-foreground">{rec.title}</h3>
-                <p className="text-muted-foreground mb-3">{rec.subtitle}</p>
-                
-                {/* Details Line */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-accent">
-                  {rec.location && (
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{rec.location}</span>
-                    </div>
-                  )}
-                  {rec.time && (
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{rec.time}</span>
-                    </div>
-                  )}
-                  {rec.vibeMatch && (
-                    <div className="flex items-center space-x-1">
-                      <Target className="w-4 h-4" />
-                      <span>Vibe Match: {rec.vibeMatch}%</span>
-                    </div>
-                  )}
-                  {rec.mutuals && (
-                    <div className="flex items-center space-x-1">
-                      <div className="w-4 h-4 rounded-full bg-gradient-secondary"></div>
-                      <span>{rec.mutuals} mutuals nearby</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex space-x-3">
-                {rec.type === "venue" && (
-                  <>
-                    <button className="flex-1 bg-gradient-primary text-primary-foreground py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 text-center">
-                      View Crowd
-                    </button>
-                    <button className="px-6 bg-secondary/50 text-secondary-foreground py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 border border-border/30">
-                      Add to Plan
-                    </button>
-                  </>
-                )}
-                {rec.type === "floq" && (
-                  <button className="flex-1 bg-gradient-primary text-primary-foreground py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 text-center">
-                    Join Now
-                  </button>
-                )}
-                {rec.type === "person" && (
-                  <button className="flex-1 bg-gradient-secondary text-secondary-foreground py-3 rounded-2xl font-medium transition-all duration-300 hover:scale-105 text-center">
-                    DM Someone There
-                  </button>
-                )}
-              </div>
-            </div>
+              {time.charAt(0).toUpperCase() + time.slice(1)}
+            </button>
           ))}
         </div>
       </div>
+
+      {/* Quick Filters - Right under time filters */}
+      <div className="px-6 mb-4">
+        <div className="flex flex-wrap gap-2">
+          {quickSuggestions.map((suggestion, index) => (
+            <button
+              key={index}
+              onClick={() => handleQuickSuggestionClick(suggestion.filter)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                selectedFilters.includes(suggestion.filter)
+                  ? 'bg-white text-gray-900 shadow-md'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+              }`}
+            >
+              {suggestion.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter Chips - Right under quick filters */}
+      <div className="px-6 mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Filter className="w-4 h-4 text-white/70" />
+          <span className="text-sm text-white/70">Filters:</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {['Walking distance', 'High energy', 'Social vibes', 'My floqs'].map((filter) => (
+            <button
+              key={filter}
+              onClick={() => toggleFilter(filter)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                selectedFilters.includes(filter)
+                  ? 'bg-white text-gray-900 shadow-md'
+                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content Sections */}
+      <div className="space-y-6">
+        {/* AI Insight Section */}
+        {/* {showAIInsights && aiSuggestion && (
+          <div className="px-6">
+            <AISuggestionCard
+              suggestion={aiSuggestion}
+              onRefresh={refetchAI}
+              loading={aiLoading}
+              source={aiSource}
+            />
+          </div>
+        )} */}
+
+        {/* Live Activity Feed */}
+        {liveActivities.length > 0 && (
+          <div className="px-6">
+            <LiveActivityFeed 
+              activities={liveActivities} 
+              maxItems={3}
+              onCardClick={(activity) => {
+                // Route based on activity type
+                if ((activity.type === 'checkin' || activity.type === 'venue_activity' || activity.venue_name)) {
+                  navigate(`/venues/${activity.venue_id ? activity.venue_id : (activity.venue_name || '')}`);
+                } else if (activity.type === 'friend_joined' && activity.user_name) {
+                  navigate(`/profile/${activity.user_name}`);
+                } else if (activity.type === 'trending' && activity.venue_name) {
+                  navigate(`/venues/${activity.venue_id ? activity.venue_id : (activity.venue_name || '')}`);
+                }
+              }}
+              boldEntities={true}
+            />
+          </div>
+        )}
+
+        {/* Weather-Aware Suggestion */}
+        <div className="px-6">
+          <WeatherAwareSuggestion
+            weather={weather}
+            onIndoorToggle={() => setShowIndoorOnly(!showIndoorOnly)}
+          />
+        </div>
+
+        {/* Trending Venues Section */}
+        {trendingVenues.length > 0 && (
+          <div className="px-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Flame className="w-5 h-5 text-orange-500" />
+              <h2 className="font-bold text-white text-lg">🔥 Trending Now</h2>
+            </div>
+            <div className="space-y-4">
+              {trendingVenues.slice(0, 3).map((venue) => (
+                <TrendingVenueCard
+                  key={venue.id}
+                  venue={venue}
+                  onJoin={() => console.log('Join venue:', venue.name)}
+                  onShare={() => console.log('Share venue:', venue.name)}
+                  onLike={() => console.log('Like venue:', venue.name)}
+                  onChat={() => console.log('Chat venue:', venue.name)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+
+
+
+
+        {/* Main Recommendations List */}
+        {filteredRecommendations.length > 0 && (
+          <div className="px-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5 text-white" />
+              <h2 className="font-bold text-white text-lg">Recommended for you</h2>
+            </div>
+            <div className="space-y-4">
+              {filteredRecommendations.map((rec) => {
+                // Mock host and vibe match for demo
+                const host = rec.type === 'floq' ? {
+                  name: 'Alex Johnson',
+                  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
+                } : rec.type === 'venue' ? {
+                  name: 'Venue Host',
+                  avatar: '',
+                } : undefined;
+                
+                // Use real vibe match data
+                const vibeMatchPercentage = getVibeMatchForRecommendation(rec);
+                
+                // Friends going mock (replace with real data if available)
+                const friends = (rec.friends_going_names || rec.friends || []).map((name: string, i: number) => ({
+                  name,
+                  avatar: rec.friends_going_avatars?.[i],
+                }));
+                return (
+                  <EnhancedRecommendationCard
+                    key={rec.id}
+                    item={{
+                      id: rec.id,
+                      title: rec.title,
+                      type: rec.type,
+                      distance: rec.distance_meters || 0,
+                      vibe: rec.vibe,
+                      participants: rec.participant_count || rec.participants,
+                      maxParticipants: rec.maxParticipants,
+                      startTime: rec.starts_at || rec.startTime,
+                      endTime: rec.ends_at || rec.endTime,
+                      status: 'open',
+                      description: rec.description,
+                      location: getCityFromAddress(rec.address ? String(rec.address) : ''),
+                      host,
+                      tags: rec.tags,
+                      friends,
+                      vibeMatch: vibeMatchPercentage,
+                    }}
+                    onAction={(action, id) => {
+                      if (action === 'friends') {
+                        setModalFriends(friends);
+                        setFriendsModalOpen(true);
+                      }
+                      // ...other actions
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {/* Friends Modal */}
+            <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>
+              <DialogContent>
+                <h3 className="font-bold text-lg mb-4">Friends Going</h3>
+                <div className="space-y-2">
+                  {modalFriends.map((f, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      {f.avatar && <img src={f.avatar} alt={f.name} className="w-8 h-8 rounded-full" />}
+                      <span className="text-base text-foreground">{f.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="px-6 text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white/70">Discovering amazing places...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && filteredRecommendations.length === 0 && (
+          <div className="px-6 text-center py-12">
+            <Search className="w-12 h-12 text-white/30 mx-auto mb-4" />
+            <h3 className="text-white font-medium mb-2">No matches found</h3>
+            <p className="text-white/70">Try adjusting your filters or search terms</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

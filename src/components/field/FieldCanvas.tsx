@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
-import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Sprite, Texture, Text } from 'pixi.js';
+import { Text as PIXIText } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
@@ -8,6 +9,10 @@ import { projectLatLng, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
 import { useFieldHitTest } from '@/hooks/useFieldHitTest';
+import { useAddRipple } from '@/hooks/useAddRipple';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { metersToPixelsAtLat } from '@/utils/geoUtils';
+import { zIndex } from '@/constants/z.ts';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
 import { safeVibe } from '@/types/enums/vibes';
@@ -17,12 +22,10 @@ import { forwardRef } from 'react';
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
 import { AnimatePresence } from 'framer-motion';
 import { ClusterTooltip } from '@/components/field/ClusterTooltip';
-import { useAddRipple } from '@/hooks/useAddRipple';
-import { useUserLocation } from '@/hooks/useUserLocation';
-import { metersToPixelsAtLat } from '@/utils/geoUtils';
 
 interface FieldCanvasProps {
   people: Person[];
+  floqs?: any[];
   tileIds?: string[];
   fieldTiles?: FieldTile[];
   viewportGeo?: {
@@ -36,14 +39,12 @@ interface FieldCanvasProps {
 
 export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   people = [],
+  floqs = [],
   tileIds = [],
   fieldTiles = [],
   viewportGeo,
   onRipple
 }, ref) => {
-  // ⬇️ bail until Mapbox bridge is live
-  const mapReady = !!getMapInstance();
-  if (!mapReady) return null;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
   const { light } = useAdvancedHaptics();
@@ -70,6 +71,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
+  // Track existing floq sprites to prevent recreation
+  const floqSpritesRef = useRef<Map<string, Graphics>>(new Map());
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -102,18 +105,29 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       canvas: actualRef.current,
       width: window.innerWidth,
       height: window.innerHeight,
-      backgroundColor: 0x000000,
+      backgroundColor: undefined, // Force transparent background
       antialias: true,
+      resolution: window.devicePixelRatio || 1, // Better quality on high-DPI displays
+      autoDensity: true, // Handle high-DPI displays properly
+      backgroundAlpha: 0, // Ensure background is transparent
     }).then(() => {
       // Create containers in proper z-order
       const heatContainer = new Container();
       const peopleContainer = new Container();
       
+      // Add containers in proper order (last = top layer)
+      // heatContainer will be below peopleContainer
       app.stage.addChild(heatContainer);
-      app.stage.addChild(peopleContainer);
+      app.stage.addChild(peopleContainer); // This will be on top
+      
+      // Debug the layering
+      console.log('[PIXI_LAYERS] Heat container index:', app.stage.children.indexOf(heatContainer));
+      console.log('[PIXI_LAYERS] People container index:', app.stage.children.indexOf(peopleContainer));
       
       heatContainerRef.current = heatContainer;
       peopleContainerRef.current = peopleContainer;
+      
+      // Debug indicators removed to fix green tint issue
       
       // Initialize pools
       tilePoolRef.current = new TileSpritePool();
@@ -205,6 +219,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
     let animationId: number;
     let pending = false;
+    let lastFloqsHash = '';
+    let lastPeopleHash = '';
+    let lastFieldTilesHash = '';
     
     // HSL to RGB conversion (lifted out of loop for performance)
     const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
@@ -218,6 +235,28 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
     
     const animate = () => {
+      // Check if data has actually changed
+      const currentFloqsHash = JSON.stringify(floqs.map(f => ({ id: f.id, x: f.x, y: f.y })));
+      const currentPeopleHash = JSON.stringify(people.map(p => ({ id: p.id, x: p.x, y: p.y })));
+      const currentFieldTilesHash = JSON.stringify(fieldTiles.map(t => ({ id: t.tile_id, count: t.crowd_count })));
+      
+      const hasChanged = currentFloqsHash !== lastFloqsHash || 
+                        currentPeopleHash !== lastPeopleHash || 
+                        currentFieldTilesHash !== lastFieldTilesHash;
+      
+      if (!hasChanged) {
+        // No changes, just continue the loop without re-rendering
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+      
+      // Update hashes
+      lastFloqsHash = currentFloqsHash;
+      lastPeopleHash = currentPeopleHash;
+      lastFieldTilesHash = currentFieldTilesHash;
+      
+      console.log('[ANIMATION] Data changed, re-rendering...');
+      
       // ---- TILE CLUSTERING ----
       if (viewportGeo && fieldTiles.length > 0) {
         const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
@@ -282,48 +321,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       }
 
       // ---- PEOPLE DOTS ----
-      const viewport = {
-        minX: 0,
-        minY: 0, 
-        maxX: app.screen.width,
-        maxY: app.screen.height
-      };
-      
-      const visiblePeople = searchViewport(viewport);
-      
-      // Update people sprites
-      visiblePeople.forEach(person => {
-        if (!person.sprite) {
-          person.sprite = graphicsPool.acquire();
-          peopleContainer.addChild(person.sprite);
-        }
-        
-        person.sprite.clear();
-        person.sprite.circle(person.x, person.y, 12);
-        person.sprite.fill({ color: 0x00ff00, alpha: 0.8 });
-      });
+      // People are now rendered by Mapbox layers instead of PIXI sprites
+      console.log('[PIXI_DEBUG] People moved to Mapbox layers');
+
+      // ---- FLOQ EVENTS ----
+      // Floqs are now rendered as Mapbox layers instead of PIXI sprites
+      console.log('[PIXI_DEBUG] Floqs moved to Mapbox clustering');
 
       // ---- USER LOCATION DOT ----
-      if (myPos && getMapInstance()) {
-        const { x, y } = projectLatLng(myPos.lng, myPos.lat);
-
-        /* Dot */
-        myDotRef.current!.position.set(x, y);
-        myDotRef.current!.visible = true;
-
-        /* Accuracy ring (metres ➜ pixels requires projection helper) */
-        if (accuracyRef.current) {
-          const m2px = metersToPixelsAtLat(myPos.lat, getMapInstance()!.getZoom());
-          const r = myPos.accuracy * m2px;
-          accuracyRef.current
-            .clear()
-            .lineStyle(2, 0x3399ff, 0.25)
-            .drawCircle(x, y, r);
-        }
-      } else {
-        if (myDotRef.current) myDotRef.current.visible = false;
-        accuracyRef.current?.clear();
-      }
+      // TODO: Implement user location dot with PIXI.js projection
+      if (myDotRef.current) myDotRef.current.visible = false;
+      accuracyRef.current?.clear();
 
       animationId = requestAnimationFrame(animate);
     };
@@ -335,19 +343,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         cancelAnimationFrame(animationId);
       }
     };
-  }, [fieldTiles, people, viewportGeo, searchViewport]);
-
-  // Pan the map to user location on first fix
-  useEffect(() => {
-    if (!myPos) return;
-    const map = getMapInstance();
-    if (!map) return;
-    map.easeTo({ center: [myPos.lng, myPos.lat], duration: 600 });
-  }, [myPos?.lat, myPos?.lng]);
+  }, [fieldTiles, people, viewportGeo, searchViewport, floqs]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Clean up floq sprites
+      floqSpritesRef.current.forEach((sprite, floqId) => {
+        console.log('[FLOQ_CLEANUP] Destroying sprite for floq:', floqId);
+        sprite.destroy();
+      });
+      floqSpritesRef.current.clear();
+      
       // 1️⃣ empty the pool first (all Graphics still have a context)
       graphicsPoolRef.current?.releaseAll();
       
@@ -367,6 +374,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
   }, []);
 
+  //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
   return (
     <>
       <canvas 
@@ -375,9 +383,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         style={{ 
           width: '100%', 
           height: '100%',
-          display: 'block'
+          display: 'block',
         }}
       />
+      {/* Debug info */}
       {/* tooltip portal */}
       <AnimatePresence>
         {tooltip && <ClusterTooltip {...tooltip} />}

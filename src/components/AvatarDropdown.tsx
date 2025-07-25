@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -26,12 +26,18 @@ import { FriendsSheet } from './FriendsSheet';
 import { AddFriendModal } from './AddFriendModal';
 import { MessagesSheet } from './MessagesSheet';
 import { AvatarUpload } from './AvatarUpload';
+import { FavoritesSheet } from './ui/FavoritesSheet';
+import { WatchlistSheet } from './ui/WatchlistSheet';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useWatchlist } from '@/hooks/useWatchlist';
 
 export const AvatarDropdown = () => {
   const [debug, setDebug] = useDebug();
   const [friendsSheetOpen, setFriendsSheetOpen] = useState(false);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
   const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
+  const [favoritesSheetOpen, setFavoritesSheetOpen] = useState(false);
+  const [watchlistSheetOpen, setWatchlistSheetOpen] = useState(false);
   
   const { user } = useAuth();
   
@@ -44,6 +50,10 @@ export const AvatarDropdown = () => {
   const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.unread_count, 0);
   const totalNotifications = pendingRequests.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
+  
+  // Get favorites and watchlist counts
+  const { favorites } = useFavorites();
+  const { upcomingPlans } = useWatchlist();
   
   const avatarMgr = useAvatarManager();
   const navigate = useNavigate();
@@ -84,6 +94,16 @@ export const AvatarDropdown = () => {
           <DropdownMenuItem onSelect={() => navigate('/vibe')}>
             <Heart className="w-4 h-4 mr-2" />
             My vibe / status
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onSelect={() => setFavoritesSheetOpen(true)}>
+            <Heart className="w-4 h-4 mr-2" />
+            Favorites ({favorites.length})
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onSelect={() => setWatchlistSheetOpen(true)}>
+            <Eye className="w-4 h-4 mr-2" />
+            Watchlist ({upcomingPlans.length})
           </DropdownMenuItem>
           
           <DropdownMenuItem onSelect={() => setMessagesSheetOpen(true)}>
@@ -149,6 +169,16 @@ export const AvatarDropdown = () => {
       <AddFriendModal 
         open={addFriendOpen}
         onOpenChange={setAddFriendOpen}
+      />
+
+      <FavoritesSheet
+        open={favoritesSheetOpen}
+        onOpenChange={setFavoritesSheetOpen}
+      />
+
+      <WatchlistSheet
+        open={watchlistSheetOpen}
+        onOpenChange={setWatchlistSheetOpen}
       />
 
       {/* Avatar upload sheet */}

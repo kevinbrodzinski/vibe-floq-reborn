@@ -5,7 +5,7 @@ const titles: Record<FloqTab, string> = {
   floqs: 'Floqs · Floq',
   pulse: 'Pulse · Floq',
   vibe: 'Vibe · Floq',
-  afterglow: 'Afterglow · Floq',
+  afterglow: 'Ripple · Floq',
   plan: 'Plan · Floq',
 };
 

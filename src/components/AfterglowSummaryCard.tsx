@@ -69,7 +69,7 @@ export const AfterglowSummaryCard = ({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-5 h-5" />
-              <h3 className="text-lg font-semibold">Afterglow</h3>
+              <h3 className="text-lg font-semibold">Ripple</h3>
             </div>
             <h2 className="text-xl font-bold mb-1">{afterglow.plan_title}</h2>
             <p className="text-purple-100 text-sm">

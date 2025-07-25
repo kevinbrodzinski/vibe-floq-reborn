@@ -19,6 +19,10 @@ import { safeVibe, safeVibeState } from '@/types/enums/vibes';
 import { useVibe, useCurrentVibeRow } from "@/lib/store/useVibe";
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';
+import { useVibeMatch } from '@/hooks/useVibeMatch';
+import { useMotionBasedVibe } from '@/hooks/useMotionBasedVibe';
+import { useBatteryOptimizedDbMeter } from '@/hooks/useBatteryOptimizedDbMeter';
+import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
 import { FullScreenSpinner } from "@/components/ui/FullScreenSpinner";
 import type { VibeEnum } from "@/constants/vibes";
 import { VibeWheel } from "@/components/vibe/VibeWheel";
@@ -76,6 +80,24 @@ export const VibeScreen = () => {
     learningData.preferences
   );
 
+  // Get real-time vibe match data
+  const { vibeMatch, crowdData, eventTags, dominantVibe } = useVibeMatch();
+
+  // Motion-based vibe detection
+  const { motionData, vibeTransitions, activity, speed, confidence } = useMotionBasedVibe();
+  
+  // Battery-optimized dB meter
+  const { 
+    dbState, 
+    currentLevel, 
+    startListening, 
+    stopListening, 
+    startPulsing, 
+    stopPulsing,
+    getVibeInfluence,
+    shouldChangeVibeFromDb
+  } = useBatteryOptimizedDbMeter(30000); // 30 second pulses
+
   const vibes: Record<VibeState, VibeInfo> = {
     chill: { label: "Chill", angle: 0, color: "hsl(var(--accent))" },
     hype: { label: "Hype", angle: 40, color: "hsl(0 70% 60%)" },
@@ -90,21 +112,40 @@ export const VibeScreen = () => {
 
   // Dynamic status updates based on auto-detection
   const getStatusUpdates = () => {
-    if (autoMode && vibeDetection) {
-      return [
-        `Auto-detected: ${vibeDetection.suggestedVibe} (${Math.round(vibeDetection.confidence * 100)}% confidence)`,
-        ...vibeDetection.reasoning,
-        `Audio: ${sensorData.audioLevel}% • Movement: ${sensorData.movement.pattern}`,
-        "Your vibe is now visible to 19 friends nearby"
-      ];
+    const updates = [];
+
+    // Auto-detection status
+    if (autoMode) {
+      updates.push("Auto-detection active • Learning your patterns");
+      
+      if (motionData.isMoving) {
+        updates.push(`Motion detected: ${activity} at ${speed.toFixed(1)} m/s`);
+      }
+      
+      if (dbState.isActive) {
+        updates.push(`Sound level: ${currentLevel.toFixed(0)} dB (${getVibeInfluence()})`);
+      }
+      
+      if (learningData.accuracy > 0) {
+        updates.push(`Learning accuracy: ${(learningData.accuracy * 100).toFixed(0)}%`);
+      }
+    } else {
+      updates.push("Manual mode • You're in control");
     }
-    
-    return [
-      "Feed priority has shifted toward Chill Floqs",
-      "Pulse is scanning venues with low lighting + mellow music", 
-      "Your vibe is now visible to 19 friends nearby",
-      "4 people with matching vibes in a 2-mile radius"
-    ];
+
+    // Vibe match status
+    if (vibeMatch) {
+      updates.push(`Vibe match: ${Math.round(vibeMatch.matchPercentage)}% with nearby events`);
+    }
+
+    // Recent transitions
+    if (vibeTransitions.length > 0) {
+      const lastTransition = vibeTransitions[vibeTransitions.length - 1];
+      const timeAgo = Math.round((Date.now() - lastTransition.timestamp) / 1000);
+      updates.push(`Recent change: ${lastTransition.from} → ${lastTransition.to} (${timeAgo}s ago)`);
+    }
+
+    return updates;
   };
 
   const handleVibeSelect = useCallback(async (vibe: VibeState) => {
@@ -223,6 +264,22 @@ export const VibeScreen = () => {
     }
   }, [learningData.patterns]);
 
+  // Auto-start motion and dB detection when auto mode is enabled
+  useEffect(() => {
+    if (autoMode) {
+      // Start dB pulsing
+      startPulsing();
+      
+      // Request microphone permission for dB detection
+      startListening().catch(console.error);
+      
+      return () => {
+        stopPulsing();
+        stopListening();
+      };
+    }
+  }, [autoMode, startPulsing, stopPulsing, startListening, stopListening]);
+
   // Enhanced toggle auto mode with Supabase sync and logging
   const handleToggleAutoMode = useCallback(async () => {
     if (!autoMode) {
@@ -322,7 +379,15 @@ export const VibeScreen = () => {
   if (!hydrated) return <FullScreenSpinner />;
 
   // Safe vibe fallback to prevent crashes
-  const safeFallbackVibe = selectedVibe ?? 'chill';
+  const safeFallbackVibe = (() => {
+    // First check if selectedVibe exists and is a valid key in vibes
+    if (selectedVibe && vibes[selectedVibe as keyof typeof vibes]) {
+      return selectedVibe;
+    }
+    
+    // If not, fall back to 'chill'
+    return 'chill';
+  })();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -347,7 +412,22 @@ export const VibeScreen = () => {
 
       {/* Magical Vibe Wheel with Physics */}
       <div className="px-6 mb-8">
-        <VibeWheel />
+        <VibeWheel 
+          eventVibeData={{
+            crowdData,
+            eventTags,
+            dominantVibe: dominantVibe || selectedVibe || 'chill'
+          }}
+          userPreferences={learningData.preferences}
+        />
+      </div>
+
+      {/* Dynamic Vibe Toggle */}
+      <div className="px-6 mb-6 flex justify-center">
+        <DynamicVibeToggle 
+          showMotionData={true}
+          showDbData={true}
+        />
       </div>
 
       {/* Feedback Buttons */}
@@ -480,13 +560,13 @@ export const VibeScreen = () => {
                 <div 
                   className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
                   style={{ 
-                    backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeFallbackVibe].color} 80%, ${tintColor} 20%)` : vibes[safeFallbackVibe].color,
+                    backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeFallbackVibe]?.color || vibes.chill.color} 80%, ${tintColor} 20%)` : vibes[safeFallbackVibe]?.color || vibes.chill.color,
                     transform: `scale(${pulseScale})`,
                     boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
                   }}
                 >
                   <span className="text-lg font-bold text-white drop-shadow-sm">
-                    {vibes[safeFallbackVibe].label.charAt(0).toUpperCase()}
+                    {(vibes[safeFallbackVibe]?.label || vibes.chill.label).charAt(0).toUpperCase()}
                   </span>
                   {/* Accessibility: Reduced motion fallback */}
                   <style>{`
@@ -500,7 +580,7 @@ export const VibeScreen = () => {
                   `}</style>
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">{vibes[safeFallbackVibe].label}</span>
+                  <span className="font-medium text-foreground">{vibes[safeFallbackVibe]?.label || vibes.chill.label}</span>
                     <div className="text-xs text-muted-foreground">
                       Active for {elapsed}
                     </div>

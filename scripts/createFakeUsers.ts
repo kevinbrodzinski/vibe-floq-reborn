@@ -11,72 +11,90 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { writeFileSync } from 'fs';
 
-const argv = yargs(hideBin(process.argv))
-  .option('count', { type: 'number', default: 150 })
-  .option('service-key', { type: 'string', demandOption: true })
-  .argv as { count: number; serviceKey: string };
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  argv.serviceKey,
+// Demo users for testing the profile functionality
+const demoUsers = [
   {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+    id: 'demo-user-1',
+    username: 'danii',
+    display_name: 'Dani Rodriguez',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=danii',
+    bio: 'Always down for a good vibe! 🌟'
+  },
+  {
+    id: 'demo-user-2', 
+    username: 'alex_chen',
+    display_name: 'Alex Chen',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
+    bio: 'Exploring the city one floq at a time 🗺️'
+  },
+  {
+    id: 'demo-user-3',
+    username: 'jordan_smith',
+    display_name: 'Jordan Smith',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jordan',
+    bio: 'Music lover and social butterfly 🎵'
+  },
+  {
+    id: 'demo-user-4',
+    username: 'casey_williams',
+    display_name: 'Casey Williams',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=casey',
+    bio: 'Adventure seeker and coffee enthusiast ☕'
+  },
+  {
+    id: 'demo-user-5',
+    username: 'morgan_davis',
+    display_name: 'Morgan Davis',
+    avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=morgan',
+    bio: 'Creative soul finding inspiration everywhere ✨'
   }
-);
+];
 
-(async () => {
-  console.log(`Creating ${argv.count} fake users...`);
-  const tokens: string[] = [];
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'your-service-role-key';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function createDemoUsers() {
+  console.log('🚀 Creating demo users...');
   
-  for (let i = 0; i < argv.count; i++) {
-    const email = `loadbot_${i}@floq.fake`;
-    const password = 'loadbot123';
-    
+  for (const user of demoUsers) {
     try {
-      // Create user
-      const { data: user, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          display_name: `LoadBot ${i}`,
-          generated_for: 'load_testing'
-        }
-      });
+      // Insert into profiles table
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          username: user.username,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          bio: user.bio,
+          created_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        });
 
-      if (createError) {
-        console.warn(`Failed to create user ${i}:`, createError.message);
-        continue;
-      }
-
-      // Generate access token
-      const { data: tokenData, error: tokenError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email,
-      });
-
-      if (tokenError || !tokenData.properties?.authentication_token) {
-        console.warn(`Failed to generate token for user ${i}:`, tokenError?.message);
-        continue;
-      }
-
-      tokens.push(tokenData.properties.authentication_token);
-      
-      if (i % 25 === 0) {
-        console.log(`Created ${i + 1}/${argv.count} users...`);
+      if (error) {
+        console.error(`❌ Error creating user ${user.username}:`, error);
+      } else {
+        console.log(`✅ Created user: ${user.username} (${user.display_name})`);
       }
     } catch (error) {
-      console.warn(`Error creating user ${i}:`, error);
+      console.error(`❌ Failed to create user ${user.username}:`, error);
     }
   }
-
-  // Save tokens to file
-  const tokensFile = 'scripts/loadbot-tokens.json';
-  writeFileSync(tokensFile, JSON.stringify(tokens, null, 2));
   
-  console.log(`✅ Created ${tokens.length} users with tokens saved to ${tokensFile}`);
-  console.log('Now you can run: npx ts-node scripts/loadPresence.ts');
-})();
+  console.log('🎉 Demo users creation completed!');
+  console.log('\n📋 Available demo usernames:');
+  demoUsers.forEach(user => {
+    console.log(`  - @${user.username} (${user.display_name})`);
+  });
+  console.log('\n🔗 Test URLs:');
+  demoUsers.forEach(user => {
+    console.log(`  - http://localhost:3000/u/${user.username}`);
+  });
+}
+
+// Run the script
+createDemoUsers().catch(console.error);

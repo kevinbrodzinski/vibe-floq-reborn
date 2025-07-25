@@ -148,18 +148,19 @@ export function CreateFloqSheet() {
     <Sheet open={showCreateSheet} onOpenChange={setShowCreateSheet}>
       <SheetContent side="bottom" className="w-full max-w-lg mx-auto p-0 overflow-hidden sm:rounded-2xl h-[85vh] flex flex-col" style={{ marginBottom: 'var(--mobile-nav-height, 64px)' }}>
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm flex-shrink-0">
+        <SheetHeader className="px-6 py-5 border-b bg-background/95 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
+            <SheetTitle className="flex items-center gap-3 text-lg font-semibold">
+              <Sparkles className="w-6 h-6 text-primary" />
               Create New Floq
             </SheetTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowCreateSheet(false)}
+              className="hover:bg-accent/50 transition-all duration-200 hover:scale-105"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
         </SheetHeader>
@@ -210,16 +211,20 @@ export function CreateFloqSheet() {
                 {/* Vibe Selection */}
                 <div>
                   <Label className="mb-3 block">Vibe</Label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {VIBE_OPTIONS.map((vibe) => (
                       <Badge
                         key={vibe}
                         variant={selectedVibe === vibe ? "default" : "outline"}
-                        className="cursor-pointer px-3 py-1 capitalize hover:scale-105 transition-transform"
+                        className="cursor-pointer px-4 py-2.5 capitalize hover:scale-105 transition-all duration-300 font-medium rounded-full border-2"
                         style={{
                           backgroundColor: selectedVibe === vibe ? (VIBE_COLORS[vibe] || 'hsl(var(--primary))') : 'transparent',
                           borderColor: VIBE_COLORS[vibe] || 'hsl(var(--primary))',
                           color: selectedVibe === vibe ? 'white' : (VIBE_COLORS[vibe] || 'hsl(var(--primary))'),
+                          boxShadow: selectedVibe === vibe 
+                            ? `0 0 0 3px ${VIBE_COLORS[vibe]}30, 0 4px 12px ${VIBE_COLORS[vibe]}40` 
+                            : '0 2px 8px rgba(0,0,0,0.1)',
+                          transform: selectedVibe === vibe ? 'scale(1.05)' : 'scale(1)',
                         }}
                         onClick={() => setSelectedVibe(vibe)}
                       >
@@ -232,13 +237,20 @@ export function CreateFloqSheet() {
                 {/* Duration Mode */}
                 <div>
                   <Label className="mb-3 block">Duration</Label>
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex gap-3 mb-4">
                     <Button
                       type="button"
                       variant={durationMode === 'quick' ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleDurationModeChange('quick')}
-                      className="flex-1"
+                      className="flex-1 py-3 font-medium transition-all duration-200 hover:scale-105"
+                      style={{
+                        backgroundColor: durationMode === 'quick' ? 'hsl(var(--primary))' : 'transparent',
+                        boxShadow: durationMode === 'quick' 
+                          ? '0 0 0 2px hsl(var(--primary)/20), 0 4px 12px hsl(var(--primary)/30)' 
+                          : '0 2px 8px rgba(0,0,0,0.1)',
+                        transform: durationMode === 'quick' ? 'scale(1.02)' : 'scale(1)',
+                      }}
                     >
                       Quick (2 h)
                     </Button>
@@ -247,7 +259,14 @@ export function CreateFloqSheet() {
                       variant={durationMode === 'custom' ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleDurationModeChange('custom')}
-                      className="flex-1"
+                      className="flex-1 py-3 font-medium transition-all duration-200 hover:scale-105"
+                      style={{
+                        backgroundColor: durationMode === 'custom' ? 'hsl(var(--primary))' : 'transparent',
+                        boxShadow: durationMode === 'custom' 
+                          ? '0 0 0 2px hsl(var(--primary)/20), 0 4px 12px hsl(var(--primary)/30)' 
+                          : '0 2px 8px rgba(0,0,0,0.1)',
+                        transform: durationMode === 'custom' ? 'scale(1.02)' : 'scale(1)',
+                      }}
                     >
                       Custom
                     </Button>
@@ -256,7 +275,14 @@ export function CreateFloqSheet() {
                       variant={durationMode === 'persistent' ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleDurationModeChange('persistent')}
-                      className="flex-1"
+                      className="flex-1 py-3 font-medium transition-all duration-200 hover:scale-105"
+                      style={{
+                        backgroundColor: durationMode === 'persistent' ? 'hsl(var(--primary))' : 'transparent',
+                        boxShadow: durationMode === 'persistent' 
+                          ? '0 0 0 2px hsl(var(--primary)/20), 0 4px 12px hsl(var(--primary)/30)' 
+                          : '0 2px 8px rgba(0,0,0,0.1)',
+                        transform: durationMode === 'persistent' ? 'scale(1.02)' : 'scale(1)',
+                      }}
                     >
                       Ongoing
                     </Button>
@@ -322,7 +348,7 @@ export function CreateFloqSheet() {
 
                 {/* Welcome Message Template */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <Label>Welcome Message</Label>
                      <Button
                        type="button"
@@ -330,14 +356,14 @@ export function CreateFloqSheet() {
                        size="sm"
                        onClick={() => updateWelcomeTemplate(selectedWelcomeTemplate as any)}
                        disabled={selectedWelcomeTemplate === settings?.preferred_welcome_template}
-                       className="text-xs h-6 px-2"
+                       className="text-xs h-7 px-3 font-medium transition-all duration-200 hover:scale-105"
                      >
                        Save as default
                      </Button>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {WELCOME_MESSAGE_TEMPLATES.map((template) => (
-                      <div key={template.id} className="flex items-start gap-3">
+                      <div key={template.id} className="flex items-start gap-4 p-3 rounded-lg border border-border/50 hover:bg-accent/30 transition-all duration-200">
                         <input
                           type="radio"
                           id={`template-${template.id}`}
@@ -350,11 +376,11 @@ export function CreateFloqSheet() {
                         <div className="flex-1 min-w-0">
                           <label 
                             htmlFor={`template-${template.id}`}
-                            className="block text-sm font-medium cursor-pointer"
+                            className="block text-sm font-medium cursor-pointer mb-2"
                           >
                             {template.name}
                           </label>
-                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
                             {template.content}
                           </p>
                         </div>
@@ -378,14 +404,19 @@ export function CreateFloqSheet() {
           <div className="flex-shrink-0 bg-background border-t p-4">
             <Button 
               type="submit"
-              className="w-full" 
+              className="w-full py-4 font-medium text-base transition-all duration-300 hover:scale-105" 
               disabled={!title.trim() || isPending || (durationMode === 'custom' && !customEndTime)}
               aria-disabled={isPending}
+              style={{
+                boxShadow: !title.trim() || isPending || (durationMode === 'custom' && !customEndTime)
+                  ? '0 2px 8px rgba(0,0,0,0.1)'
+                  : '0 0 0 2px hsl(var(--primary)/20), 0 8px 24px hsl(var(--primary)/30)',
+              }}
             >
               {isPending ? (
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
               ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
+                <Sparkles className="w-5 h-5 mr-2" />
               )}
               {isPending ? 'Creating...' : 'Create Floq'}
             </Button>
