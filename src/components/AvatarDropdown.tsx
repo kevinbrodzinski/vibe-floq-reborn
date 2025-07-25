@@ -134,10 +134,6 @@ export const AvatarDropdown = () => {
           
           <DropdownMenuSeparator />
           
-          <DropdownMenuItem onSelect={() => avatarMgr.setOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Change avatar...
-          </DropdownMenuItem>
           
           {import.meta.env.DEV && (
             <DropdownMenuItem onSelect={() => setDebug(v => !v)}>
