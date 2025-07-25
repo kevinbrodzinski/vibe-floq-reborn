@@ -3663,9 +3663,11 @@ export type Database = {
           geom: unknown | null
           id: string
           lat: number
+          live_count: number
           lng: number
           name: string
           photo_url: string | null
+          popularity: number
           provider: string
           provider_id: string
           radius_m: number | null
@@ -3674,6 +3676,7 @@ export type Database = {
           source: string | null
           updated_at: string | null
           vibe: string | null
+          vibe_score: number | null
         }
         Insert: {
           address?: string | null
@@ -3685,9 +3688,11 @@ export type Database = {
           geom?: unknown | null
           id?: string
           lat: number
+          live_count?: number
           lng: number
           name: string
           photo_url?: string | null
+          popularity?: number
           provider: string
           provider_id: string
           radius_m?: number | null
@@ -3696,6 +3701,7 @@ export type Database = {
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
+          vibe_score?: number | null
         }
         Update: {
           address?: string | null
@@ -3707,9 +3713,11 @@ export type Database = {
           geom?: unknown | null
           id?: string
           lat?: number
+          live_count?: number
           lng?: number
           name?: string
           photo_url?: string | null
+          popularity?: number
           provider?: string
           provider_id?: string
           radius_m?: number | null
@@ -3718,6 +3726,7 @@ export type Database = {
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
+          vibe_score?: number | null
         }
         Relationships: []
       }
@@ -5659,6 +5668,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      refresh_venue_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       refresh_venue_social_metrics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -6941,7 +6954,15 @@ export type Database = {
         Args: { p_username: string }
         Returns: Json
       }
+      update_venue_live_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_venue_popularity: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_venue_vibe_scores: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

@@ -7,6 +7,8 @@ export interface VenueDetails {
   vibe?: string;
   description?: string;
   live_count: number;
+  vibe_score: number;
+  popularity: number;
   lat: number;
   lng: number;
 }
@@ -31,7 +33,11 @@ export const useVenueDetails = (venueId: string | null) => {
         throw new Error("Venue not found");
       }
 
-      return data;
+      return {
+        ...data,
+        vibe_score: (data as any).vibe_score || 50,
+        popularity: (data as any).popularity || 0
+      };
     },
     enabled: !!venueId,
     staleTime: 30000, // 30 seconds

@@ -10,6 +10,8 @@ interface VenueNearMe {
   source: string;
   distance_m: number;
   live_count: number;
+  vibe_score: number;
+  popularity: number;
 }
 
 export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 0.5) {
@@ -17,27 +19,41 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
     queryKey: ['venues-near-me', lat, lng, radius_km],
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async ({ pageParam = 0 }) => {
-      // Use get_venues_in_bbox for now until venues_near_me is available
+      // Use get_cluster_venues for enhanced venue data
       const degreeOffset = radius_km / 111; // rough conversion
-      const { data, error } = await supabase.rpc('get_venues_in_bbox', {
-        west: lng! - degreeOffset,
-        south: lat! - degreeOffset,
-        east: lng! + degreeOffset,
-        north: lat! + degreeOffset,
+      const { data, error } = await supabase.rpc('get_cluster_venues', {
+        min_lng: lng! - degreeOffset,
+        min_lat: lat! - degreeOffset,
+        max_lng: lng! + degreeOffset,
+        max_lat: lat! + degreeOffset,
       });
       
       if (error) throw error;
+      
+      // Transform data to match VenueNearMe interface
+      const venues = (data || []).map(venue => ({
+        id: venue.id,
+        name: venue.name,
+        lat: venue.lat,
+        lng: venue.lng,
+        vibe: 'social', // default vibe
+        source: 'database',
+        distance_m: 0, // would need geospatial calculation
+        live_count: venue.live_count,
+        vibe_score: venue.vibe_score,
+        popularity: venue.check_ins // map check_ins to popularity
+      }));
       
       // Simulate pagination for infinite scroll
       const pageSize = 10;
       const start = pageParam * pageSize;
       const end = start + pageSize;
-      const venues = (data as VenueNearMe[]).slice(start, end);
+      const paginatedVenues = venues.slice(start, end);
       
       return {
-        venues,
-        nextCursor: venues.length === pageSize ? pageParam + 1 : undefined,
-        hasMore: end < (data as VenueNearMe[]).length
+        venues: paginatedVenues,
+        nextCursor: paginatedVenues.length === pageSize ? pageParam + 1 : undefined,
+        hasMore: end < venues.length
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
