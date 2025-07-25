@@ -38,11 +38,11 @@ export const useVibeMatch = (eventId?: string, venueId?: string) => {
   const crowdData = useMemo(() => {
     const data: Array<{ vibe: string }> = [];
     
-    // Add nearby venue vibes
+    // Add nearby venue vibes (placeholder until schema ready)
     nearbyVenues.slice(0, 5).forEach(venue => {
-      if (venue.primary_vibe) {
-        data.push({ vibe: venue.primary_vibe });
-      }
+      // TODO: Add primary_vibe to venue schema
+      const venuePrimaryVibe = 'social'; // placeholder
+      data.push({ vibe: venuePrimaryVibe });
     });
     
     // Add active floq vibes
@@ -68,9 +68,9 @@ export const useVibeMatch = (eventId?: string, venueId?: string) => {
     }
     
     if (targetVenue) {
-      // Add venue-specific tags
-      if (targetVenue.venue_type) tags.push(targetVenue.venue_type);
-      if (targetVenue.atmosphere) tags.push(targetVenue.atmosphere);
+      // TODO: Add venue_type and atmosphere to venue schema when ready
+      // if (targetVenue.venue_type) tags.push(targetVenue.venue_type);
+      // if (targetVenue.atmosphere) tags.push(targetVenue.atmosphere);
     }
     
     return tags;
@@ -79,7 +79,8 @@ export const useVibeMatch = (eventId?: string, venueId?: string) => {
   // Get dominant vibe
   const dominantVibe = useMemo(() => {
     if (targetEvent?.primary_vibe) return targetEvent.primary_vibe;
-    if (targetVenue?.primary_vibe) return targetVenue.primary_vibe;
+    // TODO: Add primary_vibe to venue schema when ready
+    // if (targetVenue?.primary_vibe) return targetVenue.primary_vibe;
     return undefined;
   }, [targetEvent, targetVenue]);
   

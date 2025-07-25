@@ -90,7 +90,7 @@ export const useMotionBasedVibe = () => {
       case 'running':
         return 'hype';
       case 'driving':
-        return speed > 15 ? 'curious' : 'solo';
+        return speed > 15 ? 'hype' : 'solo';
       default:
         return currentVibe as Vibe;
     }

@@ -31,7 +31,7 @@ export const useBatteryOptimizedDbMeter = (pulseInterval: number = 30000) => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const dataArrayRef = useRef<Uint8Array | null>(null);
-  const pulseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pulseTimerRef = useRef<number | null>(null);
   const readingsRef = useRef<DbReading[]>([]);
 
   // Calculate dB level from frequency data
@@ -145,7 +145,7 @@ export const useBatteryOptimizedDbMeter = (pulseInterval: number = 30000) => {
     takeReading();
 
     // Set up pulsing interval
-    pulseTimerRef.current = setInterval(() => {
+    pulseTimerRef.current = window.setInterval(() => {
       takeReading();
     }, pulseInterval);
 
@@ -155,7 +155,7 @@ export const useBatteryOptimizedDbMeter = (pulseInterval: number = 30000) => {
   // Stop pulsing
   const stopPulsing = useCallback(() => {
     if (pulseTimerRef.current) {
-      clearInterval(pulseTimerRef.current);
+      window.clearInterval(pulseTimerRef.current);
       pulseTimerRef.current = null;
     }
     setDbState(prev => ({ ...prev, isActive: false }));

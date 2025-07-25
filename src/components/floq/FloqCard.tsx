@@ -128,10 +128,10 @@ export const FloqCard = React.memo<FloqCardProps>(({
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Determine card state for glow effects
-  const isIdle = !floq.is_joined && !floq.has_plan_today;
-  const hasPlanToday = floq.has_plan_today && !floq.is_active;
-  const isActiveFloq = floq.is_active || floq.is_live;
-  const hasUnreadMessages = floq.unread_count && floq.unread_count > 0;
+  const isIdle = !floq.is_joined;
+  const hasPlanToday = false; // TODO: Add plan detection when schema is ready
+  const isActiveFloq = floq.participant_count > 0;
+  const hasUnreadMessages = false; // TODO: Add unread message count when schema is ready
 
   // Get glow class based on state
   const getGlowClass = () => {

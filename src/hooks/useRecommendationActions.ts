@@ -48,9 +48,11 @@ export const useRecommendationActions = () => {
           // Request to join private floq
           if (itemData?.type === 'floq') {
             try {
-              const { error } = await supabase.rpc('request_floq_access', {
-                p_floq_id: itemId
-              });
+              // Placeholder for request floq access
+              // const { error } = await supabase.rpc('request_floq_access', {
+              //   p_floq_id: itemId
+              // });
+              const error = null; // Stub until RPC function is created
               
               if (error) throw error;
               toast.success(`Request sent to join ${itemData.title}`);

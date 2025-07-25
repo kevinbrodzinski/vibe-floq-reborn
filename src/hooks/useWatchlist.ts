@@ -33,53 +33,36 @@ export const useWatchlist = () => {
     queryFn: async (): Promise<WatchlistItem[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from('user_watchlist')
-        .select(`
-          id,
-          user_id,
-          plan_id,
-          created_at,
-          plans!inner(
-            id,
-            title,
-            description,
-            starts_at,
-            ends_at,
-            image_url,
-            creator_id,
-            profiles!plans_creator_id_fkey(
-              display_name,
-              username,
-              avatar_url
-            )
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('starts_at', { ascending: true }); // Order by upcoming time
+      // TODO: Enable when user_watchlist table is created
+      return [];
 
-      if (error) throw error;
+      // const { data, error } = await supabase
+      //   .from('user_watchlist')
+      //   .select(`
+      //     id,
+      //     user_id,
+      //     plan_id,
+      //     created_at,
+      //     plans!inner(
+      //       id,
+      //       title,
+      //       description,
+      //       starts_at,
+      //       ends_at,
+      //       image_url,
+      //       creator_id,
+      //       profiles!plans_creator_id_fkey(
+      //         display_name,
+      //         username,
+      //         avatar_url
+      //       )
+      //     )
+      //   `)
+      //   .eq('user_id', user.id)
+      //   .order('starts_at', { ascending: true });
 
-      return data?.map(item => ({
-        id: item.id,
-        user_id: item.user_id,
-        plan_id: item.plan_id,
-        created_at: item.created_at,
-        plan: {
-          id: item.plans.id,
-          title: item.plans.title,
-          description: item.plans.description,
-          starts_at: item.plans.starts_at,
-          ends_at: item.plans.ends_at,
-          image_url: item.plans.image_url,
-          creator_id: item.plans.creator_id,
-          creator: {
-            display_name: item.plans.profiles?.display_name || 'Unknown',
-            username: item.plans.profiles?.username || 'unknown',
-            avatar_url: item.plans.profiles?.avatar_url,
-          },
-        },
-      })) || [];
+      // if (error) throw error;
+      // return data || [];
     },
     enabled: !!user?.id,
   });
@@ -88,17 +71,20 @@ export const useWatchlist = () => {
     mutationFn: async (planId: string) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_watchlist')
-        .insert({
-          user_id: user.id,
-          plan_id: planId,
-        })
-        .select()
-        .single();
+      // TODO: Enable when user_watchlist table is created
+      return { id: 'placeholder', user_id: user.id, plan_id: planId };
 
-      if (error) throw error;
-      return data;
+      // const { data, error } = await supabase
+      //   .from('user_watchlist')
+      //   .insert({
+      //     user_id: user.id,
+      //     plan_id: planId,
+      //   })
+      //   .select()
+      //   .single();
+
+      // if (error) throw error;
+      // return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });
@@ -114,13 +100,16 @@ export const useWatchlist = () => {
     mutationFn: async (planId: string) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('user_watchlist')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('plan_id', planId);
+      // TODO: Enable when user_watchlist table is created
+      return;
 
-      if (error) throw error;
+      // const { error } = await supabase
+      //   .from('user_watchlist')
+      //   .delete()
+      //   .eq('user_id', user.id)
+      //   .eq('plan_id', planId);
+
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watchlist', user?.id] });

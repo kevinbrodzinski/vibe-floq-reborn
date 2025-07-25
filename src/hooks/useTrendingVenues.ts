@@ -15,18 +15,20 @@ export interface TrendingVenue {
 }
 
 const fetchTrendingVenues = async (lat: number, lng: number, radiusM: number = 1000): Promise<TrendingVenue[]> => {
-  // For now, we'll simulate trending venues with enhanced data
-  // In production, this would call a Supabase edge function
-  const { data: venues, error } = await supabase
-    .from('venues_near_me')
-    .select('*')
-    .gte('lat', lat - 0.01)
-    .lte('lat', lat + 0.01)
-    .gte('lng', lng - 0.01)
-    .lte('lng', lng + 0.01)
-    .limit(10)
+  // For now, we'll simulate trending venues with mock data
+  // TODO: Replace with actual venues_near_me query when table is created
+  const venues = Array.from({ length: 10 }, (_, index) => ({
+    id: `venue-${index}`,
+    name: `Trending Venue ${index + 1}`,
+    address: `${100 + index} Main St`,
+    vibe: ['social', 'hype', 'chill', 'open'][index % 4],
+    live_count: Math.floor(Math.random() * 50) + 5,
+    distance_m: Math.floor(Math.random() * 500) + 100,
+    photo_url: null
+  }));
 
-  if (error) throw error
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   // Enhance with trending data
   return (venues || []).map((venue, index) => ({

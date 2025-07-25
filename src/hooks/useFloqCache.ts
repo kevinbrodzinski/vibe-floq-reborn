@@ -35,7 +35,7 @@ class FloqCache {
     totalSize: 0
   };
   private maxSize = 50 * 1024 * 1024; // 50MB
-  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
+  private cleanupInterval: number | null = null;
 
   constructor() {
     this.startCleanup();
@@ -195,7 +195,7 @@ class FloqCache {
 
   // Cleanup expired entries
   private startCleanup(): void {
-    this.cleanupInterval = setInterval(() => {
+    this.cleanupInterval = window.setInterval(() => {
       const now = Date.now();
       for (const [key, entry] of this.cache.entries()) {
         if (now - entry.timestamp > entry.ttl) {
@@ -209,7 +209,7 @@ class FloqCache {
   // Stop cleanup interval
   destroy(): void {
     if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
+      window.clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
   }
@@ -221,17 +221,17 @@ const floqCache = new FloqCache();
 export function useFloqCache() {
   const queryClient = useQueryClient();
   const [stats, setStats] = useState<CacheStats>(floqCache.getStats());
-  const statsInterval = useRef<NodeJS.Timeout | null>(null);
+  const statsInterval = useRef<number | null>(null);
 
   // Update stats periodically
   useEffect(() => {
-    statsInterval.current = setInterval(() => {
+    statsInterval.current = window.setInterval(() => {
       setStats(floqCache.getStats());
     }, 5000); // Update every 5 seconds
 
     return () => {
       if (statsInterval.current) {
-        clearInterval(statsInterval.current);
+        window.clearInterval(statsInterval.current);
       }
     };
   }, []);
