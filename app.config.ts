@@ -6,11 +6,13 @@ import { ExpoConfig, ConfigContext } from '@expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'Floq',
+  name: 'floq social',
   slug: 'floq',
   runtimeVersion: { policy: 'appVersion' },
   updates: { fallbackToCacheTimeout: 0 },
-  plugins: ['@rnmapbox/maps', ...(config.plugins ?? [])],
+  plugins: [
+    ...(config.plugins ?? [])
+  ],
   extra: {
     ...config.extra,
     MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN,
