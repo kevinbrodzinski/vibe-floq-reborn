@@ -5057,6 +5057,10 @@ export type Database = {
         Args: { p_days?: number }
         Returns: Json
       }
+      get_dashboard_friends: {
+        Args: { p_days?: number }
+        Returns: Json
+      }
       get_dashboard_overview: {
         Args: { p_days?: number }
         Returns: Json
