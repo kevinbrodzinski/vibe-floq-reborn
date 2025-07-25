@@ -79,6 +79,7 @@ declare module '@supabase/supabase-js' {
             max_lng: number;
             max_lat: number;
             cursor_popularity?: number;
+            cursor_id?: string;
             limit_rows?: number;
           };
           Returns: { 
@@ -89,7 +90,7 @@ declare module '@supabase/supabase-js' {
             lng: number;
             vibe_score: number;
             live_count: number;
-            check_ins: number;
+            popularity: number;
           }[];
         };
       };

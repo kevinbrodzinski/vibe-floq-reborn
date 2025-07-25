@@ -9,7 +9,7 @@ export interface ClusterVenue {
   lng: number;
   vibe_score: number;
   live_count: number;
-  check_ins: number;   // popularity snapshot
+  popularity: number;   // popularity snapshot for pagination
 }
 
 /** fetches venues inside current map bounds */
@@ -18,7 +18,7 @@ export function useClusterVenues(bounds: [number, number, number, number] | null
     queryKey: ['cluster-venues', bounds?.map((n) => n.toFixed(3)).join(',')], // stable key
     enabled: !!bounds,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       if (!bounds) return [];
 
       const [w, s, e, n] = bounds;
@@ -31,8 +31,18 @@ export function useClusterVenues(bounds: [number, number, number, number] | null
         limit_rows: 10,
       } as any);
 
-      if (error) throw error;
-      return data as ClusterVenue[];
+      if (error) {
+        console.error('Failed to fetch cluster venues:', error);
+        throw error;
+      }
+
+      // Transform lat/lng to numbers and return properly typed data
+      return (data || []).map(venue => ({
+        ...venue,
+        lat: Number(venue.lat),
+        lng: Number(venue.lng),
+        popularity: (venue as any).popularity || (venue as any).check_ins || 0,
+      }));
     },
   });
 }

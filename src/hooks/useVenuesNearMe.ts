@@ -14,51 +14,94 @@ interface VenueNearMe {
   popularity: number;
 }
 
+// Haversine distance calculation
+function haversine(coord1: [number, number], coord2: [number, number]): number {
+  const [lat1, lng1] = coord1;
+  const [lat2, lng2] = coord2;
+  const R = 6371000; // Earth's radius in meters
+  
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+    
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 0.5) {
   return useInfiniteQuery({
-    queryKey: ['venues-near-me', lat, lng, radius_km],
+    queryKey: ['venues-near-me', lat, lng, radius_km, 'compound-cursor'],
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
-    queryFn: async ({ pageParam = 0 }) => {
-      // Use get_cluster_venues for enhanced venue data
-      const degreeOffset = radius_km / 111; // rough conversion
+    queryFn: async ({ pageParam, signal }) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return { venues: [], nextCursor: undefined, hasMore: false };
+      }
+
+      // Better degree offset calculation accounting for latitude
+      const latRad = lat! * Math.PI / 180;
+      const degreeOffsetLat = radius_km / 111;
+      const degreeOffsetLng = radius_km / (111 * Math.cos(latRad));
+      
+      const { popularity: cursorPopularity = Number.MAX_SAFE_INTEGER, id: cursorId = '' } = pageParam || {};
+      
       const { data, error } = await supabase.rpc('get_cluster_venues', {
-        min_lng: lng! - degreeOffset,
-        min_lat: lat! - degreeOffset,
-        max_lng: lng! + degreeOffset,
-        max_lat: lat! + degreeOffset,
-        cursor_popularity: pageParam ?? 0,
+        min_lng: lng! - degreeOffsetLng,
+        min_lat: lat! - degreeOffsetLat,
+        max_lng: lng! + degreeOffsetLng,
+        max_lat: lat! + degreeOffsetLat,
+        cursor_popularity: cursorPopularity,
+        cursor_id: cursorId,
         limit_rows: 10,
       } as any);
       
-      if (error) throw error;
+      if (error) {
+        // Only return empty for out of range, otherwise surface error
+        if (error.code === 'PGRST116') {
+          return { venues: [], nextCursor: undefined, hasMore: false };
+        }
+        console.error('Failed to load nearby venues:', error);
+        throw error;
+      }
       
-      // Transform data to match VenueNearMe interface
-      const venues = (data || []).map(venue => ({
-        id: venue.id,
-        name: venue.name,
-        lat: venue.lat,
-        lng: venue.lng,
-        vibe: 'social', // default vibe
-        source: 'database',
-        distance_m: 0, // would need geospatial calculation
-        live_count: venue.live_count,
-        vibe_score: venue.vibe_score,
-        popularity: venue.check_ins // map check_ins to popularity
-      }));
+      // Transform data to match VenueNearMe interface with real distance calculation
+      const venues: VenueNearMe[] = (data || []).map(venue => {
+        const venueLat = Number(venue.lat);
+        const venueLng = Number(venue.lng);
+        const distance = haversine([lat!, lng!], [venueLat, venueLng]);
+        
+        return {
+          id: venue.id,
+          name: venue.name,
+          lat: venueLat,
+          lng: venueLng,
+          vibe: 'social', // default vibe
+          source: 'database',
+          distance_m: Math.round(distance),
+          live_count: venue.live_count,
+          vibe_score: venue.vibe_score,
+          popularity: (venue as any).popularity || (venue as any).check_ins || 0
+        };
+      });
       
-      // Key-set pagination using popularity (check_ins)
-      const nextCursor = venues.length
-        ? venues[venues.length - 1].popularity   // smallest pop on this page
+      // Compound cursor for reliable pagination
+      const nextCursor = venues.length === 10 && venues.length > 0
+        ? { 
+            popularity: venues[venues.length - 1].popularity,
+            id: venues[venues.length - 1].id
+          }
         : undefined;
       
       return {
         venues,
         nextCursor,
-        hasMore: venues.length === 10 // If we got full page, there might be more
+        hasMore: venues.length === 10
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: 0,
+    initialPageParam: undefined,
     staleTime: 30_000, // 30 seconds
     refetchInterval: 60_000, // 1 minute for live count updates
   });
