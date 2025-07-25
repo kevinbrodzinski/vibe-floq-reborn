@@ -5,12 +5,12 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export function VibeRealtime() {
   const sync = useVibe((s) => s.syncFromRemote);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
 
   // Initial fetch for brand-new installs
   useEffect(() => {
-    if (!userId) return;
+    if (authLoading || !userId) return;
     
     const fetchInitialVibe = async () => {
       try {
@@ -37,36 +37,62 @@ export function VibeRealtime() {
     };
     
     fetchInitialVibe();
-  }, [userId, sync]);
+  }, [authLoading, userId, sync]);
 
   // Realtime subscription management
   useEffect(() => {
-    if (!userId) return;
+    if (authLoading || !userId) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⏳ VibeRealtime waiting for auth:', { authLoading, userId: !!userId });
+      }
+      return;
+    }
 
     // Ensure only one channel in dev hot-reload
     const key = `vibe-now-${userId}`;
     const existing = supabase.getChannels().find((c) => c.topic === key);
-    const channel =
-      existing ??
-      supabase
-        .channel(key)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'vibes_now',
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload) =>
-            sync(payload.new.vibe as string, payload.new.updated_at as string)
-        )
-        .subscribe();
+    
+    try {
+      const channel =
+        existing ??
+        supabase
+          .channel(key)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'vibes_now',
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              try {
+                sync(payload.new.vibe as string, payload.new.updated_at as string);
+              } catch (syncError) {
+                console.warn('Failed to sync vibe update:', syncError);
+              }
+            }
+          )
+          .subscribe((status) => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('📡 Vibe channel status:', status, 'for user:', userId);
+            }
+            if (status === 'CHANNEL_ERROR') {
+              console.warn('Vibe channel connection failed for user:', userId);
+            }
+          });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, sync]);
+      return () => {
+        try {
+          supabase.removeChannel(channel);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup vibe channel:', cleanupError);
+        }
+      };
+    } catch (channelError) {
+      console.error('Failed to create vibe channel:', channelError);
+    }
+  }, [authLoading, userId, sync]);
 
   // Clean up channels and store on auth state change
   useEffect(() => {

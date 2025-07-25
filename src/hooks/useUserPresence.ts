@@ -13,61 +13,96 @@ export function useUserPresence() {
   const [userPresence, setUserPresence] = useState<Map<string, UserPresence>>(new Map());
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('⏳ useUserPresence waiting for session');
+      }
+      return;
+    }
 
-    // Subscribe to presence updates with modern API
-    const channel = supabase
-      .channel('user_presence')
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState?.() || {};
-        const presenceMap = new Map<string, UserPresence>();
-        
-        Object.entries(state).forEach(([userId, presences]) => {
-          const presence = presences[0] as any;
-          if (presence?.user_id) {
-            presenceMap.set(userId, presence as UserPresence);
+    try {
+      // Subscribe to presence updates with modern API
+      const channel = supabase
+        .channel('user_presence')
+        .on('presence', { event: 'sync' }, () => {
+          try {
+            const state = channel.presenceState?.() || {};
+            const presenceMap = new Map<string, UserPresence>();
+            
+            Object.entries(state).forEach(([userId, presences]) => {
+              const presence = presences[0] as any;
+              if (presence?.user_id) {
+                presenceMap.set(userId, presence as UserPresence);
+              }
+            });
+            
+            setUserPresence(presenceMap);
+          } catch (syncError) {
+            console.warn('Failed to sync user presence:', syncError);
           }
-        });
-        
-        setUserPresence(presenceMap);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        setUserPresence(prev => {
-          const updated = new Map(prev);
-          newPresences.forEach((presence: any) => {
-            if (presence?.user_id) {
-              updated.set(key, presence as UserPresence);
+        })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          try {
+            setUserPresence(prev => {
+              const updated = new Map(prev);
+              newPresences.forEach((presence: any) => {
+                if (presence?.user_id) {
+                  updated.set(key, presence as UserPresence);
+                }
+              });
+              return updated;
+            });
+          } catch (joinError) {
+            console.warn('Failed to handle presence join:', joinError);
+          }
+        })
+        .on('presence', { event: 'leave' }, ({ key }) => {
+          try {
+            setUserPresence(prev => {
+              const updated = new Map(prev);
+              const presence = updated.get(key);
+              if (presence) {
+                updated.set(key, { ...presence, status: 'offline' });
+              }
+              return updated;
+            });
+          } catch (leaveError) {
+            console.warn('Failed to handle presence leave:', leaveError);
+          }
+        })
+        .subscribe(async (status) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📡 User presence channel status:', status);
+          }
+          
+          if (status === 'SUBSCRIBED') {
+            try {
+              // Track our own presence
+              await channel.track({
+                user_id: session.user.id,
+                status: 'online',
+                last_seen: new Date().toISOString(),
+              });
+            } catch (trackError) {
+              console.warn('Failed to track user presence:', trackError);
             }
-          });
-          return updated;
-        });
-      })
-      .on('presence', { event: 'leave' }, ({ key }) => {
-        setUserPresence(prev => {
-          const updated = new Map(prev);
-          const presence = updated.get(key);
-          if (presence) {
-            updated.set(key, { ...presence, status: 'offline' });
+          } else if (status === 'CHANNEL_ERROR') {
+            console.warn('User presence channel connection failed');
           }
-          return updated;
         });
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Track our own presence
-          await channel.track({
-            user_id: session.user.id,
-            status: 'online',
-            last_seen: new Date().toISOString(),
-          });
-        }
-      });
 
-    return () => {
-      // Untrack presence before removing channel
-      channel.untrack?.();
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        try {
+          // Untrack presence before removing channel
+          channel.untrack?.();
+          supabase.removeChannel(channel);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup user presence channel:', cleanupError);
+        }
+      };
+    } catch (channelError) {
+      console.error('Failed to create user presence channel:', channelError);
+    }
   }, [session?.user?.id]);
 
   const getUserPresence = (userId: string): UserPresence | null => {
