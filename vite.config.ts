@@ -15,7 +15,7 @@ export default defineConfig(({ mode, command }) => {
       return false;
     }
     
-    if (DISABLE_HMR === 'true') {
+    if (DISABLE_HMR === 'false') {
       return false;
     }
     
@@ -35,7 +35,7 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     server: {
-      host: "::",
+      host: "0.0.0.0", // listen on all interfaces inside the sandbox
       port: 8080,
       hmr: getHMRConfig(),
     },
