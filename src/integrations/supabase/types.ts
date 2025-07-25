@@ -5291,6 +5291,8 @@ export type Database = {
           centroid: unknown
           total: number
           vibe_counts: Json
+          vibe_mode: string
+          member_count: number
         }[]
       }
       get_walkable_floqs: {
