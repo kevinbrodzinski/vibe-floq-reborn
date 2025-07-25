@@ -8,6 +8,8 @@ interface NotificationPayload {
   id: string;
   user_id: string;
   created_at: string;
+  seen_at?: string;
+  accepted_at?: string;
 }
 
 export const useNotificationSubscription = (userId: string | null) => {
@@ -29,7 +31,7 @@ export const useNotificationSubscription = (userId: string | null) => {
         (payload) => {
           const notif = payload.new as NotificationPayload;
           
-          // Show local toast notification
+          // Show local toast notification for new notifications
           switch (notif.kind) {
             case 'dm':
               toast({
@@ -55,6 +57,26 @@ export const useNotificationSubscription = (userId: string | null) => {
                 description: "You've been invited to join a floq",
               });
               break;
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'event_notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const notif = payload.new as NotificationPayload;
+          
+          // Handle notification updates (seen/accepted)
+          if (notif.accepted_at && notif.kind.includes('invite')) {
+            toast({
+              title: "Invitation Accepted",
+              description: "Your invitation has been accepted",
+            });
           }
         }
       )
