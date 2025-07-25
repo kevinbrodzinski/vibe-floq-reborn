@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
+import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
+import { PlanBadgeProvider } from "@/providers/PlanBadgeProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
@@ -69,15 +71,17 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <VibeRealtime />
-        <BannerProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <NetworkStatusBanner />
-            <BrowserRouter>
-              <PlanInviteProvider />
-              <Routes>
+        <EventNotificationsProvider>
+          <VibeRealtime />
+          <BannerProvider>
+            <PlanBadgeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <NetworkStatusBanner />
+                <BrowserRouter>
+                  <PlanInviteProvider />
+                  <Routes>
                 {/* Public shared routes - no auth required */}
                 <Route path="/a/:slug" element={<SharedAfterglow />} />
                 <Route path="/share/:slug" element={<SharedPlan />} />
@@ -86,12 +90,14 @@ const App = () => {
                 {/* Settings route */}
                 <Route path="/settings/profile" element={<Settings />} />
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}
-                <Route path="/*" element={<Index />} />
-              </Routes>
-              {/* Remove development-only environment debug panel for TestFlight */}
-            </BrowserRouter>
-          </TooltipProvider>
-        </BannerProvider>
+                    <Route path="/*" element={<Index />} />
+                  </Routes>
+                  {/* Remove development-only environment debug panel for TestFlight */}
+                </BrowserRouter>
+              </TooltipProvider>
+            </PlanBadgeProvider>
+          </BannerProvider>
+        </EventNotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

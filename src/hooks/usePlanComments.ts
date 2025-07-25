@@ -1,39 +1,95 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-export function usePlanComments(plan_id: string, stop_id?: string) {
+export interface PlanComment {
+  id: string;
+  plan_id: string;
+  user_id: string;
+  content: string;
+  mentioned_users: string[];
+  reply_to_id?: string;
+  created_at: string;
+  updated_at: string;
+  profiles: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
+export function usePlanComments(planId?: string) {
+  const queryClient = useQueryClient();
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!planId) return;
+
+    const channel = supabase
+      .channel(`plan_comments:${planId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'plan_comments', 
+          filter: `plan_id=eq.${planId}` 
+        },
+        () => queryClient.invalidateQueries({ queryKey: ['plan-comments', planId] })
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'plan_comments', 
+          filter: `plan_id=eq.${planId}` 
+        },
+        () => queryClient.invalidateQueries({ queryKey: ['plan-comments', planId] })
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'plan_comments', 
+          filter: `plan_id=eq.${planId}` 
+        },
+        () => queryClient.invalidateQueries({ queryKey: ['plan-comments', planId] })
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [planId, queryClient]);
+
   return useQuery({
-    queryKey: ['plan-comments', plan_id, stop_id],
+    queryKey: ['plan-comments', planId],
+    enabled: !!planId,
     queryFn: async () => {
-      let query = supabase
-        .from('plan_comments')
-        .select(`
-          *,
-          user:profiles(display_name, username, avatar_url),
-          reply_to:plan_comments(
-            id,
-            content,
-            user:profiles(display_name, username)
-          )
-        `)
-        .eq('plan_id', plan_id)
-        .order('created_at', { ascending: true })
-      
-      if (stop_id) {
-        query = query.eq('stop_id', stop_id)
-      } else {
-        query = query.is('stop_id', null) // General plan comments
-      }
-      
-      const { data, error } = await query
-      
-      if (error) {
-        console.error('Plan comments fetch error:', error)
-        throw error
-      }
-      
-      return data || []
+      const { data, error } = await supabase
+        .from('plan_comments' as any)
+        .select('*, profiles!plan_comments_user_id_fkey(username, avatar_url)')
+        .eq('plan_id', planId!)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as unknown as PlanComment[];
     },
-    enabled: !!plan_id,
-  })
+    refetchOnWindowFocus: false,
+  });
+}
+
+export async function sendPlanComment(
+  planId: string,
+  content: string,
+  replyToId?: string
+) {
+  const { error } = await supabase.from('plan_comments' as any).insert({
+    plan_id: planId,
+    content,
+    reply_to_id: replyToId ?? null,
+  });
+  
+  if (error) throw error;
 }

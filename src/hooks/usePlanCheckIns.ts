@@ -1,55 +1,63 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
-import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-export function usePlanCheckIns(planId: string) {
-  const queryClient = useQueryClient()
+export interface PlanCheckIn {
+  id: string;
+  plan_id: string;
+  stop_id: string;
+  user_id: string;
+  checked_in_at: string;
+  checked_out_at?: string;
+  location?: any;
+  device_id?: string;
+  geo_hash?: string;
+  created_at: string;
+}
 
-  // Set up real-time subscription for plan check-ins
-  useEffect(() => {
-    if (!planId) return
+export async function checkIntoStop(
+  planId: string,
+  stopId: string,
+  { lat, lng }: { lat: number; lng: number },
+  deviceId?: string,
+) {
+  const { error } = await supabase.from('plan_check_ins' as any).insert({
+    plan_id: planId,
+    stop_id: stopId,
+    location: lat && lng ? `SRID=4326;POINT(${lng} ${lat})` : null,
+    device_id: deviceId,
+  });
+  
+  if (error) throw error;
+}
 
-    const channel = supabase
-      .channel('plan-check-ins-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'plan_check_ins',
-          filter: `plan_id=eq.${planId}`,
-        },
-        () => {
-          // Invalidate and refetch when check-ins change
-          queryClient.invalidateQueries({ queryKey: ['plan-check-ins', planId] })
-        }
-      )
-      .subscribe()
+export async function checkOutOfStop(
+  checkInId: string
+) {
+  const { error } = await supabase
+    .from('plan_check_ins' as any)
+    .update({ checked_out_at: new Date().toISOString() })
+    .eq('id', checkInId);
+    
+  if (error) throw error;
+}
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [planId, queryClient])
+export async function getCurrentCheckIns(planId: string, userId: string): Promise<PlanCheckIn[]> {
+  const { data, error } = await supabase
+    .from('plan_check_ins' as any)
+    .select('*')
+    .eq('plan_id', planId)
+    .eq('user_id', userId)
+    .is('checked_out_at', null);
+    
+  if (error) throw error;
+  return (data as unknown as PlanCheckIn[]) || [];
+}
 
+export function usePlanCheckIns(planId?: string, userId?: string) {
   return useQuery({
-    queryKey: ['plan-check-ins', planId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('plan_check_ins')
-        .select(`
-          *,
-          profiles(display_name, avatar_url)
-        `)
-        .eq('plan_id', planId)
-        .order('checked_in_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching plan check-ins:', error)
-        throw error
-      }
-
-      return data || []
-    },
-    enabled: !!planId,
-  })
+    queryKey: ['plan-check-ins', planId, userId],
+    enabled: !!planId && !!userId,
+    queryFn: () => getCurrentCheckIns(planId!, userId!),
+    refetchOnWindowFocus: false,
+  });
 }
