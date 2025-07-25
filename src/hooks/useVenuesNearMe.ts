@@ -83,7 +83,7 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         throw error;
       }
       
-      // Transform data with memoized distance calculation
+      // Transform data with distance calculation
       const venues: VenueNearMe[] = (data || []).map(venue => {
         const venueLat = +venue.lat; // Safe casting for both string and number types
         const venueLng = +venue.lng;

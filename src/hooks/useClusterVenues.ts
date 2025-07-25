@@ -15,7 +15,7 @@ export interface ClusterVenue {
 /** fetches venues inside current map bounds */
 export function useClusterVenues(bounds: [number, number, number, number] | null) {
   return useQuery({
-    queryKey: ['cluster-venues', { bounds: bounds?.map((n) => n.toFixed(3)) }], // stable object key
+    queryKey: ['cluster-venues', { w: bounds?.[0], s: bounds?.[1], e: bounds?.[2], n: bounds?.[3] }], // stable object key
     enabled: !!bounds,
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
@@ -30,6 +30,11 @@ export function useClusterVenues(bounds: [number, number, number, number] | null
         cursor_popularity: 0,
         limit_rows: 10,
       } as any);
+      
+      // Check for abort signal
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
 
       if (error) {
         console.error('Failed to fetch cluster venues:', error);
