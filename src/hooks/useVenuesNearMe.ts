@@ -26,7 +26,9 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         min_lat: lat! - degreeOffset,
         max_lng: lng! + degreeOffset,
         max_lat: lat! + degreeOffset,
-      });
+        cursor_popularity: pageParam ?? 0,
+        limit_rows: 10,
+      } as any);
       
       if (error) throw error;
       
@@ -44,16 +46,15 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         popularity: venue.check_ins // map check_ins to popularity
       }));
       
-      // Simulate pagination for infinite scroll
-      const pageSize = 10;
-      const start = pageParam * pageSize;
-      const end = start + pageSize;
-      const paginatedVenues = venues.slice(start, end);
+      // Key-set pagination using popularity (check_ins)
+      const nextCursor = venues.length
+        ? venues[venues.length - 1].popularity   // smallest pop on this page
+        : undefined;
       
       return {
-        venues: paginatedVenues,
-        nextCursor: paginatedVenues.length === pageSize ? pageParam + 1 : undefined,
-        hasMore: end < venues.length
+        venues,
+        nextCursor,
+        hasMore: venues.length === 10 // If we got full page, there might be more
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,

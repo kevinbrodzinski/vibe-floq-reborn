@@ -9,7 +9,7 @@ export interface ClusterVenue {
   lng: number;
   vibe_score: number;
   live_count: number;
-  check_ins: number;
+  check_ins: number;   // popularity snapshot
 }
 
 /** fetches venues inside current map bounds */
@@ -27,7 +27,9 @@ export function useClusterVenues(bounds: [number, number, number, number] | null
         min_lat: s,
         max_lng: e,
         max_lat: n,
-      });
+        cursor_popularity: 0,
+        limit_rows: 10,
+      } as any);
 
       if (error) throw error;
       return data as ClusterVenue[];

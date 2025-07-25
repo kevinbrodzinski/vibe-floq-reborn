@@ -78,6 +78,8 @@ declare module '@supabase/supabase-js' {
             min_lat: number;
             max_lng: number;
             max_lat: number;
+            cursor_popularity?: number;
+            limit_rows?: number;
           };
           Returns: { 
             id: string; 
