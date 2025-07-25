@@ -47,6 +47,171 @@ html, body, #root {
   animation: ripple 600ms linear;
 }
 
+/* Flowing timeline animations */
+@keyframes flow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-flow {
+  animation: flow 8s linear infinite;
+}
+
+@keyframes ripple-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+.animate-ripple-pulse {
+  animation: ripple-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ripple-wave {
+  0% {
+    background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  10% {
+    background: linear-gradient(to right, #c4b5fd, #e5e7eb, #a78bfa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  20% {
+    background: linear-gradient(to right, #e5e7eb, #a78bfa, #c4b5fd);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  30% {
+    background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  40% {
+    background: linear-gradient(to right, #c4b5fd, #e5e7eb, #a78bfa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  50% {
+    background: linear-gradient(to right, #e5e7eb, #a78bfa, #c4b5fd);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  60% {
+    background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  70% {
+    background: linear-gradient(to right, #c4b5fd, #e5e7eb, #a78bfa);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  80% {
+    background: linear-gradient(to right, #e5e7eb, #a78bfa, #c4b5fd);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  90% {
+    background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  100% {
+    background: linear-gradient(to right, #a78bfa, #c4b5fd, #e5e7eb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+.animate-ripple-wave {
+  animation: ripple-wave 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes glow-flow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(123, 97, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(123, 97, 255, 0.6), 0 0 30px rgba(225, 43, 255, 0.4);
+  }
+}
+
+.animate-glow-flow {
+  animation: glow-flow 3s ease-in-out infinite;
+}
+
+/* Plan Card Glow Effects */
+@keyframes pulseGlow {
+  0%, 100% { 
+    box-shadow: 0 0 8px rgba(var(--vibeColor), 0.1); 
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(var(--vibeColor), 0.4); 
+  }
+}
+
+@keyframes unreadPulse {
+  0%, 100% { 
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.3); 
+  }
+  50% { 
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6); 
+  }
+}
+
+/* Base - Idle Floq */
+.card-idle {
+  box-shadow: none;
+}
+
+/* Plan coming up - Gentle ambient glow */
+.card-has-plan {
+  box-shadow: 0 0 6px 2px rgba(var(--vibeColor), 0.2);
+  animation: pulseGlow 12s ease-in-out infinite;
+}
+
+/* Actively executing plan - Bright animated ring */
+.card-live {
+  box-shadow: 0 0 12px 4px rgba(var(--vibeColor), 0.5);
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Unread messages - Quick pulse on edge */
+.card-unread {
+  animation: unreadPulse 2s ease-in-out 2;
+}
+
 /* Enhanced focus ring system - WCAG 2.1 compliant */
 body:not(.using-keyboard) *:focus {
   outline: none;     /* hides default focus when using pointer */
@@ -815,3 +980,111 @@ All colors MUST be HSL.
       transition-duration: 0.15s !important;
     }
   }
+
+/* Add custom styles for Mapbox popups */
+.mapboxgl-popup {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 1000; /* Ensure popups are above other elements */
+}
+
+.mapboxgl-popup-content {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  background: #1F2937; /* Dark background to match app theme */
+  color: #F9FAFB; /* Light text for dark background */
+}
+
+/* Improve popup content readability */
+.mapboxgl-popup-content h3 {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.mapboxgl-popup-content .text-gray-600 {
+  color: #D1D5DB !important;
+}
+
+.mapboxgl-popup-content .text-gray-500 {
+  color: #9CA3AF !important;
+}
+
+.mapboxgl-popup-content .text-gray-800 {
+  color: #F3F4F6 !important;
+}
+
+/* Dark theme button styles */
+.mapboxgl-popup-content .bg-blue-700 {
+  background-color: #3B82F6 !important;
+  color: #FFFFFF !important;
+}
+
+.mapboxgl-popup-content .bg-blue-700:hover {
+  background-color: #2563EB !important;
+}
+
+.mapboxgl-popup-content .border-gray-400 {
+  border-color: #4B5563 !important;
+}
+
+.mapboxgl-popup-content .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+.mapboxgl-popup-content .bg-gray-100:hover {
+  background-color: #4B5563 !important;
+}
+
+.mapboxgl-popup-content .text-gray-700 {
+  color: #D1D5DB !important;
+}
+
+.mapboxgl-popup-content .text-gray-800 {
+  color: #F3F4F6 !important;
+}
+
+.mapboxgl-popup-content .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+.mapboxgl-popup-content .hover\:bg-gray-100:hover {
+  background-color: #4B5563 !important;
+}
+
+.mapboxgl-popup-content .hover\:bg-gray-200:hover {
+  background-color: #4B5563 !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: #9CA3AF !important;
+  font-size: 18px !important;
+  padding: 8px !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.mapboxgl-popup-close-button:hover {
+  color: #D1D5DB !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #1F2937 !important;
+}
+
+/* Dark theme for floq detail popup */
+.floq-detail-popup .mapboxgl-popup-content {
+  background: #1F2937 !important;
+  color: #F9FAFB !important;
+}
+
+.floq-detail-popup .mapboxgl-popup-tip {
+  border-top-color: #1F2937 !important;
+}
+
+/* Hover effects for map elements */
+.mapboxgl-canvas-container:hover {
+  cursor: default;
+}

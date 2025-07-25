@@ -5,7 +5,7 @@ import {
   useQueryClient,
   InfiniteData,
 } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { extractMentions } from '@/utils/mentionParser'
 
@@ -20,10 +20,24 @@ export interface FloqMessage {
     display_name: string | null
     avatar_url: string | null
   } | null
+  reactions?: string[]    // Array of user IDs who reacted
+  read_by?: string[]     // Array of user IDs who read the message
+  reply_to_id?: string   // ID of the message this is replying to
+  reply_to?: FloqMessage // The message being replied to (for display)
+  thread_count?: number  // Number of replies in this thread
+}
+
+export interface TypingIndicator {
+  userId: string
+  displayName: string
+  timestamp: number
 }
 
 export function useFloqMessages(floqId: string) {
   const queryClient = useQueryClient()
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set())
+  const [readReceipts, setReadReceipts] = useState<Record<string, string[]>>({})
+  const [messageReactions, setMessageReactions] = useState<Record<string, string[]>>({})
   
   const query = useInfiniteQuery({
     queryKey: ['floq-messages', floqId],
@@ -95,6 +109,46 @@ export function useFloqMessages(floqId: string) {
           }
         )
       })
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        const { userId, isTyping, displayName } = payload.payload
+        
+        if (isTyping) {
+          setTypingUsers(prev => new Set([...prev, userId]))
+        } else {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(userId)
+            return newSet
+          })
+        }
+      })
+      .on('broadcast', { event: 'reaction' }, (payload) => {
+        const { messageId, userId, reaction, isAdding } = payload.payload
+        
+        setMessageReactions(prev => {
+          const current = prev[messageId] || []
+          
+          if (isAdding) {
+            return {
+              ...prev,
+              [messageId]: [...current, userId]
+            }
+          } else {
+            return {
+              ...prev,
+              [messageId]: current.filter(id => id !== userId)
+            }
+          }
+        })
+      })
+      .on('broadcast', { event: 'read' }, (payload) => {
+        const { messageId, userId } = payload.payload
+        
+        setReadReceipts(prev => ({
+          ...prev,
+          [messageId]: [...(prev[messageId] || []), userId]
+        }))
+      })
       .subscribe()
 
     return () => {
@@ -102,7 +156,60 @@ export function useFloqMessages(floqId: string) {
     }
   }, [floqId, queryClient])
 
-  return query
+  // Send typing indicator
+  const sendTypingIndicator = (isTyping: boolean) => {
+    if (!floqId) return
+    
+    supabase.channel(`floq-${floqId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { 
+        userId: 'current-user-id', // Replace with actual user ID
+        isTyping,
+        displayName: 'You' // Replace with actual display name
+      }
+    })
+  }
+
+  // Send message reaction
+  const sendReaction = (messageId: string, reaction: string, isAdding: boolean) => {
+    if (!floqId) return
+    
+    supabase.channel(`floq-${floqId}`).send({
+      type: 'broadcast',
+      event: 'reaction',
+      payload: { 
+        messageId,
+        userId: 'current-user-id', // Replace with actual user ID
+        reaction,
+        isAdding
+      }
+    })
+  }
+
+  // Send read receipt
+  const sendReadReceipt = (messageId: string) => {
+    if (!floqId) return
+    
+    supabase.channel(`floq-${floqId}`).send({
+      type: 'broadcast',
+      event: 'read',
+      payload: { 
+        messageId,
+        userId: 'current-user-id' // Replace with actual user ID
+      }
+    })
+  }
+
+  return {
+    ...query,
+    typingUsers,
+    readReceipts,
+    messageReactions,
+    sendTypingIndicator,
+    sendReaction,
+    sendReadReceipt
+  }
 }
 
 export function useSendFloqMessage() {

@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { getEnvironmentConfig } from '@/lib/environment';
+import { useEffect, useRef } from 'react';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface FloqRow {
   id: string;
@@ -17,6 +19,8 @@ export interface FloqRow {
   boost_count: number; // Added boost count
   starts_in_min: number;
   distance_meters: number | null; // Added distance
+  lat?: number; // Geographic latitude
+  lng?: number; // Geographic longitude
   members: {
     avatar_url: string | null;
     id: string;
@@ -212,7 +216,7 @@ const generateStubFloqs = (userLat?: number, userLng?: number): FloqRow[] => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = Math.round(R * c);
     
-    return { ...floq, distance_meters: distance };
+    return { ...floq, distance_meters: distance, lat: floqLat, lng: floqLng };
   });
 };
 
@@ -220,15 +224,26 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
   const { limit = 20, offset = 0, includeDistance = true } = options;
   const { lat, lng } = useGeolocation();
   const env = getEnvironmentConfig();
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  // Debug logging for hook initialization
+  console.log('[FLOQS_DEBUG] useActiveFloqs called with:', {
+    options,
+    lat,
+    lng,
+    env: env.presenceMode
+  });
 
   // Round coordinates for better cache key stability
   const roundedLat = lat ? Math.round(lat * 1000) / 1000 : null;
   const roundedLng = lng ? Math.round(lng * 1000) / 1000 : null;
 
-  return useQuery<FloqRow[]>({
+  const query = useQuery<FloqRow[]>({
     queryKey: ['active-floqs', limit, offset, roundedLat, roundedLng, includeDistance, env.presenceMode],
     staleTime: 10_000,
+    refetchOnWindowFocus: false, // Disable auto-refetch on window focus since we have real-time
     queryFn: async () => {
+      console.log('[FLOQS_DEBUG] Query function executing...');
       // Offline mode - pure client-side generation (no network required)
       if (env.presenceMode === 'offline') {
         console.log('✈️ Returning offline mock floq data');
@@ -236,6 +251,7 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
           includeDistance && lat ? lat : undefined,
           includeDistance && lng ? lng : undefined
         );
+        console.log('[FLOQS_DEBUG] Offline mode returning:', mockData.length, 'floqs');
         return mockData.slice(offset, offset + limit);
       }
 
@@ -251,6 +267,8 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
             p_user_lng: includeDistance && lng ? lng : null
           });
           
+          console.log('[FLOQS_DEBUG] RPC response:', { data, error, dataLength: data?.length });
+          
           if (error) {
             console.warn('Demo floq function not available, using fallback data:', error);
             // Return fallback data instead of throwing
@@ -258,17 +276,31 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
               includeDistance && lat ? lat : undefined,
               includeDistance && lng ? lng : undefined
             );
+            console.log('[FLOQS_DEBUG] Mock mode fallback returning:', fallbackData.length, 'floqs');
+            return fallbackData.slice(offset, offset + limit);
+          }
+          
+          // If RPC returns empty data, use fallback
+          if (!data || data.length === 0) {
+            console.warn('Demo floq function returned empty data, using fallback');
+            const fallbackData = generateStubFloqs(
+              includeDistance && lat ? lat : undefined,
+              includeDistance && lng ? lng : undefined
+            );
+            console.log('[FLOQS_DEBUG] Mock mode empty data fallback returning:', fallbackData.length, 'floqs');
             return fallbackData.slice(offset, offset + limit);
           }
           
           // Transform the data to match our interface
-          return (data || []).map((floq: any) => ({
+          const transformedData = (data || []).map((floq: any) => ({
             ...floq,
             vibe_tag: floq.primary_vibe,
             members: Array.isArray(floq.members) ? floq.members : [],
             boost_count: floq.boost_count || 0,
             distance_meters: floq.distance_meters
           }));
+          console.log('[FLOQS_DEBUG] Mock mode RPC returning:', transformedData.length, 'floqs');
+          return transformedData;
         } catch (err) {
           console.warn('Demo floq function failed, using fallback data:', err);
           // Return fallback data instead of throwing
@@ -276,6 +308,7 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
             includeDistance && lat ? lat : undefined,
             includeDistance && lng ? lng : undefined
           );
+          console.log('[FLOQS_DEBUG] Mock mode catch fallback returning:', fallbackData.length, 'floqs');
           return fallbackData.slice(offset, offset + limit);
         }
       }
@@ -298,6 +331,7 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
             includeDistance && lat ? lat : undefined,
             includeDistance && lng ? lng : undefined
           );
+          console.log('[FLOQS_DEBUG] Live mode fallback returning:', fallbackData.length, 'floqs');
           return fallbackData.slice(offset, offset + limit);
         }
         
@@ -319,10 +353,61 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
           includeDistance && lat ? lat : undefined,
           includeDistance && lng ? lng : undefined
         );
+        console.log('[FLOQS_DEBUG] Live mode catch fallback returning:', fallbackData.length, 'floqs');
         return fallbackData.slice(offset, offset + limit);
       }
     },
     // Always enable the query - don't wait for geolocation
     enabled: true,
   });
+
+  // Set up real-time subscription for live mode
+  useEffect(() => {
+    // Only enable real-time for live mode
+    if (env.presenceMode !== 'live') {
+      return;
+    }
+
+    // Clean up existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Create real-time subscription for floqs table changes
+    const channel = supabase
+      .channel('floqs-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'floqs',
+        },
+        (payload) => {
+          console.log('[FLOQS_REALTIME] Received change:', payload);
+          
+          // Invalidate and refetch the query to get updated data
+          query.refetch();
+        }
+      )
+      .subscribe((status) => {
+        console.log('[FLOQS_REALTIME] Subscription status:', status);
+      });
+
+    channelRef.current = channel;
+
+    // Cleanup on unmount
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [env.presenceMode, query.refetch]);
+
+  return {
+    ...query,
+    realtime: channelRef.current !== null
+  };
 };

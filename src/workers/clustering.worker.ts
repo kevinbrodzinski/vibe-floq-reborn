@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-globals */
+ 
 import * as Comlink from 'comlink';
 
 /* ────────────── types ────────────── */
@@ -59,7 +59,7 @@ const api = {
         }
       });
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[cluster-worker]', err);
     }
 

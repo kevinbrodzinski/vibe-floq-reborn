@@ -30,6 +30,7 @@ import SharedPlan from '@/pages/SharedPlan';
 import { PlanDetailsView } from '@/components/plans/PlanDetailsView';
 import DailyRecapGate from '@/pages/DailyRecapGate';
 import RecapActionSheet from '@/pages/RecapActionSheet';
+import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -52,6 +53,7 @@ export const AppRoutes = () => {
     <Route path="/floqs/:floqId/plans/:planId/execute" element={<FloqPlanExecutionScreen />} />
     <Route path="/pulse" element={<PulseScreen />} />
     <Route path="/vibe" element={<VibeScreen />} />
+    <Route path="/recommendations-demo" element={<RecommendationsDemo />} />
     {exploreBeta && (
       <Route path="/explore" element={<div className="p-4 text-center"><h2 className="text-lg font-semibold">Map Explorer</h2><p className="text-muted-foreground">Coming soon - interactive map exploration</p></div>} />
     )}

@@ -168,7 +168,7 @@ export function VenueStopStep({ stops, onChange, onNext, onBack, startTime, plan
   const defaultTransitMinutes = 15;
 
   const calculateStopTimes = (stopsToCalculate: PlanStop[], baseStartTime: string) => {
-    let currentTime = new Date(`2000-01-01T${baseStartTime}:00`);
+    const currentTime = new Date(`2000-01-01T${baseStartTime}:00`);
     
     return stopsToCalculate.map((stop, index) => {
       const stopStartTime = currentTime.toTimeString().slice(0, 5);

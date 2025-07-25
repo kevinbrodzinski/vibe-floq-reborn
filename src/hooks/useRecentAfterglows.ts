@@ -5,6 +5,9 @@ interface RecentAfterglowData {
   date: string;
   energy: number | null;
   has_data: boolean;
+  total_venues?: number;
+  total_floqs?: number;
+  crossed_paths_count?: number;
 }
 
 export function useRecentAfterglows() {
@@ -15,13 +18,13 @@ export function useRecentAfterglows() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data, error } = await supabase
+      const { data: afterglowData, error: afterglowError } = await supabase
         .from('daily_afterglow')
-        .select('date, energy_score')
+        .select('date, energy_score, total_venues, total_floqs, crossed_paths_count')
         .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
         .order('date', { ascending: false });
       
-      if (error) throw error;
+      if (afterglowError) throw afterglowError;
       
       // Generate the last 30 days with data availability
       const recentDates: RecentAfterglowData[] = [];
@@ -32,19 +35,40 @@ export function useRecentAfterglows() {
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
         
-        const afterglowData = data?.find(d => d.date === dateStr);
+        const afterglow = afterglowData?.find(d => d.date === dateStr);
         
         recentDates.push({
           date: dateStr,
-          energy: afterglowData?.energy_score || null,
-          has_data: !!afterglowData
+          energy: afterglow?.energy_score || null,
+          has_data: !!afterglow,
+          total_venues: afterglow?.total_venues || 0,
+          total_floqs: afterglow?.total_floqs || 0,
+          crossed_paths_count: afterglow?.crossed_paths_count || 0,
         });
       }
+      
+      // Calculate some stats for better UX
+      const daysWithData = recentDates.filter(d => d.has_data);
+      const averageEnergy = daysWithData.length > 0 
+        ? daysWithData.reduce((sum, d) => sum + (d.energy || 0), 0) / daysWithData.length 
+        : 0;
       
       return {
         hasDataDates: recentDates.filter(d => d.has_data).map(d => new Date(d.date)),
         recent: recentDates.slice(0, 7),
+        all: recentDates,
+        stats: {
+          totalDays: recentDates.length,
+          daysWithData: daysWithData.length,
+          averageEnergy: Math.round(averageEnergy * 10) / 10,
+          highestEnergy: Math.max(...daysWithData.map(d => d.energy || 0)),
+          totalVenues: daysWithData.reduce((sum, d) => sum + (d.total_venues || 0), 0),
+          totalFloqs: daysWithData.reduce((sum, d) => sum + (d.total_floqs || 0), 0),
+          totalCrossedPaths: daysWithData.reduce((sum, d) => sum + (d.crossed_paths_count || 0), 0),
+        }
       };
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }

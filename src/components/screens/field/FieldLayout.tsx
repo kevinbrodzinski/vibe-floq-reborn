@@ -91,6 +91,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
           <FieldMapLayer 
             data={data} 
             people={people} 
+            floqs={data.floqEvents}
             onRipple={handleRipple}
             canvasRef={canvasRef}
           />

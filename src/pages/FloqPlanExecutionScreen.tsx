@@ -220,12 +220,12 @@ export default function FloqPlanExecutionScreen() {
                   onClick={startAfterglow}
                   className="px-3 py-1 bg-secondary text-secondary-foreground rounded text-sm"
                 >
-                  Start Afterglow
+                  Start Ripple
                 </button>
               </div>
               <div className="mt-2 text-xs text-muted-foreground">
                 Current: Stop {currentStopIndex + 1}/{stops.length} | 
-                Afterglow: {afterglowStarted ? 'Started' : 'Not Started'} | 
+                Ripple: {afterglowStarted ? 'Started' : 'Not Started'} | 
                 Complete: {isExecutionComplete ? 'Yes' : 'No'}
               </div>
             </div>

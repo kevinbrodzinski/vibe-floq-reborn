@@ -14,20 +14,26 @@ import { ErrorBoundary } from '@/components/system/ErrorBoundary';
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN
 if (sentryDsn) {
   try {
-    const Sentry = require('sentry-expo');
-    Sentry.init({
-      dsn: sentryDsn,
-      enableInExpoDevelopment: true,
-      debug: process.env.NODE_ENV === 'development',
-      sendDefaultPii: true,
-      tracesSampleRate: 1.0,
-      profilesSampleRate: 1.0,
-      release: 'floq@1.0.0',
-    });
+    // Only try to import Sentry in native environment
+    if (typeof window !== 'undefined' && window.Capacitor) {
+      const Sentry = require('sentry-expo');
+      Sentry.init({
+        dsn: sentryDsn,
+        enableInExpoDevelopment: true,
+        debug: process.env.NODE_ENV === 'development',
+        sendDefaultPii: true,
+        tracesSampleRate: 1.0,
+        profilesSampleRate: 1.0,
+        release: 'floq@1.0.0',
+      });
+    } else {
+      console.log('[Sentry] Skipping mobile init - not in native environment');
+    }
   } catch (err) {
     console.warn('Sentry native initialization failed:', err)
   }
 }
+
 // Initialize PostHog for mobile (conditional import)
 const posthogKey = process.env.POSTHOG_MOBILE_KEY
 if (posthogKey) {

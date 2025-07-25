@@ -7,7 +7,7 @@ import 'resize-observer-polyfill/dist/ResizeObserver.global';
 
 // Additional SSR guard for ResizeObserver
 if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   (window as any).ResizeObserver = require('resize-observer-polyfill').default;
 }
 

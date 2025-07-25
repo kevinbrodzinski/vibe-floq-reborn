@@ -530,7 +530,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
 
   // Start monitoring when enabled  
   useEffect(() => {
-    let cleanups: (() => void)[] = [];
+    const cleanups: (() => void)[] = [];
 
     const startMonitoring = async () => {
       if (!enabled) return; // ✅ Guard inside effect

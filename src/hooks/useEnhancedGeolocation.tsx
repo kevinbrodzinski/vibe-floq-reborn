@@ -18,7 +18,7 @@ interface UseGeolocationOptions {
 }
 
 const GEO_OPTIONS: PositionOptions = {
-  enableHighAccuracy: false,      // stop CoreLocation GPS spam
+  enableHighAccuracy: true,       // enable high accuracy for better location precision
   timeout: 30_000,                // 30 s - desktop-friendly timeout
   maximumAge: 60_000              // cache a 1-min old fix
 };
@@ -94,6 +94,21 @@ export function useEnhancedGeolocation(options: UseGeolocationOptions = {}) {
         ...prev, 
         error: 'Geolocation is not supported by this browser',
         permissionDenied: true 
+      }));
+      return;
+    }
+
+    // Development override for Venice Beach testing
+    if (import.meta.env.DEV && import.meta.env.VITE_USE_VENICE_LOCATION === 'true') {
+      console.log('[LOCATION_DEBUG] Using Venice Beach override for development');
+      console.log('📍 Venice Beach Location Override Active: 33.9850, -118.4695');
+      setLocation(prev => ({
+        ...prev,
+        coords: { lat: 33.9850, lng: -118.4695 }, // Venice Beach coordinates
+        accuracy: 10,
+        loading: false,
+        error: null,
+        hasPermission: true
       }));
       return;
     }
