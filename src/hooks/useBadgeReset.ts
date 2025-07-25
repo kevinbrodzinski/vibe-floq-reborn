@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { resetBadge } from './usePushNotifications';
 
 export function useBadgeReset() {
   const { user } = useAuth();
@@ -11,21 +11,13 @@ export function useBadgeReset() {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
         // Reset server-side counter when app becomes visible
-        try {
-          await supabase.rpc('reset_badge' as any);
-        } catch (error) {
-          console.error('Error resetting badge:', error);
-        }
+        await resetBadge();
       }
     };
 
     const handleFocus = async () => {
       // Reset badge when window gains focus
-      try {
-        await supabase.rpc('reset_badge' as any);
-      } catch (error) {
-        console.error('Error resetting badge:', error);
-      }
+      await resetBadge();
     };
 
     // Listen for visibility and focus changes
@@ -34,13 +26,7 @@ export function useBadgeReset() {
 
     // Reset badge on initial load if app is already visible/focused
     if (document.visibilityState === 'visible') {
-      (async () => {
-        try {
-          await supabase.rpc('reset_badge' as any);
-        } catch (error) {
-          console.error('Error resetting badge:', error);
-        }
-      })();
+      resetBadge();
     }
 
     return () => {

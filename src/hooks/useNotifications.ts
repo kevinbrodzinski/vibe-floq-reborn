@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { usePushToken } from './usePushToken';
+import { usePushToken } from './usePushNotifications';
 import { useBadgeReset } from './useBadgeReset';
 
 interface NotificationRow {

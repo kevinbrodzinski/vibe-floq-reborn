@@ -1,6 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
+// Pre-flight check for required environment variables
+if (!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+  throw new Error('Service key missing: SUPABASE_SERVICE_ROLE_KEY is required');
+}
+
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -51,17 +56,22 @@ Deno.serve(async (req) => {
 
     console.log('Would send notifications:', notifications);
 
-    // 3. Reset badge counts after "sending"
+    // 3. Reset badge counts after "sending" in chunks to avoid 10k row limit
     const userIds = tokens.map(t => t.user_id);
-    const { error: resetError } = await supabase
-      .from('user_push_tokens')
-      .update({ badge_count: 0 })
-      .in('user_id', userIds);
+    const chunkSize = 1000;
+    
+    for (let i = 0; i < userIds.length; i += chunkSize) {
+      const chunk = userIds.slice(i, i + chunkSize);
+      const { error: resetError } = await supabase
+        .from('user_push_tokens')
+        .update({ badge_count: 0 })
+        .in('user_id', chunk);
 
-    if (resetError) {
-      console.error('Error resetting badge counts:', resetError);
-    } else {
-      console.log('Badge counts reset for users:', userIds);
+      if (resetError) {
+        console.error(`Error resetting badge counts for chunk ${i / chunkSize + 1}:`, resetError);
+      } else {
+        console.log(`Badge counts reset for chunk ${i / chunkSize + 1}, users:`, chunk.length);
+      }
     }
 
     return new Response(
