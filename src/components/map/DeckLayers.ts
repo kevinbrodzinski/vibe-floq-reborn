@@ -30,7 +30,7 @@ export const createDensityLayer = (
         return clusterFill(d as any);
       } catch (error) {
         console.warn('Color calculation failed, using fallback:', error);
-        return [70, 130, 180]; // Steel blue fallback
+        return [100, 116, 139]; // slate-500 fallback
       }
     },
     getLineColor: (d) => {
@@ -43,7 +43,7 @@ export const createDensityLayer = (
     getLineWidth: 2,
     lineWidthUnits: "pixels",
     stroked: true,
-    radiusUnits: "pixels",
+    radiusUnits: "meters",
     opacity: 0.7,
     pickable: true,
     autoHighlight: true,

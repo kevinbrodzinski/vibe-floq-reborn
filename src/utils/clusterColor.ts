@@ -61,7 +61,7 @@ export const clusterFill = memoizeOne(
 export const clusterStroke = memoizeOne(
   ({ vibe_mode }: Cluster, alpha = 0.8) => {
     const colorStr = dominantColor(vibe_mode as any, alpha)
-    const color = tinycolor(colorStr).brighten(0.4).toRgb()
+    const color = tinycolor(colorStr).brighten(40).toRgb() // Use integer percentage
     return [color.r, color.g, color.b] as [number, number, number]
   }
 )
