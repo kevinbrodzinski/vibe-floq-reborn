@@ -1,10 +1,12 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { useVibe } from '@/lib/store/useVibe';
 import { VIBE_ORDER, VIBE_RGB, VibeEnum } from '@/constants/vibes';
 import { VIBE_DESCRIPTIONS } from '@/constants/vibeDescriptions';
 import { RingGradient } from './ConicGradientRing';
 import { useCompatGlow } from '@/hooks/useCompatGlow';
+import { weightedHue, blendHue } from '@/utils/color';
+import { calculateVibeMatch, getUserVibeDistribution, getEventVibeDistribution } from '@/utils/vibeMatch';
 
 // Web-compatible haptics helper
 const triggerHaptic = () => {
@@ -32,9 +34,47 @@ const PULSE_ANIMATION = {
   },
 };
 
-export const VibeWheel = memo(() => {
+interface VibeWheelProps {
+  eventVibeData?: {
+    crowdData?: Array<{ vibe: string }>;
+    eventTags?: string[];
+    dominantVibe?: string;
+  };
+  userPreferences?: Record<string, number>;
+}
+
+export const VibeWheel = memo<VibeWheelProps>(({ 
+  eventVibeData, 
+  userPreferences = {} 
+}) => {
   const { vibe: current, setVibe } = useVibe();
   const { strength, hue } = useCompatGlow();
+
+  /* ---------- vibe match calculation ---------- */
+  const vibeMatch = useMemo(() => {
+    if (!eventVibeData) return null;
+    
+    const userVibeCounts = getUserVibeDistribution(current, []);
+    const eventVibeCounts = getEventVibeDistribution(
+      eventVibeData.crowdData || [],
+      eventVibeData.eventTags || [],
+      eventVibeData.dominantVibe
+    );
+    
+    return calculateVibeMatch(userVibeCounts, eventVibeCounts, userPreferences);
+  }, [current, eventVibeData, userPreferences]);
+
+  /* ---------- dynamic color calculation ---------- */
+  const dynamicColor = useMemo(() => {
+    if (vibeMatch) {
+      // Use blended color from vibe match
+      return vibeMatch.blendedColor;
+    }
+    
+    // Fallback to current vibe color
+    const currentVibeRGB = VIBE_RGB[current ?? 'chill'];
+    return `rgb(${currentVibeRGB.join(',')})`;
+  }, [vibeMatch, current]);
 
   /* ---------- motion values ---------- */
   const orbAngle = useMotionValue(VIBE_ORDER.indexOf(current ?? 'chill') * SEGMENT);
@@ -90,23 +130,18 @@ export const VibeWheel = memo(() => {
     commitVibe(VIBE_ORDER[idx]);
   }, [orbAngle, commitVibe]);
 
-  /* ---------- current vibe color ---------- */
-  const currentVibeRGB = VIBE_RGB[current ?? 'chill'];
-  const currentColor = `rgb(${currentVibeRGB.join(',')})`;
-
   return (
     <div 
       className="relative w-[280px] h-[280px] mx-auto"
       style={{ touchAction: 'none' }}
     >
-      {/* Cross-platform gradient ring with proper masking */}
+      {/* Cross-platform gradient ring with dynamic color */}
       <RingGradient 
         mode="rainbow" 
-        singleColor={currentColor}
+        singleColor={dynamicColor}
         size={280}
         strokeWidth={6}
       />
-      
       
       {/* Vibe labels around the circle - positioned to align with ring segments */}
       {VIBE_ORDER.map((vibe, index) => {
@@ -148,10 +183,10 @@ export const VibeWheel = memo(() => {
         style={{ pointerEvents: 'none' }}
       >
         <div className="relative flex flex-col items-center justify-center text-center">
-          {/* Glow background */}
+          {/* Dynamic glow background */}
           <div
-            className="absolute w-[120px] h-[120px] rounded-full blur-2xl opacity-30"
-            style={{ backgroundColor: currentColor }}
+            className="absolute w-[120px] h-[120px] rounded-full blur-2xl opacity-30 transition-colors duration-500"
+            style={{ backgroundColor: dynamicColor }}
           />
 
           {/* Vibe label */}
@@ -166,8 +201,15 @@ export const VibeWheel = memo(() => {
             </p>
           )}
 
+          {/* Vibe match percentage */}
+          {vibeMatch && (
+            <div className="relative z-10 text-[10px] text-white/80 mt-1 font-light">
+              Match: {Math.round(vibeMatch.matchPercentage)}%
+            </div>
+          )}
+
           {/* Confidence percentage */}
-          {strength > 0 && (
+          {strength > 0 && !vibeMatch && (
             <div className="relative z-10 text-[10px] text-white/60 mt-1 font-light">
               Confidence: {Math.round(strength * 100)}%
             </div>
@@ -182,7 +224,7 @@ export const VibeWheel = memo(() => {
         dragConstraints={false}
         onDragEnd={handleOrbDragEnd}
         animate={PULSE_ANIMATION}
-        className="absolute rounded-full shadow-lg cursor-grab active:cursor-grabbing"
+        className="absolute rounded-full shadow-lg cursor-grab active:cursor-grabbing transition-colors duration-500"
         style={{
           width: ORB_RADIUS * 2,
           height: ORB_RADIUS * 2,
@@ -190,7 +232,7 @@ export const VibeWheel = memo(() => {
           y: orbY,
           left: RADIUS,
           top: RADIUS,
-          backgroundColor: currentColor,
+          backgroundColor: dynamicColor,
           border: '3px solid rgba(255,255,255,0.8)',
           boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
         }}

@@ -54,7 +54,7 @@ export function AfterglowGenerationProgress({ progress }: AfterglowGenerationPro
         </div>
         <div>
           <h3 className="text-lg font-semibold text-foreground">
-            Generating Your Afterglow
+            Generating Your Ripple
           </h3>
           <p className="text-sm text-muted-foreground">
             {step}

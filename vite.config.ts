@@ -33,7 +33,49 @@ export default defineConfig(({ mode, command }) => ({
       'react-native': 'react-native-web',
       // Stub native-only libs so Roll-up doesn't bundle them
       '@rnmapbox/maps': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      '@posthog/react-native': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'expo-application': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'expo-device': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'sentry-expo': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Core/ReactNativeVersion': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Core/Devtools/parseErrorStack': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Core/Devtools/symbolicateStackTrace': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Core/Devtools/getDevServer': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Promise': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
+      'react-native/Libraries/Utilities/PolyfillFunctions': path.resolve(__dirname, 'src/web-stubs/emptyModule.ts'),
     },
     dedupe: ['react', 'react-dom', 'react-native-web'],
   },
+  optimizeDeps: {
+    exclude: [
+      'expo-application',
+      'expo-device',
+      'sentry-expo',
+      '@posthog/react-native',
+      '@rnmapbox/maps',
+      'react-native/Libraries/Core/ReactNativeVersion',
+      'react-native/Libraries/Core/Devtools/parseErrorStack',
+      'react-native/Libraries/Core/Devtools/symbolicateStackTrace',
+      'react-native/Libraries/Core/Devtools/getDevServer',
+      'react-native/Libraries/Promise',
+      'react-native/Libraries/Utilities/PolyfillFunctions'
+    ]
+  },
+  build: {
+    rollupOptions: {
+      external: [
+        'expo-application',
+        'expo-device',
+        'sentry-expo',
+        '@posthog/react-native',
+        '@rnmapbox/maps',
+        'react-native/Libraries/Core/ReactNativeVersion',
+        'react-native/Libraries/Core/Devtools/parseErrorStack',
+        'react-native/Libraries/Core/Devtools/symbolicateStackTrace',
+        'react-native/Libraries/Core/Devtools/getDevServer',
+        'react-native/Libraries/Promise',
+        'react-native/Libraries/Utilities/PolyfillFunctions'
+      ]
+    }
+  }
 }));

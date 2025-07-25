@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from 'react';
 import { getVibeColor } from '@/utils/getVibeColor';
 import { useFieldLocation } from './FieldLocationContext';
+import { useSelectedFloq } from '@/components/maps/FieldWebMap';
 
 export interface ProfileRow {
   id: string;
@@ -35,6 +36,7 @@ interface FieldSocialProviderProps {
 
 export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
   const { location, presenceData } = useFieldLocation();
+  const { selectedFloqMembers } = useSelectedFloq();
 
   // Create profiles map for quick lookup with hash-based memoization
   const profilesMap = useMemo(() => {
@@ -45,12 +47,37 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
   const people: Person[] = useMemo(() => {
     if (!location?.lat || !location?.lng) return [];
     
-    return presenceData.map((presence) => {
+    let filteredPresenceData = presenceData;
+    
+    // Filter by selected floq members if a floq is selected
+    if (selectedFloqMembers && selectedFloqMembers.length > 0) {
+      filteredPresenceData = presenceData.filter(presence => 
+        selectedFloqMembers.includes(presence.user_id)
+      );
+    }
+    
+    return filteredPresenceData.map((presence) => {
       const profile = profilesMap.get(presence.user_id);
       
+      // Extract lat/lng from presence data (handle both geometry and lat/lng formats)
+      let presenceLat: number, presenceLng: number;
+      
+      if (presence.location && presence.location.coordinates) {
+        // New geometry format: [longitude, latitude]
+        presenceLng = presence.location.coordinates[0];
+        presenceLat = presence.location.coordinates[1];
+      } else if (presence.lat && presence.lng) {
+        // Old lat/lng format (fallback for mock data)
+        presenceLat = presence.lat;
+        presenceLng = presence.lng;
+      } else {
+        // Skip if no location data
+        return null;
+      }
+      
       // Convert lat/lng to field coordinates based on geographic distance from user
-      const latDiff = presence.lat - location.lat!;
-      const lngDiff = presence.lng - location.lng!;
+      const latDiff = presenceLat - location.lat!;
+      const lngDiff = presenceLng - location.lng!;
       
       // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
       const xMeters = lngDiff * 111320 * Math.cos((location.lat! * Math.PI) / 180);
@@ -70,8 +97,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         vibe: presence.vibe || 'social',
         isFriend: presence.isFriend || false,
       };
-    });
-  }, [presenceData, profilesMap, location?.lat, location?.lng]);
+    }).filter(Boolean); // Remove null entries
+  }, [presenceData, profilesMap, location?.lat, location?.lng, selectedFloqMembers]);
 
   const value = {
     people,

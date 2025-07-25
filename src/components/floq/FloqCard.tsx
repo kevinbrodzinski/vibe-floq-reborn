@@ -127,6 +127,20 @@ export const FloqCard = React.memo<FloqCardProps>(({
   // Detect user's motion preference
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Determine card state for glow effects
+  const isIdle = !floq.is_joined && !floq.has_plan_today;
+  const hasPlanToday = floq.has_plan_today && !floq.is_active;
+  const isActiveFloq = floq.is_active || floq.is_live;
+  const hasUnreadMessages = floq.unread_count && floq.unread_count > 0;
+
+  // Get glow class based on state
+  const getGlowClass = () => {
+    if (isActiveFloq) return 'card-live';
+    if (hasPlanToday) return 'card-has-plan';
+    if (hasUnreadMessages) return 'card-unread';
+    return 'card-idle';
+  };
+
   return (
     <article
       {...bind()}
@@ -139,13 +153,16 @@ export const FloqCard = React.memo<FloqCardProps>(({
         // Hover shimmer effect
         'before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/5 before:to-transparent',
         'before:translate-x-[-100%] before:transition-transform before:duration-1000',
-        !prefersReducedMotion && 'hover:before:translate-x-[100%]'
+        !prefersReducedMotion && 'hover:before:translate-x-[100%]',
+        // Glow effects
+        getGlowClass()
       )}
       style={{ 
         '--vibe-from': accent,
         '--vibe-h': `var(--${floq.primary_vibe}-h)`,
         '--vibe-s': `var(--${floq.primary_vibe}-s)`, 
-        '--vibe-l': `var(--${floq.primary_vibe}-l)`
+        '--vibe-l': `var(--${floq.primary_vibe}-l)`,
+        '--vibeColor': getVibeColor(floq.primary_vibe)
       } as React.CSSProperties}
       onClick={handleCardClick}
       onKeyDown={(e) => {

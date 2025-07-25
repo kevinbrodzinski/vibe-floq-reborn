@@ -1,13 +1,14 @@
 
-import React from 'react';
-import { FieldWebMap } from '@/components/maps/FieldWebMap';
-import { FieldCanvas } from '@/components/field/FieldCanvas';
-import { useFieldViewport } from '@/hooks/useFieldViewport';
+import React, { useRef } from 'react';
+import { FieldMapBase } from '@/components/maps/FieldMapBase';
+import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
+import { FieldUILayer } from './FieldUILayer';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
   data: FieldData;
   people: any[];
+  floqs?: any[];
   onRipple: (x: number, y: number) => void;
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }
@@ -15,26 +16,28 @@ interface FieldMapLayerProps {
 export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   data,
   people,
+  floqs = [],
   onRipple,
   canvasRef
 }) => {
-  const { onRegionChange } = useFieldViewport();
+  const { walkableFloqs, fieldTiles, realtime } = data;
 
   return (
     <div className="absolute inset-0">
-      <FieldWebMap visible={true} onRegionChange={onRegionChange}>
-        {/* WebGL layer on top, no pointer events so map remains interactive */}
-        <div style={{ pointerEvents: 'none' }}>
-          <FieldCanvas
-            ref={canvasRef}
-            people={people}
-            tileIds={data.tileIds}
-            fieldTiles={data.fieldTiles}
-            viewportGeo={data.viewport}
-            onRipple={onRipple}
-          />
-        </div>
-      </FieldWebMap>
+      {/* Layer 1: Base Map */}
+      <FieldMapBase visible={true} floqs={walkableFloqs} realtime={realtime} />
+      
+      {/* Layer 2: PIXI Canvas Overlay */}
+      <FieldCanvasLayer
+        canvasRef={canvasRef}
+        people={people}
+        floqs={floqs}
+        data={data}
+        onRipple={onRipple}
+      />
+      
+      {/* Layer 3: UI Controls */}
+      <FieldUILayer data={data} />
     </div>
   );
 };

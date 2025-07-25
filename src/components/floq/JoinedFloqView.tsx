@@ -1,25 +1,36 @@
 
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/providers/AuthProvider';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { FloqActivityStream } from '@/components/floq/FloqActivityStream';
-import { FloqMemberList } from '@/components/floq/FloqMemberList';
-import { FloqPlansTab } from '@/components/floq/FloqPlansTab';
-import { FloqChat } from '@/components/floq/FloqChat';
+import { Badge } from '@/components/ui/badge';
+import { 
+  MessageCircle, 
+  Users, 
+  Activity, 
+  Calendar
+} from 'lucide-react';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
-import { MapPin, MessageCircle, Users, Calendar, ExternalLink, Zap, ClipboardList } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { FloqPlansTab } from './FloqPlansTab';
+import { FloqMemberList } from './FloqMemberList';
+import { useFloqRealtime } from '@/hooks/useFloqRealtime';
+import { cn } from '@/lib/utils';
+import { FloqChatPanel } from '@/components/FloqChatPanel';
+import { FloqActivityFeed } from './FloqActivityFeed';
+import { FloqHeader } from './FloqHeader';
+import { FloqMapModal } from './FloqMapModal';
+import { FloqSocialModal } from './FloqSocialModal';
+import type { FloqDetails } from '@/hooks/useFloqDetails';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface JoinedFloqViewProps {
-  floqDetails: any;
+  floqDetails: FloqDetails;
   onLeave: () => void;
   isLeaving: boolean;
   liveScore?: any;
   onEndFloq?: () => void;
   isEndingFloq?: boolean;
+  onBack: () => void;
+  onSettings?: () => void;
 }
 
 export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
@@ -28,117 +39,102 @@ export const JoinedFloqView: React.FC<JoinedFloqViewProps> = ({
   isLeaving,
   liveScore,
   onEndFloq,
-  isEndingFloq
+  isEndingFloq,
+  onBack,
+  onSettings
 }) => {
-  const { session } = useAuth();
   const { data: members = [] } = useFloqMembers(floqDetails.id);
-  const [activeTab, setActiveTab] = useState<'plans' | 'chat' | 'members' | 'activity'>('plans');
+  const [activeTab, setActiveTab] = useState<'members' | 'chat' | 'plans' | 'activity'>('chat');
+  const [mapModalOpen, setMapModalOpen] = useState(false);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
+  
+  const { isConnected, connectionQuality, stats } = useFloqRealtime(floqDetails.id);
 
-  const isHost = floqDetails.creator_id === session?.user?.id;
+  const { user } = useAuth();
+  const isHost = user?.id === floqDetails.creator_id;
 
   return (
-    <div className="space-y-4 px-4 pb-4">
-      {/* Header */}
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1 min-w-0 flex-1">
-            <h1 className="text-xl font-bold leading-tight truncate">{floqDetails.title}</h1>
-            {floqDetails.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{floqDetails.description}</p>
-            )}
-          </div>
-          
-          <div className="flex gap-1 shrink-0">
-            {onEndFloq && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onEndFloq}
-                disabled={isEndingFloq}
-                className="text-xs px-2 py-1 h-7"
-              >
-                {isEndingFloq ? 'Ending...' : 'End'}
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onLeave}
-              disabled={isLeaving}
-              className="text-xs px-3 py-1 h-7"
-            >
-              {isLeaving ? 'Leaving...' : 'Leave'}
-            </Button>
-          </div>
-        </div>
+    <div className="h-full flex flex-col">
+      {/* New Header */}
+      <FloqHeader
+        floqDetails={floqDetails}
+        onBack={onBack}
+        onSettings={onSettings}
+        onMap={() => setMapModalOpen(true)}
+        onSocial={() => setSocialModalOpen(true)}
+        isHost={isHost}
+      />
 
-        {/* Stats - Mobile optimized */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <Users className="h-3 w-3 shrink-0" />
-            <span>{floqDetails.participants?.length || 0} members</span>
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="h-full flex flex-col">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="members" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              <span>Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>Plans</span>
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span>Activity</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex-1 overflow-hidden">
+            <TabsContent value="members" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="h-full overflow-y-auto p-2">
+                <div className="h-full bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 overflow-hidden p-3 shadow-sm">
+                  <FloqMemberList floqId={floqDetails.id} />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="chat" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="h-full p-2">
+                <div className="h-full bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 overflow-hidden p-3 shadow-sm">
+                  <FloqChatPanel floqId={floqDetails.id} />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="plans" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="h-full overflow-y-auto p-2">
+                <div className="h-full bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 overflow-hidden p-3 shadow-sm">
+                  <FloqPlansTab floqDetails={floqDetails} />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="activity" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="h-full overflow-y-auto p-2">
+                <div className="h-full bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 overflow-hidden p-3 shadow-sm">
+                  <FloqActivityFeed floqId={floqDetails.id} />
+                </div>
+              </div>
+            </TabsContent>
           </div>
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <Calendar className="h-3 w-3 shrink-0" />
-            <span>Started {floqDetails.starts_at && !isNaN(Date.parse(floqDetails.starts_at)) ? formatDistanceToNow(new Date(floqDetails.starts_at)) : 'recently'} ago</span>
-          </div>
-          {floqDetails.ends_at && !isNaN(Date.parse(floqDetails.ends_at)) && (
-            <div className="flex items-center gap-1 whitespace-nowrap">
-              <Zap className="h-3 w-3 shrink-0" />
-              <span>Ends about {formatDistanceToNow(new Date(floqDetails.ends_at))}</span>
-            </div>
-          )}
-        </div>
+        </Tabs>
       </div>
 
-      {/* Tabs - Mobile optimized */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'plans' | 'chat' | 'members' | 'activity')}>
-        <TabsList className="grid w-full grid-cols-4 h-10">
-          <TabsTrigger value="plans" className="text-xs px-1 flex items-center gap-1" aria-label="Plans">
-            <ClipboardList className="h-3 w-3 shrink-0" />
-            <span className="hidden xs:inline">Plans</span>
-          </TabsTrigger>
-          <TabsTrigger value="chat" className="text-xs px-1 flex items-center gap-1" aria-label="Chat">
-            <MessageCircle className="h-3 w-3 shrink-0" />
-            <span className="hidden xs:inline">Chat</span>
-          </TabsTrigger>
-          <TabsTrigger value="members" className="text-xs px-1 flex items-center gap-1 relative" aria-label="Members">
-            <Users className="h-3 w-3 shrink-0" />
-            <span className="hidden xs:inline">Members</span>
-            {members.length > 0 && (
-              <span className="ml-1 bg-primary text-primary-foreground text-[10px] rounded-full px-1 py-0.5 min-w-[16px] h-4 flex items-center justify-center leading-none">
-                {members.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs px-1 flex items-center gap-1" aria-label="Activity">
-            <Zap className="h-3 w-3 shrink-0" />
-            <span className="hidden xs:inline">Activity</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="plans" className="space-y-3 mt-3" role="tabpanel">
-          <FloqPlansTab floqDetails={floqDetails} />
-        </TabsContent>
-
-        <TabsContent value="chat" className="mt-3" role="tabpanel">
-          <FloqChat floqId={floqDetails.id} />
-        </TabsContent>
-
-        <TabsContent value="members" className="mt-3" role="tabpanel">
-          <ScrollArea className="h-[400px]">
-            <FloqMemberList floqId={floqDetails.id} />
-            <ScrollBar />
-          </ScrollArea>
-        </TabsContent>
-
-        <TabsContent value="activity" className="mt-3" role="tabpanel">
-          <ScrollArea className="h-[400px]">
-            <FloqActivityStream floqId={floqDetails.id} />
-            <ScrollBar />
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+      {/* Modals */}
+      <FloqMapModal
+        isOpen={mapModalOpen}
+        onClose={() => setMapModalOpen(false)}
+        floqId={floqDetails.id}
+      />
+      
+      <FloqSocialModal
+        isOpen={socialModalOpen}
+        onClose={() => setSocialModalOpen(false)}
+        floqId={floqDetails.id}
+      />
     </div>
   );
 };

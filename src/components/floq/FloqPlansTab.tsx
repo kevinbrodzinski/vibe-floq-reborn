@@ -27,7 +27,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="h-full p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -42,7 +42,7 @@ export const FloqPlansTab: React.FC<FloqPlansTabProps> = ({ floqDetails }) => {
       </div>
 
       {/* Plans List */}
-      <div className="space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto">
         {isLoading ? (
           <Card className="p-4">
             <div className="animate-pulse space-y-3">
