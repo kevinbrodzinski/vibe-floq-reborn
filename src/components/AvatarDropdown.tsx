@@ -131,10 +131,6 @@ export const AvatarDropdown = () => {
             )}
           </DropdownMenuItem>
           
-          <DropdownMenuItem onSelect={() => setAddFriendOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            + Add friend...
-          </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
