@@ -16,7 +16,7 @@ export interface ClusterVenue {
 export function useClusterVenues(bounds: [number, number, number, number] | null) {
   return useQuery({
     queryKey: ['cluster-venues', { w: bounds?.[0], s: bounds?.[1], e: bounds?.[2], n: bounds?.[3] }], // stable object key
-    enabled: !!bounds,
+    placeholderData: (previousData) => previousData, // smoother panning
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
       if (!bounds) return [];
