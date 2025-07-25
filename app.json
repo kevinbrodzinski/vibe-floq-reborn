@@ -1,11 +1,10 @@
-
 {
   "expo": {
     "name": "floq social",
     "slug": "floq social",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "/lovable-uploads/eba285b4-d984-4dae-97e3-e48ecf96ce3a.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
@@ -38,14 +37,13 @@
       "favicon": "./assets/favicon.png",
       "bundler": "vite"
     },
-    "plugins": [
-      "@capacitor/cli"
-    ],
+    "plugins": [],
     "extra": {
+      "MAPBOX_ACCESS_TOKEN": "pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A",
       "eas": {
-        "projectId": "11986cc9-7473-4e33-83dd-acd244d83d3e"
+        "projectId": "17404536-fee7-4f98-b3fa-6162360dda09"
       }
-    }
-  },
-  "main": "src/main.native.tsx"
+    },
+    "main": "src/main.native.tsx"
+  }
 }
