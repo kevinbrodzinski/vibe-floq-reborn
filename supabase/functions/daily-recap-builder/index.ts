@@ -54,7 +54,7 @@ async function handleRequest(req: Request): Promise<Response> {
     }
 
     // Use keyset pagination to get all active users efficiently
-    let allUsers: string[] = []
+    const allUsers: string[] = []
     let lastUserId = ''
     let hasMore = true
     const batchSize = 5000

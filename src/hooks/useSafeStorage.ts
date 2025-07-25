@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 
 // Memory fallback for when localStorage fails
-let memoryFallback: Record<string, string> = {};
+const memoryFallback: Record<string, string> = {};
 
 export const useSafeStorage = () => {
   const getItem = async (key: string): Promise<string | null> => {

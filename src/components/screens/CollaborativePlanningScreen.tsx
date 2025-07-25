@@ -268,7 +268,7 @@ export const CollaborativePlanningScreen = () => {
         overlayTimeoutRef.current = null;
       }, ms);
     },
-    [] // eslint-disable-line react-hooks/exhaustive-deps
+    []  
   );
 
   const handleAcceptSuggestion = async (s: any) => {

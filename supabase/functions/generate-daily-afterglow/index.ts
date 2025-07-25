@@ -204,7 +204,7 @@ async function generateAfterglowForUser(
   
   const totalVenues = new Set<string>()
   const totalFloqs = new Set<string>()
-  let crossedPathsCount = crossedPaths ? new Set(crossedPaths.map(cp => cp.other_user_id).filter(Boolean)).size : 0
+  const crossedPathsCount = crossedPaths ? new Set(crossedPaths.map(cp => cp.other_user_id).filter(Boolean)).size : 0
   let energyScore = 0
   let socialIntensity = 0
 

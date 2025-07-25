@@ -66,7 +66,7 @@ export default serve(async (req) => {
       );
     }
 
-    let result = { success: true, message: '', data: null };
+    const result = { success: true, message: '', data: null };
 
     switch (changes.type) {
       case 'reorder_stops': {

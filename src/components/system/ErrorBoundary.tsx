@@ -11,7 +11,7 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(e: Error, info: React.ErrorInfo) {
-    // eslint-disable-next-line no-console
+     
     console.error('💥 Uncaught React error:', e, info)
     
     // Track to Sentry and analytics
