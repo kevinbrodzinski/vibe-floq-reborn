@@ -87,7 +87,7 @@ interface AnalyticsSummary {
 }
 
 export function FloqMemberAnalytics({ floqId }: { floqId: string }) {
-  const { members, isLoading, error } = useFloqMembers(floqId);
+  const { data: members, isLoading, error } = useFloqMembers(floqId);
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d');
   const [viewMode, setViewMode] = useState<'overview' | 'individual' | 'comparison'>('overview');
@@ -104,9 +104,9 @@ export function FloqMemberAnalytics({ floqId }: { floqId: string }) {
       const activeDays = [1, 2, 3, 5, 6]; // Monday, Tuesday, Wednesday, Friday, Saturday
 
       return {
-        memberId: member.id,
-        name: member.display_name || member.username,
-        avatar: member.avatar_url,
+        memberId: member.user_id,
+        name: member.profile.display_name || member.profile.username,
+        avatar: member.profile.avatar_url,
         engagementScore: Math.floor(Math.random() * 100),
         activityHeatmap,
         weeklyActivity,
@@ -134,38 +134,38 @@ export function FloqMemberAnalytics({ floqId }: { floqId: string }) {
             description: 'Active before 9 AM',
             icon: '🌅',
             earnedAt: new Date(Date.now() - Math.random() * 86400000 * 7),
-            rarity: 'common'
+            rarity: 'common' as const
           },
           {
             name: 'Social Butterfly',
             description: 'Interacted with 10+ members',
             icon: '🦋',
             earnedAt: new Date(Date.now() - Math.random() * 86400000 * 3),
-            rarity: 'rare'
+            rarity: 'rare' as const
           },
           {
             name: 'Vibe Master',
             description: 'Changed vibes 5 times in a day',
             icon: '✨',
             earnedAt: new Date(Date.now() - Math.random() * 86400000),
-            rarity: 'epic'
+            rarity: 'epic' as const
           }
         ].slice(0, Math.floor(Math.random() * 3) + 1),
         insights: [
           {
-            type: 'positive',
+            type: 'positive' as const,
             message: 'Engagement increased by 25%',
             metric: 'Messages sent',
             change: 25
           },
           {
-            type: 'neutral',
+            type: 'neutral' as const,
             message: 'Response time stable',
             metric: 'Avg response time',
             change: 0
           },
           {
-            type: 'negative',
+            type: 'negative' as const,
             message: 'Activity dropped 10%',
             metric: 'Daily active time',
             change: -10

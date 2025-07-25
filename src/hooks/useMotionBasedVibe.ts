@@ -143,7 +143,7 @@ export const useMotionBasedVibe = () => {
         };
         
         setVibeTransitions(prev => [...prev.slice(-5), transition]); // Keep last 5 transitions
-        setVibe(newVibe);
+        setVibe(newVibe as any);
         lastVibeChange.current = now;
       }
     }

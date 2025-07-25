@@ -36,7 +36,7 @@ interface MemberLocation {
     name: string;
     type: 'venue' | 'home' | 'work' | 'transit' | 'outdoor' | 'unknown';
     coordinates: { lat: number; lng: number };
-    accuracy: number;
+    accuracy?: number;
   };
   distance: number;
   lastUpdate: Date;
