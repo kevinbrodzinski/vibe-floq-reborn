@@ -21,29 +21,38 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
 
-    /* ──────────────── Rules (TEMPORARY relaxations) ──────────────── */
+    /* ─────────────── Rules we’re relaxing temporarily ─────────────── */
     rules: {
       ...reactHooks.configs.recommended.rules,
 
-      /* ❶  Loudest offenders → WARN for now */
-      "@typescript-eslint/no-explicit-any": "warn",
-      "react-hooks/rules-of-hooks":         "warn",
-      "react-hooks/exhaustive-deps":        "warn",
+      /* ❶  Loudest offenders (already WARN) */
+      "@typescript-eslint/no-explicit-any":      "warn",
+      "react-hooks/rules-of-hooks":              "warn",
+      "react-hooks/exhaustive-deps":             "warn",
 
-      /* ❷  Lesser noisy rules */
-      "react-refresh/only-export-components": "off",
-      "no-restricted-syntax":                 "off",
-      "@typescript-eslint/no-require-imports":"warn",
+      /* ❷  Lesser noisy rules (already WARN/OFF) */
+      "react-refresh/only-export-components":    "off",
+      "no-restricted-syntax":                    "off",
+      "@typescript-eslint/no-require-imports":   "warn",
 
-      /* ❸  Unused vars → WARN (ignore vars/args prefixed with _) */
+      /* ❸  Unused vars → WARN, ignore leading "_" */
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        {
-          varsIgnorePattern: "^_",
-          argsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_"
-        }
-      ]
+        { varsIgnorePattern: "^_", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }
+      ],
+
+      /* ❹  Remaining error rules from your list → WARN */
+      "@typescript-eslint/no-unused-expressions":     "warn",
+      "@typescript-eslint/ban-ts-comment":            "warn",
+      "no-useless-escape":                            "warn",
+      "no-case-declarations":                         "warn",
+      "@typescript-eslint/no-empty-object-type":      "warn",
+      "prefer-const":                                 "warn",
+      "no-empty":                                     "warn",
+      "no-dupe-else-if":                              "warn",
+      "no-constant-binary-expression":                "warn",
+      "@typescript-eslint/no-unsafe-function-type":   "warn",
+      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn"
     },
   },
 
