@@ -15,7 +15,7 @@ export interface ClusterVenue {
 /** fetches venues inside current map bounds */
 export function useClusterVenues(bounds: [number, number, number, number] | null) {
   return useQuery({
-    queryKey: ['cluster-venues', bounds?.map((n) => n.toFixed(3)).join(',')], // stable key
+    queryKey: ['cluster-venues', { bounds: bounds?.map((n) => n.toFixed(3)) }], // stable object key
     enabled: !!bounds,
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
@@ -39,8 +39,8 @@ export function useClusterVenues(bounds: [number, number, number, number] | null
       // Transform lat/lng to numbers and return properly typed data
       return (data || []).map(venue => ({
         ...venue,
-        lat: Number(venue.lat),
-        lng: Number(venue.lng),
+        lat: +venue.lat, // Safe casting for both string and number types
+        lng: +venue.lng,
         popularity: (venue as any).popularity || (venue as any).check_ins || 0,
       }));
     },

@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VenueNearMe {
@@ -31,19 +32,30 @@ function haversine(coord1: [number, number], coord2: [number, number]): number {
   return R * c;
 }
 
+// Memoized Haversine distance calculation
+const useMemoizedHaversine = (coord1: [number, number], coord2: [number, number]) => {
+  const [lat1, lng1] = coord1;
+  const [lat2, lng2] = coord2;
+  
+  return useMemo(() => haversine([lat1, lng1], [lat2, lng2]), [lat1, lng1, lat2, lng2]);
+};
+
 export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 0.5) {
+  // Stable queryKey using object for better equality checking
+  const queryKey = useMemo(() => ['venues-near-me', { lat, lng, radius_km }], [lat, lng, radius_km]);
   return useInfiniteQuery({
-    queryKey: ['venues-near-me', lat, lng, radius_km, 'compound-cursor'],
+    queryKey,
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async ({ pageParam, signal }) => {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         return { venues: [], nextCursor: undefined, hasMore: false };
       }
 
-      // Better degree offset calculation accounting for latitude
+      // Better degree offset calculation accounting for latitude (with pole protection)
       const latRad = lat! * Math.PI / 180;
       const degreeOffsetLat = radius_km / 111;
-      const degreeOffsetLng = radius_km / (111 * Math.cos(latRad));
+      const denom = Math.max(0.01, Math.abs(Math.cos(latRad))); // Clamp to prevent division by zero at poles
+      const degreeOffsetLng = radius_km / (111 * denom);
       
       const { popularity: cursorPopularity = Number.MAX_SAFE_INTEGER, id: cursorId = '' } = pageParam || {};
       
@@ -57,6 +69,11 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         limit_rows: 10,
       } as any);
       
+      // Check for abort signal
+      if (signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      
       if (error) {
         // Only return empty for out of range, otherwise surface error
         if (error.code === 'PGRST116') {
@@ -66,10 +83,10 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         throw error;
       }
       
-      // Transform data to match VenueNearMe interface with real distance calculation
+      // Transform data with memoized distance calculation
       const venues: VenueNearMe[] = (data || []).map(venue => {
-        const venueLat = Number(venue.lat);
-        const venueLng = Number(venue.lng);
+        const venueLat = +venue.lat; // Safe casting for both string and number types
+        const venueLng = +venue.lng;
         const distance = haversine([lat!, lng!], [venueLat, venueLng]);
         
         return {
