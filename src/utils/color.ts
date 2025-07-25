@@ -48,19 +48,63 @@ export const blendHue = (
 }
 
 /**
- * Final colour helper used by layers.
- * `densityNorm` = cluster.total / maxTotal   (0‥1)
+ * Enhanced cluster color using vibe_mode for stronger vibe influence
+ * `densityNorm` = cluster.member_count / maxMemberCount   (0‥1)
+ * `vibeMode` = dominant vibe from database analysis
  */
 export const getClusterColor = (
   densityNorm: number,
   vibeCounts: Record<string, number>,
-  prefs: Record<string, number>
+  prefs: Record<string, number>,
+  vibeMode?: string
 ) => {
-  // turbo returns a string like "rgb(255, 0, 0)"
+  // Start with turbo colormap for density
   const colorString = String(turbo(densityNorm))
   const base = tinycolor(colorString).toRgb()
+  
+  // If we have a clear dominant vibe, use stronger influence
+  if (vibeMode && vibeHueMap[vibeMode]) {
+    const vibeHue = vibeHueMap[vibeMode]
+    // Stronger blend for dominant vibe (35% vs 20%)
+    return blendHue([base.r, base.g, base.b], vibeHue, 0.35)
+  }
+  
+  // Fallback to weighted average from vibe counts
   const biasHue = weightedHue(vibeCounts, prefs)
   return blendHue([base.r, base.g, base.b], biasHue, 0.2)
+}
+
+/**
+ * Get stroke color for cluster based on vibe_mode
+ */
+export const getClusterStrokeColor = (vibeMode?: string): [number, number, number] => {
+  if (!vibeMode || !vibeHueMap[vibeMode]) {
+    return [255, 255, 255] // white fallback
+  }
+  
+  const hue = vibeHueMap[vibeMode]
+  const vibeColor = tinycolor({ h: hue, s: 0.8, l: 0.4 }).toRgb()
+  return [vibeColor.r, vibeColor.g, vibeColor.b]
+}
+
+/**
+ * Get vibe-specific pulse intensity for animations
+ */
+export const getVibeIntensity = (vibeMode?: string): number => {
+  const intensityMap: Record<string, number> = {
+    hype: 1.0,      // maximum pulse
+    social: 0.8,    // high energy
+    flowing: 0.6,   // medium flow
+    open: 0.7,      // welcoming energy
+    curious: 0.5,   // gentle exploration
+    romantic: 0.4,  // soft pulse
+    chill: 0.3,     // minimal pulse
+    solo: 0.2,      // very subtle
+    down: 0.1,      // barely visible
+    weird: 0.9,     // chaotic energy
+  }
+  
+  return intensityMap[vibeMode || ''] ?? 0.5
 }
 
 // Updated hue palette to match actual vibe enum values from database

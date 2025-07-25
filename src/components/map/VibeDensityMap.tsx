@@ -63,7 +63,7 @@ export const VibeDensityMap: React.FC = () => {
       <VibeDensityShell
         realtime={realtime}
         spots={filtered.length}
-        people={clusters.reduce((sum, c) => sum + (c.total || 0), 0)}
+        people={clusters.reduce((sum, c) => sum + (c.member_count || c.total || 0), 0)}
         onFilterClick={() => setShowFilter(true)}
         onClose={() => console.log('Close clicked')}
       >

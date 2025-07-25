@@ -17,7 +17,7 @@ interface Props {
 
 export const ClusterLegend = ({ clusters, className = '' }: Props) => {
   const { maxTotal, gradientStops } = useMemo(() => {
-    const maxTotal = Math.max(...clusters.map((c) => c.total), 1)
+    const maxTotal = Math.max(...clusters.map((c) => c.member_count || c.total || 1), 1)
     const colorScale = scaleSequential((t: number) => interpolateTurbo(t)).domain([0, 1])
     
     // Create gradient stops
