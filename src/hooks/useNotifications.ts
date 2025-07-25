@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { usePushToken } from './usePushToken';
+import { useBadgeReset } from './useBadgeReset';
 
 interface NotificationRow {
   id: string;
@@ -15,6 +17,10 @@ interface NotificationRow {
 export function useNotifications() {
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Initialize push token and badge reset functionality
+  usePushToken();
+  useBadgeReset();
 
   useEffect(() => {
     if (!user) return;
