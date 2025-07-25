@@ -20,8 +20,6 @@ export interface FloqMessage {
     display_name: string | null
     avatar_url: string | null
   } | null
-  reactions?: string[]    // Array of user IDs who reacted
-  read_by?: string[]     // Array of user IDs who read the message
   reply_to_id?: string   // ID of the message this is replying to
   reply_to?: FloqMessage // The message being replied to (for display)
   thread_count?: number  // Number of replies in this thread
@@ -58,6 +56,7 @@ export function useFloqMessages(floqId: string) {
             body,
             created_at,
             sender_id,
+            reply_to_id,
             sender:profiles!floq_messages_sender_id_fkey (
               id, username, display_name, avatar_url
             )
@@ -77,138 +76,35 @@ export function useFloqMessages(floqId: string) {
     enabled: !!floqId,
   })
 
-  // Real-time subscription using broadcast (like DM system)
+  // Real-time subscription for messages and reactions
   useEffect(() => {
-    if (!floqId) return
+    if (!floqId) return;
 
     const channel = supabase
-      .channel(`floq-${floqId}`)
-      .on('broadcast', { event: 'message' }, async (payload) => {
-        // Fetch sender profile for the new message
-        const { data: senderProfile } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url')
-          .eq('id', payload.payload.sender_id)
-          .single()
-
-        queryClient.setQueryData<InfiniteData<FloqMessage[]>>(
-          ['floq-messages', floqId],
-          (old) => {
-            if (!old) return old
-            const pages = [...old.pages]
-            if (pages[0]) {
-              pages[0] = [{
-                id: payload.payload.id,
-                body: payload.payload.body || '',
-                created_at: payload.payload.created_at,
-                sender_id: payload.payload.sender_id,
-                sender: senderProfile || null
-              }, ...pages[0]]
-            }
-            return { ...old, pages }
-          }
-        )
-      })
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        const { userId, isTyping, displayName } = payload.payload
-        
-        if (isTyping) {
-          setTypingUsers(prev => new Set([...prev, userId]))
-        } else {
-          setTypingUsers(prev => {
-            const newSet = new Set(prev)
-            newSet.delete(userId)
-            return newSet
-          })
-        }
-      })
-      .on('broadcast', { event: 'reaction' }, (payload) => {
-        const { messageId, userId, reaction, isAdding } = payload.payload
-        
-        setMessageReactions(prev => {
-          const current = prev[messageId] || []
-          
-          if (isAdding) {
-            return {
-              ...prev,
-              [messageId]: [...current, userId]
-            }
-          } else {
-            return {
-              ...prev,
-              [messageId]: current.filter(id => id !== userId)
-            }
-          }
-        })
-      })
-      .on('broadcast', { event: 'read' }, (payload) => {
-        const { messageId, userId } = payload.payload
-        
-        setReadReceipts(prev => ({
-          ...prev,
-          [messageId]: [...(prev[messageId] || []), userId]
-        }))
-      })
-      .subscribe()
+      .channel(`floq:${floqId}`)
+      // new message
+      .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'floq_messages', filter: `floq_id=eq.${floqId}` },
+          () => queryClient.invalidateQueries({ queryKey: ['floq-messages', floqId] }))
+      // reaction add / remove
+      .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'floq_message_reactions' },
+          () => queryClient.invalidateQueries({ queryKey: ['floq-reactions', floqId] }))
+      .subscribe();
 
     return () => {
-      channel.unsubscribe().catch(console.error)
-    }
-  }, [floqId, queryClient])
-
-  // Send typing indicator
-  const sendTypingIndicator = (isTyping: boolean) => {
-    if (!floqId) return
-    
-    supabase.channel(`floq-${floqId}`).send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { 
-        userId: 'current-user-id', // Replace with actual user ID
-        isTyping,
-        displayName: 'You' // Replace with actual display name
-      }
-    })
-  }
-
-  // Send message reaction
-  const sendReaction = (messageId: string, reaction: string, isAdding: boolean) => {
-    if (!floqId) return
-    
-    supabase.channel(`floq-${floqId}`).send({
-      type: 'broadcast',
-      event: 'reaction',
-      payload: { 
-        messageId,
-        userId: 'current-user-id', // Replace with actual user ID
-        reaction,
-        isAdding
-      }
-    })
-  }
-
-  // Send read receipt
-  const sendReadReceipt = (messageId: string) => {
-    if (!floqId) return
-    
-    supabase.channel(`floq-${floqId}`).send({
-      type: 'broadcast',
-      event: 'read',
-      payload: { 
-        messageId,
-        userId: 'current-user-id' // Replace with actual user ID
-      }
-    })
-  }
+      supabase.removeChannel(channel);
+    };
+  }, [floqId, queryClient]);
 
   return {
     ...query,
     typingUsers,
     readReceipts,
     messageReactions,
-    sendTypingIndicator,
-    sendReaction,
-    sendReadReceipt
+    sendTypingIndicator: (isTyping: boolean) => {},
+    sendReaction: (messageId: string, reaction: string, isAdding: boolean) => {},
+    sendReadReceipt: (messageId: string) => {}
   }
 }
 
@@ -216,7 +112,7 @@ export function useSendFloqMessage() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (p: { floqId: string; body: string; emoji?: string }) => {
+    mutationFn: async (p: { floqId: string; body: string; emoji?: string; replyTo?: string }) => {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
       
@@ -233,7 +129,8 @@ export function useSendFloqMessage() {
         body: p.body,
         created_at: new Date().toISOString(),
         sender_id: user.user.id,
-        sender: userProfile || null
+        sender: userProfile || null,
+        reply_to_id: p.replyTo
       }
 
       // Add optimistic message immediately
@@ -251,26 +148,20 @@ export function useSendFloqMessage() {
       
       // 1️⃣ Insert to database
       const { data, error } = await supabase
-        .from('floq_messages')
+        .from('floq_messages' as any)
         .insert({
           floq_id: p.floqId,
           body: p.body,
           emoji: p.emoji ?? null,
           sender_id: user.user.id,
+          reply_to_id: p.replyTo ?? null,
         })
-        .select('id, body, created_at, sender_id')
+        .select('id, body, created_at, sender_id, reply_to_id')
         .single()
 
       if (error) throw error
 
       // Note: Mentions are now handled by the database trigger automatically
-
-      // 4️⃣ Broadcast to other clients
-      await supabase.channel(`floq-${p.floqId}`).send({
-        type: 'broadcast',
-        event: 'message',
-        payload: data
-      })
 
       return data
     },
@@ -285,8 +176,12 @@ export function useSendFloqMessage() {
             // Remove optimistic message and add real one
             const filtered = pages[0].filter(msg => !msg.id.startsWith('temp-'))
             const realMessage: FloqMessage = { 
-              ...data, 
-              sender: pages[0][0]?.sender || null 
+              id: (data as any).id,
+              body: (data as any).body,
+              created_at: (data as any).created_at,
+              sender_id: (data as any).sender_id,
+              sender: pages[0][0]?.sender || null,
+              reply_to_id: (data as any).reply_to_id
             }
             pages[0] = [realMessage, ...filtered]
           }
