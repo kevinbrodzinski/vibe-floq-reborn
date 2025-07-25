@@ -31,9 +31,15 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={() => onOpen?.(flock)}
-      className="cursor-pointer transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-primary/70 rounded-2xl"
+      className="cursor-pointer transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-primary/70 rounded-2xl relative"
     >
       <CardContent className="p-4">
+        {/* Live indicator in top right corner */}
+        {isLive && (
+          <span className="absolute top-3 right-3 text-green-500 text-xs font-medium">
+            Live
+          </span>
+        )}
         {/* Header with Avatar and Status */}
         <div className="flex items-start gap-4 mb-3">
           <div className="relative">
@@ -48,11 +54,6 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="truncate font-semibold text-foreground">{flock.title}</h3>
-              {isLive && (
-                <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
-                  Live
-                </span>
-              )}
             </div>
             
             <p className="text-xs text-muted-foreground capitalize mb-1">
