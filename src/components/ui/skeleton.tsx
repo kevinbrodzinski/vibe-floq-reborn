@@ -12,4 +12,8 @@ function Skeleton({
   )
 }
 
+export const CardSkeleton = () => (
+  <div role="status" className="animate-pulse rounded-lg bg-muted h-36 w-full" />
+);
+
 export { Skeleton }

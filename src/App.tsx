@@ -21,6 +21,7 @@ import Index from "./pages/Index";
 import Settings from "./pages/Settings";
 import SharedAfterglow from "./pages/SharedAfterglow";
 import SharedPlan from "./pages/SharedPlan";
+import ShareRipplePage from "./pages/ShareRipplePage";
 import { PlanInvite } from "./pages/PlanInvite";
 
 const queryClient = new QueryClient();
@@ -81,6 +82,7 @@ const App = () => {
                 <Route path="/a/:slug" element={<SharedAfterglow />} />
                 <Route path="/share/:slug" element={<SharedPlan />} />
                 <Route path="/invite/:slug" element={<PlanInvite />} />
+                <Route path="/ripple/share/:id" element={<ShareRipplePage />} />
                 {/* Settings route */}
                 <Route path="/settings/profile" element={<Settings />} />
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}

@@ -4,7 +4,19 @@
 // ----------------------------------------------------------------------
 
 import { supabase } from '@/integrations/supabase/client';
-import type { TimeInVenueDaily, VenueVisit } from '@/types/supabase-override';
+// Types moved inline since tables now exist in main schema
+interface TimeInVenueDaily {
+  user_id: string;
+  day: string;
+  minutes_spent: number;
+  venue_id?: string;
+}
+
+interface VenueVisit {
+  user_id: string;
+  venue_id: string;
+  created_at: string;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Core data fetching utilities                                      */
