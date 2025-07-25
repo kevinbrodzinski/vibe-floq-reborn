@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -92,7 +92,7 @@ export const AvatarDropdown = () => {
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onSelect={() => navigate('/vibe')}>
-            <Heart className="w-4 h-4 mr-2" />
+            <AudioLines className="w-4 h-4 mr-2" />
             My vibe / status
           </DropdownMenuItem>
           
