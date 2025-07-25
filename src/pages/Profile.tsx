@@ -110,6 +110,61 @@ const Profile = () => {
 
           <Separator />
 
+          {/* Avatar & Display Name Section - Condensed */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-16 h-16">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+                ) : (
+                  <AvatarFallback className="text-lg">
+                    {getInitials(profile?.display_name || 'U')}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              
+              <div className="flex-1 space-y-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => avatarMgr.setOpen(true)}
+                  className="text-xs"
+                >
+                  Change avatar
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Supported: JPEG, PNG, WebP, GIF (max 5MB)
+                </p>
+              </div>
+            </div>
+
+            {/* Display Name */}
+            <div className="space-y-2">
+              <Label htmlFor="displayName" className="text-sm">Display Name</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="displayName"
+                  placeholder="Enter your display name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleSaveProfile}
+                  disabled={isLoading}
+                  size="sm"
+                >
+                  {isLoading ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your display name is shown alongside your username
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Username Section */}
           <UsernameSettings />
 
@@ -189,65 +244,16 @@ const Profile = () => {
 
           <Separator />
 
-          {/* Profile Form */}
-          <div className="space-y-6">
-            {/* Avatar Upload */}
-            <div className="text-center space-y-4">
-              <Avatar className="w-24 h-24 mx-auto">
-                {profile?.avatar_url ? (
-                  <AvatarImage src={getAvatarUrl(profile.avatar_url, 256)} />
-                ) : (
-                  <AvatarFallback className="text-3xl">
-                    {getInitials(profile?.display_name || 'U')}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              
-              <Button 
-                variant="secondary" 
-                onClick={() => avatarMgr.setOpen(true)}
-              >
-                {profile?.avatar_url ? 'Change avatar' : 'Add avatar'}
-              </Button>
-            </div>
-
-            {/* Display Name */}
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input
-                id="displayName"
-                placeholder="Enter your display name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Your display name is shown alongside your username
-              </p>
-            </div>
-
-            {/* Save Button */}
-            <Button 
-              onClick={handleSaveProfile}
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? 'Saving...' : 'Save Profile'}
-            </Button>
-
-            {/* Info */}
-            <div className="text-sm text-muted-foreground text-center">
-              <p>Your avatar will be automatically resized and optimized for fast loading.</p>
-              <p className="mt-1">Supported formats: JPEG, PNG, WebP, GIF (max 5MB)</p>
-            </div>
-
-            {/* Debug: Transform CDN Tester */}
-            {import.meta.env.MODE === 'development' && profile?.avatar_url && (
-              <div className="mt-8 border-t pt-6">
-                <h3 className="text-sm font-medium mb-4 text-center">Debug: Transform CDN</h3>
+          {/* Debug: Transform CDN Tester */}
+          {import.meta.env.MODE === 'development' && profile?.avatar_url && (
+            <div className="space-y-4">
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium mb-4">Debug: Transform CDN</h3>
                 <TransformCDNTester avatarPath={profile.avatar_url} />
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
