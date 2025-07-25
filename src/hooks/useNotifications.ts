@@ -74,6 +74,18 @@ export function useNotifications() {
                 description: 'Your plan invitation was declined'
               });
               break;
+            case 'plan_comment_new':
+              toast({
+                title: 'New plan comment',
+                description: 'Someone commented on your plan'
+              });
+              break;
+            case 'plan_checkin':
+              toast({
+                title: 'Plan check-in',
+                description: 'Someone checked in to your plan'
+              });
+              break;
             case 'floq_invite':
               toast({
                 title: 'Floq invitation',
