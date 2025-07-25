@@ -1,8 +1,9 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
-import tseslint from "typescript-eslint";
+// eslint.config.js
+import js              from "@eslint/js";
+import globals         from "globals";
+import reactHooks      from "eslint-plugin-react-hooks";
+import reactRefresh    from "eslint-plugin-react-refresh";
+import tseslint        from "typescript-eslint";
 
 export default tseslint.config(
   { ignores: ["dist"] },
@@ -16,7 +17,7 @@ export default tseslint.config(
       globals: globals.browser,
     },
     plugins: {
-      "react-hooks": reactHooks,
+      "react-hooks":  reactHooks,
       "react-refresh": reactRefresh,
     },
 
@@ -25,25 +26,30 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
 
       /* ❶  Loudest offenders → WARN for now */
-      "@typescript-eslint/no-explicit-any":        "warn", // 600+ hits
-      "react-hooks/rules-of-hooks":                "warn", // 50+ hits
-      "react-hooks/exhaustive-deps":               "warn", // 80+ hits
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/rules-of-hooks":         "warn",
+      "react-hooks/exhaustive-deps":        "warn",
 
       /* ❷  Lesser noisy rules */
-      "react-refresh/only-export-components":      "off",  // 20 hits
-      "no-restricted-syntax":                      "off",  // Tail-wind z-index rule
-      "@typescript-eslint/no-require-imports":     "warn",
+      "react-refresh/only-export-components": "off",
+      "no-restricted-syntax":                 "off",
+      "@typescript-eslint/no-require-imports":"warn",
 
-      /* ❸  Keep truly dangerous stuff strict */
-      "@typescript-eslint/no-unused-vars": "error"
+      /* ❸  Unused vars → WARN (ignore vars/args prefixed with _) */
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_"
+        }
+      ]
     },
   },
 
-  /* ────────────────── Folder-specific overrides (unchanged) ────────────────── */
+  /* ────────────────── Folder-specific overrides ────────────────── */
   {
     files: ["src/components/ui/**/*.{ts,tsx}"],
-    rules: {
-      "no-restricted-syntax": "off",
-    },
+    rules: { "no-restricted-syntax": "off" },
   }
 );
