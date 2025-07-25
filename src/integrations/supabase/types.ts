@@ -5027,20 +5027,14 @@ export type Database = {
         Returns: Json
       }
       get_cluster_venues: {
-        Args:
-          | {
-              min_lng: number
-              min_lat: number
-              max_lng: number
-              max_lat: number
-            }
-          | {
-              min_lng: number
-              min_lat: number
-              max_lng: number
-              max_lat: number
-              limit_n?: number
-            }
+        Args: {
+          min_lng: number
+          min_lat: number
+          max_lng: number
+          max_lat: number
+          cursor_popularity?: number
+          limit_rows?: number
+        }
         Returns: {
           id: string
           name: string
