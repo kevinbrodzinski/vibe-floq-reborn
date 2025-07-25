@@ -106,6 +106,7 @@
     "expo": "^53.0.20",
     "expo-constants": "^17.1.7",
     "expo-haptics": "^14.1.4",
+    "fast-memoize": "^2.5.2",
     "framer-motion": "^12.23.6",
     "husky": "^9.1.7",
     "input-otp": "^1.2.4",

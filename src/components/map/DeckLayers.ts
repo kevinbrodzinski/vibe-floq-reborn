@@ -2,13 +2,17 @@
 // src/components/map/DeckLayers.ts
 // ─────────────────────────────────────────────────────────────
 import { ScatterplotLayer } from "@deck.gl/layers";
-import { getClusterColor, getClusterStrokeColor, getVibeIntensity } from "@/utils/color";
+import { 
+  clusterSizePx, 
+  clusterFill, 
+  clusterStroke 
+} from "@/utils/clusterColor";
 import type { Cluster } from "@/hooks/useClusters";
 
 // Module-scope timer to avoid re-evaluation on hot-reload
 const t0 = Date.now();
 
-/* Enhanced density layer with vibe-aware sizing and colors ----------- */
+/* Enhanced density layer using new cluster utilities ----------------- */
 export const createDensityLayer = (
   clusters: Cluster[],
   prefs: Record<string, number>,
@@ -16,24 +20,14 @@ export const createDensityLayer = (
 ) => {
   if (!clusters.length) return null;
 
-  // Use member_count for more accurate sizing
-  const maxMemberCount = Math.max(...clusters.map(c => c.member_count || c.total || 1));
-
   return new ScatterplotLayer({
     id: "vibe-density",
     data: clusters,
     getPosition: (d) => d.centroid.coordinates,
-    getRadius: (d) => {
-      const count = d.member_count || d.total || 1;
-      // Enhanced sizing: min 40m, max 200m, with sqrt scaling
-      return Math.max(40, Math.min(200, Math.sqrt(count) * 12));
-    },
+    getRadius: (d) => clusterSizePx(d.member_count || d.total || 1),
     getFillColor: (d) => {
       try {
-        const count = d.member_count || d.total || 1;
-        const normalizedScore = maxMemberCount > 0 ? count / maxMemberCount : 0;
-        // Use enhanced color with vibe_mode
-        return getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {}, d.vibe_mode);
+        return clusterFill(d as any);
       } catch (error) {
         console.warn('Color calculation failed, using fallback:', error);
         return [70, 130, 180]; // Steel blue fallback
@@ -41,7 +35,7 @@ export const createDensityLayer = (
     },
     getLineColor: (d) => {
       try {
-        return getClusterStrokeColor(d.vibe_mode);
+        return clusterStroke(d as any);
       } catch (error) {
         return [255, 255, 255]; // White fallback
       }
@@ -49,12 +43,17 @@ export const createDensityLayer = (
     getLineWidth: 2,
     lineWidthUnits: "pixels",
     stroked: true,
-    radiusUnits: "meters",
+    radiusUnits: "pixels",
     opacity: 0.7,
     pickable: true,
+    autoHighlight: true,
     onClick: ({ object }) => object && onClick(object as Cluster),
+    getTooltip: ({ object: c }) =>
+      c
+        ? `${c.member_count || c.total} people · ${c.vibe_mode?.toUpperCase() || 'UNKNOWN'}`
+        : null,
     updateTriggers: { 
-      getFillColor: [clusters, prefs], 
+      getFillColor: [clusters], 
       getLineColor: [clusters],
       getRadius: [clusters]
     },
@@ -85,20 +84,18 @@ export const usePulseLayer = (
     getRadius: (d) => {
       const t = getT();
       const count = d.member_count || d.total || 1;
-      const normalizedCount = maxMemberCount > 0 ? count / maxMemberCount : 0;
-      const vibeIntensity = getVibeIntensity(d.vibe_mode);
+      // stronger pulse if vibe is "hype"
+      const vibeBoost = d.vibe_mode === 'hype' ? 0.3 : 0;
+      const intensity = Math.min(1, count / 80 + vibeBoost);
       
-      // Base radius + pulse amplitude scaled by both count and vibe intensity
       const baseRadius = 35;
-      const pulseAmplitude = 25 * normalizedCount * vibeIntensity;
+      const pulseAmplitude = 25 * intensity;
       return baseRadius + Math.sin(t * 2 * Math.PI) * pulseAmplitude;
     },
     radiusUnits: "meters",
     getFillColor: (d) => {
       try {
-        const count = d.member_count || d.total || 1;
-        const normalizedScore = maxMemberCount > 0 ? count / maxMemberCount : 0;
-        const color = getClusterColor(normalizedScore, d.vibe_counts || {}, prefs || {}, d.vibe_mode);
+        const color = clusterFill(d as any);
         // Add transparency for pulse effect
         return [...color, 77] as [number, number, number, number]; // ~30% opacity
       } catch (error) {
