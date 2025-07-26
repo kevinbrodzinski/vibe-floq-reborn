@@ -20,9 +20,13 @@ export async function checkIntoStop(
   { lat, lng }: { lat: number; lng: number },
   deviceId?: string,
 ) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) throw new Error('Not authenticated');
+
   const { error } = await supabase.from('plan_check_ins' as any).insert({
     plan_id: planId,
     stop_id: stopId,
+    participant_id: user.id,
     location: lat && lng ? `SRID=4326;POINT(${lng} ${lat})` : null,
     device_id: deviceId,
   });
