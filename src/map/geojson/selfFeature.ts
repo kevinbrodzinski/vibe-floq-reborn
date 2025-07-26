@@ -1,7 +1,7 @@
-/** small helper that returns a GeoJSON feature for the current user */
+/** Build a GeoJSON feature for the current user ("YOU" pin) */
 export function buildSelfFeature(
   lngLat: [number, number],
-  userId: string
+  userId: string,
 ): GeoJSON.Feature<GeoJSON.Point, { self: true; id: string }> {
   return {
     type: 'Feature',
