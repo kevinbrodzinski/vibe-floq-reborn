@@ -3,9 +3,10 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { AuthScreen } from '@/components/auth/AuthScreen';
 import { EnhancedOnboardingScreen } from '@/components/onboarding/EnhancedOnboardingScreen';
+import { SplashScreen } from '@/components/visual/SplashScreen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDeepLinkRedirect } from '@/hooks/useDeepLinkRedirect';
 import { useSafeStorage } from '@/hooks/useSafeStorage';
 import { useLocation } from 'react-router-dom';
@@ -13,18 +14,35 @@ import { supabase } from '@/integrations/supabase/client';
 import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
 
 const ONBOARDING_KEY = 'floq_onboarding_complete';
+const SPLASH_SEEN_KEY = 'floq_splash_seen';
 
 export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const [showSplash, setShowSplash] = useState<boolean | null>(null);
   const { data: preferences, isLoading: loadingPrefs } = useUserPreferences();
   const queryClient = useQueryClient();
   const { getRedirectPath, clearRedirectPath } = useDeepLinkRedirect();
   const { getItem, setItem } = useSafeStorage();
   const location = useLocation();
 
-  // Check if user is visiting a shared plan route (bypass onboarding)
+  // Check if user is visiting a shared plan route (bypass onboarding and splash)
   const isSharedPlanRoute = location.pathname.startsWith('/share/');
   const isDirectPlanRoute = location.pathname.startsWith('/plan/');
+
+  // Check if splash screen has been seen
+  useEffect(() => {
+    const checkSplashSeen = async () => {
+      if (isSharedPlanRoute || isDirectPlanRoute) {
+        setShowSplash(false);
+        return;
+      }
+      
+      const splashSeen = await getItem(SPLASH_SEEN_KEY);
+      setShowSplash(!splashSeen);
+    };
+    
+    checkSplashSeen();
+  }, [getItem, isSharedPlanRoute, isDirectPlanRoute]);
 
   // Enhanced onboarding completion check with debug logging
   const { data: onboardingComplete, isLoading: onboardingLoading } = useQuery({
@@ -104,7 +122,7 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
     currentPath: location.pathname
   });
 
-  if (loading || (user && loadingPrefs) || onboardingLoading) {
+  if (loading || (user && loadingPrefs) || onboardingLoading || showSplash === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -123,6 +141,20 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   if (!user && isSharedPlanRoute) {
     console.log('🔓 Allowing access to shared route without auth');
     return <>{children}</>;
+  }
+
+  // Show splash screen for first-time visitors (before auth)
+  if (showSplash && !user) {
+    console.log('✨ Showing splash screen');
+    return (
+      <SplashScreen
+        onComplete={async () => {
+          await setItem(SPLASH_SEEN_KEY, 'true');
+          setShowSplash(false);
+        }}
+        autoTransition={false}
+      />
+    );
   }
 
   if (!user) {
