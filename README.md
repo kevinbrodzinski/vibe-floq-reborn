@@ -71,6 +71,16 @@ VITE_FLAG_EXPLORE=false     # Enable explore mode and map features
 VITE_FLAG_PLAN_BETA=false   # Enable collaborative planning features
 ```
 
+## Database Types
+
+To regenerate TypeScript types from your Supabase schema, run:
+
+```bash
+npm run gen:types
+```
+
+This will update `src/integrations/supabase/types.ts` with the latest database schema types.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/11986cc9-7473-4e33-83dd-acd244d83d3e) and click on Share -> Publish.
