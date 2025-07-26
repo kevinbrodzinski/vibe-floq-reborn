@@ -89,6 +89,7 @@ export function useDMThread(friendId: string | null) {
     return () => {
       if (typingTimeout.current) clearTimeout(typingTimeout.current);
       supabase.removeChannel(channel);
+      setIsTyping(false);
     };
   }, [threadId, selfId, qc]);
 
