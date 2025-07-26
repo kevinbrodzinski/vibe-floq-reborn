@@ -36,6 +36,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         id,
         title,
         name,
+        description,
         primary_vibe,
         creator_id,
         starts_at,
@@ -54,6 +55,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       id,
       title,
       name,
+      description,
       primary_vibe,
       creator_id,
       starts_at,
@@ -106,6 +108,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         id: floq.id,
         title: floq.title || floq.name || 'Untitled',
         name: floq.name || undefined,
+        description: floq.description || undefined,
         primary_vibe: safeVibe(floq.primary_vibe),
         participant_count: 0, // Will be filled below
         role,
@@ -140,6 +143,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         id: floq.id,
         title: floq.title || floq.name || 'Untitled',
         name: floq.name || undefined,
+        description: floq.description || undefined,
         primary_vibe: safeVibe(floq.primary_vibe),
         participant_count: 0, // Will be filled below
         role: 'creator',

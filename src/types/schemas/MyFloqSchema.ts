@@ -4,7 +4,8 @@ import { VibeEnum, type Vibe } from '@/types/vibes';
 const BaseFloqSchema = z.object({
   id: z.string(),
   title: z.string().nullable().optional(),
-  name: z.string().nullable().optional(), 
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   primary_vibe: VibeEnum,
   creator_id: z.string().nullable().optional(),
   starts_at: z.string().nullable().optional(),
@@ -27,6 +28,7 @@ export interface MyFloq {
   id: string;
   title: string;
   name?: string;
+  description?: string;
   primary_vibe: Vibe;
   participant_count: number;
   role: string;
