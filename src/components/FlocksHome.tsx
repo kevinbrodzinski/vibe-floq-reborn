@@ -309,7 +309,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                     <FloqCard floq={floq} onBoost={floq.is_joined ? handleBoost : undefined} onLeave={floq.is_joined ? handleLeave : undefined} hasUserBoosted={floq.hasUserBoosted} />
                   </li>)}
               </ul> : <div className="text-center py-8 text-muted-foreground">
-                <p>{useAdvancedSearch ? 'No floqs match your search' : 'No nearby flocks found'}</p>
+                <p>{useAdvancedSearch ? 'No floqs match your search' : 'No nearby floqs found'}</p>
                 <p className="text-sm mt-1">
                   {useAdvancedSearch ? 'Try adjusting your search criteria' : 'Try adjusting your filters or create one!'}
                 </p>
