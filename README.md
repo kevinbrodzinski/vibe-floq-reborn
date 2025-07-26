@@ -20,6 +20,8 @@ If you want to work locally using your own IDE, you can clone this repo and push
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
+## Local Setup
+
 Follow these steps:
 
 ```sh
@@ -35,6 +37,12 @@ npm i
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
+
+**Regenerate Supabase Types:**
+```sh
+npm run gen:types
+```
+This updates `src/integrations/supabase/types.ts` with the latest database schema types.
 
 **Edit a file directly in GitHub**
 
