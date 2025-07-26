@@ -19,7 +19,7 @@ export const useFloqParticipants = (floqId?: string, limit = 6) =>
       });
 
       if (error) throw error;
-      return data || [];
+      return (data ? (typeof data === 'string' ? JSON.parse(data) : data) : []) as Participant[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const { floq_id, limit = 6 } = await req.json();
+    const safeLimit = Math.min(Number(limit) || 6, 12);
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -32,7 +33,7 @@ serve(async (req) => {
         profiles!inner(avatar_url)
       `)
       .eq("floq_id", floq_id)
-      .limit(+limit);
+      .limit(safeLimit);
 
     if (error) {
       console.error('Error fetching participants:', error);

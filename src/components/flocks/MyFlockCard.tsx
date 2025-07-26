@@ -9,6 +9,8 @@ import { useFloqPlans } from '@/hooks/useFloqPlans';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useFloqParticipants } from '@/hooks/useFloqParticipants';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface MyFlockCardProps {
   flock: MyFloq;
@@ -20,7 +22,14 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
   const { data: host, isLoading: hostLoading } = useProfile(flock.creator_id);
   const { data: plans } = useFloqPlans(flock.id);
   const { data: unreadCounts } = useUnreadCounts(flock.id);
-  const { data: prefs } = useUserPreferences();
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    },
+  });
+  const { data: prefs } = useUserPreferences(currentUser?.id);
   const { data: participants } = useFloqParticipants(flock.id, 3);
 
   /* ————— derived ————— */
@@ -80,8 +89,10 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
               {flock.primary_vibe} •&nbsp;
               {hostLoading ? (
                 <Skeleton className="inline-block h-3 w-12" />
+              ) : host?.display_name ? (
+                <>Hosted by {host.display_name}</>
               ) : (
-                <>Hosted by {host?.display_name ?? '—'}</>
+                '—'
               )}
             </p>
 
@@ -99,6 +110,7 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
                     key={p.user_id}
                     src={p.avatar_url ?? '/avatar-placeholder.png'}
                     alt=""
+                    loading="lazy"
                     className="w-6 h-6 rounded-full border-2 border-background object-cover"
                   />
                 ))}

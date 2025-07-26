@@ -21,17 +21,15 @@ export interface UserPreferences {
 /**
  * Hook to fetch user preferences
  */
-export function useUserPreferences() {
+export function useUserPreferences(userId?: string) {
   return useQuery({
-    queryKey: ['user-preferences'],
+    queryKey: ['user-preferences', userId],
+    enabled: !!userId,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
       const { data, error } = await supabase
         .from('user_preferences')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('checkin_streak')
+        .eq('user_id', userId!)
         .maybeSingle();
 
       if (error) throw error;
