@@ -1,7 +1,7 @@
 import { useMemo, useRef, useCallback } from 'react';
 import Supercluster from 'supercluster';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/Database';
 import { useQuery } from '@tanstack/react-query';
 import type { Viewport } from '@/utils/geoConversion';
 

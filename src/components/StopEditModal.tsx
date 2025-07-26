@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/Database';
 
 type PlanStop = Database['public']['Tables']['plan_stops']['Row'] & {
   venue?: Database['public']['Tables']['venues']['Row'];

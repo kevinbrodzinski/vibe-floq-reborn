@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import debounce from 'lodash.debounce'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
-import { Database } from '@/integrations/supabase/types'
+import { Database } from '@/integrations/supabase/Database'
 import { useToast } from '@/hooks/use-toast'
 
 type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];

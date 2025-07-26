@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database } from '@/integrations/supabase/types';
+import { Database } from '@/integrations/supabase/Database';
 import { Sparkles, Users, MapPin, Calendar } from 'lucide-react';
 
 type AfterglowRow = Database['public']['Tables']['daily_afterglow']['Row'];

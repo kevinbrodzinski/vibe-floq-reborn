@@ -22,7 +22,7 @@ import { ParticleField } from '@/components/visual/ParticleField';
 import { useAmbientBackground } from '@/hooks/useAmbientBackground';
 import { triggerHaptic } from '@/utils/haptics';
 import { sampleMomentsWithMetadata } from '@/utils/sampleAfterglowData';
-import { Database } from '@/integrations/supabase/types';
+import { Database } from '@/integrations/supabase/Database';
 import { zIndex } from '@/constants/z';
 
 interface NightEvent {

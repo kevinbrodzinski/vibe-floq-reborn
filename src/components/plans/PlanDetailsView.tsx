@@ -20,7 +20,7 @@ import { usePlanStops } from '@/hooks/usePlanStops';
 import { usePlanParticipantsOptimized } from '@/hooks/usePlanParticipantsOptimized';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/integrations/supabase/Database';
 import type { PlanStatus } from '@/types/enums/planStatus';
 import { zIndex } from '@/constants/z';
 
