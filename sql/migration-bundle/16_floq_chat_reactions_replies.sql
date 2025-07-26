@@ -10,7 +10,7 @@ create table if not exists public.floq_message_reactions (
   emoji       text not null check (char_length(emoji) <= 8),
   created_at  timestamptz not null default now(),
 
-  unique (message_id, user_id, emoji)              -- toggle-like constraint
+  unique (message_id, user_id, emoji)              -- prevent duplicate reactions
 );
 
 create index if not exists idx_fmr_message on public.floq_message_reactions(message_id);
@@ -72,7 +72,7 @@ $$;
 drop trigger if exists trg_floq_reaction_notify on public.floq_message_reactions;
 create trigger trg_floq_reaction_notify
   after insert on public.floq_message_reactions
-  for each row execute procedure public.tg_floq_reaction_notify();
+  for each row when (TG_OP = 'INSERT') execute procedure public.tg_floq_reaction_notify();
 
 -- optional: notify original author when someone replies to their message
 create or replace function public.tg_floq_reply_notify()

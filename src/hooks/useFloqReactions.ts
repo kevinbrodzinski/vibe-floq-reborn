@@ -46,7 +46,7 @@ export function useReactions(floqId: string) {
     if (!floqId) return;
 
     const channel = supabase
-      .channel(`floq-reactions:${floqId}`)
+      .channel(`floq:${floqId}`)
       .on(
         'postgres_changes',
         { 
