@@ -236,15 +236,13 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           {/* My Flocks Cards */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-foreground">My Flocks</h2>
+              <h2 className="text-lg font-semibold text-foreground">My Floqs</h2>
               <Badge variant="secondary" className="text-xs">
                 {myFlocks?.length || 0}
               </Badge>
             </div>
-            {myFlocksLoading ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-                {[...Array(3)].map((_, i) => (
-                  <Card key={i}>
+            {myFlocksLoading ? <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+                {[...Array(3)].map((_, i) => <Card key={i}>
                     <CardContent className="flex items-center gap-4 p-4">
                       <div className="h-[104px] w-[104px] rounded-2xl bg-muted/40 animate-pulse" />
                       <div className="flex-1 space-y-2">
@@ -253,24 +251,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                         <div className="h-3 w-2/3 bg-muted/40 rounded animate-pulse" />
                       </div>
                     </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : myFlocks.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-                {myFlocks.map(flock => (
-                  <MyFlockCard 
-                    key={flock.id} 
-                    flock={flock} 
-                    onOpen={() => handleFloqPress(flock.id)} 
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card 
-                onClick={handleCreatePress}
-                className="cursor-pointer border-dashed border-2 hover:bg-accent/50 transition-colors"
-              >
+                  </Card>)}
+              </div> : myFlocks.length > 0 ? <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+                {myFlocks.map(flock => <MyFlockCard key={flock.id} flock={flock} onOpen={() => handleFloqPress(flock.id)} />)}
+              </div> : <Card onClick={handleCreatePress} className="cursor-pointer border-dashed border-2 hover:bg-accent/50 transition-colors">
                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="rounded-full bg-primary/10 p-4 mb-4">
                     <Plus className="h-8 w-8 text-primary" />
@@ -280,8 +264,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
                     Start building your community by creating a flock
                   </p>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
           </section>
 
           {/* AI Recommendations */}
@@ -358,16 +341,11 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
 
 // Create Floq FAB Component
 const CreateFloqFAB = () => {
-  const { setShowCreateSheet } = useFloqUI();
-  
-  return (
-    <button
-      onClick={() => setShowCreateSheet(true)}
-      className="fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium"
-      {...zIndex('system')}
-    >
+  const {
+    setShowCreateSheet
+  } = useFloqUI();
+  return <button onClick={() => setShowCreateSheet(true)} className="fixed bottom-24 right-4 px-6 py-3 rounded-full bg-gradient-to-r from-[hsl(279,100%,60%)] to-[hsl(320,100%,60%)] text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 font-medium" {...zIndex('system')}>
       <Plus size={20} />
       Create Floq
-    </button>
-  );
+    </button>;
 };
