@@ -284,7 +284,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground">
-                {useAdvancedSearch ? 'Search Results' : 'Nearby Flocks'}
+                {useAdvancedSearch ? 'Search Results' : 'Nearby Floqs'}
               </h2>
               <Badge variant="secondary" className="text-xs">
                 {displayFlocks.length}
