@@ -1,5 +1,5 @@
 
-import type { Database } from '@/integrations/supabase/types'
+import type { Database } from '@/integrations/supabase/Database'
 
 // Database row types for easy reuse
 export type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {

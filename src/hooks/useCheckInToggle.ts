@@ -36,7 +36,7 @@ export function useCheckInToggle() {
           })
           .eq('plan_id', planId)
           .eq('stop_id', stopId)
-          .eq('user_id', user.id)
+          .eq('participant_id', user.id)
 
         if (error) throw error
 
@@ -58,7 +58,7 @@ export function useCheckInToggle() {
           .insert({
             plan_id: planId,
             stop_id: stopId,
-            user_id: user.id,
+            participant_id: user.id,
             checked_in_at: new Date().toISOString(),
             device_id: getDeviceInfo().device_id,
           })
