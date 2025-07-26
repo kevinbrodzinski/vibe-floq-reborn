@@ -4,17 +4,13 @@
   "version": "1.0.0",
   "description": "A living interface for human presence, motion, and belonging",
   "type": "module",
-
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "gen:types": "supabase gen types typescript --linked --schema public,storage > src/integrations/supabase/types.ts"
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-
     "preview": "vite preview",
-
     "eas:build": "eas build",
     "eas:build:development": "eas build --profile development",
     "eas:build:preview": "eas build --profile preview",
@@ -23,7 +19,6 @@
     "eas:submit:ios": "eas submit --platform ios",
     "eas:submit:android": "eas submit --platform android"
   },
-
   "dependencies": {
     "@capacitor/android": "^7.4.2",
     "@capacitor/cli": "^7.4.2",
@@ -80,6 +75,8 @@
     "@supabase/supabase-js": "^2.52.0",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-virtual": "^3.13.12",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
     "@types/geojson": "^7946.0.16",
     "@types/lodash.debounce": "^4.0.9",
     "@types/mapbox-gl": "^3.4.1",
@@ -153,6 +150,7 @@
     "slugify": "^1.6.6",
     "sonner": "^2.0.6",
     "stats.js": "^0.17.0",
+    "supabase": "^2.31.8",
     "supercluster": "^8.0.1",
     "swr": "^2.3.4",
     "tailwind-merge": "^2.5.2",
@@ -162,12 +160,12 @@
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0",
     "vaul": "^0.9.3",
+    "vitest": "^3.2.4",
     "web-vitals": "^5.0.3",
     "yargs": "^17.7.2",
     "zod": "^3.23.8",
     "zustand": "^5.0.6"
   },
-
   "devDependencies": {
     "@eslint/js": "^9.9.0",
     "@tailwindcss/typography": "^0.5.15",
