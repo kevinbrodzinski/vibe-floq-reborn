@@ -1,58 +1,101 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+/* src/hooks/useDMThread.ts ****************************************/
+import {
+  useCallback, useEffect, useRef, useState,
+} from 'react';
+import {
+  useMutation, useQuery, useQueryClient,
+} from '@tanstack/react-query';
 import throttle from 'lodash.throttle';
+import { v4 as uuid } from 'uuid';
+
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
+import { uploadDmMedia } from '@/utils/uploadDmMedia';     // <–– you created this
 import { getEnvironmentConfig, isDemo } from '@/lib/environment';
 
-interface DirectMessage {
+/* ───────── types ───────── */
+export interface DirectMessage {
   id: string;
   thread_id: string;
   sender_id: string;
-  content: string;
+  content: string | null;
+  image_url: string | null;
+  reply_to_id: string | null;
   created_at: string;
-  metadata?: any;
-  isOptimistic?: boolean; // Flag for optimistic updates
+  emoji_only: boolean;
+  isOptimistic?: boolean;
 }
 
+/* ───────── hook ───────── */
 export function useDMThread(friendId: string | null) {
   const qc = useQueryClient();
-  const [selfId, setSelfId] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const { user } = useAuth();                       // current signed-in user
+  const selfId = user?.id ?? null;
 
-  /* 1️⃣ cache current user id once – synchronous */
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setSelfId(data.user?.id ?? null);
-    });
-  }, []);
-
-  /* 2️⃣ obtain / create the thread */
+  /* 1️⃣  create / fetch thread_id … */
   const { data: threadId } = useQuery({
     queryKey: ['dm-thread', friendId, selfId],
     enabled: !!friendId && !!selfId,
     queryFn: async () => {
       const env = getEnvironmentConfig();
-      
       if (env.presenceMode === 'offline') {
-        // Return a mock thread ID for offline mode
         return `offline-thread-${selfId}-${friendId}`;
       }
-
       const { data, error } = await supabase.rpc('find_or_create_dm', {
         a: selfId,
         b: friendId,
-        p_use_demo: isDemo()
+        p_use_demo: isDemo(),
       });
       if (error) throw error;
       return data as string;
     },
+    staleTime: 0,
   });
 
-  /* 3️⃣ messages query */
+  /* 2️⃣  real-time subscription (DB changes for messages, broadcast for typing) */
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    if (!threadId) return undefined;
+
+    const channel = supabase.channel(`dm:${threadId}`);
+
+    /* postgres_changes – new / edited / deleted messages */
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'direct_messages', filter: `thread_id=eq.${threadId}` },
+      ({ new: row }) => {
+        qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) => {
+          if (old.find((m) => m.id === row.id)) return old;          // already present
+          return [...old, row];
+        });
+      },
+    );
+
+    /* broadcast – typing indicator */
+    channel.on(
+      'broadcast',
+      { event: 'typing' },
+      ({ payload }) => {
+        if (payload.user_id === selfId) return;
+        setIsTyping(true);
+        if (typingTimeout.current) clearTimeout(typingTimeout.current);
+        typingTimeout.current = setTimeout(() => setIsTyping(false), 3_000);
+      },
+    );
+
+    channel.subscribe();
+    return () => {
+      if (typingTimeout.current) clearTimeout(typingTimeout.current);
+      supabase.removeChannel(channel);
+    };
+  }, [threadId, selfId, qc]);
+
+  /* 3️⃣  fetch last 50 messages */
   const { data: messages = [] } = useQuery({
-    queryKey: ['dm-msgs', threadId],
+    queryKey: ['dm-messages', threadId],
     enabled: !!threadId,
-    staleTime: 15_000, // Don't refetch immediately after optimistic update
     queryFn: async () => {
       const { data, error } = await supabase
         .from('direct_messages')
@@ -63,156 +106,102 @@ export function useDMThread(friendId: string | null) {
       if (error) throw error;
       return data as DirectMessage[];
     },
+    staleTime: 10_000,
   });
 
-  /* 4️⃣ send */
-  const send = useMutation({
-    mutationFn: async (content: string) => {
-      if (!threadId) throw new Error('No thread');
-      if (!selfId) throw new Error('No auth');
+  /* 4️⃣  send message (with optional file / emojiOnly / reply_to) */
+  const sendMessage = useMutation({
+    mutationFn: async (p: {
+      content?: string;
+      file?: File;
+      reply_to?: string;
+      emojiOnly?: boolean;
+    }) => {
+      if (!threadId || !selfId) throw new Error('not-ready');
 
-      const { data, error } = await supabase.from('direct_messages').insert({
-        thread_id: threadId,
-        sender_id: selfId,
-        content,
-      }).select().single();
-      
+      const imageUrl = p.file ? await uploadDmMedia(p.file) : null;
+
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .insert({
+          thread_id: threadId,
+          sender_id: selfId,
+          content: p.emojiOnly ? null : p.content ?? null,
+          image_url: imageUrl,
+          reply_to_id: p.reply_to ?? null,
+          emoji_only: !!p.emojiOnly,
+        })
+        .select()
+        .single();
+
       if (error) throw error;
-      return data;
+      return data as DirectMessage;
     },
-    onMutate: async (content: string) => {
-      if (!threadId || !selfId) return;
+    onMutate: async (p) => {
+      if (!threadId || !selfId) return undefined;
 
-      const tempId = `temp-${crypto.randomUUID()}`;
-      const optimisticMessage: DirectMessage = {
-        id: tempId,
+      const optimistic: DirectMessage = {
+        id: `tmp-${uuid()}`,
         thread_id: threadId,
         sender_id: selfId,
-        content,
+        content: p.emojiOnly ? null : p.content ?? null,
+        image_url: p.file ? URL.createObjectURL(p.file) : null,
+        reply_to_id: p.reply_to ?? null,
         created_at: new Date().toISOString(),
+        emoji_only: !!p.emojiOnly,
         isOptimistic: true,
       };
 
-      qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => [
-        ...(old ?? []),
-        optimisticMessage,
-      ]);
-      
-      return { tempId };
+      qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) => [...old, optimistic]);
+      return { optimisticId: optimistic.id };
     },
-    onSuccess: (realMessage, content, context) => {
-      // Replace optimistic message with real one
-      if (context?.tempId && threadId) {
-        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => 
-          old?.map(msg => 
-            msg.id === context.tempId ? { ...realMessage, isOptimistic: false } : msg
-          ) ?? []
-        );
-      }
+    onSuccess: (real, _vars, ctx) => {
+      if (!ctx?.optimisticId || !threadId) return;
+      qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) =>
+        old.map((m) => (m.id === ctx.optimisticId ? real : m)),
+      );
     },
-    onError: (error, content, context) => {
-      // Remove failed optimistic message
-      if (context?.tempId && threadId) {
-        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) =>
-          old?.filter(msg => msg.id !== context.tempId) ?? []
-        );
-      }
+    onError: (_e, _vars, ctx) => {
+      if (!ctx?.optimisticId || !threadId) return;
+      qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) =>
+        old.filter((m) => m.id !== ctx.optimisticId),
+      );
     },
   });
 
-  /* 5️⃣ realtime – LISTEN to `pg_notify` + typing indicator */
-  useEffect(() => {
-    if (!threadId) return;
-    
-    const channel = supabase
-      .channel(`dm:${threadId}`)
-      .on('broadcast', { event: 'message' }, (payload) => {
-        const msg = payload.payload as DirectMessage;
-        qc.setQueryData<DirectMessage[]>(['dm-msgs', threadId], (old) => {
-          // Skip if already exists (avoids duplicates from optimistic updates)
-          if (old?.some((m) => m.id === msg.id)) return old;
-          return [...(old ?? []), msg];
-        });
-      })
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        // Extension point for typing indicators
-        if (payload.payload.user_id !== selfId) {
-          setIsTyping(true);
-          // Auto-clear after 3 seconds
-          setTimeout(() => setIsTyping(false), 3000);
-        }
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [threadId, qc, selfId]);
-
-  // Helper function to send typing indicator (throttled)
-  const sendTyping = useCallback(() => {
-    if (!threadId || !selfId) return;
-    supabase.channel(`dm:${threadId}`).send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { user_id: selfId }
-    });
-  }, [threadId, selfId]);
-
-  const throttledTyping = useCallback(
-    throttle(() => sendTyping(), 2000, { trailing: false }),
-    [sendTyping]
+  /* 5️⃣  typing indicator (throttled) */
+  const sendTyping = useCallback(
+    throttle(() => {
+      if (!threadId || !selfId) return;
+      supabase.channel(`dm:${threadId}`).send({
+        type: 'broadcast',
+        event: 'typing',
+        payload: { user_id: selfId },
+      });
+    }, 2_000, { trailing: false }),
+    [threadId, selfId],
   );
 
-  // Throttled function to mark thread as read (prevent database hammering)
-  const markAsReadRef = useRef<() => Promise<void>>();
-  
-  useEffect(() => {
-    if (!threadId || !selfId) return;
-    
-    markAsReadRef.current = throttle(async () => {
-      try {
-        console.log('📖 Marking thread as read:', { threadId, selfId });
-        
-        const { error } = await supabase.rpc('update_last_read_at', {
-          thread_id_param: threadId,
-          user_id_param: selfId
-        });
-        
-        if (error) {
-          console.error('❌ RPC error marking as read:', error);
-          // Continue gracefully - don't block messaging
-          return;
-        }
-        
-        console.log('✅ Successfully marked as read, invalidating unread counts');
-        
-        // Only invalidate - TanStack Query will auto-refetch when needed
-        await qc.invalidateQueries({ 
-          queryKey: ['dm-unread', selfId],
-          refetchType: 'active'
-        });
-        
-      } catch (error) {
-        console.error('❌ Exception marking as read:', error);
-        // Continue gracefully - don't block messaging
-      }
-    }, 1000, { leading: true, trailing: false }); // Only fire once per second max
-  }, [threadId, selfId, qc]);
+  /* 6️⃣  mark thread as read */
+  const markReadThrottled = useRef(
+    throttle(async () => {
+      if (!threadId || !selfId) return;
+      await supabase.rpc('update_last_read_at', {
+        p_thread_id: threadId,
+        p_user_id: selfId,
+      });
+    }, 1_000, { trailing: false }),
+  );
 
-  const markAsRead = useCallback(async () => {
-    if (markAsReadRef.current) {
-      await markAsReadRef.current();
-    }
-  }, []);
+  const markAsRead = useCallback(async () => markReadThrottled.current(), []);
 
   return {
     threadId,
     messages,
     isTyping,
-    isSending: send.isPending,
-    sendMessage: send.mutateAsync,
-    sendTyping: throttledTyping, // Throttled typing indicator
-    markAsRead, // Mark thread as read
+    isSending: sendMessage.isPending,
+    sendMessage: sendMessage.mutateAsync,
+    sendTyping,
+    markAsRead,
   };
 }
