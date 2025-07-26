@@ -6,17 +6,19 @@ import { VIBE_COLORS } from '@/constants/vibes';
 import { Button } from '@/components/ui/button';
 import { storage } from '@/lib/storage';
 
-// Lazy import framer-motion for web only
+// Conditional imports for framer-motion (web only)
+import { motion, AnimatePresence as FramerAnimatePresence } from 'framer-motion';
+
 const MotionDiv = Platform.OS === 'web' 
-  ? require('framer-motion').motion.div 
+  ? motion.div 
   : ({ children, ...props }: any) => <div {...props}>{children}</div>;
 
 const MotionSpan = Platform.OS === 'web'
-  ? require('framer-motion').motion.span
+  ? motion.span
   : ({ children, ...props }: any) => <span {...props}>{children}</span>;
 
 const AnimatePresence = Platform.OS === 'web'
-  ? require('framer-motion').AnimatePresence
+  ? FramerAnimatePresence
   : ({ children }: any) => <>{children}</>;
 
 interface SplashScreenProps {
