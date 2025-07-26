@@ -187,7 +187,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
             </form> : <SearchBarWithTypeahead value={searchQuery} onChange={setSearchQuery} onSelect={result => {
           // Navigate to selected floq
           navigate(`/floqs/${result.id}`);
-        }} placeholder="Search flocks..." className="flex-1" />}
+        }} placeholder="Search floqs..." className="flex-1" />}
           
           {/* Advanced Search Toggle */}
           <Button variant={useAdvancedSearch ? "default" : "outline"} size="sm" onClick={() => {
