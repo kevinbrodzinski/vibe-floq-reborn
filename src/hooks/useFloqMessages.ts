@@ -86,9 +86,9 @@ export function useFloqMessages(floqId: string) {
       .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'floq_messages', filter: `floq_id=eq.${floqId}` },
           () => queryClient.invalidateQueries({ queryKey: ['floq-messages', floqId] }))
-      // reaction add / remove
       .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'floq_message_reactions' },
+          { event: '*', schema: 'public', table: 'floq_message_reactions',
+            filter: `message_id=in.(select id from public.floq_messages where floq_id='${floqId}')` },
           () => queryClient.invalidateQueries({ queryKey: ['floq-reactions', floqId] }))
       .subscribe();
 

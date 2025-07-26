@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { usePlanMeta } from '@/hooks/usePlanMeta';
+import { useAuth } from '@/providers/AuthProvider';
 import { formatCurrency, formatDuration } from '@/lib/format';
 import { planStatusColor } from '@/lib/planStatusColor';
 import { VibePill } from '@/components/floq/VibePill';
@@ -50,6 +51,7 @@ interface PlanCardProps {
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   const nav = useNavigate();
+  const { user } = useAuth();
   const { data: meta } = usePlanMeta(plan.id);
   const isJoined = plan.is_joined ?? false;
   
@@ -78,7 +80,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan }) => {
   // Real-time status indicators
   const isLive = plan.status === 'active' || plan.status === 'executing';
   const isStartingSoon = plan.status === 'active' && new Date(plan.planned_at) <= new Date(Date.now() + 30 * 60 * 1000);
-  const isCreator = plan.creator?.id === 'current-user-id';
+  const isCreator = user?.id && plan.creator?.id === user.id;
   const hasUnreadMessages = false;
   const isPrivate = plan.is_private ?? false;
   const isInFuture = new Date(plan.planned_at) > new Date();
