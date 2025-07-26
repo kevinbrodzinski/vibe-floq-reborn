@@ -180,7 +180,7 @@ export const LivePlanTracker = ({
           {participants.map((participant) => {
             // Check if participant is checked in to current stop
             const isCheckedIn = currentStop && checkIns.some(
-              checkIn => checkIn.stop_id === currentStop.id && checkIn.user_id === participant.id
+              checkIn => checkIn.stop_id === currentStop.id && checkIn.participant_id === participant.id
             );
             
             return (

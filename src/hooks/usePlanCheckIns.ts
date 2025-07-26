@@ -5,7 +5,7 @@ export interface PlanCheckIn {
   id: string;
   plan_id: string;
   stop_id: string;
-  user_id: string;
+  participant_id: string;
   checked_in_at: string;
   checked_out_at?: string;
   location?: any;
@@ -46,7 +46,7 @@ export async function getCurrentCheckIns(planId: string, userId: string): Promis
     .from('plan_check_ins' as any)
     .select('*')
     .eq('plan_id', planId)
-    .eq('user_id', userId)
+    .eq('participant_id', userId)
     .is('checked_out_at', null);
     
   if (error) throw error;
