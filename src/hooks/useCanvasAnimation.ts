@@ -1,4 +1,37 @@
 import { useRef, useLayoutEffect, useMemo } from 'react';
+import { VIBE_RGB, VIBE_ORDER } from '@/constants/vibes';
+
+// Helper to convert RGB to HSL string for Canvas API
+const rgbToHsl = (r: number, g: number, b: number, alpha: number = 1): string => {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const diff = max - min;
+  const sum = max + min;
+  const l = sum / 2;
+  
+  let h = 0;
+  let s = 0;
+  
+  if (diff !== 0) {
+    s = l > 0.5 ? diff / (2 - sum) : diff / sum;
+    
+    switch (max) {
+      case r: h = ((g - b) / diff + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / diff + 2) / 6; break;
+      case b: h = ((r - g) / diff + 4) / 6; break;
+    }
+  }
+  
+  const hDeg = Math.round(h * 360);
+  const sPercent = Math.round(s * 100);
+  const lPercent = Math.round(l * 100);
+  
+  return `hsla(${hDeg}, ${sPercent}%, ${lPercent}%, ${alpha})`;
+};
 
 interface Orb {
   id: string;
@@ -48,14 +81,18 @@ export function useCanvasAnimation({
     if (typeof window === 'undefined') return [];
     
     return Array.from({ length: 16 }, (_, i) => {
-      const color = vibeColors[i % vibeColors.length];
+      // Use VIBE_RGB values instead of CSS custom properties
+      const vibeIndex = i % VIBE_ORDER.length;
+      const vibeName = VIBE_ORDER[vibeIndex];
+      const [r, g, b] = VIBE_RGB[vibeName];
+      
       return {
         id: `orb-${i}`,
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
         size: Math.random() * 120 + 40, // TODO: Use design tokens
-        innerColor: color.replace('hsl(', 'hsla(').replace(')', ', 0.8)'),
-        outerColor: color.replace('hsl(', 'hsla(').replace(')', ', 0.1)'),
+        innerColor: rgbToHsl(r, g, b, 0.8),
+        outerColor: rgbToHsl(r, g, b, 0.1),
         gradient: null, // Will be created once
         speed: Math.random() * 0.5 + 0.2,
         angle: Math.random() * Math.PI * 2,
