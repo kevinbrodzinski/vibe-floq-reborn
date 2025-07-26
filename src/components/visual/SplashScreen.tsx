@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useCanvasAnimation } from '@/hooks/useCanvasAnimation';
 import { VIBE_COLORS } from '@/constants/vibes';
 import { Button } from '@/components/ui/button';
+import { safePlatform } from '@/types/enums/platform';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -10,210 +12,100 @@ interface SplashScreenProps {
   duration?: number;
 }
 
-interface Orb {
-  id: string;
-  x: number;
-  y: number;
-  size: number;
-  color: string;
-  speed: number;
-  angle: number;
-  opacity: number;
-}
-
-interface Bird {
-  id: string;
-  x: number;
-  y: number;
-  targetX: number;
-  targetY: number;
-  speed: number;
-  size: number;
-}
-
 export function SplashScreen({ 
   onComplete, 
   autoTransition = false, 
   duration = 7000 
 }: SplashScreenProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
   const prefersReduced = usePrefersReducedMotion();
+  const platform = safePlatform(typeof window !== 'undefined' ? 'web' : 'web');
   const [phase, setPhase] = useState<'orbs' | 'transform' | 'swarm' | 'fadeout'>('orbs');
-  const [orbs, setOrbs] = useState<Orb[]>([]);
-  const [birds, setBirds] = useState<Bird[]>([]);
   const [showWordmark, setShowWordmark] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [isInteracted, setIsInteracted] = useState(false);
+  const timersRef = useRef<number[]>([]);
+  
+  // Get vibe colors as array
+  const vibeColorValues = Object.values(VIBE_COLORS);
+  
+  // Use canvas animation hook
+  const { canvasRef } = useCanvasAnimation({
+    onDone: onComplete,
+    prefersReducedMotion: prefersReduced,
+    vibeColors: vibeColorValues,
+    phase,
+  });
 
-  // Initialize orbs with vibe colors
+  // Set splash as seen immediately when component mounts
   useEffect(() => {
-    const vibeColorValues = Object.values(VIBE_COLORS);
-    const initialOrbs: Orb[] = Array.from({ length: 16 }, (_, i) => ({
-      id: `orb-${i}`,
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      size: Math.random() * 120 + 40, // 40-160px
-      color: vibeColorValues[i % vibeColorValues.length],
-      speed: Math.random() * 0.5 + 0.2,
-      angle: Math.random() * Math.PI * 2,
-      opacity: Math.random() * 0.6 + 0.3
-    }));
-    setOrbs(initialOrbs);
+    if (typeof window !== 'undefined') {
+      // Mark splash as seen right away to make it truly one-time
+      localStorage.setItem('floq_splash_seen', 'true');
+    }
   }, []);
 
   // Phase timing
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Clear any existing timers
+    timersRef.current.forEach(timer => clearTimeout(timer));
+    timersRef.current = [];
+    
     if (prefersReduced) {
       // Reduced motion - quick transition
-      const timer = window.setTimeout(() => {
+      const timer = setTimeout(() => {
         setShowWordmark(true);
         setShowButton(true);
       }, 500);
-      return () => window.clearTimeout(timer);
+      timersRef.current.push(timer);
+      return () => {
+        clearTimeout(timer);
+        timersRef.current = [];
+      };
     }
 
-    const timers: number[] = [];
-
     // Phase 1: Show wordmark
-    timers.push(window.setTimeout(() => setShowWordmark(true), 1000));
+    timersRef.current.push(setTimeout(() => setShowWordmark(true), 1000));
 
     // Phase 2: Show enter button
-    timers.push(window.setTimeout(() => setShowButton(true), 2000));
+    timersRef.current.push(setTimeout(() => setShowButton(true), 2000));
 
     // Auto transition if enabled
     if (autoTransition && !isInteracted) {
-      timers.push(window.setTimeout(() => startTransition(), duration - 3000));
+      timersRef.current.push(setTimeout(() => startTransition(), duration - 3000));
     }
 
-    return () => timers.forEach(window.clearTimeout);
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current = [];
+    };
   }, [autoTransition, duration, isInteracted, prefersReduced]);
 
   const startTransition = () => {
-    if (isInteracted) return;
+    if (isInteracted || typeof window === 'undefined') return;
     setIsInteracted(true);
     
     if (prefersReduced) {
       // Simple fade for reduced motion
       setPhase('fadeout');
-      window.setTimeout(onComplete, 1000);
+      setTimeout(() => onComplete?.(), 1000);
       return;
     }
 
     // Start transformation sequence
     setPhase('transform');
-    
-    // Convert orbs to birds
-    const newBirds: Bird[] = orbs.map(orb => ({
-      id: orb.id,
-      x: orb.x,
-      y: orb.y,
-      targetX: window.innerWidth / 2,
-      targetY: window.innerHeight / 2,
-      speed: Math.random() * 8 + 4,
-      size: Math.random() * 20 + 10
-    }));
-    setBirds(newBirds);
-
-    window.setTimeout(() => setPhase('swarm'), 1000);
-    window.setTimeout(() => setPhase('fadeout'), 2500);
-    window.setTimeout(onComplete, 3500);
+    setTimeout(() => setPhase('swarm'), 1000);
+    setTimeout(() => setPhase('fadeout'), 2500);
+    setTimeout(() => onComplete?.(), 3500);
   };
 
-  // Canvas animation
+  // Cleanup timers on unmount
   useEffect(() => {
-    if (prefersReduced || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth * window.devicePixelRatio;
-      canvas.height = window.innerHeight * window.devicePixelRatio;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    };
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    const animate = () => {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-      if (phase === 'orbs') {
-        // Draw floating orbs
-        orbs.forEach(orb => {
-          ctx.save();
-          ctx.globalAlpha = orb.opacity;
-          
-          // Create radial gradient for orb
-          const gradient = ctx.createRadialGradient(
-            orb.x, orb.y, 0,
-            orb.x, orb.y, orb.size / 2
-          );
-          gradient.addColorStop(0, orb.color.replace('hsl(', 'hsla(').replace(')', ', 0.8)'));
-          gradient.addColorStop(1, orb.color.replace('hsl(', 'hsla(').replace(')', ', 0.1)'));
-          
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(orb.x, orb.y, orb.size / 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-
-          // Gentle floating motion
-          orb.x += Math.cos(orb.angle) * orb.speed;
-          orb.y += Math.sin(orb.angle) * orb.speed;
-          orb.angle += 0.01;
-
-          // Keep in bounds
-          if (orb.x < 0 || orb.x > window.innerWidth) orb.speed *= -1;
-          if (orb.y < 0 || orb.y > window.innerHeight) orb.speed *= -1;
-        });
-      } else if (phase === 'transform' || phase === 'swarm') {
-        // Draw birds swarming to center
-        birds.forEach(bird => {
-          ctx.save();
-          ctx.globalAlpha = phase === 'swarm' ? 1 : 0.9;
-          ctx.fillStyle = 'white';
-          
-          // Simple bird shape
-          ctx.translate(bird.x, bird.y);
-          ctx.rotate(Math.atan2(bird.targetY - bird.y, bird.targetX - bird.x));
-          ctx.fillRect(-bird.size / 2, -2, bird.size, 4);
-          ctx.fillRect(-bird.size / 4, -1, bird.size / 2, 2);
-          ctx.restore();
-
-          // Move towards center
-          const dx = bird.targetX - bird.x;
-          const dy = bird.targetY - bird.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          if (distance > 5) {
-            bird.x += (dx / distance) * bird.speed;
-            bird.y += (dy / distance) * bird.speed;
-          }
-
-          // Increase speed as they get closer
-          if (phase === 'swarm') {
-            bird.speed += 0.5;
-          }
-        });
-      }
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animate();
-
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      timersRef.current.forEach(timer => clearTimeout(timer));
     };
-  }, [orbs, birds, phase, prefersReduced]);
+  }, []);
 
   const handleEnterClick = () => {
     startTransition();
@@ -221,13 +113,20 @@ export function SplashScreen({
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-[#020202] to-[#0e0f12] overflow-hidden">
-      {/* Canvas for animations */}
-      {!prefersReduced && (
+      {/* Canvas for animations - only on web */}
+      {!prefersReduced && platform === 'web' && (
         <canvas
           ref={canvasRef}
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'transparent' }}
         />
+      )}
+
+      {/* Static fallback for reduced motion */}
+      {prefersReduced && (
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-muted/20" />
+        </div>
       )}
 
       {/* Particle field for subtle background */}
@@ -263,7 +162,11 @@ export function SplashScreen({
             transition={{ duration: 1, ease: "easeOut" }}
             className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
           >
-            <h1 className="text-6xl md:text-8xl font-thin text-white tracking-wider">
+            <h1 
+              className="text-6xl md:text-8xl font-thin text-white tracking-wider"
+              role="img"
+              aria-label="Floq logo"
+            >
               floq
             </h1>
           </motion.div>
@@ -282,15 +185,18 @@ export function SplashScreen({
           >
             <Button
               onClick={handleEnterClick}
+              disabled={isInteracted}
               variant="outline"
               size="lg"
-              className="relative overflow-hidden bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:border-white/40 transition-all duration-300 rounded-xl px-8 py-4 text-lg font-medium hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+              aria-label="Enter splash screen"
+              className="relative overflow-hidden bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 hover:border-white/40 transition-all duration-300 rounded-xl px-8 py-4 text-lg font-medium hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <motion.span
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={!isInteracted ? { scale: 1.05 } : {}}
+                whileTap={!isInteracted ? { scale: 0.95 } : {}}
+                className={isInteracted ? "animate-pulse" : ""}
               >
-                Enter
+                {isInteracted ? 'Entering...' : 'Enter'}
               </motion.span>
             </Button>
           </motion.div>
