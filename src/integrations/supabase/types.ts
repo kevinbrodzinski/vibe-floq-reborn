@@ -507,6 +507,8 @@ export type Database = {
           last_read_at_b: string
           member_a: string
           member_b: string
+          unread_a: number | null
+          unread_b: number | null
         }
         Insert: {
           created_at?: string | null
@@ -516,6 +518,8 @@ export type Database = {
           last_read_at_b?: string
           member_a: string
           member_b: string
+          unread_a?: number | null
+          unread_b?: number | null
         }
         Update: {
           created_at?: string | null
@@ -525,6 +529,8 @@ export type Database = {
           last_read_at_b?: string
           member_a?: string
           member_b?: string
+          unread_a?: number | null
+          unread_b?: number | null
         }
         Relationships: []
       }
@@ -591,6 +597,36 @@ export type Database = {
           shape?: Database["public"]["Enums"]["event_shape"] | null
           starts_at?: string | null
           vibe?: string | null
+        }
+        Relationships: []
+      }
+      event_notifications: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          payload: Json | null
+          seen_at: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          payload?: Json | null
+          seen_at?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json | null
+          seen_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1068,6 +1104,45 @@ export type Database = {
           },
         ]
       }
+      floq_message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floq_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "v_chat_message"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floq_messages: {
         Row: {
           body: string | null
@@ -1076,6 +1151,7 @@ export type Database = {
           emoji: string | null
           floq_id: string
           id: string
+          reply_to_id: string | null
           sender_id: string
           status: string | null
         }
@@ -1086,6 +1162,7 @@ export type Database = {
           emoji?: string | null
           floq_id: string
           id?: string
+          reply_to_id?: string | null
           sender_id: string
           status?: string | null
         }
@@ -1096,15 +1173,44 @@ export type Database = {
           emoji?: string | null
           floq_id?: string
           id?: string
+          reply_to_id?: string | null
           sender_id?: string
           status?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "fk_floq_reply"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_floq_reply"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_chat_message"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "floq_messages_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "floq_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floq_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "v_chat_message"
             referencedColumns: ["id"]
           },
           {
@@ -1844,9 +1950,9 @@ export type Database = {
           geo_hash: string | null
           id: string
           location: unknown | null
+          participant_id: string
           plan_id: string
           stop_id: string
-          user_id: string
         }
         Insert: {
           checked_in_at?: string
@@ -1856,9 +1962,9 @@ export type Database = {
           geo_hash?: string | null
           id?: string
           location?: unknown | null
+          participant_id: string
           plan_id: string
           stop_id: string
-          user_id: string
         }
         Update: {
           checked_in_at?: string
@@ -1868,9 +1974,9 @@ export type Database = {
           geo_hash?: string | null
           id?: string
           location?: unknown | null
+          participant_id?: string
           plan_id?: string
           stop_id?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -3392,6 +3498,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_push_tokens: {
+        Row: {
+          badge_count: number
+          device_id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          badge_count?: number
+          device_id: string
+          last_seen_at?: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          badge_count?: number
+          device_id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           available_until: string | null
@@ -4605,6 +4738,13 @@ export type Database = {
         Args: { requested_precision?: number }
         Returns: number
       }
+      count_unseen_plan_events: {
+        Args: { uid: string }
+        Returns: {
+          plan_id: string
+          unseen: number
+        }[]
+      }
       create_floq: {
         Args:
           | {
@@ -4735,6 +4875,10 @@ export type Database = {
       finish_plan: {
         Args: { p_plan_id: string; p_user_id: string }
         Returns: Json
+      }
+      fn_emit_notification: {
+        Args: { p_user_id: string; p_kind: string; p_payload: Json }
+        Returns: undefined
       }
       friend_count: {
         Args: Record<PropertyKey, never>
@@ -5287,6 +5431,14 @@ export type Database = {
           friendship_created_at: string
         }[]
       }
+      get_message_reactions: {
+        Args: { ids: string[] }
+        Returns: {
+          message_id: string
+          emoji: string
+          cnt: number
+        }[]
+      }
       get_nearby_presence: {
         Args: { user_lat: number; user_lng: number; radius_meters?: number }
         Returns: {
@@ -5796,6 +5948,10 @@ export type Database = {
           | { p_plan_id: string; p_stop_orders: Json }
         Returns: undefined
       }
+      reset_badge: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       search_afterglows: {
         Args: {
           p_user_id?: string
@@ -5896,6 +6052,10 @@ export type Database = {
       send_friend_request: {
         Args: { _target: string }
         Returns: Json
+      }
+      send_pending_push: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       set_limit: {
         Args: { "": number }
@@ -7012,6 +7172,10 @@ export type Database = {
       st_zmin: {
         Args: { "": unknown }
         Returns: number
+      }
+      store_push_token: {
+        Args: { p_device_id: string; p_token: string; p_platform: string }
+        Returns: undefined
       }
       suggest_friends: {
         Args: { p_user_id: string; p_limit?: number }
