@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect, useMemo } from 'react';
 
 interface Orb {
   id: string;
@@ -7,6 +7,7 @@ interface Orb {
   size: number;
   innerColor: string;
   outerColor: string;
+  gradient: CanvasGradient | null;
   speed: number;
   angle: number;
   opacity: number;
@@ -40,26 +41,34 @@ export function useCanvasAnimation({
   const orbsRef = useRef<Orb[]>([]);
   const birdsRef = useRef<Bird[]>([]);
   const phaseRef = useRef<'orbs' | 'transform' | 'swarm' | 'fadeout'>('orbs');
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
-  // Initialize orbs once
-  const initializeOrbs = () => {
-    if (typeof window === 'undefined') return;
+  // Memoize orb initialization to respond to vibeColors changes
+  const initialOrbs = useMemo(() => {
+    if (typeof window === 'undefined') return [];
     
-    orbsRef.current = Array.from({ length: 16 }, (_, i) => {
+    return Array.from({ length: 16 }, (_, i) => {
       const color = vibeColors[i % vibeColors.length];
       return {
         id: `orb-${i}`,
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
-        size: Math.random() * 120 + 40, // 40-160px
+        size: Math.random() * 120 + 40, // TODO: Use design tokens
         innerColor: color.replace('hsl(', 'hsla(').replace(')', ', 0.8)'),
         outerColor: color.replace('hsl(', 'hsla(').replace(')', ', 0.1)'),
+        gradient: null, // Will be created once
         speed: Math.random() * 0.5 + 0.2,
         angle: Math.random() * Math.PI * 2,
         opacity: Math.random() * 0.6 + 0.3
       };
     });
-  };
+  }, [vibeColors.join(',')]);
+
+  // Update orbs when vibeColors change
+  useLayoutEffect(() => {
+    orbsRef.current = initialOrbs;
+    birdsRef.current = []; // Reset birds when orbs change
+  }, [initialOrbs]);
 
   const transformOrbsToBirds = () => {
     if (typeof window === 'undefined') return;
@@ -77,20 +86,22 @@ export function useCanvasAnimation({
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined' || prefersReducedMotion || !canvasRef.current) {
+      // Cancel any running animation
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = undefined;
+      }
       return;
     }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    // Initialize orbs on first mount
-    if (orbsRef.current.length === 0) {
-      initializeOrbs();
-    }
+    
+    ctxRef.current = ctx;
 
     const resizeCanvas = () => {
-      if (typeof window === 'undefined') return;
+      if (typeof window === 'undefined' || !ctx) return;
       
       canvas.width = window.innerWidth * window.devicePixelRatio;
       canvas.height = window.innerHeight * window.devicePixelRatio;
@@ -100,15 +111,29 @@ export function useCanvasAnimation({
       // Reset transform to avoid accumulation
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      
+      // Invalidate cached gradients on resize
+      orbsRef.current.forEach(orb => orb.gradient = null);
     };
 
     resizeCanvas();
     
     const handleResize = () => resizeCanvas();
+    const handleOrientationChange = () => {
+      // Handle mobile orientation changes
+      setTimeout(resizeCanvas, 100);
+    };
+    
     window.addEventListener('resize', handleResize);
+    if (typeof screen !== 'undefined' && screen.orientation) {
+      screen.orientation.addEventListener('change', handleOrientationChange);
+    }
 
     const animate = () => {
-      if (typeof window === 'undefined') return;
+      // Guard against reduced motion changes during animation
+      if (prefersReducedMotion || typeof window === 'undefined' || !ctx) {
+        return;
+      }
       
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       phaseRef.current = phase;
@@ -119,15 +144,17 @@ export function useCanvasAnimation({
           ctx.save();
           ctx.globalAlpha = orb.opacity;
           
-          // Use pre-computed gradient colors
-          const gradient = ctx.createRadialGradient(
-            orb.x, orb.y, 0,
-            orb.x, orb.y, orb.size / 2
-          );
-          gradient.addColorStop(0, orb.innerColor);
-          gradient.addColorStop(1, orb.outerColor);
+          // Cache gradient to avoid recreation
+          if (!orb.gradient) {
+            orb.gradient = ctx.createRadialGradient(
+              orb.x, orb.y, 0,
+              orb.x, orb.y, orb.size / 2
+            );
+            orb.gradient.addColorStop(0, orb.innerColor);
+            orb.gradient.addColorStop(1, orb.outerColor);
+          }
           
-          ctx.fillStyle = gradient;
+          ctx.fillStyle = orb.gradient;
           ctx.beginPath();
           ctx.arc(orb.x, orb.y, orb.size / 2, 0, Math.PI * 2);
           ctx.fill();
@@ -137,6 +164,11 @@ export function useCanvasAnimation({
           orb.x += Math.cos(orb.angle) * orb.speed;
           orb.y += Math.sin(orb.angle) * orb.speed;
           orb.angle = (orb.angle + 0.01) % (Math.PI * 2);
+
+          // Invalidate gradient cache when position changes significantly
+          if (orb.gradient) {
+            orb.gradient = null;
+          }
 
           // Keep in bounds
           if (orb.x < 0 || orb.x > window.innerWidth) orb.speed *= -1;
@@ -171,9 +203,9 @@ export function useCanvasAnimation({
             bird.y += (dy / distance) * bird.speed;
           }
 
-          // Increase speed as they get closer
+          // Increase speed as they get closer (with clamp to prevent runaway)
           if (phaseRef.current === 'swarm') {
-            bird.speed += 0.5;
+            bird.speed = Math.min(bird.speed + 0.5, 30); // Clamp max speed
           }
         });
       }
@@ -185,8 +217,12 @@ export function useCanvasAnimation({
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (typeof screen !== 'undefined' && screen.orientation) {
+        screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
+        rafRef.current = undefined;
       }
     };
   }, [phase, prefersReducedMotion, vibeColors]);
