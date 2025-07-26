@@ -107,7 +107,9 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
     if (!input.trim() || isSending) return;
     
     try {
-      await sendMessage(input.trim());
+      await sendMessage({
+        content: input.trim()
+      });
       setInput('');
     } catch (error) {
       console.error('Failed to send message:', error);

@@ -62,7 +62,7 @@ export function useFriendRequests() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as FriendRequest[];
+      return (data || []) as unknown as FriendRequest[];
     },
     staleTime: 15_000,
   });
@@ -85,7 +85,9 @@ export function useFriendRequests() {
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [uid, qc]);
 
   /* 3️⃣  accept / decline / send helpers (SQL updates) */
@@ -148,8 +150,7 @@ export function useFriendRequests() {
          – noop if already pending / friends
       */
       const { error } = await supabase.rpc('send_friend_request', {
-        requester_id_param: uid,
-        addressee_id_param: targetUserId,
+        _target: targetUserId,
       });
 
       if (error) throw error;

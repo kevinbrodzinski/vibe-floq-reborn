@@ -181,43 +181,46 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
             
             {pendingRequests.length > 0 ? (
               <div className="space-y-2">
-                {pendingRequests.map((request) => (
-                  <div key={request.requester_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                    <AvatarWithFallback 
-                      src={request.avatar_url ? getAvatarUrl(request.avatar_url, 40) : null}
-                      fallbackText={request.display_name || request.username || 'U'}
-                      className="w-10 h-10"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">
-                        {request.display_name || request.username || 'Unknown User'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Wants to be friends
-                      </p>
+                {pendingRequests.map((request) => {
+                  const reqProfile = request.requester_profile;
+                  return (
+                    <div key={request.user_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                      <AvatarWithFallback 
+                        src={reqProfile?.avatar_url ? getAvatarUrl(reqProfile.avatar_url, 40) : null}
+                        fallbackText={reqProfile?.display_name || reqProfile?.username || 'U'}
+                        className="w-10 h-10"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">
+                          {reqProfile?.display_name || reqProfile?.username || 'Unknown User'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Wants to be friends
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="default"
+                          onClick={() => acceptRequest(request.user_id)}
+                          disabled={isAccepting || isDeclining}
+                          className="h-8 px-3"
+                        >
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => declineRequest(request.user_id)}
+                          disabled={isAccepting || isDeclining}
+                          className="h-8 px-3"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="default"
-                        onClick={() => acceptRequest(request.requester_id)}
-                        disabled={isAccepting || isDeclining}
-                        className="h-8 px-3"
-                      >
-                        <Check className="w-3 h-3" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => declineRequest(request.requester_id)}
-                        disabled={isAccepting || isDeclining}
-                        className="h-8 px-3"
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-4 text-muted-foreground">

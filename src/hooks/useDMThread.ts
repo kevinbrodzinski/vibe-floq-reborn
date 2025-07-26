@@ -68,7 +68,7 @@ export function useDMThread(friendId: string | null) {
       ({ new: row }) => {
         qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) => {
           if (old.find((m) => m.id === row.id)) return old;          // already present
-          return [...old, row];
+          return [...old, row as DirectMessage];
         });
       },
     );
@@ -104,7 +104,7 @@ export function useDMThread(friendId: string | null) {
         .order('created_at', { ascending: true })
         .limit(50);
       if (error) throw error;
-      return data as DirectMessage[];
+      return (data || []) as unknown as DirectMessage[];
     },
     staleTime: 10_000,
   });
@@ -135,7 +135,7 @@ export function useDMThread(friendId: string | null) {
         .single();
 
       if (error) throw error;
-      return data as DirectMessage;
+      return data as unknown as DirectMessage;
     },
     onMutate: async (p) => {
       if (!threadId || !selfId) return undefined;
@@ -158,7 +158,7 @@ export function useDMThread(friendId: string | null) {
     onSuccess: (real, _vars, ctx) => {
       if (!ctx?.optimisticId || !threadId) return;
       qc.setQueryData<DirectMessage[]>(['dm-messages', threadId], (old = []) =>
-        old.map((m) => (m.id === ctx.optimisticId ? real : m)),
+        old.map((m) => (m.id === ctx.optimisticId ? real as DirectMessage : m)),
       );
     },
     onError: (_e, _vars, ctx) => {
@@ -187,8 +187,8 @@ export function useDMThread(friendId: string | null) {
     throttle(async () => {
       if (!threadId || !selfId) return;
       await supabase.rpc('update_last_read_at', {
-        p_thread_id: threadId,
-        p_user_id: selfId,
+        thread_id_param: threadId,
+        user_id_param: selfId,
       });
     }, 1_000, { trailing: false }),
   );
