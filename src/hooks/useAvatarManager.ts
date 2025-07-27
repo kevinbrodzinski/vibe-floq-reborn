@@ -19,26 +19,33 @@ export function useAvatarManager() {
     try {
       if (!user) throw new Error('No user found');
       
-      const { path } = await uploadAvatar(file);
-      
-      await supabase
-        .from('profiles')
-        .update({ avatar_url: path })
-        .eq('id', user.id);
-
-      // Clear URL cache for the old avatar path first
+      // Get current avatar for cleanup
       const { data: currentProfile } = await supabase
         .from('profiles')
         .select('avatar_url')
         .eq('id', user.id)
         .single();
       
-      if (currentProfile?.avatar_url) {
+      const { path, error: uploadError } = await uploadAvatar(file);
+      if (uploadError) throw new Error(uploadError);
+      
+      // Update profile with public URL (path now contains the public URL)
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: path })
+        .eq('id', user.id);
+
+      // Clean up old avatar if it exists
+      if (currentProfile?.avatar_url && currentProfile.avatar_url !== path) {
+        // Don't await this - let it run in background
+        deleteAvatar(currentProfile.avatar_url).catch(console.warn);
         clearAvatarUrlCache(currentProfile.avatar_url);
       }
       
-      // Clear cache for new path too
-      clearAvatarUrlCache(path);
+      // Clear cache for new avatar
+      if (path) {
+        clearAvatarUrlCache(path);
+      }
 
       toast({ title: 'Avatar updated' });
       queryClient.invalidateQueries({ queryKey: ['profile'] });

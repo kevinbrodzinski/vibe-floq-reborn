@@ -75,8 +75,8 @@ export const AvatarGrid = ({
       {remainingCount > 0 && (
         <div className="flex items-center justify-center bg-muted text-muted-foreground border-2 border-background rounded-full text-xs font-medium"
              style={{ 
-               width: size === 'xs' ? 32 : size === 'sm' ? 48 : 64, 
-               height: size === 'xs' ? 32 : size === 'sm' ? 48 : 64 
+               width: typeof size === 'string' ? (size === 'xs' ? 32 : size === 'sm' ? 48 : 64) : size, 
+               height: typeof size === 'string' ? (size === 'xs' ? 32 : size === 'sm' ? 48 : 64) : size 
              }}>
           +{remainingCount}
         </div>

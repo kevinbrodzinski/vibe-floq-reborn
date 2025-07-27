@@ -109,13 +109,16 @@ export const AvatarUpload = ({
       }
 
       // Clear cache for the new avatar
-      clearAvatarUrlCache(result.path);
+      if (result.path) {
+        clearAvatarUrlCache(result.path);
+      }
 
       toast({
         title: "Avatar updated",
         description: "Your profile picture has been updated successfully"
       });
 
+      // Use the path (which is now the public URL)
       onAvatarChange?.(result.path);
     } catch (error) {
       console.error('Avatar upload error:', error);
