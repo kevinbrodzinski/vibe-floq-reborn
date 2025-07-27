@@ -4,6 +4,7 @@ import { Camera, Upload, Trash2 } from 'lucide-react';
 import { uploadAvatar, deleteAvatar } from '@/lib/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { XXLAvatar } from '@/components/ui/avatar-variants';
+import { clearAvatarUrlCache } from '@/hooks/useAvatarUrl';
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string | null;
@@ -23,6 +24,54 @@ export const AvatarUpload = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Image compression function for mobile uploads
+  const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxWidth) {
+            width = (width * maxWidth) / height;
+            height = maxWidth;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file); // Fallback to original
+            }
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -37,11 +86,11 @@ export const AvatarUpload = ({
       return;
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (10MB limit, increased for better compatibility)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please select an image smaller than 5MB",
+        description: "Please select an image smaller than 10MB",
         variant: "destructive"
       });
       return;
@@ -50,11 +99,17 @@ export const AvatarUpload = ({
     setIsUploading(true);
     
     try {
-      const result = await uploadAvatar(file);
+      // Compress image for better performance and storage efficiency
+      const compressedFile = await compressImage(file);
+      
+      const result = await uploadAvatar(compressedFile);
       
       if (result.error) {
         throw result.error;
       }
+
+      // Clear cache for the new avatar
+      clearAvatarUrlCache(result.path);
 
       toast({
         title: "Avatar updated",
@@ -89,6 +144,9 @@ export const AvatarUpload = ({
       if (result.error) {
         throw result.error;
       }
+
+      // Clear cache for deleted avatar
+      clearAvatarUrlCache(currentAvatarUrl);
 
       toast({
         title: "Avatar removed",
@@ -153,8 +211,9 @@ export const AvatarUpload = ({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={handleFileSelect}
+        capture="environment"
         className="hidden"
+        onChange={handleFileSelect}
       />
     </div>
   );

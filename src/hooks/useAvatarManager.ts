@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { uploadAvatar, deleteAvatar } from '@/lib/avatar';
+import { clearAvatarUrlCache } from '@/hooks/useAvatarUrl';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function useAvatarManager() {
@@ -24,6 +25,20 @@ export function useAvatarManager() {
         .from('profiles')
         .update({ avatar_url: path })
         .eq('id', user.id);
+
+      // Clear URL cache for the old avatar path first
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', user.id)
+        .single();
+      
+      if (currentProfile?.avatar_url) {
+        clearAvatarUrlCache(currentProfile.avatar_url);
+      }
+      
+      // Clear cache for new path too
+      clearAvatarUrlCache(path);
 
       toast({ title: 'Avatar updated' });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -48,6 +63,8 @@ export function useAvatarManager() {
       
       if (profile?.avatar_url) {
         await deleteAvatar(profile.avatar_url);
+        // Clear cache for deleted avatar
+        clearAvatarUrlCache(profile.avatar_url);
       }
       
       await supabase
