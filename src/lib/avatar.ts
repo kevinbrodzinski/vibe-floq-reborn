@@ -8,52 +8,81 @@ export type AvatarSize = 32 | 48 | 64 | 96 | 128 | 256 | 'xs' | 'sm' | 'md' | 'l
  */
 export async function uploadAvatar(file: File) {
   try {
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      throw new Error('Not authenticated');
-    }
+    // Import telemetry for monitoring
+    const { avatarTelemetry, trackTiming, logError } = await import('@/lib/monitoring/telemetry');
+    
+    // Start tracking upload
+    avatarTelemetry.uploadStarted(file.size, file.type);
+    const startTime = Date.now();
+    
+    return await trackTiming('Avatar Upload', async () => {
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        avatarTelemetry.uploadFailed('Not authenticated', file.size, 'auth');
+        throw new Error('Not authenticated');
+      }
 
-    // Validate file size (5MB server-side limit)
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('File too large. Please select an image smaller than 5MB.');
-    }
+      // Validate file size (5MB server-side limit)
+      if (file.size > 5 * 1024 * 1024) {
+        avatarTelemetry.uploadFailed('File too large', file.size, 'validation');
+        throw new Error('File too large. Please select an image smaller than 5MB.');
+      }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      throw new Error('Invalid file type. Please select an image.');
-    }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        avatarTelemetry.uploadFailed('Invalid file type', file.size, 'validation');
+        throw new Error('Invalid file type. Please select an image.');
+      }
 
-    // Generate secure filename with user ID path structure
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const filename = `${crypto.randomUUID()}.${fileExt}`;
-    const path = `${user.id}/${filename}`;
+      // Generate secure filename with user ID path structure
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const filename = `${globalThis.crypto.randomUUID()}.${fileExt}`;
+      const path = `${user.id}/${filename}`;
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type
-      });
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, {
+          upsert: true,
+          contentType: file.type
+        });
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error(`Upload failed: ${uploadError.message}`);
-    }
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        avatarTelemetry.uploadFailed(uploadError.message, file.size, 'storage_upload');
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(path);
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(path);
 
-    return { 
-      path: publicUrl,  // Return public URL instead of storage path
-      publicUrl,
-      error: null 
-    };
+      const duration = Date.now() - startTime;
+      avatarTelemetry.uploadCompleted(file.size, duration, publicUrl);
+
+      return { 
+        path: publicUrl,  // Return public URL instead of storage path
+        publicUrl,
+        error: null 
+      };
+    });
   } catch (error: any) {
     console.error('Avatar upload failed:', error);
+    
+    // Log error to telemetry
+    try {
+      const { logError } = await import('@/lib/monitoring/telemetry');
+      logError(error, {
+        context: 'avatar_upload',
+        fileSize: file.size,
+        fileType: file.type,
+      });
+    } catch (e) {
+      console.warn('Failed to log error to telemetry:', e);
+    }
+    
     return { 
       path: null, 
       publicUrl: null,
