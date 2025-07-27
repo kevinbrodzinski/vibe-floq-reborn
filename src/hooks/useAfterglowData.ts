@@ -21,7 +21,7 @@ export function useAfterglowData(date?: string) {
           .from('daily_afterglow')
           .select('*')
           .eq('date', date)
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)  // TODO(user): Update to profile_id after database migration
+          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
           .maybeSingle()
 
         if (fetchError) throw fetchError

@@ -21,7 +21,7 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
       const { data, error: fetchError } = await supabase
         .from('daily_afterglow')
         .select('*')
-        .eq('user_id', user.id)  // TODO(user): Update to profile_id after database migration
+        .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(limit)
 

@@ -46,7 +46,7 @@ export function useAutoSaveDrafts(planId: string) {
         .from('plan_drafts')
         .upsert({
           plan_id: planId,
-          user_id: currentUser.id,  // TODO(user): Update to profile_id after database migration
+          user_id: currentUser.id,
           draft_data: draftData as any, // Cast to satisfy JSON type
           last_saved_at: new Date().toISOString(),
           version: currentVersion + 1,
@@ -75,7 +75,7 @@ export function useAutoSaveDrafts(planId: string) {
         .from('plan_drafts')
         .select('*')
         .eq('plan_id', planId)
-        .eq('user_id', currentUser.id)  // TODO(user): Update to profile_id after database migration
+        .eq('user_id', currentUser.id)
         .order('last_saved_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -102,7 +102,7 @@ export function useAutoSaveDrafts(planId: string) {
         .from('plan_drafts')
         .select('*')
         .eq('plan_id', planId)
-        .eq('user_id', currentUser?.id)  // TODO(user): Update to profile_id after database migration
+        .eq('user_id', currentUser?.id)
         .order('last_saved_at', { ascending: false })
         .limit(1)
         .maybeSingle()
