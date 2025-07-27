@@ -18,3 +18,8 @@ export const useCurrentUserId = () => {
   const { data: user } = useCurrentUser();
   return user?.id;
 };
+
+export const useCurrentProfileId = () => {
+  const { data: user } = useCurrentUser();
+  return user?.id; // This is the profile_id in our database
+};

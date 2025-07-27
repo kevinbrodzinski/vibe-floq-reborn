@@ -21,7 +21,7 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
       const { data, error: fetchError } = await supabase
         .from('daily_afterglow')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id)  // TODO(user): Update to profile_id after database migration
         .order('date', { ascending: false })
         .limit(limit)
 
@@ -62,7 +62,7 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
           event: 'INSERT',
           schema: 'public',
           table: 'daily_afterglow',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${user.id}`  // TODO(user): Update to profile_id after database migration
         },
         (payload) => {
           console.log('New afterglow added to history:', payload)
@@ -91,7 +91,7 @@ export function useRealtimeAfterglowHistory(limit: number = 10) {
           event: 'UPDATE',
           schema: 'public',
           table: 'daily_afterglow',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${user.id}`  // TODO(user): Update to profile_id after database migration
         },
         (payload) => {
           console.log('Afterglow updated in history:', payload)

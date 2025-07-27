@@ -7,7 +7,7 @@ export type ClusterType = Database['public']['Enums']['cluster_type_enum'];
 export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 
 export interface NearbyUser {
-  user_id: string;
+  profile_id: string;    // Updated from user_id to match database schema
   vibe: Vibe;
   distance_meters: number;
   updated_at: string;
@@ -23,7 +23,7 @@ export interface WalkableFloq {
 }
 
 export interface PresenceData {
-  user_id: string;
+  profile_id: string;    // Updated from user_id to match database schema
   vibe: Vibe;
   location: [number, number]; // [lng, lat]
   broadcast_radius: number;
@@ -33,7 +33,7 @@ export interface PresenceData {
 }
 
 export interface LivePresence {
-  user_id: string;
+  profile_id: string;    // Updated from user_id to match database schema
   vibe: string | null;
   lat: number;
   lng: number;
@@ -43,7 +43,7 @@ export interface LivePresence {
 }
 
 export interface CrossedPath {
-  user_id: string;
+  profile_id: string;    // Updated from user_id to match database schema
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;

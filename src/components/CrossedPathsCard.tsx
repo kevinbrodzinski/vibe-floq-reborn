@@ -38,7 +38,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
 
   const handleAddFriend = async () => {
     try {
-      await addFriend(person.user_id);
+      await addFriend(person.profile_id);
       toast({
         title: "Friend request sent",
         description: `Sent friend request to ${label}`,

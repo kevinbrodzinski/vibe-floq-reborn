@@ -63,7 +63,7 @@ export function useCrossedPathsToday() {
   // Filter out existing friends from crossed paths
   const filteredCrossedPaths = useMemo(() => {
     const friendsSet = new Set(friends);
-    return crossedPaths.filter(person => !friendsSet.has(person.user_id));
+    return crossedPaths.filter(person => !friendsSet.has(person.profile_id));
   }, [crossedPaths, friends]);
 
   // Trigger haptic feedback when new crossed paths are detected

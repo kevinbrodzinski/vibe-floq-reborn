@@ -343,7 +343,7 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
               ) : crossedPathsCount > 0 ? (
                 <div className="space-y-2">
                   {(showAllCrossedPaths ? crossedPaths : crossedPaths.slice(0, 3)).map((person) => (
-                    <CrossedPathsCard key={person.user_id} person={person} />
+                    <CrossedPathsCard key={person.profile_id} person={person} />
                   ))}
                 </div>
               ) : (

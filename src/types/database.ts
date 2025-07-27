@@ -36,7 +36,7 @@ export type PlanFloqRow = Database['public']['Tables']['plan_floqs']['Row']
 
 export type EventNotificationRow = {
   id: string;
-  user_id: string;
+  profile_id: string; // Updated from user_id to match database schema
   kind: string;
   payload: any;
   seen_at: string | null;

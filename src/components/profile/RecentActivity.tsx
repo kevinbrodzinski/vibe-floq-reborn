@@ -87,7 +87,7 @@ export function RecentActivity() {
       // Add recent crossed paths (from today's data)
       crossedPaths.slice(0, 3).forEach((person) => {
         activities.push({
-          id: `crossed-${person.user_id}`,
+          id: `crossed-${person.profile_id}`,
           type: 'crossed_path',
           timestamp: person.last_seen_ts,
           description: `Crossed paths with ${person.display_name || person.username || 'someone'}`,

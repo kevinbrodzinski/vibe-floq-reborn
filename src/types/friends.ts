@@ -7,7 +7,7 @@ export interface FriendRow {
 
 export interface FriendRequestRow {
   id: string;
-  user_id: string;       // requester
+  profile_id: string;    // requester (updated from user_id)
   friend_id: string;     // addressee
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
