@@ -8,6 +8,7 @@ import { storage } from '@/lib/storage';
 import { navigation } from '@/lib/navigation';
 import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants';
 import { useOnboardingToasts } from '@/lib/toastHelpers';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 interface OnboardingCompletionStepProps {
   onDone: () => void;
@@ -16,6 +17,7 @@ interface OnboardingCompletionStepProps {
 export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepProps) {
   const session = useSession();
   const queryClient = useQueryClient();
+  const { state } = useOnboardingProgress();
   const { 
     showOnboardingComplete, 
     showOnboardingSaveFailed, 
@@ -55,10 +57,47 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       setIsCompleting(true);
       console.log('🎯 Starting onboarding completion for user:', session.user.id);
 
+      // Validate required onboarding data
+      if (!state.profileData?.username || !state.profileData?.display_name) {
+        throw new Error('Missing required profile data (username or display name)');
+      }
+
+      if (!state.selectedVibe) {
+        throw new Error('Missing vibe selection');
+      }
+
       // Update both tables atomically to ensure consistency
       const completionTime = new Date().toISOString();
 
-      // 1. Mark onboarding progress as completed
+      // 1. Create user profile
+      console.log('📝 Creating user profile...');
+      const profileData = {
+        id: session.user.id,
+        username: state.profileData.username.toLowerCase().trim(),
+        display_name: state.profileData.display_name.trim(),
+        bio: state.profileData.bio?.trim() || null,
+        interests: state.profileData.interests || [],
+        avatar_url: state.avatarUrl || null,
+        vibe_preference: state.selectedVibe,
+        profile_created: true,
+        email: session.user.email || null,
+      };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert(profileData);
+
+      if (profileError) {
+        console.error('❌ Error creating profile:', profileError);
+        if (profileError.code === '23505' && profileError.message?.includes('username')) {
+          throw new Error(`Username "${state.profileData.username}" is already taken. Please choose a different one.`);
+        }
+        throw new Error(`Failed to create profile: ${profileError.message}`);
+      }
+
+      console.log('✅ Profile created successfully');
+
+      // 2. Mark onboarding progress as completed
       const { error: progressError } = await supabase
         .from('user_onboarding_progress')
         .upsert({
@@ -122,6 +161,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
       await queryClient.invalidateQueries({ queryKey: ['onboarding-complete'] });
       await queryClient.invalidateQueries({ queryKey: ['onboarding-progress', session.user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['profile:v2', session.user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['current-user-profile'] });
 
       // 5. Show success message
       showOnboardingComplete();
