@@ -1,15 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { MobileOptimizedButton } from '@/components/mobile/MobileOptimizedButton';
-
-const VIBE_OPTIONS = [
-  { id: 'chill', label: 'Chill', emoji: '😌', description: 'Relaxed and easy-going' },
-  { id: 'energetic', label: 'Energetic', emoji: '⚡', description: 'High energy and active' },
-  { id: 'romantic', label: 'Romantic', emoji: '💕', description: 'Looking for connection' },
-  { id: 'wild', label: 'Wild', emoji: '🎉', description: 'Ready to party' },
-  { id: 'cozy', label: 'Cozy', emoji: '🏠', description: 'Intimate and comfortable' },
-  { id: 'deep', label: 'Deep', emoji: '🌊', description: 'Meaningful conversations' },
-];
+import { VibeEnum } from '@/lib/vibeEnum';
+import { type Vibe } from '@/lib/vibeHelpers';
+import { toast } from '@/hooks/use-toast';
+import { vibeOptions, getVibeMeta } from '@/lib/vibeConstants';
 
 interface OnboardingVibeStepProps {
   selectedVibe: string | null;
@@ -19,6 +14,22 @@ interface OnboardingVibeStepProps {
 }
 
 export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack }: OnboardingVibeStepProps) {
+  const handleContinue = () => {
+    if (!selectedVibe) {
+      toast({ title: 'Pick a vibe first', variant: 'destructive' });
+      return;
+    }
+    if (!VibeEnum.includes(selectedVibe as Vibe)) {
+      toast({
+        title: 'Invalid vibe selected',
+        description: 'Please pick one of the listed vibe options.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    onNext();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -34,7 +45,7 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
       </div>
       
       <div className="grid grid-cols-2 gap-3">
-        {VIBE_OPTIONS.map((vibe) => (
+        {vibeOptions.map((vibe) => (
           <motion.button
             key={vibe.id}
             whileHover={{ scale: 1.02 }}
@@ -50,7 +61,9 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
           >
             <div className="text-2xl mb-2">{vibe.emoji}</div>
             <div className="font-semibold">{vibe.label}</div>
-            <div className="text-xs text-muted-foreground">{vibe.description}</div>
+            <div className="text-xs text-muted-foreground capitalize">
+              {getVibeMeta(vibe.id).energy} energy • {getVibeMeta(vibe.id).social}
+            </div>
           </motion.button>
         ))}
       </div>
@@ -65,7 +78,7 @@ export function OnboardingVibeStep({ selectedVibe, onVibeSelect, onNext, onBack 
           Back
         </MobileOptimizedButton>
         <MobileOptimizedButton 
-          onClick={onNext} 
+          onClick={handleContinue} 
           disabled={!selectedVibe}
           hapticType="medium"
           className="flex-1"
