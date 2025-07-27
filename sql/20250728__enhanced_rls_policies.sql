@@ -17,18 +17,18 @@ DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "profile_self_read"
   ON public.profiles
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = id);
 
 CREATE POLICY "profile_self_update"
   ON public.profiles
   FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "profile_self_insert"
   ON public.profiles
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = id);
 
 -- ================================
 -- 2. ADD DATABASE CONSTRAINTS
