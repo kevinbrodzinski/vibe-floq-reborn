@@ -53,6 +53,8 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       return;
     }
 
+    if (isCompleting) return;
+
     try {
       setIsCompleting(true);
       console.log('🎯 Starting onboarding completion for user:', session.user.id);
@@ -66,38 +68,34 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         throw new Error('Missing vibe selection');
       }
 
-      // Update both tables atomically to ensure consistency
-      const completionTime = new Date().toISOString();
-
-      // 1. Create user profile
-      console.log('📝 Creating user profile...');
-      const profileData = {
-        id: session.user.id,
-        username: state.profileData.username.toLowerCase().trim(),
+      // Prepare payload for edge function
+      const payload = {
+        username: state.profileData.username.trim().toLowerCase(),
         display_name: state.profileData.display_name.trim(),
-        bio: state.profileData.bio?.trim() || null,
-        interests: state.profileData.interests || [],
-        avatar_url: state.avatarUrl || null,
+        bio: state.profileData.bio?.trim().substring(0, 280) || null,
+        avatar_url: state.avatarUrl || '',
         vibe_preference: state.selectedVibe,
-        profile_created: true,
-        email: session.user.email || null,
+        interests: state.profileData.interests?.length ? state.profileData.interests : [],
+        email: session.user.email,
       };
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert(profileData);
+      // Create profile using edge function
+      console.log('📝 Creating user profile via edge function...');
+      const { data: profile, error: profileError } = await supabase.functions.invoke('create-profile', {
+        body: payload
+      });
 
       if (profileError) {
         console.error('❌ Error creating profile:', profileError);
-        if (profileError.code === '23505' && profileError.message?.includes('username')) {
-          throw new Error(`Username "${state.profileData.username}" is already taken. Please choose a different one.`);
-        }
-        throw new Error(`Failed to create profile: ${profileError.message}`);
+        throw profileError;
       }
 
       console.log('✅ Profile created successfully');
 
-      // 2. Mark onboarding progress as completed
+      // Update both tables atomically to ensure consistency
+      const completionTime = new Date().toISOString();
+
+      // Mark onboarding progress as completed
       const { error: progressError } = await supabase
         .from('user_onboarding_progress')
         .upsert({
@@ -113,17 +111,11 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (progressError) {
         console.error('❌ Error updating onboarding progress:', progressError);
-        console.error('Progress Error Details:', { 
-          message: progressError.message, 
-          details: progressError.details,
-          hint: progressError.hint,
-          code: progressError.code 
-        });
         showOnboardingSaveFailed(progressError.details || progressError.message);
         throw new Error(`Failed to update onboarding progress: ${progressError.message}`);
       }
 
-      // 2. Update user preferences
+      // Update user preferences
       const { error: preferencesError } = await supabase
         .from('user_preferences')
         .upsert({
@@ -137,19 +129,13 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (preferencesError) {
         console.error('❌ Error updating user preferences:', preferencesError);
-        console.error('Preferences Error Details:', { 
-          message: preferencesError.message, 
-          details: preferencesError.details,
-          hint: preferencesError.hint,
-          code: preferencesError.code 
-        });
         showUserPreferencesFailed(preferencesError.details || preferencesError.message);
         throw new Error(`Failed to update user preferences: ${preferencesError.message}`);
       }
 
       console.log('✅ Onboarding completion successful');
 
-      // 3. Clear local storage to prevent stale state
+      // Clear local storage to prevent stale state
       try {
         await storage.removeItem('floq_onboarding_complete');
         await storage.removeItem('floq_onboarding_progress');
@@ -157,29 +143,51 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         console.warn('Warning: Failed to clear local storage:', storageError);
       }
 
-      // 4. Invalidate queries to refresh auth state
+      // Invalidate queries to refresh auth state
       await queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
       await queryClient.invalidateQueries({ queryKey: ['onboarding-complete'] });
       await queryClient.invalidateQueries({ queryKey: ['onboarding-progress', session.user.id] });
       await queryClient.invalidateQueries({ queryKey: ['profile:v2', session.user.id] });
       await queryClient.invalidateQueries({ queryKey: ['current-user-profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile', session.user.id] });
 
-      // 5. Show success message
+      // Show success message
       showOnboardingComplete();
 
-      // 6. Complete onboarding flow
+      // Complete onboarding flow
       console.log('🚀 Calling onDone to complete onboarding');
       onDone();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('💥 Error completing onboarding:', error);
       setIsCompleting(false);
-      const toastId = toast({
-        variant: 'destructive',
-        title: 'Failed to complete onboarding',
-        description: 'Please try again.',
-      });
-      if (toastId) toastIdsRef.current.push(toastId.id);
+      
+      // Handle specific error codes
+      if (error?.message?.includes('Username already taken') || 
+          error?.message?.includes('already taken') ||
+          error?.status === 409 || 
+          error?.code === '23505') {
+        const toastId = toast({
+          variant: 'destructive',
+          title: 'Username taken',
+          description: 'This username is already in use. Please go back and choose another.',
+        });
+        if (toastId) toastIdsRef.current.push(toastId.id);
+      } else if (error?.status === 401) {
+        const toastId = toast({
+          variant: 'destructive',
+          title: 'Authentication error',
+          description: 'Please log in again to continue.',
+        });
+        if (toastId) toastIdsRef.current.push(toastId.id);
+      } else {
+        const toastId = toast({
+          variant: 'destructive',
+          title: 'Failed to complete onboarding',
+          description: error?.message || 'Please try again.',
+        });
+        if (toastId) toastIdsRef.current.push(toastId.id);
+      }
     }
   };
 
