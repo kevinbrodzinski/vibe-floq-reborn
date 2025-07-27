@@ -1,6 +1,4 @@
 import { useRef, useState } from 'react';
-import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import { compressImageNative } from '@/lib/native/compressImage';
 import { uploadAvatar, deleteAvatar } from '@/lib/avatar';
@@ -75,6 +73,9 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
 
   /* ---------- Helpers ---------- */
   const pickNative = async () => {
+    if (Platform.OS === 'web') return;
+    
+    const ImagePicker = require('expo-image-picker');
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       toast({ title: 'Permission required', description: 'Camera access is needed to upload photos', variant: 'destructive' });
@@ -91,7 +92,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
     if (pick.canceled) return;
     
     const { uri } = await compressImageNative(pick.assets[0].uri);
-    const file = await uriToFile(uri, `${crypto.randomUUID()}.jpg`);
+    const file = await uriToFile(uri, `${globalThis.crypto.randomUUID()}.jpg`);
     await uploadFlow(file);
   };
 
@@ -122,6 +123,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
         
         // Haptic feedback for success
         if (Platform.OS !== 'web') {
+          const Haptics = require('expo-haptics');
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
         
@@ -132,6 +134,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
       
       // Haptic feedback for error
       if (Platform.OS !== 'web') {
+        const Haptics = require('expo-haptics');
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
       
@@ -165,6 +168,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
 
       // Haptic feedback for success
       if (Platform.OS !== 'web') {
+        const Haptics = require('expo-haptics');
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
@@ -175,6 +179,7 @@ export function AvatarUpload({ currentAvatarUrl, displayName, onAvatarChange, si
       
       // Haptic feedback for error
       if (Platform.OS !== 'web') {
+        const Haptics = require('expo-haptics');
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
       
