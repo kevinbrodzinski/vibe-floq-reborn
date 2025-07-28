@@ -1,7 +1,8 @@
 import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
 import type { FloqMessage } from '@/hooks/useFloqMessages'
 import { supabase } from '@/integrations/supabase/client'
-import { highlightMentions } from '@/utils/highlightMentions'
+import { renderMentions } from '@/utils/mentions'
+import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMentionPopover } from '@/hooks/useMentionPopover'
 import { MentionPopover } from '@/components/chat/MentionPopover'
@@ -280,10 +281,17 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
                 : 'bg-muted rounded-bl-md'
             )}>
               {/* Rich text with mentions */}
-              <p
-                className="text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: highlightMentions(m.body) }}
-              />
+              <p className="text-sm leading-relaxed">
+                {renderMentions(m.body || '', (handle) => (
+                  <Link
+                    key={handle}
+                    to={`/u/${handle}`}
+                    className="text-primary/80 font-medium cursor-pointer hover:underline"
+                  >
+                    @{handle}
+                  </Link>
+                ))}
+              </p>
               
               {/* Message footer */}
               <div className={cn(

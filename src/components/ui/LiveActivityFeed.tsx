@@ -1,5 +1,6 @@
 import React from 'react'
 import { Users, MapPin, Clock, TrendingUp, Activity } from 'lucide-react'
+import { secureBoldify } from '@/utils/secureTextRenderer'
 
 interface LiveActivity {
   id: string
@@ -58,26 +59,6 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
   const displayedActivities = activities.slice(0, maxItems)
 
-  // Helper to bold entities in activity_text
-  const boldify = (text: string, activity: LiveActivity) => {
-    if (!boldEntities) return text;
-    let result = text;
-    if (activity.user_name) {
-      result = result.replace(
-        new RegExp(activity.user_name, 'g'),
-        `<b>${activity.user_name}</b>`
-      );
-    }
-    if (activity.venue_name) {
-      result = result.replace(
-        new RegExp(activity.venue_name, 'g'),
-        `<b>${activity.venue_name}</b>`
-      );
-    }
-    // Add more entity types as needed (floq, plan, etc.)
-    return result;
-  };
-
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-4">
@@ -104,7 +85,12 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white/90 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: boldify(activity.activity_text, activity) }} />
+              <p className="text-white/90 text-sm leading-relaxed">
+                {secureBoldify(activity.activity_text, {
+                  user_name: activity.user_name || '',
+                  venue_name: activity.venue_name || ''
+                })}
+              </p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-white/50 text-xs">{activity.timestamp}</span>
                 {activity.vibe && (
