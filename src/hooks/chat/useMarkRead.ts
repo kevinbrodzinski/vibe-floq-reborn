@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Surface } from '@/lib/chat/types';
+import { Surface } from '@/lib/chat/api';
 
 interface MarkReadArgs {
   p_surface:  'dm' | 'floq' | 'plan';
