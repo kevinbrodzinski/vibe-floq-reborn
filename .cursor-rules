@@ -1,0 +1,60 @@
+# Cursor AI Rules for Floq Project
+
+## Project Context
+This is a React TypeScript project with Mapbox GL JS and Supabase integration.
+
+## Key Technologies
+- React 18 + TypeScript
+- Vite build tool
+- Tailwind CSS for styling
+- Mapbox GL JS for maps
+- Supabase for backend (auth, database, storage)
+- React Query for data fetching
+
+## Important File Structure
+- `src/integrations/supabase/` - Supabase client and types
+- `src/lib/geo/` - Mapbox utilities and geo functions
+- `src/hooks/` - Custom React hooks
+- `src/components/maps/` - Map components
+- `src/types/` - TypeScript type definitions
+
+## Code Style Guidelines
+1. Use semantic design tokens from `index.css` and `tailwind.config.ts`
+2. Never use direct colors like `text-white`, `bg-black` - always use CSS variables
+3. Prefer `profile_id` over `user_id` (ongoing migration)
+4. Use `useCurrentProfileId()` hook for auth user ID
+5. Always handle loading and error states in components
+
+## Mapbox Integration
+- Access token managed via `getMapboxToken()` function
+- Map instance stored in singleton pattern via `src/lib/geo/project.ts`
+- Use `registerMapboxWorker()` for CSP compliance
+- Prefer lazy loading for map components
+
+## Supabase Integration
+- Client: `import { supabase } from "@/integrations/supabase/client"`
+- Types: Auto-generated in `src/integrations/supabase/types.ts`
+- Use `.maybeSingle()` instead of `.single()` for safer queries
+- Always handle RLS policies for user data
+
+## Common Patterns
+- Use React Query for server state
+- Prefer `useCallback` and `useMemo` for performance
+- Create focused, single-purpose hooks
+- Use error boundaries for map components
+
+## Environment Setup
+- Development server runs on port 8080
+- No `.env` files - use Supabase secrets for API keys
+- Mapbox token can be environment variable or Supabase edge function
+
+## Database Schema Notes
+- Tables use both `user_id` and `profile_id` during migration
+- Always check column names in database types
+- Use `auth.uid()` in RLS policies
+
+## Performance Considerations
+- Lazy load map components to avoid WebGL memory issues
+- Use `visible` prop on BaseMap to control mounting
+- Implement proper cleanup in useEffect hooks
+- Memoize expensive calculations (geo distance, clustering)

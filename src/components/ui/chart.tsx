@@ -74,26 +74,27 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // Generate safe CSS for chart theming (only CSS variables, no user content)
+  const safeCss = Object.entries(THEMES)
+    .map(([theme, prefix]) => {
+      const chartSelector = `${prefix} [data-chart=${CSS.escape(id)}]`;
+      const cssVars = colorConfig
+        .map(([key, itemConfig]) => {
+          const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
+          // Sanitize color values to prevent CSS injection
+          const safeColor = color?.match(/^(#[0-9a-fA-F]{3,8}|rgb\(.*?\)|hsl\(.*?\)|[a-zA-Z]+)$/) ? color : null;
+          return safeColor ? `  --color-${CSS.escape(key)}: ${safeColor};` : null;
+        })
+        .filter(Boolean)
+        .join('\n');
+      
+      return `${chartSelector} {\n${cssVars}\n}`;
+    })
+    .join('\n');
+
   return (
     <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
+      dangerouslySetInnerHTML={{ __html: safeCss }}
     />
   )
 }
