@@ -7,17 +7,22 @@ export const useReactToMessage = (threadId: string, selfId: string) => {
 
   return useMutation({
     mutationFn: async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
-      // Try the new RPC first, fallback to placeholder
+      // Try the new edge function first, fallback to placeholder
       try {
-        const { error } = await (supabase as any).rpc('toggle_dm_reaction', {
-          p_message_id: messageId,
-          p_user_id   : selfId,
-          p_emoji     : emoji
+        const { data, error } = await supabase.functions.invoke('toggle-dm-reaction', {
+          body: {
+            p_message_id: messageId,
+            p_user_id: selfId,
+            p_emoji: emoji
+          }
         });
+        
         if (error) throw error;
-      } catch (rpcError) {
-        // Placeholder until RPC is available - throw to prevent optimistic update
-        throw new Error('Reaction RPC not available yet');
+        return data;
+      } catch (edgeError) {
+        console.warn('Edge function failed:', edgeError);
+        // Throw to prevent optimistic update when edge function is not available
+        throw new Error('Reaction feature not available yet');
       }
     },
 

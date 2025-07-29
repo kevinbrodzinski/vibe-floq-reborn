@@ -13,20 +13,24 @@ export const useSendDM = (threadId: string, selfId: string) => {
       media?: any;
       type?: 'text'|'image'|'voice'|'file';
     }) => {
-      // Try the new RPC first, fallback to direct insert
+      // Try the new edge function first, fallback to direct insert
       try {
-        const { data, error } = await (supabase as any).rpc('send_dm_message', {
-          p_thread_id   : threadId,
-          p_sender_id   : selfId,
-          p_message_type: payload.media ? 'image' : 'text',
-          p_body        : payload.text,              // can be null for media-only
-          p_reply_to_id : payload.replyTo ?? null,
-          p_media_meta  : payload.media  ?? {}
+        const { data, error } = await supabase.functions.invoke('send-dm-message', {
+          body: {
+            p_thread_id   : threadId,
+            p_sender_id   : selfId,
+            p_message_type: payload.media ? 'image' : 'text',
+            p_body        : payload.text,              // can be null for media-only
+            p_reply_to_id : payload.replyTo ?? null,
+            p_media_meta  : payload.media  ?? {}
+          }
         });
         if (error) throw error;
-        return data![0];
-      } catch (rpcError) {
-        // Fallback to direct insert until RPC is available
+        return data.message;
+      } catch (edgeError) {
+        console.warn('Edge function failed, using fallback:', edgeError);
+        
+        // Fallback to direct insert until edge function is stable
         const { data, error } = await supabase
           .from('direct_messages')
           .insert({
@@ -34,7 +38,9 @@ export const useSendDM = (threadId: string, selfId: string) => {
             sender_id: selfId,
             content: payload.text,
             reply_to_id: payload.replyTo || null,
-            metadata: payload.media || {}
+            message_type: payload.media ? 'image' : 'text',
+            metadata: payload.media || {},
+            status: 'sent'
           })
           .select()
           .single();
