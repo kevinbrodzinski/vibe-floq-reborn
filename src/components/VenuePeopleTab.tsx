@@ -62,7 +62,7 @@ function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
       <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {displayPeople.map((person) => (
           <motion.div
-            key={person.user_id}
+            key={person.profile_id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/50 hover:bg-card/80 transition-colors"
@@ -78,7 +78,7 @@ function VenuePeopleContent({ venueId }: VenuePeopleTabProps) {
                 <p className="font-medium">{person.profiles.display_name || person.profiles.username}</p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span className="text-lg">{vibeEmoji(person.vibe)}</span>
-                  <span>{person.session_duration}</span>
+                  <span>Just now</span>
                 </div>
               </div>
             </div>

@@ -86,10 +86,10 @@ serve(async (req) => {
         const { data: people, error: peopleError } = await supabase
           .from('venue_live_presence')
           .select(`
-            user_id,
+            profile_id,
             vibe,
             last_heartbeat,
-            profiles:user_id (
+            profiles:profile_id (
               username,
               display_name,
               avatar_url
@@ -170,29 +170,55 @@ serve(async (req) => {
           });
         }
 
-        // Get current presence count
-        const { data: presenceData, error: presenceError } = await supabase
-          .from('venue_live_presence')
-          .select('vibe')
+        // Get current presence from snapshot (fast)
+        const { data: snap, error: snapError } = await supabase
+          .from('venue_presence_snapshot')
+          .select('people_now, dominant_vibe')
           .eq('venue_id', venue_id)
-          .gt('expires_at', new Date().toISOString());
+          .single();
 
-        if (presenceError) {
-          return new Response(JSON.stringify({ error: 'Failed to get venue energy' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
+        let totalPeople = 0;
+        let dominantVibe = 'neutral';
+        let vibeDistribution = {};
+
+        if (snap && !snapError) {
+          // Use snapshot data (preferred)
+          totalPeople = snap.people_now || 0;
+          dominantVibe = snap.dominant_vibe || 'neutral';
+          // For vibe distribution, fall back to live data
+          const { data: presenceData } = await supabase
+            .from('venue_live_presence')
+            .select('vibe')
+            .eq('venue_id', venue_id)
+            .gt('expires_at', new Date().toISOString());
+          
+          vibeDistribution = presenceData?.reduce((acc, p) => {
+            acc[p.vibe] = (acc[p.vibe] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>) || {};
+        } else {
+          // Fallback to live presence if snapshot not found
+          const { data: presenceData, error: presenceError } = await supabase
+            .from('venue_live_presence')
+            .select('vibe')
+            .eq('venue_id', venue_id)
+            .gt('expires_at', new Date().toISOString());
+
+          if (presenceError) {
+            return new Response(JSON.stringify({ error: 'Failed to get venue energy' }), {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
+          totalPeople = presenceData?.length || 0;
+          vibeDistribution = presenceData?.reduce((acc, p) => {
+            acc[p.vibe] = (acc[p.vibe] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>) || {};
+          dominantVibe = Object.entries(vibeDistribution)
+            .sort(([,a], [,b]) => b - a)[0]?.[0] || 'neutral';
         }
-
-        // Calculate energy metrics
-        const totalPeople = presenceData?.length || 0;
-        const vibeDistribution = presenceData?.reduce((acc, p) => {
-          acc[p.vibe] = (acc[p.vibe] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>) || {};
-
-        const dominantVibe = Object.entries(vibeDistribution)
-          .sort(([,a], [,b]) => b - a)[0]?.[0] || 'neutral';
 
         const energyScore = Math.min(100, totalPeople * 10); // Simple energy calculation
 

@@ -2,10 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface VenuePerson {
-  user_id: string;
+  profile_id: string;
   vibe: string;
-  checked_in_at: string;
-  session_duration: string;
+  last_heartbeat: string;
   profiles: {
     username: string;
     display_name: string;
@@ -33,7 +32,7 @@ export const useVenuePeople = (venueId: string | null) => {
         throw error;
       }
 
-      return data || [];
+      return data?.people || [];
     },
     enabled: !!venueId,
     staleTime: 30000,
