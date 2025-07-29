@@ -46,7 +46,7 @@ export const FriendOverrideList = () => {
                     const { error } = await supabase.rpc('set_live_share_bulk', {
                         _friend_ids: friendIds,
                         _on: true,
-                        _auto_when: ['always']
+                        _auto_when: ['always'] as any  // Cast to avoid TS enum issues
                     });
                     
                     if (!error) {

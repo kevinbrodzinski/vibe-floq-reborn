@@ -16,7 +16,7 @@ export const enableLiveShareForFloq = async (floqId: string) => {
   const { error } = await supabase.rpc('set_live_share_bulk', {
     _friend_ids: memberIds,
     _on: true,
-    _auto_when: ['in_floq'] // Use the enum value instead of 'floq'
+    _auto_when: ['in_floq'] as any  // Cast to avoid TS enum issues
   });
 
   if (error) {

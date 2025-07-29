@@ -10019,13 +10019,11 @@ export type Database = {
         Returns: undefined
       }
       set_live_share_bulk: {
-        Args:
-          | {
-              _friend_ids: string[]
-              _on: boolean
-              _auto_when?: Database["public"]["Enums"]["auto_when_enum"][]
-            }
-          | { _friend_ids: string[]; _on: boolean; _auto_when?: string }
+        Args: {
+          _friend_ids: string[]
+          _on: boolean
+          _auto_when?: Database["public"]["Enums"]["auto_when_enum"][]
+        }
         Returns: undefined
       }
       set_participant_role: {
