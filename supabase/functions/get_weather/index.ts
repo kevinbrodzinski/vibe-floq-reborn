@@ -1,5 +1,11 @@
 /// <reference lib="dom" />
 import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as geohash from "https://esm.sh/ngeohash@0.6.3";
+
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,11 +13,35 @@ const CORS = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+async function fetchFromOpenWeatherMap(lat: number, lng: number) {
+  const url = new URL("https://api.openweathermap.org/data/2.5/weather");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  url.searchParams.set("units", "imperial");        // °F / mph
+  url.searchParams.set("appid", Deno.env.get("WEATHER_API_KEY")!);
+
+  const r = await fetch(url.href);
+  if (!r.ok) throw new Error(`OpenWeatherMap API error: ${r.status}`);
+
+  const w = await r.json();
+  
+  // Normalize the response
+  return {
+    condition: w.weather?.[0]?.main?.toLowerCase() ?? "sunny",
+    temperatureF: Math.round(w.main.temp),
+    feelsLikeF: Math.round(w.main.feels_like),
+    humidity: w.main.humidity,
+    windMph: Math.round(w.wind.speed),
+    icon: w.weather?.[0]?.icon ?? "01d",
+    created_at: new Date().toISOString(),
+  };
+}
+
 serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   try {
-    const { lat, lng } = await req.json();           // {lat:number,lng:number}
+    const { lat, lng } = await req.json();
     if (typeof lat !== "number" || typeof lng !== "number") {
       return new Response(
         JSON.stringify({ error: "lat/lng required" }),
@@ -19,35 +49,58 @@ serve(async req => {
       );
     }
 
-    const url = new URL("https://api.openweathermap.org/data/2.5/weather");
-    url.searchParams.set("lat",   String(lat));
-    url.searchParams.set("lon",   String(lng));
-    url.searchParams.set("units", "imperial");        // °F / mph
-    url.searchParams.set("appid", Deno.env.get("WEATHER_API_KEY")!);
+    // 1. Generate geohash6 for this location (≈ 1 km²)
+    const geohash6 = geohash.encode(lat, lng, 6);
+    console.log(`[weather] Checking cache for geohash6: ${geohash6}`);
 
-    const r = await fetch(url.href);
-    if (!r.ok) throw new Error(`upstream ${r.status}`);
+    // 2. Try cache first (10-minute TTL)
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: cached, error: cacheError } = await supabase
+      .from('weather_cache')
+      .select('payload')
+      .eq('geohash6', geohash6)
+      .gt('fetched_at', tenMinutesAgo)
+      .maybeSingle();
 
-    const w = await r.json();
-    /* normalise */
-    const out = {
-      condition:   w.weather?.[0]?.main?.toLowerCase() ?? "sunny",
-      temperatureF: Math.round(w.main.temp),
-      feelsLikeF:   Math.round(w.main.feels_like),
-      humidity:     w.main.humidity,
-      windMph:      Math.round(w.wind.speed),
-      icon:         w.weather?.[0]?.icon ?? "01d",
-      created_at:   new Date().toISOString(),
-    };
+    if (cacheError) {
+      console.error("[weather] Cache query error:", cacheError);
+    }
 
-    return new Response(JSON.stringify(out), {
+    if (cached) {
+      console.log(`[weather] Cache hit for ${geohash6}`);
+      return new Response(JSON.stringify(cached.payload), {
+        headers: { ...CORS, "Content-Type": "application/json" },
+      });
+    }
+
+    // 3. Cache miss - fetch from OpenWeatherMap
+    console.log(`[weather] Cache miss for ${geohash6}, fetching from API`);
+    const weatherData = await fetchFromOpenWeatherMap(lat, lng);
+
+    // 4. Upsert to cache
+    const { error: upsertError } = await supabase
+      .from('weather_cache')
+      .upsert({ 
+        geohash6, 
+        payload: weatherData,
+        fetched_at: new Date().toISOString()
+      });
+
+    if (upsertError) {
+      console.error("[weather] Cache upsert error:", upsertError);
+      // Continue anyway, just log the error
+    } else {
+      console.log(`[weather] Cached fresh data for ${geohash6}`);
+    }
+
+    return new Response(JSON.stringify(weatherData), {
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("[weather] err", err);
+    console.error("[weather] Error:", err);
     return new Response(
       JSON.stringify({ error: "weather fetch failed" }),
       { status: 500, headers: CORS },
     );
   }
-}); 
+});
