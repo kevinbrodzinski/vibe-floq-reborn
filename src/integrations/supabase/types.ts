@@ -7092,94 +7092,69 @@ export type Database = {
       }
       v_friend_last_seen: {
         Row: {
-          first_seen_at: string | null
+          friend_id: string | null
           last_seen_at: string | null
-          profile_id: string | null
         }
-        Insert: {
-          first_seen_at?: string | null
-          last_seen_at?: string | null
-          profile_id?: string | null
-        }
-        Update: {
-          first_seen_at?: string | null
-          last_seen_at?: string | null
-          profile_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       v_friend_requests: {
         Row: {
-          avatar_url: string | null
           created_at: string | null
-          display_name: string | null
-          friend_id: string | null
           id: string | null
-          requester_profile_id: string | null
-          status: string | null
-          username: string | null
+          me: string | null
+          requester_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          me?: string | null
+          requester_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          me?: string | null
+          requester_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
+            columns: ["me"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
+            columns: ["me"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
+            columns: ["me"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_friend_requests_profile_id"
-            columns: ["requester_profile_id"]
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_friend_requests_profile_id"
-            columns: ["requester_profile_id"]
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_friend_requests_profile_id"
-            columns: ["requester_profile_id"]
+            columns: ["requester_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
@@ -8880,26 +8855,25 @@ export type Database = {
       }
       get_visible_floqs_with_members: {
         Args: {
-          p_user_lat: number
-          p_user_lng: number
+          p_lat: number
+          p_lng: number
           p_limit?: number
           p_offset?: number
+          p_radius_km?: number
         }
         Returns: {
           id: string
           title: string
-          name: string
           description: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
-          type: string
+          primary_vibe: string
+          vibe_tag: string
           flock_type: string
           starts_at: string
           ends_at: string
+          starts_in_min: number
+          distance_m: number
           participant_count: number
           boost_count: number
-          starts_in_min: number
-          distance_meters: number
           members: Json
           creator_id: string
         }[]
