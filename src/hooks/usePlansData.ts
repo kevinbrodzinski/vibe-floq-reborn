@@ -16,8 +16,12 @@ export function usePlansData() {
   const { data: userPlans = [], isLoading: isLoadingUserPlans } = useQuery({
     queryKey: ['user-floq-plans'],
     queryFn: async () => {
-      // TODO: wire to v_user_plans_profile when view is rebuilt
-      return [];
+      const { data, error } = await supabase
+        .from('v_user_plans' as any)
+        .select('*') as any;
+      
+      if (error) throw error;
+      return data || [];
     },
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000 // 5 minutes

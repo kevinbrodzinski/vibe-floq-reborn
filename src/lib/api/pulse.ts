@@ -10,9 +10,8 @@ export const recordPulseEvent = async (payload: Partial<PulseEvent>) => {
 
 /* paginated live-activity feed */
 export const fetchLiveActivity = async (cursor?: number, limit = 30) => {
-  // @ts-expect-error - TODO: add get_live_activity to RPC types
-  const { data, error } = await supabase.rpc('get_live_activity',
-    { p_cursor: cursor ?? null, p_limit: limit });
+  const { data, error } = await supabase.rpc('get_live_activity' as any,
+    { p_radius_km: 5, p_lat: 0, p_lng: 0 });
   if (error) throw error;
   return data as PulseEvent[];
 };
@@ -24,4 +23,4 @@ export const fetchTrendingVenues = async (lat: number, lng: number,
     { p_user_lat: lat, p_user_lng: lng, p_radius_m: radius, p_limit: limit });
   if (error) throw error;
   return data as TrendingVenue[];
-}; 
+};

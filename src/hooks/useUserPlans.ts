@@ -40,8 +40,12 @@ export function useUserPlans() {
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      // TODO: wire to proper view when v_user_plans is available
-      return [];
+      const { data, error } = await supabase
+        .from('v_user_plans' as any)
+        .select('*') as any;
+      
+      if (error) throw error;
+      return data || [];
     },
   })
 
