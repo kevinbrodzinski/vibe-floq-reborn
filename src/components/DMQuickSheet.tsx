@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { Waypoint } from 'react-waypoint';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -210,6 +211,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
           role="log"
           aria-label="Direct message conversation"
         >
+          {timeline.hasNextPage && (
+            <Waypoint onEnter={() => timeline.fetchNextPage()}>
+              <div className="flex justify-center p-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            </Waypoint>
+          )}
+
           {timeline.isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin" />
@@ -229,7 +238,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                 >
                   {message.metadata?.media ? (
                     <img 
-                      src={message.metadata.media.url} 
+                      src={`${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/${message.metadata.media.bucket}/${message.metadata.media.key}`}
                       className="rounded-lg max-w-xs" 
                       alt="Shared media"
                     />

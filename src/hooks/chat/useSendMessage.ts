@@ -31,7 +31,7 @@ export const useSendMessage = (surface: Surface, threadId: string, selfId: strin
         id: `tmp-${uuid()}`,
         thread_id: threadId,
         sender_id: selfId,
-        content: vars.text,
+        content: vars.text ?? '[Uploading…]',
         metadata: vars.metadata ?? null,
         reply_to_id: vars.reply_to ?? null,
         created_at: new Date().toISOString(),
@@ -63,6 +63,19 @@ export const useSendMessage = (surface: Surface, threadId: string, selfId: strin
         });
         return { ...old };
       });
+    },
+    onSettled: (data, error, vars, ctx) => {
+      // Clean up any remaining optimistic messages
+      if (ctx?.optimisticId) {
+        qc.setQueryData(queryKey, (old: any) => {
+          if (!old) return old;
+          old.pages.forEach((p: ChatMessage[]) => {
+            const idx = p.findIndex((m) => m.id === ctx.optimisticId);
+            if (idx > -1) p.splice(idx, 1);
+          });
+          return { ...old };
+        });
+      }
     },
   });
 };

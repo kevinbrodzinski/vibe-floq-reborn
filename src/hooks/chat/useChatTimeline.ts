@@ -15,7 +15,7 @@ export const useChatTimeline = (surface: Surface, threadId: string, userId: stri
   const query = useInfiniteQuery<ChatMessage[]>({
     queryKey,
     initialPageParam: null as string | null,
-    getNextPageParam: (last) => last.at(-1)?.id ?? null,
+    getNextPageParam: (last) => last.at(0)?.created_at ?? null,
     queryFn: async ({ pageParam }) => {
       if (surface === 'dm') {
         let q = supabase
@@ -25,7 +25,7 @@ export const useChatTimeline = (surface: Surface, threadId: string, userId: stri
           .order('created_at', { ascending: false })
           .limit(PAGE_SIZE);
 
-        if (pageParam) q = q.lt('id', pageParam);
+        if (pageParam) q = q.lt('created_at', pageParam);
 
         const { data, error } = await q;
         if (error) throw error;
@@ -41,7 +41,7 @@ export const useChatTimeline = (surface: Surface, threadId: string, userId: stri
           .order('created_at', { ascending: false })
           .limit(PAGE_SIZE);
 
-        if (pageParam) q = q.lt('id', pageParam);
+        if (pageParam) q = q.lt('created_at', pageParam);
 
         const { data, error } = await q;
         if (error) throw error;
@@ -71,11 +71,14 @@ export const useChatTimeline = (surface: Surface, threadId: string, userId: stri
             ? { ...payload.new, reply_to_id: null }
             : { ...payload.new, content: payload.new.body };
           
-          newestPage.push(newMsg as ChatMessage);
+          newestPage.unshift(newMsg as ChatMessage);
           return { ...old };
         });
       })
       .subscribe();
+
+    // Add debug logging for realtime state  
+    console.log('Realtime channel setup completed');
 
     return () => {
       supabase.removeChannel(channel);

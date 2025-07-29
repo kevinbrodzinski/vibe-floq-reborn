@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { rpc_reactToMsg, Surface } from '@/lib/chat/api';
 
 export const useReactToMessage = (surface: Surface, threadId: string, selfId: string) => {
   const qc = useQueryClient();
   const queryKey = ['chat', surface, threadId];
+  const [pendingReactions, setPendingReactions] = useState(new Set<string>());
 
   return useMutation({
     mutationFn: async (vars: { messageId: string; emoji: string }) => {
@@ -16,6 +18,11 @@ export const useReactToMessage = (surface: Surface, threadId: string, selfId: st
       return data;
     },
     onMutate: ({ messageId, emoji }) => {
+      const reactionKey = `${messageId}-${emoji}`;
+      if (pendingReactions.has(reactionKey)) return;
+      
+      setPendingReactions(prev => new Set(prev).add(reactionKey));
+      
       qc.setQueryData(queryKey, (old: any) => {
         if (!old) return old;
         old.pages.flat().forEach((m: any) => {
@@ -29,6 +36,16 @@ export const useReactToMessage = (surface: Surface, threadId: string, selfId: st
         });
         return { ...old };
       });
+      return { reactionKey };
+    },
+    onSettled: (data, error, vars, ctx) => {
+      if (ctx?.reactionKey) {
+        setPendingReactions(prev => {
+          const next = new Set(prev);
+          next.delete(ctx.reactionKey);
+          return next;
+        });
+      }
     },
   });
 };

@@ -12,8 +12,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get('Authorization')!;
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader?.replace('Bearer ', ''));
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "unauthenticated" }), { 
         status: 401, 
@@ -25,6 +24,13 @@ serve(async (req) => {
     if (!thread_id || !filename) {
       return new Response(JSON.stringify({ error: "thread_id & filename required" }), { 
         status: 400, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
+
+    if (!content_type?.startsWith('image/') && !content_type?.startsWith('video/')) {
+      return new Response(JSON.stringify({ error: "only image and video files allowed" }), { 
+        status: 415, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
@@ -43,7 +49,7 @@ serve(async (req) => {
     const objectName = `${thread_id}/${crypto.randomUUID()}.${filename.split('.').pop() || 'bin'}`;
     const { data, error: urlErr } = await supabase.storage
       .from("chat-media")
-      .createSignedUploadUrl(objectName, 60);
+      .createSignedUploadUrl(objectName, 300);
 
     if (urlErr) throw urlErr;
 
@@ -52,7 +58,7 @@ serve(async (req) => {
       object_key: objectName,
       bucket: "chat-media",
       mime_type: content_type ?? "application/octet-stream",
-      expires_in: 60
+      expires_in: 300
     }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
