@@ -19,20 +19,28 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
         return { friendsSince: null, lastInteraction: null, daysSinceLastHang: null, isFriend: false };
       }
 
-      // Check friendship in flock_relationships table
-      const { data: relationship } = await supabase
-        .from('flock_relationships')
-        .select('created_at, last_interaction_at')
-        .or(`and(user_a_id.eq.${currentUserId},user_b_id.eq.${profileId}),and(user_a_id.eq.${profileId},user_b_id.eq.${currentUserId})`)
-        .single();
+      // Check friendship using the v_friends_with_presence view which works correctly
+      const { data: friends } = await supabase
+        .from('v_friends_with_presence')
+        .select('friend_id, created_at, friend_state')
+        .eq('friend_id', profileId)
+        .eq('friend_state', 'accepted')
+        .maybeSingle();
 
-      if (!relationship) {
+      if (!friends) {
         return { friendsSince: null, lastInteraction: null, daysSinceLastHang: null, isFriend: false };
       }
 
+      // Try to get interaction data from flock_relationships if it exists
+      const { data: relationship } = await supabase
+        .from('flock_relationships')
+        .select('last_interaction_at')
+        .or(`and(user_a_id.eq.${currentUserId},user_b_id.eq.${profileId}),and(user_a_id.eq.${profileId},user_b_id.eq.${currentUserId})`)
+        .maybeSingle();
+
       // Calculate days since last interaction
       let daysSinceLastHang = null;
-      if (relationship.last_interaction_at) {
+      if (relationship?.last_interaction_at) {
         const lastInteraction = new Date(relationship.last_interaction_at);
         const now = new Date();
         const diffTime = Math.abs(now.getTime() - lastInteraction.getTime());
@@ -40,8 +48,8 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       }
 
       return {
-        friendsSince: relationship.created_at,
-        lastInteraction: relationship.last_interaction_at,
+        friendsSince: friends.created_at,
+        lastInteraction: relationship?.last_interaction_at || null,
         daysSinceLastHang,
         isFriend: true
       };
