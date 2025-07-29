@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -20,10 +20,14 @@ import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
-import { useDMThread } from '@/hooks/useDMThread';
+import { useChatTimeline } from '@/hooks/chat/useChatTimeline';
+import { useReactToMessage } from '@/hooks/chat/useReactToMessage';
+import { useSendMessage } from '@/hooks/chat/useSendMessage';
+import { useUploadMedia } from '@/hooks/chat/useUploadMedia';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
+import type { Surface } from '@/lib/chat/api';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
 // TODO: Re-enable these imports after creating the missing components
@@ -38,9 +42,24 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const [input, setInput] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
+
+  // Helper to create stable thread ID
+  const threadIdFrom = (fId: string | null) =>
+    [currentUserId, fId].filter(Boolean).sort().join('-');
+
+  // New chat hooks
+  const surface: Surface = 'dm';
+  const threadId = threadIdFrom(friendId);
+  const timeline = useChatTimeline(surface, threadId, currentUserId ?? '');
+  const sendMut = useSendMessage(surface, threadId, currentUserId ?? '');
+  const reactMut = useReactToMessage(surface, threadId, currentUserId ?? '');
+  const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
+
+  // Typing indicator state
+  const [isTyping, setIsTyping] = useState(false);
 
   // Debug logging for overlay management
   useEffect(() => {
@@ -58,21 +77,22 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
 
-  // Get current user ID and mark as read when sheet opens
+  // Get current user ID
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id ?? null);
     });
+  }, []);
 
-    // Mark as read when sheet opens with optimistic badge update
-    if (open && friendId && currentUserId) {
-      if (import.meta.env.DEV) console.log('📖 DM sheet opened, marking as read for friend:', friendId);
-      markAsRead();
-
-      // Immediate optimistic update for badge responsiveness - fixed query key
-      queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
+  // Auto-focus input when sheet opens
+  useEffect(() => {
+    if (open && !timeline.isLoading) {
+      const timer = setTimeout(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [open, friendId, currentUserId, markAsRead, queryClient]);
+  }, [open, timeline.isLoading]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
@@ -85,30 +105,32 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
   }, [friendError, open, toast]);
 
-  // Auto-scroll to bottom with requestAnimationFrame
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const id = requestAnimationFrame(() =>
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    );
-    return () => cancelAnimationFrame(id);
-  }, [messages.length]);
+    const messages = timeline.data?.pages.flat() ?? [];
+    if (messages.length > 0) {
+      const id = requestAnimationFrame(() =>
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+      );
+      return () => cancelAnimationFrame(id);
+    }
+  }, [timeline.data?.pages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
-    // Send typing indicator on input
-    if (e.target.value.length > 0) {
-      sendTyping();
-    }
+    // Optional: Add typing indicator logic here
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isSending) return;
+    if (!input.trim() || sendMut.isPending) return;
 
     try {
-      await sendMessage({
-        content: input.trim()
-      });
+      await sendMut.mutateAsync({ text: input.trim() });
       setInput('');
+      
+      // Invalidate unread counts
+      queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
@@ -188,25 +210,49 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
           role="log"
           aria-label="Direct message conversation"
         >
-          {messages.map((message) => {
-            const isOwn = message.sender_id === currentUserId;
-            return (
-              <div
-                key={message.id}
-                className={cn(
-                  "max-w-[70%] p-3 rounded-lg",
-                  isOwn
-                    ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted"
-                )}
-              >
-                <div className="text-sm">{message.content}</div>
-                <div className="text-xs opacity-70 mt-1">
-                  {dayjs(message.created_at).format('HH:mm')}
+          {timeline.isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : (
+            (timeline.data?.pages.flat() ?? []).map((message) => {
+              const isOwn = message.sender_id === currentUserId;
+              return (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "max-w-[70%] p-3 rounded-lg group",
+                    isOwn
+                      ? "bg-primary text-primary-foreground ml-auto"
+                      : "bg-muted"
+                  )}
+                >
+                  {message.metadata?.media ? (
+                    <img 
+                      src={message.metadata.media.url} 
+                      className="rounded-lg max-w-xs" 
+                      alt="Shared media"
+                    />
+                  ) : (
+                    <div className="text-sm">{message.content}</div>
+                  )}
+                  <div className="flex items-center justify-between mt-1">
+                    <div className="text-xs opacity-70">
+                      {dayjs(message.created_at).format('HH:mm')}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
+                      onClick={() => reactMut.mutate({ messageId: message.id, emoji: '👍' })}
+                    >
+                      👍
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
           {isTyping && (
             <div className="text-sm text-muted-foreground italic animate-pulse">
               {friend?.display_name} is typing...
@@ -217,19 +263,37 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
         {/* Input */}
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <input
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            ref={fileRef}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadMut.mutate(file);
+            }}
+          />
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileRef.current?.click()}
+              className="shrink-0"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Input
               value={input}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1 bg-background/50 border-border/50"
-              disabled={isSending}
+              disabled={sendMut.isPending}
               aria-label="Direct message input"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isSending}
+              disabled={!input.trim() || sendMut.isPending}
               size="icon"
               className="shrink-0"
             >
