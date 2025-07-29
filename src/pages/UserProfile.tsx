@@ -91,36 +91,42 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
   const isOnline = true; // TODO: Get actual presence data
 
-  // Display name logic
-  const displayName = profile.username ? `@${profile.username}` : profile.display_name || 'Unknown User';
-  const subtitle = profile.username && profile.display_name ? profile.display_name : null;
+  // Display name logic - display name first, then username
+  const displayName = profile.display_name || profile.username || 'Unknown User';
+  const username = profile.username;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-[#0B0E19] via-[#050713] to-[#0B0E19] pb-24">
       {/* Zone 0: App Bar */}
       <AppBarBack title="Profile" />
 
-      <div className="max-w-2xl mx-auto px-4 space-y-6">
+      <div className="max-w-md mx-auto px-4 space-y-4">
         {/* Zone 1: Hero Card */}
         <GlassCard center>
-          <Avatar className="w-24 h-24 mx-auto mb-4">
-            <AvatarImage src={getAvatarUrl(profile.avatar_url, 96)} />
-            <AvatarFallback className="text-xl">
+          <Avatar className="w-32 h-32 mx-auto mb-4">
+            <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+            <AvatarFallback className="text-2xl">
               {getInitials(profile.display_name || profile.username)}
             </AvatarFallback>
           </Avatar>
-          <h2 className="text-white text-2xl font-light mb-2">{displayName}</h2>
-          {subtitle && (
-            <p className="text-muted-foreground mb-2">@{profile.username}</p>
+          <h1 className="text-white text-xl font-medium mb-1">{displayName}</h1>
+          {username && (
+            <p className="text-gray-400 text-sm mb-3">@{username}</p>
           )}
           {profile.bio && (
-            <p className="text-sm text-muted-foreground mb-4">{profile.bio}</p>
+            <p className="text-sm text-gray-300 mb-3 leading-relaxed">{profile.bio}</p>
           )}
-          {isOnline && <ChipOnline />}
+          {isOnline && <ChipOnline className="mb-2" />}
+          {mockLiveVibe.location && (
+            <div className="flex items-center justify-center gap-1 text-sm text-gray-400">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span>{mockLiveVibe.location}</span>
+            </div>
+          )}
         </GlassCard>
 
         {/* Zone 2: Social Stats Strip */}
-        <div className="flex justify-between gap-2">
+        <div className="grid grid-cols-4 gap-3">
           <StatPill value={mockStats.friendCount} label="Friends" icon={Users} />
           <StatPill value={mockStats.mutualCount} label="Mutual" icon={Users2} />
           <StatPill value={mockStats.sharedFloqs} label="Floqs" icon={MapPin} />

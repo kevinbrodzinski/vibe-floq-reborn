@@ -8,12 +8,13 @@ export const ChipOnline = ({ className }: ChipOnlineProps) => {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/40',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20',
+        'text-xs font-medium text-green-300',
         className
       )}
     >
-      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-      <span className="text-xs text-green-300 font-medium">Online</span>
+      <span className="block h-1.5 w-1.5 rounded-full bg-green-300" />
+      online
     </div>
   );
 };
