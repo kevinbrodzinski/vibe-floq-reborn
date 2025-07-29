@@ -2,12 +2,12 @@ import React from 'react'
 import { Sun, Cloud, CloudRain, Umbrella, Coffee, Users } from 'lucide-react'
 
 interface WeatherInfo {
-  condition: 'sunny' | 'cloudy' | 'rainy' | 'stormy'
-  temperature: number
-  isIndoor: boolean
-  humidity?: number
-  windSpeed?: number
-  precipitation?: number
+  condition: 'clear' | 'clouds' | 'rain' | 'snow' | 'drizzle' | 'thunderstorm' | 'mist' | 'fog';
+  temperatureF: number;
+  feelsLikeF: number;
+  humidity: number;
+  windMph: number;
+  icon: string;
 }
 
 interface UpcomingEvent {
@@ -31,13 +31,14 @@ export const WeatherAwareSuggestion: React.FC<WeatherAwareSuggestionProps> = ({
 }) => {
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
-      case 'sunny':
+      case 'clear':
         return <Sun className="w-5 h-5 text-yellow-400" />
-      case 'cloudy':
+      case 'clouds':
         return <Cloud className="w-5 h-5 text-gray-400" />
-      case 'rainy':
+      case 'rain':
+      case 'drizzle':
         return <CloudRain className="w-5 h-5 text-blue-400" />
-      case 'stormy':
+      case 'thunderstorm':
         return <Umbrella className="w-5 h-5 text-purple-400" />
       default:
         return <Sun className="w-5 h-5 text-yellow-400" />
@@ -45,13 +46,13 @@ export const WeatherAwareSuggestion: React.FC<WeatherAwareSuggestionProps> = ({
   }
 
   const getSuggestion = () => {
-    if (weather.condition === 'rainy' || weather.condition === 'stormy') {
+    if (weather.condition === 'rain' || weather.condition === 'drizzle' || weather.condition === 'thunderstorm') {
       return {
         text: 'Perfect weather for cozy indoor spots!',
         icon: <Coffee className="w-4 h-4 text-orange-400" />,
         action: 'Show indoor venues'
       }
-    } else if (weather.condition === 'sunny') {
+    } else if (weather.condition === 'clear') {
       return {
         text: 'Great weather for outdoor activities!',
         icon: <Users className="w-4 h-4 text-green-400" />,
@@ -74,7 +75,7 @@ export const WeatherAwareSuggestion: React.FC<WeatherAwareSuggestionProps> = ({
         {getWeatherIcon(weather.condition)}
         <div className="flex-1">
           <h3 className="font-semibold text-white text-sm">
-            {weather.temperature}°F • {weather.condition.charAt(0).toUpperCase() + weather.condition.slice(1)}
+            {weather.temperatureF}°F • {weather.condition.charAt(0).toUpperCase() + weather.condition.slice(1)}
           </h3>
           <p className="text-white/80 text-xs">{suggestion.text}</p>
         </div>
@@ -117,7 +118,7 @@ export const WeatherAwareSuggestion: React.FC<WeatherAwareSuggestionProps> = ({
                   {event.projectedWeather && (
                     <div className="text-right">
                       <div className="text-white/90 text-sm font-medium">
-                        {event.projectedWeather.temperature}°F
+                        {event.projectedWeather.temperatureF}°F
                       </div>
                       <div className="text-white/50 text-xs">
                         {event.projectedWeather.condition}

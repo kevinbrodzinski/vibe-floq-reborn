@@ -167,26 +167,32 @@ export const PulseScreen: React.FC = () => {
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
     condition: mapWeatherCondition((weatherData as any).condition),
-    temperature: (weatherData as any).temperatureF,
-    isIndoor: showIndoorOnly
+    temperatureF: (weatherData as any).temperatureF,
+    feelsLikeF: (weatherData as any).feelsLikeF,
+    humidity: (weatherData as any).humidity,
+    windMph: (weatherData as any).windMph,
+    icon: (weatherData as any).icon
   } : {
-    condition: 'sunny' as const,
-    temperature: 72,
-    isIndoor: showIndoorOnly
+    condition: 'clear' as const,
+    temperatureF: 72,
+    feelsLikeF: 72,
+    humidity: 50,
+    windMph: 5,
+    icon: '01d'
   };
 
   // Helper function to map weather conditions to UI expectations
-  function mapWeatherCondition(condition: string): 'sunny' | 'cloudy' | 'rainy' | 'stormy' {
+  function mapWeatherCondition(condition: string): 'clear' | 'clouds' | 'rain' | 'snow' | 'drizzle' | 'thunderstorm' | 'mist' | 'fog' {
     switch (condition) {
-      case 'clear': return 'sunny';
-      case 'clouds': return 'cloudy';
-      case 'rain':
-      case 'drizzle': return 'rainy';
-      case 'thunderstorm': return 'stormy';
-      case 'snow': return 'rainy'; // Treat snow as rainy for UI
-      case 'mist':
-      case 'fog': return 'cloudy';
-      default: return 'sunny';
+      case 'clear': return 'clear';
+      case 'clouds': return 'clouds';
+      case 'rain': return 'rain';
+      case 'drizzle': return 'drizzle';
+      case 'thunderstorm': return 'thunderstorm';
+      case 'snow': return 'snow';
+      case 'mist': return 'mist';
+      case 'fog': return 'fog';
+      default: return 'clear';
     }
   }
 
