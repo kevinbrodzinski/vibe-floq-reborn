@@ -1,7 +1,7 @@
 
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass } from 'lucide-react';
+import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
@@ -120,20 +120,26 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           {/* Gradient backdrop */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(101,56,255,0.2),transparent)] rounded-3xl" />
           
-          {/* Avatar with vibe halo */}
-          <div className="relative">
-            <VibeHalo vibe={mockLiveVibe.vibe} className="mb-4">
-              <Avatar className="w-32 h-32 mx-auto bg-surface border border-white/10">
-                <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
-                <AvatarFallback className="text-2xl">
-                  {getInitials(profile.display_name || profile.username)}
-                </AvatarFallback>
-              </Avatar>
-            </VibeHalo>
+          {/* Online pill in top right */}
+          {isOnline && (
+            <div className="absolute top-4 right-4">
+              <ChipOnline />
+            </div>
+          )}
+          
+          {/* Avatar without vibe halo */}
+          <div className="relative mb-4">
+            <Avatar className="w-32 h-32 mx-auto bg-surface border border-white/10">
+              <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+              <AvatarFallback className="text-2xl">
+                {getInitials(profile.display_name || profile.username)}
+              </AvatarFallback>
+            </Avatar>
             
             {/* Quick ping button */}
             {!isMe && <QuickPingButton targetId={profile.id} />}
           </div>
+          
           <h1 className="text-white text-xl font-medium mb-1">{displayName}</h1>
           {username && (
             <p className="text-gray-400 text-sm mb-3">@{username}</p>
@@ -142,34 +148,25 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
             <p className="text-sm text-gray-300 mb-3 leading-relaxed">{profile.bio}</p>
           )}
           
-          {/* Status chips row */}
-          <div className="flex flex-wrap justify-center gap-2 mb-3">
-            {isOnline && <ChipOnline />}
+          {/* Status info with text and icons */}
+          <div className="flex flex-col items-center gap-2 mb-3">
             {distance && (
-              <ProfileChip 
-                icon={Compass} 
-                text={`${distance.distance} ${distance.unit} away`}
-                className="bg-blue-500/20 text-blue-300"
-              />
+              <div className="flex items-center gap-1 text-sm text-gray-300">
+                <Compass className="h-4 w-4" />
+                <span>{distance.distance} {distance.unit} away</span>
+              </div>
             )}
             {streak && streak.currentStreak > 0 && (
-              <ProfileChip 
-                icon={Flame} 
-                text={`${streak.currentStreak} d`}
-                className="bg-orange-500/20 text-orange-300"
-              />
-            )}
-            {mockLiveVibe.vibe && (
-              <ProfileChip 
-                text={mockLiveVibe.vibe}
-                className="bg-purple-500/20 text-purple-300"
-              />
+              <div className="flex items-center gap-1 text-sm text-gray-300">
+                <Flame className="h-4 w-4" />
+                <span>{streak.currentStreak} d</span>
+              </div>
             )}
             {isCurrentlyFriend && (
-              <ProfileChip 
-                text="close friend"
-                className="bg-emerald-500/20 text-emerald-300"
-              />
+              <div className="flex items-center gap-1 text-sm text-emerald-300">
+                <Sparkles className="h-4 w-4" />
+                <span>close friend</span>
+              </div>
             )}
           </div>
           {/* Location info */}
