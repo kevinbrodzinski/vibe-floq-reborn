@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import { storage } from '@/lib/storage';
 import { navigation } from '@/lib/navigation';
-import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants';
+import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
 import { useOnboardingToasts } from '@/lib/toastHelpers';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
@@ -59,25 +59,44 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       setIsCompleting(true);
       console.log('🎯 Starting onboarding completion for user:', session.user.id);
 
-      // Validate required onboarding data
-      if (!state.profileData?.username || !state.profileData?.display_name) {
-        throw new Error('Missing required profile data (username or display name)');
+      // Comprehensive validation of required onboarding data
+      const missingFields = [];
+      
+      if (!state.profileData?.username?.trim()) {
+        missingFields.push('username');
       }
-
+      
+      if (!state.profileData?.display_name?.trim()) {
+        missingFields.push('display name');
+      }
+      
       if (!state.selectedVibe) {
-        throw new Error('Missing vibe selection');
+        missingFields.push('vibe selection');
+      }
+      
+      if (!state.avatarUrl) {
+        missingFields.push('avatar');
+      }
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}. Please complete all onboarding steps.`);
       }
 
-      // Prepare payload for edge function
+      // Prepare payload for edge function with validated data
       const payload = {
         username: state.profileData.username.trim().toLowerCase(),
         display_name: state.profileData.display_name.trim(),
         bio: state.profileData.bio?.trim().substring(0, 280) || null,
-        avatar_url: state.avatarUrl || '',
-        vibe_preference: state.selectedVibe,
+        avatar_url: state.avatarUrl!, // Already validated above
+        vibe_preference: state.selectedVibe!, // Already validated above
         interests: state.profileData.interests?.length ? state.profileData.interests : [],
         email: session.user.email,
       };
+      
+      console.log('📋 Profile payload prepared:', {
+        ...payload,
+        avatar_url: payload.avatar_url ? 'present' : 'missing'
+      });
 
       // Create profile using edge function
       console.log('📝 Creating user profile via edge function...');
@@ -87,7 +106,22 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (profileError) {
         console.error('❌ Error creating profile:', profileError);
-        throw profileError;
+        console.error('❌ Profile error details:', {
+          message: profileError.message,
+          details: profileError.details,
+          hint: profileError.hint
+        });
+        
+        // Handle specific edge function errors
+        if (profileError.message?.includes('Missing required fields')) {
+          throw new Error('Please complete all onboarding steps before continuing.');
+        } else if (profileError.message?.includes('Username already taken')) {
+          throw new Error('Username already taken. Please go back and choose another.');
+        } else if (profileError.message?.includes('Unauthenticated')) {
+          throw new Error('Authentication error. Please log in again.');
+        }
+        
+        throw new Error(profileError.message || 'Failed to create profile. Please try again.');
       }
 
       console.log('✅ Profile created successfully');
@@ -193,11 +227,18 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
           description: 'Please log in again to continue.',
         });
         if (toastId) toastIdsRef.current.push(toastId.id);
+      } else if (error?.message?.includes('Missing required fields')) {
+        const toastId = toast({
+          variant: 'destructive',
+          title: 'Incomplete profile',
+          description: 'Please go back and complete all onboarding steps.',
+        });
+        if (toastId) toastIdsRef.current.push(toastId.id);
       } else {
         const toastId = toast({
           variant: 'destructive',
           title: 'Failed to complete onboarding',
-          description: error?.message || 'Please try again.',
+          description: error?.message || 'An unexpected error occurred. Please try again.',
         });
         if (toastId) toastIdsRef.current.push(toastId.id);
       }

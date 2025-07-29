@@ -42,16 +42,58 @@ Deno.serve(async (req) => {
     // Parse JSON body
     const payload: CreateProfilePayload = await req.json();
 
-    // Basic field validation
+    // Enhanced field validation with detailed error messages
     const username = payload.username?.trim().toLowerCase();
     const displayName = payload.display_name?.trim();
     const bio = payload.bio?.trim().substring(0, 280) || null; // Trim to 280 chars
     
-    if (!username || !displayName || !payload.avatar_url || !payload.vibe_preference) {
-      return new Response('Missing required fields', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
+    // Check for missing required fields
+    const missingFields = [];
+    if (!username) missingFields.push('username');
+    if (!displayName) missingFields.push('display_name');
+    if (!payload.avatar_url) missingFields.push('avatar_url');
+    if (!payload.vibe_preference) missingFields.push('vibe_preference');
+    
+    if (missingFields.length > 0) {
+      console.error('Missing required fields:', missingFields);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required fields', 
+          missing_fields: missingFields,
+          message: `Missing required fields: ${missingFields.join(', ')}`
+        }), 
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+    
+    // Additional validation
+    if (username.length < 2 || username.length > 30) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid username length', 
+          message: 'Username must be between 2 and 30 characters'
+        }), 
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+    
+    if (displayName.length < 1 || displayName.length > 50) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid display name length', 
+          message: 'Display name must be between 1 and 50 characters'
+        }), 
+        { 
+          status: 400, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
     }
 
     // Initialize Supabase client with request auth
@@ -84,10 +126,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
-      return new Response('Username already taken', { 
-        status: 409, 
-        headers: corsHeaders 
-      });
+      console.error('Username already taken:', username);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Username already taken', 
+          message: `Username "${username}" is already taken`
+        }), 
+        { 
+          status: 409, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
     }
 
     // Build insert payload
@@ -113,18 +162,31 @@ Deno.serve(async (req) => {
     if (error) {
       console.error('create-profile insert error:', error);
       
-      // Map specific error codes
+      // Map specific error codes with detailed responses
       if (error.code === '23505' || error.code === '409') {
-        return new Response('Username already taken', { 
-          status: 409, 
-          headers: corsHeaders 
-        });
+        return new Response(
+          JSON.stringify({ 
+            error: 'Username already taken', 
+            message: `Username "${username}" is already taken`
+          }), 
+          { 
+            status: 409, 
+            headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          }
+        );
       }
       
-      return new Response(error.message, { 
-        status: 500, 
-        headers: corsHeaders 
-      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Database error', 
+          message: error.message,
+          code: error.code 
+        }), 
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
     }
 
     return new Response(JSON.stringify(data), {
@@ -137,9 +199,15 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('create-profile error:', error);
-    return new Response('Internal server error', { 
-      status: 500, 
-      headers: corsHeaders 
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      }), 
+      { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      }
+    );
   }
 });
