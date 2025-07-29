@@ -1,21 +1,17 @@
 import { WeatherSnapshot } from '@/types/weather';
+import { supabase } from '@/integrations/supabase/client';
 
 // Use Supabase Edge Function for weather data
 export async function getWeather(lat: number, lng: number): Promise<WeatherSnapshot> {
   try {
-    const response = await fetch('/functions/v1/get_weather', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ lat, lng }),
+    const { data, error } = await supabase.functions.invoke('get_weather', {
+      body: { lat, lng },
     });
 
-    if (!response.ok) {
+    if (error) {
       throw new Error('Weather fetch failed');
     }
 
-    const data = await response.json();
     return data as WeatherSnapshot;
   } catch (error) {
     console.error('Weather API error:', error);

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getWeather } from '@/lib/api/weather';
+import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
 export const useWeather = () => {
@@ -8,9 +8,15 @@ export const useWeather = () => {
   return useQuery({
     queryKey: ['weather', lat, lng],
     enabled: !!lat && !!lng && !geoError,
-    queryFn: () => getWeather(lat!, lng!),
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get_weather', {
+        body: { lat, lng },
+      });
+      if (error) throw error;
+      return data;
+    },
     staleTime: 10 * 60_000, // 10 min
     retry: 2,
     meta: { errorMessage: 'Failed to fetch weather data' }
   });
-}; 
+};
