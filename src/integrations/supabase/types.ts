@@ -587,6 +587,82 @@ export type Database = {
           },
         ]
       }
+      chat_message_reactions: {
+        Row: {
+          emoji: string
+          message_id: string
+          reacted_at: string
+          reactor_id: string
+        }
+        Insert: {
+          emoji: string
+          message_id: string
+          reacted_at?: string
+          reactor_id: string
+        }
+        Update: {
+          emoji?: string
+          message_id?: string
+          reacted_at?: string
+          reactor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          metadata: Json | null
+          reply_to_id: string | null
+          sender_id: string
+          surface: Database["public"]["Enums"]["chat_surface_enum"]
+          thread_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reply_to_id?: string | null
+          sender_id: string
+          surface: Database["public"]["Enums"]["chat_surface_enum"]
+          thread_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          metadata?: Json | null
+          reply_to_id?: string | null
+          sender_id?: string
+          surface?: Database["public"]["Enums"]["chat_surface_enum"]
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crossed_paths: {
         Row: {
           created_at: string | null
@@ -895,6 +971,60 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_media: {
+        Row: {
+          created_at: string | null
+          height: number | null
+          id: string
+          message_id: string | null
+          meta: Json | null
+          mime_type: string
+          object_path: string
+          thread_id: string
+          uploader_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          height?: number | null
+          id?: string
+          message_id?: string | null
+          meta?: Json | null
+          mime_type: string
+          object_path: string
+          thread_id: string
+          uploader_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          height?: number | null
+          id?: string
+          message_id?: string | null
+          meta?: Json | null
+          mime_type?: string
+          object_path?: string
+          thread_id?: string
+          uploader_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_media_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_media_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "direct_threads"
             referencedColumns: ["id"]
           },
         ]
@@ -9221,6 +9351,10 @@ export type Database = {
         Args: { uid: string }
         Returns: boolean
       }
+      is_thread_member: {
+        Args: { tid: string }
+        Returns: boolean
+      }
       join_floq: {
         Args: { p_floq_id: string; p_profile_id?: string; p_use_demo?: boolean }
         Returns: Json
@@ -9268,6 +9402,14 @@ export type Database = {
       mark_notifications_read: {
         Args: { notification_ids?: string[]; mark_all_for_user?: boolean }
         Returns: number
+      }
+      mark_read: {
+        Args: {
+          p_surface: Database["public"]["Enums"]["chat_surface_enum"]
+          p_thread_id: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       match_locations_batch: {
         Args: { _since: string }
@@ -9535,6 +9677,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      react_to_message: {
+        Args: { p_message_id: string; p_user_id: string; p_emoji: string }
+        Returns: Json
+      }
       refresh_field_tiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -9663,6 +9809,28 @@ export type Database = {
       send_friend_request: {
         Args: { _target: string }
         Returns: Json
+      }
+      send_message: {
+        Args: {
+          p_surface: Database["public"]["Enums"]["chat_surface_enum"]
+          p_thread_id: string
+          p_sender_id: string
+          p_body?: string
+          p_reply_to_id?: string
+          p_media_meta?: Json
+        }
+        Returns: {
+          body: string | null
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          metadata: Json | null
+          reply_to_id: string | null
+          sender_id: string
+          surface: Database["public"]["Enums"]["chat_surface_enum"]
+          thread_id: string
+        }
       }
       send_pending_push: {
         Args: Record<PropertyKey, never>
@@ -11039,6 +11207,7 @@ export type Database = {
         | "peak_energy"
         | "social_boost"
         | "solo_moment"
+      chat_surface_enum: "dm" | "floq" | "plan"
       cluster_type_enum:
         | "nightlife"
         | "cafe"
@@ -11601,6 +11770,7 @@ export const Constants = {
         "social_boost",
         "solo_moment",
       ],
+      chat_surface_enum: ["dm", "floq", "plan"],
       cluster_type_enum: [
         "nightlife",
         "cafe",
