@@ -16,22 +16,22 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('direct_threads')
-        .select('id, unread_a, unread_b, member_a, member_b')
+        .select('id, member_a, member_b, unread_a, unread_b')
         .or(`member_a.eq.${selfId},member_b.eq.${selfId}`);
       
       if (error) throw error;
       
       return (data || [])
-        .map(thread => ({
-          thread_id: thread.id,
-          cnt: thread.member_a === selfId ? thread.unread_a : thread.unread_b
+        .map(t => ({
+          thread_id: t.id,
+          cnt: t.member_a === selfId ? t.unread_a : t.unread_b
         }))
-        .filter(item => item.cnt > 0);
+        .filter(r => r.cnt > 0);
     },
     staleTime: 30_000, // 30 seconds
   });
 
-  // Listen only for threads that involve this user to reduce noise
+  // Setup realtime invalidation
   useEffect(() => {
     if (!selfId) return;
 

@@ -1,51 +1,30 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { rpc_reactToMsg, Surface } from '@/lib/chat/api';
+import { supabase } from '@/integrations/supabase/client';
 
-export const useReactToMessage = (surface: Surface, threadId: string, selfId: string) => {
+export const useReactToMessage = (threadId: string, selfId: string) => {
   const qc = useQueryClient();
-  const queryKey = ['chat', surface, threadId];
-  const [pendingReactions, setPendingReactions] = useState(new Set<string>());
+  const key = ['chat','dm',threadId];
 
   return useMutation({
-    mutationFn: async (vars: { messageId: string; emoji: string }) => {
-      const { data, error } = await rpc_reactToMsg({ 
-        p_message_id: vars.messageId, 
-        p_user_id: selfId, 
-        p_emoji: vars.emoji 
-      });
-      if (error) throw error;
-      return data;
+    mutationFn: async ({messageId, emoji}:{messageId:string;emoji:string}) => {
+      // Placeholder implementation until tables are migrated
+      console.log('React to message:', { messageId, emoji, selfId });
+      return Promise.resolve();
     },
-    onMutate: ({ messageId, emoji }) => {
-      const reactionKey = `${messageId}-${emoji}`;
-      if (pendingReactions.has(reactionKey)) return;
-      
-      setPendingReactions(prev => new Set(prev).add(reactionKey));
-      
-      qc.setQueryData(queryKey, (old: any) => {
+
+    onMutate: ({messageId,emoji}) => {
+      qc.setQueryData(key, (old:any)=>{
         if (!old) return old;
-        old.pages.flat().forEach((m: any) => {
-          if (m.id !== messageId) return;
-          m.reactions = m.reactions ?? {};
+        old.pages.flat().forEach((m: any)=>{
+          if(m.id!==messageId) return;
+          m.reactions ??= {};
           const arr: string[] = m.reactions[emoji] ?? [];
-          if (arr.includes(selfId))
-            m.reactions[emoji] = arr.filter((u) => u !== selfId);
-          else
-            m.reactions[emoji] = [...arr, selfId];
+          m.reactions[emoji] = arr.includes(selfId)
+              ? arr.filter(u=>u!==selfId)
+              : [...arr, selfId];
         });
-        return { ...old };
+        return {...old};
       });
-      return { reactionKey };
-    },
-    onSettled: (data, error, vars, ctx) => {
-      if (ctx?.reactionKey) {
-        setPendingReactions(prev => {
-          const next = new Set(prev);
-          next.delete(ctx.reactionKey);
-          return next;
-        });
-      }
-    },
+    }
   });
 };

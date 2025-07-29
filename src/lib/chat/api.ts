@@ -8,6 +8,8 @@ export interface ChatMessage {
   content: string | null;
   metadata: any | null;
   reply_to_id: string | null;
+  message_type?: 'text' | 'image' | 'voice' | 'file';
+  status?: string;
   created_at: string;
   reactions?: Record<string, string[]>;
 }

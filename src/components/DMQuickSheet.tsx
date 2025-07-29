@@ -23,7 +23,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
 import { useChatTimeline } from '@/hooks/chat/useChatTimeline';
 import { useReactToMessage } from '@/hooks/chat/useReactToMessage';
-import { useSendMessage } from '@/hooks/chat/useSendMessage';
+import { useSendDM } from '@/hooks/chat/useSendDM';
 import { useMarkRead } from '@/hooks/chat/useMarkRead';
 import { useUploadMedia } from '@/hooks/chat/useUploadMedia';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
@@ -33,6 +33,8 @@ import { rpc_markThreadRead, type Surface } from '@/lib/chat/api';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
 import { ChatMediaBubble } from '@/components/chat/ChatMediaBubble';
+import { ReplySnippet } from '@/components/chat/ReplySnippet';
+import { getMediaURL } from '@/utils/mediaHelpers';
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -42,6 +44,7 @@ interface DMQuickSheetProps {
 
 export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
   const [input, setInput] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -58,8 +61,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const timeline = useChatTimeline(surface, threadId, currentUserId ?? '', { 
     enabled: !!currentUserId && !!friendId && !!threadId 
   });
-  const sendMut = useSendMessage(surface, threadId, currentUserId ?? '');
-  const reactMut = useReactToMessage(surface, threadId, currentUserId ?? '');
+  const sendMut = useSendDM(threadId, currentUserId ?? '');
+  const reactMut = useReactToMessage(threadId, currentUserId ?? '');
   const markReadMut = useMarkRead(surface, threadId, currentUserId ?? '');
 
   const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
@@ -179,8 +182,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
 
     try {
-      await sendMut.mutateAsync({ text: input.trim() });
+      await sendMut.mutateAsync({ 
+        text: input.trim(), 
+        replyTo: replyTo 
+      });
       setInput('');
+      setReplyTo(null);
       
       // Note: sendMut already invalidates queries optimistically, but keeping for safety
       queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
@@ -288,7 +295,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                       ? "bg-primary text-primary-foreground ml-auto"
                       : "bg-muted"
                   )}
+                  onDoubleClick={() => setReplyTo(message.id)}
                 >
+                  {/* Reply context */}
+                  {message.reply_to_id && (
+                    <ReplySnippet messageId={message.reply_to_id} />
+                  )}
+
+                  {/* Main content / media */}
                   {message.metadata?.media ? (
                     <ChatMediaBubble 
                       media={message.metadata.media}
@@ -297,18 +311,47 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                   ) : (
                     <div className="text-sm">{message.content}</div>
                   )}
+
+                  {/* Reactions */}
+                  {message.reactions && Object.keys(message.reactions).length > 0 && (
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      {Object.entries(message.reactions).map(([emoji, arr]) => (
+                        <button
+                          key={emoji}
+                          onClick={() => reactMut.mutate({ messageId: message.id, emoji })}
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/80 transition-colors",
+                            arr.includes(currentUserId || '') ? 'ring-1 ring-primary' : ''
+                          )}
+                        >
+                          {emoji} {arr.length}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between mt-1">
                     <div className="text-xs opacity-70">
                       {dayjs(message.created_at).format('HH:mm')}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
-                      onClick={() => reactMut.mutate({ messageId: message.id, emoji: '👍' })}
-                    >
-                      👍
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
+                        onClick={() => reactMut.mutate({ messageId: message.id, emoji: '👍' })}
+                      >
+                        👍
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
+                        onClick={() => setReplyTo(message.id)}
+                      >
+                        ↩️
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -322,8 +365,23 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
+        {/* Input with reply preview */}
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          {replyTo && (
+            <div className="mb-2 bg-muted/30 p-2 rounded flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                Replying to message
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyTo(null)}
+                className="h-6 w-6 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+          )}
           <input
             type="file"
             accept="image/*,video/*"
