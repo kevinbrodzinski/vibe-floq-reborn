@@ -26,10 +26,11 @@ export interface SupabaseRPCTypes {
   };
   get_visible_floqs_with_members: {
     Args: {
-      p_lat?: number;
-      p_lng?: number;
+      p_lat: number;
+      p_lng: number;
       p_limit?: number;
       p_offset?: number;
+      p_radius_km?: number;
     };
     Returns: Array<{
       id: string;
@@ -58,6 +59,21 @@ export interface SupabaseRPCTypes {
       p_visibility?: string;
     };
     Returns: undefined;
+  };
+  get_trending_venues: {
+    Args: {
+      p_lat: number;
+      p_lng: number;
+      p_radius_m?: number;
+      p_limit?: number;
+    };
+    Returns: Array<{
+      venue_id: string;
+      name: string;
+      distance_m: number;
+      vibe_tag: string | null;
+      people_now: number;
+    }>;
   };
 }
 
