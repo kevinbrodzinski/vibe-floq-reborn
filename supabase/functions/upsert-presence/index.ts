@@ -32,68 +32,29 @@ serve(async (req) => {
     const body = await req.json();
     const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
 
-    const updateData: any = {
-      user_id: user.id,
-      location: `POINT(${lng} ${lat})`,
-      broadcast_radius,
-      updated_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 90_000).toISOString()
-    };
-
-    // Set venue_id if provided
-    if (venue_id !== undefined) {
-      updateData.venue_id = venue_id;
-    }
-    
-    // Only set vibe if explicitly provided (don't clear on venue leave)
-    if (vibe !== undefined && vibe !== null) {
-      updateData.vibe = vibe;
-    }
-
-    console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
-
-    // Upsert presence with PostGIS point and optional venue_id
-    const { error } = await supabase
-      .from("vibes_now")
-      .upsert(updateData);
+    // Use the new canonical upsert_presence function
+    const { error } = await supabase.rpc('upsert_presence', {
+      p_lat: lat,
+      p_lng: lng,
+      p_vibe: vibe || 'chill',
+      p_visibility: 'public'
+    });
 
     if (error) {
       console.error("Presence upsert error:", error);
-      
-      // Track critical database errors
-      try {
-        const posthogKey = Deno.env.get("POSTHOG_PUBLIC_KEY");
-        if (posthogKey && Deno.env.get("DEV") !== "true") {
-          await fetch('https://app.posthog.com/capture/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Keep-Alive': 'timeout=5' },
-            body: JSON.stringify({
-              api_key: posthogKey,
-              event: 'presence_upsert_error',
-              properties: {
-                msg: error.message,
-                code: error.code ?? null,
-              },
-            }),
-            keepalive: true,
-          }).catch(() => {/* silent */});
-        }
-      } catch (analyticsError) {
-        console.debug('Analytics tracking failed:', analyticsError);
-      }
-      
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Get nearby users using PostGIS function (now includes self by default)
+    console.log(`Presence updated: ${user.id}${venue_id ? ` → venue ${venue_id}` : venue_id === null ? ' → left venue' : ''}`);
+
+    // Get nearby users using PostGIS function
     const { data: nearby, error: nearbyError } = await supabase.rpc('presence_nearby', {
       lat: lat,
       lng: lng,
-      km: 1.0,
-      include_self: true
+      metres: 1000
     });
 
     if (nearbyError) {
@@ -120,8 +81,8 @@ serve(async (req) => {
         supabase.functions.invoke('relationship-tracker', {
           body: {
             user_id: user.id,
-            nearby_users: nearby.filter(u => u.user_id !== user.id),
-            current_vibe: vibe || updateData.vibe,
+            nearby_users: nearby.filter(u => u.profile_id !== user.id),
+            current_vibe: vibe || 'chill',
             venue_id: venue_id
           }
         }).catch(err => console.error('Relationship tracking failed:', err))
@@ -135,7 +96,7 @@ serve(async (req) => {
         event_type: 'proximity_update' as const,
         user_id: user.id,
         proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
-        vibe: vibe || updateData.vibe
+        vibe: vibe || 'chill'
       }));
 
       backgroundTasks.push(
