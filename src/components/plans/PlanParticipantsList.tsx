@@ -15,7 +15,7 @@ import { InvitePeopleModal } from './InvitePeopleModal';
 
 interface Participant {
   id: string;
-  user_id: string | null;
+  profile_id: string | null;
   role: string;
   is_guest: boolean | null;
   guest_name: string | null;

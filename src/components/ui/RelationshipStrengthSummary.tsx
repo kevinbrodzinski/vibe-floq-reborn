@@ -57,7 +57,7 @@ export const RelationshipStrengthSummary: React.FC<RelationshipStrengthSummaryPr
       {/* Top relationships */}
       <div className="space-y-3">
         {topRelationships.map((relationship, index) => (
-          <div key={relationship.userId} className="flex items-center gap-3">
+          <div key={relationship.profileId} className="flex items-center gap-3">
             {/* Rank */}
             <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
               <span className="text-white/90 text-xs font-medium">{index + 1}</span>

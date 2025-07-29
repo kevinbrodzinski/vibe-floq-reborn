@@ -107,7 +107,7 @@ export function MyFlockCard({ flock, onOpen }: MyFlockCardProps) {
               <div className="flex -space-x-2">
                 {(participants ?? []).slice(0, 3).map((p) => (
                   <img
-                    key={p.user_id}
+                    key={p.profile_id}
                     src={p.avatar_url ?? '/avatar-placeholder.png'}
                     alt=""
                     loading="lazy"

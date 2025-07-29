@@ -50,7 +50,7 @@ export const RelationshipStrengthIndicator: React.FC<RelationshipStrengthIndicat
   }
 
   const handlePrivacyToggle = () => {
-    onTogglePrivacy?.(relationship.userId, !relationship.isPublic)
+    onTogglePrivacy?.(relationship.profileId, !relationship.isPublic)
     setShowPrivacyMenu(false)
   }
 

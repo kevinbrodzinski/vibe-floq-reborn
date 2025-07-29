@@ -33,7 +33,7 @@ export function useFloqSuggestions({
       if (!user || !geo) return [];
       
       const { data, error } = await supabase.rpc("generate_floq_suggestions", {
-        p_user_id: user.id,
+        p_profile_id: user.id,
         p_user_lat: geo.lat,
         p_user_lng: geo.lng,
         p_limit: limit,

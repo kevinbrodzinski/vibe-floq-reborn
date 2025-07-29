@@ -30,7 +30,7 @@ export const useFloqJoin = () => {
 
       const { data, error } = await supabase.rpc('join_floq', {
         p_floq_id: floqId,
-        p_user_id: profileId || undefined,
+        p_profile_id: profileId || undefined,
         p_use_demo: isDemo()
       });
       
@@ -88,7 +88,7 @@ export const useFloqJoin = () => {
 
       const { data, error } = await supabase.rpc('leave_floq', {
         p_floq_id: floqId,
-        p_user_id: profileId || undefined,
+        p_profile_id: profileId || undefined,
         p_use_demo: isDemo()
       });
       

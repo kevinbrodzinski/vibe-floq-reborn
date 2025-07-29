@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 
 interface EncounteredUser {
-  user_id: string
+  profile_id: string
   interaction_strength: number
   shared_duration: number
   interaction_type: string

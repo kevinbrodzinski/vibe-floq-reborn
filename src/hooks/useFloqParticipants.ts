@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Participant {
-  user_id: string;
+  profile_id: string;
   avatar_url: string | null;
 }
 

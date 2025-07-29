@@ -163,7 +163,7 @@ export const RelationshipStrengthGrid: React.FC = () => {
         {filteredAndSortedRelationships.length > 0 ? (
           filteredAndSortedRelationships.map(relationship => (
             <RelationshipStrengthIndicator
-              key={relationship.userId}
+              key={relationship.profileId}
               relationship={relationship}
               onTogglePrivacy={updatePrivacy}
               showDetails={showDetails}
