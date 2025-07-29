@@ -857,33 +857,49 @@ export type Database = {
       }
       direct_messages: {
         Row: {
-          content: string
+          content: string | null
           created_at: string | null
           id: string
+          message_type: Database["public"]["Enums"]["dm_msg_type"]
           metadata: Json | null
           profile_id: string | null
+          reply_to_id: string | null
           sender_id: string
+          status: string
           thread_id: string
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string | null
           id?: string
+          message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
           profile_id?: string | null
+          reply_to_id?: string | null
           sender_id: string
+          status?: string
           thread_id: string
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string | null
           id?: string
+          message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
           profile_id?: string | null
+          reply_to_id?: string | null
           sender_id?: string
+          status?: string
           thread_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "direct_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "direct_messages_thread_id_fkey"
             columns: ["thread_id"]
@@ -1025,6 +1041,56 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "direct_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_message_reactions: {
+        Row: {
+          emoji: string
+          message_id: string
+          profile_id: string
+          reacted_at: string
+        }
+        Insert: {
+          emoji: string
+          message_id: string
+          profile_id: string
+          reacted_at?: string
+        }
+        Update: {
+          emoji?: string
+          message_id?: string
+          profile_id?: string
+          reacted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dm_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "direct_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dm_message_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -9806,6 +9872,36 @@ export type Database = {
           created_at: string
         }[]
       }
+      send_dm_message: {
+        Args:
+          | {
+              p_thread_id: string
+              p_sender_id: string
+              p_body?: string
+              p_reply_to?: string
+              p_media?: Json
+            }
+          | {
+              p_thread_id: string
+              p_sender_id: string
+              p_body?: string
+              p_reply_to?: string
+              p_media?: Json
+              p_type?: Database["public"]["Enums"]["dm_msg_type"]
+            }
+        Returns: {
+          content: string | null
+          created_at: string | null
+          id: string
+          message_type: Database["public"]["Enums"]["dm_msg_type"]
+          metadata: Json | null
+          profile_id: string | null
+          reply_to_id: string | null
+          sender_id: string
+          status: string
+          thread_id: string
+        }[]
+      }
       send_friend_request: {
         Args: { _target: string }
         Returns: Json
@@ -10980,6 +11076,10 @@ export type Database = {
         Args: { "": unknown }
         Returns: string
       }
+      toggle_dm_reaction: {
+        Args: { p_message_id: string; p_profile_id: string; p_emoji: string }
+        Returns: undefined
+      }
       unlockrows: {
         Args: { "": string }
         Returns: number
@@ -11215,6 +11315,7 @@ export type Database = {
         | "transit"
         | "creative"
         | "wellness"
+      dm_msg_type: "text" | "image" | "voice" | "file"
       event_shape: "circle"
       flock_event_type_enum:
         | "created"
@@ -11779,6 +11880,7 @@ export const Constants = {
         "creative",
         "wellness",
       ],
+      dm_msg_type: ["text", "image", "voice", "file"],
       event_shape: ["circle"],
       flock_event_type_enum: [
         "created",
