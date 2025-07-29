@@ -22,8 +22,13 @@ import { Highlights } from '@/components/profile/Highlights';
 import { FooterMemberSince } from '@/components/profile/FooterMemberSince';
 import { AppBarBack } from '@/components/profile/AppBarBack';
 
-const UserProfile = () => {
-  const { profileId } = useParams<{ profileId: string }>();
+interface UserProfileProps {
+  profileId?: string; // Allow profileId to be passed as prop
+}
+
+const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
+  const { profileId: routeProfileId } = useParams<{ profileId: string }>();
+  const profileId = propProfileId || routeProfileId;
   const currentUserId = useCurrentUserId();
   const [dmOpen, setDmOpen] = useState(false);
   

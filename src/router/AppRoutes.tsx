@@ -13,7 +13,7 @@ import AfterglowRoutes from '@/routes/AfterglowRoutes';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
 import FloqPlanExecutionScreen from '@/pages/FloqPlanExecutionScreen';
 import { LegacyRedirect } from '@/components/LegacyRedirect';
-import { UserProfileByUsername } from '@/components/UserProfileByUsername';
+import UserProfileByUsernameWrapper from '@/components/UserProfileByUsernameWrapper';
 import Profile from '@/pages/Profile';
 import Settings from '@/pages/Settings';
 import UserProfile from '@/pages/UserProfile';
@@ -74,7 +74,7 @@ export const AppRoutes = () => {
       {/* New route for shared plans using /share/:slug */}
       <Route path="/share/:slug" element={<SharedPlan />} />
       <Route path="/invites" element={<Invites />} />
-      <Route path="/u/:username" element={<UserProfileByUsername />} />
+      <Route path="/u/:username" element={<UserProfileByUsernameWrapper />} />
       <Route path="/profile/:profileId" element={<UserProfile />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile-settings" element={<Profile />} />
