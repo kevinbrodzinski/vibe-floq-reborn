@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface ClusterVenue {
   id: string;
@@ -9,44 +9,45 @@ export interface ClusterVenue {
   lng: number;
   vibe_score: number;
   live_count: number;
-  popularity: number;   // popularity snapshot for pagination
+  /** popularity snapshot returned by the RPC – used for cursor-paging */
+  popularity: number;
 }
 
-/** fetches venues inside current map bounds */
-export function useClusterVenues(bounds: [number, number, number, number] | null) {
+/** Fetches venues that fall inside the current map bounds. */
+export function useClusterVenues(
+  bounds: [w: number, s: number, e: number, n: number] | null
+) {
   return useQuery<ClusterVenue[]>({
-    queryKey: ['cluster-venues', bounds ? JSON.stringify(bounds) : null],
-    placeholderData: (previousData) => previousData ?? [], // smoother panning
+    queryKey: ["cluster-venues", bounds ? JSON.stringify(bounds) : null],
+    placeholderData: prev => prev ?? [],
     staleTime: 30_000,
     queryFn: async ({ signal }) => {
       if (!bounds) return [];
 
       const [w, s, e, n] = bounds;
-      const { data, error } = await supabase.rpc('get_cluster_venues', {
+
+      const { data, error } = await supabase.rpc("get_cluster_venues", {
         min_lng: w,
         min_lat: s,
         max_lng: e,
         max_lat: n,
         cursor_popularity: 0,
         limit_rows: 10,
-      } as any);
-      
-      // Check for abort signal
-      if (signal?.aborted) {
-        throw new DOMException('Aborted', 'AbortError');
-      }
+      } as Record<string, unknown>);
+
+      if (signal?.aborted)
+        throw new DOMException("Aborted", "AbortError");
 
       if (error) {
-        console.error('Failed to fetch cluster venues:', error);
+        console.error("[useClusterVenues] RPC error:", error);
         throw error;
       }
 
-      // Transform lat/lng to numbers and return properly typed data
-      return (data || []).map(venue => ({
-        ...venue,
-        lat: +venue.lat, // Safe casting for both string and number types
-        lng: +venue.lng,
-        popularity: (venue as any).popularity || (venue as any).check_ins || 0,
+      return (data ?? []).map(v => ({
+        ...v,
+        lat: +v.lat,
+        lng: +v.lng,
+        popularity: (v as any).popularity ?? (v as any).check_ins ?? 0,
       }));
     },
   });
