@@ -127,7 +127,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const messages = timeline.data?.pages.flatMap(p => p) ?? [];
+    const messages = timeline.data?.pages?.flatMap(p => p) ?? [];
     if (messages.length > 0) {
       const id = requestAnimationFrame(() =>
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -284,7 +284,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           ) : (
-            (timeline.data?.pages.flatMap(p => p) ?? []).map((message) => {
+            (timeline.data?.pages?.flatMap(p => p) ?? []).map((message) => {
               const isOwn = message.sender_id === currentUserId;
               return (
                 <div
@@ -321,10 +321,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                           onClick={() => reactMut.mutate({ messageId: message.id, emoji })}
                           className={cn(
                             "px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/80 transition-colors",
-                            arr.includes(currentUserId || '') ? 'ring-1 ring-primary' : ''
+                            Array.isArray(arr) && arr.includes(currentUserId || '') ? 'ring-1 ring-primary' : ''
                           )}
                         >
-                          {emoji} {arr.length}
+                          {emoji} {Array.isArray(arr) ? arr.length : 0}
                         </button>
                       ))}
                     </div>

@@ -18,7 +18,7 @@ export const useChatTimeline = (
   threadId: string,
   profileId: string,
   opts:     { enabled?: boolean } = {},
-): UseInfiniteQueryResult<ChatMessage[]> => {
+) => {
   const qc       = useQueryClient();
   const queryKey = ['chat', surface, threadId];
 
@@ -99,7 +99,7 @@ export const useChatTimeline = (
       }, () => qc.invalidateQueries({ queryKey }))
       .subscribe();
 
-    return () => supabase.removeChannel(ch);
+    return () => { supabase.removeChannel(ch); };
   }, [surface, threadId, qc, queryKey]);
 
   /* 3️⃣  realtime reactions (DM only) ------------------------------------- */
@@ -115,7 +115,7 @@ export const useChatTimeline = (
       }, () => qc.invalidateQueries({ queryKey }))
       .subscribe();
 
-    return () => supabase.removeChannel(ch);
+    return () => { supabase.removeChannel(ch); };
   }, [surface, threadId, qc, queryKey]);
 
   /* 4️⃣  auto-mark-read ---------------------------------------------------- */
