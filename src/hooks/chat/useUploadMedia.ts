@@ -37,7 +37,7 @@ export const useUploadMedia = (
         });
         if (!putRes.ok) throw new Error('Upload failed');
 
-        await sendMessage({
+        return await sendMessage({
           text: null,
           metadata: {
             media: { 

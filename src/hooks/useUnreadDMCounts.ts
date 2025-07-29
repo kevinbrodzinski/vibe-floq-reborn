@@ -38,22 +38,37 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     if (import.meta.env.DEV) console.log('📱 Setting up DM unread counts realtime for user:', selfId);
 
     const channel = supabase
-      .channel(`unread_updates:${selfId}`)
+      .channel(`dm_unread_${selfId}`)
+      // New DM - catch all and filter client-side
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages'
+        table: 'direct_messages',
+        filter: 'thread_id=neq.null'
       }, (payload) => {
-        if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
+        const msg = payload.new as { thread_id: string; sender_id: string };
+        if (msg.sender_id !== selfId) {
+          if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+        }
+      })
+      // Read status changes - separate listeners for each member column
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'direct_threads',
+        filter: `member_a=eq.${selfId}`
+      }, () => {
+        if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_a)');
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `or=(member_a.eq.${selfId},member_b.eq.${selfId})`
-      }, (payload) => {
-        if (import.meta.env.DEV) console.log('📖 Thread read status updated, invalidating unread counts:', payload);
+        filter: `member_b=eq.${selfId}`
+      }, () => {
+        if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_b)');
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .subscribe();

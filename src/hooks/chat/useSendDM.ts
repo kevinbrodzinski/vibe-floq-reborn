@@ -25,8 +25,9 @@ export const useSendDM = (threadId: string, selfId: string) => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate the chat timeline to refresh messages
+      // Invalidate both the chat timeline and thread list
       qc.invalidateQueries({ queryKey: ['chat', 'dm', threadId] });
+      qc.invalidateQueries({ queryKey: ['dm-threads', selfId] });
     }
   });
 };

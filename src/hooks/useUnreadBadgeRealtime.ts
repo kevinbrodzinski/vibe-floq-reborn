@@ -13,18 +13,31 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'direct_messages'
+        table: 'direct_messages',
+        filter: 'thread_id=neq.null'
       }, (payload) => {
-        if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
+        const msg = payload.new as { thread_id: string; sender_id: string };
+        if (msg.sender_id !== userId) {
+          if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'direct_threads',
+        filter: `member_a=eq.${userId}`
+      }, () => {
+        if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');
         queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
-        filter: `or=(member_a.eq.${userId},member_b.eq.${userId})`
-      }, (payload) => {
-        if (import.meta.env.DEV) console.log('🔔 Thread updated, invalidating unread counts');
+        filter: `member_b=eq.${userId}`
+      }, () => {
+        if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');
         queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
       })
       .subscribe();
