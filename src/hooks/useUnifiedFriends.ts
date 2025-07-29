@@ -1,99 +1,127 @@
 /* ------------------------------------------------------------------
-   useUnifiedFriends – ONE hook for
-     • accepted friends
-     • incoming / outgoing requests
-     • live presence   (via view  v_friends_with_presence)
+   useUnifiedFriends  –  one hook for friends, requests & presence
    ------------------------------------------------------------------ */
-import { useEffect } from 'react';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useEffect }           from 'react';
+import { useQueryClient,
+         useQuery,
+         useMutation }         from '@tanstack/react-query';
+import { supabase }            from '@/integrations/supabase/client';
+import { useAuth }             from '@/providers/AuthProvider';
+import { useToast }            from '@/hooks/use-toast';
 
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
-import { subscribeFriendsChannel } from '@/lib/realtime/subscribeFriendsChannel';
+/* ---------- shape returned by view -------------------------------- */
+export interface UnifiedRow {
+  friend_id      : string;                 // other user's id
+  display_name   : string | null;
+  username       : string | null;
+  avatar_url     : string | null;
 
-/* ─────── database row returned by the view ─────── */
-export interface FriendRow {
-  friend_id:      string;
-  display_name:   string | null;
-  username:       string | null;
-  avatar_url:     string | null;
-  online:         boolean;
-  started_at:     string | null;
-  vibe_tag:       string | null;
-  request_status: 'pending' | 'accepted' | null;  // null means already accepted (legacy)
-  request_id:     string | null;
+  online         : boolean;                // presence flag
+  started_at     : string | null;          // presence.started_at
+  vibe_tag       : string | null;          // presence.vibe_tag
+
+  friend_state   : 'pending' | 'accepted' | 'blocked';
+  created_at     : string | null;
+  responded_at   : string | null;
 }
 
-/* ─────── main hook ─────── */
+/* ---------- small helper for SUPABASE RPC ------------------------- */
+const callUpsert = async (other: string, state: 'pending'|'accepted'|'blocked') => {
+  const { data, error } = await (supabase.rpc as any)('upsert_friendship', { _other: other, _action: state });
+  if (error) throw error;
+  return data;
+};
+
+/* ------------------------------------------------------------------ */
 export function useUnifiedFriends() {
   const { user } = useAuth();
   const uid      = user?.id;
   const qc       = useQueryClient();
+  const { toast }= useToast();
 
-  /* 1️⃣  fetch list (30 s cache; comes from the VIEW) */
+  /* ── 1. main list (view) ────────────────────────────────────────── */
   const { data = [], isLoading } = useQuery({
     queryKey : ['friends-unified', uid],
     enabled  : !!uid,
-    staleTime: 30_000,
-    queryFn  : async (): Promise<FriendRow[]> => {
+    staleTime: 15_000,
+    queryFn  : async (): Promise<UnifiedRow[]> => {
       const { data, error } = await supabase
         .from('v_friends_with_presence' as any)
         .select('*')
         .order('display_name', { ascending: true });
-      
+
       if (error) throw error;
-      return (data as unknown as FriendRow[]) ?? [];
-    }
+      return (data as unknown as UnifiedRow[]) ?? [];
+    },
   });
 
-  /* 2️⃣  realtime invalidation (friends / requests / presence) */
+  /* ── 2. realtime invalidation (friends + presence) ─────────────── */
   useEffect(() => {
     if (!uid) return;
-    const ch = subscribeFriendsChannel(uid, () =>
-      qc.invalidateQueries({ queryKey: ['friends-unified', uid] })
-    );
-    return () => {
-      supabase.removeChannel(ch);
-    };
+
+    const invalidate = () =>
+      qc.invalidateQueries({ queryKey: ['friends-unified', uid] });
+
+    const ch = supabase.channel(`friends+presence:${uid}`)
+      .on(
+        'postgres_changes',
+        { event:'*', schema:'public', table:'friendships',
+          filter:`or(user_low.eq.${uid},user_high.eq.${uid})` },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
+        { event:'*', schema:'public', table:'presence' },
+        invalidate         // we filter in JS: only friends' presence rows are in the view
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
   }, [uid, qc]);
 
-  /* 3️⃣  single mutate helper (send / accept / decline / block) */
-  const mutate = useMutation({
-    mutationFn : async ({ other, state }: { other: string; state: 'pending'|'accepted'|'blocked'|'declined' }) => {
-      const { data, error } = await supabase.rpc('upsert_friendship' as any, { 
-        target_user_id: other, 
-        new_state: state 
-      });
-      if (error) throw error;
-      return data;
+  /* ── 3. mutate helper ------------------------------------------------ */
+  const mutation = useMutation({
+    mutationFn : ({ other, state }: { other:string; state:'pending'|'accepted'|'blocked' }) =>
+      callUpsert(other, state),
+
+    onSuccess  : (_, vars) => {
+      qc.invalidateQueries({ queryKey:['friends-unified', uid] });
+      toast({ title:
+        vars.state==='pending'  ? 'Request sent 🎉' :
+        vars.state==='accepted' ? 'Friend added ✅' :
+        vars.state==='blocked'  ? 'User blocked'   :
+        'Updated' });
     },
-    onSuccess  : () => qc.invalidateQueries({ queryKey: ['friends-unified', uid] })
+    onError    : (e:any) =>
+      toast({ title:'Error', description:e.message, variant:'destructive' })
   });
 
-  /* 4️⃣  handy derived arrays */
-  const acceptedIds   = data.filter(r => r.request_status === 'accepted' || r.request_status === null)
-                            .map(r => r.friend_id);
-  const pendingIn     = data.filter(r => r.request_status === 'pending' && r.request_id && r.friend_id === uid);
-  const pendingOut    = data.filter(r => r.request_status === 'pending' && (!r.request_id || r.friend_id !== uid));
+  /* ── 4. derived helpers -------------------------------------------- */
+  const acceptedIds = data
+    .filter(r => r.friend_state === 'accepted')
+    .map   (r => r.friend_id);
 
-  /* 5️⃣  public API  */
+  const pendingIn  = data
+    .filter(r => r.friend_state === 'pending' && r.friend_id === uid);
+
+  const pendingOut = data
+    .filter(r => r.friend_state === 'pending' && r.friend_id !== uid);
+
+  /* ── 5. public API --------------------------------------------------- */
   return {
-    data,
     isLoading,
-    friends: acceptedIds,              // ✔ list of friend IDs
+    rows        : data,
+
+    friendIds   : acceptedIds,
     pendingIn,
     pendingOut,
 
-    sendRequest: (id: string) => mutate.mutate({ other: id, state: 'pending' }),
-    accept:      (id: string) => mutate.mutate({ other: id, state: 'accepted' }),
-    decline:     (id: string) => mutate.mutate({ other: id, state: 'declined' }),
-    block:       (id: string) => mutate.mutate({ other: id, state: 'blocked' }),
+    /* actions */
+    sendRequest : (id:string) => mutation.mutate({ other:id, state:'pending' }),
+    accept      : (id:string) => mutation.mutate({ other:id, state:'accepted' }),
+    block       : (id:string) => mutation.mutate({ other:id, state:'blocked' }),
 
-    isFriend:  (id: string) => acceptedIds.includes(id),
-    loading:   mutate.isPending,
+    isFriend    : (id:string) => acceptedIds.includes(id),
+    updating    : mutation.isPending,
   };
 }
