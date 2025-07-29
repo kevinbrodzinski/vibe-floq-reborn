@@ -72,10 +72,12 @@ export const useETASharing = () => {
           travel_mode: eta.mode
         }));
 
-        // Use any cast until types are regenerated 
-        await (supabase as any).from('eta_shares')
-          .upsert(etaEntries, { onConflict: 'sharer_id,friend_id' })
-          .catch((error: any) => console.error('Error storing ETA shares:', error));
+        const { error: etaError } = await supabase.from('eta_shares')
+          .upsert(etaEntries, { onConflict: 'sharer_id,friend_id' });
+        
+        if (etaError) {
+          console.error('Error storing ETA shares:', etaError);
+        }
       }
 
     } catch (error) {

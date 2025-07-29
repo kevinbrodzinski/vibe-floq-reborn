@@ -40,8 +40,7 @@ export const useLocationRequests = () => {
     if (!user) return;
 
     try {
-      // Use any cast until types are regenerated
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('location_requests')
         .select(`
           id,
@@ -83,8 +82,7 @@ export const useLocationRequests = () => {
     if (!user) return;
 
     try {
-      // Use any cast until types are regenerated
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('location_requests')
         .select(`
           id,
