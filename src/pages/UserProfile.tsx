@@ -1,7 +1,7 @@
 
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Users, Users2, MapPin, Heart, Calendar, Clock } from 'lucide-react';
+import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
@@ -10,6 +10,9 @@ import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { useLocationDuration } from '@/hooks/useLocationDuration';
 import { useFriendshipInfo } from '@/hooks/useFriendshipInfo';
+import { useUserDistance } from '@/hooks/useUserDistance';
+import { useUserStreak } from '@/hooks/useUserStreak';
+import { useUserAchievements } from '@/hooks/useUserAchievements';
 import { RelationshipStrengthIndicator } from '@/components/ui/RelationshipStrengthIndicator';
 
 // Zone components
@@ -24,6 +27,9 @@ import { Highlights } from '@/components/profile/Highlights';
 import { FooterMemberSince } from '@/components/profile/FooterMemberSince';
 import { AppBarBack } from '@/components/profile/AppBarBack';
 import { FrequencyDisplay } from '@/components/profile/FrequencyDisplay';
+import { ProfileChip } from '@/components/profile/ProfileChip';
+import { VibeHalo } from '@/components/profile/VibeHalo';
+import { QuickPingButton } from '@/components/profile/QuickPingButton';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -38,6 +44,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
   const { data: friendshipInfo } = useFriendshipInfo(profileId);
+  const { data: distance } = useUserDistance(profileId);
+  const { data: streak } = useUserStreak(profileId);
+  const { data: achievements } = useUserAchievements(profileId);
   const { isFriend, rows: friendsData } = useUnifiedFriends();
 
   if (!profileId) {
@@ -107,13 +116,24 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
       <div className="max-w-md mx-auto px-4 space-y-4">
         {/* Zone 1: Hero Card */}
-        <GlassCard center>
-          <Avatar className="w-32 h-32 mx-auto mb-4">
-            <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
-            <AvatarFallback className="text-2xl">
-              {getInitials(profile.display_name || profile.username)}
-            </AvatarFallback>
-          </Avatar>
+        <GlassCard center className="relative">
+          {/* Gradient backdrop */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(101,56,255,0.2),transparent)] rounded-3xl" />
+          
+          {/* Avatar with vibe halo */}
+          <div className="relative">
+            <VibeHalo vibe={mockLiveVibe.vibe} className="mb-4">
+              <Avatar className="w-32 h-32 mx-auto bg-surface border border-white/10">
+                <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+                <AvatarFallback className="text-2xl">
+                  {getInitials(profile.display_name || profile.username)}
+                </AvatarFallback>
+              </Avatar>
+            </VibeHalo>
+            
+            {/* Quick ping button */}
+            {!isMe && <QuickPingButton targetId={profile.id} />}
+          </div>
           <h1 className="text-white text-xl font-medium mb-1">{displayName}</h1>
           {username && (
             <p className="text-gray-400 text-sm mb-3">@{username}</p>
@@ -121,9 +141,40 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           {profile.bio && (
             <p className="text-sm text-gray-300 mb-3 leading-relaxed">{profile.bio}</p>
           )}
-          {isOnline && <ChipOnline className="mb-2" />}
+          
+          {/* Status chips row */}
+          <div className="flex flex-wrap justify-center gap-2 mb-3">
+            {isOnline && <ChipOnline />}
+            {distance && (
+              <ProfileChip 
+                icon={Compass} 
+                text={`${distance.distance} ${distance.unit} away`}
+                className="bg-blue-500/20 text-blue-300"
+              />
+            )}
+            {streak && streak.currentStreak > 0 && (
+              <ProfileChip 
+                icon={Flame} 
+                text={`${streak.currentStreak} d`}
+                className="bg-orange-500/20 text-orange-300"
+              />
+            )}
+            {mockLiveVibe.vibe && (
+              <ProfileChip 
+                text={mockLiveVibe.vibe}
+                className="bg-purple-500/20 text-purple-300"
+              />
+            )}
+            {isCurrentlyFriend && (
+              <ProfileChip 
+                text="close friend"
+                className="bg-emerald-500/20 text-emerald-300"
+              />
+            )}
+          </div>
+          {/* Location info */}
           {mockLiveVibe.location && (
-            <div className="flex flex-col items-center gap-1 text-sm text-gray-400">
+            <div className="flex flex-col items-center gap-1 text-sm text-gray-400 mb-3">
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4 shrink-0" />
                 <span>{mockLiveVibe.location}</span>
@@ -133,6 +184,21 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
                   for {locationDuration.duration}
                 </span>
               )}
+            </div>
+          )}
+          
+          {/* Mini achievements */}
+          {achievements && achievements.length > 0 && (
+            <div className="flex justify-center gap-2 mb-3">
+              {achievements.slice(0, 3).map(achievement => (
+                <span 
+                  key={achievement.id} 
+                  title={achievement.name}
+                  className="text-lg hover:scale-110 transition-transform cursor-pointer"
+                >
+                  {achievement.icon}
+                </span>
+              ))}
             </div>
           )}
           

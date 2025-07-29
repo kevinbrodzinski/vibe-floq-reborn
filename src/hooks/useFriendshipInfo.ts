@@ -19,12 +19,11 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
         return { friendsSince: null, lastInteraction: null, daysSinceLastHang: null, isFriend: false };
       }
 
-      // Check friendship using the v_friends_with_presence view which works correctly
+      // Check friendship using the friendships table 
       const { data: friends } = await supabase
-        .from('v_friends_with_presence')
-        .select('friend_id, created_at, friend_state')
-        .eq('friend_id', profileId)
-        .eq('friend_state', 'accepted')
+        .from('friendships')
+        .select('*')
+        .or(`and(user_id.eq.${currentUserId},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${currentUserId})`)
         .maybeSingle();
 
       if (!friends) {
