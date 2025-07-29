@@ -56,14 +56,12 @@ export const useContextDetection = () => {
       if (requiredContexts.includes('in_floq')) {
         try {
           if (!floqPromiseRef.current) {
-            floqPromiseRef.current = Promise.resolve(
-              supabase.rpc('get_visible_floqs_with_members' as any, {
-                p_lat: lat,
-                p_lng: lng,
-                p_limit: 20,
-                p_offset: 0
-              }).throwOnError()
-            );
+            floqPromiseRef.current = (supabase as any).rpc('get_visible_floqs_with_members', {
+              p_lat: lat,
+              p_lng: lng,
+              p_limit: 20,
+              p_offset: 0
+            }) as Promise<any>;
           }
           
           const { data: floqs } = await floqPromiseRef.current;
@@ -83,14 +81,12 @@ export const useContextDetection = () => {
       if (requiredContexts.includes('at_venue')) {
         try {
           if (!venuePromiseRef.current) {
-            venuePromiseRef.current = Promise.resolve(
-              supabase.rpc('get_nearby_venues' as any, {
-                p_lat: lat,
-                p_lng: lng,
-                p_radius_km: 0.1, // 100m radius
-                p_limit: 1
-              }).throwOnError()
-            );
+            venuePromiseRef.current = (supabase as any).rpc('get_nearby_venues', {
+              p_lat: lat,
+              p_lng: lng,
+              p_radius_km: 0.1, // 100m radius
+              p_limit: 1
+            }) as Promise<any>;
           }
           
           const { data: venues } = await venuePromiseRef.current;

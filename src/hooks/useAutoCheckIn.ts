@@ -12,9 +12,10 @@ interface VenueCheckIn {
   lastSeen: number;
 }
 
-const CHECK_IN_RADIUS = 50; // meters
-const MIN_STAY_TIME = 300_000; // 5 minutes in milliseconds
-const CHECK_INTERVAL = 30_000; // 30 seconds
+// Exported constants for testability
+export const CHECK_IN_RADIUS = 50; // meters  
+export const MIN_STAY_TIME = 300_000; // 5 minutes in milliseconds
+export const CHECK_INTERVAL = 30_000; // 30 seconds
 
 /**
  * Auto check-in hook that detects when user arrives at venues
@@ -64,8 +65,10 @@ export const useAutoCheckIn = () => {
           // Check if we've been here long enough to auto check-in
           const stayTime = now - currentCheckInRef.current.checkedInAt;
           if (stayTime >= MIN_STAY_TIME) {
-            await performAutoCheckIn(currentCheckInRef.current);
-            currentCheckInRef.current = null; // Reset after check-in
+            const success = await performAutoCheckIn(currentCheckInRef.current);
+            if (success) {
+              currentCheckInRef.current = null; // Reset after successful check-in
+            }
           }
         }
       } else {
@@ -80,7 +83,7 @@ export const useAutoCheckIn = () => {
     }
   }, []);
 
-  const performAutoCheckIn = async (checkIn: VenueCheckIn) => {
+  const performAutoCheckIn = async (checkIn: VenueCheckIn): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke('auto-checkin', {
         body: {
@@ -92,7 +95,7 @@ export const useAutoCheckIn = () => {
 
       if (error) {
         console.error('Auto check-in failed:', error);
-        return;
+        return false;
       }
 
       // Show success toast
@@ -103,8 +106,10 @@ export const useAutoCheckIn = () => {
       });
 
       console.log(`[AutoCheckIn] Successfully checked in at: ${checkIn.name}`);
+      return true;
     } catch (error) {
       console.error('Error performing auto check-in:', error);
+      return false;
     }
   };
 

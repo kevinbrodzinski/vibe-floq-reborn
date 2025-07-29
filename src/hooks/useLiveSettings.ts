@@ -40,7 +40,7 @@ export const useLiveSettings = () => {
 
             return (data ?? DEFAULTS) as LiveSettings;
         },
-        staleTime: 60_000, // 1 minute
+        staleTime: 300_000, // 5 minutes - reduce DB hammering
         retry: false, // Don't retry if QueryClient isn't ready
     });
 

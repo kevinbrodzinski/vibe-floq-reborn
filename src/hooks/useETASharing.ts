@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface ETAShare {
   friendId: string;
@@ -19,6 +20,7 @@ const MAX_ETA_DISTANCE = 5000; // 5km max for ETA calculation
  * Hook for calculating and sharing ETA to friends
  */
 export const useETASharing = () => {
+  const { user } = useAuth();
   const { data: liveSettings } = useLiveSettings();
   const shareTo = useLiveShareFriends();
   const { pos } = useUserLocation();
@@ -60,22 +62,20 @@ export const useETASharing = () => {
 
       etaMapRef.current = newETAMap;
 
-      // Broadcast updated ETAs to realtime channel if any friends are close enough
-      if (newETAMap.size > 0) {
-        const channel = supabase.channel(`eta_${Date.now()}`);
-        Array.from(newETAMap.values()).forEach(eta => {
-          channel.send({
-            type: 'broadcast',
-            event: 'eta_update',
-            payload: {
-              friend_id: eta.friendId,
-              eta_minutes: eta.eta,
-              distance_meters: eta.distance,
-              travel_mode: eta.mode,
-              timestamp: eta.updatedAt
-            }
-          });
-        });
+      // Store ETA data to database for sharing
+      if (newETAMap.size > 0 && user) {
+        const etaEntries = Array.from(newETAMap.values()).map(eta => ({
+          sharer_id: user.id,
+          friend_id: eta.friendId,
+          eta_minutes: eta.eta,
+          distance_meters: eta.distance,
+          travel_mode: eta.mode
+        }));
+
+        // Use any cast until types are regenerated 
+        await (supabase as any).from('eta_shares')
+          .upsert(etaEntries, { onConflict: 'sharer_id,friend_id' })
+          .catch((error: any) => console.error('Error storing ETA shares:', error));
       }
 
     } catch (error) {

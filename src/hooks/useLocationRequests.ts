@@ -35,14 +35,44 @@ export const useLocationRequests = () => {
   const [sentRequests, setSentRequests] = useState<SentRequest[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch incoming requests
+  // Fetch incoming requests  
   const fetchIncomingRequests = useCallback(async () => {
     if (!user) return;
 
     try {
-      // TODO: Uncomment when location_requests table is created
-      console.log('Fetching incoming requests - table not yet created');
-      setIncomingRequests([]);
+      // Use any cast until types are regenerated
+      const { data, error } = await (supabase as any)
+        .from('location_requests')
+        .select(`
+          id,
+          requester_id,
+          message,
+          created_at,
+          expires_at,
+          status,
+          requester:profiles!requester_id(display_name)
+        `)
+        .eq('target_id', user.id)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching incoming requests:', error);
+        return;
+      }
+
+      const requests = data?.map((req: any) => ({
+        id: req.id,
+        requester_id: req.requester_id,
+        requester_name: req.requester?.display_name || 'Unknown',
+        message: req.message,
+        created_at: req.created_at,
+        expires_at: req.expires_at,
+        status: req.status as LocationRequest['status']
+      })) || [];
+
+      setIncomingRequests(requests);
     } catch (error) {
       console.error('Error in fetchIncomingRequests:', error);
     }
@@ -53,9 +83,36 @@ export const useLocationRequests = () => {
     if (!user) return;
 
     try {
-      // TODO: Uncomment when location_requests table is created
-      console.log('Fetching sent requests - table not yet created');
-      setSentRequests([]);
+      // Use any cast until types are regenerated
+      const { data, error } = await (supabase as any)
+        .from('location_requests')
+        .select(`
+          id,
+          target_id,
+          message,
+          created_at,
+          status,
+          target:profiles!target_id(display_name)
+        `)
+        .eq('requester_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching sent requests:', error);
+        return;
+      }
+
+      const requests = data?.map((req: any) => ({
+        id: req.id,
+        target_id: req.target_id,
+        target_name: req.target?.display_name || 'Unknown',
+        message: req.message,
+        status: req.status as SentRequest['status'],
+        created_at: req.created_at
+      })) || [];
+
+      setSentRequests(requests);
     } catch (error) {
       console.error('Error in fetchSentRequests:', error);
     }
@@ -151,11 +208,36 @@ export const useLocationRequests = () => {
   useEffect(() => {
     if (!user) return;
 
-    // TODO: Uncomment when location_requests table is created
-    console.log('Setting up realtime subscriptions - table not yet created');
+    const channel = supabase
+      .channel('location_requests')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'location_requests',
+        filter: `target_id=eq.${user.id}`
+      }, (payload) => {
+        // New incoming request
+        fetchIncomingRequests();
+        
+        // Show notification
+        toast({
+          title: 'Location request received',
+          description: 'Someone requested your location.',
+        });
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'location_requests',
+        filter: `requester_id=eq.${user.id}`
+      }, (payload) => {
+        // Update to our sent request
+        fetchSentRequests();
+      })
+      .subscribe();
 
     return () => {
-      // TODO: Remove channel when subscription is active
+      supabase.removeChannel(channel);
     };
   }, [user, fetchIncomingRequests, fetchSentRequests, toast]);
 

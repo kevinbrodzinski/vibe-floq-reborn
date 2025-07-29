@@ -1,0 +1,57 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
+
+    // Verify authentication
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { from_lat, from_lng, friend_ids } = await req.json();
+
+    // TODO: Get friend locations and calculate actual ETAs
+    // For now, return mock data
+    const mockETAs = friend_ids.map((friendId: string) => ({
+      friend_id: friendId,
+      eta_minutes: Math.floor(Math.random() * 30) + 5, // 5-35 minutes
+      distance_meters: Math.floor(Math.random() * 3000) + 200, // 200-3200 meters  
+      travel_mode: 'walking'
+    }));
+
+    return new Response(JSON.stringify({ 
+      etas: mockETAs,
+      from_lat,
+      from_lng
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error("ETA calculation function error:", error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
