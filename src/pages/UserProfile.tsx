@@ -22,6 +22,7 @@ import { MutualContext } from '@/components/profile/MutualContext';
 import { Highlights } from '@/components/profile/Highlights';
 import { FooterMemberSince } from '@/components/profile/FooterMemberSince';
 import { AppBarBack } from '@/components/profile/AppBarBack';
+import { FrequencyDisplay } from '@/components/profile/FrequencyDisplay';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -183,6 +184,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {/* Zone 7: Highlights (always visible) */}
         <Highlights userId={profile.id} isFriend={isCurrentlyFriend} />
+
+        {/* Frequency Display: Most visited venues, locations, activities */}
+        <FrequencyDisplay userId={profile.id} />
 
         {/* Zone 8: Relationship Panel (friend only) */}
         {!isMe && isCurrentlyFriend && (
