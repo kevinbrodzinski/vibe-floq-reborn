@@ -18,8 +18,8 @@ export const fetchLiveActivity = async (cursor?: number, limit = 30) => {
 /* trending venues near user */
 export const fetchTrendingVenues = async (lat: number, lng: number,
                                           radius = 2000, limit = 5) => {
-  const { data } = await supabase.rpc('get_trending_venues',
-    { p_user_lat: lat, p_user_lng: lng, p_radius_m: radius, p_limit: limit }).throwOnError();
+  const { data } = await supabase.rpc('get_trending_venues' as any,
+    { p_lat: lat, p_lng: lng, p_radius_m: radius, p_limit: limit }).throwOnError();
   return data as TrendingVenue[];
 };
 

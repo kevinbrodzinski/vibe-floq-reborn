@@ -26,8 +26,8 @@ export interface SupabaseRPCTypes {
   };
   get_visible_floqs_with_members: {
     Args: {
-      p_user_lat?: number;
-      p_user_lng?: number;
+      p_lat?: number;
+      p_lng?: number;
       p_limit?: number;
       p_offset?: number;
     };
@@ -49,6 +49,15 @@ export interface SupabaseRPCTypes {
       members: any;
       creator_id: string;
     }>;
+  };
+  upsert_presence: {
+    Args: { 
+      p_lat: number; 
+      p_lng: number; 
+      p_vibe: string;
+      p_visibility?: string;
+    };
+    Returns: undefined;
   };
 }
 

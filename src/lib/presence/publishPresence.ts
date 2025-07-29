@@ -10,6 +10,7 @@ export async function publishPresence(
     p_lat: lat,
     p_lng: lng,
     p_vibe: vibe,
+    p_visibility: visibility,
   });
 
   if (error) {

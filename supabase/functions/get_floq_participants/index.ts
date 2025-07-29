@@ -52,7 +52,7 @@ serve(async (req) => {
     // 4. Fetch participants + avatar using separate queries to avoid relationship ambiguity
     const { data: participants, error: participantsError } = await supabase
       .from("floq_participants")
-      .select("user_id")
+      .select("profile_id")
       .eq("floq_id", floq_id)
       .limit(safeLimit);
 
@@ -65,21 +65,21 @@ serve(async (req) => {
       return response(200, []);
     }
 
-    // Get user IDs
-    const userIds = participants.map(p => p.user_id);
+    // Get profile IDs
+    const profileIds = participants.map(p => p.profile_id);
 
     // Fetch profiles for these users
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, avatar_url")
-      .in("id", userIds);
+      .in("id", profileIds);
 
     if (profilesError) {
       console.error("[get_floq_participants] Profiles query error:", profilesError);
       return response(400, { error: profilesError.message });
     }
 
-    // Create a map of user_id to avatar_url
+    // Create a map of profile_id to avatar_url
     const avatarMap = new Map();
     profiles?.forEach(profile => {
       avatarMap.set(profile.id, profile.avatar_url);
@@ -87,8 +87,8 @@ serve(async (req) => {
 
     // Combine the data
     const data = participants.map(participant => ({
-      user_id: participant.user_id,
-      avatar_url: avatarMap.get(participant.user_id) || null,
+      user_id: participant.profile_id,
+      avatar_url: avatarMap.get(participant.profile_id) || null,
     }));
 
     return response(200, data);

@@ -14,8 +14,8 @@ export const useActiveFloqs = () => {
       const { data, error } = await supabase.rpc(
         'get_visible_floqs_with_members' as any,
         {
-          p_user_lat:  coords!.latitude,
-          p_user_lng:  coords!.longitude,
+          p_lat:  coords!.latitude,
+          p_lng:  coords!.longitude,
           p_limit   :  20,
           p_offset  :  pageParam,
         },
