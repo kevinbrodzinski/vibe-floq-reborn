@@ -13,20 +13,34 @@ export const useSendDM = (threadId: string, selfId: string) => {
       media?: any;
       type?: 'text'|'image'|'voice'|'file';
     }) => {
-      // Since the new schema hasn't been applied yet, use direct insert
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .insert({
-          thread_id: threadId,
-          sender_id: selfId,
-          content: payload.text,
-          reply_to_id: payload.replyTo || null,
-          metadata: payload.media || {}
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+      // Try the new RPC first, fallback to direct insert
+      try {
+        const { data, error } = await (supabase as any).rpc('send_dm_message', {
+          p_thread_id   : threadId,
+          p_sender_id   : selfId,
+          p_message_type: payload.media ? 'image' : 'text',
+          p_body        : payload.text,              // can be null for media-only
+          p_reply_to_id : payload.replyTo ?? null,
+          p_media_meta  : payload.media  ?? {}
+        });
+        if (error) throw error;
+        return data![0];
+      } catch (rpcError) {
+        // Fallback to direct insert until RPC is available
+        const { data, error } = await supabase
+          .from('direct_messages')
+          .insert({
+            thread_id: threadId,
+            sender_id: selfId,
+            content: payload.text,
+            reply_to_id: payload.replyTo || null,
+            metadata: payload.media || {}
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
     },
 
     /* ---------- optimistic --------------- */

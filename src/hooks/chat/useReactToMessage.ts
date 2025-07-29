@@ -6,10 +6,19 @@ export const useReactToMessage = (threadId: string, selfId: string) => {
   const key = ['chat','dm',threadId];
 
   return useMutation({
-    mutationFn: async ({messageId, emoji}:{messageId:string;emoji:string}) => {
-      // Placeholder implementation until tables are migrated
-      console.log('React to message:', { messageId, emoji, selfId });
-      return Promise.resolve();
+    mutationFn: async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+      // Try the new RPC first, fallback to placeholder
+      try {
+        const { error } = await (supabase as any).rpc('toggle_dm_reaction', {
+          p_message_id: messageId,
+          p_user_id   : selfId,
+          p_emoji     : emoji
+        });
+        if (error) throw error;
+      } catch (rpcError) {
+        // Placeholder until RPC is available
+        console.log('React to message (fallback):', { messageId, emoji, selfId });
+      }
     },
 
     onMutate: ({messageId,emoji}) => {

@@ -62,12 +62,18 @@ export const useChatTimeline = (
   useEffect(() => {
     if (!threadId) return;
     
+    // Determine the correct primary key column based on surface
+    const pkCol = 
+      surface === 'dm'   ? 'thread_id' :
+      surface === 'floq' ? 'floq_id'   :
+      'plan_id';
+    
     const channel = supabase.channel(`chat_${surface}_${threadId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: surface === 'dm' ? 'direct_messages' : 'chat_messages',
-        filter: `thread_id=eq.${threadId}`,
+        filter: `${pkCol}=eq.${threadId}`,
       }, (payload) => {
         qc.invalidateQueries({ queryKey });
       })
