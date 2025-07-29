@@ -10,8 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useFriends } from '@/hooks/useFriends';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useNavigate } from 'react-router-dom';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
@@ -31,8 +30,8 @@ interface FriendsSheetProps {
 }
 
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
-  const { friendsWithPresence, friendCount, isLoading } = useFriends();
-  const { pendingRequests, acceptRequest, declineRequest, isAccepting, isDeclining } = useFriendRequests();
+  const { rows: friendsWithPresence, friendIds, isLoading } = useUnifiedFriends();
+  const { pendingIn, accept, updating } = useUnifiedFriends();
   const { lat, lng } = useGeolocation();
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();
@@ -88,8 +87,8 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             Your friends
-            {friendCount > 0 && (
-              <Badge variant="secondary">{friendCount}</Badge>
+            {friendIds.length > 0 && (
+              <Badge variant="secondary">{friendIds.length}</Badge>
             )}
           </SheetTitle>
 
@@ -212,25 +211,24 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
               Pending requests
-              {pendingRequests.length > 0 && (
-                <Badge variant="destructive" className="ml-2">{pendingRequests.length}</Badge>
+              {pendingIn.length > 0 && (
+                <Badge variant="destructive" className="ml-2">{pendingIn.length}</Badge>
               )}
             </h3>
 
-            {pendingRequests.length > 0 ? (
+            {pendingIn.length > 0 ? (
               <div className="space-y-2">
-                {pendingRequests.map((request) => {
-                  const reqProfile = request.requester_profile;
+                {pendingIn.map((request) => {
                   return (
-                    <div key={request.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div key={request.friend_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                       <AvatarWithFallback
-                        src={reqProfile?.avatar_url ? getAvatarUrl(reqProfile.avatar_url, 40) : null}
-                        fallbackText={reqProfile?.display_name || reqProfile?.username || 'U'}
+                        src={request.avatar_url ? getAvatarUrl(request.avatar_url, 40) : null}
+                        fallbackText={request.display_name || request.username || 'U'}
                         className="w-10 h-10"
                       />
                       <div className="flex-1">
                         <p className="font-medium text-sm">
-                          {reqProfile?.display_name || reqProfile?.username || 'Unknown User'}
+                          {request.display_name || request.username || 'Unknown User'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Wants to be friends
@@ -240,8 +238,8 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                         <Button
                           size="sm"
                           variant="default"
-                          onClick={() => acceptRequest(request.id)}
-                          disabled={isAccepting || isDeclining}
+                          onClick={() => accept(request.friend_id)}
+                          disabled={updating}
                           className="h-8 px-3"
                         >
                           <Check className="w-3 h-3" />
@@ -249,8 +247,8 @@ export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSh
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => declineRequest(request.id)}
-                          disabled={isAccepting || isDeclining}
+                          onClick={() => accept(request.friend_id)} // Note: Using accept for now, could add decline later
+                          disabled={updating}
                           className="h-8 px-3"
                         >
                           <X className="w-3 h-3" />

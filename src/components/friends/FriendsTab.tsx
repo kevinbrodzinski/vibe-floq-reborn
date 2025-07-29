@@ -2,55 +2,54 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFriends, useFriendRequests, useSendFriendRequest, useRespondToFriendRequest } from '@/hooks/useNewFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useAuth } from '@/providers/AuthProvider';
 
 export function FriendsTab() {
   const { user } = useAuth();
-  const { data: friends = [] } = useFriends();
-  const { data: requests = [] } = useFriendRequests();
-  const { mutate: sendRequest, isPending: isSending } = useSendFriendRequest();
-  const { mutate: respondToRequest, isPending: isResponding } = useRespondToFriendRequest();
+  const { rows, pendingIn, accept, updating, friendIds } = useUnifiedFriends();
 
-  const pendingRequests = requests.filter(r => r.status === 'pending' && r.friend_id === user?.id);
+  // Filter for accepted friends
+  const friends = rows.filter(r => r.friend_state === 'accepted');
 
   return (
     <div className="space-y-6">
       {/* Pending Friend Requests */}
-      {pendingRequests.length > 0 && (
+      {pendingIn.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Pending Friend Requests</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {pendingRequests.map(request => (
-              <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+            {pendingIn.map(request => (
+              <div key={request.friend_id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Avatar>
+                    <AvatarImage src={request.avatar_url || undefined} />
                     <AvatarFallback>
-                      {request.user_id.slice(0, 2).toUpperCase()}
+                      {(request.display_name || request.username || 'U').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">Friend Request</p>
+                    <p className="font-medium">{request.display_name || request.username}</p>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(request.created_at).toLocaleDateString()}
+                      Wants to be friends
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => respondToRequest({ id: request.id, status: 'accepted' })}
-                    disabled={isResponding}
+                    onClick={() => accept(request.friend_id)}
+                    disabled={updating}
                   >
                     Accept
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => respondToRequest({ id: request.id, status: 'declined' })}
-                    disabled={isResponding}
+                    onClick={() => accept(request.friend_id)}
+                    disabled={updating}
                   >
                     Decline
                   </Button>
@@ -73,29 +72,28 @@ export function FriendsTab() {
             </p>
           ) : (
             <div className="space-y-4">
-              {friends.map(friend => {
-                const otherUserId = friend.user_a === user?.id ? friend.user_b : friend.user_a;
-                return (
-                  <div key={friend.id || `${friend.user_a}-${friend.user_b}`} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>
-                          {otherUserId.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">Friend</p>
-                        <p className="text-sm text-muted-foreground">
-                          Connected since {new Date(friend.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
+              {friends.map(friend => (
+                <div key={friend.friend_id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={friend.avatar_url || undefined} />
+                      <AvatarFallback>
+                        {(friend.display_name || friend.username || 'U').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{friend.display_name || friend.username}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {friend.online ? '🟢 Online' : '⚫ Offline'}
+                        {friend.vibe_tag && ` • ${friend.vibe_tag}`}
+                      </p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Message
-                    </Button>
                   </div>
-                );
-              })}
+                  <Button variant="outline" size="sm">
+                    Message
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

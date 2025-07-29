@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { UsernameLink } from "@/components/ui/username-link";
 import { UserPlus, Users, MapPin, Heart } from "lucide-react";
 import { useFriendSuggestions, type FriendSuggestion } from "@/hooks/useFriendSuggestions";
-import { useFriendRequests } from "@/hooks/useFriendRequests";
+import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 import { useToast } from "@/hooks/use-toast";
 
 interface ConnectionInsightsProps {
@@ -14,7 +14,7 @@ interface ConnectionInsightsProps {
 
 export function ConnectionInsights({ profileId }: ConnectionInsightsProps) {
   const { data: suggestions = [], isLoading } = useFriendSuggestions(6);
-  const { sendRequest, isSending } = useFriendRequests();
+  const { sendRequest, updating } = useUnifiedFriends();
   const { toast } = useToast();
 
   const handleSendRequest = (suggestion: FriendSuggestion) => {
@@ -159,7 +159,7 @@ export function ConnectionInsights({ profileId }: ConnectionInsightsProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => handleSendRequest(suggestion)}
-                disabled={isSending}
+                disabled={updating}
                 className="ml-2 shrink-0"
               >
                 <UserPlus className="h-4 w-4" />

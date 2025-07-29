@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2 } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
-import { useFriends } from '@/hooks/useFriends';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/providers/AuthProvider';
@@ -42,13 +41,13 @@ export const AvatarDropdown = () => {
   const { user } = useAuth();
 
   // Use real friends data, pending requests, and unread messages for notification badge
-  const { friendCount, profiles } = useFriends();
-  const { pendingRequests } = useFriendRequests();
+  const { friendIds, rows } = useUnifiedFriends();
+  const { pendingIn } = useUnifiedFriends();
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
 
   // Total notifications = pending friend requests + unread messages
   const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.cnt, 0);
-  const totalNotifications = pendingRequests.length + totalUnreadMessages;
+  const totalNotifications = pendingIn.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
 
   // Get favorites and watchlist counts
@@ -109,10 +108,10 @@ export const AvatarDropdown = () => {
             setFriendsSheetOpen(true);
           }} className="h-11">
             <Users className="w-6 h-6 mr-3" />
-            Friends ({friendCount})
-            {pendingRequests.length > 0 && (
+            Friends ({friendIds.length})
+            {pendingIn.length > 0 && (
               <AnimatedBadge
-                count={pendingRequests.length}
+                count={pendingIn.length}
                 className="ml-auto"
               />
             )}

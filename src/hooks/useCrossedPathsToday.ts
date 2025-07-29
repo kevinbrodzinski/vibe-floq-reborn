@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useFriends } from './useFriends';
+import { useUnifiedFriends } from './useUnifiedFriends';
 import { useMemo, useEffect, useRef } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ import { OFFLINE_MODE } from '@/lib/constants';
 export function useCrossedPathsToday() {
   
   const { user } = useAuth();
-  const { friends } = useFriends();
+  const { friendIds: friends } = useUnifiedFriends();
   const { toast } = useToast();
   const { socialHaptics } = useHapticFeedback();
   

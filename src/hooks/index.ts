@@ -3,7 +3,7 @@ export { useShakeDetection } from './useShakeDetection';
 export { useHapticFeedback } from './useHapticFeedback';
 export { useFloqJoin } from './useFloqJoin';
 export { useVenueJoin } from './useVenueJoin';
-export { useFriendRequests } from './useFriendRequests';
+export { useUnifiedFriends } from './useUnifiedFriends';
 export { useFloqSuggestions } from './useFloqSuggestions';
 export { useLiveFloqScore } from './useLiveFloqScore';
 export { useMyFlocks } from './useMyFlocks';

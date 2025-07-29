@@ -8,7 +8,7 @@ import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { OnlineFriendRow } from '@/components/OnlineFriendRow';
 import { VenueListItem } from '@/components/VenueListItem';
 import { TitleRow } from '@/components/TitleRow';
-import { useFriends } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
 import { useFullscreenMap } from '@/store/useFullscreenMap';
 import { useSelectedVenue } from '@/store/useSelectedVenue';
@@ -25,7 +25,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
   const { data: results, isLoading } = useGlobalSearch(query, open);
   
   const navigate = useNavigate();
-  const { addFriend, isFriend } = useFriends();
+  const { sendRequest, isFriend } = useUnifiedFriends();
   const { primeProfiles } = useProfileCache();
   const { setMode: setMapMode } = useFullscreenMap();
   const { setSelectedVenueId } = useSelectedVenue();
@@ -59,7 +59,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
       navigate(`/profile/${profileId}`); // Use legacy route for now since search doesn't return username
     } else {
       // Send friend request
-      await addFriend(profileId);
+      await sendRequest(profileId);
     }
     
     onOpenChange(false);

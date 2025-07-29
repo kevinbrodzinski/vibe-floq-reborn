@@ -64,7 +64,7 @@ import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { openNativeMaps } from '@/utils/nativeNavigation';
 import { useState, useEffect } from 'react';
 import { useUserPresence } from '@/hooks/useUserPresence';
-import { useFriendsWithPresence } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { vibeToBorder } from '@/utils/vibeColors';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -110,7 +110,7 @@ export const UserProfileByUsername = () => {
   const { data: vibe } = useUserVibe(profile?.id);
   
   // Get friend status and online presence
-  const { friendsWithPresence, isFriend } = useFriendsWithPresence();
+  const { rows: friendsWithPresence, isFriend } = useUnifiedFriends();
   const { isUserOnline } = useUserPresence();
   
   // Check if user is online

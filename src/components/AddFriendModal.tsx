@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { UserSearchResults } from '@/components/UserSearchResults';
@@ -22,7 +22,7 @@ interface AddFriendModalProps {
 
 export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { sendRequest, isSending } = useFriendRequests();
+  const { sendRequest, updating } = useUnifiedFriends();
   const { toast } = useToast();
   const { primeProfiles } = useProfileCache();
 
@@ -37,7 +37,7 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
       setSearchQuery('');
       onOpenChange(false);
     } catch (error) {
-      // Error handling is done in the useFriendRequests hook
+      // Error handling is done in the useUnifiedFriends hook
     }
   };
 
@@ -66,7 +66,7 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
               placeholder="Search by @username or name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              disabled={isSending}
+              disabled={updating}
               className="pl-9"
               autoFocus
             />

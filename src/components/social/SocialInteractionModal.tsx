@@ -4,7 +4,7 @@ import { MessageCircle, Users, Zap, Heart, UserPlus, Calendar, MapPin, X } from 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
-import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
 
 interface Person {
@@ -30,7 +30,7 @@ export const SocialInteractionModal = ({
   onDMOpen
 }: SocialInteractionModalProps) => {
   const { socialHaptics } = useHapticFeedback();
-  const friendRequestsHook = useFriendRequests();
+  const friendRequestsHook = useUnifiedFriends();
   const sendFriendRequest = friendRequestsHook.sendRequest || (() => console.log('Send friend request not implemented'));
   const { toast } = useToast();
   const [showFloqCreate, setShowFloqCreate] = useState(false);

@@ -10,7 +10,7 @@ import { Search, Plus, X, Mail, UserPlus } from 'lucide-react';
 import { usePlanParticipants } from '@/hooks/usePlanParticipants';
 import { useInviteFriends } from '@/hooks/useInviteFriends';
 import { useToast } from '@/hooks/use-toast';
-import { useFriends } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useUserSearch } from '@/hooks/useUserSearch';
 
 interface InviteFriendsModalProps {

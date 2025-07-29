@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useFriends } from './useFriends';
+import { useUnifiedFriends } from './useUnifiedFriends';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 
