@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Zap, MapPin } from 'lucide-react';
+import { MessageCircle, Hand, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Profile } from '@/types/profile';
@@ -45,7 +45,7 @@ export const ActionBarFriend = ({ profile, onOpenDM }: ActionBarFriendProps) => 
         onClick={handleWave}
         className="border border-white/20 text-white hover:bg-white/10"
       >
-        <Zap className="h-4 w-4" />
+        <Hand className="h-4 w-4" />
       </Button>
       <Button
         variant={isSharing ? "default" : "ghost"}
