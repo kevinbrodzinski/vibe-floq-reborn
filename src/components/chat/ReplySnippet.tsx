@@ -30,7 +30,10 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
 
   if (!message) {
     return (
-      <div className={cn("text-xs text-muted-foreground italic mb-1", className)}>
+      <div 
+        className={cn("text-xs text-muted-foreground italic mb-1", className)}
+        aria-label="Deleted message"
+      >
         [Deleted message]
       </div>
     );

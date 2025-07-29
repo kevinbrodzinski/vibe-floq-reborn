@@ -16,12 +16,13 @@ export const useReactToMessage = (threadId: string, selfId: string) => {
         });
         if (error) throw error;
       } catch (rpcError) {
-        // Placeholder until RPC is available
-        console.log('React to message (fallback):', { messageId, emoji, selfId });
+        // Placeholder until RPC is available - throw to prevent optimistic update
+        throw new Error('Reaction RPC not available yet');
       }
     },
 
     onMutate: ({messageId,emoji}) => {
+      const previousData = qc.getQueryData(key);
       qc.setQueryData(key, (old:any)=>{
         if (!old) return old;
         old.pages.flat().forEach((m: any)=>{
@@ -34,6 +35,13 @@ export const useReactToMessage = (threadId: string, selfId: string) => {
         });
         return {...old};
       });
+      return { previousData };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(key, context.previousData);
+      }
     }
   });
 };
