@@ -4,7 +4,7 @@ import { LazyAvatar } from '@/components/ui/lazy-avatar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { useFriends } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useCrossedPathsToday } from '@/hooks/useCrossedPathsToday';
 
 interface ActivityItem {
@@ -23,7 +23,7 @@ interface ActivityItem {
 
 export function RecentActivity() {
   const { user } = useAuth();
-  const { profiles: friendProfiles } = useFriends();
+  const { rows: friendProfiles } = useUnifiedFriends();
   const { crossedPaths } = useCrossedPathsToday();
 
   // Fetch recent activity data

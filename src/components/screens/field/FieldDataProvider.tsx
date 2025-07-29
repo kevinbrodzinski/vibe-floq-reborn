@@ -53,7 +53,7 @@ import { safeVibe } from '@/types/enums/vibes';
 import { FieldLocationProvider, useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { FieldSocialProvider, type Person } from "@/components/field/contexts/FieldSocialContext";
 import { FieldUIProvider, useFieldUI } from "@/components/field/contexts/FieldUIContext";
-import { useFriends } from "@/hooks/useFriends";
+import { useUnifiedFriends } from "@/hooks/useUnifiedFriends";
 
 export interface FloqEvent {
   id: string;
@@ -84,7 +84,16 @@ interface FieldDataProviderProps {
 }
 
 export const FieldDataProvider = ({ children }: FieldDataProviderProps) => {
-  const { friends: friendIds, profiles } = useFriends();
+  const { friendIds, rows } = useUnifiedFriends();
+  
+  // Convert to expected profile format
+  const profiles = rows.filter(row => row.friend_state === 'accepted').map(row => ({
+    id: row.friend_id,
+    username: row.username || '',
+    display_name: row.display_name || row.username || '',
+    avatar_url: row.avatar_url,
+    bio: null // Not available in unified friends
+  }));
 
   return (
     <FieldLocationProvider friendIds={friendIds}>

@@ -9,7 +9,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, MapPin, MessageCircle, UserPlus, UserMinus, CheckCircle, Wifi, WifiOff } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
-import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { useLastSeen } from '@/hooks/useLastSeen';

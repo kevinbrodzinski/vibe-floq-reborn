@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { LazyAvatar } from "@/components/ui/lazy-avatar";
 import { UserPlus, MapPin, Clock } from "lucide-react";
-import { useFriends } from "@/hooks/useFriends";
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from "@/hooks/use-toast";
 import type { CrossedPath } from "@/types";
 
@@ -10,7 +10,7 @@ interface CrossedPathsCardProps {
 }
 
 export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
-  const { addFriend, isAddingFriend } = useFriends();
+  const { sendRequest, updating } = useUnifiedFriends();
   const { toast } = useToast();
 
   // Display logic with username fallback
@@ -38,7 +38,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
 
   const handleAddFriend = async () => {
     try {
-      await addFriend(person.profile_id);
+      await sendRequest(person.profile_id);
       toast({
         title: "Friend request sent",
         description: `Sent friend request to ${label}`,
@@ -85,11 +85,11 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
         variant="outline"
         size="sm"
         onClick={handleAddFriend}
-        disabled={isAddingFriend}
+        disabled={updating}
         className="ml-4 transition-all duration-300 hover:glow-active hover:scale-105"
       >
         <UserPlus className="w-4 h-4 mr-2" />
-        {isAddingFriend ? "Sending..." : "Add"}
+        {updating ? "Sending..." : "Add"}
       </Button>
     </div>
   );

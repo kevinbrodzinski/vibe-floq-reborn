@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Users, Tag, X } from 'lucide-react'
 import { FriendPicker } from './FriendPicker'
-import { useFriends } from '@/hooks/useFriends'
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
 
 interface PlanDetails {
   title: string

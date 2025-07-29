@@ -7,7 +7,7 @@ import { Plus, Users, X } from 'lucide-react';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { FloqCardMini } from './FloqCardMini';
 import { FriendPicker } from '@/components/new-plan/FriendPicker';
-import { useFriends } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 
@@ -27,7 +27,7 @@ interface Props {
 
 export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombinedNameChange, invitedIds, onInvitedChange }: Props) {
   const { data: myFloqs = [], isLoading } = useMyActiveFloqs();
-  const { profiles } = useFriends();
+  const { rows } = useUnifiedFriends();
   const [newName, setNewName] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -95,7 +95,12 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   }
 
   const getInvitedFriends = () => {
-    return profiles.filter(profile => invitedIds.includes(profile.id))
+    return rows.filter(row => invitedIds.includes(row.friend_id)).map(row => ({
+      id: row.friend_id,
+      display_name: row.display_name,
+      username: row.username,
+      avatar_url: row.avatar_url
+    }))
   }
 
 

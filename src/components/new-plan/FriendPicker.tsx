@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useFriends } from '@/hooks/useFriends'
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
 import { useUserSearch } from '@/hooks/useUserSearch'
 
 interface FriendPickerProps {
@@ -17,9 +17,19 @@ interface FriendPickerProps {
 }
 
 export function FriendPicker({ open, initial = [], onClose, onConfirm }: FriendPickerProps) {
-  const { profiles: friends = [], isLoading: friendsLoading, isAuthed } = useFriends()
+  const { rows: friendsWithPresence, isLoading: friendsLoading } = useUnifiedFriends()
   const [selected, setSelected] = useState<string[]>(initial)
   const [query, setQuery] = useState('')
+
+  // Convert unified friends to simple profile format
+  const friends = friendsWithPresence.filter(row => row.friend_state === 'accepted').map(row => ({
+    id: row.friend_id,
+    username: row.username || '',
+    display_name: row.display_name || row.username || '',
+    avatar_url: row.avatar_url
+  }));
+
+  const isAuthed = true; // Assuming user is authenticated if using this component
 
   // Search users when query is long enough and user is authenticated
   const { data: searchResults = [], isLoading: searchLoading } = useUserSearch(query, isAuthed)

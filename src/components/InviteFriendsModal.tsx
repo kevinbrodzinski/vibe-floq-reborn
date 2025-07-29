@@ -42,7 +42,17 @@ export const InviteFriendsModal = ({
   const { mutate: inviteFriends, isPending } = useInviteFriends();
   
   // Get friends data with auth state
-  const { profiles: friends = [], isLoading: friendsLoading, isAuthed } = useFriends();
+  const { rows: friendsWithPresence, sendRequest, updating, isLoading: friendsLoading } = useUnifiedFriends();
+  
+  // Convert unified friends to simple profile format
+  const friends = friendsWithPresence.filter(row => row.friend_state === 'accepted').map(row => ({
+    id: row.friend_id,
+    username: row.username || '',
+    display_name: row.display_name || row.username || '',
+    avatar_url: row.avatar_url
+  }));
+  
+  const isAuthed = true; // Assuming user is authenticated if using this component
   
   // Search users when query is long enough and user is authenticated
   const { data: searchResults = [], isLoading: searchLoading } = useUserSearch(searchQuery, isAuthed);

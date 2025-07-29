@@ -1,4 +1,4 @@
-import { useFriends } from '@/hooks/useFriends';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 
 export const FriendOverrideList = () => {
-    const { friendsWithPresence, isLoading: friendsLoading } = useFriends();
+    const { rows: friendsWithPresence, isLoading: friendsLoading } = useUnifiedFriends();
     const { data: liveSettings } = useLiveSettings();
     const queryClient = useQueryClient();
     const [optimisticState, setOptimisticState] = useState<Record<string, boolean>>({});
@@ -157,7 +157,7 @@ export const FriendOverrideList = () => {
                                             src={friend.avatar_url ? getAvatarUrl(friend.avatar_url) : null}
                                             fallbackText={friend.display_name || 'Friend'}
                                             username={friend.username}
-                                            profileId={friend.profile_id}
+                                            profileId={friend.friend_id}
                                             className="h-10 w-10"
                                         />
                                         <div className="min-w-0">
