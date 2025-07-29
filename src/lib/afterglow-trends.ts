@@ -25,7 +25,7 @@ export async function fetchWeeklyTrends(
 ): Promise<WeeklyTrend[]> {
   const { data, error } = await supabase.rpc(
     'get_afterglow_weekly_trends',
-    { p_user_id: undefined }
+    { p_profile_id: undefined }
   );
   if (error) throw error;
   return (data ?? []) as WeeklyTrend[];

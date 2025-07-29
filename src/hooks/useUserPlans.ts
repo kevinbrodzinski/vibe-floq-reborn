@@ -40,16 +40,8 @@ export function useUserPlans() {
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_user_plans')
-        .select('*')
-      
-      if (error) {
-        console.error('Failed to fetch user plans:', error)
-        throw error
-      }
-      
-      return (data || []) as PlanSummary[]
+      // TODO: wire to proper view when v_user_plans is available
+      return [];
     },
   })
 

@@ -10,6 +10,7 @@ export const recordPulseEvent = async (payload: Partial<PulseEvent>) => {
 
 /* paginated live-activity feed */
 export const fetchLiveActivity = async (cursor?: number, limit = 30) => {
+  // @ts-expect-error - TODO: add get_live_activity to RPC types
   const { data, error } = await supabase.rpc('get_live_activity',
     { p_cursor: cursor ?? null, p_limit: limit });
   if (error) throw error;

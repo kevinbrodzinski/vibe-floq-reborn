@@ -10,9 +10,9 @@ export const enableLiveShareForFloq = async (floqId: string) => {
   if (!members) return;
 
   // 2. bulk upsert share-on rows using the new RPC
-  const memberIds = members.map(m => m.user_id);
+  const memberIds = members.map(m => m.user_id).filter(Boolean);
   await supabase.rpc('set_live_share_bulk', {
-    _friend_ids: memberIds,
+    _friend_ids: memberIds.join(','), // Convert array to comma-separated string
     _on: true,
     _auto_when: ['floq']
   });

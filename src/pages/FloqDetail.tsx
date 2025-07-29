@@ -124,7 +124,7 @@ const FloqDetail = () => {
   }
 
   const isHost = floqDetails.creator_id === session?.user?.id;
-  const isMember = floqDetails.participants?.some(p => p.user_id === session?.user?.id);
+  const isMember = floqDetails.participants?.some(p => p.profile_id === session?.user?.id);
 
   // Don't early-return until we know definitively whether we're in or out
   const renderFloqView = () => {

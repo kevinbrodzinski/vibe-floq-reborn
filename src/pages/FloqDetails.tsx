@@ -89,7 +89,7 @@ const FloqDetails = () => {
   }
 
   const isCreator = floqDetails.creator_id === session?.user?.id;
-  const isMember = floqDetails.participants?.some(p => p.user_id === session?.user?.id);
+  const isMember = floqDetails.participants?.some(p => p.profile_id === session?.user?.id);
   const hasAccess = isCreator || isMember;
 
   return (

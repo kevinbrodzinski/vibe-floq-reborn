@@ -70,9 +70,9 @@ export default function FloqPlanExecutionScreen() {
   // live execution tracker
   // ──────────────────────────────────────────────────────────────────────────
   const trackerParticipants = participants.map(p => ({
-    id           : p.user_id,
-    username     : p.user_id, // Fallback since profile data is not available
-    display_name : p.user_id, // Fallback since profile data is not available
+    id           : p.profile_id,
+    username     : p.profile_id, // Fallback since profile data is not available
+    display_name : p.profile_id, // Fallback since profile data is not available
     avatar_url   : undefined,
     checked_in_at: undefined,
   }))

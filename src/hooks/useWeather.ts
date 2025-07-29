@@ -11,11 +11,5 @@ export const useWeather = () => {
     queryFn: () => getWeather(lat!, lng!),
     staleTime: 10 * 60_000, // 10 min
     retry: 2,
-    onError: (error) => {
-      console.error('Weather API error:', error);
-    },
-    onSuccess: (data) => {
-      console.log('Weather data loaded:', data);
-    }
   });
 }; 

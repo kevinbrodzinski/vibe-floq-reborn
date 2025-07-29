@@ -17,12 +17,13 @@ export const useVibeMatch = (eventId?: string, venueId?: string) => {
   const { data: nearbyVenues = [] } = useNearbyVenues(0, 0, 0.5); // Default location, will be updated
   
   // Get active floqs for event data
-  const { data: activeFloqs = [] } = useActiveFloqs({ limit: 20 });
+  const { data: activeFloqs = [] } = useActiveFloqs();
   
   // Find specific event/venue data
   const targetEvent = useMemo(() => {
     if (eventId) {
-      return activeFloqs.find(floq => floq.id === eventId);
+      const flatFloqs = Array.isArray(activeFloqs) ? activeFloqs : 'pages' in activeFloqs ? activeFloqs.pages.flat() : [];
+      return flatFloqs.find(floq => floq.id === eventId);
     }
     return null;
   }, [eventId, activeFloqs]);
@@ -46,7 +47,8 @@ export const useVibeMatch = (eventId?: string, venueId?: string) => {
     });
     
     // Add active floq vibes
-    activeFloqs.slice(0, 3).forEach(floq => {
+    const flatFloqs = Array.isArray(activeFloqs) ? activeFloqs : 'pages' in activeFloqs ? activeFloqs.pages.flat() : [];
+    flatFloqs.slice(0, 3).forEach(floq => {
       if (floq.primary_vibe) {
         data.push({ vibe: floq.primary_vibe });
       }

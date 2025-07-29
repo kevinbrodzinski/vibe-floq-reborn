@@ -40,7 +40,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   const navigate = useNavigate();
   const { data: p, isLoading, isError } = useProfile(profileId);
   const statusMap = useFriendsPresence();
-  const sparklineData = useFriendSparkline(profileId);
+  const { data: sparklineData = [] } = useFriendSparkline(profileId);
   const status = statusMap[profileId];
   const online = status?.status === 'online' && status?.visible;
   const [dmOpen, setDmOpen] = useState(false);
@@ -132,7 +132,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-          {sparklineData?.data?.length ? <MiniPath pts={sparklineData.data} /> : null}
+          {sparklineData?.length ? <MiniPath pts={sparklineData} /> : null}
         </div>
 
         {/* Main Content Section */}
