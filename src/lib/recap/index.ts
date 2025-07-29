@@ -57,7 +57,7 @@ export const useTodayRecap = () => {
         return null;
       }
 
-      const recapData = (data?.payload ?? null) as RecapData | null;
+      const recapData = (data?.payload ?? null) as unknown as RecapData | null;
 
       if (recapData) {                 // ← only cache valid data
         localStorage.setItem(cacheKey, JSON.stringify(recapData));

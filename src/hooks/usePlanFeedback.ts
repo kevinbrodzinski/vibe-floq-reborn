@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 export interface PlanFeedback {
   id: string;
   plan_id: string;
-  user_id: string;
+  profile_id: string;
   vibe_rating?: number;
   favorite_moment?: string;
   would_repeat?: boolean;
@@ -29,7 +29,7 @@ export function usePlanFeedback(planId: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as PlanFeedback[];
+      return data as unknown as PlanFeedback[];
     },
     enabled: !!planId,
   });
@@ -47,7 +47,7 @@ export function useMyPlanFeedback(planId: string) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as PlanFeedback | null;
+      return data as unknown as PlanFeedback | null;
     },
     enabled: !!planId,
   });

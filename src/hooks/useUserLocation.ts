@@ -125,8 +125,8 @@ export function useUserLocation() {
       if (!channelRef.current) {
         channelRef.current = supabase
           .channel(`presence_${user.id}`)
-          .on('error', err => console.error('[RT] channel error', err))
-          .on('close', () => console.warn('[RT] channel closed'))
+          .on('broadcast', { event: 'error' }, () => console.error('[RT] channel error'))
+          .on('broadcast', { event: 'close' }, () => console.warn('[RT] channel closed'))
           .subscribe(status => {
             if (status === 'SUBSCRIBED') console.debug('[RT] presence channel ready')
           })
@@ -229,12 +229,13 @@ export function useUserLocation() {
                 // --- A. in-Floq (debounced)
                 if (allowed.includes('in_floq')) {
                   if (!floqPromiseRef.current) {
-                    floqPromiseRef.current = supabase.rpc(
-                      'get_visible_floqs_with_members',
-                      { p_use_demo: false, p_limit: 50, p_offset: 0, p_user_lat: lat, p_user_lng: lng }
-                    ).finally(() => (floqPromiseRef.current = null));
+                    floqPromiseRef.current = Promise.resolve(supabase.rpc(
+                      'get_visible_floqs_with_members' as any,
+                      { p_user_lat: lat, p_user_lng: lng, p_limit: 50, p_offset: 0 }
+                    ));
                   }
                   const { data: floqs } = await floqPromiseRef.current;
+                  floqPromiseRef.current = null;
                   cachedCtx.current.inFloq = (floqs ?? []).some((f: any) =>
                     f.distance_meters != null && f.distance_meters < 50)
                 }
@@ -242,11 +243,11 @@ export function useUserLocation() {
                 // --- B. at-venue (debounced)
                 if (allowed.includes('at_venue')) {
                   if (!venuePromiseRef.current) {
-                    venuePromiseRef.current = supabase
-                      .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius: 30, p_limit: 1 })
-                      .finally(() => (venuePromiseRef.current = null));
+                    venuePromiseRef.current = Promise.resolve(supabase
+                      .rpc('get_nearby_venues' as any, { p_lat: lat, p_lng: lng, p_radius: 30, p_limit: 1 }));
                   }
                   const { data: venues } = await venuePromiseRef.current;
+                  venuePromiseRef.current = null;
                   cachedCtx.current.atVenue = !!(venues && venues.length)
                 }
               }

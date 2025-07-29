@@ -89,7 +89,7 @@ export default function ShareRipplePage() {
         description: data.daily_afterglow?.ai_summary,
         image_url: data.og_image_url,
         created_at: data.created_at,
-        profile_id: data.daily_afterglow?.user_id || '',
+        profile_id: (data.daily_afterglow as any)?.profile_id || '',
       } as RipplePayload;
     },
     staleTime: 5 * 60_000,

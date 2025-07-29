@@ -101,7 +101,7 @@ export function PlanFeedbackDisplay({ planId, className = '' }: PlanFeedbackDisp
                   key={reflection.id || index}
                   reflection={{
                     id: reflection.id || `feedback-${index}`,
-                    profile_id: reflection.user_id || '',
+                    profile_id: reflection.profile_id || '',
                     user_display_name: (reflection as any).user_display_name || 'Anonymous',
                     user_avatar_url: (reflection as any).user_avatar_url,
                     vibe_rating: reflection.vibe_rating,

@@ -81,8 +81,8 @@ export function useCollaborativeState({ planId, enabled = true }: CollaborativeS
 
       // Call RPC directly
       const { error } = await supabase.rpc('reorder_plan_stops', {
-        _plan_id: planId,
-        _ordered_stop_ids: orderedIds,
+        p_plan_id: planId,
+        p_stop_orders: orderedIds,
       })
 
       if (error) throw error

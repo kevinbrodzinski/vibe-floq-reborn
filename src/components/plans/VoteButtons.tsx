@@ -33,7 +33,7 @@ export function VoteButtons({
 
   // Find user's existing vote
   const userVote = session?.user 
-    ? votes.find(v => v.user_id === session.user.id)?.vote_type 
+    ? votes.find(v => (v as any).profile_id === session.user.id)?.vote_type 
     : null
 
   // Calculate vote counts

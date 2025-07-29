@@ -96,11 +96,11 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
       if (error) throw error;
 
       return (data || []).map(item => ({
-        ...item,
-        user_profile: item.profiles ? {
-          display_name: (item.profiles as any).display_name || 'Unknown',
-          username: (item.profiles as any).username || 'unknown',
-          avatar_url: (item.profiles as any).avatar_url || null
+        ...item as any,
+        user_profile: (item as any).profiles ? {
+          display_name: ((item as any).profiles as any).display_name || 'Unknown',
+          username: ((item as any).profiles as any).username || 'unknown',
+          avatar_url: ((item as any).profiles as any).avatar_url || null
         } : null,
       }));
     },

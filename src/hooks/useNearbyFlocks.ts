@@ -99,7 +99,7 @@ export function useNearbyFlocks({
         p_time_from: new Date().toISOString(),
         p_time_to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         p_limit: limit,
-        _viewer_id: user?.id || null,
+        // _viewer_id: user?.id || null, // commented out - not in current RPC signature
       });
 
       if (error) {

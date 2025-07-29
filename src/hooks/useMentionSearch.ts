@@ -11,7 +11,7 @@ export function useMentionSearch(query: string, enabled = true) {
     placeholderData: (prev) => prev ?? [],
     queryFn: async (): Promise<Profile[]> => {
       const { data, error } = await supabase
-        .rpc('search_users', { p_query: query, p_limit: 10 });
+        .rpc('search_users' as any, { search_query: query, p_limit: 10 });
       
       if (error) throw error;
       

@@ -6,7 +6,7 @@ export interface FloqActivity {
   id: string;
   floq_id: string;
   plan_id?: string;
-  user_id?: string;
+  profile_id?: string;
   guest_name?: string;
   kind: 'created' | 'edited' | 'commented';
   content?: string;
@@ -17,7 +17,7 @@ export interface FlockHistoryEvent {
   id: string;
   event_type: string;
   created_at: string;
-  user_id: string | null;
+  profile_id: string | null;
   metadata: any;
   profiles?: any;
 }
@@ -56,9 +56,9 @@ export function useFloqActivity(floqId: string) {
             id,
             event_type,
             created_at,
-            user_id,
+            profile_id,
             metadata,
-            profiles:user_id(display_name, username, avatar_url)
+            profiles:profile_id(display_name, username, avatar_url)
           `)
           .eq('floq_id', floqId)
           .order('created_at', { ascending: false })

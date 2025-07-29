@@ -62,13 +62,13 @@ export function PlanInvite() {
         .from('plan_participants')
         .select(`
           user_id,
-          profiles!user_id(id, display_name, username, avatar_url)
+          profiles!profile_id(id, display_name, username, avatar_url)
         `)
         .eq('plan_id', resolution!.plan_id)
 
       if (error) throw error
       
-      return data?.map(p => p.profiles).filter(Boolean) as PlanParticipant[]
+      return data?.map(p => (p as any).profiles).filter(Boolean) as PlanParticipant[]
     }
   })
 

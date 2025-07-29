@@ -25,7 +25,7 @@ export function useFloqSearch(
         p_time_from: filters.timeRange[0].toISOString(),
         p_time_to: filters.timeRange[1].toISOString(),
         p_limit: 200,
-        _viewer_id: user?.id || null,
+        // _viewer_id: user?.id || null, // commented out - not in current RPC signature
       });
 
       if (error) throw error;

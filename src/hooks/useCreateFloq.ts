@@ -61,7 +61,7 @@ export function useCreateFloq() {
           p_flock_type: data.flock_type
         };
         console.log('🔍 create_floq RPC params (geography):', fallbackParams);
-        ({ data: result, error } = await supabase.rpc('create_floq', fallbackParams));
+        ({ data: result, error } = await supabase.rpc('create_floq' as any, fallbackParams));
       }
 
       if (error) {

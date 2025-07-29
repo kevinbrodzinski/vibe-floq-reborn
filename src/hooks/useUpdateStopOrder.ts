@@ -20,8 +20,8 @@ export function useReorderPlanStops() {
   return useMutation<void, Error, ReorderStopsParams>({
     mutationFn: async ({ planId, stopOrders }: ReorderStopsParams) => {
       const { error } = await supabase.rpc('reorder_plan_stops', {
-        _plan_id: planId,
-        _ordered_stop_ids: stopOrders.map(s => s.id)
+        p_plan_id: planId,
+        p_stop_orders: stopOrders.map(s => s.id)
       })
 
       if (error) throw error

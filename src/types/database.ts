@@ -14,3 +14,10 @@ export type DailyAfterglowRow = Database['public']['Tables']['daily_afterglow'][
 // Export JSON types
 export type JsonArray = any[];
 export type JsonObject = { [key: string]: any };
+
+// Export additional types
+export type UnreadCounts = {
+  floq_id: string;
+  profile_id: string;
+  unread_total: number;
+};

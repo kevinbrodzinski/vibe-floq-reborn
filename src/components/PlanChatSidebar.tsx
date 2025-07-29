@@ -12,7 +12,7 @@ import { zIndex } from "@/constants/z";
 interface ChatMessage {
   id: string;
   content: string;
-  user_id: string;
+  profile_id: string;
   created_at: string;
   user?: {
     username: string;
@@ -61,9 +61,9 @@ export const PlanChatSidebar = ({
           .select(`
             id,
             content,
-            user_id,
+            profile_id,
             created_at,
-            profiles!plan_comments_user_id_fkey(username, display_name, avatar_url)
+            profiles!plan_comments_profile_id_fkey(username, display_name, avatar_url)
           `)
           .eq('plan_id', planId)
           .order('created_at', { ascending: true })
@@ -117,9 +117,9 @@ export const PlanChatSidebar = ({
             .select(`
               id,
               content,
-              user_id,
+              profile_id,
               created_at,
-              profiles!plan_comments_user_id_fkey(username, display_name, avatar_url)
+              profiles!plan_comments_profile_id_fkey(username, display_name, avatar_url)
             `)
             .eq('id', payload.new.id)
             .single();
