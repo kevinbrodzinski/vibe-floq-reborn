@@ -8,10 +8,11 @@ export const useActiveFloqs = () => {
   return useInfiniteQuery({
     queryKey: ['active-floqs', coords?.latitude, coords?.longitude],
     enabled : !!coords,
-    getNextPageParam: (last) => last.nextCursor ?? null,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: { data: any[], nextCursor: number | null }) => lastPage.nextCursor,
     queryFn : async ({ pageParam = 0 }) => {
       const { data, error } = await supabase.rpc(
-        'get_visible_floqs_with_members',
+        'get_visible_floqs_with_members' as any,
         {
           p_user_lat:  coords!.latitude,
           p_user_lng:  coords!.longitude,
@@ -21,8 +22,8 @@ export const useActiveFloqs = () => {
       );
       if (error) throw error;
       return {
-        data,
-        nextCursor: data.length < 20 ? null : pageParam + 20,
+        data: data || [],
+        nextCursor: (data && data.length < 20) ? null : (pageParam as number) + 20,
       };
     },
     staleTime: 30 * 1000,

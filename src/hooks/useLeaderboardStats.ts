@@ -17,11 +17,11 @@ export const useLeaderboardStats = () => {
     queryKey : ['leaderboard-stats', user?.id],
     enabled  : !!user?.id,
     staleTime: 10 * 60 * 1000,
-    queryFn  : async () => {
+    queryFn  : async (): Promise<LeaderboardRow | null> => {
       const { data, error } = await supabase
-        .rpc('get_leaderboard_rank', { p_profile_id: user!.id });
+        .rpc('get_leaderboard_rank' as any, { p_profile_id: user!.id });
       if (error) throw error;
-      return data;
+      return data as LeaderboardRow | null;
     },
   });
 };

@@ -132,7 +132,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
           )}
-          {sparklineData?.length ? <MiniPath pts={sparklineData} /> : null}
+          {sparklineData?.data?.length ? <MiniPath pts={sparklineData.data} /> : null}
         </div>
 
         {/* Main Content Section */}

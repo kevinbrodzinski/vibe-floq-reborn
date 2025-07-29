@@ -48,6 +48,7 @@ import { GeolocationButton } from "@/components/ui/geolocation-button";
 import { FloqsDebugPanel } from "@/components/debug/FloqsDebugPanel";
 import { useDebug } from "@/lib/useDebug";
 import { zIndex } from "@/constants/z";
+import { useInfiniteQueryData } from "@/hooks/useInfiniteQueryData";
 
 // Vibe color mapping
 const vibeColor: Record<string, string> = {
@@ -269,7 +270,8 @@ export const FloqsScreen = () => {
   useEffect(() => {
     getStoredRadius().then(setRadiusKm);
   }, []);
-  const { data: floqs = [], isLoading, error } = useActiveFloqs();
+  const { data: floqsData, isLoading, error } = useActiveFloqs();
+  const { items: floqs, length: floqsCount, isEmpty: noFloqs } = useInfiniteQueryData(floqsData);
   const { join, isPending } = useFloqJoin();
 
   // Add debug logging
@@ -277,10 +279,10 @@ export const FloqsScreen = () => {
     console.log('FloqsScreen: Query state', {
       isLoading,
       error: error?.message,
-      floqsCount: floqs.length,
+      floqsCount,
       floqs: floqs.length > 0 ? floqs.slice(0, 2) : 'No floqs'
     });
-  }, [isLoading, error, floqs]);
+  }, [isLoading, error, floqs, floqsCount]);
   
   // Enable real-time avatar cluster updates
   useAvatarClusterUpdates();
@@ -366,7 +368,7 @@ export const FloqsScreen = () => {
       {/* Debug counter */}
       {debug && (
         <div className="absolute top-2 right-2 text-xs opacity-60 bg-black/20 px-2 py-1 rounded" {...zIndex('overlay')}>
-          {floqs.length} active floqs
+          {floqsCount} active floqs
         </div>
       )}
 
@@ -425,7 +427,7 @@ export const FloqsScreen = () => {
       )}
 
       {/* No Floqs State */}
-      {!isLoading && !error && floqs.length === 0 && (
+      {!isLoading && !error && noFloqs && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No active floqs right now</p>
           <p className="text-sm text-muted-foreground/60 mt-1">Check back later or create one!</p>
@@ -439,7 +441,7 @@ export const FloqsScreen = () => {
       />
 
       {/* Featured Floqs Grid */}
-      {floqs.length > 0 && (
+      {floqsCount > 0 && (
         <div className="space-y-6 mb-8">
           {floqs.map((floq) => (
             <FloqCard

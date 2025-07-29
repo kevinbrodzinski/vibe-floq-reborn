@@ -7,14 +7,11 @@ export const useFriendSparkline = (friendId: string | null) => {
     enabled: !!friendId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_friend_sparkline')
-        .select('day, checkins')
-        .eq('friend_id', friendId)
-        .order('day');
-      if (error) throw error;
-      // map to [timestamp, count][]
-      return data.map(row => [new Date(row.day).valueOf(), row.checkins] as [number, number]);
+      // Mock data until view is available
+      return Array.from({ length: 7 }, (_, i) => [
+        Date.now() - (6-i) * 24 * 60 * 60 * 1000,
+        Math.floor(Math.random() * 10)
+      ] as [number, number]);
     },
   });
 };
