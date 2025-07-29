@@ -5,15 +5,15 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 /* ─── toast mock (hoist-safe, exports BOTH forms) ──────────── */
 const toastSpy = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
-  toast: toastSpy,                       // for `import { toast }`
-  useToast: () => ({ toast: toastSpy }), // for `const { toast } = useToast()`
+  toast: toastSpy,
+  useToast: () => ({ toast: toastSpy }),
 }));
 
 /* ─── framer-motion & button stubs ─────────────────────────── */
 const stub =
   <T extends keyof JSX.IntrinsicElements>(Tag: T) =>
     (p: JSX.IntrinsicElements[T] & PropsWithChildren) =>
-      /* eslint-disable react/jsx-props-no-spreading */
+
       <Tag {...p}>{p.children}</Tag>;
 
 vi.mock('framer-motion', () => ({
