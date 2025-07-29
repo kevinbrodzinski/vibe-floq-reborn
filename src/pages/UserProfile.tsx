@@ -8,6 +8,7 @@ import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { useLocationDuration } from '@/hooks/useLocationDuration';
 import { RelationshipStrengthIndicator } from '@/components/ui/RelationshipStrengthIndicator';
 
 // Zone components
@@ -33,6 +34,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const [dmOpen, setDmOpen] = useState(false);
   
   const { data: profile, isLoading, error } = useProfile(profileId);
+  const { data: locationDuration } = useLocationDuration(profileId);
   const { isFriend, rows: friendsData } = useUnifiedFriends();
 
   if (!profileId) {
@@ -118,9 +120,16 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           )}
           {isOnline && <ChipOnline className="mb-2" />}
           {mockLiveVibe.location && (
-            <div className="flex items-center justify-center gap-1 text-sm text-gray-400">
-              <MapPin className="h-4 w-4 shrink-0" />
-              <span>{mockLiveVibe.location}</span>
+            <div className="flex flex-col items-center gap-1 text-sm text-gray-400">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span>{mockLiveVibe.location}</span>
+              </div>
+              {locationDuration && (
+                <span className="text-xs text-gray-500">
+                  for {locationDuration.duration}
+                </span>
+              )}
             </div>
           )}
         </GlassCard>
