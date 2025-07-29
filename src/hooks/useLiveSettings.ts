@@ -30,7 +30,7 @@ export const useLiveSettings = () => {
                     live_muted_until,
                     live_smart_flags
                 `)
-                .eq('id', user.id)   // ← correct PK
+                .eq('profile_id', user.id)   // ← correct PK
                 .maybeSingle();         // ← null instead of crash
 
             if (error) {
@@ -52,7 +52,7 @@ export const useLiveSettings = () => {
             const { error } = await supabase
                 .from('profiles')
                 .update(patch)
-                .eq('id', user.id);  // ← same here
+                .eq('id', user.id);  // ← not profile_id 
 
             if (error) {
                 console.error('Failed to update live settings:', error);
