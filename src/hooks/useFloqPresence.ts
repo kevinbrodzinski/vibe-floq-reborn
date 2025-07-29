@@ -327,7 +327,7 @@ export function useFloqPresence(floqId: string) {
         setActiveUsers(prev => {
           const newSet = new Set(prev);
           newPresences.forEach((presence: any) => {
-            newSet.add(presence.user_id);
+            newSet.add(presence.profile_id);
           });
           return newSet;
         });
@@ -336,7 +336,7 @@ export function useFloqPresence(floqId: string) {
         setActiveUsers(prev => {
           const newSet = new Set(prev);
           leftPresences.forEach((presence: any) => {
-            newSet.delete(presence.user_id);
+            newSet.delete(presence.profile_id);
           });
           return newSet;
         });

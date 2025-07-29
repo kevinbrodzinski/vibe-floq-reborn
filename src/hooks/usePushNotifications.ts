@@ -38,7 +38,7 @@ export function usePushToken() {
         const token = `web:${deviceId}`;
         const platform = 'web';
 
-        const { data, error } = await supabase.rpc('store_push_token' as any, {
+        const { data, error } = await supabase.rpc('store_push_token', {
           p_device_id: deviceId,
           p_token: token,
           p_platform: platform,
@@ -62,7 +62,7 @@ export function usePushToken() {
 
 export async function resetBadge() {
   try {
-    const { data, error } = await supabase.rpc('reset_badge' as any);
+    const { data, error } = await supabase.rpc('reset_badge');
     if (error) {
       console.error('[push] reset badge error:', error);
     } else {

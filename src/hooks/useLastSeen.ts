@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 export function useLastSeen(profileId:string){
   const { data } = useQuery({
     queryKey:['last-seen',profileId],
+    enabled: !!profileId, // Don't run if profileId is empty
     queryFn: async ()=>{
       const { data, error } = await supabase
         .from('v_friend_last_seen' as any)

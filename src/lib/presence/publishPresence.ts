@@ -6,7 +6,7 @@ export async function publishPresence(
   vibe: string,
   visibility: 'public' | 'friends' = 'public',
 ) {
-  const { error } = await supabase.rpc('upsert_presence' as any, {
+  const { error } = await supabase.rpc('upsert_presence', {
     p_lat: lat,
     p_lng: lng,
     p_vibe: vibe,

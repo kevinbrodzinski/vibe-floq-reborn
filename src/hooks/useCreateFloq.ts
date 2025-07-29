@@ -42,7 +42,7 @@ export function useCreateFloq() {
       
       console.log('🔍 create_floq RPC params (lat/lng):', rpcParams);
 
-      const { data: result, error } = await supabase.rpc('create_floq' as any, rpcParams);
+      const { data: result, error } = await supabase.rpc('create_floq', rpcParams);
 
       if (error) {
         console.error('Create floq error:', error);

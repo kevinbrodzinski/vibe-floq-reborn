@@ -42,7 +42,7 @@ export function usePresenceSound(participants: any[]) {
   
   // Use Set for faster lookups and cleaner diffing logic
   const currentIds = useMemo(() => 
-    new Set(debouncedParticipants.map(p => p.user_id || p.id)), 
+    new Set(debouncedParticipants.map(p => p.profile_id || p.id)), 
     [debouncedParticipants]
   );
   

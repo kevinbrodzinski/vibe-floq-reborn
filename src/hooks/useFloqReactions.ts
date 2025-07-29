@@ -52,7 +52,7 @@ export function useReactions(floqId: string) {
       const messageIds = messages.map((m: any) => m.id);
 
       // Use server-side aggregation RPC
-      const { data, error } = await supabase.rpc('get_message_reactions' as any, { ids: messageIds });
+      const { data, error } = await supabase.rpc('get_message_reactions', { ids: messageIds });
 
       if (error) {
         console.warn('RPC not available, falling back to client-side aggregation');

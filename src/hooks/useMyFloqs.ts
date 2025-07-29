@@ -33,7 +33,7 @@ export function useMyFloqs() {
           starts_at,
           ends_at,
           creator_id,
-          floq_participants!inner(user_id)
+          floq_participants!inner(profile_id)
         `)
         .eq('floq_participants.profile_id', user.id)
         .eq('visibility', 'public')

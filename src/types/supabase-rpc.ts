@@ -75,6 +75,25 @@ export interface SupabaseRPCTypes {
       people_now: number;
     }>;
   };
+  get_message_reactions: {
+    Args: { ids: string[] };
+    Returns: Array<{
+      message_id: string;
+      emoji: string;
+      cnt: number;
+    }>;
+  };
+  create_floq: {
+    Args: {
+      p_title: string;
+      p_description?: string;
+      p_lat: number;
+      p_lng: number;
+      p_primary_vibe: string;
+      p_max_participants?: number;
+    };
+    Returns: { floq_id: string };
+  };
 }
 
 // Note: These types will be used via 'as any' until official types are regenerated

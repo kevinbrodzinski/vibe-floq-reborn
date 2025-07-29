@@ -18,7 +18,7 @@ import { pushAchievementEvent } from '@/lib/achievements/pushEvent';
 export interface FriendRequest {
   id: string;
   /* requester → receiver (this user) */
-  user_id: string;             // requester
+  profile_id: string;          // requester (updated from user_id)
   friend_id: string;           // *this user*
   status: 'pending' | 'accepted' | 'declined';
   requested_at: string;
@@ -48,11 +48,11 @@ export function useFriendRequests() {
         .select(
           `
             id,
-            user_id,
+            profile_id,
             friend_id,
             status,
             requested_at:created_at,
-            requester_profile:profiles!friend_requests_user_id_fkey(
+            requester_profile:profiles!friend_requests_profile_id_fkey(
               id, username, display_name, avatar_url
             )
           `

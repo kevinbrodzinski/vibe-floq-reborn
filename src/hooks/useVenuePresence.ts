@@ -22,14 +22,14 @@ export function useVenuePresence(onEvent: (payload: VenuePresenceEvent) => void)
         if (payload.eventType === 'INSERT') {
           onEvent({
             event: 'enter',
-            profile_id: payload.new.user_id,
+            profile_id: payload.new.profile_id,
             venue_id: payload.new.venue_id,
             arrived_at: payload.new.arrived_at
           });
         } else if (payload.eventType === 'UPDATE' && payload.new.departed_at) {
           onEvent({
             event: 'exit',
-            profile_id: payload.new.user_id,
+            profile_id: payload.new.profile_id,
             venue_id: payload.new.venue_id,
             departed_at: payload.new.departed_at
           });

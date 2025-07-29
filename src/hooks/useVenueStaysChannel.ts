@@ -19,7 +19,7 @@ export function useVenueStaysChannel(
           onEvent({
             type: 'stay_insert',
             id: payload.new.id,
-            profile_id: payload.new.user_id,
+            profile_id: payload.new.profile_id,
             venue_id: payload.new.venue_id,
             arrived_at: payload.new.arrived_at,
             plan_id: payload.new.plan_id,
@@ -29,7 +29,7 @@ export function useVenueStaysChannel(
           onEvent({
             type: 'stay_depart',
             id: payload.new.id,
-            profile_id: payload.new.user_id,
+            profile_id: payload.new.profile_id,
             venue_id: payload.new.venue_id,
             departed_at: payload.new.departed_at,
             plan_id: payload.new.plan_id,

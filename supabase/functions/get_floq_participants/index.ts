@@ -87,7 +87,7 @@ serve(async (req) => {
 
     // Combine the data
     const data = participants.map(participant => ({
-      user_id: participant.profile_id,
+      profile_id: participant.profile_id,
       avatar_url: avatarMap.get(participant.profile_id) || null,
     }));
 
