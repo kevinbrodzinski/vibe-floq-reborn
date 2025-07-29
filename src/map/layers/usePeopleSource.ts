@@ -23,9 +23,9 @@ export function usePeopleSource(
   const { user } = useAuth();            // to tag the feature with our id
 
   // Use field location if user tracking is not available
-  const userPos = pos || (fieldLocation?.lat && fieldLocation?.lng ? {
-    lat: fieldLocation.lat,
-    lng: fieldLocation.lng,
+  const userPos = pos || (fieldLocation?.coords?.lat && fieldLocation?.coords?.lng ? {
+    lat: fieldLocation.coords.lat,
+    lng: fieldLocation.coords.lng,
     accuracy: fieldLocation.accuracy || 50
   } : null);
 

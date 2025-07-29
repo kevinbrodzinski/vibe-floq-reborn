@@ -159,21 +159,21 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { setShowBanner } = useFieldUI();
 
   // Start publishing user presence to the field only when location is available
-  const isLocationAvailable = !!(location?.lat && location?.lng);
+  const isLocationAvailable = !!(location?.coords?.lat && location?.coords?.lng);
   usePresencePublisher(isLocationAvailable);
 
   // Define viewport bounds based on location
   const viewport = useMemo(() => {
-    if (!location?.lat || !location?.lng) return null;
+    if (!location?.coords?.lat || !location?.coords?.lng) return null;
 
     const radius = 0.01; // ~1km viewport
     return {
-      minLat: location.lat - radius,
-      maxLat: location.lat + radius,
-      minLng: location.lng - radius,
-      maxLng: location.lng + radius,
+      minLat: location.coords.lat - radius,
+      maxLat: location.coords.lat + radius,
+      minLng: location.coords.lng - radius,
+      maxLng: location.coords.lng + radius,
     };
-  }, [location?.lat, location?.lng]);
+  }, [location?.coords?.lat, location?.coords?.lng]);
 
   // Get tile IDs for current viewport
   const tileIds = useMemo(() => {
@@ -216,12 +216,12 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   });
 
   // Get nearby venues for chip and current event
-  const { data: nearbyVenues = [] } = useNearbyVenues(location?.lat ?? 0, location?.lng ?? 0, 0.3);
-  const { data: currentEvent } = useCurrentEvent(location?.lat ?? 0, location?.lng ?? 0, () => setShowBanner(false));
+  const { data: nearbyVenues = [] } = useNearbyVenues(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, 0.3);
+  const { data: currentEvent } = useCurrentEvent(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, () => setShowBanner(false));
 
   // Debug logging for location and viewport
   console.log('[FIELD_DEBUG] Location and viewport:', {
-    location: location ? { lat: location.lat, lng: location.lng } : null,
+    location: location?.coords ? { lat: location.coords.lat, lng: location.coords.lng } : null,
     viewport,
     activeFloqsCount: Array.isArray(activeFloqs) ? activeFloqs.length : 'pages' in activeFloqs ? activeFloqs.pages.flat().length : 0
   });

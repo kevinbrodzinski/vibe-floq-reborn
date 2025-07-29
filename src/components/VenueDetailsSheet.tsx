@@ -15,7 +15,7 @@ import { useVenueDetails } from "@/hooks/useVenueDetails";
 import { useEnhancedVenueDetails } from "@/hooks/useEnhancedVenueDetails";
 import { vibeEmoji } from "@/utils/vibe";
 import { useVenueJoin } from "@/hooks/useVenueJoin";
-import { useGeolocation } from "@/hooks/useGeolocation";
+import { useGeo } from "@/hooks/useGeo";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { VenueSocialPortal } from "@/components/VenueSocialPortal";
@@ -29,7 +29,9 @@ interface VenueDetailsSheetProps {
 export function VenueDetailsSheet({ open, onOpenChange, venueId }: VenueDetailsSheetProps) {
   const { data: venue, isLoading, error } = useVenueDetails(venueId);
   const { data: socialData, isLoading: isSocialLoading, error: socialError } = useEnhancedVenueDetails(venueId);
-  const { lat, lng } = useGeolocation();
+  const { coords } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
   const { settings } = useUserSettings();
   const { join, joinPending, leave, leavePending } =
     useVenueJoin(venue?.id ?? null, lat, lng);

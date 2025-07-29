@@ -45,7 +45,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
 
   // Convert presence data to people format with proper field coordinates
   const people: Person[] = useMemo(() => {
-    if (!location?.lat || !location?.lng) return [];
+    if (!location?.coords?.lat || !location?.coords?.lng) return [];
     
     let filteredPresenceData = presenceData;
     
@@ -83,11 +83,11 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       }
       
       // Convert lat/lng to field coordinates based on geographic distance from user
-      const latDiff = presenceLat - location.lat!;
-      const lngDiff = presenceLng - location.lng!;
+      const latDiff = presenceLat - location.coords!.lat;
+      const lngDiff = presenceLng - location.coords!.lng;
       
       // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
-      const xMeters = lngDiff * 111320 * Math.cos((location.lat! * Math.PI) / 180);
+      const xMeters = lngDiff * 111320 * Math.cos((location.coords!.lat * Math.PI) / 180);
       const yMeters = latDiff * 111320;
       
       // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
@@ -105,7 +105,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         isFriend: presence.isFriend || false,
       };
     }).filter(Boolean); // Remove null entries
-  }, [presenceData, profilesMap, location?.lat, location?.lng, selectedFloqMembers]);
+  }, [presenceData, profilesMap, location?.coords?.lat, location?.coords?.lng, selectedFloqMembers]);
 
   const value = {
     people,

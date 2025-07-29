@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, MapPin, Users, Clock, Star, TrendingUp, Sparkles, Flame, Activity, Coffee, Zap } from 'lucide-react';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 import { useActiveFloqs } from '@/hooks/useActiveFloqs';
 import { useNearbyVenues } from '@/hooks/useNearbyVenues';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
@@ -137,7 +137,7 @@ export const PulseScreen: React.FC = () => {
   };
 
   // Data fetching hooks
-  const { coords } = useGeolocation();
+  const { coords } = useGeo();
   const { data: activeFloqsPages } = useActiveFloqs();
   const activeFloqs = activeFloqsPages?.pages?.flatMap(page => page.data) ?? [];
   const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);

@@ -1,10 +1,12 @@
 import React from 'react';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 import { useWeather } from '@/hooks/useWeather';
 import { WeatherBanner } from '@/components/ui/WeatherBanner';
 
 export const WeatherTest: React.FC = () => {
-  const { lat, lng } = useGeolocation();
+  const { coords } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
   const { data: weather, isLoading, error } = useWeather();
 
   if (isLoading) return <div className="p-4">Loading weather...</div>;

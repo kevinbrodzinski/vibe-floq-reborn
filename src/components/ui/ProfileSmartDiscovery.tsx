@@ -20,7 +20,7 @@ import { useFloqJoin } from '@/hooks/useFloqJoin';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 
 interface ProfileSmartDiscoveryProps {
   className?: string;
@@ -48,7 +48,9 @@ export const ProfileSmartDiscovery: React.FC<ProfileSmartDiscoveryProps> = ({
   className
 }) => {
   const navigate = useNavigate();
-  const { lat, lng } = useGeolocation();
+  const { coords } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
   const [filters, setFilters] = useState<DiscoveryFilters>({
     radius: 2,
     vibe: 'social',

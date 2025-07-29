@@ -10,9 +10,9 @@ export const useTrendingVenues = (
 
   return useQuery({
     enabled: !!coords,
-    queryKey: ['trending', coords?.latitude, coords?.longitude, radiusM, limit],
+    queryKey: ['trending', coords?.lat, coords?.lng, radiusM, limit],
     queryFn: () =>
-      fetchTrendingVenues(coords!.latitude, coords!.longitude, radiusM, limit),
+      fetchTrendingVenues(coords!.lat, coords!.lng, radiusM, limit),
     staleTime: 30_000 // 30s is plenty – rows update via trigger anyway
   });
 };

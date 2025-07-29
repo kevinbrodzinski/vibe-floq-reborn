@@ -74,7 +74,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   };
 
   // ---- helper flags ---------------------------------------------
-  const geoReady = isLocationReady && location?.lat != null;
+  const geoReady = isLocationReady && location?.coords?.lat != null;
   const geoLoading = !isLocationReady && locationError == null;
   const geoError = locationError === 'denied';
 

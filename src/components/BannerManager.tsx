@@ -4,14 +4,16 @@ import { EventBanner } from '@/components/EventBanner';
 import { EventModal } from '@/components/EventModal';
 import { usePlaceBanners } from '@/hooks/usePlaceBanners';
 import { useBannerContext } from '@/providers/BannerProvider';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 
 /**
  * BannerManager - Orchestrates the place-aware banner system
  * Handles banner display logic, auto-dismiss, and modal integration
  */
 export const BannerManager = () => {
-  const { lat, lng } = useGeolocation();
+  const { coords } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
   const { banners } = usePlaceBanners(lat || undefined, lng || undefined);
   const { 
     activeBanner, 

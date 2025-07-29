@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 
 export const useWeather = () => {
-  const { lat, lng, error: geoError, isLoading: geoLoading } = useGeolocation();
+  const { coords, error: geoError, status } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
+  const geoLoading = status === 'loading';
   
   return useQuery({
     queryKey: ['weather', lat, lng],

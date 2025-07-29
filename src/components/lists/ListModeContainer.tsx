@@ -1,11 +1,13 @@
 import { useNearbyVenues } from '@/hooks/useNearbyVenues'
-import { useGeolocation } from '@/hooks/useGeolocation'
+import { useGeo } from '@/hooks/useGeo'
 import { VenueListItem } from '@/components/VenueListItem'
 import { useSelectedVenue } from '@/store/useSelectedVenue'
 import { usePrefetchVenue } from '@/hooks/usePrefetchVenue'
 
 export const ListModeContainer = () => {
-  const { lat, lng } = useGeolocation()
+  const { coords } = useGeo()
+  const lat = coords?.lat
+  const lng = coords?.lng
   const { data: nearby = [], isLoading } = useNearbyVenues(lat, lng, 0.5)
   const { setSelectedVenueId } = useSelectedVenue()
   const prefetchVenue = usePrefetchVenue()

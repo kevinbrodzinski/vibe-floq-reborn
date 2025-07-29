@@ -6,7 +6,7 @@ export const useActiveFloqs = () => {
   const { coords } = useGeo();
 
   return useInfiniteQuery({
-    queryKey: ['active-floqs', coords?.latitude, coords?.longitude],
+    queryKey: ['active-floqs', coords?.lat, coords?.lng],
     enabled : !!coords,
     initialPageParam: 0,
     getNextPageParam: (lastPage: { data: any[], nextCursor: number | null }) => lastPage.nextCursor,
@@ -14,8 +14,8 @@ export const useActiveFloqs = () => {
       const { data, error } = await supabase.rpc(
         'get_visible_floqs_with_members',
         {
-          p_lat: coords!.latitude,
-          p_lng: coords!.longitude,
+          p_lat: coords!.lat,
+          p_lng: coords!.lng,
           p_limit: 20,
           p_offset: pageParam,
         },

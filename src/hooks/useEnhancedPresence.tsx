@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { useGeolocation } from './useGeolocation';
+import { useGeo } from './useGeo';
 import type { Vibe, NearbyUser, WalkableFloq } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -31,7 +31,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
   
   const { session } = useAuth();
   const { toast } = useToast();
-  const location = useGeolocation();
+  const location = useGeo();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const updateIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentRef = useRef<number>(0);
@@ -42,7 +42,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     vibe?: Vibe,
     broadcastRadius = 500
   ): Promise<PresenceResponse | null> => {
-    if (!session || !location.lat || !location.lng) {
+    if (!session || !location.coords?.lat || !location.coords?.lng) {
       return null;
     }
 
@@ -69,8 +69,8 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
       const { data, error } = await supabase.functions.invoke('upsert-presence', {
         body: {
           vibe: vibeToUse,
-          lat: location.lat,
-          lng: location.lng,
+        lat: location.coords!.lat,
+        lng: location.coords!.lng,
           broadcast_radius: broadcastRadius,
         },
       });
@@ -114,11 +114,11 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     } finally {
       isUpdatingRef.current = false;
     }
-  }, [session, location.lat, location.lng, presenceData.currentVibe, defaultVibe, toast]);
+  }, [session, location.coords?.lat, location.coords?.lng, presenceData.currentVibe, defaultVibe, toast]);
 
   // Set up automatic presence updates with proper cleanup
   useEffect(() => {
-    if (!session || !location.lat || !location.lng) {
+    if (!session || !location.coords?.lat || !location.coords?.lng) {
       return;
     }
 
@@ -133,7 +133,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
 
     // Debug: Test spatial query directly
     supabase
-      .rpc('presence_nearby', { lat: location.lat, lng: location.lng, km: 1.0, include_self: true })
+      .rpc('presence_nearby', { lat: location.coords!.lat, lng: location.coords!.lng, km: 1.0, include_self: true })
       .then(({ data }) => console.log('Nearby rows from DB ->', data?.length || 0));
 
     // Set up interval for automatic updates (reduced frequency)
@@ -147,7 +147,7 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         updateIntervalRef.current = null;
       }
     };
-  }, [session, location.lat, location.lng]); // Remove updatePresence from deps to prevent recreation
+  }, [session, location.coords?.lat, location.coords?.lng]); // Remove updatePresence from deps to prevent recreation
 
   // Set up realtime subscription with throttled responses
   useEffect(() => {
@@ -217,6 +217,6 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     location,
     updatePresence,
     changeVibe,
-    isLocationReady: !location.loading && location.lat !== null && location.lng !== null,
+    isLocationReady: location.status === 'success' && location.coords?.lat !== null && location.coords?.lng !== null,
   };
 };

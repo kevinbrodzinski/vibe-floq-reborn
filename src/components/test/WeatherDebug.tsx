@@ -1,9 +1,12 @@
 import React from 'react';
 import { useWeather } from '@/hooks/useWeather';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 
 export const WeatherDebug: React.FC = () => {
-  const { lat, lng, error: geoError, isLoading: geoLoading } = useGeolocation();
+  const { coords, error: geoError, status } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
+  const geoLoading = status === 'loading';
   const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather();
 
   return (

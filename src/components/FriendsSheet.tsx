@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useNavigate } from 'react-router-dom';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useProfileCache } from '@/hooks/useProfileCache';
 import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
@@ -32,7 +32,9 @@ interface FriendsSheetProps {
 export const FriendsSheet = ({ open, onOpenChange, onAddFriendClick }: FriendsSheetProps) => {
   const { rows: friendsWithPresence, friendIds, isLoading } = useUnifiedFriends();
   const { pendingIn, accept, updating } = useUnifiedFriends();
-  const { lat, lng } = useGeolocation();
+  const { coords } = useGeo();
+  const lat = coords?.lat;
+  const lng = coords?.lng;
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } = useNearbyFriends(lat, lng, { km: 0.5 });
   const { primeProfiles } = useProfileCache();
   const navigate = useNavigate();

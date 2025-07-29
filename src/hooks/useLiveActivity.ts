@@ -5,8 +5,8 @@ import type { PulseEvent } from '@/types/pulse';
 
 export const useLiveActivity = (lat?: number, lng?: number, radiusKm = 2) => {
   const { coords } = useGeo();
-  const actualLat = lat ?? coords?.latitude;
-  const actualLng = lng ?? coords?.longitude;
+  const actualLat = lat ?? coords?.lat;
+  const actualLng = lng ?? coords?.lng;
 
   return useQuery({
     queryKey: ['live_activity', actualLat, actualLng, radiusKm],

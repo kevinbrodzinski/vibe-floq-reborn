@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { calculateBounds, type Viewport } from '@/utils/geoConversion';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 
 export interface MapViewportControls {
   viewport: Viewport;
@@ -21,7 +21,9 @@ export function useMapViewport(
   initialCenter?: [number, number], 
   initialZoom: number = 5
 ): MapViewportControls {
-  const { lat: userLat, lng: userLng } = useGeolocation();
+  const { coords } = useGeo();
+  const userLat = coords?.lat;
+  const userLng = coords?.lng;
   
   // Default to user location or San Francisco if location unavailable
   const defaultCenter: [number, number] = useMemo(() => {

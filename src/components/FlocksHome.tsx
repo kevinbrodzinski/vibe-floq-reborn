@@ -20,7 +20,7 @@ import { useMyFlocks } from '@/hooks/useMyFlocks';
 import { useNearbyFlocks } from '@/hooks/useNearbyFlocks';
 import { useFloqSuggestions } from '@/hooks/useFloqSuggestions';
 import { useFloqSearch } from '@/hooks/useFloqSearch';
-import { useEnhancedGeolocation } from '@/hooks/useEnhancedGeolocation';
+import { useGeo } from '@/hooks/useGeo';
 import { useFloqUI } from '@/contexts/FloqUIContext';
 import { formatDistance } from '@/utils/formatDistance';
 import { cn } from '@/lib/utils';
@@ -66,10 +66,10 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   // Use enhanced geolocation hook with better permission handling
   const {
     coords,
-    permissionDenied,
+    hasPermission,
     error: geoError,
     requestLocation
-  } = useEnhancedGeolocation({
+  } = useGeo({
     enableHighAccuracy: true
   });
   const geo = propGeo || coords;
@@ -165,7 +165,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
   };
   return <div className="flex flex-col h-full bg-background" ref={refreshRef} {...bind()}>
       {/* Geolocation Permission Banner */}
-      {permissionDenied && <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
+      {hasPermission === false && <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-yellow-600 dark:text-yellow-400">
               📍 Location access needed to see nearby flocks
