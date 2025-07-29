@@ -30,7 +30,7 @@ export const useLiveSettings = () => {
                     live_muted_until,
                     live_smart_flags
                 `)
-                .eq('profile_id', user.id)   // ← correct PK
+                .eq('id', user.id)   // ← correct PK
                 .maybeSingle();         // ← null instead of crash
 
             if (error) {

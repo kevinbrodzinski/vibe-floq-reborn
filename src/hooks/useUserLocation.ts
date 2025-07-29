@@ -6,6 +6,7 @@ import { useContextDetection } from '@/hooks/useContextDetection'
 import dayjs from '@/lib/dayjs'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { metersBetween } from '@/lib/location/geo'
+import { applyPrivacyFilter } from '@/lib/location/privacy'
 
 interface LocationCoords {
   latitude: number;
@@ -217,14 +218,8 @@ export function useUserLocation() {
               /* 4. check auto-sharing rules */
               const allowed = liveSettings?.live_auto_when ?? ['always'];
 
-              /* 5. apply accuracy filtering based on user preference */
-              let filteredAccuracy = acc;
-              if (liveSettings?.live_accuracy === 'street') {
-                filteredAccuracy = Math.max(acc, 100); // min 100m accuracy for street level
-              } else if (liveSettings?.live_accuracy === 'area') {
-                filteredAccuracy = Math.max(acc, 1000); // min 1km accuracy for area level
-              }
-              // for 'exact', use actual GPS accuracy
+               /* 5. apply coordinate snapping for privacy */
+               const privacyFiltered = applyPrivacyFilter(lat, lng, acc, liveSettings);
 
               /* ---------- smart context detection ------------------ */
               const context = await detectContext(lat, lng, acc, allowed);
@@ -242,12 +237,17 @@ export function useUserLocation() {
               /* 5. throttle and broadcast */
               lastPresenceBroadcast.current = now;
 
-              // Use the cached channel with filtered accuracy
-              channelRef.current?.send({
-                type: 'broadcast',
-                event: 'live_pos',
-                payload: { lat, lng, acc: filteredAccuracy, ts: now }
-              });
+               // Use the cached channel with snapped coordinates and accuracy
+               channelRef.current?.send({
+                 type: 'broadcast',
+                 event: 'live_pos',
+                 payload: { 
+                   lat: privacyFiltered.lat, 
+                   lng: privacyFiltered.lng, 
+                   acc: privacyFiltered.accuracy, 
+                   ts: now 
+                 }
+               });
             } catch (error) {
               console.error('Error broadcasting presence:', error)
             }
