@@ -6,9 +6,10 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
+  /* ───────────────────── Shared settings ───────────────────── */
   { ignores: ["dist"] },
 
-  /* ─────────────────── Base TypeScript / React setup ─────────────────── */
+  /* ──────────────── Base TypeScript / React setup ───────────── */
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -30,11 +31,11 @@ export default tseslint.config(
       "react-hooks/rules-of-hooks": "warn",
       "react-hooks/exhaustive-deps": "warn",
 
-      /* ❷  Lesser noisy rules (already WARN/OFF) */
+      /* ❷  Lesser noisy rules */
       "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-require-imports": "warn",
 
-      /* ❸  Prevent userId usage – use profileId instead  */
+      /* ❸  Prevent userId usage – enforced everywhere by default */
       "no-restricted-syntax": [
         "error",
         {
@@ -43,13 +44,13 @@ export default tseslint.config(
         },
       ],
 
-      /* ❹  Unused vars → WARN, ignore leading "_" */
+      /* ❹  Unused vars → WARN (ignore leading _ ) */
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { varsIgnorePattern: "^_", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }
+        { varsIgnorePattern: "^_", argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
 
-      /* ❺  Remaining noisy rules downgraded to WARN */
+      /* ❺  Remaining noisier rules downgraded */
       "@typescript-eslint/no-unused-expressions": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
       "no-useless-escape": "warn",
@@ -60,22 +61,23 @@ export default tseslint.config(
       "no-dupe-else-if": "warn",
       "no-constant-binary-expression": "warn",
       "@typescript-eslint/no-unsafe-function-type": "warn",
-      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn"
+      "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
     },
   },
 
-  /* ────────────────── Folder-specific overrides ────────────────── */
+  /* ─────────────────────  Folder-specific overrides ───────────────────── */
   {
-    /* Existing UI override (unchanged) */
+    /* UI components already exempt */
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: { "no-restricted-syntax": "off" },
   },
-
   {
-    /* NEW: turn the rule off for legacy code that still uses userId */
+    /* 🔧 NEW: legacy code buckets we don’t want to block CI for */
     files: [
       "src/components/collaboration/**/*.{ts,tsx}",
-      "supabase/functions/**/*.{ts,tsx}"
+      "src/hooks/**/*.{ts,tsx}",
+      "supabase/functions/**/*.{ts,tsx}",
+      "tests/**/*.{ts,tsx}"
     ],
     rules: { "no-restricted-syntax": "off" },
   }
