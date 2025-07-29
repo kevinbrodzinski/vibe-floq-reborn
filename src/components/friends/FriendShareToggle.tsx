@@ -29,10 +29,10 @@ export function FriendShareToggle({
 
         try {
             // RPC wrapper keeps RLS nice and tight.
-            const { error } = await supabase.rpc('set_live_share', {
-                _friend: friendId,
+            const { error } = await supabase.rpc('set_live_share_bulk', {
+                _friend_ids: [friendId],
                 _on: val,
-                _auto_when: ['always'] // Default to always share
+                _auto_when: null
             });
 
             if (error) {

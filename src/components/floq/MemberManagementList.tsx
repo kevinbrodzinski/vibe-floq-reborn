@@ -404,8 +404,8 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
         description={`Are you sure you want to remove ${selectedUser?.display_name} from this floq? They won't be able to access the chat or activities.`}
         confirmLabel="Remove"
         cancelLabel="Cancel"
-        isLoading={removingUserId === selectedUser?.user_id}
-        onConfirm={() => selectedUser && handleRemoveMember(selectedUser.user_id)}
+        isLoading={removingUserId === selectedUser?.profile_id}
+        onConfirm={() => selectedUser && handleRemoveMember(selectedUser.profile_id)}
       />
 
       <ConfirmDialog

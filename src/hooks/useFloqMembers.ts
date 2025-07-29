@@ -12,7 +12,7 @@ export const useFloqMembers = (floqId: string) => {
           profile_id,
           role,
           joined_at,
-          profiles!inner (
+          profiles!profile_id (
             id,
             username,
             display_name,
