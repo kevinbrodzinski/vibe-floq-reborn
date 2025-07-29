@@ -319,7 +319,7 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
           }
 
           // If RPC returns empty data, use fallback
-          if (!data || data.length === 0) {
+          if (!data || (data as any)?.length === 0) {
             if (import.meta.env.DEV) {
               console.warn('Demo floq function returned empty data, using fallback');
             }

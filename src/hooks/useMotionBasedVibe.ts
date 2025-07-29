@@ -26,7 +26,7 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
   });
 
   const [vibeTransitions, setVibeTransitions] = useState<VibeTransition[]>([]);
-  const [currentVibe, setVibe] = useState<Vibe>('solo');
+  const [currentVibe, setVibe] = useState<Vibe>('solo' as Vibe);
 
   const lastPosition = useRef<GeolocationPosition | null>(null);
   const geolocationRef = useRef<GeolocationPosition | null>(null);
@@ -84,13 +84,13 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
   const getVibeFromActivity = (activity: string, speed: number, confidence: number): Vibe => {
     switch (activity) {
       case 'still':
-        return 'solo';
+        return 'solo' as Vibe;
       case 'walking':
-        return 'open';
+        return 'open' as Vibe;
       case 'running':
-        return 'hype';
+        return 'hype' as Vibe;
       case 'driving':
-        return speed > 15 ? 'hype' : 'solo';
+        return speed > 15 ? ('hype' as Vibe) : ('solo' as Vibe);
       default:
         return currentVibe as Vibe;
     }

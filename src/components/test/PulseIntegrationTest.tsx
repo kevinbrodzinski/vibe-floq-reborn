@@ -25,9 +25,9 @@ export const PulseIntegrationTest: React.FC = () => {
         {liveError && <p className="text-red-500">Error: {liveError.message}</p>}
         {liveActivity && (
           <div>
-            <p>Pages: {liveActivity.pages?.length || 0}</p>
-            <p>Total events: {liveActivity.pages?.flat().length || 0}</p>
-            {liveActivity.pages?.flat().slice(0, 3).map((event: any, i: number) => (
+            <p>Pages: {(liveActivity as any)?.pages?.length || 0}</p>
+            <p>Total events: {(liveActivity as any)?.pages?.flat().length || 0}</p>
+            {(liveActivity as any)?.pages?.flat().slice(0, 3).map((event: any, i: number) => (
               <div key={i} className="text-sm bg-gray-100 p-2 rounded mt-2">
                 {event.event_type} - {event.created_at}
               </div>
@@ -43,8 +43,8 @@ export const PulseIntegrationTest: React.FC = () => {
         {trendingError && <p className="text-red-500">Error: {trendingError.message}</p>}
         {trendingVenues && (
           <div>
-            <p>Count: {trendingVenues.length}</p>
-            {trendingVenues.slice(0, 3).map((venue: any, i: number) => (
+            <p>Count: {(trendingVenues as any)?.length || 0}</p>
+            {(trendingVenues as any)?.slice(0, 3).map((venue: any, i: number) => (
               <div key={i} className="text-sm bg-gray-100 p-2 rounded mt-2">
                 {venue.name} - {venue.people_now} people - {venue.trend_score} score
               </div>
@@ -60,7 +60,7 @@ export const PulseIntegrationTest: React.FC = () => {
         {weatherError && <p className="text-red-500">Error: {weatherError.message}</p>}
         {weather && (
           <div className="text-sm bg-gray-100 p-2 rounded">
-            {weather.temperatureF}°F - {weather.condition} - {weather.summary}
+            Weather: {(weather as any)?.temperatureF || 'N/A'}°F, {(weather as any)?.condition || 'N/A'}
           </div>
         )}
       </div>
@@ -72,7 +72,7 @@ export const PulseIntegrationTest: React.FC = () => {
         {badgesError && <p className="text-red-500">Error: {badgesError.message}</p>}
         {badges && (
           <div className="text-sm bg-gray-100 p-2 rounded">
-            Active Floqs: {badges.activeFloqs} | Venues Discovered: {badges.venuesDiscovered}
+            Active Floqs: {(badges as any)?.activeFloqs || 0} | Venues Discovered: {(badges as any)?.venuesDiscovered || 0}
           </div>
         )}
       </div>
@@ -90,4 +90,4 @@ export const PulseIntegrationTest: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

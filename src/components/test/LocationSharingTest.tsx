@@ -46,8 +46,7 @@ export const LocationSharingTest: React.FC = () => {
     try {
       const { error } = await supabase.rpc('set_live_share', {
         _friend: 'test-friend-123',
-        _on: true,
-        _auto_when: ['always']
+        _on: true
       });
 
       if (error) {

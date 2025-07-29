@@ -134,8 +134,8 @@ export const useRespondToFriendRequest = () => {
 
         if (request) {
           await supabase.from('friends').insert([
-            { user_a: request.user_id, user_b: request.friend_id },
-            { user_a: request.friend_id, user_b: request.user_id }
+            { user_a: request.profile_id, user_b: request.friend_id },
+            { user_a: request.friend_id, user_b: request.profile_id }
           ]);
         }
       }

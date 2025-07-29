@@ -3,7 +3,7 @@ import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 
 export const TrendingVenuesTest: React.FC = () => {
   // Test with LA coordinates
-  const { venues = [], isLoading, error } = useTrendingVenues(34.0224, -118.4912, 2000, 5);
+  const { data: venues = [], isLoading, error } = useTrendingVenues();
 
   if (isLoading) return <div>Loading trending venues...</div>;
   if (error) return <div>Error: {error.message}</div>;
