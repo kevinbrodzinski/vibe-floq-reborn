@@ -23,9 +23,21 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
-  const { startTracking, stopTracking, setLocation, error: locationError, loading: locationLoading } = useUserLocation();
+  const { startTracking, stopTracking, setLocation, error: locationError, loading: locationLoading, isTracking, pos } = useUserLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gestureHandlers = useFieldGestures(canvasRef);
+
+  // Debug logging for location tracking state
+  console.log('[FieldLayout] Location tracking state:', {
+    isTracking,
+    isLocationReady,
+    locationError,
+    locationLoading,
+    hasPos: !!pos,
+    posValue: pos,
+    hasLocation: !!location,
+    locationValue: location
+  });
 
   // Get shake detection functions for motion permission banner
   const { requestMotionPermission, isMotionAvailable } = useShakeDetection({
