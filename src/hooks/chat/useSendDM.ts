@@ -73,12 +73,22 @@ export const useSendDM = (threadId: string, selfId: string) => {
       return { optimisticId: optimistic.id };
     },
 
-    onError: (_e, _v, ctx) => {
+    onError: (error, _v, ctx) => {
+      console.error('[useSendDM] Message send failed:', {
+        error: error instanceof Error ? error.message : String(error),
+        threadId,
+        selfId,
+        optimisticId: ctx?.optimisticId
+      });
+      
       qc.setQueryData(key, (old:any) => {
         if (!old) return old;
-        old.pages.forEach((p: ChatMessage[]) =>
-          p.splice(p.findIndex(m=>m.id===ctx?.optimisticId),1)
-        );
+        old.pages.forEach((p: ChatMessage[]) => {
+          const index = p.findIndex(m => m.id === ctx?.optimisticId);
+          if (index !== -1) {
+            p.splice(index, 1);
+          }
+        });
         return { ...old };
       });
     },

@@ -127,6 +127,17 @@ serve(async (req) => {
       throw new Error("Missing required parameters: surface, thread_id, profile_id");
     }
 
+    // Validate UUID format for thread_id and profile_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(payload.thread_id)) {
+      console.error(`[mark-thread-read] Invalid thread_id format: ${payload.thread_id}`);
+      throw new Error(`Invalid thread_id format: ${payload.thread_id}`);
+    }
+    if (!uuidRegex.test(payload.profile_id)) {
+      console.error(`[mark-thread-read] Invalid profile_id format: ${payload.profile_id}`);
+      throw new Error(`Invalid profile_id format: ${payload.profile_id}`);
+    }
+
     const result = await markThreadRead(payload);
 
     return new Response(

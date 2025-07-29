@@ -46,24 +46,56 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Helper to create stable thread ID
-  const threadIdFrom = (fId: string | null) =>
-    [currentUserId, fId].filter(Boolean).sort().join('-');
+  // Helper to create stable thread ID - now generates proper UUID
+  const threadIdFrom = async (userId: string, friendId: string) => {
+    try {
+      // Check if thread already exists
+      const { data: existingThread } = await supabase
+        .from('direct_threads')
+        .select('id')
+        .or(`and(member_a.eq.${userId},member_b.eq.${friendId}),and(member_a.eq.${friendId},member_b.eq.${userId})`)
+        .maybeSingle();
+      
+      if (existingThread) {
+        return existingThread.id;
+      }
+      
+      // Create new thread
+      const { data: newThread, error } = await supabase
+        .from('direct_threads')
+        .insert({
+          member_a: userId,
+          member_b: friendId,
+          last_message_at: new Date().toISOString(),
+          unread_a: 0,
+          unread_b: 0
+        })
+        .select('id')
+        .single();
+      
+      if (error) throw error;
+      return newThread.id;
+    } catch (error) {
+      console.error('Failed to create/get thread:', error);
+      // Fallback to deterministic ID for now
+      return [userId, friendId].sort().join('-');
+    }
+  };
 
   // New chat hooks
   const surface: Surface = 'dm';
-  const threadId = threadIdFrom(friendId);
-  const timeline = useChatTimeline(surface, threadId, currentUserId ?? '', { 
+  const timeline = useChatTimeline(surface, threadId || '', currentUserId ?? '', { 
     enabled: !!currentUserId && !!friendId && !!threadId 
   });
-  const sendMut = useSendDM(threadId, currentUserId ?? '');
-  const reactMut = useReactToMessage(threadId, currentUserId ?? '');
-  const markReadMut = useMarkRead(surface, threadId, currentUserId ?? '');
+  const sendMut = useSendDM(threadId || '', currentUserId ?? '');
+  const reactMut = useReactToMessage(threadId || '', currentUserId ?? '');
+  const markReadMut = useMarkRead(surface, threadId || '', currentUserId ?? '');
 
   const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
   const [isTyping, setIsTyping] = useState(false);
@@ -85,12 +117,21 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
 
-  // Get current user ID
+  // Get current user ID and setup thread
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id ?? null);
     });
   }, []);
+
+  // Initialize thread when both user and friend are available
+  useEffect(() => {
+    if (currentUserId && friendId && open) {
+      threadIdFrom(currentUserId, friendId).then(setThreadId);
+    } else {
+      setThreadId(null);
+    }
+  }, [currentUserId, friendId, open]);
 
   useEffect(() => {
     if (open && currentUserId && friendId && threadId) {
