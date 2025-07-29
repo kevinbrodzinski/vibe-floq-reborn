@@ -1,13 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTrendingVenues } from '@/lib/api/pulse';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { fetchTrendingVenues } from '@/lib/api/venues';
+import { useGeo } from '@/hooks/useGeo';
 
-export const useTrendingVenues = (radius = 2000, limit = 5) => {
-  const { lat, lng } = useGeolocation();
+export const useTrendingVenues = (
+  radiusM = 2_000,
+  limit = 15
+) => {
+  const { coords } = useGeo();
+
   return useQuery({
-    queryKey : ['trending', lat, lng, radius, limit],
-    enabled  : !!lat && !!lng,
-    queryFn  : () => fetchTrendingVenues(lat!, lng!, radius, limit),
-    staleTime: 30_000
+    enabled: !!coords,
+    queryKey: ['trending', coords?.latitude, coords?.longitude, radiusM, limit],
+    queryFn: () =>
+      fetchTrendingVenues(coords!.latitude, coords!.longitude, radiusM, limit),
+    staleTime: 30_000 // 30s is plenty – rows update via trigger anyway
   });
-}; 
+};
