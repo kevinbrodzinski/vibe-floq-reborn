@@ -2658,21 +2658,21 @@ export type Database = {
           ends_at: string | null
           friend_id: string
           is_live: boolean
-          profile_id: string | null
+          profile_id: string
           updated_at: string | null
         }
         Insert: {
           ends_at?: string | null
           friend_id: string
           is_live?: boolean
-          profile_id?: string | null
+          profile_id: string
           updated_at?: string | null
         }
         Update: {
           ends_at?: string | null
           friend_id?: string
           is_live?: boolean
-          profile_id?: string | null
+          profile_id?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -2692,6 +2692,48 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_friend_share_pref_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_friend_fk"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_friend_fk"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_friend_fk"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_profile_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_profile_fk"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_share_pref_profile_fk"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "v_profiles"
@@ -8768,8 +8810,8 @@ export type Database = {
       }
       get_trending_venues: {
         Args: {
-          p_user_lat: number
-          p_user_lng: number
+          p_lat: number
+          p_lng: number
           p_radius_m?: number
           p_limit?: number
         }
@@ -8777,9 +8819,9 @@ export type Database = {
           venue_id: string
           name: string
           distance_m: number
-          people_now: number
-          last_seen_at: string
+          vibe_tag: string
           trend_score: number
+          people_now: number
         }[]
       }
       get_unread_counts: {
