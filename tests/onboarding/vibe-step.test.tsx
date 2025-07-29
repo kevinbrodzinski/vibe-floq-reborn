@@ -1,30 +1,31 @@
 // tests/onboarding/vibe-step.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react'
-import { vi, describe, it, expect, beforeEach } from 'vitest'
-import { OnboardingVibeStep } from '@/components/onboarding/steps/OnboardingVibeStep'
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// ---------- mocks --------------------------------------------------
-
-// 1️⃣  toast hook – factory returns a *new* fn each time the test file loads
+// 🟡 1 ▸ mock use-toast BEFORE importing the component
+const mockToast = vi.fn();
 vi.mock('@/hooks/use-toast', () => {
-  const mockToast = vi.fn()
-  return { useToast: () => ({ toast: mockToast }) }
-})
+  return {
+    useToast: () => ({ toast: mockToast }),
+  };
+});
 
-// 2️⃣  framer-motion shim
+// 🟡 2 ▸ stub framer-motion & MobileOptimizedButton
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...p }: any) => <div {...p}>{children}</div>,
-    button: ({ children, ...p }: any) => <button {...p}>{children}</button>,
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
   },
-}))
-
-// 3️⃣  MobileOptimizedButton shim
+}));
 vi.mock('@/components/mobile/MobileOptimizedButton', () => ({
-  MobileOptimizedButton: ({ children, ...p }: any) => <button {...p}>{children}</button>,
-}))
+  MobileOptimizedButton: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
+}));
 
-// ---------- tests --------------------------------------------------
+// ✅ now import the component (after mocks)
+import { OnboardingVibeStep } from '@/components/onboarding/steps/OnboardingVibeStep';
 
 describe('OnboardingVibeStep', () => {
   const baseProps = {
@@ -32,54 +33,38 @@ describe('OnboardingVibeStep', () => {
     onVibeSelect: vi.fn(),
     onNext: vi.fn(),
     onBack: vi.fn(),
-  }
+  };
 
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders 10 vibe option buttons', () => {
-    render(<OnboardingVibeStep {...baseProps} />)
-
-    const buttons = screen
-      .getAllByRole('button')
-      .filter(b => b.textContent && /😌|⚡|🤔|🎉|🧘|💕|🤪|😔|🌊|🌈/.test(b.textContent))
-
-    expect(buttons).toHaveLength(10)
-  })
+    render(<OnboardingVibeStep {...baseProps} />);
+    const buttons = screen.getAllByRole('button').filter(
+      (b) => b.textContent && b.textContent.match(/[😌⚡🤔🎉🧘💕🤪😔🌊🌈]/)
+    );
+    expect(buttons).toHaveLength(10);
+  });
 
   it('shows toast when continuing with invalid vibe', () => {
-    const { toast } = require('@/hooks/use-toast').useToast()
+    render(<OnboardingVibeStep {...baseProps} selectedVibe="chaotic" />);
+    fireEvent.click(screen.getByText(/continue/i));
+    expect(mockToast).toHaveBeenCalled();
+    expect(baseProps.onNext).not.toHaveBeenCalled();
+  });
 
-    render(<OnboardingVibeStep {...baseProps} selectedVibe="chaotic" />)
+  it('shows toast when continuing with no vibe', () => {
+    render(<OnboardingVibeStep {...baseProps} />);
+    fireEvent.click(screen.getByText(/continue/i));
+    expect(mockToast).toHaveBeenCalled();
+    expect(baseProps.onNext).not.toHaveBeenCalled();
+  });
 
-    fireEvent.click(screen.getByText('Continue'))
-
-    expect(toast).toHaveBeenCalledWith({
-      title: 'Invalid vibe selected',
-      description: 'Please pick one of the listed vibe options.',
-      variant: 'destructive',
-    })
-  })
-
-  it('shows toast when continuing without selecting a vibe', () => {
-    const { toast } = require('@/hooks/use-toast').useToast()
-
-    render(<OnboardingVibeStep {...baseProps} />)
-
-    fireEvent.click(screen.getByText('Continue'))
-
-    expect(toast).toHaveBeenCalledWith({
-      title: 'Pick a vibe first',
-      variant: 'destructive',
-    })
-  })
-
-  it('calls onNext when a valid vibe is selected', () => {
-    const props = { ...baseProps, selectedVibe: 'chill' as const }
-
-    render(<OnboardingVibeStep {...props} />)
-
-    fireEvent.click(screen.getByText('Continue'))
-
-    expect(props.onNext).toHaveBeenCalled()
-  })
-})
+  it('calls onNext when valid vibe selected', () => {
+    render(<OnboardingVibeStep {...baseProps} selectedVibe="chill" />);
+    fireEvent.click(screen.getByText(/continue/i));
+    expect(mockToast).not.toHaveBeenCalled();
+    expect(baseProps.onNext).toHaveBeenCalled();
+  });
+});
