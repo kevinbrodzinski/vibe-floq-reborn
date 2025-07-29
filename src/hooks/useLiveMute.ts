@@ -1,3 +1,4 @@
+/* TODO: wire to supabase.live_mute table / RPC */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/providers/AuthProvider';

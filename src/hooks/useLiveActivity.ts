@@ -1,33 +1,23 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { supabase }         from '@/integrations/supabase/client';
-import type { PulseEvent }  from '@/types/pulse';
+import { supabase } from '@/integrations/supabase/client';
+import { useGeo } from '@/hooks/useGeo';
 
-export const useLiveActivity = (lat: number, lng: number, radius_km = 1) => {
-  return useInfiniteQuery<PulseEvent[]>({
-    queryKey: ['live_activity', lat, lng, radius_km],
-    initialPageParam: null,
-    queryFn: async ({ pageParam = null }) => {
-      const { data, error } = await supabase
-        .rpc('get_live_activity', {
-          p_radius_km: radius_km,
-          p_lat: lat,
-          p_lng: lng,
-        });
+export const useLiveActivity = () => {
+  const { coords } = useGeo();
 
+  return useInfiniteQuery({
+    queryKey: ['live_activity', coords?.latitude, coords?.longitude],
+    enabled : !!coords,
+    getNextPageParam: (last) => last.nextCursor ?? null,
+    queryFn: async ({ pageParam = 0 }) => {
+      const { data, error } = await supabase.rpc('get_live_activity', {
+        p_radius_km:  5,
+        p_lat      :  coords!.latitude,
+        p_lng      :  coords!.longitude,
+      });
       if (error) throw error;
-      
-      // Transform the data to match PulseEvent structure
-      return (data || []).map((item: any) => ({
-        id: item.venue_id || `live_${Date.now()}_${Math.random()}`,
-        type: 'live_activity',
-        venue_id: item.venue_id,
-        people_now: item.people_now,
-        vibe_tag: item.vibe_tag,
-        timestamp: new Date().toISOString(),
-      })) as PulseEvent[];
+      return { data, nextCursor: null };   // RPC already returns full set
     },
-    getNextPageParam: () => undefined, // No pagination for live activity
-    staleTime: 30_000, // 30 seconds
-    enabled: Boolean(lat && lng),
+    staleTime: 30 * 1000,
   });
 };

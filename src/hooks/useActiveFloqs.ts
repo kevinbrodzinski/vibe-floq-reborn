@@ -1,17 +1,29 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useGeo } from '@/hooks/useGeo';
 
-// Mock implementation for missing RPC functions
 export const useActiveFloqs = () => {
-  const { user } = useAuth();
+  const { coords } = useGeo();
 
-  return useQuery({
-    queryKey: ['active-floqs', user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      // Return empty array since RPC doesn't exist
-      return [];
+  return useInfiniteQuery({
+    queryKey: ['active-floqs', coords?.latitude, coords?.longitude],
+    enabled : !!coords,
+    getNextPageParam: (last) => last.nextCursor ?? null,
+    queryFn : async ({ pageParam = 0 }) => {
+      const { data, error } = await supabase.rpc(
+        'get_visible_floqs_with_members',
+        {
+          p_user_lat:  coords!.latitude,
+          p_user_lng:  coords!.longitude,
+          p_limit   :  20,
+          p_offset  :  pageParam,
+        },
+      );
+      if (error) throw error;
+      return {
+        data,
+        nextCursor: data.length < 20 ? null : pageParam + 20,
+      };
     },
     staleTime: 30 * 1000,
   });
