@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends'
 import { useLiveSettings } from '@/hooks/useLiveSettings'
+import { useContextDetection } from '@/hooks/useContextDetection'
 import dayjs from '@/lib/dayjs'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { metersBetween } from '@/lib/location/geo'
@@ -36,10 +37,6 @@ export function useUserLocation() {
   const lastPresenceBroadcast = useRef<number>(0)
   const userRef = useRef<string | null>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
-  const lastCtxCheck = useRef<number>(0)
-  const cachedCtx = useRef<{ inFloq: boolean; atVenue: boolean }>({ inFloq: false, atVenue: false })
-  const floqPromiseRef = useRef<Promise<any> | null>(null)
-  const venuePromiseRef = useRef<Promise<any> | null>(null)
   const retryRef = useRef(0)          // back-off counter
   const triesRef = useRef(0)          // accuracy level counter
   const retried = useRef(false)
@@ -49,6 +46,9 @@ export function useUserLocation() {
 
   // Get live settings for enhanced controls
   const { data: liveSettings } = useLiveSettings()
+
+  // Context detection for smart sharing rules
+  const { detectContext } = useContextDetection()
 
   // Also provide the simplified pos interface for the FieldCanvas
   const pos = location ? {
@@ -217,57 +217,23 @@ export function useUserLocation() {
               /* 4. check auto-sharing rules */
               const allowed = liveSettings?.live_auto_when ?? ['always'];
 
+              /* 5. apply accuracy filtering based on user preference */
+              let filteredAccuracy = acc;
+              if (liveSettings?.live_accuracy === 'street') {
+                filteredAccuracy = Math.max(acc, 100); // min 100m accuracy for street level
+              } else if (liveSettings?.live_accuracy === 'area') {
+                filteredAccuracy = Math.max(acc, 1000); // min 1km accuracy for area level
+              }
+              // for 'exact', use actual GPS accuracy
+
               /* ---------- smart context detection ------------------ */
-              let insideFloq = false;
-              let atVenue = false;
-              let walking = false;
-
-              // throttle expensive context checks
-              if (now - lastCtxCheck.current > 60_000) {
-                lastCtxCheck.current = now
-
-                 // --- A. in-Floq (debounced)
-                if (allowed.includes('in_floq')) {
-                  if (!floqPromiseRef.current) {
-                     floqPromiseRef.current = Promise.resolve(supabase.rpc(
-                       'get_visible_floqs_with_members' as any,
-                       { p_lat: lat, p_lng: lng, p_limit: 50, p_offset: 0 }
-                     ).throwOnError());
-                  }
-                  const { data: floqs } = await floqPromiseRef.current;
-                  floqPromiseRef.current = null;
-                  cachedCtx.current.inFloq = (floqs ?? []).some((f: any) =>
-                    f.distance_meters != null && f.distance_meters < 50)
-                }
-
-                // --- B. at-venue (debounced)
-                if (allowed.includes('at_venue')) {
-                  if (!venuePromiseRef.current) {
-                     venuePromiseRef.current = Promise.resolve(supabase
-                       .rpc('get_nearby_venues' as any, { p_lat: lat, p_lng: lng, p_radius_km: 1, p_limit: 1 }).throwOnError());
-                  }
-                  const { data: venues } = await venuePromiseRef.current;
-                  venuePromiseRef.current = null;
-                  cachedCtx.current.atVenue = !!(venues && venues.length)
-                }
-              }
-
-              insideFloq = cachedCtx.current.inFloq
-              atVenue = cachedCtx.current.atVenue
-
-              /*  C. walking speed 0.7-2.5 m/s  (~2-9 km/h) */
-              if (allowed.includes('walking') && bufferRef.current.length > 1) {
-                const prev = bufferRef.current.at(-2)!;
-                const dist = metersBetween(lat, lng, prev.lat, prev.lng);
-                const v = dist / ((now - new Date(prev.ts).valueOf()) / 1000);  // m/s
-                walking = v >= 0.7 && v <= 2.5;
-              }
+              const context = await detectContext(lat, lng, acc, allowed);
 
               const ruleOK =
                 allowed.includes('always') ||
-                (insideFloq && allowed.includes('in_floq')) ||
-                (atVenue && allowed.includes('at_venue')) ||
-                (walking && allowed.includes('walking'));
+                (context.inFloq && allowed.includes('in_floq')) ||
+                (context.atVenue && allowed.includes('at_venue')) ||
+                (context.walking && allowed.includes('walking'));
 
               if (!ruleOK) {
                 return; // conditions not met
@@ -276,11 +242,11 @@ export function useUserLocation() {
               /* 5. throttle and broadcast */
               lastPresenceBroadcast.current = now;
 
-              // Use the cached channel
+              // Use the cached channel with filtered accuracy
               channelRef.current?.send({
                 type: 'broadcast',
                 event: 'live_pos',
-                payload: { lat, lng, acc, ts: now }
+                payload: { lat, lng, acc: filteredAccuracy, ts: now }
               });
             } catch (error) {
               console.error('Error broadcasting presence:', error)
