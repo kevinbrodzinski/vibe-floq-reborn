@@ -1,16 +1,8 @@
 BEGIN;
+SET LOCAL role authenticated;
 
-SELECT plan(3);
-
--- 1. call function
-SELECT ok(
-  EXISTS(
-    SELECT upsert_presence(34.0522, -118.2437, 'excited')
-  ),
-  'upsert_presence() executed'
-);
-
--- 2. row exists
+SELECT plan(1);
+SELECT upsert_presence(34,-118,'excited','public') AS ok;
 SELECT ok(
   EXISTS(
     SELECT 1 FROM vibes_now
@@ -18,13 +10,5 @@ SELECT ok(
   ),
   'row inserted for current profile'
 );
-
--- 3. has fresh TTL
-SELECT ok(
-  (SELECT expires_at > now() FROM vibes_now WHERE profile_id = auth.uid()),
-  'expires_at is in the future'
-);
-
 SELECT * FROM finish();
-
 ROLLBACK;

@@ -9,6 +9,10 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 describe('publishPresence', () => {
+  afterEach(() => {
+    vi.mocked(supabase.rpc).mockClear();
+  });
+
   it('calls upsert_presence with correct args', async () => {
     await publishPresence(34, -118, 'excited');
 
