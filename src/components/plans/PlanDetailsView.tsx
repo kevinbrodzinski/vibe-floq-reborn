@@ -164,7 +164,7 @@ export const PlanDetailsView: React.FC = () => {
   }
 
   const isCreator = plan.creator_id === session?.user?.id;
-  const userParticipation = participants.find(p => p.user_id === session?.user?.id);
+  const userParticipation = participants.find(p => p.profile_id === session?.user?.id);
   const isParticipant = !!userParticipation;
   
   const validationContext = {

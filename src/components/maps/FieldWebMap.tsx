@@ -57,8 +57,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   // Get user's active floqs
   const { data: myFloqs = [] } = useMyActiveFloqs();
   
-  // Get real weather data
-  const { data: weatherData } = useWeather(location?.lat, location?.lng);
+  // Get real weather data  
+  const { data: weatherData } = useWeather();
   
   // Get members of selected floq
   const { data: selectedFloqMembers = [] } = useFloqMembers(selectedMyFloq || '');
@@ -96,12 +96,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
-    condition: mapWeatherCondition(weatherData.condition),
-    temperature: weatherData.temperatureF,
-    humidity: weatherData.humidity,
-    windSpeed: weatherData.windMph,
+    condition: mapWeatherCondition((weatherData as any)?.condition ?? 'sunny'),
+    temperature: (weatherData as any)?.temperatureF ?? 72,
+    humidity: (weatherData as any)?.humidity ?? 45,
+    windSpeed: (weatherData as any)?.windMph ?? 8,
     precipitation: 0,
-    feelsLike: weatherData.feelsLikeF
+    feelsLike: (weatherData as any)?.feelsLikeF ?? 72
   } : {
     condition: 'sunny' as const,
     temperature: 72,

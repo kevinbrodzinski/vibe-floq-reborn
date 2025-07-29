@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 
 export type PlanParticipantWithProfile = {
   id: string
-  user_id: string | null
+  profile_id: string | null
   role: string
   joined_at: string
   is_guest: boolean
@@ -28,12 +28,12 @@ export function usePlanParticipantsOptimized(planId: string) {
         .from('plan_participants')
         .select(`
           id,
-          user_id,
+          profile_id,
           role,
           joined_at,
           is_guest,
           guest_name,
-          profiles!user_id (
+          profiles!profile_id (
             id,
             username,
             display_name,
@@ -53,20 +53,20 @@ export function usePlanParticipantsOptimized(planId: string) {
         
         if (participantsError) throw participantsError
         
-        // Get unique user IDs (excluding guests)
-        const userIds = participants
-          ?.filter(p => !p.is_guest && p.user_id)
-          .map(p => p.user_id)
+        // Get unique profile IDs (excluding guests)
+        const profileIds = participants
+          ?.filter(p => !p.is_guest && p.profile_id)
+          .map(p => p.profile_id)
           .filter(Boolean) || []
         
-        if (userIds.length === 0) {
+        if (profileIds.length === 0) {
           return participants?.map(p => ({ ...p, profiles: null })) || []
         }
         
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .in('id', userIds)
+          .in('id', profileIds)
         
         if (profilesError) {
           console.warn('[PlanParticipants] Profiles fetch failed:', profilesError)
@@ -78,7 +78,7 @@ export function usePlanParticipantsOptimized(planId: string) {
           ...participant,
           profiles: participant.is_guest 
             ? null 
-            : profiles?.find(profile => profile.id === participant.user_id) || null
+            : profiles?.find(profile => profile.id === participant.profile_id) || null
         })) || []
       }
       

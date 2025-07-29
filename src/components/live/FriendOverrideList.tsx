@@ -112,10 +112,11 @@ export const FriendOverrideList = () => {
                                 <div className="flex items-center justify-between">
                                     {/* Left: Avatar and Name */}
                                     <div className="flex items-center gap-3">
-                                        <AvatarWithFallback
+                                         <AvatarWithFallback
                                             src={friend.avatar_url ? getAvatarUrl(friend.avatar_url) : null}
-                                            alt={friend.display_name || 'Friend'}
-                                            fallback={friend.display_name?.charAt(0) || 'U'}
+                                            fallbackText={friend.display_name || 'Friend'}
+                                            username={friend.username}
+                                            profileId={friend.profile_id}
                                             className="h-10 w-10"
                                         />
                                         <div className="min-w-0">
