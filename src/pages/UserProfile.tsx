@@ -144,6 +144,21 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           {username && (
             <p className="text-gray-400 text-sm mb-3">@{username}</p>
           )}
+          
+          {/* Social stats - Friends and Mutual */}
+          <div className="flex items-center justify-center gap-6 mb-3">
+            <div className="flex flex-col items-center gap-1">
+              <Users className="h-4 w-4 text-purple-300/70" />
+              <span className="text-sm font-medium text-gray-100">{mockStats.friendCount}</span>
+              <span className="text-[10px] uppercase tracking-wide text-gray-500">friends</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Users2 className="h-4 w-4 text-purple-300/70" />
+              <span className="text-sm font-medium text-gray-100">{mockStats.mutualCount}</span>
+              <span className="text-[10px] uppercase tracking-wide text-gray-500">mutual</span>
+            </div>
+          </div>
+          
           {profile.bio && (
             <p className="text-sm text-gray-300 mb-3 leading-relaxed">{profile.bio}</p>
           )}
@@ -228,10 +243,8 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           )}
         </GlassCard>
 
-        {/* Zone 2: Social Stats Strip */}
-        <div className="grid grid-cols-4 gap-3">
-          <StatPill value={mockStats.friendCount} label="Friends" icon={Users} />
-          <StatPill value={mockStats.mutualCount} label="Mutual" icon={Users2} />
+        {/* Zone 2: Social Stats Strip - Floqs and Resonance only */}
+        <div className="grid grid-cols-2 gap-3">
           <StatPill value={mockStats.sharedFloqs} label="Floqs" icon={MapPin} />
           <StatPill value={`${mockStats.resonanceScore}%`} label="Resonance" icon={Heart} />
         </div>
