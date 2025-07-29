@@ -73,15 +73,18 @@ export function useFloqActivity(floqId: string) {
         source: 'plan_activity' as const
       } as MergedActivity));
 
-      const historyEvents: MergedActivity[] = (historyResult.data || []).map(event => ({
-        ...event,
-        source: 'flock_history' as const,
-        user_profile: event.profiles ? {
-          display_name: (event.profiles as any).display_name || 'Unknown',
-          username: (event.profiles as any).username || 'unknown',
-          avatar_url: (event.profiles as any).avatar_url || null
-        } : null,
-      } as MergedActivity));
+      const historyEvents: MergedActivity[] = (historyResult.data || []).map(event => {
+        const profile = event.profiles as { display_name?: string; username?: string; avatar_url?: string } | null;
+        return {
+          ...event,
+          source: 'flock_history' as const,
+          user_profile: profile ? {
+            display_name: profile.display_name || 'Unknown',
+            username: profile.username || 'unknown',
+            avatar_url: profile.avatar_url || null
+          } : null,
+        } as MergedActivity;
+      });
 
       // Merge and sort by created_at (optimized)
       const allEvents = [...planEvents, ...historyEvents].sort(

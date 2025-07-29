@@ -19,11 +19,11 @@ export async function toggleReaction(
 
   if (isAdding) {
     await supabase
-      .from('floq_message_reactions' as any)
+      .from('floq_message_reactions')
       .insert({ message_id: messageId, emoji, profile_id: user.id });
   } else {
     await supabase
-      .from('floq_message_reactions' as any)
+      .from('floq_message_reactions')
       .delete()
       .eq('message_id', messageId)
       .eq('profile_id', user.id)
@@ -39,7 +39,7 @@ export function useReactions(floqId: string) {
     queryFn: async (): Promise<Record<string, Record<string, number>>> => {
       // Get all messages for this floq first
       const { data: messages, error: messagesError } = await supabase
-        .from('floq_messages' as any)
+        .from('floq_messages')
         .select('id')
         .eq('floq_id', floqId);
 
@@ -49,7 +49,7 @@ export function useReactions(floqId: string) {
         return {};
       }
 
-      const messageIds = messages.map((m: any) => m.id);
+      const messageIds = messages.map((m: { id: string }) => m.id);
 
       // Use server-side aggregation RPC
       const { data, error } = await supabase.rpc('get_message_reactions', { ids: messageIds });
@@ -58,14 +58,14 @@ export function useReactions(floqId: string) {
         console.warn('RPC not available, falling back to client-side aggregation');
         // Fallback to client-side aggregation
         const { data: reactionData, error: reactionError } = await supabase
-          .from('floq_message_reactions' as any)
+          .from('floq_message_reactions')
           .select('message_id, emoji, profile_id')
           .in('message_id', messageIds);
 
         if (reactionError) throw reactionError;
 
         const result: Record<string, Record<string, number>> = {};
-        (reactionData || []).forEach((reaction: any) => {
+        (reactionData || []).forEach((reaction: { message_id: string; emoji: string; profile_id: string }) => {
           if (!result[reaction.message_id]) {
             result[reaction.message_id] = {};
           }
@@ -79,7 +79,7 @@ export function useReactions(floqId: string) {
 
       // Shape to { [messageId]: { '❤️':2,'👍':1 } }
       const result: Record<string, Record<string, number>> = {};
-      (data as any[] || []).forEach((reaction: any) => {
+      (data || []).forEach((reaction: { message_id: string; emoji: string; cnt: number }) => {
         if (!result[reaction.message_id]) {
           result[reaction.message_id] = {};
         }
@@ -101,7 +101,7 @@ export async function sendFloqMessage(
   const user = (await supabase.auth.getUser()).data?.user;
   if (!user) throw new Error('Not authenticated');
 
-  await supabase.from('floq_messages' as any).insert({
+  await supabase.from('floq_messages').insert({
     floq_id: floqId,
     body: text,
     reply_to_id: replyTo ?? null,

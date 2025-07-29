@@ -148,7 +148,7 @@ export function useSendFloqMessage() {
       
       // 1️⃣ Insert to database
       const { data, error } = await supabase
-        .from('floq_messages' as any)
+        .from('floq_messages')
         .insert({
           floq_id: p.floqId,
            body: p.body,
@@ -174,13 +174,14 @@ export function useSendFloqMessage() {
           if (pages[0]) {
             // Remove optimistic message and add real one
             const filtered = pages[0].filter(msg => !msg.id.startsWith('temp-'))
+            const messageData = data as { id: string; body: string; created_at: string; sender_id: string; reply_to_id?: string };
             const realMessage: FloqMessage = { 
-              id: (data as any).id,
-              body: (data as any).body,
-              created_at: (data as any).created_at,
-              sender_id: (data as any).sender_id,
+              id: messageData.id,
+              body: messageData.body,
+              created_at: messageData.created_at,
+              sender_id: messageData.sender_id,
               sender: pages[0][0]?.sender || null,
-              reply_to_id: (data as any).reply_to_id
+              reply_to_id: messageData.reply_to_id
             }
             pages[0] = [realMessage, ...filtered]
           }

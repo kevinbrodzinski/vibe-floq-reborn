@@ -7,12 +7,12 @@ export function useLastSeen(profileId:string){
     enabled: !!profileId, // Don't run if profileId is empty
     queryFn: async ()=>{
       const { data, error } = await supabase
-        .from('v_friend_last_seen' as any)
+        .from('v_friend_last_seen')
         .select('last_seen_at')
         .eq('friend_id', profileId)
         .maybeSingle();
       if(error) throw error;
-      return (data as any)?.last_seen_at as string|undefined;
+      return (data as { last_seen_at?: string })?.last_seen_at;
     },
     refetchInterval:30_000
   });

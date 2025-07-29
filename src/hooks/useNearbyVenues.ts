@@ -81,7 +81,19 @@ export const useNearbyVenues = (
       if (error) throw new Error(error.message ?? 'Venue fetch failed');
       
       // Cast and map the data to include legacy fields
-      const rawVenues = (data as any[]) || [];
+      const rawVenues = (data || []) as Array<{
+        id: string;
+        name: string;
+        address?: string;
+        categories?: string[];
+        rating?: number;
+        photo_url?: string;
+        lat: number;
+        lng: number;
+        distance_m: number;
+        vibe?: string;
+        provider?: string;
+      }>;
       if (rawVenues.length < MIN_EXPECTED) {
         // Fire-and-forget: ask backend to refresh again
         supabase.functions.invoke('sync-places', { body: { lat, lng } });
@@ -89,6 +101,10 @@ export const useNearbyVenues = (
       
       const venues: Venue[] = rawVenues.map(v => ({
         ...v,
+        address: v.address || null,  // Ensure address is never undefined
+        categories: v.categories || null,  // Ensure categories is never undefined
+        rating: v.rating || null,  // Ensure rating is never undefined
+        photo_url: v.photo_url || null,  // Ensure photo_url is never undefined
         vibe: v.vibe || v.categories?.[0] || 'mixed',  // Use existing vibe or first category
         source: v.provider || 'manual',              // Map provider to source
       }));

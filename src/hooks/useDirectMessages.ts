@@ -130,17 +130,23 @@ export async function sendDm({
   file?: File;
   emojiOnly?: boolean;
 }) {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) throw new Error('Not authenticated');
+
   let imageUrl: string | null = null;
   if (file) {
     imageUrl = await uploadDmMedia(file);
   }
 
-  const { error } = await supabase.from('direct_messages' as any).insert({
+  const { error } = await supabase.from('direct_messages').insert({
     thread_id: threadId,
+    sender_id: user.user.id,
     content: content ?? null,
-    reply_to_id: replyToId ?? null,
-    image_url: imageUrl,
-    emoji_only: emojiOnly ?? false,
+    metadata: {
+      image_url: imageUrl,
+      emoji_only: emojiOnly ?? false,
+      reply_to_id: replyToId ?? null,
+    }
   });
   
   if (error) throw error;

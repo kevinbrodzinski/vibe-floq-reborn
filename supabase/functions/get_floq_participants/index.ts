@@ -65,8 +65,14 @@ serve(async (req) => {
       return response(200, []);
     }
 
-    // Get profile IDs
-    const profileIds = participants.map(p => p.profile_id);
+    // Get profile IDs, filtering out any null values
+    const profileIds = participants
+      .map(p => p.profile_id)
+      .filter((id): id is string => id !== null && id !== undefined);
+
+    if (profileIds.length === 0) {
+      return response(200, []);
+    }
 
     // Fetch profiles for these users
     const { data: profiles, error: profilesError } = await supabase
