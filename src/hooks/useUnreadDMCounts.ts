@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UnreadCount {
-  kind: string;
+  thread_id: string;
   cnt: number;
 }
 
@@ -15,9 +15,18 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     enabled: !!selfId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_unread_counts', { p_profile: selfId });
+        .from('direct_threads')
+        .select('id, unread_a, unread_b, member_a, member_b')
+        .or(`member_a.eq.${selfId},member_b.eq.${selfId}`);
+      
       if (error) throw error;
-      return data as UnreadCount[];
+      
+      return (data || [])
+        .map(thread => ({
+          thread_id: thread.id,
+          cnt: thread.member_a === selfId ? thread.unread_a : thread.unread_b
+        }))
+        .filter(item => item.cnt > 0);
     },
     staleTime: 30_000, // 30 seconds
   });
@@ -36,7 +45,6 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         table: 'direct_messages'
       }, (payload) => {
         if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
-        // Invalidate for any new message - will be filtered by RPC function
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .on('postgres_changes', {
@@ -46,7 +54,6 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         filter: `or=(member_a.eq.${selfId},member_b.eq.${selfId})`
       }, (payload) => {
         if (import.meta.env.DEV) console.log('📖 Thread read status updated, invalidating unread counts:', payload);
-        // Invalidate when read timestamps are updated - fixed OR syntax
         queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
       })
       .subscribe();

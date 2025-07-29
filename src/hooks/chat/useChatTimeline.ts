@@ -60,6 +60,8 @@ export const useChatTimeline = (
   });
 
   useEffect(() => {
+    if (!threadId) return;
+    
     const channel = supabase.channel(`chat_${surface}_${threadId}`)
       .on('postgres_changes', {
         event: 'INSERT',
@@ -67,24 +69,9 @@ export const useChatTimeline = (
         table: surface === 'dm' ? 'direct_messages' : 'chat_messages',
         filter: `thread_id=eq.${threadId}`,
       }, (payload) => {
-        qc.setQueryData(queryKey, (old: any) => {
-          if (!old) return old;
-          const newestPage = old.pages[0];
-          if (!newestPage) return old;
-          if (newestPage.some((m: ChatMessage) => m.id === payload.new.id)) return old;
-          
-          const newMsg = surface === 'dm' 
-            ? { ...payload.new, reply_to_id: null }
-            : { ...payload.new, content: payload.new.body };
-          
-          newestPage.unshift(newMsg as ChatMessage);
-          return { ...old };
-        });
+        qc.invalidateQueries({ queryKey });
       })
       .subscribe();
-
-    // Add debug logging for realtime state  
-    console.log('Realtime channel setup completed');
 
     return () => {
       supabase.removeChannel(channel);
