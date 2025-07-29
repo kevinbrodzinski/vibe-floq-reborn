@@ -1,7 +1,7 @@
 
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Users, Users2, MapPin, Heart } from 'lucide-react';
+import { Users, Users2, MapPin, Heart, Calendar, Clock } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
@@ -9,6 +9,7 @@ import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { useLocationDuration } from '@/hooks/useLocationDuration';
+import { useFriendshipInfo } from '@/hooks/useFriendshipInfo';
 import { RelationshipStrengthIndicator } from '@/components/ui/RelationshipStrengthIndicator';
 
 // Zone components
@@ -36,6 +37,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
+  const { data: friendshipInfo } = useFriendshipInfo(profileId);
   const { isFriend, rows: friendsData } = useUnifiedFriends();
 
   if (!profileId) {
@@ -130,6 +132,34 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
                 <span className="text-xs text-gray-500">
                   for {locationDuration.duration}
                 </span>
+              )}
+            </div>
+          )}
+          
+          {/* Friendship Info */}
+          {!isMe && friendshipInfo?.isFriend && (
+            <div className="mt-3 space-y-1">
+              {friendshipInfo.friendsSince && (
+                <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+                  <Calendar className="h-3 w-3 shrink-0" />
+                  <span>Friends since {new Date(friendshipInfo.friendsSince).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    year: 'numeric' 
+                  })}</span>
+                </div>
+              )}
+              {friendshipInfo.daysSinceLastHang !== null && (
+                <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+                  <Clock className="h-3 w-3 shrink-0" />
+                  <span>
+                    {friendshipInfo.daysSinceLastHang === 0 
+                      ? 'Last hung out today'
+                      : friendshipInfo.daysSinceLastHang === 1
+                      ? 'Last hung out yesterday'
+                      : `${friendshipInfo.daysSinceLastHang} days since last hang`
+                    }
+                  </span>
+                </div>
               )}
             </div>
           )}
