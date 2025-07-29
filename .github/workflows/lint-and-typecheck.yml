@@ -1,4 +1,4 @@
-name: Lint and Type check
+name: Lint and Typecheck
 
 on:
   push:
@@ -9,31 +9,25 @@ on:
 jobs:
   lint-and-typecheck:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣  Checkout the current branch / PR
+      # 1️⃣  Checkout code
       - uses: actions/checkout@v4
 
-      # 2️⃣  Install Node 18 and enable automatic npm-cache
+      # 2️⃣  Node 18 + npm cache
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: npm            # caches ~/.npm and node_modules keyed on package-lock.json
+          cache: npm
 
-      # 3️⃣  Install dependencies from *package-lock.json*
-      - run: npm ci
+      # 3️⃣  Install deps (peer-deps workaround)
+      - run: npm ci --legacy-peer-deps
 
-      # 4️⃣  Lint -- attach ESLint problem-matcher so annotations show inline
+      # 4️⃣  ESLint (fail job on errors)
       - name: Run ESLint
         run: npm run lint
-        env:
-          FORCE_COLOR: "1"       # pretty output
-        continue-on-error: false # fail the job on lint errors
-        shell: bash
-        # GitHub’s built-in matcher picks up standard ESLint JSON/Unix output automatically
+        env: { FORCE_COLOR: "1" }
 
-      # 5️⃣  Type-check – emits PR annotations for TS errors
+      # 5️⃣  TypeScript type-check
       - name: Run TypeScript check
         run: npm run typecheck
-        env:
-          FORCE_COLOR: "1"
+        env: { FORCE_COLOR: "1" }

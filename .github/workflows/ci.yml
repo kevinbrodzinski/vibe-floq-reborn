@@ -17,7 +17,7 @@ jobs:
           cache: npm                # 👉  switched from 'pnpm' to 'npm'
 
       # 3. Install deps from package-lock.json (fail if it’s out of sync)
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
 
       # 4. Build the app / library
       - run: npm run build
