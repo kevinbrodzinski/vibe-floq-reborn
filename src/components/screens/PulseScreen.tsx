@@ -166,8 +166,8 @@ export const PulseScreen: React.FC = () => {
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
-    condition: mapWeatherCondition(weatherData.condition),
-    temperature: weatherData.temperatureF,
+    condition: mapWeatherCondition((weatherData as any).condition),
+    temperature: (weatherData as any).temperatureF,
     isIndoor: showIndoorOnly
   } : {
     condition: 'sunny' as const,
@@ -570,7 +570,8 @@ export const PulseScreen: React.FC = () => {
                     distance_m: venue.distance_m,
                     people_now: venue.people_now,
                     last_seen_at: venue.last_seen_at,
-                    trend_score: venue.trend_score
+                    trend_score: venue.trend_score,
+                    vibe_tag: venue.vibe_tag
                   }}
                   onJoin={() => console.log('Join venue:', venue.name)}
                   onShare={() => console.log('Share venue:', venue.name)}

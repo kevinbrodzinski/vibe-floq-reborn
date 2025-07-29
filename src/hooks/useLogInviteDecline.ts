@@ -15,7 +15,7 @@ export function useLogInviteDecline() {
       if (authError || !user) throw new Error('Not authenticated')
 
       const { error } = await supabase.rpc('log_invite_decline', {
-        p_user_id: user.id,
+        p_profile_id: user.id,
         p_plan_id: planId,
       })
 

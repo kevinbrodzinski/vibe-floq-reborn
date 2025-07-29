@@ -40,9 +40,9 @@ export function useNearbyFloqs(
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async () => {
       const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', {
-        user_lat: lat!,
-        user_lng: lng!,
-        max_walk_meters: km * 1000,
+        lat: lat!,
+        lng: lng!,
+        metres: km * 1000,
       });
 
       if (rpcError) {

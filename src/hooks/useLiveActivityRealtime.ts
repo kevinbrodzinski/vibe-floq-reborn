@@ -11,7 +11,7 @@ export function useLiveActivityRealtime() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'pulse_events' },
-        () => qc.invalidateQueries(['live-activity']),
+        () => qc.invalidateQueries({ queryKey: ['live-activity'] }),
       )
       .subscribe();
 

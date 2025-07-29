@@ -5,14 +5,12 @@ import { vibeToBorder } from '@/utils/vibeColors'
 interface TrendingVenue {
   id: string
   name: string
-  address: string
-  vibe: string
-  live_count: number
-  trending_score: number
   distance_m: number
-  photo_url?: string
-  is_trending: boolean
-  recent_activity: string
+  people_now: number
+  last_seen_at: string
+  trend_score: number
+  vibe_tag?: string
+  venue_id?: string
 }
 
 interface TrendingVenueCardProps {
@@ -42,7 +40,7 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
     return 'text-yellow-500'
   }
 
-  const borderClass = venue.vibe ? vibeToBorder(venue.vibe as any) : 'border-gray-500'
+  const borderClass = venue.vibe_tag ? vibeToBorder(venue.vibe_tag as any) : 'border-gray-500'
 
   return (
     <div className={`bg-card/80 backdrop-blur-xl rounded-3xl p-6 border ${borderClass} hover:glow-secondary transition-all duration-300 group`}>
@@ -50,29 +48,18 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            {venue.is_trending && (
-              <span className={`text-lg ${getTrendingColor(venue.trending_score)} animate-pulse`}>
-                {getTrendingIcon(venue.trending_score)}
-              </span>
-            )}
+            <span className={`text-lg text-orange-500 animate-pulse`}>
+              🔥
+            </span>
             <h3 className="font-bold text-white text-lg">{venue.name}</h3>
           </div>
           <div className="flex items-center gap-2 text-white/70 text-sm">
             <MapPin className="w-4 h-4" />
             <span>{venue.distance_m}m away</span>
             <span>•</span>
-            <span>{venue.recent_activity}</span>
+            <span>Score: {venue.trend_score}</span>
           </div>
         </div>
-        {venue.photo_url && (
-          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-            <img 
-              src={venue.photo_url} 
-              alt={venue.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
       </div>
 
       {/* Live activity indicator */}
@@ -80,7 +67,7 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <Users className="w-4 h-4 text-white/70" />
-          <span className="text-white/90 font-medium">{venue.live_count} people here</span>
+          <span className="text-white/90 font-medium">{venue.people_now} people here</span>
         </div>
         <div className="flex items-center gap-1">
           <Clock className="w-4 h-4 text-white/50" />
