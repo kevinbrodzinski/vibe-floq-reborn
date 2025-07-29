@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Hand, MapPin } from 'lucide-react';
+import { MessageCircle, Hand, MapPin, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useFloqUI } from '@/contexts/FloqUIContext';
 import { Profile } from '@/types/profile';
 
 interface ActionBarFriendProps {
@@ -12,6 +13,7 @@ interface ActionBarFriendProps {
 export const ActionBarFriend = ({ profile, onOpenDM }: ActionBarFriendProps) => {
   const [isSharing, setIsSharing] = useState(false);
   const { toast } = useToast();
+  const { setShowCreateSheet } = useFloqUI();
 
   const handleWave = () => {
     toast({
@@ -30,6 +32,14 @@ export const ActionBarFriend = ({ profile, onOpenDM }: ActionBarFriendProps) => 
     });
   };
 
+  const handleInviteToFloq = () => {
+    setShowCreateSheet(true);
+    toast({
+      title: "Create Floq",
+      description: `Planning something with @${profile.username}`,
+    });
+  };
+
   return (
     <div className="flex gap-3">
       <Button
@@ -38,6 +48,15 @@ export const ActionBarFriend = ({ profile, onOpenDM }: ActionBarFriendProps) => 
       >
         <MessageCircle className="h-4 w-4 mr-2" />
         Message
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleInviteToFloq}
+        className="border border-white/20 text-white hover:bg-white/10"
+        title="Invite to Floq"
+      >
+        <Plus className="h-4 w-4" />
       </Button>
       <Button
         variant="ghost"

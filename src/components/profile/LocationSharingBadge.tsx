@@ -4,11 +4,10 @@ import { useUserLocationSharing } from '@/hooks/useUserLocationSharing';
 
 interface LocationSharingBadgeProps {
   profileId: string;
-  onClick?: () => void;
   className?: string;
 }
 
-export function LocationSharingBadge({ profileId, onClick, className }: LocationSharingBadgeProps) {
+export function LocationSharingBadge({ profileId, className }: LocationSharingBadgeProps) {
   const { data: locationData } = useUserLocationSharing(profileId);
   const { isSharing, accuracyLevel } = locationData || { isSharing: false, accuracyLevel: 'exact' as const };
 
@@ -41,15 +40,13 @@ export function LocationSharingBadge({ profileId, onClick, className }: Location
   };
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
         'absolute top-3 left-3 z-10',
         'flex items-center gap-1.5 px-2 py-1',
         'rounded-full border backdrop-blur-sm',
         'text-xs font-medium',
-        'transition-all duration-200',
-        'hover:scale-105 active:scale-95',
+        'pointer-events-none',
         getAccuracyColor(accuracyLevel),
         className
       )}
@@ -57,6 +54,6 @@ export function LocationSharingBadge({ profileId, onClick, className }: Location
     >
       <Wifi className="h-3 w-3" />
       <span className="hidden sm:inline">Live</span>
-    </button>
+    </div>
   );
 }

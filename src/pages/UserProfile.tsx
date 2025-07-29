@@ -140,7 +140,6 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           {/* Location sharing badge - top left */}
           <LocationSharingBadge
             profileId={profileId}
-            onClick={handleQuickFloq}
             className="z-10"
           />
           
