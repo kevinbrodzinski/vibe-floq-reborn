@@ -41,7 +41,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
   // Get potential new owners (co-admins only)
   const potentialOwners = useMemo(() => 
     floqDetails.participants.filter(p => 
-      p.role === 'co-admin' && p.user_id !== floqDetails.creator_id
+      p.role === 'co-admin' && p.profile_id !== floqDetails.creator_id
     ),
     [floqDetails.participants, floqDetails.creator_id]
   );
@@ -209,7 +209,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {potentialOwners.map((user) => (
-                    <SelectItem key={user.user_id} value={user.user_id}>
+                    <SelectItem key={user.profile_id} value={user.profile_id}>
                       {user.display_name} {user.username && `(@${user.username})`}
                     </SelectItem>
                   ))}
@@ -301,7 +301,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
         open={showTransferConfirm}
         onOpenChange={setShowTransferConfirm}
         title="Transfer ownership?"
-        description={`Are you sure you want to transfer ownership to ${potentialOwners.find(p => p.user_id === selectedNewOwner)?.display_name}? You'll become a co-admin and lose host privileges.`}
+        description={`Are you sure you want to transfer ownership to ${potentialOwners.find(p => p.profile_id === selectedNewOwner)?.display_name}? You'll become a co-admin and lose host privileges.`}
         confirmLabel="Transfer"
         cancelLabel="Cancel"
         isLoading={isTransferring}

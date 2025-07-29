@@ -31,7 +31,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, roles }) => {
   }
 
   const isCreator = floqDetails.creator_id === session.user.id;
-  const userRole = floqDetails.participants?.find(p => p.user_id === session.user.id)?.role;
+  const userRole = floqDetails.participants?.find(p => p.profile_id === session.user.id)?.role;
   
   const hasRequiredRole = isCreator || roles.includes(userRole || '');
 

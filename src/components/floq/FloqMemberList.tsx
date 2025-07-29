@@ -11,7 +11,7 @@ export function FloqMemberList({ floqId }: { floqId: string }) {
 
   // Simplified member status - stable and deterministic
   const getMemberStatus = (member: any) => {
-    const memberId = member.user_id || member.id || 'default';
+    const memberId = member.profile_id || member.id || 'default';
     
     // Simple hash for consistent values
     const hash = memberId.split('').reduce((a, b) => {
@@ -90,11 +90,11 @@ export function FloqMemberList({ floqId }: { floqId: string }) {
       <div className="space-y-3">
         {members.map((member) => {
           const memberStatus = getMemberStatus(member);
-          const isSelected = selectedMember === member.user_id;
+          const isSelected = selectedMember === member.profile_id;
           
           return (
             <motion.div
-              key={member.user_id}
+              key={member.profile_id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -103,7 +103,7 @@ export function FloqMemberList({ floqId }: { floqId: string }) {
                 className={`cursor-pointer transition-all duration-200 hover:bg-accent/5 ${
                   isSelected ? 'ring-2 ring-primary' : ''
                 }`}
-                onClick={() => setSelectedMember(isSelected ? null : member.user_id)}
+                onClick={() => setSelectedMember(isSelected ? null : member.profile_id)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">

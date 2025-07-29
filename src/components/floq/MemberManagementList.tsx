@@ -282,7 +282,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
               <h5 className="text-sm font-medium text-muted-foreground">Active Members</h5>
             )}
             {activeMembers.map((participant) => (
-              <div key={participant.user_id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
+              <div key={participant.profile_id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
                 <div className="flex items-center gap-3">
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={participant.avatar_url} />
@@ -318,7 +318,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                     <>
                       <Select
                         value={participant.role}
-                        onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole, participant.role)}
+                        onValueChange={(newRole) => handleRoleChange(participant.profile_id, newRole, participant.role)}
                       >
                         <SelectTrigger 
                           className={isMobile ? "w-full h-12" : "w-28 h-8"} 
@@ -341,7 +341,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRoleChange(participant.user_id, 'member', participant.role)}
+                          onClick={() => handleRoleChange(participant.profile_id, 'member', participant.role)}
                           disabled={coAdminCount === 1}
                           className="text-muted-foreground hover:text-foreground"
                           title={coAdminCount === 1 ? 'Cannot revoke the last co-admin' : 'Revoke co-admin'}
@@ -354,7 +354,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
                         variant="ghost"
                         size={isMobile ? "default" : "sm"}
                         onClick={() => confirmRemove(participant)}
-                        disabled={removingUserId === participant.user_id}
+                        disabled={removingUserId === participant.profile_id}
                         className={`text-destructive hover:text-destructive ${
                           isMobile ? "w-full h-12" : ""
                         }`}

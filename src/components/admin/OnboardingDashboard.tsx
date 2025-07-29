@@ -94,8 +94,8 @@ export function OnboardingDashboard() {
         stepDropoffs,
         usernameFailures: 0, // Would need to track this separately
         recentCompletions: prefsData?.slice(-10).map(p => ({
-          id: p.user_id,
-          profile_id: p.user_id,
+          id: p.profile_id,
+          profile_id: p.profile_id,
           completed_at: p.onboarding_completed_at!,
           time_taken_minutes: 3 // Would calculate from actual data
         })) || []

@@ -88,7 +88,7 @@ export function FloqMemberMap({ floqId }: { floqId: string }) {
       const isMoving = Math.random() > 0.7;
       
       return {
-        id: member.user_id,
+        id: member.profile_id,
         name: member.profile.display_name || member.profile.username,
         avatar: member.profile.avatar_url,
         status: ['online', 'away', 'busy', 'offline'][Math.floor(Math.random() * 4)] as any,

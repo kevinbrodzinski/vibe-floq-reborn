@@ -104,7 +104,7 @@ export function FloqMemberAnalytics({ floqId }: { floqId: string }) {
       const activeDays = [1, 2, 3, 5, 6]; // Monday, Tuesday, Wednesday, Friday, Saturday
 
       return {
-        memberId: member.user_id,
+        memberId: member.profile_id,
         name: member.profile.display_name || member.profile.username,
         avatar: member.profile.avatar_url,
         engagementScore: Math.floor(Math.random() * 100),
