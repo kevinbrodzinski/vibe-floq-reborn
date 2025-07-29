@@ -19,21 +19,21 @@ export const safeProfileUpdate = async (id: string, updates: {
   return { data, error };
 };
 
-export const safeUserSettingsQuery = async (userId: string) => {
+export const safeUserSettingsQuery = async (profileId: string) => {
   const { data, error } = await supabase
     .from('user_settings')
     .select('available_until')
-    .eq('user_id', userId as any)
+    .eq('profile_id', profileId as any)
     .maybeSingle();
     
   return { data, error };
 };
 
-export const safeVibesNowQuery = async (userId: string) => {
+export const safeVibesNowQuery = async (profileId: string) => {
   const { data, error } = await supabase
     .from('vibes_now')
     .select('vibe, expires_at')
-    .eq('user_id', userId as any)
+    .eq('profile_id', profileId as any)
     .maybeSingle();
     
   return { data, error };
@@ -173,7 +173,7 @@ export const addToFavorites = async (afterglowId: string) => {
     .from('afterglow_favorites')
     .insert({ 
       daily_afterglow_id: afterglowId,
-      user_id: user.data.user.id
+      profile_id: user.data.user.id
     });
   
   if (error) throw error;
@@ -231,7 +231,7 @@ export const createCollection = async (name: string, description?: string, color
       name, 
       description, 
       color,
-      user_id: user.data.user.id
+      profile_id: user.data.user.id
     })
     .select()
     .single();

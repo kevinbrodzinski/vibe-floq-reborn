@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Heart, Users, Star, Shield, Eye, EyeOff, Settings } from 'lucide-react'
 
 interface RelationshipStrength {
-  userId: string
+  profileId: string
   displayName: string
   avatarUrl?: string
   strength: number // 0-100
@@ -15,7 +15,7 @@ interface RelationshipStrength {
 
 interface RelationshipStrengthIndicatorProps {
   relationship: RelationshipStrength
-  onTogglePrivacy?: (userId: string, isPublic: boolean) => void
+  onTogglePrivacy?: (profileId: string, isPublic: boolean) => void
   showDetails?: boolean
 }
 

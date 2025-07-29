@@ -36,7 +36,7 @@ export function useAfterglowNotifications() {
             event: 'INSERT',
             schema: 'public',
             table: 'app_user_notification',
-            filter: `user_id=eq.${session.user.id}`
+            filter: `profile_id=eq.${session.user.id}`
           },
           (payload) => {
             const notification = payload.new.payload as any

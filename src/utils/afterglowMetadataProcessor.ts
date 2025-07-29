@@ -11,7 +11,7 @@ export interface ProcessedMomentMetadata {
   }
   people?: {
     encountered_users: Array<{
-      user_id: string
+      profile_id: string
       interaction_strength: number
       shared_duration: number
       interaction_type: string
@@ -127,16 +127,16 @@ export function calculateMomentDistances(moments: Array<{ metadata: ProcessedMom
  */
 export function analyzePeopleEncounters(moments: Array<{ metadata: ProcessedMomentMetadata }>) {
   const allEncounters = moments.flatMap(m => m.metadata.people?.encountered_users || [])
-  const uniqueUsers = new Set(allEncounters.map(e => e.user_id))
+  const uniqueUsers = new Set(allEncounters.map(e => e.profile_id))
   
-  const userStats = Array.from(uniqueUsers).map(userId => {
-    const userEncounters = allEncounters.filter(e => e.user_id === userId)
+  const userStats = Array.from(uniqueUsers).map(profileId => {
+    const userEncounters = allEncounters.filter(e => e.profile_id === profileId)
     const totalDuration = userEncounters.reduce((sum, e) => sum + e.shared_duration, 0)
     const maxStrength = Math.max(...userEncounters.map(e => e.interaction_strength))
     const encounterCount = userEncounters.length
     
     return {
-      user_id: userId,
+      profile_id: profileId,
       encounter_count: encounterCount,
       total_duration: totalDuration,
       max_interaction_strength: maxStrength,

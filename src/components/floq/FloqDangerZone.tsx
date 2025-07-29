@@ -71,7 +71,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
         .from('floq_participants')
         .update({ role: 'creator' })
         .eq('floq_id', floqDetails.id)
-        .eq('user_id', selectedNewOwner);
+        .eq('profile_id', selectedNewOwner);
 
       if (roleError) throw roleError;
 
@@ -80,7 +80,7 @@ export const FloqDangerZone: React.FC<FloqDangerZoneProps> = ({
         .from('floq_participants')
         .update({ role: 'co-admin' })
         .eq('floq_id', floqDetails.id)
-        .eq('user_id', floqDetails.creator_id);
+        .eq('profile_id', floqDetails.creator_id);
 
       if (oldRoleError) throw oldRoleError;
 

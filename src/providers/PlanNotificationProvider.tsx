@@ -50,7 +50,7 @@ export const PlanNotificationProvider: React.FC<{ children: React.ReactNode }> =
           event: 'INSERT',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         ({ new: row }) => {
           const notif = row as { kind: string; payload: { plan_id?: string } };
@@ -70,7 +70,7 @@ export const PlanNotificationProvider: React.FC<{ children: React.ReactNode }> =
           event: 'UPDATE',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         ({ new: row }) => {
           const notification = row as EventNotification;

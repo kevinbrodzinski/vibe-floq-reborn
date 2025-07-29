@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react';
-import { useMyLocation }   from '@/hooks/useMyLocation';
-import { useAuth }         from '@/providers/AuthProvider';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { useAuth } from '@/providers/AuthProvider';
 import { buildSelfFeature } from '@/map/geojson/selfFeature';
 import mapboxgl from 'mapbox-gl';
 
@@ -17,7 +17,7 @@ export function usePeopleSource(
   map: mapboxgl.Map | null,        // Mapbox instance ref
   people: Person[],                // incoming dots
 ) {
-  const myCoords = useMyLocation();      // live [lng,lat] | null
+  const { pos } = useUserLocation();      // live location from user gesture
   const { user } = useAuth();            // to tag the feature with our id
 
   /** Build the feature-collection every time inputs change */
@@ -26,19 +26,19 @@ export function usePeopleSource(
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
       properties: {
-        id   : p.id,
-        vibe : p.vibe,
-        me   : false,
+        id: p.id,
+        vibe: p.vibe,
+        me: false,
         friend: !!p.isFriend,
       },
     }));
 
-    if (myCoords && user?.id) {
-      features.push(buildSelfFeature(myCoords, user.id));
+    if (pos && user?.id) {
+      features.push(buildSelfFeature([pos.lng, pos.lat], user.id));
     }
 
     return { type: 'FeatureCollection', features } as const;
-  }, [people, myCoords?.[0], myCoords?.[1], user?.id]);
+  }, [people, pos?.lng, pos?.lat, user?.id]);
 
   /* Push to Mapbox every time geojson changes */
   useEffect(() => {

@@ -177,7 +177,7 @@ export function useDMThread(friendId: string | null) {
       supabase.channel(`dm:${threadId}`).send({
         type: 'broadcast',
         event: 'typing',
-        payload: { user_id: selfId },
+        payload: { profile_id: selfId },
       });
     }, 2_000, { trailing: false }),
     [threadId, selfId],

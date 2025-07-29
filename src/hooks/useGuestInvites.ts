@@ -39,7 +39,7 @@ export function useGuestInvites() {
         .from('plan_participants')
         .insert({
           plan_id: planId,
-          user_id: null,
+          profile_id: null,
           is_guest: true,
           guest_name: guest.name.trim(),
           guest_email: guest.email?.trim() || null,

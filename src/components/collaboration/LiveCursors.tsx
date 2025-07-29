@@ -109,7 +109,7 @@ function CursorIndicator({ participant }: CursorIndicatorProps) {
 }
 
 // Generate consistent colors for users
-function getUserColor(userId: string): string {
+function getUserColor(profileId: string): string {
   const colors = [
     '#3B82F6', // Blue
     '#10B981', // Emerald
@@ -125,8 +125,8 @@ function getUserColor(userId: string): string {
   
   // Simple hash function to get consistent color
   let hash = 0
-  for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash + userId.charCodeAt(i)) & 0xffffffff
+  for (let i = 0; i < profileId.length; i++) {
+    hash = ((hash << 5) - hash + profileId.charCodeAt(i)) & 0xffffffff
   }
   
   return colors[Math.abs(hash) % colors.length]

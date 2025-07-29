@@ -15,15 +15,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProfileHeroProps {
-  userId?: string;
+  profileId?: string;
 }
 
-export function ProfileHero({ userId }: ProfileHeroProps) {
+export function ProfileHero({ profileId }: ProfileHeroProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const targetUserId = userId || user?.id;
-  const isOwnProfile = !userId || userId === user?.id;
+  const targetUserId = profileId || user?.id;
+  const isOwnProfile = !profileId || profileId === user?.id;
   
   const { data: profile, isLoading: profileLoading } = useProfile(targetUserId);
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -40,7 +40,7 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
       const { data } = await supabase
         .from('vibes_now')
         .select('vibe, expires_at')
-        .eq('user_id', targetUserId)
+        .eq('profile_id', targetUserId)
         .maybeSingle();
       
       return data;
@@ -58,7 +58,7 @@ export function ProfileHero({ userId }: ProfileHeroProps) {
       const { data } = await supabase
         .from('user_settings')
         .select('available_until')
-        .eq('user_id', targetUserId)
+        .eq('profile_id', targetUserId)
         .maybeSingle();
       
       return data;

@@ -8,7 +8,7 @@ import { getAvatarUrl, getInitials } from '@/lib/avatar';
 
 interface UserSearchResultsProps {
   users: SearchedUser[];
-  onAddFriend: (userId: string) => void;
+  onAddFriend: (profileId: string) => void;
   isLoading?: boolean;
   selectedIndex?: number;
 }

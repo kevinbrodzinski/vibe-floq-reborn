@@ -47,8 +47,9 @@ export default defineConfig(({ mode, command }) => {
 
         /* expo shims used by sentry-expo & friends */
         { find: "expo-application", replacement: "expo-application/web" },
-        { find: "expo-constants",   replacement: "expo-constants/build/Constants.web" },
+        { find: "expo-constants",   replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
         { find: "expo-device",      replacement: "expo-device/build/Device.web" },
+        { find: "expo-asset",       replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
 
         /* fully stub sentry-expo on web */
         { find: "sentry-expo", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
@@ -61,6 +62,7 @@ export default defineConfig(({ mode, command }) => {
 
         /* native-only libs we never want in the browser bundle */
         { find: "@rnmapbox/maps", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "react-native-mmkv", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
       ],
 
       // ensure singletons

@@ -13,8 +13,8 @@ export type PosthogEvent =
 
   // Invites & RSVP
   | { name: 'Invite Sent'; props: { toUserId: string; planId: string } }
-  | { name: 'Invite Accepted'; props: { userId: string; planId: string } }
-  | { name: 'Invite Declined'; props: { userId: string; planId: string } }
+  | { name: 'Invite Accepted'; props: { profileId: string; planId: string } }
+  | { name: 'Invite Declined'; props: { profileId: string; planId: string } }
 
   // Execution
   | { name: 'Check-In'; props: { venueId: string; planId: string; auto?: boolean } }

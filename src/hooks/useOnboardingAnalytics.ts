@@ -36,7 +36,7 @@ export function useOnboardingAnalytics() {
   const { user } = useAuth();
   const sessionId = getSessionId();
 
-  const trackEvent = useCallback(async (event: Omit<OnboardingEvent, 'user_id' | 'session_id'>) => {
+  const trackEvent = useCallback(async (event: Omit<OnboardingEvent, 'profile_id' | 'session_id'>) => {
     if (!user) return;
 
     try {
@@ -44,7 +44,7 @@ export function useOnboardingAnalytics() {
       // For now, we'll log to console and optionally store in Supabase
       console.log('📊 Onboarding Analytics Event:', {
         ...event,
-        user_id: user.id,
+        profile_id: user.id,
         session_id: sessionId,
         timestamp: new Date().toISOString()
       });

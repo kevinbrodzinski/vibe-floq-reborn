@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, AtSign, FileText, Heart, CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { useUsernameValidation } from '@/hooks/useUsernameValidation';
+import { InterestPills } from '@/components/ui/InterestPills';
 
 interface ProfileData {
   username: string;
@@ -14,110 +16,197 @@ interface ProfileData {
 }
 
 interface OnboardingProfileStepProps {
-  profileData: ProfileData;
-  onProfileUpdate: (data: ProfileData) => void;
-  onNext: () => void;
-  onBack: () => void;
+  onNext: (data: ProfileData) => void;
+  onBack?: () => void;
 }
 
-export function OnboardingProfileStep({ profileData, onProfileUpdate, onNext, onBack }: OnboardingProfileStepProps) {
-  const [localData, setLocalData] = useState(profileData || { username: '', display_name: '', bio: '' });
+export function OnboardingProfileStep({ onNext, onBack }: OnboardingProfileStepProps) {
+  const [formData, setFormData] = useState<ProfileData>({
+    username: '',
+    display_name: '',
+    bio: '',
+    interests: [],
+  });
+  const [displayNameError, setDisplayNameError] = useState('');
+  
+  // Use the existing username validation hook
+  const usernameValidation = useUsernameValidation(formData.username);
 
-  const MAX_BIO = 280;
-  const MAX_NAME = 40;
-  const MAX_USERNAME = 30;
-
-  const handleInputChange = (field: keyof ProfileData, value: string) => {
-    let processedValue = value;
-    
-    // Apply length limits
-    if (field === 'display_name') {
-      processedValue = value.slice(0, MAX_NAME);
-    } else if (field === 'bio') {
-      processedValue = value.slice(0, MAX_BIO);
-    } else if (field === 'username') {
-      processedValue = value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, MAX_USERNAME);
+  const validateForm = () => {
+    if (!formData.display_name || formData.display_name.length < 2) {
+      setDisplayNameError('Display name must be at least 2 characters');
+      return false;
     }
     
-    const updated = { ...localData, [field]: processedValue };
-    setLocalData(updated);
-    onProfileUpdate(updated);
+    if (!usernameValidation.isValid || !usernameValidation.isAvailable) {
+      return false;
+    }
+    
+    setDisplayNameError('');
+    return true;
   };
 
-  const isValid = localData.display_name.trim().length > 0 && localData.username.trim().length > 0;
+  const handleInputChange = (field: keyof ProfileData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear display name error when user starts typing
+    if (field === 'display_name' && displayNameError) {
+      setDisplayNameError('');
+    }
+  };
+
+  const handleUsernameSelect = (username: string) => {
+    setFormData(prev => ({ ...prev, username }));
+  };
+
+  const handleInterestsChange = (interests: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      interests
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      onNext(formData);
+    }
+  };
+
+  const isValid = usernameValidation.isValid && 
+                  usernameValidation.isAvailable && 
+                  formData.display_name.length >= 2;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold">Create your profile</h2>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">Create Your Profile</h2>
         <p className="text-muted-foreground">
-          Tell others a bit about yourself
+          Tell us a bit about yourself to personalize your Floq experience
         </p>
       </div>
       
-      <div className="space-y-4">
+      <Card className="max-w-md mx-auto">
+        <CardContent className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username" className="flex items-center gap-2">
+              <AtSign className="w-4 h-4" />
+              Username
+            </Label>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleInputChange('username', e.target.value)}
+              placeholder="Enter your username"
+              className={!usernameValidation.isValid && formData.username.length > 0 ? 'border-destructive' : 
+                         usernameValidation.isAvailable ? 'border-green-500' : ''}
+            />
+            
+            {/* Enhanced username validation feedback */}
+            {formData.username.length > 0 && (
+              <div className="space-y-2">
+                {usernameValidation.isChecking ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Checking availability...
+                  </div>
+                ) : usernameValidation.isAvailable ? (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    {usernameValidation.message}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <XCircle className="w-4 h-4" />
+                      {usernameValidation.message}
+                    </div>
+                    {usernameValidation.suggestions.length > 0 && (
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="display_name">Display Name</Label>
-            <span className="text-xs text-muted-foreground">
-              {localData.display_name.length}/{MAX_NAME}
-            </span>
+                        <p className="text-xs text-muted-foreground">Try one of these:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {usernameValidation.suggestions.map((suggestion) => (
+                            <Button
+                              key={suggestion}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUsernameSelect(suggestion)}
+                              className="text-xs h-7"
+                            >
+                              {suggestion}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="display_name" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Display Name
+            </Label>
           <Input
             id="display_name"
-            placeholder="How should people know you?"
-            value={localData.display_name}
+              value={formData.display_name}
             onChange={(e) => handleInputChange('display_name', e.target.value)}
-          />
+              placeholder="How should others see you?"
+              className={displayNameError ? 'border-destructive' : ''}
+            />
+            {displayNameError && (
+              <p className="text-sm text-destructive">{displayNameError}</p>
+            )}
         </div>
         
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="username">Username</Label>
-            <span className="text-xs text-muted-foreground">
-              {localData.username.length}/{MAX_USERNAME}
-            </span>
-          </div>
-          <Input
-            id="username"
-            placeholder="@username"
-            value={localData.username}
-            onChange={(e) => handleInputChange('username', e.target.value)}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="bio">Bio (optional)</Label>
-            <span className="text-xs text-muted-foreground">
-              {(localData.bio || '').length}/{MAX_BIO}
-            </span>
-          </div>
+            <Label htmlFor="bio" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Bio <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
           <Textarea
             id="bio"
-            placeholder="Tell us a bit about yourself..."
-            value={localData.bio || ''}
+              value={formData.bio}
             onChange={(e) => handleInputChange('bio', e.target.value)}
-            className="resize-none"
+              placeholder="Tell us about yourself..."
             rows={3}
           />
         </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="interests" className="flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              Interests <span className="text-muted-foreground text-xs">(optional)</span>
+            </Label>
+            <InterestPills
+              interests={formData.interests || []}
+              onInterestsChange={handleInterestsChange}
+              maxInterests={8}
+              placeholder="Add your interests..."
+            />
       </div>
+        </CardContent>
+      </Card>
       
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="flex gap-3 max-w-md mx-auto">
+        {onBack && (
+          <Button variant="outline" onClick={onBack} className="flex-1">
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid}>
-          Continue
+        )}
+        <Button 
+          onClick={handleSubmit}
+          disabled={!isValid}
+          className="flex-1"
+        >
+          Create Profile
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }

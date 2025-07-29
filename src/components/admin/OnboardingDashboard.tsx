@@ -28,7 +28,7 @@ interface OnboardingStats {
   usernameFailures: number;
   recentCompletions: Array<{
     id: string;
-    user_id: string;
+    profile_id: string;
     completed_at: string;
     time_taken_minutes: number;
   }>;
@@ -63,7 +63,7 @@ export function OnboardingDashboard() {
       // Get user preferences for completion data
       const { data: prefsData, error: prefsError } = await supabase
         .from('user_preferences')
-        .select('user_id, onboarding_completed_at')
+        .select('profile_id, onboarding_completed_at')
         .not('onboarding_completed_at', 'is', null);
 
       if (prefsError) throw prefsError;
@@ -95,7 +95,7 @@ export function OnboardingDashboard() {
         usernameFailures: 0, // Would need to track this separately
         recentCompletions: prefsData?.slice(-10).map(p => ({
           id: p.user_id,
-          user_id: p.user_id,
+          profile_id: p.user_id,
           completed_at: p.onboarding_completed_at!,
           time_taken_minutes: 3 // Would calculate from actual data
         })) || []
@@ -263,7 +263,7 @@ export function OnboardingDashboard() {
                 <div key={index} className="flex items-center justify-between p-2 rounded border">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline">
-                      User {completion.user_id.slice(-8)}
+                      User {completion.profile_id.slice(-8)}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
                       {new Date(completion.completed_at).toLocaleDateString()}

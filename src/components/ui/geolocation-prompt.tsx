@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { MapPin, AlertCircle } from 'lucide-react';
+import { MapPin, AlertCircle, Compass } from 'lucide-react';
 import { Button } from './button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { Alert, AlertDescription, AlertTitle } from './alert';
 
 interface GeolocationPromptProps {
   onRequestLocation: () => void;
   error?: string | null;
   loading?: boolean;
+  onSetDebugLocation?: () => void;
 }
 
-export function GeolocationPrompt({ onRequestLocation, error, loading }: GeolocationPromptProps) {
+export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebugLocation }: GeolocationPromptProps) {
   const [hasRequested, setHasRequested] = useState(false);
 
   const handleRequest = () => {
@@ -18,8 +20,13 @@ export function GeolocationPrompt({ onRequestLocation, error, loading }: Geoloca
   };
 
   const setDebugLocation = () => {
-    localStorage.setItem('floq-debug-forceLoc', '34.078,-118.261'); // Silver Lake, LA
-    window.location.reload();
+    if (onSetDebugLocation) {
+      onSetDebugLocation();
+    } else {
+      // Fallback: set debug location in localStorage and reload
+      localStorage.setItem('floq-debug-forceLoc', '34.078,-118.261'); // Venice, CA
+      window.location.reload();
+    }
   };
 
   return (
@@ -34,25 +41,36 @@ export function GeolocationPrompt({ onRequestLocation, error, loading }: Geoloca
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error && (
+        {error === 'unavailable' && (
+          <Alert variant="warning" className="border-yellow-500/20 bg-yellow-500/10">
+            <Compass className="h-4 w-4 text-yellow-600" />
+            <AlertTitle className="text-yellow-600">Searching for GPS…</AlertTitle>
+            <AlertDescription className="text-yellow-600">
+              We haven't picked up a signal yet. Try moving closer to a window or
+              enable Wi-Fi for faster location.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && error !== 'unavailable' && (
           <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle className="h-4 w-4" />
             <span>{error}</span>
           </div>
         )}
-        
+
         <div className="space-y-2">
-          <Button 
-            onClick={handleRequest} 
+          <Button
+            onClick={handleRequest}
             disabled={loading}
             className="w-full"
           >
             {loading ? 'Getting Location...' : hasRequested ? 'Allow Location Access' : 'Enable Location'}
           </Button>
-          
+
           {import.meta.env.DEV && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={setDebugLocation}
               className="w-full text-xs"
             >

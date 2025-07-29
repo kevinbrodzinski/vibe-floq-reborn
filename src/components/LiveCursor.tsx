@@ -8,7 +8,7 @@ import { zIndex } from '@/constants/z';
 interface CursorPosition {
   x: number;
   y: number;
-  userId: string;
+  profileId: string;
   username: string;
   avatar?: string;
   color?: string;
@@ -55,7 +55,7 @@ export const LiveCursor: React.FC<LiveCursorProps> = ({
 
           return (
             <motion.div
-              key={cursor.userId}
+              key={cursor.profileId}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ 
                 scale: 1, 

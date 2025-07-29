@@ -4,7 +4,7 @@ import { Clock, MapPin, Users, TrendingUp } from 'lucide-react'
 import { RecapData } from './index'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { track } from '@/lib/analytics'
-import dayjs from 'dayjs'
+import dayjs from '@/lib/dayjs'
 
 interface DailyRecapCardProps {
   data: RecapData
@@ -12,7 +12,7 @@ interface DailyRecapCardProps {
 
 export default function DailyRecapCard({ data }: DailyRecapCardProps) {
   const hasTrackedRef = useRef<string | null>(null)
-  
+
   const timelineData = data.timeline?.map(t => ({
     hour: t.hour,
     mins: t.mins,
@@ -52,7 +52,7 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
         </CardTitle>
         <p className="text-sm text-muted-foreground">{data.day}</p>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Main Stats */}
         <div className="grid grid-cols-2 gap-4">
@@ -66,7 +66,7 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
               {remainingMins > 0 ? ` ${remainingMins}m` : totalHours === 0 ? `${remainingMins}m` : ''}
             </div>
           </div>
-          
+
           <div className="text-center p-3 rounded-lg bg-background/50">
             <div className="flex items-center justify-center gap-1 mb-1">
               <MapPin className="w-4 h-4 text-primary" />
@@ -82,16 +82,16 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
             <h4 className="text-sm font-medium text-foreground">Daily Timeline</h4>
             <div className="h-20 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
+                <BarChart
                   data={timelineData}
                   role="img"
                   aria-label={`Timeline of minutes spent out between ${timelineData[0]?.label || '12AM'} and ${timelineData[timelineData.length - 1]?.label || '11PM'}`}
                 >
-                  <XAxis 
-                    dataKey="hour" 
+                  <XAxis
+                    dataKey="hour"
                     tick={{ fontSize: 10 }}
                     interval="preserveStartEnd"
-                    tickFormatter={(hour) => hour === 0 ? '12A' : hour <= 12 ? `${hour}A` : `${hour-12}P`}
+                    tickFormatter={(hour) => hour === 0 ? '12A' : hour <= 12 ? `${hour}A` : `${hour - 12}P`}
                   />
                   <YAxis hide />
                   <Bar dataKey="mins" fill="hsl(var(--primary))" radius={[1, 1, 0, 0]} />
@@ -133,8 +133,8 @@ export default function DailyRecapCard({ data }: DailyRecapCardProps) {
             <h4 className="text-sm font-medium text-foreground">Your Hotspots</h4>
             <div className="space-y-2">
               {data.topVenues.slice(0, 3).map((venue, idx) => (
-                <div 
-                  key={venue.id} 
+                <div
+                  key={venue.id}
                   className="flex items-center justify-between p-2 rounded bg-background/30"
                   dir="auto"
                 >

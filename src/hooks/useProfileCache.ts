@@ -24,20 +24,20 @@ export function useProfileCache() {
   };
 }
 
-export function useProfile(userId: string) {
+export function useProfile(profileId: string) {
   const env = getEnvironmentConfig();
   
   if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
     // Return mock profile with deterministic but varied data
     const names = ['Alex Chen', 'Jordan Smith', 'Casey Williams', 'Morgan Davis'];
     const usernames = ['alex_chen', 'jordan_smith', 'casey_williams', 'morgan_davis'];
-    const index = Math.abs(userId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length;
+    const index = Math.abs(profileId.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % names.length;
     
     const mockProfile: Profile = {
-      id: userId,
+      id: profileId,
       username: usernames[index],
       display_name: names[index],
-      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileId}`,
     };
 
     return {
@@ -51,38 +51,38 @@ export function useProfile(userId: string) {
 
   // Live mode - implement real profile fetching using React Query
   return useQuery({
-    queryKey: ['profile:v2', userId],
+    queryKey: ['profile:v2', profileId],
     queryFn: async (): Promise<Profile> => {
       if (import.meta.env.DEV) {
-        console.log(`🔍 [PROFILE] Fetching profile for user: ${userId}`);
+        console.log(`🔍 [PROFILE] Fetching profile for user: ${profileId}`);
       }
       
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', userId)
+        .eq('id', profileId)
         .maybeSingle();
 
       if (error) {
         if (import.meta.env.DEV) {
-          console.error(`❌ [PROFILE] Error fetching profile for ${userId}:`, error);
+          console.error(`❌ [PROFILE] Error fetching profile for ${profileId}:`, error);
         }
         throw error;
       }
       
       if (!data) {
         if (import.meta.env.DEV) {
-          console.warn(`⚠️ [PROFILE] No profile found for user: ${userId}`);
+          console.warn(`⚠️ [PROFILE] No profile found for user: ${profileId}`);
         }
-        throw new Error(`Profile not found for user ${userId}`);
+        throw new Error(`Profile not found for user ${profileId}`);
       }
       
       if (import.meta.env.DEV) {
-        console.log(`✅ [PROFILE] Successfully fetched profile for ${userId}:`, data.username);
+        console.log(`✅ [PROFILE] Successfully fetched profile for ${profileId}:`, data.username);
       }
       return data as Profile;
     },
-    enabled: !!userId,
+    enabled: !!profileId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });

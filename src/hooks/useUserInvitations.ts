@@ -67,7 +67,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
             )
           )
         `)
-        .eq('invitee_user_id', user.id)
+        .eq('invitee_profile_id', user.id)
         .eq('status', 'pending')
         .eq('archived', false)
         .order('invited_at', { ascending: false });
@@ -118,7 +118,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
           .from('plan_participants')
           .insert({
             plan_id: planId,
-            user_id: user.id,
+            profile_id: user.id,
             invite_type: 'invitation',
           })
           .select()

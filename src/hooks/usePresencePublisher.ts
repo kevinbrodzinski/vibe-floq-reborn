@@ -74,7 +74,7 @@ export const usePresencePublisher = (isActive: boolean) => {
         lng: longitude,
         vibe,
         gh5,
-        user_id: user.id
+        profile_id: user.id
       })
 
       try {

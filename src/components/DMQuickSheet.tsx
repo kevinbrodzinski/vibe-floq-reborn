@@ -1,31 +1,31 @@
 
-import { useEffect, useRef, useState } from 'react';
-import { Send, User } from 'lucide-react';
-import { Z } from '@/constants/z';
-
-import { useDMThread } from '@/hooks/useDMThread';
-import { useProfile } from '@/hooks/useProfile';
-import { useFriendsPresence } from '@/hooks/useFriendsPresence';
-import { useLastSeen } from '@/hooks/useLastSeen';
-import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
-import { MessageBubble } from '@/components/MessageBubble';
-import { UserTag } from '@/components/ui/user-tag';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getAvatarUrl } from '@/lib/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Block, Flag, User } from 'lucide-react';
+import { useAuth } from '@/providers/AuthProvider';
+import { useProfile } from '@/hooks/useProfile';
+import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
+import { useLastSeen } from '@/hooks/useLastSeen';
+import { useFriends } from '@/hooks/useFriends';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useNearbyFriends } from '@/hooks/useNearbyFriends';
+import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
+import { useLiveSettings } from '@/hooks/useLiveSettings';
+import { useToast } from '@/hooks/use-toast';
+import { useDMThread } from '@/hooks/useDMThread';
+import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
+import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import { cn } from '@/lib/utils';
+import dayjs from '@/lib/dayjs';
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -33,44 +33,41 @@ interface DMQuickSheetProps {
   friendId: string | null;
 }
 
-export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps) {
+export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
   const [input, setInput] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { messages, sendMessage, isSending, isTyping, sendTyping, markAsRead } = useDMThread(friendId);
-  
+
   // Debug logging for overlay management
   useEffect(() => {
     console.log('[DM_SHEET] Sheet state changed:', { open, friendId });
   }, [open, friendId]);
-  
+
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
     onSwipeDown: () => onOpenChange(false)
   });
-  
+
   // Get friend profile and presence
   const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
   const presence = useFriendsPresence()[friendId || ''];
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
 
-  // Initialize dayjs plugin
-  dayjs.extend(relativeTime);
-
   // Get current user ID and mark as read when sheet opens
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setCurrentUserId(data.user?.id ?? null);
     });
-    
+
     // Mark as read when sheet opens with optimistic badge update
     if (open && friendId && currentUserId) {
       if (import.meta.env.DEV) console.log('📖 DM sheet opened, marking as read for friend:', friendId);
       markAsRead();
-      
+
       // Immediate optimistic update for badge responsiveness - fixed query key
       queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
     }
@@ -105,7 +102,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
 
   const handleSend = async () => {
     if (!input.trim() || isSending) return;
-    
+
     try {
       await sendMessage({
         content: input.trim()
@@ -130,10 +127,10 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent 
-        side="bottom" 
+      <SheetContent
+        side="bottom"
         className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80`}
-        style={{ 
+        style={{
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
           zIndex: Z.dmSheet
@@ -162,10 +159,10 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>
                   : lastSeenTs && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {dayjs(lastSeenTs).fromNow(true)}
-                      </span>
-                    )
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {dayjs(lastSeenTs).fromNow(true)}
+                    </span>
+                  )
                 }
               </>
             ) : (
@@ -182,7 +179,7 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
         </SheetHeader>
 
         {/* Messages */}
-        <div 
+        <div
           className="flex-1 overflow-y-auto p-4 space-y-4"
           role="log"
           aria-label="Direct message conversation"
@@ -230,4 +227,4 @@ export function DMQuickSheet({ open, onOpenChange, friendId }: DMQuickSheetProps
       </SheetContent>
     </Sheet>
   );
-}
+});

@@ -62,7 +62,7 @@ export function useOnboardingDatabase() {
       const { data, error: fetchError } = await supabase
         .from('user_onboarding_progress')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .eq('onboarding_version', 'v2')
         .maybeSingle();
       
@@ -94,7 +94,7 @@ export function useOnboardingDatabase() {
     
     try {
       const progressData = {
-        user_id: user.id,
+        profile_id: user.id,
         onboarding_version: 'v2' as const,
         current_step: Math.min(state.currentStep, 10),
         completed_steps: state.completedSteps,
@@ -106,7 +106,7 @@ export function useOnboardingDatabase() {
       const { error: upsertError } = await supabase
         .from('user_onboarding_progress')
         .upsert(progressData, {
-          onConflict: 'user_id,onboarding_version'
+          onConflict: 'profile_id,onboarding_version'
         });
       
       if (upsertError) throw upsertError;
@@ -133,7 +133,7 @@ export function useOnboardingDatabase() {
           completed_at: new Date().toISOString(),
           current_step: FINAL_STEP
         })
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .eq('onboarding_version', 'v2');
       
       if (updateError) throw updateError;
@@ -157,7 +157,7 @@ export function useOnboardingDatabase() {
       const { error: deleteError } = await supabase
         .from('user_onboarding_progress')
         .delete()
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .eq('onboarding_version', 'v2');
       
       if (deleteError) throw deleteError;

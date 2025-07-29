@@ -31,9 +31,9 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
   // ⚡ seed profile cache
   primeProfiles(searchResults);
 
-  const handleAddFriend = async (userId: string) => {
+  const handleAddFriend = async (profileId: string) => {
     try {
-      sendRequest(userId);
+      sendRequest(profileId);
       setSearchQuery('');
       onOpenChange(false);
     } catch (error) {

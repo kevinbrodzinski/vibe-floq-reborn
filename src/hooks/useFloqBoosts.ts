@@ -39,7 +39,7 @@ export function useFloqBoosts(floqId: string) {
       // Safely access response properties
       const result = data && typeof data === 'object' ? data : {}
       const responseFloqId = 'floq_id' in result ? result.floq_id : variables.floqId
-      const responseUserId = 'user_id' in result ? result.user_id : null
+      const responseUserId = 'profile_id' in result ? result.user_id : null
 
       // Optimistically update boost count
       queryClient.setQueryData(['floq-boosts', variables.floqId], (old: any) => {
@@ -85,7 +85,7 @@ export function useUserBoostStatus(floqId: string) {
         .from('floq_boosts')
         .select('*')
         .eq('floq_id', floqId)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle()
       
       if (error) throw error

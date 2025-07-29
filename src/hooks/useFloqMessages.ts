@@ -26,7 +26,7 @@ export interface FloqMessage {
 }
 
 export interface TypingIndicator {
-  userId: string
+  profileId: string
   displayName: string
   timestamp: number
 }

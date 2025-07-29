@@ -26,7 +26,7 @@ export function useRespondToInvitation() {
           responded_at: new Date().toISOString(),
         })
         .eq('id', invitationId)
-        .eq('invitee_user_id', user.id);
+        .eq('invitee_profile_id', user.id);
 
       if (inviteError) throw inviteError;
 
@@ -46,7 +46,7 @@ export function useRespondToInvitation() {
           .from('plan_participants')
           .insert({
             plan_id: invitation.plan_id,
-            user_id: user.id,
+            profile_id: user.id,
             joined_at: new Date().toISOString(),
           });
 

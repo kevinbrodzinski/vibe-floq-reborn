@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface FriendLocation {
@@ -10,20 +10,31 @@ interface FriendLocation {
 
 export function useFriendLocations(friendIds: string[]) {
   const [spots, setSpots] = useState<Record<string, FriendLocation>>({});
+  const channelsRef = useRef<any[]>([]);
 
   useEffect(() => {
+    // Clear previous channels
+    channelsRef.current.forEach(ch => supabase.removeChannel(ch));
+    channelsRef.current = [];
+
     if (!friendIds.length) return;
 
-    const channels = friendIds.map(fid =>
+    // Listen to each friend's presence channel
+    channelsRef.current = friendIds.map(fid =>
       supabase.channel(`presence_${fid}`)
         .on('broadcast', { event: 'live_pos' }, ({ payload }) => {
-          setSpots(s => ({ ...s, [fid]: payload }));
+          setSpots(s => ({ ...s, [fid]: payload as FriendLocation }));
         })
         .subscribe()
     );
 
-    return () => channels.forEach(ch => supabase.removeChannel(ch));
-  }, [friendIds.join()]); // stringify so React compares properly
+    return () => {
+      channelsRef.current.forEach(ch => {
+        if (ch) supabase.removeChannel(ch);
+      });
+      channelsRef.current = [];
+    };
+  }, [friendIds.slice().sort().join()]); // Sort for stable dependencies
 
   return spots; // { friendId: { lat, lng, acc, ts }, ... }
 }

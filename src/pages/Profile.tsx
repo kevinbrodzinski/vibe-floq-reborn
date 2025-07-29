@@ -199,7 +199,7 @@ const Profile = () => {
           {/* Connection Insights */}
           {profile && (
             <div className="space-y-4">
-              <ConnectionInsights userId={profile.id} />
+              <ConnectionInsights profileId={profile.id} />
             </div>
           )}
 

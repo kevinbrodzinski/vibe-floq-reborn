@@ -8,7 +8,7 @@ interface RipplePayload {
   description?: string;
   image_url?: string;
   created_at: string;
-  user_id: string;
+  profile_id: string;
 }
 
 interface ShareRippleProps {
@@ -89,7 +89,7 @@ export default function ShareRipplePage() {
         description: data.daily_afterglow?.ai_summary,
         image_url: data.og_image_url,
         created_at: data.created_at,
-        user_id: data.daily_afterglow?.user_id || '',
+        profile_id: data.daily_afterglow?.user_id || '',
       } as RipplePayload;
     },
     staleTime: 5 * 60_000,

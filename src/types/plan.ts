@@ -44,7 +44,7 @@ export interface PlanStop {
   start_time: string
   end_time: string
   participants: string[]
-  votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[]
+  votes: { profileId: string; vote: 'yes' | 'no' | 'maybe' }[]
   kind: any // StopKind from theme
   vibe_tag?: any // VibeTag from theme
   address?: string

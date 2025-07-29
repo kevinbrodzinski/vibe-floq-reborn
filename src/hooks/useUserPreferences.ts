@@ -21,15 +21,15 @@ export interface UserPreferences {
 /**
  * Hook to fetch user preferences
  */
-export function useUserPreferences(userId?: string) {
+export function useUserPreferences(profileId?: string) {
   return useQuery({
-    queryKey: ['user-preferences', userId],
-    enabled: !!userId,
+    queryKey: ['user-preferences', profileId],
+    enabled: !!profileId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('checkin_streak')
-        .eq('user_id', userId!)
+        .eq('profile_id', profileId!)
         .maybeSingle();
 
       if (error) throw error;

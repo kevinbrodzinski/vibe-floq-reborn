@@ -7,7 +7,9 @@ import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 // import { useWeeklyAI } from '@/hooks/useWeeklyAI';
 import { useSocialSuggestions } from '@/hooks/useSocialSuggestions';
 import { useTrendingVenues } from '@/hooks/useTrendingVenues';
-import { useLiveActivities } from '@/hooks/useLiveActivities';
+import { useLiveActivity } from '@/hooks/useLiveActivity';
+import { useWeather } from '@/hooks/useWeather';
+import { usePulseBadges } from '@/hooks/usePulseBadges';
 import { useAuth } from '@/providers/AuthProvider';
 import { TrendingVenueCard } from '@/components/ui/TrendingVenueCard';
 import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
@@ -22,6 +24,11 @@ import { EnhancedRecommendationCard } from '@/components/ui/EnhancedRecommendati
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useVibeMatch } from '@/hooks/useVibeMatch';
+import { FilterChip } from '@/components/ui/FilterChip';
+import { PulseFilter, WALKING_THRESHOLD_M, HIGH_ENERGY_SCORE } from '@/pages/pulse/filters';
+import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
+import { LiveFeedPreview } from '@/components/pulse/LiveFeedPreview';
+import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
 
 // Minimal brain outline SVG
 const BrainOutlineIcon = ({ className = '', size = 24, color = 'currentColor' }) => (
@@ -74,14 +81,21 @@ export const PulseScreen: React.FC = () => {
   const navigate = useNavigate();
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
   const [modalFriends, setModalFriends] = useState<{name: string, avatar?: string}[]>([]);
+  const [activitySheetOpen, setActivitySheetOpen] = useState(false);
 
-  
-  // Mock weather data - in production this would come from a weather API
-  const weather = {
-    condition: 'sunny' as const,
-    temperature: 72,
-    isIndoor: showIndoorOnly
-  };
+  // Realtime live activity updates
+  useLiveActivityRealtime();
+
+  /* 2-A  chips state */
+  const [filters, setFilters] = useState<Set<PulseFilter>>(new Set());
+
+  /* 2-B  helper */
+  const toggle = (f: PulseFilter) =>
+    setFilters(prev =>
+      prev.has(f)
+        ? new Set([...prev].filter(x => x !== f))
+        : new Set(prev).add(f),
+    );
 
   // Mock gamification data - in production this would come from user profile
   const gamificationData = {
@@ -129,12 +143,93 @@ export const PulseScreen: React.FC = () => {
   const { data: myFloqs = [] } = useMyActiveFloqs();
   // const { suggestion: aiSuggestion, loading: aiLoading, refetch: refetchAI, source: aiSource } = useWeeklyAI();
   const { suggestions: socialSuggestions = [] } = useSocialSuggestions(1000);
-  const { venues: trendingVenues = [] } = useTrendingVenues(coords?.lat ?? 0, coords?.lng ?? 0, 1000);
-  const { activities: liveActivities = [] } = useLiveActivities(coords?.lat ?? 0, coords?.lng ?? 0, 1000);
+  
+  // Real-time Pulse data
+  const radiusArg = filters.has('walking') ? WALKING_THRESHOLD_M : 2000;
+  const { data: trendingVenues = [] } = useTrendingVenues(radiusArg, 5);
+  const { data: liveActivity, fetchNextPage, hasNextPage, isFetchingNextPage } = useLiveActivity();
+  const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather();
+  const { data: pulseBadges } = usePulseBadges(user?.id);
+
+  // Debug weather data
+  console.log('Weather Debug:', { weatherData, weatherLoading, weatherError });
+
+  /* 3 · Derive "my floq" ID set once */
+  const myFloqIds = useMemo(
+    () => new Set(myFloqs.map(f => f.id)),
+    [myFloqs],
+  );
 
   // Loading and error states
   const isLoading = !activeFloqs.length && !nearbyVenues.length;
   const hasError = false; // Add error handling if needed
+
+  // Use real weather data or fallback to mock
+  const weather = weatherData ? {
+    condition: mapWeatherCondition(weatherData.condition),
+    temperature: weatherData.temperatureF,
+    isIndoor: showIndoorOnly
+  } : {
+    condition: 'sunny' as const,
+    temperature: 72,
+    isIndoor: showIndoorOnly
+  };
+
+  // Helper function to map weather conditions to UI expectations
+  function mapWeatherCondition(condition: string): 'sunny' | 'cloudy' | 'rainy' | 'stormy' {
+    switch (condition) {
+      case 'clear': return 'sunny';
+      case 'clouds': return 'cloudy';
+      case 'rain':
+      case 'drizzle': return 'rainy';
+      case 'thunderstorm': return 'stormy';
+      case 'snow': return 'rainy'; // Treat snow as rainy for UI
+      case 'mist':
+      case 'fog': return 'cloudy';
+      default: return 'sunny';
+    }
+  }
+
+  /* 4-A · Apply filters to trending venues */
+  const visibleTrending = useMemo(() => {
+    return trendingVenues.filter(v => {
+      if (filters.has('walking') &&
+          v.distance_m != null &&
+          v.distance_m > WALKING_THRESHOLD_M) return false;
+
+      if (filters.has('highEnergy') &&
+          v.vibe_tag !== 'hype' &&
+          v.trend_score <= HIGH_ENERGY_SCORE) return false;
+
+      if (filters.has('socialVibes') &&
+          v.vibe_tag !== 'social') return false;
+
+      if (filters.has('myFloqs') &&
+          !myFloqIds.has(v.venue_id)) return false;
+
+      return true;
+    });
+  }, [trendingVenues, filters, myFloqIds]);
+
+  /* 4-B · Apply filters to nearby floqs */
+  const visibleFloqs = useMemo(() => {
+    return activeFloqs.filter(f => {
+      if (filters.has('walking') &&
+          f.distance_meters != null &&
+          f.distance_meters > WALKING_THRESHOLD_M) return false;
+
+      if (filters.has('highEnergy') &&
+          f.primary_vibe !== 'hype') return false;
+
+      if (filters.has('socialVibes') &&
+          f.primary_vibe !== 'social') return false;
+
+      if (filters.has('myFloqs') &&
+          !myFloqIds.has(f.id)) return false;
+
+      return true;
+    });
+  }, [activeFloqs, filters, myFloqIds]);
 
   // Transform data into recommendations
   const recommendations = useMemo(() => {
@@ -151,7 +246,7 @@ export const PulseScreen: React.FC = () => {
       venue_id: venue.id
     }));
 
-    const floqRecommendations: PulseRecommendation[] = activeFloqs.map(floq => ({
+    const floqRecommendations: PulseRecommendation[] = visibleFloqs.map(floq => ({
       id: floq.id,
       title: floq.title,
       type: 'floq' as const,
@@ -163,7 +258,7 @@ export const PulseScreen: React.FC = () => {
     }));
 
     return [...venueRecommendations, ...floqRecommendations];
-  }, [nearbyVenues, activeFloqs]);
+  }, [nearbyVenues, visibleFloqs]);
 
   // Filter recommendations based on search and filters
   const filteredRecommendations = useMemo(() => {
@@ -209,16 +304,16 @@ export const PulseScreen: React.FC = () => {
   const quickSuggestions = useMemo(() => {
     const suggestions = [];
 
-    if (activeFloqs.length > 0) {
+    if (pulseBadges?.activeFloqs && pulseBadges.activeFloqs > 0) {
       suggestions.push({
-        label: `${activeFloqs.length} active floqs nearby`,
+        label: `${pulseBadges.activeFloqs} active floqs nearby`,
         filter: 'Active floqs'
       });
     }
 
-    if (nearbyVenues.length > 0) {
+    if (pulseBadges?.venuesDiscovered && pulseBadges.venuesDiscovered > 0) {
       suggestions.push({
-        label: `${nearbyVenues.length} venues discovered`,
+        label: `${pulseBadges.venuesDiscovered} venues discovered`,
         filter: 'Venues'
       });
     }
@@ -257,13 +352,7 @@ export const PulseScreen: React.FC = () => {
     }
   };
 
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters(prev => 
-      prev.includes(filter) 
-        ? prev.filter(f => f !== filter)
-        : [...prev, filter]
-    );
-  };
+
 
   // Helper to extract city from address
   const getCityFromAddress = (address?: string | null) => {
@@ -317,6 +406,12 @@ export const PulseScreen: React.FC = () => {
         isOpen={showDiscoveryModal}
         onClose={() => setShowDiscoveryModal(false)}
         userLocation={coords ? { lat: coords.lat, lng: coords.lng } : undefined}
+      />
+
+      {/* Live Activity Sheet */}
+      <LiveActivitySheet 
+        open={activitySheetOpen} 
+        onClose={() => setActivitySheetOpen(false)} 
       />
 
       {/* AI Summary Collapsible (controlled) */}
@@ -389,19 +484,33 @@ export const PulseScreen: React.FC = () => {
           <span className="text-sm text-white/70">Filters:</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['Walking distance', 'High energy', 'Social vibes', 'My floqs'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => toggleFilter(filter)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                selectedFilters.includes(filter)
-                  ? 'bg-white text-gray-900 shadow-md'
-                  : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
-              }`}
-            >
-              {filter}
-            </button>
-          ))}
+          <FilterChip
+            active={filters.has('walking')}
+            onClick={() => toggle('walking')}
+          >
+            Walking distance
+          </FilterChip>
+
+          <FilterChip
+            active={filters.has('highEnergy')}
+            onClick={() => toggle('highEnergy')}
+          >
+            High energy
+          </FilterChip>
+
+          <FilterChip
+            active={filters.has('socialVibes')}
+            onClick={() => toggle('socialVibes')}
+          >
+            Social vibes
+          </FilterChip>
+
+          <FilterChip
+            active={filters.has('myFloqs')}
+            onClick={() => toggle('myFloqs')}
+          >
+            My floqs
+          </FilterChip>
         </div>
       </div>
 
@@ -420,25 +529,21 @@ export const PulseScreen: React.FC = () => {
         )} */}
 
         {/* Live Activity Feed */}
-        {liveActivities.length > 0 && (
-          <div className="px-6">
-            <LiveActivityFeed 
-              activities={liveActivities} 
-              maxItems={3}
-              onCardClick={(activity) => {
-                // Route based on activity type
-                if ((activity.type === 'checkin' || activity.type === 'venue_activity' || activity.venue_name)) {
-                  navigate(`/venues/${activity.venue_id ? activity.venue_id : (activity.venue_name || '')}`);
-                } else if (activity.type === 'friend_joined' && activity.user_name) {
-                  navigate(`/profile/${activity.user_name}`);
-                } else if (activity.type === 'trending' && activity.venue_name) {
-                  navigate(`/venues/${activity.venue_id ? activity.venue_id : (activity.venue_name || '')}`);
-                }
-              }}
-              boldEntities={true}
-            />
+        <div className="px-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-white" />
+              <h2 className="font-bold text-white text-lg">Live Activity</h2>
+            </div>
+            <button
+              onClick={() => setActivitySheetOpen(true)}
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              View more →
+            </button>
           </div>
-        )}
+          <LiveFeedPreview max={3} />
+        </div>
 
         {/* Weather-Aware Suggestion */}
         <div className="px-6">
@@ -449,17 +554,24 @@ export const PulseScreen: React.FC = () => {
         </div>
 
         {/* Trending Venues Section */}
-        {trendingVenues.length > 0 && (
+        {visibleTrending && visibleTrending.length > 0 && (
           <div className="px-6">
             <div className="flex items-center gap-2 mb-4">
               <Flame className="w-5 h-5 text-orange-500" />
               <h2 className="font-bold text-white text-lg">🔥 Trending Now</h2>
             </div>
             <div className="space-y-4">
-              {trendingVenues.slice(0, 3).map((venue) => (
+              {visibleTrending.slice(0, 3).map((venue) => (
                 <TrendingVenueCard
-                  key={venue.id}
-                  venue={venue}
+                  key={venue.venue_id}
+                  venue={{
+                    id: venue.venue_id,
+                    name: venue.name,
+                    distance_m: venue.distance_m,
+                    people_now: venue.people_now,
+                    last_seen_at: venue.last_seen_at,
+                    trend_score: venue.trend_score
+                  }}
                   onJoin={() => console.log('Join venue:', venue.name)}
                   onShare={() => console.log('Share venue:', venue.name)}
                   onLike={() => console.log('Like venue:', venue.name)}

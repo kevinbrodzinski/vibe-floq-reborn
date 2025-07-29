@@ -27,7 +27,7 @@ export function usePlanRSVP() {
           .from('plan_participants')
           .delete()
           .eq('plan_id', planId)
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
 
         if (error) throw error
         return { action: 'removed' }
@@ -38,7 +38,7 @@ export function usePlanRSVP() {
           .upsert(
             {
               plan_id: planId,
-              user_id: user.id,
+              profile_id: user.id,
               is_guest: false,
               role: 'participant',
               rsvp_status: status,
@@ -46,7 +46,7 @@ export function usePlanRSVP() {
               responded_at: new Date().toISOString(),
             },
             { 
-              onConflict: 'plan_id,user_id',
+              onConflict: 'plan_id,profile_id',
               ignoreDuplicates: false 
             }
           )

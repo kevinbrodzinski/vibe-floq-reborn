@@ -186,7 +186,7 @@ export const useSmartDiscovery = (
           try {
             const { data: aiSuggestions } = await supabase.functions.invoke('get-social-suggestions', {
               body: {
-                user_id: user.id,
+                profile_id: user.id,
                 lat: userLocation.lat,
                 lng: userLocation.lng,
                 radius_km: filters.radius,

@@ -348,28 +348,48 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Clean up floq sprites
-      floqSpritesRef.current.forEach((sprite, floqId) => {
-        console.log('[FLOQ_CLEANUP] Destroying sprite for floq:', floqId);
-        sprite.destroy();
-      });
-      floqSpritesRef.current.clear();
-      
-      // 1️⃣ empty the pool first (all Graphics still have a context)
-      graphicsPoolRef.current?.releaseAll();
-      
-      // 2️⃣ THEN destroy containers and clean up
-      heatContainerRef.current?.removeChildren();
-      peopleContainerRef.current?.removeChildren();
-      tilePoolRef.current?.clearAll();
-      
-      // 3️⃣ Destroy the PIXI Application after cleanup
-      if (appRef.current) {
-        appRef.current.destroy(true, {
-          children: true,
-          texture: true
+      try {
+        // Clean up floq sprites
+        floqSpritesRef.current.forEach((sprite, floqId) => {
+          console.log('[FLOQ_CLEANUP] Destroying sprite for floq:', floqId);
+          try {
+            sprite.destroy();
+          } catch (e) {
+            console.warn('[FLOQ_CLEANUP] Error destroying sprite:', e);
+          }
         });
-        appRef.current = null;
+        floqSpritesRef.current.clear();
+        
+        // 1️⃣ empty the pool first (all Graphics still have a context)
+        try {
+          graphicsPoolRef.current?.releaseAll();
+        } catch (e) {
+          console.warn('[CLEANUP] Error releasing graphics pool:', e);
+        }
+        
+        // 2️⃣ THEN destroy containers and clean up
+        try {
+          heatContainerRef.current?.removeChildren();
+          peopleContainerRef.current?.removeChildren();
+          tilePoolRef.current?.clearAll();
+        } catch (e) {
+          console.warn('[CLEANUP] Error clearing containers:', e);
+        }
+        
+        // 3️⃣ Destroy the PIXI Application after cleanup
+        if (appRef.current) {
+          try {
+            appRef.current.destroy(true, {
+              children: true,
+              texture: true
+            });
+          } catch (e) {
+            console.warn('[CLEANUP] Error destroying PIXI app:', e);
+          }
+          appRef.current = null;
+        }
+      } catch (e) {
+        console.error('[CLEANUP] Critical cleanup error:', e);
       }
     };
   }, []);

@@ -2,11 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
 import { getMapboxToken }       from '@/lib/geo/getMapboxToken';
 import { setMapInstance }       from '@/lib/geo/project';
-
-registerMapboxWorker();          // runs only once even if imported multiple times
 
 interface Props {
   onRegionChange: (b: {

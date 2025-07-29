@@ -7,7 +7,7 @@ export interface TelemetryEvent {
   name: string;
   properties?: Record<string, any>;
   timestamp?: string;
-  userId?: string;
+  profileId?: string;
   sessionId?: string;
 }
 

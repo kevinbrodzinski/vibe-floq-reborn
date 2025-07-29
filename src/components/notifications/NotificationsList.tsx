@@ -69,7 +69,7 @@ export const NotificationsList = () => {
       const { data, error } = await supabase
         .from('user_notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 

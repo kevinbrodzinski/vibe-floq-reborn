@@ -129,7 +129,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
       if (error) throw error;
 
       // Filter out existing participants and pending invitations
-      const participantIds = floqDetails.participants.map(p => p.user_id);
+      const participantIds = floqDetails.participants.map(p => p.profile_id);
       const invitationIds = pendingInvitations.map(inv => inv.invitee_id);
       const typedData = data as Array<{
         id: string;
@@ -160,14 +160,14 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
     }
   };
 
-  const sendInvitation = async (userId: string) => {
-    setInvitingUserId(userId);
+  const sendInvitation = async (profileId: string) => {
+    setInvitingUserId(profileId);
     try {
       const { error } = await supabase.functions.invoke('send-invitations', {
         body: {
           type: 'internal',
           floq_id: floqDetails.id,  // Use snake_case as expected by edge function
-          invitee_ids: [userId]     // Use snake_case plural as expected
+          invitee_ids: [profileId]     // Use snake_case plural as expected
         }
       });
 

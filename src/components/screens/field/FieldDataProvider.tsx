@@ -13,27 +13,27 @@ const simpleProjectLatLng = (lng: number, lat: number, userLat?: number, userLng
     // Fallback to simple positioning if no user location
     return { x: 50, y: 50 };
   }
-  
+
   // Simple projection based on geographic distance from user
   const latDiff = lat - userLat;
   const lngDiff = lng - userLng;
-  
+
   // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
   const xMeters = lngDiff * 111320 * Math.cos((userLat * Math.PI) / 180);
   const yMeters = latDiff * 111320;
-  
+
   // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
   const scale = 50; // 50% field width per km
   const x = Math.min(Math.max((xMeters / 1000) * scale + 50, 5), 95);
   const y = Math.min(Math.max(-(yMeters / 1000) * scale + 50, 5), 95);
-  
+
   return { x, y };
 };
 
 // Proper map-to-screen coordinate conversion
 const projectToScreenCoords = (
-  lat: number, 
-  lng: number, 
+  lat: number,
+  lng: number,
   viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number },
   screenWidth: number,
   screenHeight: number
@@ -41,11 +41,11 @@ const projectToScreenCoords = (
   // Calculate the percentage position within the viewport
   const latPercent = (lat - viewport.minLat) / (viewport.maxLat - viewport.minLat);
   const lngPercent = (lng - viewport.minLng) / (viewport.maxLng - viewport.minLng);
-  
+
   // Convert to screen coordinates
   const x = lngPercent * screenWidth;
   const y = (1 - latPercent) * screenHeight; // Invert Y axis for screen coordinates
-  
+
   return { x, y };
 };
 import type { Vibe } from "@/types";
@@ -147,14 +147,15 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   }, [floqsWithAddresses]);
 
   const { setShowBanner } = useFieldUI();
-  
-  // Start publishing user presence to the field
-  usePresencePublisher(true);
-  
+
+  // Start publishing user presence to the field only when location is available
+  const isLocationAvailable = !!(location?.lat && location?.lng);
+  usePresencePublisher(isLocationAvailable);
+
   // Define viewport bounds based on location
   const viewport = useMemo(() => {
     if (!location?.lat || !location?.lng) return null;
-    
+
     const radius = 0.01; // ~1km viewport
     return {
       minLat: location.lat - radius,
@@ -174,13 +175,13 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
       viewport.maxLng,
       6
     );
-    
+
     // Debug helper - expose to window for debugging
     if (typeof window !== 'undefined') {
       (window as any).__debug_tiles = ids;
       console.log('[FIELD_DEBUG] Tile IDs for viewport:', ids);
     }
-    
+
     return ids;
   }, [viewport]);
 
@@ -192,7 +193,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     maxLng: viewport.maxLng,
     precision: 6
   } : undefined);
-  
+
   // Debug logging for field tiles
   console.log('[FIELD_DEBUG] Field tiles query state:', {
     isLoading,
@@ -203,21 +204,21 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     tilesCount: fieldTiles?.length || 0,
     tiles: fieldTiles
   });
-  
+
   // Get nearby venues for chip and current event
   const { data: nearbyVenues = [] } = useNearbyVenues(location?.lat ?? 0, location?.lng ?? 0, 0.3);
   const { data: currentEvent } = useCurrentEvent(location?.lat ?? 0, location?.lng ?? 0, () => setShowBanner(false));
- 
+
   // Debug logging for location and viewport
   console.log('[FIELD_DEBUG] Location and viewport:', {
     location: location ? { lat: location.lat, lng: location.lng } : null,
     viewport,
     activeFloqsCount: activeFloqs?.length || 0
   });
- 
+
   // Floqs are now rendered by Mapbox clustering, not PIXI
   const floqEvents: FloqEvent[] = [];
-  
+
   // Debug log the floqs being passed to Mapbox
   console.log('[FIELD_DEBUG] Floqs for Mapbox:', (floqsWithAddresses || []).map(floq => ({
     id: floq.id,
@@ -227,7 +228,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     vibe: floq.primary_vibe,
     participants: floq.participant_count
   })));
-  
+
   const data: FieldData = {
     // Events and venues
     floqEvents,

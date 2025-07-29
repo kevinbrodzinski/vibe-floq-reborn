@@ -35,7 +35,7 @@ export function useMyFloqs() {
           creator_id,
           floq_participants!inner(user_id)
         `)
-        .eq('floq_participants.user_id', user.id)
+        .eq('floq_participants.profile_id', user.id)
         .eq('visibility', 'public')
         .is('deleted_at', null)
         .order('created_at', { ascending: false });

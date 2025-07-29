@@ -156,7 +156,7 @@ async function processOfflineQueue() {
 
 // Enhanced award function with offline support
 async function maybeAwardWithRetry(
-  userId: string, 
+  profileId: string, 
   code: string, 
   increment: number, 
   event: AchievementEvent,
@@ -192,7 +192,7 @@ async function maybeAwardWithRetry(
     }
 
     // Fallback to direct RPC call
-    await maybeAward(userId, code, increment);
+    await maybeAward(profileId, code, increment);
     
   } catch (error) {
     console.error('Achievement award failed, queuing for retry:', error);
@@ -222,10 +222,10 @@ function validateEventPayload(event: AchievementEvent, payload: Record<string, a
   }
 }
 
-async function maybeAward(userId: string, code: string, increment: number) {
+async function maybeAward(profileId: string, code: string, increment: number) {
   try {
     const { data: wasEarned, error } = await supabase.rpc('award_if_goal_met', {
-      _user: userId,
+      _user: profileId,
       _code: code,
       _increment: increment,
     });

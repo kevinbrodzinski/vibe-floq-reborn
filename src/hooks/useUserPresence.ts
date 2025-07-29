@@ -29,10 +29,10 @@ export function useUserPresence() {
             const state = channel.presenceState?.() || {};
             const presenceMap = new Map<string, UserPresence>();
             
-            Object.entries(state).forEach(([userId, presences]) => {
+            Object.entries(state).forEach(([profileId, presences]) => {
               const presence = presences[0] as any;
               if (presence?.user_id) {
-                presenceMap.set(userId, presence as UserPresence);
+                presenceMap.set(profileId, presence as UserPresence);
               }
             });
             
@@ -79,7 +79,7 @@ export function useUserPresence() {
             try {
               // Track our own presence
               await channel.track({
-                user_id: session.user.id,
+                profile_id: session.user.id,
                 status: 'online',
                 last_seen: new Date().toISOString(),
               });
@@ -105,12 +105,12 @@ export function useUserPresence() {
     }
   }, [session?.user?.id]);
 
-  const getUserPresence = (userId: string): UserPresence | null => {
-    return userPresence.get(userId) || null;
+  const getUserPresence = (profileId: string): UserPresence | null => {
+    return userPresence.get(profileId) || null;
   };
 
-  const isUserOnline = (userId: string): boolean => {
-    const presence = getUserPresence(userId);
+  const isUserOnline = (profileId: string): boolean => {
+    const presence = getUserPresence(profileId);
     return presence?.status === 'online';
   };
 

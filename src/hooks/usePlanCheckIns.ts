@@ -45,23 +45,23 @@ export async function checkOutOfStop(
   if (error) throw error;
 }
 
-export async function getCurrentCheckIns(planId: string, userId: string): Promise<PlanCheckIn[]> {
+export async function getCurrentCheckIns(planId: string, profileId: string): Promise<PlanCheckIn[]> {
   const { data, error } = await supabase
     .from('plan_check_ins' as any)
     .select('*')
     .eq('plan_id', planId)
-    .eq('participant_id', userId)
+    .eq('participant_id', profileId)
     .is('checked_out_at', null);
     
   if (error) throw error;
   return (data as unknown as PlanCheckIn[]) || [];
 }
 
-export function usePlanCheckIns(planId?: string, userId?: string) {
+export function usePlanCheckIns(planId?: string, profileId?: string) {
   return useQuery({
-    queryKey: ['plan-check-ins', planId, userId],
-    enabled: !!planId && !!userId,
-    queryFn: () => getCurrentCheckIns(planId!, userId!),
+    queryKey: ['plan-check-ins', planId, profileId],
+    enabled: !!planId && !!profileId,
+    queryFn: () => getCurrentCheckIns(planId!, profileId!),
     refetchOnWindowFocus: false,
   });
 }

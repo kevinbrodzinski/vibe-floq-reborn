@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
 import { setMapInstance }       from '@/lib/geo/project';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
+import { useWeather } from '@/hooks/useWeather';
 import { createContext, useContext } from 'react';
 import { Bird, Cloud, Sun, CloudRain, Umbrella } from 'lucide-react';
 import {
@@ -18,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
+import { usePeopleSource } from '@/map/layers/usePeopleSource';
+import { selfLayer } from '@/map/layers/selfLayer';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -30,7 +32,7 @@ const SelectedFloqContext = createContext<{
 
 export const useSelectedFloq = () => useContext(SelectedFloqContext);
 
-registerMapboxWorker();
+// Remove registerMapboxWorker() for Mapbox v3
 
 interface Props {
   onRegionChange: (b:{
@@ -55,6 +57,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   // Get user's active floqs
   const { data: myFloqs = [] } = useMyActiveFloqs();
   
+  // Get real weather data
+  const { data: weatherData } = useWeather(location?.lat, location?.lng);
+  
   // Get members of selected floq
   const { data: selectedFloqMembers = [] } = useFloqMembers(selectedMyFloq || '');
 
@@ -64,12 +69,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       return []; // Return empty array when no floq is selected or no members
     }
     
-    const selectedFloqMemberIds = selectedFloqMembers.map(member => member.user_id);
+    const selectedFloqMemberIds = selectedFloqMembers.map(member => member.profile_id);
     
     // For now, we'll return the selected floq members as people
     // In a real implementation, you'd filter the actual people data
     return selectedFloqMembers.map(member => ({
-      id: member.user_id,
+      id: member.profile_id,
       x: 0, // These would be actual coordinates in a real implementation
       y: 0,
       profile: member.profile,
@@ -80,7 +85,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   // Prepare context value for selected floq
   const selectedFloqContextValue = useMemo(() => ({
     selectedFloqId: selectedMyFloq,
-    selectedFloqMembers: selectedFloqMembers.map(member => member.user_id)
+    selectedFloqMembers: selectedFloqMembers.map(member => member.profile_id)
   }), [selectedMyFloq, selectedFloqMembers]);
 
   const initialCenter: [number, number] = location ? [location.lng, location.lat] : [-118.4912, 34.0224];
@@ -89,8 +94,15 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   const [err,setErr]       = useState<string>();
   const [showWeather, setShowWeather] = useState(false);
 
-  // Mock weather data - in production this would come from a weather API
-  const mockWeather = {
+  // Use real weather data or fallback to mock
+  const weather = weatherData ? {
+    condition: mapWeatherCondition(weatherData.condition),
+    temperature: weatherData.temperatureF,
+    humidity: weatherData.humidity,
+    windSpeed: weatherData.windMph,
+    precipitation: 0,
+    feelsLike: weatherData.feelsLikeF
+  } : {
     condition: 'sunny' as const,
     temperature: 72,
     humidity: 45,
@@ -98,6 +110,21 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     precipitation: 0,
     feelsLike: 74
   };
+
+  // Helper function to map weather conditions to UI expectations
+  function mapWeatherCondition(condition: string): 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'windy' {
+    switch (condition) {
+      case 'clear': return 'sunny';
+      case 'clouds': return 'cloudy';
+      case 'rain':
+      case 'drizzle': return 'rainy';
+      case 'thunderstorm': return 'stormy';
+      case 'snow': return 'rainy'; // Treat snow as rainy for UI
+      case 'mist':
+      case 'fog': return 'cloudy';
+      default: return 'sunny';
+    }
+  }
 
   // Get weather icon based on condition
   const getWeatherIcon = (condition: string) => {
@@ -205,30 +232,19 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           ? [location.lng, location.lat] 
           : [-118.4695, 33.9850]; // Venice Beach fallback
 
-        // Try the new custom style with fallback
+        // Create map with guaranteed-to-exist style
         let map: mapboxgl.Map;
         
-        try {
-          map = new mapboxgl.Map({
-            container: mapContainerRef.current!,
-            style: 'mapbox://styles/floqlabs/cmdh17nrn00a301ptb00i386k',
-            center: initialCenter,
-            zoom: 11,
-            preserveDrawingBuffer: true,
-            antialias: true
-          });
-          console.log('✅ Custom style loaded successfully');
-        } catch (error) {
-          console.warn('❌ Custom style failed, falling back to default:', error);
-          map = new mapboxgl.Map({
-            container: mapContainerRef.current!,
-            style: 'mapbox://styles/mapbox/dark-v11',
-            center: initialCenter,
-            zoom: 11,
-            preserveDrawingBuffer: true,
-            antialias: true
-          });
-        }
+        map = new mapboxgl.Map({
+          container: mapContainerRef.current!,
+          /* Use a guaranteed-to-exist style.  
+             Replace with your own later if you want. */
+          style: 'mapbox://styles/mapbox/dark-v11',
+          center: initialCenter,
+          zoom: 11,
+          preserveDrawingBuffer: true,
+          antialias: true
+        });
         mapRef.current=map;
 
         // Add user location marker
@@ -240,9 +256,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         
         // Add error handling for map load
         map.on('error', (e) => {
-          console.error('Mapbox error:', e);
-          setStatus('error');
-          setErr(e.error?.message || 'Map failed to load');
+          // Log but do NOT block rendering for minor 4xx tile/style errors
+          console.warn('[Mapbox warning]', e.error?.message);
         });
 
         // Add user location source and layer
@@ -255,6 +270,15 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           
           // Add user location source
           map.addSource('user-location', {
+            type: 'geojson',
+            data: {
+              type: 'FeatureCollection',
+              features: []
+            }
+          });
+          
+          // Add people source for self feature
+          map.addSource('people', {
             type: 'geojson',
             data: {
               type: 'FeatureCollection',
@@ -313,6 +337,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
               'circle-stroke-opacity': 0.3
             }
           });
+
+          // Add self layer (blue "YOU" pin)
+          map.addLayer(selfLayer);
 
           // Add cluster layer with improved styling
           map.addLayer({
@@ -755,6 +782,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     };
   },[onRegionChange, location.lat, location.lng]);
 
+  // Use the people source hook to manage self feature
+  usePeopleSource(mapRef.current, []);
+
   // Update user location when it changes
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.lat || !location.lng) return;
@@ -916,11 +946,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
                 ? 'bg-blue-500 text-white hover:bg-blue-600' 
                 : 'bg-white/90 hover:bg-white text-gray-800'
             }`}
-            title={`${mockWeather.temperature}°F - ${mockWeather.condition}`}
+            title={`${weather.temperature}°F - ${weather.condition}`}
           >
             <div className="flex flex-col items-center">
-              {getWeatherIcon(mockWeather.condition)}
-              <span className="text-xs font-medium mt-1">{mockWeather.temperature}°</span>
+              {getWeatherIcon(weather.condition)}
+              <span className="text-xs font-medium mt-1">{weather.temperature}°</span>
             </div>
           </button>
         )}
@@ -940,7 +970,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
         {/* Weather Overlay */}
         {status === 'ready' && showWeather && (
-          <WeatherOverlay weather={mockWeather} />
+          <WeatherOverlay weather={weather} />
         )}
 
         {/* Venice Beach Location Indicator */}

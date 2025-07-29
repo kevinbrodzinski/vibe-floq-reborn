@@ -6,7 +6,7 @@ interface AvatarWithFallbackProps {
   src?: string | null;
   fallbackText?: string;
   username?: string;
-  userId?: string;
+  profileId?: string;
   className?: string;
   size?: number;
 }
@@ -15,7 +15,7 @@ export const AvatarWithFallback = ({
   src, 
   fallbackText = 'U',
   username,
-  userId,
+  profileId,
   className = '',
   size = 64 
 }: AvatarWithFallbackProps) => {
@@ -25,7 +25,7 @@ export const AvatarWithFallback = ({
   const initials = getInitials(fallbackText, username);
   
   // Generate deterministic color if userId provided
-  const fallbackColor = userId ? getAvatarFallbackColor(userId) : undefined;
+  const fallbackColor = profileId ? getAvatarFallbackColor(profileId) : undefined;
 
   // Phase 1B Fix: Proper avatar failure fallback
   if (src && !failed) {

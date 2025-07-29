@@ -43,7 +43,7 @@ export function useMyPlanFeedback(planId: string) {
         .from('plan_feedback')
         .select('*')
         .eq('plan_id', planId)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle();
 
       if (error) throw error;
@@ -71,7 +71,7 @@ export function useSubmitPlanFeedback() {
         .from('plan_feedback')
         .upsert({
           plan_id: planId,
-          user_id: user.id,
+          profile_id: user.id,
           ...feedback,
         });
 

@@ -28,7 +28,7 @@ export function useLeaderboardStats() {
       const { data, error } = await supabase
         .from('leaderboard_cache')
         .select('rank, total_users')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .maybeSingle();
 
       if (error) throw error;

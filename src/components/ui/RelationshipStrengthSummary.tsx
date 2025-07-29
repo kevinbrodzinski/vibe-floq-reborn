@@ -2,7 +2,7 @@ import React from 'react'
 import { Heart, Users, TrendingUp } from 'lucide-react'
 
 interface RelationshipStrength {
-  userId: string
+  profileId: string
   displayName: string
   strength: number
   isPublic: boolean

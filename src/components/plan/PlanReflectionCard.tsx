@@ -6,7 +6,7 @@ import { getVibeColor } from '@/hooks/useUserPreferences';
 
 export interface PlanFeedback {
   id: string;
-  user_id: string;
+  profile_id: string;
   user_display_name: string;
   user_avatar_url?: string;
   vibe_rating?: number;

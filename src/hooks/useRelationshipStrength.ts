@@ -2,7 +2,7 @@ import useSWR from 'swr'
 import { supabase } from '@/integrations/supabase/client'
 
 export interface RelationshipStrength {
-  userId: string
+  profileId: string
   displayName: string
   avatarUrl?: string
   strength: number // 0-100
@@ -19,7 +19,7 @@ const fetchRelationshipStrength = async (): Promise<RelationshipStrength[]> => {
   
   const mockRelationships: RelationshipStrength[] = [
     {
-      userId: '1',
+      profileId: '1',
       displayName: 'Sarah Chen',
       avatarUrl: undefined,
       strength: 85,
@@ -30,7 +30,7 @@ const fetchRelationshipStrength = async (): Promise<RelationshipStrength[]> => {
       isPublic: true
     },
     {
-      userId: '2',
+      profileId: '2',
       displayName: 'Mike Rodriguez',
       avatarUrl: undefined,
       strength: 72,
@@ -41,7 +41,7 @@ const fetchRelationshipStrength = async (): Promise<RelationshipStrength[]> => {
       isPublic: false
     },
     {
-      userId: '3',
+      profileId: '3',
       displayName: 'Emma Thompson',
       avatarUrl: undefined,
       strength: 45,
@@ -52,7 +52,7 @@ const fetchRelationshipStrength = async (): Promise<RelationshipStrength[]> => {
       isPublic: true
     },
     {
-      userId: '4',
+      profileId: '4',
       displayName: 'Alex Kim',
       avatarUrl: undefined,
       strength: 28,
@@ -63,7 +63,7 @@ const fetchRelationshipStrength = async (): Promise<RelationshipStrength[]> => {
       isPublic: false
     },
     {
-      userId: '5',
+      profileId: '5',
       displayName: 'Jordan Lee',
       avatarUrl: undefined,
       strength: 95,
@@ -89,14 +89,14 @@ export const useRelationshipStrength = () => {
     }
   )
 
-  const updatePrivacy = async (userId: string, isPublic: boolean) => {
+  const updatePrivacy = async (profileId: string, isPublic: boolean) => {
     // In production, this would update the database
-    console.log(`Updating privacy for user ${userId} to ${isPublic}`)
+    console.log(`Updating privacy for user ${profileId} to ${isPublic}`)
     
     // Optimistically update the local data
     if (data) {
       const updatedData = data.map(relationship => 
-        relationship.userId === userId 
+        relationship.profileId === profileId 
           ? { ...relationship, isPublic }
           : relationship
       )

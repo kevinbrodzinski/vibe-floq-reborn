@@ -52,11 +52,17 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     // Filter by selected floq members if a floq is selected
     if (selectedFloqMembers && selectedFloqMembers.length > 0) {
       filteredPresenceData = presenceData.filter(presence => 
-        selectedFloqMembers.includes(presence.user_id)
+        presence.user_id && selectedFloqMembers.includes(presence.user_id)
       );
     }
     
     return filteredPresenceData.map((presence) => {
+      // Skip if no user_id
+      if (!presence.user_id) {
+        console.warn('[FieldSocialContext] Presence data missing user_id:', presence);
+        return null;
+      }
+      
       const profile = profilesMap.get(presence.user_id);
       
       // Extract lat/lng from presence data (handle both geometry and lat/lng formats)
@@ -72,6 +78,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         presenceLng = presence.lng;
       } else {
         // Skip if no location data
+        console.warn('[FieldSocialContext] Presence data missing location:', presence);
         return null;
       }
       
@@ -90,7 +97,7 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       
       return {
         id: presence.user_id,
-        name: profile?.display_name || `User ${presence.user_id.slice(-4)}`,
+        name: profile?.display_name || `User ${presence.user_id?.slice(-4) || 'unknown'}`,
         x,
         y,
         color: getVibeColor(presence.vibe || 'social'),

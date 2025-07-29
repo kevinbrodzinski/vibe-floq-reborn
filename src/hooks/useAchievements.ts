@@ -75,7 +75,7 @@ export function useAchievements() {
                 metadata
               )
             `)
-            .eq('user_id', user.id),
+            .eq('profile_id', user.id),
           getCachedCatalogue()
         ]);
 

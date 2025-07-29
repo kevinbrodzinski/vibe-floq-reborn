@@ -71,7 +71,7 @@ export default function WeeklyAITest() {
       // Test 4: Pre-warm call
       addTestResult('Pre-warm Call', 'pending', 'Testing preWarm: true...');
       const { data: prewarmData, error: prewarmError } = await supabase.functions.invoke('generate-intelligence', {
-        body: { mode: 'weekly-ai', preWarm: true, userId: user.id },
+        body: { mode: 'weekly-ai', preWarm: true, profileId: user.id },
       });
 
       if (prewarmError) {

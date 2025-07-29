@@ -33,7 +33,7 @@ export function useNotifications() {
           event: 'INSERT',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         ({ new: n }: { new: NotificationRow }) => {
           // 🔔 central switch-board for all notifications
@@ -125,7 +125,7 @@ export function useNotifications() {
           event: 'UPDATE',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         ({ new: n }: { new: NotificationRow }) => {
           // Handle seen_at updates if needed

@@ -1,11 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export async function uploadDmImage(
-  userId: string,
+  profileId: string,
   threadId: string,
   file: File
 ) {
-  const path = `${userId}/${threadId}/${crypto.randomUUID()}-${file.name}`;
+  const path = `${profileId}/${threadId}/${crypto.randomUUID()}-${file.name}`;
   const { error } = await supabase.storage
     .from('dm_media')
     .upload(path, file, { upsert: false, contentType: file.type });
@@ -21,11 +21,11 @@ export async function uploadDmImage(
 }
 
 export async function uploadDmVoiceNote(
-  userId: string,
+  profileId: string,
   threadId: string,
   file: File
 ) {
-  const path = `${userId}/${threadId}/${crypto.randomUUID()}-${file.name}`;
+  const path = `${profileId}/${threadId}/${crypto.randomUUID()}-${file.name}`;
   const { error } = await supabase.storage
     .from('dm_media')
     .upload(path, file, { upsert: false, contentType: file.type });

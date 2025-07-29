@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { X, Settings, Eye, Network, MapPin } from 'lucide-react';
+import { X, Settings, Eye, Network, MapPin, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { zIndex } from '@/constants/z';
+import { LocationSharingTest } from '@/components/test/LocationSharingTest';
 
 interface EnvironmentDebugPanelProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface EnvironmentDebugPanelProps {
     debugPresence: boolean;
     debugNetwork: boolean;
     debugGeohash: boolean;
+    debugLocationSharing: boolean;
   };
   onConfigChange: (config: any) => void;
 }
@@ -34,7 +36,7 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
   };
 
   return (
-    <div 
+    <div
       {...zIndex('debug')}
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
     >
@@ -53,7 +55,7 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -88,6 +90,17 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
             />
           </div>
 
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Share2 className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Debug Location Sharing</span>
+            </div>
+            <Switch
+              checked={debugConfig.debugLocationSharing}
+              onCheckedChange={(value) => handleToggle('debugLocationSharing', value)}
+            />
+          </div>
+
           <div className="pt-3 border-t border-border">
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className="text-xs">
@@ -99,10 +112,12 @@ export const EnvironmentDebugPanel: React.FC<EnvironmentDebugPanelProps> = ({
             </div>
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            <p className="mb-1">Hotkey: Ctrl/Cmd + Shift + E</p>
-            <p>URL param: ?debug_env=1</p>
-          </div>
+          {/* Location Sharing Test Component */}
+          {debugConfig.debugLocationSharing && (
+            <div className="pt-3 border-t border-border">
+              <LocationSharingTest />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

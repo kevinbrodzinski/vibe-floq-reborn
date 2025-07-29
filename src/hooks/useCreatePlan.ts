@@ -120,15 +120,15 @@ export function useCreatePlan() {
           const uniquePairs = new Set<string>();
           const rows = linkedFloqIds.flatMap(floqId =>
             payload.invitedUserIds
-              .filter(userId => {
-                const key = `${floqId}_${userId}`;
+              .filter(profileId => {
+                const key = `${floqId}_${profileId}`;
                 if (uniquePairs.has(key)) return false;
                 uniquePairs.add(key);
                 return true;
               })
-              .map(userId => ({
+              .map(profileId => ({
                 floq_id: floqId,
-                user_id: userId,
+                profile_id: profileId,
                 role: 'member' as const,
               }))
           );

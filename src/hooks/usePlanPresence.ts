@@ -12,7 +12,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
 }
 
 export type DBParticipant = {
-  user_id: string;
+  profile_id: string;
   profiles: {
     id: string;
     username: string | null;
@@ -22,7 +22,7 @@ export type DBParticipant = {
 };
 
 export type PresencePayload = {
-  user_id: string;
+  profile_id: string;
   username: string;
   display_name: string;
   avatar_url: string;
@@ -31,7 +31,7 @@ export type PresencePayload = {
 };
 
 export interface ParticipantPresence {
-  userId: string;
+  profileId: string;
   username: string;
   displayName: string;
   avatarUrl: string;
@@ -73,7 +73,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
 
       // Transform and remove duplicates
       const transformedParticipants = (data as DBParticipant[] ?? []).map(participant => ({
-        userId: participant.user_id,
+        profileId: participant.profile_id,
         username: participant.profiles?.username ?? 'Unknown',
         displayName: participant.profiles?.display_name ?? participant.profiles?.username ?? 'Unknown',
         avatarUrl: participant.profiles?.avatar_url ?? '',
@@ -84,7 +84,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
       }));
 
       const uniqueParticipants = transformedParticipants.reduce((acc, participant) => {
-        if (!acc.find(p => p.userId === participant.userId)) {
+        if (!acc.find(p => p.profileId === participant.profileId)) {
           acc.push(participant);
         }
         return acc;
@@ -108,7 +108,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
     
     const state = channel.presenceState() as Record<string, PresencePayload[]>;
     const presenceList = Object.values(state).flat().map(raw => ({
-      userId: raw.user_id,
+      profileId: raw.profile_id,
       username: raw.username,
       displayName: raw.display_name,
       avatarUrl: raw.avatar_url,
@@ -120,7 +120,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
     
     // Merge presence data with SQL participants
     const mergedParticipants = participants.map(p => {
-      const presenceData = presenceList.find(pr => pr.userId === p.userId);
+      const presenceData = presenceList.find(pr => pr.profileId === p.profileId);
       return presenceData ? {
         ...p,
         isOnline: presenceData.isOnline,
@@ -169,7 +169,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
     if (!ch) return;
     
     await ch.track({
-      user_id: session.user.id,
+      profile_id: session.user.id,
       username: session.user.user_metadata?.username ?? session.user.email ?? 'Anonymous',
       display_name: session.user.user_metadata?.display_name ?? session.user.user_metadata?.username ?? session.user.email ?? 'Anonymous',
       avatar_url: session.user.user_metadata?.avatar_url ?? '',

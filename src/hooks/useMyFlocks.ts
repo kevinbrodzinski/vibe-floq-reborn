@@ -22,7 +22,7 @@ const CountRowSchema = z.object({
 });
 
 // Extract the query function for better organization
-const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
+const fetchMyFloqs = async (profileId: string): Promise<MyFloq[]> => {
   if (import.meta.env.DEV) console.info('🚀 Fetching my floqs from DB');
 
   // Query for floqs I'm participating in (not creator)
@@ -45,7 +45,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
         deleted_at
       )
     `)
-    .eq('user_id', userId)
+    .eq('profile_id', profileId)
     .neq('role', 'creator');
 
   // Query for floqs I created
@@ -64,7 +64,7 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
       created_at,
       deleted_at
     `)
-    .eq('creator_id', userId);
+    .eq('creator_id', profileId);
 
   const [participatedResult, createdResult] = await Promise.all([
     participatedQuery,
@@ -213,19 +213,19 @@ const fetchMyFloqs = async (userId: string): Promise<MyFloq[]> => {
 
 export const useMyFlocks = () => {
   const { session } = useAuth();
-  const userId = session?.user?.id;
+  const profileId = session?.user?.id;
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
 
   const invalidate = useCallback(() => {
     // Add a small delay to prevent race conditions
     setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['my-floqs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['my-floqs', profileId] });
     }, 100);
-  }, [queryClient, userId]);
+  }, [queryClient, profileId]);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!profileId) return;
 
     // Clean up existing channel first
     if (channelRef.current) {
@@ -234,12 +234,12 @@ export const useMyFlocks = () => {
     }
 
     const channel = supabase
-      .channel(`my-flocks-${userId}`)
+      .channel(`my-flocks-${profileId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'floqs',
-        filter: `creator_id=eq.${userId}`
+        filter: `creator_id=eq.${profileId}`
       }, invalidate)
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -250,13 +250,13 @@ export const useMyFlocks = () => {
         event: 'INSERT',
         schema: 'public',
         table: 'floq_participants',
-        filter: `user_id=eq.${userId}`
+        filter: `profile_id=eq.${profileId}`
       }, invalidate)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'floq_participants',
-        filter: `user_id=eq.${userId}`
+        filter: `profile_id=eq.${profileId}`
       }, invalidate)
       .subscribe();
 
@@ -268,12 +268,12 @@ export const useMyFlocks = () => {
         channelRef.current = null;
       }
     };
-  }, [userId, invalidate]);
+  }, [profileId, invalidate]);
 
   return useQuery({
-    queryKey: ['my-floqs', userId],
-    queryFn: () => fetchMyFloqs(userId!),
-    enabled: !!userId,
+    queryKey: ['my-floqs', profileId],
+    queryFn: () => fetchMyFloqs(profileId!),
+    enabled: !!profileId,
     placeholderData: [],
     staleTime: 30_000, // Raised to 30s to work better with realtime
     gcTime: 300_000,

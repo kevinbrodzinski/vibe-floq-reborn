@@ -88,13 +88,13 @@ export function InviteOverlay({
         table: 'plan_participants',
         filter: `plan_id=eq.${planId}`
       }, async (payload) => {
-        const userId = payload.new?.user_id;
-        if (!userId) return;
+        const profileId = payload.new?.user_id;
+        if (!profileId) return;
 
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, username, display_name, avatar_url')
-          .eq('id', userId)
+          .eq('id', profileId)
           .maybeSingle();
 
         if (profile) {
@@ -182,11 +182,11 @@ export function InviteOverlay({
     }
   };
 
-  const toggleUserSelection = (userId: string) => {
+  const toggleUserSelection = (profileId: string) => {
     setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
+      prev.includes(profileId) 
+        ? prev.filter(id => id !== profileId)
+        : [...prev, profileId]
     );
   };
 
@@ -476,17 +476,17 @@ export function InviteOverlay({
 
                         {selectedUsers.length > 0 && (
                           <div className="flex flex-wrap gap-1 pt-2">
-                            {selectedUsers.map((userId) => {
-                              const user = suggestions.find(s => s.id === userId) || 
-                                          floqMembers.find(m => m.id === userId) ||
-                                          friends.find(f => f.id === userId);
+                            {selectedUsers.map((profileId) => {
+                              const user = suggestions.find(s => s.id === profileId) || 
+                                          floqMembers.find(m => m.id === profileId) ||
+                                          friends.find(f => f.id === profileId);
                               if (!user) return null;
                               return (
-                                <Badge key={userId} variant="secondary" className="text-xs">
+                                <Badge key={profileId} variant="secondary" className="text-xs">
                                   {user.display_name || user.username}
                                   <X
                                     className="w-3 h-3 ml-1 cursor-pointer"
-                                    onClick={() => toggleUserSelection(userId)}
+                                    onClick={() => toggleUserSelection(profileId)}
                                   />
                                 </Badge>
                               );
@@ -558,15 +558,15 @@ export function InviteOverlay({
 
                     {selectedUsers.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-2">
-                        {selectedUsers.map((userId) => {
-                          const user = floqMembers.find(m => m.id === userId);
+                        {selectedUsers.map((profileId) => {
+                          const user = floqMembers.find(m => m.id === profileId);
                           if (!user) return null;
                           return (
-                            <Badge key={userId} variant="secondary" className="text-xs">
+                            <Badge key={profileId} variant="secondary" className="text-xs">
                               {user.display_name || user.username}
                               <X
                                 className="w-3 h-3 ml-1 cursor-pointer"
-                                onClick={() => toggleUserSelection(userId)}
+                                onClick={() => toggleUserSelection(profileId)}
                               />
                             </Badge>
                           );

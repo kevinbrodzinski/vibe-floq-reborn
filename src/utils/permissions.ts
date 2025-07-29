@@ -7,13 +7,13 @@
  */
 export const hasManagePermission = (
   creatorId: string | null | undefined,
-  userId: string | null | undefined,
+  profileId: string | null | undefined,
   userRole?: string
 ): boolean => {
-  if (!userId || !creatorId) return false;
+  if (!profileId || !creatorId) return false;
   
   // Host/creator always has manage permissions
-  if (creatorId === userId) return true;
+  if (creatorId === profileId) return true;
   
   // Future: Add support for moderator/admin roles
   if (userRole === 'moderator' || userRole === 'admin') return true;
@@ -26,7 +26,7 @@ export const hasManagePermission = (
  */
 export const isFloqHost = (
   creatorId: string | null | undefined,
-  userId: string | null | undefined
+  profileId: string | null | undefined
 ): boolean => {
-  return !!(creatorId && userId && creatorId === userId);
+  return !!(creatorId && profileId && creatorId === profileId);
 };

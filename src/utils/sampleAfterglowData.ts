@@ -20,7 +20,7 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
       people: {
         encountered_users: [
           {
-            user_id: 'user_456',
+            profile_id: 'user_456',
             interaction_strength: 0.3,
             shared_duration: 15,
             interaction_type: 'brief'
@@ -53,19 +53,19 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
       people: {
         encountered_users: [
           {
-            user_id: 'user_789',
+            profile_id: 'user_789',
             interaction_strength: 0.8,
             shared_duration: 120,
             interaction_type: 'hangout'
           },
           {
-            user_id: 'user_101',
+            profile_id: 'user_101',
             interaction_strength: 0.6,
             shared_duration: 90,
             interaction_type: 'activity'
           },
           {
-            user_id: 'user_202',
+            profile_id: 'user_202',
             interaction_strength: 0.7,
             shared_duration: 105,
             interaction_type: 'chat'
@@ -100,13 +100,13 @@ export const sampleMomentsWithMetadata: AfterglowMoment[] = [
       people: {
         encountered_users: [
           {
-            user_id: 'user_789',
+            profile_id: 'user_789',
             interaction_strength: 0.9,
             shared_duration: 45,
             interaction_type: 'hangout'
           },
           {
-            user_id: 'user_303',
+            profile_id: 'user_303',
             interaction_strength: 0.4,
             shared_duration: 20,
             interaction_type: 'chat'

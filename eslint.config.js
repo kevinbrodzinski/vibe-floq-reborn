@@ -32,8 +32,16 @@ export default tseslint.config(
 
       /* ❷  Lesser noisy rules (already WARN/OFF) */
       "react-refresh/only-export-components":    "off",
-      "no-restricted-syntax":                    "off",
       "@typescript-eslint/no-require-imports":   "warn",
+
+      /* ❸  Prevent userId usage - use profileId instead */
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Identifier[name='userId']",
+          message: "Use profileId instead of userId",
+        },
+      ],
 
       /* ❸  Unused vars → WARN, ignore leading "_" */
       "@typescript-eslint/no-unused-vars": [

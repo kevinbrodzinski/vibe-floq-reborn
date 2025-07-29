@@ -18,7 +18,7 @@ export const usePresenceChannel = () => {
     // Wait for auth to complete and ensure we have required data
     if (authLoading || !vibe || !gh5 || !user?.id) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('⏳ usePresenceChannel waiting for:', { authLoading, vibe: !!vibe, gh5: !!gh5, userId: !!user?.id });
+        console.log('⏳ usePresenceChannel waiting for:', { authLoading, vibe: !!vibe, gh5: !!gh5, profileId: !!user?.id });
       }
       return;
     }
@@ -47,7 +47,7 @@ export const usePresenceChannel = () => {
           if (status === 'SUBSCRIBED') {
             try {
               await ch.track({ 
-                userId: user.id,
+                profileId: user.id,
                 name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
                 avatar: user.user_metadata?.avatar_url,
                 online_at: new Date().toISOString(),
@@ -91,7 +91,7 @@ export const usePresenceChannel = () => {
         // Note: update method doesn't exist on RealtimeChannel, 
         // would need to track again with new state
         existingChannel.track({
-          userId: user.id,
+          profileId: user.id,
           name: user.user_metadata?.username || user.email?.split('@')[0] || 'Unknown',
           avatar: user.user_metadata?.avatar_url,
           online_at: new Date().toISOString(),

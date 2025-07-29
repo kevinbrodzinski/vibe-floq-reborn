@@ -9,10 +9,10 @@ import { useFriendRequests } from "@/hooks/useFriendRequests";
 import { useToast } from "@/hooks/use-toast";
 
 interface ConnectionInsightsProps {
-  userId: string;
+  profileId: string;
 }
 
-export function ConnectionInsights({ userId }: ConnectionInsightsProps) {
+export function ConnectionInsights({ profileId }: ConnectionInsightsProps) {
   const { data: suggestions = [], isLoading } = useFriendSuggestions(6);
   const { sendRequest, isSending } = useFriendRequests();
   const { toast } = useToast();

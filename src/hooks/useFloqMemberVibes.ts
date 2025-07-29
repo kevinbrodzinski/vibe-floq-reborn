@@ -9,7 +9,7 @@ export const useFloqMemberVibes = (floqId: string) => {
       // Get current vibes for floq members
       const { data: participants } = await supabase
         .from('floq_participants')
-        .select('user_id')
+        .select('profile_id')
         .eq('floq_id', floqId);
 
       if (!participants?.length) return [];
@@ -18,8 +18,8 @@ export const useFloqMemberVibes = (floqId: string) => {
       
       const { data: vibes, error } = await supabase
         .from('user_vibe_states')
-        .select('user_id, vibe_tag, started_at, location')
-        .in('user_id', userIds)
+        .select('profile_id, vibe_tag, started_at, location')
+        .in('profile_id', userIds)
         .eq('active', true)
         .gte('started_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()); // Last 2 hours
 

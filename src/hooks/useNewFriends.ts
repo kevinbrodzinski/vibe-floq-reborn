@@ -84,7 +84,7 @@ export const useSendFriendRequest = () => {
       const { error } = await supabase
         .from('friend_requests')
         .insert({ 
-          user_id: user.id, 
+          profile_id: user.id, 
           friend_id: friendId,
           status: 'pending'
         });
@@ -128,7 +128,7 @@ export const useRespondToFriendRequest = () => {
       if (status === 'accepted') {
         const { data: request } = await supabase
           .from('friend_requests')
-          .select('user_id, friend_id')
+          .select('profile_id, friend_id')
           .eq('id', id)
           .single();
 

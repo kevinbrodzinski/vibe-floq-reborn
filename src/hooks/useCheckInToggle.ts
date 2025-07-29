@@ -43,7 +43,7 @@ export function useCheckInToggle() {
         // Log activity
         await supabase.from('plan_activities').insert({
           plan_id: planId,
-          user_id: user.id,
+          profile_id: user.id,
           activity_type: 'check_out',
           entity_id: stopId,
           entity_type: 'stop',
@@ -68,7 +68,7 @@ export function useCheckInToggle() {
         // Log activity
         await supabase.from('plan_activities').insert({
           plan_id: planId,
-          user_id: user.id,
+          profile_id: user.id,
           activity_type: 'check_in',
           entity_id: stopId,
           entity_type: 'stop',

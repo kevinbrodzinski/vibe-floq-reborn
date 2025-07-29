@@ -9,7 +9,7 @@ export function useUserBoostStatus(floqId: string) {
         .from('floq_boosts')
         .select('*')
         .eq('floq_id', floqId)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
         .maybeSingle()
 
       if (error) throw error

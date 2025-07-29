@@ -89,11 +89,11 @@ export const useToggleFavorite = () => {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  return useMutation<boolean, Error, {afterglowId: string; isFavorite: boolean; userId: string}, FavoriteMutationContext>({
-    mutationFn: async ({ afterglowId, isFavorite, userId }: { 
+  return useMutation<boolean, Error, {afterglowId: string; isFavorite: boolean; profileId: string}, FavoriteMutationContext>({
+    mutationFn: async ({ afterglowId, isFavorite, profileId }: { 
       afterglowId: string 
       isFavorite: boolean
-      userId: string
+      profileId: string
     }) => {
       if (isFavorite) {
         // Remove from favorites
@@ -101,7 +101,7 @@ export const useToggleFavorite = () => {
           .from('afterglow_favorites')
           .delete()
           .eq('daily_afterglow_id', afterglowId)
-          .eq('user_id', userId)
+          .eq('profile_id', profileId)
         
         if (error) throw error
         return false
@@ -111,7 +111,7 @@ export const useToggleFavorite = () => {
           .from('afterglow_favorites')
           .insert({
             daily_afterglow_id: afterglowId,
-            user_id: userId
+            profile_id: profileId
           })
         
         if (error) throw error

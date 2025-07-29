@@ -35,7 +35,7 @@ export function useTrackInviteRSVP() {
           .from('plan_participants')
           .insert({
             plan_id: planId,
-            user_id: user.id,
+            profile_id: user.id,
             invite_type: 'invitation',
           })
 

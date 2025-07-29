@@ -168,7 +168,7 @@ export const InvitePeopleModal: React.FC<Props> = ({
                   size="sm"
                   disabled={addMember.isPending}
                   onClick={() => {
-                    addMember.mutate({ planId, userId: u.id }, {
+                    addMember.mutate({ planId, profileId: u.id }, {
                       onSuccess: () => {
                         toast({
                           title: 'Invitation sent',

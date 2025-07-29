@@ -6,18 +6,18 @@ import { useAuth } from '@/providers/AuthProvider';
 export function VibeRealtime() {
   const sync = useVibe((s) => s.syncFromRemote);
   const { user, loading: authLoading } = useAuth();
-  const userId = user?.id;
+  const profileId = user?.id;
 
   // Initial fetch for brand-new installs
   useEffect(() => {
-    if (authLoading || !userId) return;
+    if (authLoading || !profileId) return;
     
     const fetchInitialVibe = async () => {
       try {
         const { data, error } = await supabase
           .from('vibes_now')
           .select('vibe, updated_at')
-          .eq('user_id', userId)
+          .eq('profile_id', profileId)
           .maybeSingle();
         
         if (data && !error) {
@@ -37,19 +37,19 @@ export function VibeRealtime() {
     };
     
     fetchInitialVibe();
-  }, [authLoading, userId, sync]);
+  }, [authLoading, profileId, sync]);
 
   // Realtime subscription management
   useEffect(() => {
-    if (authLoading || !userId) {
+    if (authLoading || !profileId) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('⏳ VibeRealtime waiting for auth:', { authLoading, userId: !!userId });
+        console.log('⏳ VibeRealtime waiting for auth:', { authLoading, profileId: !!profileId });
       }
       return;
     }
 
     // Ensure only one channel in dev hot-reload
-    const key = `vibe-now-${userId}`;
+    const key = `vibe-now-${profileId}`;
     const existing = supabase.getChannels().find((c) => c.topic === key);
     
     try {
@@ -63,7 +63,7 @@ export function VibeRealtime() {
               event: 'UPDATE',
               schema: 'public',
               table: 'vibes_now',
-              filter: `user_id=eq.${userId}`,
+              filter: `profile_id=eq.${profileId}`,
             },
             (payload) => {
               try {
@@ -75,10 +75,10 @@ export function VibeRealtime() {
           )
           .subscribe((status) => {
             if (process.env.NODE_ENV === 'development') {
-              console.log('📡 Vibe channel status:', status, 'for user:', userId);
+              console.log('📡 Vibe channel status:', status, 'for user:', profileId);
             }
             if (status === 'CHANNEL_ERROR') {
-              console.warn('Vibe channel connection failed for user:', userId);
+              console.warn('Vibe channel connection failed for user:', profileId);
             }
           });
 
@@ -92,7 +92,7 @@ export function VibeRealtime() {
     } catch (channelError) {
       console.error('Failed to create vibe channel:', channelError);
     }
-  }, [authLoading, userId, sync]);
+  }, [authLoading, profileId, sync]);
 
   // Clean up channels and store on auth state change
   useEffect(() => {

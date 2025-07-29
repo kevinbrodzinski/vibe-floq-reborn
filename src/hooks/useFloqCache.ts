@@ -286,14 +286,14 @@ export function useFloqCache() {
     queryClient.invalidateQueries({ queryKey: ['floq', floqId] });
   }, [queryClient]);
 
-  const invalidateUserData = useCallback((userId: string) => {
+  const invalidateUserData = useCallback((profileId: string) => {
     // Clear cache entries related to this user
     const keysToDelete: string[] = [];
     // This would need to be implemented based on your cache key patterns
     keysToDelete.forEach(key => floqCache.delete(key));
     
     // Also invalidate React Query cache
-    queryClient.invalidateQueries({ queryKey: ['user', userId] });
+    queryClient.invalidateQueries({ queryKey: ['user', profileId] });
   }, [queryClient]);
 
   // Performance monitoring

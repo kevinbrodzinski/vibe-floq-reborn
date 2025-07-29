@@ -145,17 +145,17 @@ export function getEnvironmentConfig(): EnvironmentConfig {
 /**
  * Check if a user should be included in the rollout
  */
-export function isUserInRollout(userId?: string, config?: EnvironmentConfig): boolean {
+export function isUserInRollout(profileId?: string, config?: EnvironmentConfig): boolean {
   const env = config || getEnvironmentConfig();
   
   // Force include specific user
-  if (env.rolloutUserId && userId === env.rolloutUserId) {
+  if (env.rolloutUserId && profileId === env.rolloutUserId) {
     return true;
   }
   
   // Percentage-based rollout using djb2 hash
-  if (env.rolloutPercentage > 0 && userId) {
-    const pct = getPercentageBucket(userId);
+  if (env.rolloutPercentage > 0 && profileId) {
+    const pct = getPercentageBucket(profileId);
     return pct <= env.rolloutPercentage;
   }
   

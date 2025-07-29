@@ -60,7 +60,7 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
         const { data: progressData, error: progressError } = await supabase
           .from('user_onboarding_progress')
           .select('completed_at, onboarding_version')
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .eq('onboarding_version', ONBOARDING_VERSION)
           .maybeSingle();
 
@@ -112,7 +112,7 @@ export function AppAccessGuard({ children }: { children: React.ReactNode }) {
   // Debug logging with more detail
   console.log('[AppAccessGuard Debug]', {
     user: !!user,
-    userId: user?.id,
+    profileId: user?.id,
     preferences: !!preferences,
     preferencesVersion: preferences?.onboarding_version,
     onboardingVersion: ONBOARDING_VERSION,

@@ -3,11 +3,9 @@ project_id = "reztyrrafsmlvvlqvsqt"
 
 [functions."cleanup-orphaned-avatars"]
 verify_jwt = false
-memory = 256
 
 [functions."daily-recap-builder"]
 verify_jwt = false
-memory = 256
 
 [functions.generate-plan-recap]
 verify_jwt = true

@@ -19,7 +19,7 @@ export function usePlanInviteListener() {
           event: 'INSERT',
           schema: 'public',
           table: 'plan_invites',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         (payload) => {
           const planId = payload.new.plan_id as string

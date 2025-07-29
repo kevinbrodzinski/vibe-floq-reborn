@@ -7,7 +7,7 @@ export interface RealtimeEvent {
   type: 'message' | 'presence' | 'activity' | 'location' | 'vibe' | 'typing' | 'reaction' | 'join' | 'leave';
   data: any;
   timestamp: Date;
-  userId: string;
+  profileId: string;
 }
 
 export interface RealtimeStats {
@@ -338,7 +338,7 @@ export function useFloqRealtime(floqId: string) {
         type: 'broadcast',
         event: 'typing',
         payload: {
-          userId: user.id,
+          profileId: user.id,
           isTyping,
           timestamp: new Date().toISOString()
         }
@@ -358,7 +358,7 @@ export function useFloqRealtime(floqId: string) {
         event: 'reaction',
         payload: {
           messageId,
-          userId: user.id,
+          profileId: user.id,
           emoji,
           timestamp: new Date().toISOString()
         }
