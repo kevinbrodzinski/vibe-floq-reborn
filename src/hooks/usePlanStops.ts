@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { mapPlanStopFromDb } from '@/types/mappers'
-import type { PlanStopRow } from '@/types/database'
+import type { Database } from '@/integrations/supabase/types'
+
+type PlanStopRow = Database['public']['Tables']['plan_stops']['Row'] & {
+  venue?: Database['public']['Tables']['venues']['Row'];
+};
 
 export function usePlanStops(plan_id: string) {
   return useQuery({

@@ -147,7 +147,7 @@ export const PulseScreen: React.FC = () => {
   // Real-time Pulse data
   const radiusArg = filters.has('walking') ? WALKING_THRESHOLD_M : 2000;
   const { data: trendingVenues = [] } = useTrendingVenues(radiusArg, 5);
-  const { data: liveActivity, fetchNextPage, hasNextPage, isFetchingNextPage } = useLiveActivity(coords?.lat ?? 0, coords?.lng ?? 0, 1);
+  const { data: livePages } = useLiveActivity();
   const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather();
   const { data: pulseBadges } = usePulseBadges(user?.id);
 

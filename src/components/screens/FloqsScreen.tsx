@@ -443,16 +443,20 @@ export const FloqsScreen = () => {
       {/* Featured Floqs Grid */}
       {floqsCount > 0 && (
         <div className="space-y-6 mb-8">
-          {floqs.map((floq) => (
-            <FloqCard
-              key={floq.id}
-              row={floq}
-              onJoin={() => handleJoinFloq(floq.id)}
-              onChat={() => handleChat(floq)}
-              onSuggestChange={() => handleSuggestChange(floq)}
-              onCardClick={() => navigate(`/floqs/${floq.id}`)}
-            />
-          ))}
+          {floqs.map((floq, idx) => {
+            const floqRow = floq as unknown as FloqRow;
+            if (!floqRow?.id) return null;
+            return (
+              <FloqCard
+                key={floqRow.id}
+                row={floqRow}
+                onJoin={() => handleJoinFloq(floqRow.id)}
+                onChat={() => handleChat(floqRow)}
+                onSuggestChange={() => handleSuggestChange(floqRow)}
+                onCardClick={() => navigate(`/floqs/${floqRow.id}`)}
+              />
+            );
+          })}
         </div>
       )}
 
