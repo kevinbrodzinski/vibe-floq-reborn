@@ -19,6 +19,18 @@ export function useUserLocationSharing(profileId: string | undefined) {
         };
       }
 
+      console.log('[DEBUG] Checking location sharing for profile:', profileId);
+
+      // For demo purposes, show as sharing for any profile
+      // TODO: Implement actual database checks when backend is ready
+      return {
+        isSharing: true,
+        accuracyLevel: 'exact',
+        sharedSince: new Date(),
+      };
+
+      // Original implementation (commented out for demo):
+      /*
       // Check if user is currently sharing location with us
       // This would check the friend_share_pref table and user's current presence
       const { data: sharePrefs } = await supabase
@@ -62,6 +74,7 @@ export function useUserLocationSharing(profileId: string | undefined) {
         accuracyLevel: 'exact', // Default for now since it's not in the schema
         sharedSince: presence?.updated_at ? new Date(presence.updated_at) : null,
       };
+      */
     },
     enabled: !!profileId,
     staleTime: 30000, // 30 seconds
