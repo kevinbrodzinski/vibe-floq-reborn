@@ -7,10 +7,12 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Lock } from 'lucide-react';
 import { getAvatarUrl } from '@/lib/avatar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLiveSettings } from '@/hooks/useLiveSettings';
 
 export const FriendOverrideList = () => {
     const { friendsWithPresence, isLoading: friendsLoading } = useFriends();
+    const { data: liveSettings } = useLiveSettings();
     const queryClient = useQueryClient();
     const [optimisticState, setOptimisticState] = useState<Record<string, boolean>>({});
 
@@ -27,6 +29,37 @@ export const FriendOverrideList = () => {
             return Object.fromEntries(data.map(r => [r.friend_id, r.is_live]));
         }
     });
+
+    // Auto-enable friend sharing when "friends" scope is selected
+    useEffect(() => {
+        if (liveSettings?.live_scope === 'friends' && 
+            liveSettings.live_auto_when.includes('always') &&
+            friendsWithPresence.length > 0 &&
+            Object.keys(sharePrefs).length === 0) {
+            
+            // If no preferences exist yet and user selected friends + always, 
+            // automatically enable sharing for all friends
+            const enableAllFriends = async () => {
+                const friendIds = friendsWithPresence.map(f => f.friend_id);
+                
+                try {
+                    const { error } = await supabase.rpc('set_live_share_bulk', {
+                        _friend_ids: friendIds,
+                        _on: true,
+                        _auto_when: ['always']
+                    });
+                    
+                    if (!error) {
+                        queryClient.invalidateQueries({ queryKey: ['share-prefs'] });
+                    }
+                } catch (error) {
+                    console.error('Failed to auto-enable friend sharing:', error);
+                }
+            };
+            
+            enableAllFriends();
+        }
+    }, [liveSettings, friendsWithPresence, sharePrefs, queryClient]);
 
     const mutation = useMutation({
         mutationFn: async ({ friendId, isLive }: { friendId: string; isLive: boolean }) => {
@@ -79,8 +112,22 @@ export const FriendOverrideList = () => {
         );
     }
 
-    // Merge optimistic state with actual state
+    // Merge optimistic state with actual state, with smart defaults
     const effectiveSharePrefs = { ...sharePrefs, ...optimisticState };
+    
+    // Apply smart defaults based on scope settings
+    friendsWithPresence.forEach(friend => {
+        if (!(friend.friend_id in effectiveSharePrefs)) {
+            // If no explicit preference exists, default based on scope
+            if (liveSettings?.live_scope === 'friends' && 
+                liveSettings.live_auto_when.includes('always')) {
+                effectiveSharePrefs[friend.friend_id] = true; // Default to sharing
+            } else {
+                effectiveSharePrefs[friend.friend_id] = false; // Default to not sharing
+            }
+        }
+    });
+    
     const sharingCount = Object.values(effectiveSharePrefs).filter(Boolean).length;
     const totalFriends = friendsWithPresence.length;
 
