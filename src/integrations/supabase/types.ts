@@ -1057,7 +1057,6 @@ export type Database = {
           new_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           profile_id: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -1068,7 +1067,6 @@ export type Database = {
           new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           profile_id?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -1079,7 +1077,6 @@ export type Database = {
           new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           profile_id?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -1365,7 +1362,6 @@ export type Database = {
           floq_id: string
           id: string
           profile_id: string | null
-          user_id: string | null
         }
         Insert: {
           boost_type?: string
@@ -1374,7 +1370,6 @@ export type Database = {
           floq_id: string
           id?: string
           profile_id?: string | null
-          user_id?: string | null
         }
         Update: {
           boost_type?: string
@@ -1383,7 +1378,6 @@ export type Database = {
           floq_id?: string
           id?: string
           profile_id?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -1473,7 +1467,6 @@ export type Database = {
           profile_id: string | null
           responded_at: string | null
           status: Database["public"]["Enums"]["invitation_status"]
-          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1484,7 +1477,6 @@ export type Database = {
           profile_id?: string | null
           responded_at?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
-          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1495,7 +1487,6 @@ export type Database = {
           profile_id?: string | null
           responded_at?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -1818,7 +1809,6 @@ export type Database = {
           last_read_message_at: string
           profile_id: string | null
           role: string | null
-          user_id: string | null
         }
         Insert: {
           floq_id: string
@@ -1826,7 +1816,6 @@ export type Database = {
           last_read_message_at?: string
           profile_id?: string | null
           role?: string | null
-          user_id?: string | null
         }
         Update: {
           floq_id?: string
@@ -1834,7 +1823,6 @@ export type Database = {
           last_read_message_at?: string
           profile_id?: string | null
           role?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -2281,7 +2269,6 @@ export type Database = {
           profile_id: string | null
           responded_at: string | null
           status: string | null
-          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -2290,7 +2277,6 @@ export type Database = {
           profile_id?: string | null
           responded_at?: string | null
           status?: string | null
-          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -2299,7 +2285,6 @@ export type Database = {
           profile_id?: string | null
           responded_at?: string | null
           status?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -2415,7 +2400,6 @@ export type Database = {
           status: string
           user_a: string
           user_b: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -2424,7 +2408,6 @@ export type Database = {
           status?: string
           user_a: string
           user_b: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -2433,7 +2416,6 @@ export type Database = {
           status?: string
           user_a?: string
           user_b?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -2965,7 +2947,6 @@ export type Database = {
           reply_to_id: string | null
           stop_id: string | null
           updated_at: string | null
-          user_id: string | null
         }
         Insert: {
           content: string
@@ -2977,7 +2958,6 @@ export type Database = {
           reply_to_id?: string | null
           stop_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Update: {
           content?: string
@@ -2989,7 +2969,6 @@ export type Database = {
           reply_to_id?: string | null
           stop_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -3088,7 +3067,6 @@ export type Database = {
           id: string
           plan_id: string
           profile_id: string | null
-          user_id: string | null
           vibe_rating: number | null
           would_repeat: boolean | null
         }
@@ -3098,7 +3076,6 @@ export type Database = {
           id?: string
           plan_id: string
           profile_id?: string | null
-          user_id?: string | null
           vibe_rating?: number | null
           would_repeat?: boolean | null
         }
@@ -3108,7 +3085,6 @@ export type Database = {
           id?: string
           plan_id?: string
           profile_id?: string | null
-          user_id?: string | null
           vibe_rating?: number | null
           would_repeat?: boolean | null
         }
@@ -3287,7 +3263,6 @@ export type Database = {
           profile_id: string | null
           status: Database["public"]["Enums"]["invite_status"]
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           inserted_at?: string
@@ -3295,7 +3270,6 @@ export type Database = {
           profile_id?: string | null
           status?: Database["public"]["Enums"]["invite_status"]
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           inserted_at?: string
@@ -3303,7 +3277,6 @@ export type Database = {
           profile_id?: string | null
           status?: Database["public"]["Enums"]["invite_status"]
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -3346,7 +3319,6 @@ export type Database = {
           responded_at: string | null
           role: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id: string | null
         }
         Insert: {
           guest_email?: string | null
@@ -3364,7 +3336,6 @@ export type Database = {
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
         }
         Update: {
           guest_email?: string | null
@@ -3382,7 +3353,6 @@ export type Database = {
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -3808,7 +3778,6 @@ export type Database = {
           profile_id: string | null
           stop_id: string
           updated_at: string | null
-          user_id: string | null
           vote_type: string
         }
         Insert: {
@@ -3821,7 +3790,6 @@ export type Database = {
           profile_id?: string | null
           stop_id: string
           updated_at?: string | null
-          user_id?: string | null
           vote_type: string
         }
         Update: {
@@ -3834,7 +3802,6 @@ export type Database = {
           profile_id?: string | null
           stop_id?: string
           updated_at?: string | null
-          user_id?: string | null
           vote_type?: string
         }
         Relationships: [
@@ -5056,7 +5023,6 @@ export type Database = {
           profile_id: string | null
           social_streak_weeks: number | null
           updated_at: string | null
-          user_id: string | null
           vibe_color: string | null
           vibe_detection_enabled: boolean | null
           vibe_strength: number | null
@@ -5077,7 +5043,6 @@ export type Database = {
           profile_id?: string | null
           social_streak_weeks?: number | null
           updated_at?: string | null
-          user_id?: string | null
           vibe_color?: string | null
           vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
@@ -5098,7 +5063,6 @@ export type Database = {
           profile_id?: string | null
           social_streak_weeks?: number | null
           updated_at?: string | null
-          user_id?: string | null
           vibe_color?: string | null
           vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
@@ -5177,7 +5141,6 @@ export type Database = {
           profile_id: string | null
           theme_preferences: Json | null
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           available_until?: string | null
@@ -5193,7 +5156,6 @@ export type Database = {
           profile_id?: string | null
           theme_preferences?: Json | null
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           available_until?: string | null
@@ -5209,7 +5171,6 @@ export type Database = {
           profile_id?: string | null
           theme_preferences?: Json | null
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -5549,7 +5510,6 @@ export type Database = {
           distance_m: number | null
           id: number
           profile_id: string | null
-          user_id: string | null
           venue_id: string
         }
         Insert: {
@@ -5559,7 +5519,6 @@ export type Database = {
           distance_m?: number | null
           id?: number
           profile_id?: string | null
-          user_id?: string | null
           venue_id: string
         }
         Update: {
@@ -5569,7 +5528,6 @@ export type Database = {
           distance_m?: number | null
           id?: number
           profile_id?: string | null
-          user_id?: string | null
           venue_id?: string
         }
         Relationships: [
