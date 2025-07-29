@@ -15,7 +15,7 @@ export function LiveCursors({ planId, enabled = true }: LiveCursorsProps) {
     <div {...zIndex('system')} className="fixed inset-0 pointer-events-none">
       <AnimatePresence>
         {participants.filter(p => p.isOnline).map((participant) => (
-          <CursorIndicator key={participant.userId} participant={participant} />
+          <CursorIndicator key={participant.profileId} participant={participant} />
         ))}
       </AnimatePresence>
     </div>
@@ -27,7 +27,7 @@ interface CursorIndicatorProps {
 }
 
 function CursorIndicator({ participant }: CursorIndicatorProps) {
-  const cursorColor = getUserColor(participant.userId)
+  const cursorColor = getUserColor(participant.profileId)
   
   return (
     <motion.div

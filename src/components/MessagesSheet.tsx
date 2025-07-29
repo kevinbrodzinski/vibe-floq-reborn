@@ -148,11 +148,14 @@ export const MessagesSheet = ({
     .filter(Boolean);
   useAvatarPreloader(avatarPaths, [48]);
 
-  const getUnreadCount = (threadId: string) =>
-    unreadCounts.find((u) => u.thread_id === threadId)?.unread_count || 0;
+  const getUnreadCount = (threadId: string) => {
+    // Note: The unread counts API changed to use 'kind' and 'cnt' format
+    // This will need to be updated when we have thread-specific unread counts
+    return 0; // Temporary fix
+  };
 
   const totalUnread = unreadCounts.reduce(
-    (sum, u) => sum + u.unread_count,
+    (sum, u) => sum + u.cnt,
     0,
   );
 

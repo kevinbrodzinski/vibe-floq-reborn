@@ -24,7 +24,7 @@ export function StopEditingIndicators({ planId, stopId, enabled = true }: StopEd
     >
       <AnimatePresence mode="popLayout">
         {editors.map((editor) => (
-          <EditingIndicator key={`${editor.userId}_${editor.action}`} editor={editor} />
+          <EditingIndicator key={`${editor.profileId}_${editor.action}`} editor={editor} />
         ))}
       </AnimatePresence>
     </motion.div>
@@ -138,7 +138,7 @@ export function MultiUserConflictResolver({
       
       <div className="space-y-2">
         {conflictingEditors.map((editor) => (
-          <div key={`${editor.userId}_${editor.stopId}`} className="flex items-center gap-2 text-xs">
+          <div key={`${editor.profileId}_${editor.stopId}`} className="flex items-center gap-2 text-xs">
             <div className="w-2 h-2 rounded-full bg-yellow-500" />
             <span>{editor.username}</span>
             <span className="text-yellow-600">({editor.action})</span>
