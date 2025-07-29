@@ -15,7 +15,7 @@ export interface ClusterVenue {
 
 /** Fetches venues that fall inside the current map bounds. */
 export function useClusterVenues(
-  bounds: [w: number, s: number, e: number, n: number] | null
+  bounds: [number, number, number, number] | null
 ) {
   return useQuery<ClusterVenue[]>({
     queryKey: ["cluster-venues", bounds ? JSON.stringify(bounds) : null],
