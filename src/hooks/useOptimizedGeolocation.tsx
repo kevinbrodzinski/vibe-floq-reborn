@@ -149,7 +149,7 @@ export const useOptimizedGeolocation = () => {
         error: null,
       });
       lastPosition.current = { lat: 34.078, lng: -118.261 };
-    }, 20000); // 20 second fallback
+    }, 8000); // 8 second fallback - shorter than geolocation timeout
     
     // Get initial position with reasonable timeout
     navigator.geolocation.getCurrentPosition(
@@ -174,12 +174,13 @@ export const useOptimizedGeolocation = () => {
         };
       },
       (error) => {
-        clearTimeout(fallbackTimer);
+        // Don't clear the fallback timer on error - let it provide fallback location
+        console.log('[GEOLOCATION] Error occurred, fallback will activate shortly');
         errorHandler(error);
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000, // Reduced from 15s to 10s
+        enableHighAccuracy: false, // Disable high accuracy for faster response
+        timeout: 5000, // Much shorter timeout
         maximumAge: 300000, // 5 minutes cache for initial position
       }
     );
