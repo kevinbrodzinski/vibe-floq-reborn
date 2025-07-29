@@ -8,12 +8,18 @@ import {
   ChatMessage, PAGE_SIZE, Surface, rpc_markThreadRead
 } from '@/lib/chat/api';
 
-export const useChatTimeline = (surface: Surface, threadId: string, userId: string) => {
+export const useChatTimeline = (
+  surface: Surface, 
+  threadId: string, 
+  userId: string,
+  options: { enabled?: boolean } = {}
+) => {
   const qc = useQueryClient();
 
   const queryKey = ['chat', surface, threadId];
   const query = useInfiniteQuery<ChatMessage[]>({
     queryKey,
+    enabled: options.enabled !== false,
     initialPageParam: null as string | null,
     getNextPageParam: (last) => last.at(0)?.created_at ?? null,
     queryFn: async ({ pageParam }) => {

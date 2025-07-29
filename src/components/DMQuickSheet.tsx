@@ -28,10 +28,10 @@ import { useUploadMedia } from '@/hooks/chat/useUploadMedia';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
-import type { Surface } from '@/lib/chat/api';
+import { rpc_markThreadRead, type Surface } from '@/lib/chat/api';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
-// TODO: Re-enable these imports after creating the missing components
+import { ChatMediaBubble } from '@/components/chat/ChatMediaBubble';
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -54,13 +54,16 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   // New chat hooks
   const surface: Surface = 'dm';
   const threadId = threadIdFrom(friendId);
-  const timeline = useChatTimeline(surface, threadId, currentUserId ?? '');
+  const timeline = useChatTimeline(surface, threadId, currentUserId ?? '', { 
+    enabled: !!currentUserId && !!friendId && !!threadId 
+  });
   const sendMut = useSendMessage(surface, threadId, currentUserId ?? '');
   const reactMut = useReactToMessage(surface, threadId, currentUserId ?? '');
   const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
 
   // Typing indicator state
   const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
 
   // Debug logging for overlay management
   useEffect(() => {
@@ -85,6 +88,23 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     });
   }, []);
 
+  // Mark as read when sheet opens
+  useEffect(() => {
+    if (open && currentUserId && friendId && threadId) {
+      rpc_markThreadRead({ 
+        p_surface: surface as 'dm' | 'floq' | 'plan', 
+        p_thread_id: threadId, 
+        p_user_id: currentUserId 
+      });
+      
+      // Optimistically clear unread badge
+      queryClient.setQueryData(
+        ['dm-unread', currentUserId],
+        (rows: any[]) => rows?.filter(r => r.thread_id !== threadId) ?? []
+      );
+    }
+  }, [open, currentUserId, friendId, threadId, surface, queryClient]);
+
   // Auto-focus input when sheet opens
   useEffect(() => {
     if (open && !timeline.isLoading) {
@@ -108,7 +128,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const messages = timeline.data?.pages.flat() ?? [];
+    const messages = timeline.data?.pages.flatMap(p => p) ?? [];
     if (messages.length > 0) {
       const id = requestAnimationFrame(() =>
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -118,18 +138,55 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   }, [timeline.data?.pages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-    // Optional: Add typing indicator logic here
+    const value = e.target.value;
+    setInput(value);
+    
+    // Typing indicator logic
+    if (value.length === 1 && !isTyping) {
+      setIsTyping(true);
+      // TODO: Implement sendTyping('start') when ready
+    }
+    
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    // Set new timeout to stop typing indicator
+    const timeout = window.setTimeout(() => {
+      setIsTyping(false);
+      // TODO: Implement sendTyping('stop') when ready
+    }, 3000);
+    
+    setTypingTimeout(timeout);
   };
+
+  // Auto-clear typing when input becomes empty
+  useEffect(() => {
+    if (!input && isTyping) {
+      setIsTyping(false);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
+    }
+  }, [input, isTyping, typingTimeout]);
 
   const handleSend = async () => {
     if (!input.trim() || sendMut.isPending) return;
+
+    // Clear typing state immediately
+    setIsTyping(false);
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      setTypingTimeout(null);
+    }
 
     try {
       await sendMut.mutateAsync({ text: input.trim() });
       setInput('');
       
-      // Invalidate unread counts
+      // Note: sendMut already invalidates queries optimistically, but keeping for safety
       queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
     } catch (error) {
@@ -224,7 +281,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           ) : (
-            (timeline.data?.pages.flat() ?? []).map((message) => {
+            (timeline.data?.pages.flatMap(p => p) ?? []).map((message) => {
               const isOwn = message.sender_id === currentUserId;
               return (
                 <div
@@ -237,10 +294,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                   )}
                 >
                   {message.metadata?.media ? (
-                    <img 
-                      src={`${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/${message.metadata.media.bucket}/${message.metadata.media.key}`}
-                      className="rounded-lg max-w-xs" 
-                      alt="Shared media"
+                    <ChatMediaBubble 
+                      media={message.metadata.media}
+                      className="max-w-xs"
                     />
                   ) : (
                     <div className="text-sm">{message.content}</div>
