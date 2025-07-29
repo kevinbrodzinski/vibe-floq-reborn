@@ -114,18 +114,47 @@ export const useOptimizedGeolocation = () => {
 
     const errorHandler = (error: GeolocationPositionError) => {
       console.log('[GEOLOCATION] Error:', error.message, 'Code:', error.code);
+      let errorMessage = error.message;
+      
+      // Provide more user-friendly error messages
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Location access denied';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Position update is unavailable';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Timeout expired';
+          break;
+      }
+      
       setLocation(prev => ({
         ...prev,
         loading: false,
-        error: error.message,
+        error: errorMessage,
       }));
     };
 
     console.log('[GEOLOCATION] Requesting initial position...');
     
-    // Get initial position with higher timeout for first fix
+    // Set a maximum timeout before falling back to debug location
+    const fallbackTimer = setTimeout(() => {
+      console.log('[GEOLOCATION] Fallback timeout reached, using default location');
+      setLocation({
+        lat: 34.078,
+        lng: -118.261,
+        accuracy: 1000,
+        loading: false,
+        error: null,
+      });
+      lastPosition.current = { lat: 34.078, lng: -118.261 };
+    }, 20000); // 20 second fallback
+    
+    // Get initial position with reasonable timeout
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        clearTimeout(fallbackTimer);
         console.log('[GEOLOCATION] Got initial position:', {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -144,10 +173,13 @@ export const useOptimizedGeolocation = () => {
           lng: position.coords.longitude 
         };
       },
-      errorHandler,
+      (error) => {
+        clearTimeout(fallbackTimer);
+        errorHandler(error);
+      },
       {
         enableHighAccuracy: true,
-        timeout: 15000,
+        timeout: 10000, // Reduced from 15s to 10s
         maximumAge: 300000, // 5 minutes cache for initial position
       }
     );

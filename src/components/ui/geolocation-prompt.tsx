@@ -29,6 +29,12 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
     }
   };
 
+  const handleSkipLocation = () => {
+    // Set default location and continue
+    localStorage.setItem('floq-debug-forceLoc', '34.078,-118.261'); // Venice, CA  
+    window.location.reload();
+  };
+
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader className="text-center">
@@ -77,6 +83,15 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
               Use Debug Location (Dev)
             </Button>
           )}
+          
+          {/* Always show skip option for stuck users */}
+          <Button
+            variant="ghost"
+            onClick={handleSkipLocation}
+            className="w-full text-xs text-muted-foreground"
+          >
+            Continue with Demo Location
+          </Button>
         </div>
 
         <div className="text-xs text-muted-foreground">
