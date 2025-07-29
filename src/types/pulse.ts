@@ -22,6 +22,7 @@ export interface TrendingVenue {
   people_now:   number;
   last_seen_at: string;
   trend_score:  number;
+  vibe_tag?:    string; // Add missing vibe_tag property
 }
 
 export interface WeatherSnapshot {

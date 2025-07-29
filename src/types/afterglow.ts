@@ -11,7 +11,7 @@ export interface AfterglowMoment {
 
 export interface DailyAfterglowData {
   id: string;
-  user_id: string;       // TODO(user): Will be updated to profile_id once database migration is complete
+  profile_id: string;
   date: string;
   vibe_path: string[];
   emotion_journey: any[];

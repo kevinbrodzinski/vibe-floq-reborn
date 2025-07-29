@@ -33,7 +33,7 @@ export function useClusterVenues(
         max_lat: n,
         cursor_popularity: 0,
         limit_rows: 10,
-      } as Record<string, unknown>);
+      });
 
       if (signal?.aborted)
         throw new DOMException("Aborted", "AbortError");

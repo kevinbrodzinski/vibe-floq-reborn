@@ -55,7 +55,8 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
   const [insightsOpen, setInsightsOpen] = useState(false);
   const [showCrowdPulse, setShowCrowdPulse] = useState(false);
   
-  const { afterglow, loading: afterglowLoading, isGenerating, generationProgress, isStale, refresh } = useRealtimeAfterglowData(currentDate);
+  const { afterglow, isLoading: afterglowLoading, generate } = useRealtimeAfterglowData(currentDate);
+  const refresh = generate;
   
   const formattedDate = useMemo(
     () => format(new Date(currentDate), "EEEE, MMM do yyyy"),
@@ -460,17 +461,10 @@ const AfterglowScreen = ({ date }: AfterglowScreenProps) => {
       {/* Timeline */}
       <div className="px-6 relative">
         {/* Loading and generation states */}
-        {afterglowLoading && !isGenerating ? (
+        {afterglowLoading ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-muted-foreground">Loading ripple data...</p>
-          </div>
-        ) : isGenerating && typeof generationProgress === 'object' ? (
-          <AfterglowGenerationProgress progress={generationProgress} />
-        ) : isGenerating ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 mx-auto mb-4 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">Generating your ripple...</p>
           </div>
         ) : !afterglow ? (
           <div className="text-center py-16">

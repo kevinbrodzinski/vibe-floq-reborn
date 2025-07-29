@@ -5,6 +5,7 @@ import type { PulseEvent }  from '@/types/pulse';
 export const useLiveActivity = (pageSize = 20) =>
   useInfiniteQuery<PulseEvent[]>({
     queryKey : ['live-activity'],
+    initialPageParam: null,
     queryFn  : async ({ pageParam = null }) => {
       const { data, error } = await supabase
         .rpc('get_live_activity', {
@@ -20,4 +21,4 @@ export const useLiveActivity = (pageSize = 20) =>
         ? undefined                       // no more pages
         : lastPage[lastPage.length - 1].id, // use last id as cursor
     staleTime : 30_000,   // 30 s – feed is mostly real-time
-  }); 
+  });

@@ -2,13 +2,14 @@ import { useLiveActivity } from '@/hooks/useLiveActivity';
 import { pulseEventToLiveActivity } from '@/lib/pulse/formatEvent';
 import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
 import { useRef, useEffect } from 'react';
+import type { PulseEvent } from '@/types/pulse';
 
 export const LiveFeedFull = () => {
   const { data, fetchNextPage, hasNextPage, isFetching } = useLiveActivity();
   const feed = data?.pages.flat() ?? [];
   
   // Convert PulseEvent to LiveActivity format
-  const activities = feed.map(pulseEventToLiveActivity);
+  const activities = feed.map((ev: any) => pulseEventToLiveActivity(ev as PulseEvent)) as any[];
 
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
