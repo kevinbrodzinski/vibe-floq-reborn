@@ -35,8 +35,8 @@ export const rpc_reactToMsg = (payload: {
 export const rpc_markThreadRead = (payload: {
   p_surface: 'dm' | 'floq' | 'plan';
   p_thread_id: string;
-  p_user_id: string;
-}) => supabase.rpc('mark_read', payload);
+  p_profile_id: string;
+}) => (supabase as any).rpc('mark_thread_read', payload);
 
 export const fn_uploadChatMedia = (body: Record<string, unknown>) =>
   supabase.functions.invoke('upload-chat-media', { body });

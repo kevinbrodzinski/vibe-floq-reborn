@@ -9,7 +9,7 @@ export const useMarkRead = (surface: Surface, threadId: string, selfId: string) 
       const { data, error } = await rpc_markThreadRead({ 
         p_surface: surface as 'dm' | 'floq' | 'plan', 
         p_thread_id: threadId, 
-        p_user_id: selfId 
+        p_profile_id: selfId 
       });
       if (error) throw error;
       return data;
@@ -25,7 +25,7 @@ export const markRead = async (surface: Surface, threadId: string, selfId: strin
   const { data, error } = await rpc_markThreadRead({ 
     p_surface: surface as 'dm' | 'floq' | 'plan', 
     p_thread_id: threadId, 
-    p_user_id: selfId 
+    p_profile_id: selfId 
   });
   if (error) throw error;
   return data;

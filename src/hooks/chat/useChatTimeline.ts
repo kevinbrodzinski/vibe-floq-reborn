@@ -144,7 +144,7 @@ export const useChatTimeline = (
       rpc_markThreadRead({ 
         p_surface: surface as 'dm' | 'floq' | 'plan', 
         p_thread_id: threadId, 
-        p_user_id: userId 
+        p_profile_id: userId 
       });
     }
   }, [query.data?.pages?.[0]?.length, surface, threadId, userId]);
