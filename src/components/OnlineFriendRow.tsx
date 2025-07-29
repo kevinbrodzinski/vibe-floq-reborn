@@ -20,7 +20,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/lib/toast';
+import { toast } from 'sonner';
 import dayjs from '@/lib/dayjs';
 import { FriendRowSkeleton } from '@/components/skeletons';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';

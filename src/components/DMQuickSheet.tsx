@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Block, Flag, User } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -26,6 +26,7 @@ import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
+// TODO: Re-enable these imports after creating the missing components
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -133,7 +134,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         style={{
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
           paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
-          zIndex: Z.dmSheet
+          zIndex: 9999
         }}
         {...swipeGestures.handlers}
       >
@@ -150,12 +151,15 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
             ) : friend ? (
               <>
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={friend.avatar_url ? getAvatarUrl(friend.avatar_url) : undefined} />
+                  <AvatarImage src={friend.avatar_url || undefined} />
                   <AvatarFallback className="text-xs">
                     {friend.display_name?.[0]?.toUpperCase() ?? '?'}
                   </AvatarFallback>
                 </Avatar>
-                <UserTag profile={friend} showUsername={true} className="flex-1" />
+                <div className="flex-1">
+                  <SheetTitle className="text-left text-sm">{friend.display_name}</SheetTitle>
+                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                </div>
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>
                   : lastSeenTs && (
@@ -187,11 +191,20 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
           {messages.map((message) => {
             const isOwn = message.sender_id === currentUserId;
             return (
-              <MessageBubble
+              <div
                 key={message.id}
-                message={message}
-                isOwn={isOwn}
-              />
+                className={cn(
+                  "max-w-[70%] p-3 rounded-lg",
+                  isOwn
+                    ? "bg-primary text-primary-foreground ml-auto"
+                    : "bg-muted"
+                )}
+              >
+                <div className="text-sm">{message.content}</div>
+                <div className="text-xs opacity-70 mt-1">
+                  {dayjs(message.created_at).format('HH:mm')}
+                </div>
+              </div>
             );
           })}
           {isTyping && (

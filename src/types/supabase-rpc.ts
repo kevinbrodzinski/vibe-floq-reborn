@@ -6,11 +6,11 @@ export interface SupabaseRPCTypes {
       p_token: string; 
       p_platform: 'ios' | 'android' | 'web'; 
     };
-    Returns: { ok: boolean };
+    Returns: undefined;
   };
   reset_badge: {
-    Args: {};
-    Returns: { ok: boolean };
+    Args: Record<PropertyKey, never>;
+    Returns: undefined;
   };
 }
 
