@@ -63,13 +63,12 @@ export const PlanChatSidebar = ({
             content,
             profile_id,
             created_at,
-            profiles!plan_comments_profile_id_fkey(username, display_name, avatar_url)
+            profiles:profiles!profile_id(username, display_name, avatar_url)
           `)
           .eq('plan_id', planId)
           .order('created_at', { ascending: true })
-          .limit(100);
-
-        if (error) throw error;
+          .limit(100)
+          .throwOnError();
 
         const formattedMessages = data?.map(msg => ({
           ...msg,
@@ -119,10 +118,10 @@ export const PlanChatSidebar = ({
               content,
               profile_id,
               created_at,
-              profiles!plan_comments_profile_id_fkey(username, display_name, avatar_url)
+              profiles:profiles!profile_id(username, display_name, avatar_url)
             `)
             .eq('id', payload.new.id)
-            .single();
+            .maybeSingle();
 
           if (data) {
             const newMessage = {

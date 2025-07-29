@@ -30,14 +30,14 @@ export function useStopVotes({ planId, stopId }: UseStopVotesParams) {
 
   const { mutateAsync: castVote } = useMutation({
     mutationFn: async ({ voteType, emoji }: { voteType: 'upvote' | 'downvote' | 'maybe', emoji?: string }) => {
-      const user_id = session?.user?.id || null
+      const profile_id = session?.user?.id || null
 
       const { error } = await supabase
         .from('plan_stop_votes')
         .upsert({
           plan_id: planId,
           stop_id: stopId,
-          user_id,
+          profile_id,
           guest_id: guestId || null,
           vote_type: voteType,
           emoji_reaction: emoji || null,

@@ -229,10 +229,10 @@ export function useUserLocation() {
                 // --- A. in-Floq (debounced)
                 if (allowed.includes('in_floq')) {
                   if (!floqPromiseRef.current) {
-                    floqPromiseRef.current = Promise.resolve(supabase.rpc(
-                      'get_visible_floqs_with_members' as any,
-                      { p_user_lat: lat, p_user_lng: lng, p_limit: 50, p_offset: 0 }
-                    ));
+                     floqPromiseRef.current = Promise.resolve(supabase.rpc(
+                       'get_visible_floqs_with_members' as any,
+                       { p_user_lat: lat, p_user_lng: lng, p_limit: 50, p_offset: 0 }
+                     ).throwOnError());
                   }
                   const { data: floqs } = await floqPromiseRef.current;
                   floqPromiseRef.current = null;
@@ -243,8 +243,8 @@ export function useUserLocation() {
                 // --- B. at-venue (debounced)
                 if (allowed.includes('at_venue')) {
                   if (!venuePromiseRef.current) {
-                    venuePromiseRef.current = Promise.resolve(supabase
-                      .rpc('get_nearby_venues' as any, { p_lat: lat, p_lng: lng, p_radius: 30, p_limit: 1 }));
+                     venuePromiseRef.current = Promise.resolve(supabase
+                       .rpc('get_nearby_venues' as any, { p_lat: lat, p_lng: lng, p_radius: 30, p_limit: 1 }).throwOnError());
                   }
                   const { data: venues } = await venuePromiseRef.current;
                   venuePromiseRef.current = null;

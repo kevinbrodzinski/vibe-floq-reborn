@@ -44,7 +44,7 @@ interface FloqActivityItem {
   id: string;
   event_type: FlockEventType;
   created_at: string;
-  user_id: string | null;
+  profile_id: string | null;
   metadata: any;
   // Joined user profile data
   user_profile?: {
@@ -85,15 +85,14 @@ export const FloqActivityFeed: React.FC<FloqActivityFeedProps> = ({
           id,
           event_type,
           created_at,
-          user_id,
+          profile_id,
           metadata,
-          profiles:user_id(display_name, username, avatar_url)
+          profiles:profiles!profile_id(display_name, username, avatar_url)
         `)
         .eq('floq_id', floqId)
         .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
+        .limit(50)
+        .throwOnError();
 
       return (data || []).map(item => ({
         ...item as any,

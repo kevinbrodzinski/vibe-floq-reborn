@@ -11,5 +11,6 @@ export const useWeather = () => {
     queryFn: () => getWeather(lat!, lng!),
     staleTime: 10 * 60_000, // 10 min
     retry: 2,
+    meta: { errorMessage: 'Failed to fetch weather data' }
   });
 }; 

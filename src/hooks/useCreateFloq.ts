@@ -27,10 +27,9 @@ export function useCreateFloq() {
     mutationFn: async (data: CreateFloqData) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Try the new lat/lng format first
+      // Use the correct parameter format
       const rpcParams = {
-        p_lat: data.location.lat,
-        p_lng: data.location.lng,
+        p_location: `POINT(${data.location.lng} ${data.location.lat})`,
         p_starts_at: data.starts_at,
         p_vibe: data.primary_vibe,
         p_visibility: data.visibility,
@@ -38,31 +37,11 @@ export function useCreateFloq() {
         p_invitees: [],
         p_ends_at: data.ends_at,
         p_flock_type: data.flock_type
-      };
+      } as any;
       
       console.log('🔍 create_floq RPC params (lat/lng):', rpcParams);
 
-      let result, error;
-      
-      // Try new signature first
-      ({ data: result, error } = await supabase.rpc('create_floq', rpcParams));
-      
-      // If that fails, try old signature as fallback
-      if (error && error.code === 'PGRST202') {
-        console.log('🔄 Trying fallback with geography format...');
-        const fallbackParams = {
-          p_location: `POINT(${data.location.lng} ${data.location.lat})`,
-          p_starts_at: data.starts_at,
-          p_vibe: data.primary_vibe,
-          p_visibility: data.visibility,
-          p_title: data.title,
-          p_invitees: [],
-          p_ends_at: data.ends_at,
-          p_flock_type: data.flock_type
-        };
-        console.log('🔍 create_floq RPC params (geography):', fallbackParams);
-        ({ data: result, error } = await supabase.rpc('create_floq' as any, fallbackParams));
-      }
+      const { data: result, error } = await supabase.rpc('create_floq' as any, rpcParams);
 
       if (error) {
         console.error('Create floq error:', error);
