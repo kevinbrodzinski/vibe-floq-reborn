@@ -2947,6 +2947,7 @@ export type Database = {
       }
       friend_share_pref: {
         Row: {
+          auto_when: Database["public"]["Enums"]["auto_when_enum"][] | null
           ends_at: string | null
           friend_id: string
           is_live: boolean
@@ -2954,6 +2955,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auto_when?: Database["public"]["Enums"]["auto_when_enum"][] | null
           ends_at?: string | null
           friend_id: string
           is_live?: boolean
@@ -2961,6 +2963,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auto_when?: Database["public"]["Enums"]["auto_when_enum"][] | null
           ends_at?: string | null
           friend_id?: string
           is_live?: boolean
@@ -10016,7 +10019,13 @@ export type Database = {
         Returns: undefined
       }
       set_live_share_bulk: {
-        Args: { _friend_ids: string[]; _on: boolean; _auto_when?: string }
+        Args:
+          | {
+              _friend_ids: string[]
+              _on: boolean
+              _auto_when?: Database["public"]["Enums"]["auto_when_enum"][]
+            }
+          | { _friend_ids: string[]; _on: boolean; _auto_when?: string }
         Returns: undefined
       }
       set_participant_role: {
@@ -11396,6 +11405,7 @@ export type Database = {
         | "peak_energy"
         | "social_boost"
         | "solo_moment"
+      auto_when_enum: "always" | "in_floq" | "at_venue" | "walking"
       chat_surface_enum: "dm" | "floq" | "plan"
       cluster_type_enum:
         | "nightlife"
@@ -11657,6 +11667,7 @@ export const Constants = {
         "social_boost",
         "solo_moment",
       ],
+      auto_when_enum: ["always", "in_floq", "at_venue", "walking"],
       chat_surface_enum: ["dm", "floq", "plan"],
       cluster_type_enum: [
         "nightlife",

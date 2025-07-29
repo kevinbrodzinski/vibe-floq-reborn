@@ -12,12 +12,15 @@ export const enableLiveShareForFloq = async (floqId: string) => {
   // 2. bulk upsert share-on rows using the new RPC
   const memberIds = members.map(m => (m as any).profile_id).filter(Boolean);
   
-  // Handle each member ID individually since RPC expects single ID
-  await Promise.all(memberIds.map(id => 
-    supabase.rpc('set_live_share_bulk' as any, {
-      p_friend_id: id,
-      _on: true,
-      _auto_when: ['floq']
-    })
-  ));
+  // Use the new bulk function with the enum array
+  const { error } = await supabase.rpc('set_live_share_bulk', {
+    _friend_ids: memberIds,
+    _on: true,
+    _auto_when: ['in_floq'] // Use the enum value instead of 'floq'
+  });
+
+  if (error) {
+    console.error('Failed to enable live share for floq:', error);
+    throw error;
+  }
 }; 

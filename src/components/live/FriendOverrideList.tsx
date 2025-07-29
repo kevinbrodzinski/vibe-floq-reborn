@@ -30,18 +30,12 @@ export const FriendOverrideList = () => {
 
     const mutation = useMutation({
         mutationFn: async ({ friendId, isLive }: { friendId: string; isLive: boolean }) => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                throw new Error('No authenticated user');
-            }
-
-            const { error } = await supabase
-                .from('friend_share_pref')
-                .upsert({
-                    friend_id: friendId,
-                    is_live: isLive,
-                    profile_id: user.id
-                });
+            // Use the new RPC function for better consistency
+            const { error } = await supabase.rpc('set_live_share_bulk', {
+                _friend_ids: [friendId],
+                _on: isLive,
+                _auto_when: ['always'] // Use default enum value
+            });
 
             if (error) throw error;
         },

@@ -32,7 +32,7 @@ export function FriendShareToggle({
             const { error } = await supabase.rpc('set_live_share_bulk', {
                 _friend_ids: [friendId],
                 _on: val,
-                _auto_when: null
+                _auto_when: ['always'] // Use default enum value
             });
 
             if (error) {

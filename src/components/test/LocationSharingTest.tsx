@@ -44,9 +44,10 @@ export const LocationSharingTest: React.FC = () => {
   const testAddPreference = async () => {
     console.log('🧪 Testing add preference...');
     try {
-      const { error } = await supabase.rpc('set_live_share', {
-        _friend: 'test-friend-123',
-        _on: true
+      const { error } = await supabase.rpc('set_live_share_bulk', {
+        _friend_ids: ['test-friend-123'],
+        _on: true,
+        _auto_when: ['always']
       });
 
       if (error) {
