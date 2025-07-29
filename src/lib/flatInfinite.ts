@@ -1,7 +1,6 @@
 import type { InfiniteData } from '@tanstack/react-query';
 
-export function flatInfinite<T>(pages: InfiniteData<T> | undefined): T[] {
-  return pages?.pages
-    ? pages.pages.flatMap(page => page as T[])
-    : [];
+export function flatInfinite<P, T = P>(data: InfiniteData<P> | undefined, mapFn?: (p: P) => T[]): T[] {
+  if (!data?.pages) return [];
+  return mapFn ? data.pages.flatMap(mapFn) : (data.pages as unknown as T[]);
 }

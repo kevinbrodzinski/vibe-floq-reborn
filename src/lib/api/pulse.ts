@@ -10,25 +10,22 @@ export const recordPulseEvent = async (payload: Partial<PulseEvent>) => {
 
 /* paginated live-activity feed */
 export const fetchLiveActivity = async (cursor?: number, limit = 30) => {
-  const { data, error } = await supabase.rpc('get_live_activity' as any,
-    { p_radius_km: 5, p_lat: 0, p_lng: 0 });
-  if (error) throw error;
-  return data as PulseEvent[];
+  const { data } = await supabase.rpc('get_live_activity',
+    { p_radius_km: 5, p_lat: 0, p_lng: 0 }).throwOnError();
+  return data as unknown as PulseEvent[];
 };
 
 /* trending venues near user */
 export const fetchTrendingVenues = async (lat: number, lng: number,
                                           radius = 2000, limit = 5) => {
-  const { data, error } = await supabase.rpc('get_trending_venues',
-    { p_user_lat: lat, p_user_lng: lng, p_radius_m: radius, p_limit: limit });
-  if (error) throw error;
+  const { data } = await supabase.rpc('get_trending_venues',
+    { p_user_lat: lat, p_user_lng: lng, p_radius_m: radius, p_limit: limit }).throwOnError();
   return data as TrendingVenue[];
 };
 
 /* fetch nearby venues with new signature */
 export async function fetchNearbyVenues(lat: number, lng: number, radiusKm = 2) {
-  const { data, error } = await supabase
-    .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius_km: radiusKm, p_limit: 30 });
-  if (error) throw error;
+  const { data } = await supabase
+    .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius_km: radiusKm, p_limit: 30 }).throwOnError();
   return data;
 }

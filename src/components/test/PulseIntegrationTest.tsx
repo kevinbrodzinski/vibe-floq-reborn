@@ -26,9 +26,8 @@ export const PulseIntegrationTest: React.FC = () => {
         {liveError && <p className="text-red-500">Error: {liveError.message}</p>}
         {liveActivity && (
           <div>
-            <p>Pages: {liveActivity.pages?.length || 0}</p>
-            <p>Total events: {flatInfinite(liveActivity).flat().length || 0}</p>
-            {flatInfinite(liveActivity).flat().slice(0, 3).map((event: any, i: number) => (
+            <p>Total events: {liveActivity.length || 0}</p>
+            {liveActivity.slice(0, 3).map((event: any, i: number) => (
               <div key={i} className="text-sm bg-gray-100 p-2 rounded mt-2">
                 {event.event_type} - {event.created_at}
               </div>

@@ -40,11 +40,11 @@ export function useUserPlans() {
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_user_plans' as any)
-        .select('*') as any;
+      const { data } = await supabase
+        .from('v_user_plans')
+        .select('*')
+        .throwOnError();
       
-      if (error) throw error;
       return data || [];
     },
   })
@@ -68,10 +68,23 @@ export function useUserPlans() {
   }
 
   if (data) {
-    data.forEach((plan) => {
+    data.forEach((plan: any) => {
       const status = plan.status || 'draft'
       if (status in plansByStatus) {
-        plansByStatus[status as keyof PlansGrouped].push(plan)
+        // Map v_user_plans columns to PlanSummary format
+        const planSummary: PlanSummary = {
+          id: plan.plan_id,
+          title: plan.title,
+          planned_at: plan.starts_at,
+          status: status,
+          vibe_tag: plan.vibe_tag,
+          archived_at: null,
+          current_stop_id: null,
+          execution_started_at: null,
+          participant_count: 1,
+          stops_count: 0
+        };
+        plansByStatus[status as keyof PlansGrouped].push(planSummary)
         stats[status as keyof PlanStats]++
       } else {
         console.warn(`Unknown plan status: ${status}`)

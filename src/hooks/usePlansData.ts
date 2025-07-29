@@ -16,11 +16,11 @@ export function usePlansData() {
   const { data: userPlans = [], isLoading: isLoadingUserPlans } = useQuery({
     queryKey: ['user-floq-plans'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_user_plans' as any)
-        .select('*') as any;
+      const { data } = await supabase
+        .from('v_user_plans')
+        .select('*')
+        .throwOnError();
       
-      if (error) throw error;
       return data || [];
     },
     staleTime: 60 * 1000, // 1 minute

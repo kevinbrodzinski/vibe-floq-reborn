@@ -138,7 +138,8 @@ export const PulseScreen: React.FC = () => {
 
   // Data fetching hooks
   const { coords } = useGeolocation();
-  const { data: activeFloqs = [] } = useActiveFloqs();
+  const { data: activeFloqsPages } = useActiveFloqs();
+  const activeFloqs = activeFloqsPages?.pages?.flatMap(page => page.data) ?? [];
   const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);
   const { data: myFloqs = [] } = useMyActiveFloqs();
   // const { suggestion: aiSuggestion, loading: aiLoading, refetch: refetchAI, source: aiSource } = useWeeklyAI();
@@ -147,8 +148,8 @@ export const PulseScreen: React.FC = () => {
   // Real-time Pulse data
   const radiusArg = filters.has('walking') ? WALKING_THRESHOLD_M : 2000;
   const { data: trendingVenues = [] } = useTrendingVenues(radiusArg, 5);
-  const { data: livePages } = useLiveActivity();
-  const liveActivity = Array.isArray(livePages) ? livePages : 'pages' in livePages ? livePages.pages.flat() : [];
+  const { data: livePages = [] } = useLiveActivity();
+  const liveActivity = livePages;
   const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather();
   const { data: pulseBadges } = usePulseBadges(user?.id);
 
@@ -162,7 +163,7 @@ export const PulseScreen: React.FC = () => {
   );
 
   // Loading and error states
-  const isLoading = !(Array.isArray(activeFloqs) ? activeFloqs.length : 'pages' in activeFloqs ? activeFloqs.pages.flat().length : 0) && !nearbyVenues.length;
+  const isLoading = !activeFloqs.length && !nearbyVenues.length;
   const hasError = false; // Add error handling if needed
 
   // Use real weather data or fallback to mock
@@ -220,8 +221,7 @@ export const PulseScreen: React.FC = () => {
 
   /* 4-B · Apply filters to nearby floqs */
   const visibleFloqs = useMemo(() => {
-    const flatActiveFloqs = Array.isArray(activeFloqs) ? activeFloqs : 'pages' in activeFloqs ? activeFloqs.pages.flat() : [];
-    return flatActiveFloqs.filter(f => {
+    return activeFloqs.filter(f => {
       if (filters.has('walking') &&
           f.distance_meters != null &&
           f.distance_meters > WALKING_THRESHOLD_M) return false;
