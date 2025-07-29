@@ -4564,6 +4564,62 @@ export type Database = {
           },
         ]
       }
+      presence: {
+        Row: {
+          accuracy_m: number | null
+          location: unknown | null
+          profile_id: string
+          updated_at: string
+          venue_id: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Insert: {
+          accuracy_m?: number | null
+          location?: unknown | null
+          profile_id: string
+          updated_at?: string
+          venue_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Update: {
+          accuracy_m?: number | null
+          location?: unknown | null
+          profile_id?: string
+          updated_at?: string
+          venue_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presence_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presence_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presence_log: {
         Row: {
           location: unknown
@@ -6433,6 +6489,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venue_presence_snapshot: {
+        Row: {
+          dominant_vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          people_now: number
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          dominant_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          people_now: number
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          dominant_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
+          people_now?: number
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: []
       }
       venue_stays: {
         Row: {
