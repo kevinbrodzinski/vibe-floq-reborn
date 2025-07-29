@@ -30,6 +30,9 @@ import { FrequencyDisplay } from '@/components/profile/FrequencyDisplay';
 import { ProfileChip } from '@/components/profile/ProfileChip';
 import { VibeHalo } from '@/components/profile/VibeHalo';
 import { QuickPingButton } from '@/components/profile/QuickPingButton';
+import { LocationSharingBadge } from '@/components/profile/LocationSharingBadge';
+import { CreateFloqSheet } from '@/components/CreateFloqSheet';
+import { useFloqUI } from '@/contexts/FloqUIContext';
 
 interface UserProfileProps {
   profileId?: string; // Allow profileId to be passed as prop
@@ -40,6 +43,7 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const profileId = propProfileId || routeProfileId;
   const currentUserId = useCurrentUserId();
   const [dmOpen, setDmOpen] = useState(false);
+  const { setShowCreateSheet } = useFloqUI();
   
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
@@ -109,6 +113,12 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const displayName = profile.display_name || profile.username || 'Unknown User';
   const username = profile.username;
 
+  const handleQuickFloq = () => {
+    // Pre-fill the Create Floq sheet with this user
+    setShowCreateSheet(true);
+    // TODO: Add logic to pre-populate participants with current user and profile
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0B0E19] via-[#050713] to-[#0B0E19] pb-24">
       {/* Zone 0: App Bar */}
@@ -126,6 +136,13 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
               <ChipOnline />
             </div>
           )}
+          
+          {/* Location sharing badge - top left */}
+          <LocationSharingBadge
+            profileId={profileId}
+            onClick={handleQuickFloq}
+            className="z-10"
+          />
           
           {/* Avatar without vibe halo */}
           <div className="relative mb-4">
@@ -325,6 +342,9 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           friendId={profile.id}
         />
       )}
+      
+      {/* Create Floq Sheet - Controlled by FloqUI context */}
+      <CreateFloqSheet />
     </div>
   );
 };
