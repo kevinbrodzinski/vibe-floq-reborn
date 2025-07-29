@@ -2,12 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getWeather } from '@/lib/api/weather';
 import { useGeolocation } from '@/hooks/useGeolocation';
 
-export const useWeather = () => {
-  const { lat, lng, error: geoError, isLoading: geoLoading } = useGeolocation();
-  
+export const useWeather = (lat?: number, lng?: number) => {
   return useQuery({
     queryKey: ['weather', lat, lng],
-    enabled: !!lat && !!lng && !geoError,
+    enabled: !!lat && !!lng,
     queryFn: () => getWeather(lat!, lng!),
     staleTime: 10 * 60_000, // 10 min
     retry: 2,

@@ -96,12 +96,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
-    condition: mapWeatherCondition(weatherData.condition),
-    temperature: weatherData.temperatureF,
-    humidity: weatherData.humidity,
-    windSpeed: weatherData.windMph,
+    condition: mapWeatherCondition((weatherData as any)?.condition),
+    temperature: (weatherData as any)?.temperatureF,
+    humidity: (weatherData as any)?.humidity,
+    windSpeed: (weatherData as any)?.windMph,
     precipitation: 0,
-    feelsLike: weatherData.feelsLikeF
+    feelsLike: (weatherData as any)?.feelsLikeF
   } : {
     condition: 'sunny' as const,
     temperature: 72,

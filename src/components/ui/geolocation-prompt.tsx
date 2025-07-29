@@ -42,7 +42,7 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
       </CardHeader>
       <CardContent className="space-y-4">
         {error === 'unavailable' && (
-          <Alert variant="warning" className="border-yellow-500/20 bg-yellow-500/10">
+          <Alert variant="destructive" className="border-yellow-500/20 bg-yellow-500/10">
             <Compass className="h-4 w-4 text-yellow-600" />
             <AlertTitle className="text-yellow-600">Searching for GPS…</AlertTitle>
             <AlertDescription className="text-yellow-600">

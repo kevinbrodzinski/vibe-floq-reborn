@@ -5,7 +5,7 @@ import { RSVPStatus } from '@/types/enums/rsvpStatus'
 
 export interface PlanParticipant {
   id: string
-  user_id: string | null
+  profile_id: string | null
   plan_id: string
   role: string | null
   joined_at: string
@@ -35,7 +35,7 @@ export function usePlanParticipants(plan_id: string) {
         .from('plan_participants')
         .select(`
           id,
-          user_id,
+          profile_id,
           plan_id,
           role,
           joined_at,
@@ -47,7 +47,7 @@ export function usePlanParticipants(plan_id: string) {
           invited_at,
           responded_at,
           rsvp_status,
-          profiles!user_id (
+          profiles!plan_participants_profile_id_fkey (
             id,
             username,
             display_name,
