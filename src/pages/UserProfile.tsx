@@ -96,100 +96,190 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const subtitle = profile.username && profile.display_name ? profile.display_name : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 pb-24">
       {/* Zone 0: App Bar */}
-      <AppBarBack title="Profile" />
+      <div className="flex items-center justify-between p-4">
+        <button
+          onClick={() => window.history.back()}
+          className="text-white/80 hover:text-white transition-colors"
+        >
+          ✕
+        </button>
+        <h1 className="text-lg font-light text-white/90">Profile</h1>
+        <div></div>
+      </div>
 
-      <div className="max-w-2xl mx-auto px-4 space-y-6">
-        {/* Zone 1: Hero Card */}
-        <GlassCard center>
-          <Avatar className="w-24 h-24 mx-auto mb-4">
-            <AvatarImage src={getAvatarUrl(profile.avatar_url, 96)} />
-            <AvatarFallback className="text-xl">
-              {getInitials(profile.display_name || profile.username)}
-            </AvatarFallback>
-          </Avatar>
-          <h2 className="text-white text-2xl font-light mb-2">{displayName}</h2>
+      <div className="max-w-md mx-auto px-4 space-y-4">
+        {/* Zone 1: Hero Section - Pulse Style */}
+        <div className="text-center pt-8 pb-6">
+          <div className="relative">
+            <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-white/20 shadow-2xl">
+              <AvatarImage src={getAvatarUrl(profile.avatar_url, 128)} />
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                {getInitials(profile.display_name || profile.username)}
+              </AvatarFallback>
+            </Avatar>
+            {isOnline && (
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                <div className="bg-green-400 text-green-900 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  Online
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <h1 className="text-3xl font-light text-white mb-2">{displayName}</h1>
           {subtitle && (
-            <p className="text-muted-foreground mb-2">@{profile.username}</p>
+            <p className="text-purple-300 text-lg mb-1">@{profile.username}</p>
           )}
-          {profile.bio && (
-            <p className="text-sm text-muted-foreground mb-4">{profile.bio}</p>
-          )}
-          {isOnline && <ChipOnline />}
-        </GlassCard>
-
-        {/* Zone 2: Social Stats Strip */}
-        <div className="flex justify-between gap-2">
-          <StatPill value={mockStats.friendCount} label="Friends" icon={Users} />
-          <StatPill value={mockStats.mutualCount} label="Mutual" icon={Users2} />
-          <StatPill value={mockStats.sharedFloqs} label="Floqs" icon={MapPin} />
-          <StatPill value={`${mockStats.resonanceScore}%`} label="Resonance" icon={Heart} />
+          
+          {/* Socialite Level Badge - Pulse Style */}
+          <div className="inline-flex items-center gap-2 bg-purple-600/30 border border-purple-400/30 rounded-full px-4 py-2 mt-3 mb-4">
+            <span className="text-purple-300 font-medium">Socialite Level 4</span>
+            <span className="text-purple-400">• 73/100</span>
+          </div>
         </div>
 
-        {/* Zone 3: CTA Bar (non-friend only) */}
-        {!isMe && !isCurrentlyFriend && !pendingFromMe && !pendingToMe && (
-          <ActionBarNonFriend profile={profile} />
+        {/* Zone 2: Stats Grid - Pulse Style */}
+        <div className="grid grid-cols-3 gap-4 px-4">
+          <div className="text-center">
+            <div className="text-2xl font-light text-white mb-1">{mockStats.friendCount}</div>
+            <div className="text-sm text-purple-300">Check-ins this week</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-light text-white mb-1">{mockStats.sharedFloqs}</div>
+            <div className="text-sm text-purple-300">Plans created</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-light text-white mb-1">{mockStats.mutualCount}</div>
+            <div className="text-sm text-purple-300">Friends added</div>
+          </div>
+        </div>
+
+        {/* Navigation Tabs - Pulse Style */}
+        <div className="flex justify-center space-x-1 bg-gray-800/30 rounded-full p-1 mx-4 mt-8">
+          <button className="px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-medium">
+            Buzz
+          </button>
+          <button className="px-4 py-2 rounded-full text-gray-400 text-sm font-medium hover:text-white">
+            Badges
+          </button>
+          <button className="px-4 py-2 rounded-full text-gray-400 text-sm font-medium hover:text-white">
+            Plans
+          </button>
+          <button className="px-4 py-2 rounded-full text-gray-400 text-sm font-medium hover:text-white">
+            History
+          </button>
+        </div>
+
+        {/* Zone 3-4: Action Buttons */}
+        {!isMe && (
+          <div className="px-4 pt-4">
+            {!isCurrentlyFriend && !pendingFromMe && !pendingToMe && (
+              <div className="flex gap-3">
+                <ActionBarNonFriend profile={profile} />
+              </div>
+            )}
+            
+            {pendingFromMe && (
+              <div className="text-center py-4">
+                <span className="text-yellow-300 text-sm">Friend request sent</span>
+              </div>
+            )}
+            
+            {pendingToMe && (
+              <div className="flex gap-3">
+                <button className="flex-1 bg-purple-600 text-white py-3 rounded-full font-medium">
+                  Accept
+                </button>
+                <button className="flex-1 bg-gray-700 text-white py-3 rounded-full font-medium">
+                  Decline
+                </button>
+              </div>
+            )}
+            
+            {isCurrentlyFriend && (
+              <div className="flex gap-3">
+                <ActionBarFriend profile={profile} onOpenDM={() => setDmOpen(true)} />
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Pending states */}
-        {!isMe && pendingFromMe && (
-          <GlassCard>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-yellow-300">Request sent</span>
-              {/* TODO: Add cancel button */}
+        {/* Activity Feed - Pulse Style */}
+        <div className="px-4 pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center">
+                📍
+              </div>
+              <div className="flex-1">
+                <span className="text-white">Checked in at Blue Bottle Coffee</span>
+                <span className="text-gray-400 ml-2">• 2h ago</span>
+              </div>
             </div>
-          </GlassCard>
-        )}
-
-        {!isMe && pendingToMe && (
-          <GlassCard>
-            <div className="flex gap-3">
-              {/* TODO: Add Accept and Decline buttons */}
-              <span className="text-blue-300">Friend request received</span>
+            
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                📸
+              </div>
+              <div className="flex-1">
+                <span className="text-white">Posted a photo from Mission District</span>
+                <span className="text-gray-400 ml-2">• 5h ago</span>
+              </div>
             </div>
-          </GlassCard>
+            
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full bg-green-600 flex items-center justify-center">
+                📅
+              </div>
+              <div className="flex-1">
+                <span className="text-white">Joined Sarah's coffee plan</span>
+                <span className="text-gray-400 ml-2">• 1d ago</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 text-sm">
+              <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center">
+                💬
+              </div>
+              <div className="flex-1">
+                <span className="text-white">Pinged Alex to hang out</span>
+                <span className="text-gray-400 ml-2">• 2d ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* About Me Section */}
+        <div className="px-4 pt-8">
+          <h3 className="text-lg font-medium text-white mb-4">About Me</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Why I'm here</span>
+              <span className="text-white">Discover new venues and meet like-minded people</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Relationship Status</span>
+              <span className="text-white">Single</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons at Bottom - Pulse Style */}
+        {!isMe && (
+          <div className="fixed bottom-20 left-0 right-0 px-4">
+            <div className="flex gap-4 max-w-md mx-auto">
+              <button className="flex-1 bg-gray-800/80 backdrop-blur-sm border border-gray-600 text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
+                📥 Save
+              </button>
+              <button className="flex-1 bg-gray-800/80 backdrop-blur-sm border border-gray-600 text-white py-4 rounded-2xl font-medium flex items-center justify-center gap-2">
+                📤 Share
+              </button>
+            </div>
+          </div>
         )}
-
-        {/* Zone 4: Friend Action Bar */}
-        {!isMe && isCurrentlyFriend && (
-          <ActionBarFriend profile={profile} onOpenDM={() => setDmOpen(true)} />
-        )}
-
-        {/* Zone 5: Live Vibe Card (friend only) */}
-        {!isMe && isCurrentlyFriend && (
-          <LiveVibeCard vibe={mockLiveVibe} />
-        )}
-
-        {/* Zone 6: Mutual Context (friend only) */}
-        {!isMe && isCurrentlyFriend && (
-          <MutualContext friendId={profile.id} />
-        )}
-
-        {/* Zone 7: Highlights (always visible) */}
-        <Highlights userId={profile.id} isFriend={isCurrentlyFriend} />
-
-        {/* Zone 8: Relationship Panel (friend only) */}
-        {!isMe && isCurrentlyFriend && (
-          <GlassCard>
-            <RelationshipStrengthIndicator 
-              relationship={{
-                profileId: profile.id,
-                displayName: profile.display_name || profile.username,
-                avatarUrl: profile.avatar_url,
-                strength: mockStats.resonanceScore,
-                interactionCount: 12,
-                lastInteraction: new Date().toISOString(),
-                mutualFriends: mockStats.mutualCount,
-                sharedInterests: ['coffee', 'coding', 'music'],
-                isPublic: true,
-              }}
-            />
-          </GlassCard>
-        )}
-
-        {/* Zone 9: Footer */}
-        <FooterMemberSince createdAt={profile.created_at} />
       </div>
 
       {/* DM Sheet */}
