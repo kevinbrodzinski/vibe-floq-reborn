@@ -27,9 +27,10 @@ export function useCreateFloq() {
     mutationFn: async (data: CreateFloqData) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Use the correct parameter format
+      // Use the lat/lng parameter format
       const rpcParams = {
-        p_location: `POINT(${data.location.lng} ${data.location.lat})`,
+        p_lat: data.location.lat,
+        p_lng: data.location.lng,
         p_starts_at: data.starts_at,
         p_vibe: data.primary_vibe,
         p_visibility: data.visibility,

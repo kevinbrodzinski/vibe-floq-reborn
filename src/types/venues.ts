@@ -10,8 +10,10 @@ export interface UserPlan {
   plan_id: string;
   title: string;
   starts_at: string;
-  ends_at: string | null;
-  role: 'participant' | 'organizer';
+  ends_at: string;
+  vibe_tag: string | null;
+  status: 'draft' | 'locked' | 'live' | 'archived';
+  role: 'participant' | 'organizer' | 'viewer';
   owner: {
     id: string;
     username: string | null;

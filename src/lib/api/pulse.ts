@@ -24,3 +24,11 @@ export const fetchTrendingVenues = async (lat: number, lng: number,
   if (error) throw error;
   return data as TrendingVenue[];
 };
+
+/* fetch nearby venues with new signature */
+export async function fetchNearbyVenues(lat: number, lng: number, radiusKm = 2) {
+  const { data, error } = await supabase
+    .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius_km: radiusKm, p_limit: 30 });
+  if (error) throw error;
+  return data;
+}

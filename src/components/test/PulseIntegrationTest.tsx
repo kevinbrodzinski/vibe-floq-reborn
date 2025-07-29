@@ -4,6 +4,7 @@ import { useTrendingVenues } from '@/hooks/useTrendingVenues';
 import { useWeather } from '@/hooks/useWeather';
 import { usePulseBadges } from '@/hooks/usePulseBadges';
 import { useAuth } from '@/providers/AuthProvider';
+import { flatInfinite } from '@/lib/flatInfinite';
 
 export const PulseIntegrationTest: React.FC = () => {
   const { user } = useAuth();
@@ -25,9 +26,9 @@ export const PulseIntegrationTest: React.FC = () => {
         {liveError && <p className="text-red-500">Error: {liveError.message}</p>}
         {liveActivity && (
           <div>
-            <p>Pages: {(liveActivity as any)?.pages?.length || 0}</p>
-            <p>Total events: {(liveActivity as any)?.pages?.flat().length || 0}</p>
-            {(liveActivity as any)?.pages?.flat().slice(0, 3).map((event: any, i: number) => (
+            <p>Pages: {liveActivity.pages?.length || 0}</p>
+            <p>Total events: {flatInfinite(liveActivity).flat().length || 0}</p>
+            {flatInfinite(liveActivity).flat().slice(0, 3).map((event: any, i: number) => (
               <div key={i} className="text-sm bg-gray-100 p-2 rounded mt-2">
                 {event.event_type} - {event.created_at}
               </div>
