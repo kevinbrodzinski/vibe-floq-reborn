@@ -27,7 +27,7 @@ export const useAutoCheckIn = () => {
   
   const currentCheckInRef = useRef<VenueCheckIn | null>(null);
   const lastCheckRef = useRef<number>(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   const checkForNearbyVenues = useCallback(async (lat: number, lng: number) => {
     try {

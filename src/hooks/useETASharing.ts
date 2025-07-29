@@ -25,7 +25,7 @@ export const useETASharing = () => {
   
   const etaMapRef = useRef<Map<string, ETAShare>>(new Map());
   const lastUpdateRef = useRef<number>(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   const calculateETAs = useCallback(async (lat: number, lng: number) => {
     if (!shareTo.length) return;
