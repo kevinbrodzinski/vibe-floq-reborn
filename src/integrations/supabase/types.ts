@@ -954,6 +954,82 @@ export type Database = {
           },
         ]
       }
+      eta_shares: {
+        Row: {
+          created_at: string
+          distance_meters: number
+          eta_minutes: number
+          expires_at: string
+          friend_id: string
+          id: string
+          sharer_id: string
+          travel_mode: Database["public"]["Enums"]["travel_mode_enum"]
+        }
+        Insert: {
+          created_at?: string
+          distance_meters: number
+          eta_minutes: number
+          expires_at?: string
+          friend_id: string
+          id?: string
+          sharer_id: string
+          travel_mode?: Database["public"]["Enums"]["travel_mode_enum"]
+        }
+        Update: {
+          created_at?: string
+          distance_meters?: number
+          eta_minutes?: number
+          expires_at?: string
+          friend_id?: string
+          id?: string
+          sharer_id?: string
+          travel_mode?: Database["public"]["Enums"]["travel_mode_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eta_shares_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_shares_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_shares_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_shares_sharer_id_fkey"
+            columns: ["sharer_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_shares_sharer_id_fkey"
+            columns: ["sharer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eta_shares_sharer_id_fkey"
+            columns: ["sharer_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_areas: {
         Row: {
           ends_at: string | null
@@ -2962,6 +3038,85 @@ export type Database = {
           schema_name?: string
         }
         Relationships: []
+      }
+      location_requests: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          message: string | null
+          requester_id: string
+          responded_at: string | null
+          response_location: unknown | null
+          status: Database["public"]["Enums"]["location_request_status"]
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          requester_id: string
+          responded_at?: string | null
+          response_location?: unknown | null
+          status?: Database["public"]["Enums"]["location_request_status"]
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          requester_id?: string
+          responded_at?: string | null
+          response_location?: unknown | null
+          status?: Database["public"]["Enums"]["location_request_status"]
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_queue: {
         Row: {
@@ -10833,6 +10988,7 @@ export type Database = {
       floq_participant_role_enum: "creator" | "admin" | "member"
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
+      location_request_status: "pending" | "approved" | "denied" | "expired"
       mention_permissions_enum: "all" | "co-admins" | "host"
       mention_target: "user" | "venue" | "plan"
       onboarding_version_enum: "v1" | "v2"
@@ -10865,6 +11021,7 @@ export type Database = {
         | "schedule_activity"
         | "change_vibe"
       summary_mode: "finalized" | "afterglow"
+      travel_mode_enum: "walking" | "driving" | "transit"
       vibe_enum:
         | "chill"
         | "hype"
@@ -11395,6 +11552,7 @@ export const Constants = {
       floq_participant_role_enum: ["creator", "admin", "member"],
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
+      location_request_status: ["pending", "approved", "denied", "expired"],
       mention_permissions_enum: ["all", "co-admins", "host"],
       mention_target: ["user", "venue", "plan"],
       onboarding_version_enum: ["v1", "v2"],
@@ -11430,6 +11588,7 @@ export const Constants = {
         "change_vibe",
       ],
       summary_mode: ["finalized", "afterglow"],
+      travel_mode_enum: ["walking", "driving", "transit"],
       vibe_enum: [
         "chill",
         "hype",
