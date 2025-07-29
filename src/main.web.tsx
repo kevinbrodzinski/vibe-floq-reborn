@@ -7,7 +7,7 @@ import 'resize-observer-polyfill/dist/ResizeObserver.global';
 
 // Additional SSR guard for ResizeObserver
 if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
-   
+
   (window as any).ResizeObserver = require('resize-observer-polyfill').default;
 }
 
@@ -29,6 +29,7 @@ if (sentryDsn) {
 
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App.tsx'
 import './index.css'
 import { DebugProvider } from '@/lib/useDebug';
@@ -45,11 +46,43 @@ if (posthogKey) {
   })
 }
 
+// Create a single QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx errors
+        if (error?.status >= 400 && error?.status < 500) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
+
+// Conditional ReactQueryDevtools import for development
+const ReactQueryDevtools = import.meta.env.DEV
+  ? React.lazy(() => import('@tanstack/react-query-devtools').then(module => ({ default: module.ReactQueryDevtools })))
+  : null;
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
-    <DebugProvider>
-      <App />
-    </DebugProvider>
+    <QueryClientProvider client={queryClient}>
+      <DebugProvider>
+        <App />
+      </DebugProvider>
+      {import.meta.env.DEV && ReactQueryDevtools && (
+        <React.Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </React.Suspense>
+      )}
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

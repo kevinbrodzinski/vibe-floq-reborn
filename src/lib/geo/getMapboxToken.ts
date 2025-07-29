@@ -1,30 +1,37 @@
-import { supabase } from '@/integrations/supabase/client';
+/**
+ * ## Mapbox Integration
+ * – Access token managed **only** here; never inline the string anywhere else.  
+ * – Map instance stored in singleton pattern via `src/lib/geo/project.ts` (already exists).  
+ * – Prefer lazy loading for map components.  
+ *
+ * NOTE: keep this file lightweight; NO React or browser-only code allowed.
+ */
 
-let _cached: {token: string; source: string} | null = null;
+let cached: { token: string; source: 'env' | 'fallback' } | null = null;
 
-// Clear cache function for debugging
-export function clearMapboxTokenCache() {
-  _cached = null;
-}
+/** Clear cache (used by FieldWebMap dev hot-reload) */
+export const clearMapboxTokenCache = () => {
+  cached = null;
+};
 
-export async function getMapboxToken(): Promise<{token: string; source: string}> {
-  if (_cached) return _cached;                 // 1. return if memoised
+/**
+ * Returns a **public** Mapbox access token.
+ * Cursor: feel free to import this anywhere – it is side-effect free.
+ */
+export async function getMapboxToken(): Promise<{ token: string; source: string }> {
+  if (cached) return cached;
 
-  // 3. env (prioritize environment variable)
-  const env =
-    import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ??
-    (typeof process !== 'undefined' ? process.env.MAPBOX_ACCESS_TOKEN : undefined);
-  if (env) return (_cached = { token: env, source: 'env' });
+  /* 1️⃣  primary – .env.* variable injected by Vite/Next/Remix/etc. */
+  const envToken = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+  if (envToken) {
+    cached = { token: envToken, source: 'env' };
+    return cached;
+  }
 
-  // 2. edge-function – if this fails we fall through
-  try {
-    const { data } = await supabase.functions.invoke('mapbox-token');
-    if (data?.token) return (_cached = { token: data.token, source: 'edge-function' });
-  } catch {/* ignore */}
-
-  // 4. fallback
-  return (_cached = {
-    token: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw',
+  /* 2️⃣  fallback – ADMIN_MAP_TOKEN baked into the repo (only for local mock) */
+  cached = {
+    token: 'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A',
     source: 'fallback'
-  });
+  };
+  return cached;
 }

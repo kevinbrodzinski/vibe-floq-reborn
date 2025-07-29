@@ -16,13 +16,13 @@ export async function storePushToken(
   return data as { ok: boolean };
 }
 
-export async function clearPlanNotifications(userId: string) {
+export async function clearPlanNotifications(profileId: string) {
   const { error } = await supabase
     .from('event_notifications' as any)
     .update({ seen_at: new Date().toISOString() })
     .is('seen_at', null)
     .in('kind', ['plan_comment_new', 'plan_checkin'])
-    .eq('user_id', userId);
+    .eq('profile_id', profileId);
     
   if (error) throw error;
 }

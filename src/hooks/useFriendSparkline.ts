@@ -8,7 +8,7 @@ export function useFriendSparkline(friendId: string): [number, number][] | undef
       const { data, error } = await supabase
         .from('v_friend_sparkline')
         .select('points')
-        .eq('user_id', friendId)
+        .eq('profile_id', friendId)
         .maybeSingle();
       if (error) throw error;
       return (data?.points ?? []) as [number, number][];

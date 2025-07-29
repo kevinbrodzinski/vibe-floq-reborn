@@ -35,7 +35,7 @@ export function usePlanInvitations(planId: string) {
     }
   };
 
-  const inviteUser = async (userIdOrEmail: string, type: 'user_id' | 'email') => {
+  const inviteUser = async (userIdOrEmail: string, type: 'profile_id' | 'email') => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -95,7 +95,7 @@ export function usePlanInvitations(planId: string) {
             .from('plan_participants')
             .insert({
               plan_id: planId,
-              user_id: user.id,
+              profile_id: user.id,
               invite_type: 'invitation'
             });
         }

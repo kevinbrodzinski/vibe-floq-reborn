@@ -18,7 +18,7 @@ export function useSyncedVibeDetection() {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('vibe_detection_enabled')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .maybeSingle()
 
       if (error) {

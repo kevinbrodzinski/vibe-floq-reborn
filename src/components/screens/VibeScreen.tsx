@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSensorMonitoring } from "@/hooks/useSensorMonitoring";
 import { VibeDensityModal } from "@/components/screens/VibeDensityModal";
 import { useVibeCardDynamics } from "@/hooks/useVibeCardDynamics";
-
 import { useSmartSuggestions } from "@/hooks/useSmartSuggestions";
 import { useHotspotToast } from "@/hooks/useHotspotToast";
 import SuggestionToast from "@/components/vibe/SuggestionToast";
@@ -40,14 +39,14 @@ interface VibeInfo {
 
 export const VibeScreen = () => {
   useSyncedVisibility(); // Sync visibility across app and devices
-  
+
   const { user } = useAuth();
   const { vibe: selectedVibe, setVibe: setSelectedVibe, isUpdating, hydrated, clearVibe, visibility } = useVibe();
   const currentVibeRow = useCurrentVibeRow();
   const [isDragging, setIsDragging] = useState(false);
   const [elapsed, setElapsed] = useState<string>('—');
   const { autoMode, toggleAutoMode } = useVibeDetection();
-  
+
   // Sync vibe detection preference across devices
   useSyncedVibeDetection();
   const [showFeedback, setShowFeedback] = useState(false);
@@ -57,21 +56,21 @@ export const VibeScreen = () => {
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loggedThisSessionRef = useRef<boolean>(false);
   const dialRef = useRef<HTMLDivElement>(null);
-  
+
   // Sensor monitoring for auto-detection
   const { sensorData, vibeDetection, permissions, requestPermissions, recordFeedback, learningData } = useSensorMonitoring(autoMode);
-  
+
   // Hotspot toast notifications
   useHotspotToast();
-  
+
   // Mock user location for demo (replace with real geolocation)
   const userLocation = { lat: 37.7749, lng: -122.4194 };
 
   // No cluster fetching here; the modal does it
-  
+
   // Smart suggestions based on nearby clusters
   const { suggestionQueue, dismissSuggestion, applyVibe } = useSmartSuggestions();
-  
+
   // Enhanced vibe card dynamics
   const { pulseScale, pulseOpacity, tintColor, showGlow } = useVibeCardDynamics(
     [], // No clusters needed here anymore
@@ -84,15 +83,15 @@ export const VibeScreen = () => {
   const { vibeMatch, crowdData, eventTags, dominantVibe } = useVibeMatch();
 
   // Motion-based vibe detection
-  const { motionData, vibeTransitions, activity, speed, confidence } = useMotionBasedVibe();
-  
+  const { motionData, vibeTransitions, activity, speed, confidence } = useMotionBasedVibe(autoMode);
+
   // Battery-optimized dB meter
-  const { 
-    dbState, 
-    currentLevel, 
-    startListening, 
-    stopListening, 
-    startPulsing, 
+  const {
+    dbState,
+    currentLevel,
+    startListening,
+    stopListening,
+    startPulsing,
     stopPulsing,
     getVibeInfluence,
     shouldChangeVibeFromDb
@@ -117,15 +116,15 @@ export const VibeScreen = () => {
     // Auto-detection status
     if (autoMode) {
       updates.push("Auto-detection active • Learning your patterns");
-      
+
       if (motionData.isMoving) {
         updates.push(`Motion detected: ${activity} at ${speed.toFixed(1)} m/s`);
       }
-      
+
       if (dbState.isActive) {
         updates.push(`Sound level: ${currentLevel.toFixed(0)} dB (${getVibeInfluence()})`);
       }
-      
+
       if (learningData.accuracy > 0) {
         updates.push(`Learning accuracy: ${(learningData.accuracy * 100).toFixed(0)}%`);
       }
@@ -166,7 +165,7 @@ export const VibeScreen = () => {
       const bias = learningData.preferences[vibeDetection.suggestedVibe] ?? 0;
       // Base 0.50 → as low as 0.25, capped upper bound at 0.60 to avoid locking out vibes
       const threshold = Math.min(0.60, Math.max(0.25, 0.50 - bias * 0.25));
-      
+
       if (vibeDetection.confidence >= threshold) {
         // Throttled debug log with dev guard (once per session)
         if (import.meta.env.DEV && !loggedThisSessionRef.current) {
@@ -178,7 +177,7 @@ export const VibeScreen = () => {
           );
           loggedThisSessionRef.current = true;
         }
-        
+
         // Only apply if it's a valid VibeState
         const vibeAsState = safeVibeState(vibeDetection.suggestedVibe);
         if (vibes[vibeAsState]) {
@@ -207,7 +206,7 @@ export const VibeScreen = () => {
   // Handle feedback acceptance
   const handleAcceptFeedback = useCallback(async () => {
     if (!vibeDetection) return;
-    
+
     setIsLearning(true);
     try {
       await recordFeedback(true);
@@ -224,7 +223,7 @@ export const VibeScreen = () => {
   // Handle feedback correction
   const handleCorrectFeedback = useCallback(async (correctedVibe: Vibe) => {
     if (!vibeDetection) return;
-    
+
     setIsLearning(true);
     try {
       await recordFeedback(false, correctedVibe);
@@ -253,10 +252,10 @@ export const VibeScreen = () => {
 
   // Controlled pulse for outdoor patterns detection
   useEffect(() => {
-    const outdoorPatterns = learningData.patterns.filter(p => 
+    const outdoorPatterns = learningData.patterns.filter(p =>
       p.context.toLowerCase().includes('outdoor') && p.confidence > 0.7
     );
-    
+
     if (outdoorPatterns.length >= 3) {
       setShowPulse(true);
       const timeout = setTimeout(() => setShowPulse(false), 2000);
@@ -269,10 +268,10 @@ export const VibeScreen = () => {
     if (autoMode) {
       // Start dB pulsing
       startPulsing();
-      
+
       // Request microphone permission for dB detection
       startListening().catch(console.error);
-      
+
       return () => {
         stopPulsing();
         stopListening();
@@ -285,33 +284,33 @@ export const VibeScreen = () => {
     if (!autoMode) {
       await requestPermissions();
     }
-    
+
     const newAutoMode = !autoMode;
     toggleAutoMode();
-    
+
     // Log the toggle event (optional)
     if (user) {
       try {
         await supabase.from('user_action_log').insert({
           action: newAutoMode ? 'vibe_detection_enabled' : 'vibe_detection_disabled',
-          user_id: user.id
+          profile_id: user.id
         });
       } catch (error) {
         console.warn('Failed to log vibe detection toggle:', error);
       }
     }
-    
+
     // Sync to Supabase for cross-device persistence (deferred)
     if (user) {
       setTimeout(async () => {
         try {
           await supabase
             .from('user_preferences')
-            .upsert({ 
-              user_id: user.id, 
-              vibe_detection_enabled: newAutoMode 
-            }, { 
-              onConflict: 'user_id' 
+            .upsert({
+              profile_id: user.id,
+              vibe_detection_enabled: newAutoMode
+            }, {
+              onConflict: 'profile_id'
             });
         } catch (error) {
           console.warn('Failed to sync vibe detection preference:', error);
@@ -384,7 +383,7 @@ export const VibeScreen = () => {
     if (selectedVibe && vibes[selectedVibe as keyof typeof vibes]) {
       return selectedVibe;
     }
-    
+
     // If not, fall back to 'chill'
     return 'chill';
   })();
@@ -397,9 +396,8 @@ export const VibeScreen = () => {
           variant="ghost"
           size="sm"
           onClick={handleToggleAutoMode}
-          className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${
-            autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
-          }`}
+          className={`p-2 rounded-xl bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 ${autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
+            }`}
         >
           {autoMode ? <Zap className="mr-2" /> : <ZapOff className="mr-2" />}
           {autoMode ? 'Auto Vibe On' : 'Auto Vibe Off'}
@@ -412,7 +410,7 @@ export const VibeScreen = () => {
 
       {/* Magical Vibe Wheel with Physics */}
       <div className="px-6 mb-8">
-        <VibeWheel 
+        <VibeWheel
           eventVibeData={{
             crowdData,
             eventTags,
@@ -424,7 +422,7 @@ export const VibeScreen = () => {
 
       {/* Dynamic Vibe Toggle */}
       <div className="px-6 mb-6 flex justify-center">
-        <DynamicVibeToggle 
+        <DynamicVibeToggle
           showMotionData={true}
           showDbData={true}
         />
@@ -482,14 +480,14 @@ export const VibeScreen = () => {
           <div className="space-y-3">
             {getStatusUpdates().map((update, index) => (
               <div key={index} className="flex items-start space-x-3 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-                <div 
+                <div
                   className="w-2 h-2 rounded-full flex-shrink-0 mt-2"
-                  style={{ 
-                    backgroundColor: autoMode && index === 0 
-                      ? "hsl(var(--accent))" 
-                      : index < 2 
-                        ? "hsl(var(--muted-foreground))" 
-                        : "hsl(var(--accent))" 
+                  style={{
+                    backgroundColor: autoMode && index === 0
+                      ? "hsl(var(--accent))"
+                      : index < 2
+                        ? "hsl(var(--muted-foreground))"
+                        : "hsl(var(--accent))"
                   }}
                 ></div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{update}</p>
@@ -514,13 +512,12 @@ export const VibeScreen = () => {
       {/* Emotional Density Map Preview with controlled pulse */}
       <div className="px-6 mb-6">
         <div className={`relative ${showPulse ? "animate-[pulseOnce_2s_ease-out] motion-reduce:animate-none" : ""}`}>
-          <button 
+          <button
             onClick={() => setShowDensityMap(true)}
-            className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${
-              showPulse 
-                ? "border-accent/50 ring-2 ring-accent/30 shadow-[0_0_20px_hsl(var(--accent)/30)]" 
+            className={`w-full bg-card/40 backdrop-blur-xl rounded-2xl p-4 border transition-all duration-300 hover:bg-card/60 hover:scale-[1.02] ${showPulse
+                ? "border-accent/50 ring-2 ring-accent/30 shadow-[0_0_20px_hsl(var(--accent)/30)]"
                 : "border-border/30"
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -557,9 +554,9 @@ export const VibeScreen = () => {
           <div className="bg-card/80 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div 
+                <div
                   className="relative w-12 h-12 rounded-full flex items-center justify-center transition-transform duration-100 ease-linear"
-                  style={{ 
+                  style={{
                     backgroundColor: tintColor ? `color-mix(in srgb, ${vibes[safeFallbackVibe]?.color || vibes.chill.color} 80%, ${tintColor} 20%)` : vibes[safeFallbackVibe]?.color || vibes.chill.color,
                     transform: `scale(${pulseScale})`,
                     boxShadow: showGlow ? `0 0 12px 4px rgba(255,255,255,${pulseOpacity})` : undefined
@@ -581,12 +578,12 @@ export const VibeScreen = () => {
                 </div>
                 <div>
                   <span className="font-medium text-foreground">{vibes[safeFallbackVibe]?.label || vibes.chill.label}</span>
-                    <div className="text-xs text-muted-foreground">
-                      Active for {elapsed}
-                    </div>
+                  <div className="text-xs text-muted-foreground">
+                    Active for {elapsed}
+                  </div>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={handleClearVibe}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
               >
@@ -597,7 +594,7 @@ export const VibeScreen = () => {
         ) : (
           <div className="bg-card/60 backdrop-blur-xl rounded-2xl p-4 border border-border/30 shadow-lg">
             <div className="flex items-center justify-center">
-              <Button 
+              <Button
                 onClick={() => {
                   // Focus on the vibe wheel - scroll to top where the wheel is
                   window.scrollTo({ top: 0, behavior: 'smooth' });

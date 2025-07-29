@@ -45,7 +45,7 @@ export function usePlansData() {
             creator:profiles!creator_id(id, display_name, username, avatar_url)
           )
         `)
-        .eq('user_id', user.user.id)
+        .eq('profile_id', user.user.id)
         .neq('floq_plans.creator_id', user.user.id);
 
       if (error) throw error;

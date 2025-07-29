@@ -61,7 +61,7 @@ export const useVenueInsights = () => {
       const { data: visits, error: visitsError } = await supabase
         .from('venue_visits')
         .select('arrived_at')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .gte('arrived_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
         .order('arrived_at', { ascending: true })
 

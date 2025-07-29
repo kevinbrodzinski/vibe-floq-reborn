@@ -17,6 +17,76 @@ export const expoApplication = {
   nativeBuildVersion: '1.0.0',
 };
 
+// Stub for expo-constants
+export const expoConstants = {
+  expoConfig: {
+    name: 'floq-web',
+    slug: 'floq-web',
+    version: '1.0.0',
+    platform: ['web'],
+  },
+  manifest: {
+    name: 'floq-web',
+    slug: 'floq-web',
+    version: '1.0.0',
+  },
+  appOwnership: 'expo',
+  deviceName: 'web',
+  deviceYearClass: 2024,
+  isDevice: false,
+  isExpoGo: false,
+  nativeAppVersion: '1.0.0',
+  nativeBuildVersion: '1.0.0',
+  platform: 'web',
+  sessionId: 'web-session',
+  systemVersion: '1.0.0',
+  // Add more properties that might be accessed
+  installationId: 'web-installation',
+  applicationId: 'floq-web',
+  buildVersion: '1.0.0',
+  appVersion: '1.0.0',
+  // Add a default export for direct imports
+  default: {
+    expoConfig: {
+      name: 'floq-web',
+      slug: 'floq-web',
+      version: '1.0.0',
+      platform: ['web'],
+    },
+    manifest: {
+      name: 'floq-web',
+      slug: 'floq-web',
+      version: '1.0.0',
+    },
+    appOwnership: 'expo',
+    deviceName: 'web',
+    deviceYearClass: 2024,
+    isDevice: false,
+    isExpoGo: false,
+    nativeAppVersion: '1.0.0',
+    nativeBuildVersion: '1.0.0',
+    platform: 'web',
+    sessionId: 'web-session',
+    systemVersion: '1.0.0',
+    installationId: 'web-installation',
+    applicationId: 'floq-web',
+    buildVersion: '1.0.0',
+    appVersion: '1.0.0',
+  }
+};
+
+// Stub for expo-asset
+export const expoAsset = {
+  Asset: {
+    fromModule: () => Promise.resolve({ uri: 'web-asset' }),
+    loadAsync: () => Promise.resolve(),
+    downloadAsync: () => Promise.resolve(),
+  },
+  AssetModule: {
+    fromModule: () => Promise.resolve({ uri: 'web-asset' }),
+  },
+};
+
 // Stub for expo-device
 export const expoDevice = {
   brand: 'web',
@@ -55,15 +125,34 @@ export const reactNativeLibraries = {
   polyfillGlobal: () => {},
 };
 
+// Stub for react-native-mmkv
+export const reactNativeMmkv = {
+  MMKV: class {
+    constructor() {}
+    set() {}
+    get() { return null; }
+    delete() {}
+    clearAll() {}
+  },
+  createMMKV: () => new reactNativeMmkv.MMKV(),
+};
+
 // Default export for modules that use default exports
 export default {
   posthog,
   expoApplication,
+  expoConstants,
+  expoAsset,
   expoDevice,
   sentryExpo,
   reactNativeLibraries,
+  reactNativeMmkv,
   // Add any other exports that might be needed
   Application: expoApplication,
+  Constants: expoConstants,
+  Asset: expoAsset,
   Device: expoDevice,
   Sentry: sentryExpo,
+  MMKV: reactNativeMmkv.MMKV,
+  createMMKV: reactNativeMmkv.createMMKV,
 };

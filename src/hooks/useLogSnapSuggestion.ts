@@ -31,7 +31,7 @@ export function useLogSnapSuggestion() {
       const { error } = await supabase
         .from('snap_suggestion_logs')
         .insert({
-          user_id: user.id,
+          profile_id: user.id,
           plan_id: planId,
           stop_id: stopId,
           original_time: originalTime,

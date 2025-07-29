@@ -32,7 +32,7 @@ export async function fetchTimeSeries(uid: string, fromDate?: string, toDate?: s
   let query = supabase
     .from('v_time_in_venue_daily' as any)
     .select('*')
-    .eq('user_id', uid);
+    .eq('profile_id', uid);
 
   if (fromDate) query = query.gte('day', fromDate);
   if (toDate) query = query.lte('day', toDate);
@@ -67,7 +67,7 @@ export async function getVenueVisitPatterns(uid: string, days = 30) {
   const { data, error } = await supabase
     .from('venue_visits' as any)
     .select('venue_id, created_at')
-    .eq('user_id', uid)
+    .eq('profile_id', uid)
     .gte('created_at', fromDate.toISOString())
     .order('created_at');
 
@@ -160,7 +160,7 @@ export function inferSmartStatus(timeData: TimeInVenueDaily[], venueTypes: Recor
 /**
  * Calculate leaderboard rankings by minutes spent
  */
-export function calculateTimeLeaderboard(userTimeData: Array<{ userId: string; totalMinutes: number }>) {
+export function calculateTimeLeaderboard(userTimeData: Array<{ profileId: string; totalMinutes: number }>) {
   return userTimeData
     .sort((a, b) => b.totalMinutes - a.totalMinutes)
     .map((user, index) => ({
@@ -182,7 +182,7 @@ export function getBadgeTier(monthlyMinutes: number): string {
 /**
  * Check if user qualifies as venue "mayor"
  */
-export function checkVenueMayor(venueId: string, userMinutes: number, allUserMinutes: Array<{ userId: string; minutes: number }>): boolean {
+export function checkVenueMayor(venueId: string, userMinutes: number, allUserMinutes: Array<{ profileId: string; minutes: number }>): boolean {
   const sortedUsers = allUserMinutes.sort((a, b) => b.minutes - a.minutes);
   return sortedUsers.length > 0 && sortedUsers[0].minutes === userMinutes && userMinutes > 0;
 }

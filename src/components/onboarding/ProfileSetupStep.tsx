@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, AtSign, FileText, Heart, CheckCircle, Loader2 } from 'lucide-react';
 import { useUsernameValidation } from '@/hooks/useUsernameValidation';
+import { InterestPills } from '@/components/ui/InterestPills';
 
 interface ProfileData {
   username: string;
@@ -26,7 +27,6 @@ export function ProfileSetupStep({ onNext, onBack }: ProfileSetupStepProps) {
     bio: '',
     interests: [],
   });
-  const [interestsInput, setInterestsInput] = useState('');
   const [displayNameError, setDisplayNameError] = useState('');
   
   const usernameValidation = useUsernameValidation(formData.username);
@@ -61,9 +61,7 @@ export function ProfileSetupStep({ onNext, onBack }: ProfileSetupStepProps) {
     setFormData(prev => ({ ...prev, username }));
   };
 
-  const handleInterestsChange = (value: string) => {
-    setInterestsInput(value);
-    const interests = value.split(',').map(i => i.trim()).filter(Boolean);
+  const handleInterestsChange = (interests: string[]) => {
     setFormData(prev => ({
       ...prev,
       interests
@@ -178,15 +176,12 @@ export function ProfileSetupStep({ onNext, onBack }: ProfileSetupStepProps) {
               <Heart className="w-4 h-4" />
               Interests <span className="text-muted-foreground text-xs">(optional)</span>
             </Label>
-            <Input
-              id="interests"
-              value={interestsInput}
-              onChange={(e) => handleInterestsChange(e.target.value)}
-              placeholder="music, art, hiking, coffee..."
+            <InterestPills
+              interests={formData.interests || []}
+              onInterestsChange={handleInterestsChange}
+              maxInterests={8}
+              placeholder="Add your interests..."
             />
-            <p className="text-xs text-muted-foreground">
-              Separate interests with commas
-            </p>
           </div>
         </CardContent>
       </Card>

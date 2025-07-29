@@ -11,7 +11,7 @@ export const useIgnoreFloq = () => {
       .from('floq_ignored')
       .delete()
       .eq('floq_id', floqId)
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      .eq('profile_id', (await supabase.auth.getUser()).data.user?.id);
     
     if (error) throw error;
     

@@ -16,7 +16,7 @@ export function usePlanUserSearch(planId: string, query: string) {
       // Get existing plan participants first
       const { data: participants, error: participantsError } = await supabase
         .from('plan_participants')
-        .select('user_id')
+        .select('profile_id')
         .eq('plan_id', planId)
 
       if (participantsError) throw participantsError

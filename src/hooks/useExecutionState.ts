@@ -82,12 +82,12 @@ export function useExecutionState({
     });
   }, [totalStops, toast]);
 
-  const updateCheckIn = useCallback((userId: string, isCheckedIn: boolean) => {
+  const updateCheckIn = useCallback((profileId: string, isCheckedIn: boolean) => {
     setState(prev => ({
       ...prev,
       participantCheckIns: {
         ...prev.participantCheckIns,
-        [userId]: isCheckedIn,
+        [profileId]: isCheckedIn,
       },
     }));
   }, []);

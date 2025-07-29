@@ -21,7 +21,7 @@ export function useAfterglowData(date?: string) {
           .from('daily_afterglow')
           .select('*')
           .eq('date', date)
-          .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+          .eq('profile_id', (await supabase.auth.getUser()).data.user?.id)
           .maybeSingle()
 
         if (fetchError) throw fetchError
@@ -30,7 +30,7 @@ export function useAfterglowData(date?: string) {
           // Properly map the database row to our domain type
           const mappedData: DailyAfterglowData = {
             id: data.id,
-            user_id: data.user_id,
+            profile_id: data.profile_id,
             date: data.date,
             energy_score: data.energy_score || 0,
             social_intensity: data.social_intensity || 0,

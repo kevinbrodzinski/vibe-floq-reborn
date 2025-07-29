@@ -72,7 +72,7 @@ export const useWatchlist = () => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // TODO: Enable when user_watchlist table is created
-      return { id: 'placeholder', user_id: user.id, plan_id: planId };
+      return { id: 'placeholder', profile_id: user.id, plan_id: planId };
 
       // const { data, error } = await supabase
       //   .from('user_watchlist')

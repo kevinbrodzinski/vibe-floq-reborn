@@ -44,45 +44,45 @@ export function useCurrentUserProfile() {
 }
 
 // Keep the original useProfile signature for backward compatibility
-export const useProfile = (userId: string | undefined) => {
+export const useProfile = (profileId: string | undefined) => {
   
   if (OFFLINE_MODE) {
     const mockProfile: Profile = {
-      id: userId || 'mock-id',
+      id: profileId || 'mock-id',
       username: 'mock_user',
       display_name: 'Mock User',
       avatar_url: null,
     };
 
     return {
-      data: userId ? mockProfile : undefined,
+      data: profileId ? mockProfile : undefined,
       isLoading: false,
       error: null,
       isError: false,
-      isSuccess: !!userId,
+      isSuccess: !!profileId,
     };
   }
 
   return useQuery({
-    queryKey: ['profile:v2', userId],
+    queryKey: ['profile:v2', profileId],
     queryFn: async (): Promise<Profile> => {
-      if (!userId) throw new Error('User ID is required');
+      if (!profileId) throw new Error('User ID is required');
       
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .eq('id', userId)
+        .eq('id', profileId)
         .maybeSingle();
 
       if (error) throw error;
       if (!data) {
-        console.warn(`Profile not found for user ${userId}`);
+        console.warn(`Profile not found for user ${profileId}`);
         throw new Error('Profile not found');
       }
       
       return data as Profile;
     },
-    enabled: !!userId,
+    enabled: !!profileId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

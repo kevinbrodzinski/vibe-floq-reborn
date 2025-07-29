@@ -121,7 +121,7 @@ export interface FloqAutoMatch {
     title: string;
     description: string;
     suggestedMembers: Array<{
-      userId: string;
+      profileId: string;
       username: string;
       avatar: string;
     }>;
@@ -132,18 +132,18 @@ export interface FloqAutoMatch {
   timestamp: string;
 }
 
-export const useFloqAutoMatch = (userId: string | null, venueId: string | null) => {
+export const useFloqAutoMatch = (profileId: string | null, venueId: string | null) => {
   return useQuery({
-    queryKey: ["floq-auto-match", userId, venueId],
+    queryKey: ["floq-auto-match", profileId, venueId],
     queryFn: async (): Promise<FloqAutoMatch> => {
-      if (!userId || !venueId) {
+      if (!profileId || !venueId) {
         throw new Error("User ID and Venue ID are required");
       }
 
       const { data, error } = await supabase.functions.invoke(
         "generate-floq-auto-match",
         {
-          body: { userId, venueId }
+          body: { profileId, venueId }
         }
       );
 
@@ -153,7 +153,7 @@ export const useFloqAutoMatch = (userId: string | null, venueId: string | null) 
 
       return data;
     },
-    enabled: !!userId && !!venueId,
+    enabled: !!profileId && !!venueId,
     staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
   });

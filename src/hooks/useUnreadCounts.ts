@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 
 interface UnreadCounts {
-  user_id: string;
+  profile_id: string;
   floq_id: string;
   unread_chat: number;
   unread_activity: number;
@@ -23,7 +23,7 @@ export const useUnreadCounts = (floqId: string) => {
       const { data, error } = await supabase
         .from('user_floq_unread_counts')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('profile_id', session.user.id)
         .eq('floq_id', floqId)
         .maybeSingle();
 
@@ -37,7 +37,7 @@ export const useUnreadCounts = (floqId: string) => {
         ...data,
         unread_total: data.unread_chat + data.unread_activity + data.unread_plans
       } : {
-        user_id: session.user.id,
+        profile_id: session.user.id,
         floq_id: floqId,
         unread_chat: 0,
         unread_activity: 0,
@@ -64,7 +64,7 @@ export const useMyFloqsUnreadCounts = () => {
       const { data, error } = await supabase
         .from('user_floq_unread_counts')
         .select('*')
-        .eq('user_id', session.user.id);
+        .eq('profile_id', session.user.id);
 
       if (error) {
         console.error('Error fetching my floqs unread counts:', error);
@@ -113,22 +113,22 @@ export const useFloqTabBadges = (floqId: string) => {
 };
 
 // Invalidation helper for notifications
-export const invalidateNotifications = (queryClient: any, userId?: string) => {
-  queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
-  queryClient.invalidateQueries({ queryKey: ['notification-counts', userId] });
+export const invalidateNotifications = (queryClient: any, profileId?: string) => {
+  queryClient.invalidateQueries({ queryKey: ['notifications', profileId] });
+  queryClient.invalidateQueries({ queryKey: ['notification-counts', profileId] });
 };
 
 // Hook for notification counts (from user_notifications table)
-export const useNotificationCounts = (userId?: string) => {
+export const useNotificationCounts = (profileId?: string) => {
   return useQuery({
-    queryKey: ['notification-counts', userId],
+    queryKey: ['notification-counts', profileId],
     queryFn: async (): Promise<{ total: number }> => {
-      if (!userId) return { total: 0 };
+      if (!profileId) return { total: 0 };
 
       const { count, error } = await supabase
         .from('user_notifications')
         .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
+        .eq('profile_id', profileId)
         .is('read_at', null);
 
       if (error) {
@@ -138,7 +138,7 @@ export const useNotificationCounts = (userId?: string) => {
 
       return { total: count ?? 0 };
     },
-    enabled: !!userId,
+    enabled: !!profileId,
     staleTime: 30_000,
     refetchInterval: 60_000,
   });

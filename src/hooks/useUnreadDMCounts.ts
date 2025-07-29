@@ -3,9 +3,8 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UnreadCount {
-  thread_id: string;
-  friend_id: string;
-  unread_count: number;
+  kind: string;
+  cnt: number;
 }
 
 export const useUnreadDMCounts = (selfId: string | null) => {
@@ -16,7 +15,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
     enabled: !!selfId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_unread_counts', { user_id_param: selfId });
+        .rpc('get_unread_counts', { p_profile: selfId });
       if (error) throw error;
       return data as UnreadCount[];
     },

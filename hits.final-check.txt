@@ -1,0 +1,577 @@
+src/providers/EventNotificationsProvider.tsx:89:          // Double-check user_id for security
+src/providers/EventNotificationsProvider.tsx:105:          // Double-check user_id for security
+src/pages/SharedPlan.tsx:147:            user_id,
+src/pages/SharedPlan.tsx:151:            profiles:user_id (
+src/pages/SharedPlan.tsx:190:  const isParticipant = user && plan.plan_participants?.some((p: any) => p.user_id === user.id);
+src/providers/PlanNotificationProvider.tsx:7:  user_id: string;
+src/pages/AfterglowInsightsPage.tsx:98:        mUsers.some((mu: any) => mu.user_id === u.user_id)
+src/pages/FloqDetails.tsx:92:  const isMember = floqDetails.participants?.some(p => p.user_id === session?.user?.id);
+src/components/RoleGuard.tsx:34:  const userRole = floqDetails.participants?.find(p => p.user_id === session.user.id)?.role;
+src/pages/PlanInvite.tsx:64:          user_id,
+src/pages/PlanInvite.tsx:65:          profiles!user_id(id, display_name, username, avatar_url)
+src/pages/ShareRipplePage.tsx:92:        profile_id: data.daily_afterglow?.user_id || '',
+src/lib/analytics/insights.ts:9:  user_id: string;
+src/lib/analytics/insights.ts:16:  user_id: string;
+src/lib/analytics/insights.ts:26:type VenueStay = { user_id: string; venue_id: string; minutes_spent: number; day: string };
+src/pages/FloqPlanExecutionScreen.tsx:73:    id           : p.user_id,
+src/pages/FloqPlanExecutionScreen.tsx:74:    username     : p.user_id, // Fallback since profile data is not available
+src/pages/FloqPlanExecutionScreen.tsx:75:    display_name : p.user_id, // Fallback since profile data is not available
+src/types/friends.ts:10:  profile_id: string;    // requester (updated from user_id)
+src/lib/planInvites.ts:5:  userIds: string[],
+src/lib/planInvites.ts:8:  if (!floqIds.length || !userIds.length) return;
+src/lib/planInvites.ts:11:    userIds.map(user_id => ({ floq_id, user_id, role: 'member' as const }))
+src/types/index.ts:10:  profile_id: string;    // Updated from user_id to match database schema
+src/types/index.ts:26:  profile_id: string;    // Updated from user_id to match database schema
+src/types/index.ts:36:  profile_id: string;    // Updated from user_id to match database schema
+src/types/index.ts:46:  profile_id: string;    // Updated from user_id to match database schema
+src/types/afterglow.ts:14:  user_id: string;       // TODO(user): Will be updated to profile_id once database migration is complete
+src/components/ui/RelationshipStrengthIndicator.tsx:53:    onTogglePrivacy?.(relationship.userId, !relationship.isPublic)
+src/types/database.ts:39:  profile_id: string; // Updated from user_id to match database schema
+src/components/collaboration/StopEditingIndicators.tsx:27:          <EditingIndicator key={`${editor.userId}_${editor.action}`} editor={editor} />
+src/components/collaboration/StopEditingIndicators.tsx:141:          <div key={`${editor.userId}_${editor.stopId}`} className="flex items-center gap-2 text-xs">
+src/pages/FloqDetail.tsx:127:  const isMember = floqDetails.participants?.some(p => p.user_id === session?.user?.id);
+src/pages/UserProfile.tsx:12:  // const { data: profile } = useProfile(userId || '');
+src/components/collaboration/LiveCursors.tsx:18:          <CursorIndicator key={participant.userId} participant={participant} />
+src/components/collaboration/LiveCursors.tsx:30:  const cursorColor = getUserColor(participant.userId)
+src/components/ui/RelationshipStrengthSummary.tsx:60:          <div key={relationship.userId} className="flex items-center gap-3">
+src/lib/recap/index.ts:36:    queryKey: QK.Recap('user', yesterday), // Will be updated with actual userId below
+src/lib/api/transform.ts:4:      d.profileId = d.user_id;
+src/lib/api/callFloqActions.ts:8:  user_id: string
+src/components/maps/FieldWebMap.tsx:67:    const selectedFloqMemberIds = selectedFloqMembers.map(member => member.user_id);
+src/components/maps/FieldWebMap.tsx:72:      id: member.user_id,
+src/components/maps/FieldWebMap.tsx:83:    selectedFloqMembers: selectedFloqMembers.map(member => member.user_id)
+src/components/ui/avatar-with-fallback.tsx:27:  // Generate deterministic color if userId provided
+src/components/LiveCursor.tsx:40:      cursor.userId !== currentUserId && 
+src/components/plan/PlanFeedbackDisplay.tsx:104:                    profile_id: reflection.user_id || '',
+src/components/VenuePeopleTab.tsx:65:            key={person.user_id}
+src/components/demo/Phase4FeaturesDemo.tsx:174:                              <span>User {user.user_id.slice(-3)}</span>
+src/components/ui/RelationshipStrengthGrid.tsx:166:              key={relationship.userId}
+src/hooks/usePlanInvitations.ts:38:  const inviteUser = async (userIdOrEmail: string, type: 'profile_id' | 'email') => {
+src/hooks/usePlanInvitations.ts:49:          ? { invitee_email: userIdOrEmail }
+src/hooks/usePlanInvitations.ts:50:          : { invitee_user_id: userIdOrEmail }
+src/integrations/supabase/Database.ts:48:                    user_id: string;
+src/integrations/supabase/Database.ts:55:                    user_id: string;
+src/integrations/supabase/Database.ts:62:                    user_id?: string;
+src/integrations/supabase/Database.ts:110:                    user_id: string;
+src/integrations/supabase/Database.ts:119:                    user_id: string;
+src/integrations/supabase/Database.ts:128:                    user_id?: string;
+src/integrations/supabase/Database.ts:137:                    user_id: string;
+src/integrations/supabase/Database.ts:143:                    user_id: string;
+src/integrations/supabase/Database.ts:149:                    user_id?: string;
+src/integrations/supabase/Database.ts:322:                    user_id: string;
+src/integrations/supabase/Database.ts:328:                    user_id: string;
+src/integrations/supabase/Database.ts:334:                    user_id?: string;
+src/integrations/supabase/Database.ts:389:                    user_id: string;
+src/integrations/supabase/Database.ts:412:                    user_id: string;
+src/integrations/supabase/Database.ts:435:                    user_id?: string;
+src/integrations/supabase/Database.ts:445:                    user_id: string;
+src/integrations/supabase/Database.ts:451:                    user_id: string;
+src/integrations/supabase/Database.ts:457:                    user_id?: string;
+src/integrations/supabase/Database.ts:606:                    user_id: string;
+src/integrations/supabase/Database.ts:615:                    user_id: string;
+src/integrations/supabase/Database.ts:624:                    user_id?: string;
+src/integrations/supabase/Database.ts:664:                    user_id: string;
+src/integrations/supabase/Database.ts:677:                    user_id: string;
+src/integrations/supabase/Database.ts:690:                    user_id?: string;
+src/integrations/supabase/Database.ts:718:                    user_id: string | null;
+src/integrations/supabase/Database.ts:728:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:738:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:814:                    user_id: string | null;
+src/integrations/supabase/Database.ts:824:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:834:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:873:                    user_id: string;
+src/integrations/supabase/Database.ts:890:                    user_id: string;
+src/integrations/supabase/Database.ts:907:                    user_id?: string;
+src/integrations/supabase/Database.ts:929:                    user_id: string;
+src/integrations/supabase/Database.ts:937:                    user_id: string;
+src/integrations/supabase/Database.ts:945:                    user_id?: string;
+src/integrations/supabase/Database.ts:968:                    user_id: string;
+src/integrations/supabase/Database.ts:973:                    user_id: string;
+src/integrations/supabase/Database.ts:978:                    user_id?: string;
+src/integrations/supabase/Database.ts:1046:                    user_id: string;
+src/integrations/supabase/Database.ts:1051:                    user_id: string;
+src/integrations/supabase/Database.ts:1056:                    user_id?: string;
+src/integrations/supabase/Database.ts:1108:                    user_id: string;
+src/integrations/supabase/Database.ts:1115:                    user_id: string;
+src/integrations/supabase/Database.ts:1122:                    user_id?: string;
+src/integrations/supabase/Database.ts:1225:                    user_id: string;
+src/integrations/supabase/Database.ts:1231:                    user_id: string;
+src/integrations/supabase/Database.ts:1237:                    user_id?: string;
+src/integrations/supabase/Database.ts:1529:                    user_id: string;
+src/integrations/supabase/Database.ts:1536:                    user_id: string;
+src/integrations/supabase/Database.ts:1543:                    user_id?: string;
+src/integrations/supabase/Database.ts:1554:                    user_id: string;
+src/integrations/supabase/Database.ts:1562:                    user_id: string;
+src/integrations/supabase/Database.ts:1570:                    user_id?: string;
+src/integrations/supabase/Database.ts:1595:                    user_id: string;
+src/integrations/supabase/Database.ts:1602:                    user_id: string;
+src/integrations/supabase/Database.ts:1609:                    user_id?: string;
+src/integrations/supabase/Database.ts:1618:                    user_id: string;
+src/integrations/supabase/Database.ts:1624:                    user_id: string;
+src/integrations/supabase/Database.ts:1630:                    user_id?: string;
+src/integrations/supabase/Database.ts:1677:                    user_id: string;
+src/integrations/supabase/Database.ts:1682:                    user_id: string;
+src/integrations/supabase/Database.ts:1687:                    user_id?: string;
+src/integrations/supabase/Database.ts:1699:                    user_id: string;
+src/integrations/supabase/Database.ts:1708:                    user_id: string;
+src/integrations/supabase/Database.ts:1717:                    user_id?: string;
+src/integrations/supabase/Database.ts:1798:                    user_id: string;
+src/integrations/supabase/Database.ts:1808:                    user_id: string;
+src/integrations/supabase/Database.ts:1818:                    user_id?: string;
+src/integrations/supabase/Database.ts:1848:                    user_id: string;
+src/integrations/supabase/Database.ts:1861:                    user_id: string;
+src/integrations/supabase/Database.ts:1874:                    user_id?: string;
+src/integrations/supabase/Database.ts:2010:                    user_id: string;
+src/integrations/supabase/Database.ts:2021:                    user_id: string;
+src/integrations/supabase/Database.ts:2032:                    user_id?: string;
+src/integrations/supabase/Database.ts:2072:                    user_id: string;
+src/integrations/supabase/Database.ts:2081:                    user_id: string;
+src/integrations/supabase/Database.ts:2090:                    user_id?: string;
+src/integrations/supabase/Database.ts:2116:                    user_id: string;
+src/integrations/supabase/Database.ts:2125:                    user_id: string;
+src/integrations/supabase/Database.ts:2134:                    user_id?: string;
+src/integrations/supabase/Database.ts:2264:                    user_id: string;
+src/integrations/supabase/Database.ts:2271:                    user_id: string;
+src/integrations/supabase/Database.ts:2278:                    user_id?: string;
+src/integrations/supabase/Database.ts:2320:                    user_id: string;
+src/integrations/supabase/Database.ts:2337:                    user_id: string;
+src/integrations/supabase/Database.ts:2354:                    user_id?: string;
+src/integrations/supabase/Database.ts:2426:                    user_id: string | null;
+src/integrations/supabase/Database.ts:2436:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:2446:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:2481:                    user_id: string | null;
+src/integrations/supabase/Database.ts:2492:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:2503:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:2716:                    user_id: string;
+src/integrations/supabase/Database.ts:2728:                    user_id: string;
+src/integrations/supabase/Database.ts:2740:                    user_id?: string;
+src/integrations/supabase/Database.ts:2823:                    user_id: string;
+src/integrations/supabase/Database.ts:2832:                    user_id: string;
+src/integrations/supabase/Database.ts:2841:                    user_id?: string;
+src/integrations/supabase/Database.ts:2853:                    user_id: string;
+src/integrations/supabase/Database.ts:2862:                    user_id: string;
+src/integrations/supabase/Database.ts:2871:                    user_id?: string;
+src/integrations/supabase/Database.ts:2883:                    user_id: string;
+src/integrations/supabase/Database.ts:2892:                    user_id: string;
+src/integrations/supabase/Database.ts:2901:                    user_id?: string;
+src/integrations/supabase/Database.ts:2913:                    user_id: string;
+src/integrations/supabase/Database.ts:2922:                    user_id: string;
+src/integrations/supabase/Database.ts:2931:                    user_id?: string;
+src/integrations/supabase/Database.ts:2941:                    user_id: string | null;
+src/integrations/supabase/Database.ts:2948:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:2955:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:3033:                    user_id: string;
+src/integrations/supabase/Database.ts:3045:                    user_id: string;
+src/integrations/supabase/Database.ts:3057:                    user_id?: string;
+src/integrations/supabase/Database.ts:3163:                    user_id: string;
+src/integrations/supabase/Database.ts:3169:                    user_id: string;
+src/integrations/supabase/Database.ts:3175:                    user_id?: string;
+src/integrations/supabase/Database.ts:3198:                    user_id: string;
+src/integrations/supabase/Database.ts:3203:                    user_id: string;
+src/integrations/supabase/Database.ts:3208:                    user_id?: string;
+src/integrations/supabase/Database.ts:3253:                    user_id: string;
+src/integrations/supabase/Database.ts:3262:                    user_id: string;
+src/integrations/supabase/Database.ts:3271:                    user_id?: string;
+src/integrations/supabase/Database.ts:3283:                    user_id: string;
+src/integrations/supabase/Database.ts:3292:                    user_id: string;
+src/integrations/supabase/Database.ts:3301:                    user_id?: string;
+src/integrations/supabase/Database.ts:3324:                    user_id: string;
+src/integrations/supabase/Database.ts:3336:                    user_id: string;
+src/integrations/supabase/Database.ts:3348:                    user_id?: string;
+src/integrations/supabase/Database.ts:3401:                    user_id: string;
+src/integrations/supabase/Database.ts:3415:                    user_id: string;
+src/integrations/supabase/Database.ts:3429:                    user_id?: string;
+src/integrations/supabase/Database.ts:3449:                    user_id: string;
+src/integrations/supabase/Database.ts:3469:                    user_id: string;
+src/integrations/supabase/Database.ts:3489:                    user_id?: string;
+src/integrations/supabase/Database.ts:3503:                    user_id: string;
+src/integrations/supabase/Database.ts:3511:                    user_id: string;
+src/integrations/supabase/Database.ts:3519:                    user_id?: string;
+src/integrations/supabase/Database.ts:3536:                    user_id: string;
+src/integrations/supabase/Database.ts:3550:                    user_id: string;
+src/integrations/supabase/Database.ts:3564:                    user_id?: string;
+src/integrations/supabase/Database.ts:3574:                    user_id: string;
+src/integrations/supabase/Database.ts:3586:                    user_id: string;
+src/integrations/supabase/Database.ts:3598:                    user_id?: string;
+src/integrations/supabase/Database.ts:3611:                    user_id: string;
+src/integrations/supabase/Database.ts:3616:                    user_id: string;
+src/integrations/supabase/Database.ts:3621:                    user_id?: string;
+src/integrations/supabase/Database.ts:3681:                    user_id: string;
+src/integrations/supabase/Database.ts:3696:                    user_id: string;
+src/integrations/supabase/Database.ts:3711:                    user_id?: string;
+src/integrations/supabase/Database.ts:3733:                    user_id: string;
+src/integrations/supabase/Database.ts:3743:                    user_id: string;
+src/integrations/supabase/Database.ts:3753:                    user_id?: string;
+src/integrations/supabase/Database.ts:3774:                    user_id: string;
+src/integrations/supabase/Database.ts:3783:                    user_id: string;
+src/integrations/supabase/Database.ts:3792:                    user_id?: string;
+src/integrations/supabase/Database.ts:3812:                    user_id: string;
+src/integrations/supabase/Database.ts:3821:                    user_id: string;
+src/integrations/supabase/Database.ts:3830:                    user_id?: string;
+src/integrations/supabase/Database.ts:3929:                    user_id: string;
+src/integrations/supabase/Database.ts:3940:                    user_id: string;
+src/integrations/supabase/Database.ts:3951:                    user_id?: string;
+src/integrations/supabase/Database.ts:4020:                    user_id: string;
+src/integrations/supabase/Database.ts:4027:                    user_id: string;
+src/integrations/supabase/Database.ts:4034:                    user_id?: string;
+src/integrations/supabase/Database.ts:4049:                    user_id: string;
+src/integrations/supabase/Database.ts:4065:                    user_id: string;
+src/integrations/supabase/Database.ts:4081:                    user_id?: string;
+src/integrations/supabase/Database.ts:4110:                    user_id: string;
+src/integrations/supabase/Database.ts:4115:                    user_id: string;
+src/integrations/supabase/Database.ts:4120:                    user_id?: string;
+src/integrations/supabase/Database.ts:4128:                    user_id: string;
+src/integrations/supabase/Database.ts:4134:                    user_id: string;
+src/integrations/supabase/Database.ts:4140:                    user_id?: string;
+src/integrations/supabase/Database.ts:4201:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4220:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4244:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4251:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:4258:                    user_id?: string | null;
+src/integrations/supabase/Database.ts:4312:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4319:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4327:                    user_id: string | null;
+src/integrations/supabase/Database.ts:4931:                    user_id: string;
+src/integrations/supabase/Database.ts:5428:                    user_id: string;
+src/integrations/supabase/Database.ts:5669:                    user_id: string;
+src/integrations/supabase/Database.ts:5874:                    user_id: string;
+src/integrations/supabase/Database.ts:6063:                    user_id: string;
+src/components/floq/MemberManagementList.tsx:97:            p.user_id === profileId ? { ...p, role: newRole } : p
+src/components/floq/MemberManagementList.tsx:285:              <div key={participant.user_id} className={`${isMobile ? 'flex-col items-start gap-3' : 'flex items-center justify-between'} p-3 rounded-lg border`}>
+src/components/floq/MemberManagementList.tsx:321:                        onValueChange={(newRole) => handleRoleChange(participant.user_id, newRole, participant.role)}
+src/components/floq/MemberManagementList.tsx:344:                          onClick={() => handleRoleChange(participant.user_id, 'member', participant.role)}
+src/components/floq/MemberManagementList.tsx:357:                        disabled={removingUserId === participant.user_id}
+src/components/floq/MemberManagementList.tsx:407:        isLoading={removingUserId === selectedUser?.user_id}
+src/components/floq/MemberManagementList.tsx:408:        onConfirm={() => selectedUser && handleRemoveMember(selectedUser.user_id)}
+src/components/floq/PublicFloqPreview.tsx:141:              <div key={participant.user_id} className="flex flex-col items-center gap-1">
+src/integrations/supabase/types.ts:53:          user_id: string
+src/integrations/supabase/types.ts:60:          user_id: string
+src/integrations/supabase/types.ts:67:          user_id?: string
+src/integrations/supabase/types.ts:115:          user_id: string
+src/integrations/supabase/types.ts:124:          user_id: string
+src/integrations/supabase/types.ts:133:          user_id?: string
+src/integrations/supabase/types.ts:142:          user_id: string
+src/integrations/supabase/types.ts:148:          user_id: string
+src/integrations/supabase/types.ts:154:          user_id?: string
+src/integrations/supabase/types.ts:327:          user_id: string
+src/integrations/supabase/types.ts:333:          user_id: string
+src/integrations/supabase/types.ts:339:          user_id?: string
+src/integrations/supabase/types.ts:394:          user_id: string
+src/integrations/supabase/types.ts:417:          user_id: string
+src/integrations/supabase/types.ts:440:          user_id?: string
+src/integrations/supabase/types.ts:450:          user_id: string
+src/integrations/supabase/types.ts:456:          user_id: string
+src/integrations/supabase/types.ts:462:          user_id?: string
+src/integrations/supabase/types.ts:611:          user_id: string
+src/integrations/supabase/types.ts:620:          user_id: string
+src/integrations/supabase/types.ts:629:          user_id?: string
+src/integrations/supabase/types.ts:669:          user_id: string
+src/integrations/supabase/types.ts:682:          user_id: string
+src/integrations/supabase/types.ts:695:          user_id?: string
+src/integrations/supabase/types.ts:723:          user_id: string | null
+src/integrations/supabase/types.ts:733:          user_id?: string | null
+src/integrations/supabase/types.ts:743:          user_id?: string | null
+src/integrations/supabase/types.ts:819:          user_id: string | null
+src/integrations/supabase/types.ts:829:          user_id?: string | null
+src/integrations/supabase/types.ts:839:          user_id?: string | null
+src/integrations/supabase/types.ts:878:          user_id: string
+src/integrations/supabase/types.ts:895:          user_id: string
+src/integrations/supabase/types.ts:912:          user_id?: string
+src/integrations/supabase/types.ts:934:          user_id: string
+src/integrations/supabase/types.ts:942:          user_id: string
+src/integrations/supabase/types.ts:950:          user_id?: string
+src/integrations/supabase/types.ts:973:          user_id: string
+src/integrations/supabase/types.ts:978:          user_id: string
+src/integrations/supabase/types.ts:983:          user_id?: string
+src/integrations/supabase/types.ts:1051:          user_id: string
+src/integrations/supabase/types.ts:1056:          user_id: string
+src/integrations/supabase/types.ts:1061:          user_id?: string
+src/integrations/supabase/types.ts:1113:          user_id: string
+src/integrations/supabase/types.ts:1120:          user_id: string
+src/integrations/supabase/types.ts:1127:          user_id?: string
+src/integrations/supabase/types.ts:1230:          user_id: string
+src/integrations/supabase/types.ts:1236:          user_id: string
+src/integrations/supabase/types.ts:1242:          user_id?: string
+src/integrations/supabase/types.ts:1534:          user_id: string
+src/integrations/supabase/types.ts:1541:          user_id: string
+src/integrations/supabase/types.ts:1548:          user_id?: string
+src/integrations/supabase/types.ts:1559:          user_id: string
+src/integrations/supabase/types.ts:1567:          user_id: string
+src/integrations/supabase/types.ts:1575:          user_id?: string
+src/integrations/supabase/types.ts:1600:          user_id: string
+src/integrations/supabase/types.ts:1607:          user_id: string
+src/integrations/supabase/types.ts:1614:          user_id?: string
+src/integrations/supabase/types.ts:1623:          user_id: string
+src/integrations/supabase/types.ts:1629:          user_id: string
+src/integrations/supabase/types.ts:1635:          user_id?: string
+src/integrations/supabase/types.ts:1682:          user_id: string
+src/integrations/supabase/types.ts:1687:          user_id: string
+src/integrations/supabase/types.ts:1692:          user_id?: string
+src/integrations/supabase/types.ts:1704:          user_id: string
+src/integrations/supabase/types.ts:1713:          user_id: string
+src/integrations/supabase/types.ts:1722:          user_id?: string
+src/integrations/supabase/types.ts:1803:          user_id: string
+src/integrations/supabase/types.ts:1813:          user_id: string
+src/integrations/supabase/types.ts:1823:          user_id?: string
+src/integrations/supabase/types.ts:1853:          user_id: string
+src/integrations/supabase/types.ts:1866:          user_id: string
+src/integrations/supabase/types.ts:1879:          user_id?: string
+src/integrations/supabase/types.ts:2015:          user_id: string
+src/integrations/supabase/types.ts:2026:          user_id: string
+src/integrations/supabase/types.ts:2037:          user_id?: string
+src/integrations/supabase/types.ts:2077:          user_id: string
+src/integrations/supabase/types.ts:2086:          user_id: string
+src/integrations/supabase/types.ts:2095:          user_id?: string
+src/integrations/supabase/types.ts:2121:          user_id: string
+src/integrations/supabase/types.ts:2130:          user_id: string
+src/integrations/supabase/types.ts:2139:          user_id?: string
+src/integrations/supabase/types.ts:2269:          user_id: string
+src/integrations/supabase/types.ts:2276:          user_id: string
+src/integrations/supabase/types.ts:2283:          user_id?: string
+src/integrations/supabase/types.ts:2325:          user_id: string
+src/integrations/supabase/types.ts:2342:          user_id: string
+src/integrations/supabase/types.ts:2359:          user_id?: string
+src/integrations/supabase/types.ts:2431:          user_id: string | null
+src/integrations/supabase/types.ts:2441:          user_id?: string | null
+src/integrations/supabase/types.ts:2451:          user_id?: string | null
+src/integrations/supabase/types.ts:2486:          user_id: string | null
+src/integrations/supabase/types.ts:2497:          user_id?: string | null
+src/integrations/supabase/types.ts:2508:          user_id?: string | null
+src/integrations/supabase/types.ts:2721:          user_id: string
+src/integrations/supabase/types.ts:2733:          user_id: string
+src/integrations/supabase/types.ts:2745:          user_id?: string
+src/integrations/supabase/types.ts:2828:          user_id: string
+src/integrations/supabase/types.ts:2837:          user_id: string
+src/integrations/supabase/types.ts:2846:          user_id?: string
+src/integrations/supabase/types.ts:2858:          user_id: string
+src/integrations/supabase/types.ts:2867:          user_id: string
+src/integrations/supabase/types.ts:2876:          user_id?: string
+src/integrations/supabase/types.ts:2888:          user_id: string
+src/integrations/supabase/types.ts:2897:          user_id: string
+src/integrations/supabase/types.ts:2906:          user_id?: string
+src/integrations/supabase/types.ts:2918:          user_id: string
+src/integrations/supabase/types.ts:2927:          user_id: string
+src/integrations/supabase/types.ts:2936:          user_id?: string
+src/integrations/supabase/types.ts:2946:          user_id: string | null
+src/integrations/supabase/types.ts:2953:          user_id?: string | null
+src/integrations/supabase/types.ts:2960:          user_id?: string | null
+src/integrations/supabase/types.ts:3038:          user_id: string
+src/integrations/supabase/types.ts:3050:          user_id: string
+src/integrations/supabase/types.ts:3062:          user_id?: string
+src/integrations/supabase/types.ts:3168:          user_id: string
+src/integrations/supabase/types.ts:3174:          user_id: string
+src/integrations/supabase/types.ts:3180:          user_id?: string
+src/integrations/supabase/types.ts:3203:          user_id: string
+src/integrations/supabase/types.ts:3208:          user_id: string
+src/integrations/supabase/types.ts:3213:          user_id?: string
+src/integrations/supabase/types.ts:3258:          user_id: string
+src/integrations/supabase/types.ts:3267:          user_id: string
+src/integrations/supabase/types.ts:3276:          user_id?: string
+src/integrations/supabase/types.ts:3288:          user_id: string
+src/integrations/supabase/types.ts:3297:          user_id: string
+src/integrations/supabase/types.ts:3306:          user_id?: string
+src/integrations/supabase/types.ts:3329:          user_id: string
+src/integrations/supabase/types.ts:3341:          user_id: string
+src/integrations/supabase/types.ts:3353:          user_id?: string
+src/integrations/supabase/types.ts:3406:          user_id: string
+src/integrations/supabase/types.ts:3420:          user_id: string
+src/integrations/supabase/types.ts:3434:          user_id?: string
+src/integrations/supabase/types.ts:3454:          user_id: string
+src/integrations/supabase/types.ts:3474:          user_id: string
+src/integrations/supabase/types.ts:3494:          user_id?: string
+src/integrations/supabase/types.ts:3508:          user_id: string
+src/integrations/supabase/types.ts:3516:          user_id: string
+src/integrations/supabase/types.ts:3524:          user_id?: string
+src/integrations/supabase/types.ts:3542:          user_id: string
+src/integrations/supabase/types.ts:3557:          user_id: string
+src/integrations/supabase/types.ts:3572:          user_id?: string
+src/integrations/supabase/types.ts:3582:          user_id: string
+src/integrations/supabase/types.ts:3594:          user_id: string
+src/integrations/supabase/types.ts:3606:          user_id?: string
+src/integrations/supabase/types.ts:3619:          user_id: string
+src/integrations/supabase/types.ts:3624:          user_id: string
+src/integrations/supabase/types.ts:3629:          user_id?: string
+src/integrations/supabase/types.ts:3689:          user_id: string
+src/integrations/supabase/types.ts:3704:          user_id: string
+src/integrations/supabase/types.ts:3719:          user_id?: string
+src/integrations/supabase/types.ts:3741:          user_id: string
+src/integrations/supabase/types.ts:3751:          user_id: string
+src/integrations/supabase/types.ts:3761:          user_id?: string
+src/integrations/supabase/types.ts:3782:          user_id: string
+src/integrations/supabase/types.ts:3791:          user_id: string
+src/integrations/supabase/types.ts:3800:          user_id?: string
+src/integrations/supabase/types.ts:3820:          user_id: string
+src/integrations/supabase/types.ts:3829:          user_id: string
+src/integrations/supabase/types.ts:3838:          user_id?: string
+src/integrations/supabase/types.ts:3937:          user_id: string
+src/integrations/supabase/types.ts:3948:          user_id: string
+src/integrations/supabase/types.ts:3959:          user_id?: string
+src/integrations/supabase/types.ts:4028:          user_id: string
+src/integrations/supabase/types.ts:4035:          user_id: string
+src/integrations/supabase/types.ts:4042:          user_id?: string
+src/integrations/supabase/types.ts:4057:          user_id: string
+src/integrations/supabase/types.ts:4073:          user_id: string
+src/integrations/supabase/types.ts:4089:          user_id?: string
+src/integrations/supabase/types.ts:4118:          user_id: string
+src/integrations/supabase/types.ts:4123:          user_id: string
+src/integrations/supabase/types.ts:4128:          user_id?: string
+src/integrations/supabase/types.ts:4136:          user_id: string
+src/integrations/supabase/types.ts:4142:          user_id: string
+src/integrations/supabase/types.ts:4148:          user_id?: string
+src/integrations/supabase/types.ts:4209:          user_id: string | null
+src/integrations/supabase/types.ts:4228:          user_id: string | null
+src/integrations/supabase/types.ts:4252:          user_id: string | null
+src/integrations/supabase/types.ts:4259:          user_id?: string | null
+src/integrations/supabase/types.ts:4266:          user_id?: string | null
+src/integrations/supabase/types.ts:4320:          user_id: string | null
+src/integrations/supabase/types.ts:4327:          user_id: string | null
+src/integrations/supabase/types.ts:4335:          user_id: string | null
+src/integrations/supabase/types.ts:4946:          user_id: string
+src/integrations/supabase/types.ts:5445:          user_id: string
+src/integrations/supabase/types.ts:5686:          user_id: string
+src/integrations/supabase/types.ts:5892:          user_id: string
+src/integrations/supabase/types.ts:6083:          user_id: string
+src/hooks/usePlanParticipantsOptimized.ts:7:  user_id: string | null
+src/hooks/usePlanParticipantsOptimized.ts:31:          user_id,
+src/hooks/usePlanParticipantsOptimized.ts:36:          profiles!user_id (
+src/hooks/usePlanParticipantsOptimized.ts:57:        const userIds = participants
+src/hooks/usePlanParticipantsOptimized.ts:58:          ?.filter(p => !p.is_guest && p.user_id)
+src/hooks/usePlanParticipantsOptimized.ts:59:          .map(p => p.user_id)
+src/hooks/usePlanParticipantsOptimized.ts:62:        if (userIds.length === 0) {
+src/hooks/usePlanParticipantsOptimized.ts:69:          .in('id', userIds)
+src/hooks/usePlanParticipantsOptimized.ts:81:            : profiles?.find(profile => profile.id === participant.user_id) || null
+src/components/floq/InvitationManagement.tsx:132:      const participantIds = floqDetails.participants.map(p => p.user_id);
+src/components/plans/PlanDetailsView.tsx:167:  const userParticipation = participants.find(p => p.user_id === session?.user?.id);
+src/components/floq/FloqMemberAnalytics.tsx:107:        memberId: member.user_id,
+src/components/floq/FloqMemberList.tsx:14:    const memberId = member.user_id || member.id || 'default';
+src/components/floq/FloqMemberList.tsx:93:          const isSelected = selectedMember === member.user_id;
+src/components/floq/FloqMemberList.tsx:97:              key={member.user_id}
+src/components/floq/FloqMemberList.tsx:106:                onClick={() => setSelectedMember(isSelected ? null : member.user_id)}
+src/hooks/useFriendRequests.ts:21:  user_id: string;             // requester
+src/hooks/useFriendRequests.ts:51:            user_id,
+src/components/plans/PlanParticipantsList.tsx:18:  user_id: string | null;
+src/components/plans/VoteButtons.tsx:36:    ? votes.find(v => v.user_id === session.user.id)?.vote_type 
+src/components/floq/FloqInfoTab.tsx:106:              key={participant.user_id}
+src/components/modals/PeopleEncountersModal.tsx:52:      const userIds = encounteredUsers.map(user => user.profile_id)
+src/components/modals/PeopleEncountersModal.tsx:56:        .in('id', userIds)
+src/hooks/useNewFriends.ts:25:  user_id: string;
+src/hooks/useNewFriends.ts:65:        .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`)
+src/hooks/useNewFriends.ts:137:            { user_a: request.user_id, user_b: request.friend_id },
+src/hooks/useNewFriends.ts:138:            { user_a: request.friend_id, user_b: request.user_id }
+src/components/admin/OnboardingDashboard.tsx:97:          id: p.user_id,
+src/components/admin/OnboardingDashboard.tsx:98:          profile_id: p.user_id,
+src/components/flocks/MyFlockCard.tsx:110:                    key={p.user_id}
+src/components/floq/FloqActivityFeed.tsx:47:  user_id: string | null;
+src/components/floq/FloqActivityFeed.tsx:88:          user_id,
+src/components/floq/FloqActivityFeed.tsx:90:          profiles:user_id(display_name, username, avatar_url)
+src/components/floq/FloqMemberMap.tsx:91:        id: member.user_id,
+src/hooks/useVenuePresence.ts:25:            profile_id: payload.new.user_id,
+src/hooks/useVenuePresence.ts:32:            profile_id: payload.new.user_id,
+src/components/field/contexts/FieldSocialContext.tsx:55:        selectedFloqMembers.includes(presence.user_id)
+src/components/field/contexts/FieldSocialContext.tsx:60:      const profile = profilesMap.get(presence.user_id);
+src/components/field/contexts/FieldSocialContext.tsx:92:        id: presence.user_id,
+src/components/field/contexts/FieldSocialContext.tsx:93:        name: profile?.display_name || `User ${presence.user_id.slice(-4)}`,
+src/components/floq/FloqDangerZone.tsx:44:      p.role === 'co-admin' && p.user_id !== floqDetails.creator_id
+src/components/floq/FloqDangerZone.tsx:212:                    <SelectItem key={user.user_id} value={user.user_id}>
+src/components/floq/FloqDangerZone.tsx:304:        description={`Are you sure you want to transfer ownership to ${potentialOwners.find(p => p.user_id === selectedNewOwner)?.display_name}? You'll become a co-admin and lose host privileges.`}
+src/hooks/useFloqMembers.ts:12:          user_id,
+src/hooks/useFloqMembers.ts:27:        profile_id: participant.user_id,
+src/hooks/useOnboardingAnalytics.ts:10:  user_id: string;
+src/hooks/useOnboardingAnalytics.ts:61:          user_id: user.id,
+src/components/planning/InviteOverlay.tsx:91:        const profileId = payload.new?.user_id;
+src/components/planning/InviteOverlay.tsx:122:          user_id,
+src/components/planning/InviteOverlay.tsx:123:          profiles:user_id (
+src/components/FloqAutoMatchCard.tsx:66:                key={match.user_id}
+src/components/FloqAutoMatchCard.tsx:71:                  selectedMatch === match.user_id
+src/components/FloqAutoMatchCard.tsx:75:                onClick={() => setSelectedMatch(selectedMatch === match.user_id ? null : match.user_id)}
+src/components/FloqAutoMatchCard.tsx:129:                const match = matchData.potentialMatches.find(m => m.user_id === selectedMatch);
+src/hooks/useFloqActivity.ts:9:  user_id?: string;
+src/hooks/useFloqActivity.ts:20:  user_id: string | null;
+src/hooks/useFloqActivity.ts:59:            user_id,
+src/hooks/useFloqActivity.ts:61:            profiles:user_id(display_name, username, avatar_url)
+src/components/screens/CollaborativePlanningScreen.tsx:620:                      id: p.user_id, 
+src/components/PlanChatSidebar.tsx:15:  user_id: string;
+src/components/PlanChatSidebar.tsx:64:            user_id,
+src/components/PlanChatSidebar.tsx:120:              user_id,
+src/components/FriendsSheet.tsx:187:                    <div key={request.user_id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+src/components/FriendsSheet.tsx:205:                          onClick={() => acceptRequest(request.user_id)}
+src/components/FriendsSheet.tsx:214:                          onClick={() => declineRequest(request.user_id)}
+src/components/friends/FriendsTab.tsx:31:                      {request.user_id.slice(0, 2).toUpperCase()}
+src/hooks/usePlanUserSearch.ts:24:      const existingUserIds = participants?.map(p => p.user_id).filter(Boolean) || []
+src/hooks/useCreatePlan.ts:119:          // De-duplicate (floq_id, user_id) pairs
+src/hooks/useBucketedPresence.ts:8:  user_id: string;
+src/hooks/useBucketedPresence.ts:121:              isFriend: friendIds.includes(presence.user_id)
+src/hooks/useStopVotes.ts:33:      const user_id = session?.user?.id || null
+src/hooks/useStopVotes.ts:40:          user_id,
+src/hooks/useStopVotes.ts:60:    session?.user?.id ? vote.user_id === session.user.id : vote.guest_id === guestId
+src/hooks/useOnboardingDatabase.ts:18:  user_id: string;
+src/hooks/useVenueStaysChannel.ts:22:            profile_id: payload.new.user_id,
+src/hooks/useVenueStaysChannel.ts:32:            profile_id: payload.new.user_id,
+src/hooks/useAfterglowData.ts:33:            profile_id: data.user_id,
+src/hooks/usePlanVotes.ts:8:  user_id: string | null
+src/hooks/usePlanVotes.ts:32:          user:profiles!user_id(display_name, username, avatar_url)
+src/hooks/useUserLocation.ts:52:        body: { batch }  // ✅ No user_id - edge function gets it from JWT
+src/hooks/useNotificationSubscription.ts:9:  user_id: string;
+src/hooks/usePlanComments.ts:8:  user_id: string;
+src/hooks/usePresenceSound.ts:45:    new Set(debouncedParticipants.map(p => p.user_id || p.id)), 
+src/hooks/useFloqPresence.ts:330:            newSet.add(presence.user_id);
+src/hooks/useFloqPresence.ts:339:            newSet.delete(presence.user_id);
+src/hooks/useSuggestedInvitees.ts:37:      return data?.map(p => p.user_id) || [];
+src/hooks/useSuggestedInvitees.ts:53:      return data?.map(p => p.user_id) || [];
+src/hooks/useFloqReactions.ts:7:  user_id: string;
+src/hooks/useUserPresence.ts:6:  user_id: string;
+src/hooks/useUserPresence.ts:34:              if (presence?.user_id) {
+src/hooks/useUserPresence.ts:49:                if (presence?.user_id) {
+src/hooks/useRealtimeUnreadUpdates.ts:36:      // Invalidate specific floq counts with userId
+src/hooks/useRealtimeUnreadUpdates.ts:38:      // Invalidate aggregated counts with userId
+src/hooks/useRealtimeUnreadUpdates.ts:84:          if (payload.new?.user_id !== user.id) {
+src/hooks/usePrefetchFloq.ts:22:            floq_participants(user_id)
+src/hooks/usePlanParticipants.ts:8:  user_id: string | null
+src/hooks/usePlanParticipants.ts:38:          user_id,
+src/hooks/usePlanParticipants.ts:50:          profiles!user_id (
+src/hooks/useEnhancedVenueDetails.ts:18:    user_id: string;
+src/hooks/useEnhancedVenueDetails.ts:105:    user_id: string;
+src/hooks/usePeopleData.ts:5:  user_id: string
+src/hooks/usePeopleData.ts:60:  const fetchUserProfiles = useCallback(async (userIds: string[]) => {
+src/hooks/usePeopleData.ts:61:    if (userIds.length === 0) return []
+src/hooks/usePeopleData.ts:70:        .in('id', userIds)
+src/hooks/useFloqDetails.ts:92:        profile_id: p.user_id,
+src/hooks/useFloqRealtime.ts:27:  reactions: Record<string, string[]>; // userId -> emoji[]
+src/hooks/useStopEditingPresence.ts:49:          if (presence.userId !== user.id && presence.stopId) {
+src/hooks/useStopEditingPresence.ts:50:            setEditingPresences(prev => new Map(prev.set(`${presence.userId}_${presence.stopId}`, presence as StopEditingPresence)))
+src/hooks/useStopEditingPresence.ts:56:          if (presence.userId && presence.stopId) {
+src/hooks/useStopEditingPresence.ts:59:              next.delete(`${presence.userId}_${presence.stopId}`)
+src/hooks/useDMThread.ts:81:        if (payload.user_id === selfId) return;
+src/hooks/usePlanVenuePresence.ts:8:  user_id: string;
+src/hooks/useFloqParticipants.ts:5:  user_id: string;
+src/hooks/useFloqMemberVibes.ts:17:      const userIds = participants.map(p => p.user_id);
+src/hooks/useFloqMemberVibes.ts:22:        .in('profile_id', userIds)
+src/hooks/useNotifications.ts:10:  user_id: string;
+src/hooks/useFloqBoosts.ts:42:      const responseUserId = 'profile_id' in result ? result.user_id : null
+src/hooks/useFavorites.ts:8:  user_id: string;
+src/hooks/useFavorites.ts:34:      //     user_id,
+src/hooks/useFavorites.ts:42:      //   .eq('user_id', user.id)
+src/hooks/useFavorites.ts:67:      //     user_id: user.id,
+src/hooks/useFavorites.ts:100:      //   .eq('user_id', user.id)
+src/hooks/usePlanFeedback.ts:8:  user_id: string;
+src/hooks/useLiveCursors.ts:57:          if (presence.userId !== user.id) {
+src/hooks/useLiveCursors.ts:58:            setCursors(prev => new Map(prev.set(presence.userId, {
+src/hooks/useLiveCursors.ts:59:              profileId: presence.userId,
+src/hooks/useLiveCursors.ts:72:            next.delete(presence.userId)
+src/hooks/useMyFloqs.ts:36:          floq_participants!inner(user_id)
+src/hooks/useRealFriendRequests.ts:8:  user_id: string;
+src/hooks/useRealFriendRequests.ts:44:      const requesterIds = data?.map(r => r.user_id) || [];
+src/hooks/useRealFriendRequests.ts:60:        requester_profile: profiles?.find(p => p.id === request.user_id) || {
+src/hooks/useRealFriendRequests.ts:61:          id: request.user_id,
+src/hooks/useRealFriendRequests.ts:127:          { user_a: request.user_id, user_b: request.friend_id },
+src/hooks/useRealFriendRequests.ts:128:          { user_a: request.friend_id, user_b: request.user_id }
+src/hooks/usePlanPresence.ts:62:          user_id,
+src/hooks/usePlanPresence.ts:63:          profiles:profiles!user_id (
+src/hooks/useVenuePeople.ts:5:  user_id: string;
+src/hooks/usePlanRoom.ts:42:      ('userId' in p ? p.userId : p.user_id) === ('userId' in participant ? participant.userId : participant.user_id)
+src/hooks/useUserPreferences.ts:6:  user_id: string;
+src/hooks/useWatchlist.ts:8:  user_id: string;
+src/hooks/useWatchlist.ts:43:      //     user_id,
+src/hooks/useWatchlist.ts:61:      //   .eq('user_id', user.id)
+src/hooks/useWatchlist.ts:80:      //     user_id: user.id,
+src/hooks/useWatchlist.ts:109:      //   .eq('user_id', user.id)

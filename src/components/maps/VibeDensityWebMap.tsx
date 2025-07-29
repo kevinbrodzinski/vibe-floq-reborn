@@ -1,18 +1,11 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  memo,
-} from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-import { registerMapboxWorker } from '@/lib/geo/registerMapboxWorker';
-import { getMapboxToken }   from '@/lib/geo/getMapboxToken';
-import { setMapInstance }   from '@/lib/geo/project';
+import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
+import { setMapInstance } from '@/lib/geo/project';
 
-registerMapboxWorker();
+// Remove registerMapboxWorker() for Mapbox v3
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */

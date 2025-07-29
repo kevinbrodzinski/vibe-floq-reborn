@@ -12,11 +12,11 @@ interface NotificationPayload {
   accepted_at?: string;
 }
 
-export const useNotificationSubscription = (userId: string | null) => {
+export const useNotificationSubscription = (profileId: string | null) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!userId) return;
+    if (!profileId) return;
 
     const channel = supabase
       .channel('notifications')
@@ -26,7 +26,7 @@ export const useNotificationSubscription = (userId: string | null) => {
           event: 'INSERT',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${userId}`
+          filter: `profile_id=eq.${profileId}`
         },
         (payload) => {
           const notif = payload.new as NotificationPayload;
@@ -102,7 +102,7 @@ export const useNotificationSubscription = (userId: string | null) => {
           event: 'UPDATE',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${userId}`
+          filter: `profile_id=eq.${profileId}`
         },
         (payload) => {
           const notif = payload.new as NotificationPayload;
@@ -121,5 +121,5 @@ export const useNotificationSubscription = (userId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, toast]);
+  }, [profileId, toast]);
 };

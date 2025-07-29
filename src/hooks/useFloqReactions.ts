@@ -20,13 +20,13 @@ export async function toggleReaction(
   if (isAdding) {
     await supabase
       .from('floq_message_reactions' as any)
-      .insert({ message_id: messageId, emoji, user_id: user.id });
+      .insert({ message_id: messageId, emoji, profile_id: user.id });
   } else {
     await supabase
       .from('floq_message_reactions' as any)
       .delete()
       .eq('message_id', messageId)
-      .eq('user_id', user.id)
+      .eq('profile_id', user.id)
       .eq('emoji', emoji);
   }
 }
@@ -59,7 +59,7 @@ export function useReactions(floqId: string) {
         // Fallback to client-side aggregation
         const { data: reactionData, error: reactionError } = await supabase
           .from('floq_message_reactions' as any)
-          .select('message_id, emoji, user_id')
+          .select('message_id, emoji, profile_id')
           .in('message_id', messageIds);
 
         if (reactionError) throw reactionError;

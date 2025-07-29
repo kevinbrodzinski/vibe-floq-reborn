@@ -20,15 +20,15 @@ export const capture = (event: string, props?: Record<string, any>) => {
 };
 
 // PostHog identify function
-export const identify = (userId: string, traits?: Record<string, any>) => {
+export const identify = (profileId: string, traits?: Record<string, any>) => {
   try {
     if (isWeb) {
       import('posthog-js').then((ph) => {
-        ph.default?.identify(userId, traits);
+        ph.default?.identify(profileId, traits);
       });
     } else {
       // React Native PostHog not available - skip for now
-      console.log('[PostHog] Mobile identify skipped:', userId, traits);
+      console.log('[PostHog] Mobile identify skipped:', profileId, traits);
     }
   } catch (err) {
     console.warn('[PostHog] identify failed:', err);

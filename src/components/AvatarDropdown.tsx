@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2 } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useFriends } from '@/hooks/useFriends';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
@@ -38,23 +38,23 @@ export const AvatarDropdown = () => {
   const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
   const [favoritesSheetOpen, setFavoritesSheetOpen] = useState(false);
   const [watchlistSheetOpen, setWatchlistSheetOpen] = useState(false);
-  
+
   const { user } = useAuth();
-  
+
   // Use real friends data, pending requests, and unread messages for notification badge
   const { friendCount, profiles } = useFriends();
   const { pendingRequests } = useFriendRequests();
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
-  
+
   // Total notifications = pending friend requests + unread messages
   const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.unread_count, 0);
   const totalNotifications = pendingRequests.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
-  
+
   // Get favorites and watchlist counts
   const { favorites } = useFavorites();
   const { upcomingPlans } = useWatchlist();
-  
+
   const avatarMgr = useAvatarManager();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -64,13 +64,13 @@ export const AvatarDropdown = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="relative">
-            <AvatarWithFallback 
+            <AvatarWithFallback
               src={profile?.avatar_url ? getAvatarUrl(profile.avatar_url, 64) : null}
               fallbackText={profile?.display_name || 'U'}
               className="w-12 h-12 cursor-pointer hover:scale-105 transition-smooth pointer-events-auto border-2 border-primary/30 glow-secondary"
             />
             {totalNotifications > 0 && (
-              <AnimatedBadge 
+              <AnimatedBadge
                 count={totalNotifications}
                 className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] text-xs flex items-center justify-center px-1 pointer-events-none font-medium"
               />
@@ -79,71 +79,78 @@ export const AvatarDropdown = () => {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="pointer-events-auto w-56">
-          <DropdownMenuItem onSelect={() => navigate('/profile')}>
-            <User className="w-4 h-4 mr-2" />
+          {/* Core Identity Section */}
+          <DropdownMenuItem onSelect={() => navigate('/profile')} className="h-11">
+            <User className="w-6 h-6 mr-3" />
             Profile
           </DropdownMenuItem>
-          
-          <DropdownMenuItem onSelect={() => navigate('/settings')}>
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
+
+          <DropdownMenuItem onSelect={() => navigate('/vibe')} className="h-11">
+            <AudioLines className="w-6 h-6 mr-3" />
+            Vibe
           </DropdownMenuItem>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem onSelect={() => navigate('/vibe')}>
-            <AudioLines className="w-4 h-4 mr-2" />
-            My vibe / status
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onSelect={() => setFavoritesSheetOpen(true)}>
-            <Heart className="w-4 h-4 mr-2" />
-            Favorites ({favorites.length})
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onSelect={() => setWatchlistSheetOpen(true)}>
-            <Eye className="w-4 h-4 mr-2" />
-            Watchlist ({upcomingPlans.length})
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onSelect={() => setMessagesSheetOpen(true)}>
-            <MessageSquare className="w-4 h-4 mr-2" />
+
+          <DropdownMenuSeparator className="my-2" />
+
+          {/* Social Actions Section */}
+          <DropdownMenuItem onSelect={() => setMessagesSheetOpen(true)} className="h-11">
+            <MessageSquare className="w-6 h-6 mr-3" />
             Messages
             {totalUnreadMessages > 0 && (
-              <AnimatedBadge 
+              <AnimatedBadge
                 count={totalUnreadMessages}
                 className="ml-auto"
               />
             )}
           </DropdownMenuItem>
-          
+
           <DropdownMenuItem onSelect={() => {
             console.log('🔍 Friends button clicked');
             setFriendsSheetOpen(true);
-          }}>
-            <Users className="w-4 h-4 mr-2" />
+          }} className="h-11">
+            <Users className="w-6 h-6 mr-3" />
             Friends ({friendCount})
             {pendingRequests.length > 0 && (
-              <AnimatedBadge 
+              <AnimatedBadge
                 count={pendingRequests.length}
                 className="ml-auto"
               />
             )}
           </DropdownMenuItem>
-          
-          
-          <DropdownMenuSeparator />
-          
-          
+
+          {/* Personal Curation Section */}
+          <DropdownMenuItem onSelect={() => setFavoritesSheetOpen(true)} className="h-11">
+            <Heart className="w-6 h-6 mr-3" />
+            Favorites ({favorites.length})
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onSelect={() => setWatchlistSheetOpen(true)} className="h-11">
+            <Eye className="w-6 h-6 mr-3" />
+            Watchlist ({upcomingPlans.length})
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator className="my-2" />
+
+          {/* Settings & Debug Section */}
+          <DropdownMenuItem onSelect={() => navigate('/location-sharing')} className="h-11">
+            <Share2 className="w-6 h-6 mr-3" />
+            Location Sharing
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onSelect={() => navigate('/settings')} className="h-11">
+            <Settings className="w-6 h-6 mr-3" />
+            Settings
+          </DropdownMenuItem>
+
           {import.meta.env.DEV && (
-            <DropdownMenuItem onSelect={() => setDebug(v => !v)}>
+            <DropdownMenuItem onSelect={() => setDebug(v => !v)} className="h-11">
               {debug ? 'Hide testing overlays' : 'Show testing overlays'}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <FriendsSheet 
+      <FriendsSheet
         open={friendsSheetOpen}
         onOpenChange={setFriendsSheetOpen}
         onAddFriendClick={() => {
@@ -152,13 +159,13 @@ export const AvatarDropdown = () => {
         }}
       />
 
-      <MessagesSheet 
+      <MessagesSheet
         open={messagesSheetOpen}
         onOpenChange={setMessagesSheetOpen}
         onFriendsSheetOpen={() => setFriendsSheetOpen(true)}
       />
 
-      <AddFriendModal 
+      <AddFriendModal
         open={addFriendOpen}
         onOpenChange={setAddFriendOpen}
       />
@@ -187,12 +194,12 @@ export const AvatarDropdown = () => {
                   .from('profiles')
                   .update({ avatar_url: newAvatarUrl } as any)
                   .eq('id', user?.id as any);
-                
+
                 if (error) {
                   console.error('Failed to update avatar:', error);
                   return;
                 }
-                
+
                 // Refresh the profile data
                 queryClient.invalidateQueries({ queryKey: ['profile'] });
                 avatarMgr.setOpen(false);

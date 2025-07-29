@@ -4,7 +4,7 @@ import { safeNotificationType, type NotificationType } from '@/types/enums/notif
 
 interface ChatMessage {
   id: string;
-  userId: string;
+  profileId: string;
   userName: string;
   avatar: string;
   message: string;
@@ -22,7 +22,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "msg-1",
-      userId: "system",
+      profileId: "system",
       userName: "System",
       avatar: "",
       message: "Planning session started! Use this chat to coordinate while building your night.",
@@ -31,7 +31,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
     },
     {
       id: "msg-2", 
-      userId: "alex",
+      profileId: "alex",
       userName: "Alex",
       avatar: "/placeholder.svg",
       message: "EP & LP looks perfect for cocktails! Great city views 🌃",
@@ -40,7 +40,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
     },
     {
       id: "msg-3",
-      userId: "sam",
+      profileId: "sam",
       userName: "Sam", 
       avatar: "/placeholder.svg",
       message: "I'm down! Should we do dinner first?",
@@ -49,7 +49,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
     },
     {
       id: "msg-4",
-      userId: "system",
+      profileId: "system",
       userName: "System",
       avatar: "",
       message: "Alex added EP & LP to the timeline",
@@ -96,7 +96,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
 
     const message: ChatMessage = {
       id: `msg-${Date.now()}`,
-      userId: currentUserId,
+      profileId: currentUserId,
       userName: "You",
       avatar: "/placeholder.svg",
       message: newMessage,
@@ -121,7 +121,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
         
         setMessages(prev => [...prev, {
           id: `msg-${Date.now()}`,
-          userId: response.user,
+          profileId: response.user,
           userName: response.user === "alex" ? "Alex" : "Sam",
           avatar: "/placeholder.svg",
           message: response.message,
@@ -150,7 +150,7 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
       case 'suggestion':
         return 'bg-accent/20 border border-accent/30 text-accent-foreground';
       default:
-        return message.userId === currentUserId 
+        return message.profileId === currentUserId 
           ? 'bg-gradient-primary text-primary-foreground ml-auto' 
           : 'bg-card/90 text-card-foreground border border-border/30';
     }
@@ -169,9 +169,9 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
         {messages.map((message) => (
           <div key={message.id} className={`${message.type === safeNotificationType('system') ? 'flex justify-center' : 'flex'}`}>
             <div className={`max-w-xs lg:max-w-md ${getMessageStyle(message)} rounded-2xl p-3 ${
-              message.userId === currentUserId ? 'rounded-br-sm' : 'rounded-bl-sm'
+              message.profileId === currentUserId ? 'rounded-br-sm' : 'rounded-bl-sm'
             }`}>
-              {message.type !== safeNotificationType('system') && message.userId !== currentUserId && (
+              {message.type !== safeNotificationType('system') && message.profileId !== currentUserId && (
                 <div className="text-xs text-muted-foreground mb-1 font-medium">
                   {message.userName}
                 </div>
@@ -189,11 +189,11 @@ export const PlanningChat = ({ planId, currentUserId }: PlanningChatProps) => {
         ))}
         
         {/* Typing indicators */}
-        {isTyping.map((userId) => (
-          <div key={userId} className="flex">
+        {isTyping.map((profileId) => (
+          <div key={profileId} className="flex">
             <div className="bg-card/90 border border-border/30 rounded-2xl rounded-bl-sm p-3 max-w-xs">
               <div className="text-xs text-muted-foreground mb-1 font-medium">
-                {userId === "alex" ? "Alex" : "Sam"}
+                {profileId === "alex" ? "Alex" : "Sam"}
               </div>
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />

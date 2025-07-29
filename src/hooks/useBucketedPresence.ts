@@ -18,42 +18,42 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
   
   const mockUsers = [
     {
-      user_id: 'mock-user-1',
+      profile_id: 'mock-user-1',
       vibe: 'social',
       isFriend: friendIds.includes('mock-user-1')
     },
     {
-      user_id: 'mock-user-2', 
+      profile_id: 'mock-user-2', 
       vibe: 'chill',
       isFriend: friendIds.includes('mock-user-2')
     },
     {
-      user_id: 'mock-user-3',
+      profile_id: 'mock-user-3',
       vibe: 'hype',
       isFriend: friendIds.includes('mock-user-3')
     },
     {
-      user_id: 'mock-user-4',
+      profile_id: 'mock-user-4',
       vibe: 'flowing',
       isFriend: friendIds.includes('mock-user-4')
     },
     {
-      user_id: 'mock-user-5',
+      profile_id: 'mock-user-5',
       vibe: 'social',
       isFriend: friendIds.includes('mock-user-5')
     },
     {
-      user_id: 'mock-user-6',
+      profile_id: 'mock-user-6',
       vibe: 'chill',
       isFriend: friendIds.includes('mock-user-6')
     },
     {
-      user_id: 'mock-user-7',
+      profile_id: 'mock-user-7',
       vibe: 'hype',
       isFriend: friendIds.includes('mock-user-7')
     },
     {
-      user_id: 'mock-user-8',
+      profile_id: 'mock-user-8',
       vibe: 'flowing',
       isFriend: friendIds.includes('mock-user-8')
     }

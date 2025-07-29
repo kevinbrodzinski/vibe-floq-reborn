@@ -18,7 +18,7 @@ export function usePreloadOnboarding() {
         const { data } = await supabase
           .from('user_preferences')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .single();
         return data;
       },
@@ -32,7 +32,7 @@ export function usePreloadOnboarding() {
         const { data } = await supabase
           .from('user_onboarding_progress')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('profile_id', user.id)
           .single();
         return data;
       },

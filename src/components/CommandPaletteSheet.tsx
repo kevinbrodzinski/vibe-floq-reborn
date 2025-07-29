@@ -39,13 +39,13 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
     }
   }, [open]);
 
-  const handleUserTap = async (userId: string) => {
+  const handleUserTap = async (profileId: string) => {
     // Prime profile cache for instant rendering
     if (results?.users) {
-      const user = results.users.find(u => u.id === userId);
+      const user = results.users.find(u => u.id === profileId);
       if (user) {
         primeProfiles([{
-          id: userId,
+          id: profileId,
           display_name: user.label,
           username: null,
           avatar_url: null,
@@ -55,11 +55,11 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
     }
 
     // Check if already a friend, if so navigate to profile
-    if (isFriend(userId)) {
-      navigate(`/profile/${userId}`); // Use legacy route for now since search doesn't return username
+    if (isFriend(profileId)) {
+      navigate(`/profile/${profileId}`); // Use legacy route for now since search doesn't return username
     } else {
       // Send friend request
-      await addFriend(userId);
+      await addFriend(profileId);
     }
     
     onOpenChange(false);
@@ -147,7 +147,7 @@ export function CommandPaletteSheet({ open, onOpenChange }: CommandPaletteSheetP
                         onClick={() => handleUserTap(user.id)}
                       >
                         <OnlineFriendRow
-                          userId={user.id}
+                          profileId={user.id}
                           isNearby={false}
                         />
                       </div>

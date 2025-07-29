@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useVibe } from '@/lib/store/useVibe';
-import type { Vibe } from '@/types/vibes';
+import { Vibe } from '@/types/enums';
 
 interface MotionData {
   isMoving: boolean;
@@ -17,41 +16,51 @@ interface VibeTransition {
   reason: string;
 }
 
-export const useMotionBasedVibe = () => {
-  const { vibe: currentVibe, setVibe } = useVibe();
+export const useMotionBasedVibe = (enabled: boolean = false) => {
   const [motionData, setMotionData] = useState<MotionData>({
     isMoving: false,
     speed: 0,
     activity: 'still',
     confidence: 0,
-    lastUpdate: Date.now()
+    lastUpdate: 0
   });
-  
+
   const [vibeTransitions, setVibeTransitions] = useState<VibeTransition[]>([]);
-  const lastVibeChange = useRef<number>(0);
-  const motionHistory = useRef<MotionData[]>([]);
-  const geolocationRef = useRef<GeolocationPosition | null>(null);
+  const [currentVibe, setVibe] = useState<Vibe>('solo');
+
   const lastPosition = useRef<GeolocationPosition | null>(null);
+  const geolocationRef = useRef<GeolocationPosition | null>(null);
+  const motionHistory = useRef<MotionData[]>([]);
+  const lastVibeChange = useRef<number>(0);
+  const watchIdRef = useRef<number | null>(null);
 
-  // Calculate speed from GPS coordinates
+  // Calculate speed between two positions
   const calculateSpeed = (pos1: GeolocationPosition, pos2: GeolocationPosition): number => {
+    const timeDiff = (pos2.timestamp - pos1.timestamp) / 1000; // seconds
+    if (timeDiff <= 0) return 0;
+
+    const lat1 = pos1.coords.latitude;
+    const lng1 = pos1.coords.longitude;
+    const lat2 = pos2.coords.latitude;
+    const lng2 = pos2.coords.longitude;
+
+    // Haversine formula for distance
     const R = 6371e3; // Earth's radius in meters
-    const lat1 = pos1.coords.latitude * Math.PI / 180;
-    const lat2 = pos2.coords.latitude * Math.PI / 180;
-    const deltaLat = (pos2.coords.latitude - pos1.coords.latitude) * Math.PI / 180;
-    const deltaLon = (pos2.coords.longitude - pos1.coords.longitude) * Math.PI / 180;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
 
-    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-              Math.cos(lat1) * Math.cos(lat2) *
-              Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in meters
 
-    const timeDiff = (pos2.timestamp - pos1.timestamp) / 1000; // Time in seconds
-    return distance / timeDiff; // Speed in m/s
+    const distance = R * c; // meters
+    return distance / timeDiff; // m/s
   };
 
-  // Determine activity type based on speed
+  // Determine activity from speed
   const getActivityFromSpeed = (speed: number): 'still' | 'walking' | 'running' | 'driving' => {
     if (speed < 0.5) return 'still';
     if (speed < 2.5) return 'walking';
@@ -62,30 +71,21 @@ export const useMotionBasedVibe = () => {
   // Calculate confidence based on speed consistency
   const calculateConfidence = (speeds: number[]): number => {
     if (speeds.length < 2) return 0.5;
-    
-    const avgSpeed = speeds.reduce((a, b) => a + b, 0) / speeds.length;
-    const variance = speeds.reduce((sum, speed) => sum + Math.pow(speed - avgSpeed, 2), 0) / speeds.length;
+
+    const mean = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+    const variance = speeds.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / speeds.length;
     const stdDev = Math.sqrt(variance);
-    
+
     // Higher confidence for consistent speeds
-    return Math.max(0.1, Math.min(1.0, 1 - (stdDev / avgSpeed)));
+    return Math.max(0.1, 1 - (stdDev / mean));
   };
 
-  // Determine vibe based on motion activity
+  // Map activity to vibe
   const getVibeFromActivity = (activity: string, speed: number, confidence: number): Vibe => {
-    const now = Date.now();
-    const timeSinceLastChange = now - lastVibeChange.current;
-    
-    // Prevent rapid vibe changes (minimum 10 seconds between changes)
-    if (timeSinceLastChange < 10000) {
-      return currentVibe as Vibe;
-    }
-
     switch (activity) {
       case 'still':
-        return confidence > 0.7 ? 'chill' : currentVibe as Vibe;
+        return 'solo';
       case 'walking':
-        if (speed > 1.5) return 'flowing';
         return 'open';
       case 'running':
         return 'hype';
@@ -99,11 +99,11 @@ export const useMotionBasedVibe = () => {
   // Handle geolocation updates
   const handleGeolocationUpdate = (position: GeolocationPosition) => {
     const now = Date.now();
-    
+
     if (lastPosition.current) {
       const speed = calculateSpeed(lastPosition.current, position);
       const activity = getActivityFromSpeed(speed);
-      
+
       // Update motion history (keep last 10 readings)
       motionHistory.current.push({
         isMoving: speed > 0.5,
@@ -112,15 +112,15 @@ export const useMotionBasedVibe = () => {
         confidence: 0.8, // Will be calculated below
         lastUpdate: now
       });
-      
+
       if (motionHistory.current.length > 10) {
         motionHistory.current.shift();
       }
-      
+
       // Calculate confidence from recent speeds
       const recentSpeeds = motionHistory.current.map(m => m.speed);
       const confidence = calculateConfidence(recentSpeeds);
-      
+
       const newMotionData: MotionData = {
         isMoving: speed > 0.5,
         speed,
@@ -128,12 +128,12 @@ export const useMotionBasedVibe = () => {
         confidence,
         lastUpdate: now
       };
-      
+
       setMotionData(newMotionData);
-      
+
       // Determine new vibe
       const newVibe = getVibeFromActivity(activity, speed, confidence);
-      
+
       if (newVibe !== currentVibe) {
         const transition: VibeTransition = {
           from: currentVibe as Vibe,
@@ -141,28 +141,34 @@ export const useMotionBasedVibe = () => {
           timestamp: now,
           reason: `Motion: ${activity} (${speed.toFixed(1)} m/s)`
         };
-        
+
         setVibeTransitions(prev => [...prev.slice(-5), transition]); // Keep last 5 transitions
         setVibe(newVibe as any);
         lastVibeChange.current = now;
       }
     }
-    
+
     lastPosition.current = position;
     geolocationRef.current = position;
   };
 
-  // Start geolocation tracking
+  // Start geolocation tracking only when enabled
   useEffect(() => {
-    if (!navigator.geolocation) {
-      console.warn('Geolocation not supported');
+    if (!enabled || !navigator.geolocation) {
+      // Clean up any existing watcher
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
       return;
     }
+
+    console.log('[MOTION_VIBE] Starting motion-based vibe detection');
 
     const watchId = navigator.geolocation.watchPosition(
       handleGeolocationUpdate,
       (error) => {
-        console.error('Geolocation error:', error);
+        console.error('[MOTION_VIBE] Geolocation error:', error);
       },
       {
         enableHighAccuracy: true,
@@ -171,10 +177,15 @@ export const useMotionBasedVibe = () => {
       }
     );
 
+    watchIdRef.current = watchId;
+
     return () => {
-      navigator.geolocation.clearWatch(watchId);
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
     };
-  }, [currentVibe]);
+  }, [enabled, currentVibe]);
 
   return {
     motionData,

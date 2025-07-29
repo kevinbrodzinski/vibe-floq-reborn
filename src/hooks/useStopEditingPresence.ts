@@ -4,7 +4,7 @@ import { useSession } from '@supabase/auth-helpers-react'
 import type { PlanStop } from '@/types/plan'
 
 export interface StopEditingPresence {
-  userId: string
+  profileId: string
   username: string
   stopId: string
   action: 'editing' | 'resizing' | 'dragging'
@@ -35,10 +35,10 @@ export function useStopEditingPresence({ planId, enabled = true }: UseStopEditin
         const state = channel.presenceState()
         const newPresences = new Map<string, StopEditingPresence>()
         
-        Object.entries(state).forEach(([userId, presences]) => {
+        Object.entries(state).forEach(([profileId, presences]) => {
           const presence = presences[0] as any // Get latest presence
-          if (presence && userId !== user.id && presence.stopId) {
-            newPresences.set(`${userId}_${presence.stopId}`, presence as StopEditingPresence)
+          if (presence && profileId !== user.id && presence.stopId) {
+            newPresences.set(`${profileId}_${presence.stopId}`, presence as StopEditingPresence)
           }
         })
         
@@ -73,7 +73,7 @@ export function useStopEditingPresence({ planId, enabled = true }: UseStopEditin
     if (!user || !channelRef.current) return
 
     const presence: StopEditingPresence = {
-      userId: user.id,
+      profileId: user.id,
       username: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
       stopId,
       action,

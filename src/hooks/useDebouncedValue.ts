@@ -1,30 +1,12 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-/**
- * Debounce a value with cleanup
- */
-export function useDebouncedValue<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
+export function useDebouncedValue<T>(value: T, delay = 2000) {
+  const [debounced, setDebounced] = useState(value);
+  
   useEffect(() => {
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // Set new timeout
-    timeoutRef.current = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    // Cleanup on unmount or value change
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);  
+  
+  return debounced;
 }

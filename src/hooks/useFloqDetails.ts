@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Vibe } from "@/types";
 
 export interface FloqParticipant {
-  user_id: string;
+  profile_id: string;
   username?: string;
   display_name: string;
   avatar_url?: string;
@@ -58,16 +58,16 @@ interface UseFloqDetailsOptions {
 }
 
 export function useFloqDetails(
-  floqId: string | null, 
-  userId?: string,
+  floqId: string | null,
+  profileId?: string,
   { enabled = true }: UseFloqDetailsOptions = {}
 ) {
   const { session } = useAuth();
   const user = session?.user;
 
   const query = useQuery({
-    queryKey: ["floq-details", floqId, userId || user?.id],
-    enabled: enabled && !!floqId && !!(userId || user?.id), // Wait for session to load
+    queryKey: ["floq-details", floqId, profileId || user?.id],
+    enabled: enabled && !!floqId && !!(profileId || user?.id), // Wait for session to load
     queryFn: async (): Promise<FloqDetails | null> => {
       if (!floqId) return null;
 
@@ -84,12 +84,12 @@ export function useFloqDetails(
       if (!fullDetails || fullDetails.length === 0) return null;
 
       const floqData = fullDetails[0];
-      const currentUserId = userId || user?.id;
-      
+      const currentUserId = profileId || user?.id;
+
       // Safely parse participants array
       const participantsData = Array.isArray(floqData.participants) ? floqData.participants : [];
       const participants: FloqParticipant[] = participantsData.map((p: any) => ({
-        user_id: p.user_id,
+        profile_id: p.profile_id,
         username: p.username,
         display_name: p.display_name,
         avatar_url: p.avatar_url,
@@ -108,17 +108,17 @@ export function useFloqDetails(
         id: invite.id,
       }));
 
-      const userParticipant = participants.find(p => p.user_id === currentUserId);
+      const userParticipant = participants.find(p => p.profile_id === currentUserId);
       const isJoined = !!userParticipant;
       const isCreator = floqData.creator_id === currentUserId;
 
       console.log('🔍 Floq details debug:', {
         floqId,
-        userId: currentUserId,
+        profileId: currentUserId,
         creatorId: floqData.creator_id,
         isCreator,
         participantsCount: participants.length,
-        userParticipant: userParticipant ? { role: userParticipant.role, user_id: userParticipant.user_id } : null,
+        userParticipant: userParticipant ? { role: userParticipant.role, profile_id: userParticipant.profile_id } : null,
         isJoined
       });
 
@@ -151,7 +151,7 @@ export function useFloqDetails(
 
   // Debounced refetch to prevent too many rapid updates
   const debouncedRefetchRef = useRef<() => void>();
-  
+
   if (!debouncedRefetchRef.current) {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     debouncedRefetchRef.current = () => {
@@ -159,7 +159,7 @@ export function useFloqDetails(
       timeoutId = setTimeout(() => query.refetch(), 100);
     };
   }
-  
+
   const debouncedRefetch = debouncedRefetchRef.current;
 
   // Set up real-time subscription for floq changes with optimized filters

@@ -45,7 +45,7 @@ export const useWeeklySuggestion = () => {
       const { data, error } = await supabase
         .from('weekly_ai_suggestion_cooldowns')
         .select('last_regenerated_at')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .maybeSingle();
       
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found

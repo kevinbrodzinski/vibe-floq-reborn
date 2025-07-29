@@ -5,19 +5,19 @@ import { getEnvironmentConfig, isDemo } from '@/lib/environment';
 
 interface JoinFloqParams {
   floqId: string;
-  userId?: string;
+  profileId?: string;
 }
 
 interface LeaveFloqParams {
   floqId: string;
-  userId?: string;
+  profileId?: string;
 }
 
 export const useFloqJoin = () => {
   const queryClient = useQueryClient();
 
   const joinFloq = useMutation({
-    mutationFn: async ({ floqId, userId }: JoinFloqParams) => {
+    mutationFn: async ({ floqId, profileId }: JoinFloqParams) => {
       const env = getEnvironmentConfig();
       
       if (env.presenceMode === 'offline') {
@@ -30,7 +30,7 @@ export const useFloqJoin = () => {
 
       const { data, error } = await supabase.rpc('join_floq', {
         p_floq_id: floqId,
-        p_user_id: userId || undefined,
+        p_user_id: profileId || undefined,
         p_use_demo: isDemo()
       });
       
@@ -75,7 +75,7 @@ export const useFloqJoin = () => {
   });
 
   const leaveFloq = useMutation({
-    mutationFn: async ({ floqId, userId }: LeaveFloqParams) => {
+    mutationFn: async ({ floqId, profileId }: LeaveFloqParams) => {
       const env = getEnvironmentConfig();
       
       if (env.presenceMode === 'offline') {
@@ -88,7 +88,7 @@ export const useFloqJoin = () => {
 
       const { data, error } = await supabase.rpc('leave_floq', {
         p_floq_id: floqId,
-        p_user_id: userId || undefined,
+        p_user_id: profileId || undefined,
         p_use_demo: isDemo()
       });
       

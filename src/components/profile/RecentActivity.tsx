@@ -40,7 +40,7 @@ export function RecentActivity() {
       const { data: vibeChanges } = await supabase
         .from('vibes_log')
         .select('vibe, ts, venue_id')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .gte('ts', yesterday.toISOString())
         .order('ts', { ascending: false })
         .limit(5);

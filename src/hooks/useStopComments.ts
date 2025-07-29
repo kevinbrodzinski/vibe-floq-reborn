@@ -40,7 +40,7 @@ export function useStopComments({ planId, stopId }: UseStopCommentsParams) {
         .insert({
           plan_id: planId,
           stop_id: stopId,
-          user_id: session?.user?.id || null,
+          profile_id: session?.user?.id || null,
           guest_id: guestId || null,
           text,
         })

@@ -26,11 +26,11 @@ export const useActivityTracking = (floqId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      const userId = session?.user?.id;
-      if (!userId) return;
+      const profileId = session?.user?.id;
+      if (!profileId) return;
       // Refresh badge data for this floq + global aggregates with correct keys
-      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, userId] });
-      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', userId] });
+      queryClient.invalidateQueries({ queryKey: ['unread-counts', floqId, profileId] });
+      queryClient.invalidateQueries({ queryKey: ['my-floqs-unread', profileId] });
     },
   });
 

@@ -5,7 +5,7 @@ export interface VoteActivity {
   type: 'vote_cast'
   timestamp: string
   stopId: string
-  userId: string
+  profileId: string
   username: string
   vote: 'up' | 'down'
 }

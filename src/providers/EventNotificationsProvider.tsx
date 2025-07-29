@@ -4,7 +4,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 interface EventNotification {
   id: string;
-  user_id: string;
+  profile_id: string;
   kind: string;
   payload: any;
   created_at: string;
@@ -54,7 +54,7 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
       const { data, error } = await supabase
         .from('event_notifications' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .is('seen_at', null)
         .in('kind', SUB_KINDS)
         .order('created_at', { ascending: false });
@@ -82,12 +82,12 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
           event: 'INSERT',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         (payload) => {
           const notification = payload.new as EventNotification;
           // Double-check user_id for security
-          if (notification.user_id === user.id && SUB_KINDS.includes(notification.kind as any)) {
+          if (notification.profile_id === user.id && SUB_KINDS.includes(notification.kind as any)) {
             setUnseen(prev => [notification, ...prev]);
           }
         }
@@ -98,12 +98,12 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
           event: 'UPDATE',
           schema: 'public',
           table: 'event_notifications',
-          filter: `user_id=eq.${user.id}`,
+          filter: `profile_id=eq.${user.id}`,
         },
         (payload) => {
           const notification = payload.new as EventNotification;
           // Double-check user_id for security
-          if (notification.user_id === user.id && notification.seen_at) {
+          if (notification.profile_id === user.id && notification.seen_at) {
             setUnseen(prev => prev.filter(n => n.id !== notification.id));
           }
         }
@@ -122,7 +122,7 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
       .from('event_notifications' as any)
       .update({ seen_at: new Date().toISOString() })
       .in('id', ids)
-      .eq('user_id', user.id);
+      .eq('profile_id', user.id);
 
     if (error) {
       console.error('Error marking notifications as seen:', error);
@@ -135,7 +135,7 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
     let query = supabase
       .from('event_notifications' as any)
       .update({ seen_at: new Date().toISOString() })
-      .eq('user_id', user.id)
+      .eq('profile_id', user.id)
       .is('seen_at', null);
 
     if (kinds) {

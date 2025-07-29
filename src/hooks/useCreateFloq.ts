@@ -84,7 +84,7 @@ export function useCreateFloq() {
           participant_count: 1,
           participants: [
             {
-              user_id: user?.id,
+              profile_id: user?.id,
               role: 'creator',
               joined_at: new Date().toISOString(),
             },

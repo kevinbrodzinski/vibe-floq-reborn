@@ -7,30 +7,30 @@ interface AvatarWithLoadingProps {
   avatarPath?: string | null;
   displayName?: string | null;
   username?: string | null;
-  userId?: string;
+  profileId?: string;
   size?: number;
   className?: string;
 }
 
-export const AvatarWithLoading = ({ 
-  avatarPath, 
+export const AvatarWithLoading = ({
+  avatarPath,
   displayName,
   username,
-  userId,
+  profileId,
   size = 64,
-  className 
+  className
 }: AvatarWithLoadingProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  const avatarUrl = getAvatarUrl(avatarPath, size);
+  const avatarUrl = avatarPath ? getAvatarUrl(avatarPath, size) : null;
   const initials = getInitials(displayName, username);
-  const fallbackColor = userId ? getAvatarFallbackColor(userId) : undefined;
+  const fallbackColor = profileId ? getAvatarFallbackColor(profileId) : undefined;
 
   if (!avatarUrl || hasError) {
     return (
       <Avatar className={className} style={{ width: size, height: size }}>
-        <AvatarFallback 
+        <AvatarFallback
           className="text-white font-medium"
           style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
         >
@@ -43,16 +43,16 @@ export const AvatarWithLoading = ({
   return (
     <div className="relative">
       {isLoading && (
-        <Skeleton 
-          className="absolute inset-0 rounded-full" 
-          style={{ width: size, height: size }} 
+        <Skeleton
+          className="absolute inset-0 rounded-full"
+          style={{ width: size, height: size }}
         />
       )}
-      <Avatar 
+      <Avatar
         className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-200`}
         style={{ width: size, height: size }}
       >
-        <AvatarImage 
+        <AvatarImage
           src={avatarUrl}
           onLoad={() => setIsLoading(false)}
           onError={() => {
@@ -60,7 +60,7 @@ export const AvatarWithLoading = ({
             setHasError(true);
           }}
         />
-        <AvatarFallback 
+        <AvatarFallback
           className="text-white font-medium"
           style={fallbackColor ? { backgroundColor: fallbackColor } : undefined}
         >

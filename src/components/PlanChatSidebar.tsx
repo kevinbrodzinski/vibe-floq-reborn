@@ -152,7 +152,7 @@ export const PlanChatSidebar = ({
         if (status === 'SUBSCRIBED') {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            await channel.track({ user_id: user.id, timestamp: Date.now() });
+            await channel.track({ profile_id: user.id, timestamp: Date.now() });
           }
         }
       });
@@ -173,7 +173,7 @@ export const PlanChatSidebar = ({
         .insert({
           plan_id: planId,
           content: newMessage.trim(),
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          profile_id: (await supabase.auth.getUser()).data.user?.id
         });
 
       if (error) throw error;

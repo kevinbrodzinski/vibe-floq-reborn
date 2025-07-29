@@ -25,7 +25,7 @@ export function useMyActiveFloqs() {
       const { data: ids, error: idErr } = await supabase
         .from('floq_participants')
         .select('floq_id')
-        .eq('user_id', session.user.id);
+        .eq('profile_id', session.user.id);
 
       if (idErr) throw idErr;
       if (!ids?.length) return [];

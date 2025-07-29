@@ -111,13 +111,13 @@ export function useEnhancedRealTime(
   }, [channelName, enablePresence, startHealthMonitoring]);
 
   // Typing indicators
-  const broadcastTyping = useCallback((isTyping: boolean, userId?: string) => {
+  const broadcastTyping = useCallback((isTyping: boolean, profileId?: string) => {
     if (!enableTypingIndicators || !channelRef.current) return;
 
     channelRef.current.send({
       type: 'broadcast',
       event: 'typing',
-      payload: { isTyping, userId, timestamp: Date.now() }
+      payload: { isTyping, profileId, timestamp: Date.now() }
     });
   }, [enableTypingIndicators]);
 

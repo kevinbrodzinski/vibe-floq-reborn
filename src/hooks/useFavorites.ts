@@ -59,7 +59,7 @@ export const useFavorites = () => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // TODO: Enable when user_favorites table is created
-      return { id: 'placeholder', user_id: user.id, item_id: itemId, item_type: itemType };
+      return { id: 'placeholder', profile_id: user.id, item_id: itemId, item_type: itemType };
 
       // const { data, error } = await supabase
       //   .from('user_favorites')

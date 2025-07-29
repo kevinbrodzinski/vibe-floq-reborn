@@ -4,7 +4,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UserSettings {
-  user_id: string;
+  profile_id: string;
   notification_preferences: {
     push: boolean;
     email: boolean;
@@ -78,7 +78,7 @@ export const useUserSettings = () => {
       const { data, error } = await supabase
         .from('user_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -110,7 +110,7 @@ export const useUserSettings = () => {
         } as UserSettings;
       }
       return {
-        user_id: user.id,
+        profile_id: user.id,
         notification_preferences: DEFAULT_NOTIFICATION_PREFERENCES,
         privacy_settings: DEFAULT_PRIVACY_SETTINGS,
         theme_preferences: DEFAULT_THEME_PREFERENCES,
@@ -128,7 +128,7 @@ export const useUserSettings = () => {
       const { data, error } = await supabase
         .from('user_settings')
         .upsert({
-          user_id: user.id,
+          profile_id: user.id,
           ...updates,
           updated_at: new Date().toISOString(),
         })
@@ -191,7 +191,7 @@ export const useUserSettings = () => {
       const { error } = await supabase
         .from('vibes_now')
         .update({ broadcast_radius: radius })
-        .eq('user_id', user.id);
+        .eq('profile_id', user.id);
 
       if (error) throw error;
       

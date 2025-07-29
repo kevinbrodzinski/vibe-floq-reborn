@@ -141,9 +141,10 @@ export function EnhancedOnboardingScreen({ onComplete }: EnhancedOnboardingScree
       case 2:
         return (
           <OnboardingProfileStep
-            profileData={state.profileData}
-            onProfileUpdate={setProfile}
-            onNext={() => handleStepComplete({ profile: state.profileData })}
+            onNext={(profileData) => {
+              setProfile(profileData);
+              handleStepComplete({ profile: profileData });
+            }}
             onBack={prevStep}
           />
         );

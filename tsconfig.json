@@ -5,15 +5,22 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
+    /* === Path mapping === */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
+
+    /* === Type-checking behaviour === */
     "noImplicitAny": false,
     "noUnusedParameters": false,
-    "skipLibCheck": true,
-    "allowJs": true,
     "noUnusedLocals": false,
-    "strictNullChecks": false
+    "strictNullChecks": false,
+    "skipLibCheck": true,
+
+    /* === JavaScript interop === */
+    "allowJs": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }

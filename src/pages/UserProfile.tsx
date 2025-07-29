@@ -7,12 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 
 const UserProfile = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { profileId } = useParams<{ profileId: string }>();
   const navigate = useNavigate();
   // const { data: profile } = useProfile(userId || '');
   const profile = { display_name: 'User', avatar_url: null }; // Mock for now
 
-  if (!userId) {
+  if (!profileId) {
     return <div>Invalid user ID</div>;
   }
 
@@ -62,7 +62,7 @@ const UserProfile = () => {
               )}
               
               <p className="text-sm text-muted-foreground mb-4">
-                User ID: {userId}
+                User ID: {profileId}
               </p>
               
               <p className="text-sm text-muted-foreground">

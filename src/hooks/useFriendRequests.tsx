@@ -4,10 +4,10 @@ import { useToast } from '@/hooks/use-toast';
 export const useFriendRequests = () => {
   const { toast } = useToast();
 
-  const sendFriendRequest = useCallback(async (userId: string) => {
+  const sendFriendRequest = useCallback(async (profileId: string) => {
     try {
       // Note: Full implementation requires friend request table setup
-      console.log('Sending friend request to:', userId);
+      console.log('Sending friend request to:', profileId);
       
       toast({
         title: "Friend Request Sent!",

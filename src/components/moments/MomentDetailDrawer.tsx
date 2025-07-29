@@ -28,7 +28,7 @@ interface MomentDetailDrawerProps {
 }
 
 interface EncounteredUser {
-  user_id: string;
+  profile_id: string;
   interaction_strength: number;
   shared_duration: number;
 }
@@ -150,7 +150,7 @@ export const MomentDetailDrawer = memo(({
           <div className="grid grid-cols-1 gap-2">
             {encounteredUsers.map((user, index) => (
               <div 
-                key={user.user_id || index}
+                key={user.profile_id || index}
                 className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
               >
                 <div className="flex items-center gap-3">
@@ -158,7 +158,7 @@ export const MomentDetailDrawer = memo(({
                     <Users className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium">User {user.user_id?.slice(-6)}</div>
+                    <div className="text-sm font-medium">User {user.profile_id?.slice(-6)}</div>
                     <div className="text-xs text-muted-foreground">
                       {user.shared_duration}min together
                     </div>

@@ -10,7 +10,7 @@ export function useFloqBoost() {
       const { error } = await supabase.from('floq_boosts').insert({
         floq_id: floqId,
         boost_type: 'vibe',
-        user_id: user.user.id
+        profile_id: user.user.id
       })
       if (error) throw error
     }

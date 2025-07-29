@@ -10,11 +10,11 @@ export async function uploadAvatar(file: File) {
   try {
     // Import telemetry for monitoring
     const { avatarTelemetry, trackTiming, logError } = await import('@/lib/monitoring/telemetry');
-    
+
     // Start tracking upload
     avatarTelemetry.uploadStarted(file.size, file.type);
     const startTime = Date.now();
-    
+
     return await trackTiming('Avatar Upload', async () => {
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -62,15 +62,15 @@ export async function uploadAvatar(file: File) {
       const duration = Date.now() - startTime;
       avatarTelemetry.uploadCompleted(file.size, duration, publicUrl);
 
-      return { 
+      return {
         path: publicUrl,  // Return public URL instead of storage path
         publicUrl,
-        error: null 
+        error: null
       };
     });
   } catch (error: any) {
     console.error('Avatar upload failed:', error);
-    
+
     // Log error to telemetry
     try {
       const { logError } = await import('@/lib/monitoring/telemetry');
@@ -82,11 +82,11 @@ export async function uploadAvatar(file: File) {
     } catch (e) {
       console.warn('Failed to log error to telemetry:', e);
     }
-    
-    return { 
-      path: null, 
+
+    return {
+      path: null,
       publicUrl: null,
-      error: error.message || 'Upload failed' 
+      error: error.message || 'Upload failed'
     };
   }
 }
@@ -99,19 +99,19 @@ export async function deleteAvatar(publicUrl: string) {
     // Extract storage path from public URL
     const url = new URL(publicUrl);
     const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/avatars\/(.+)/);
-    
+
     if (!pathMatch) {
       throw new Error('Invalid avatar URL format');
     }
-    
+
     const storagePath = pathMatch[1];
-    
+
     // Verify user owns this avatar (path should start with user ID)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       throw new Error('Not authenticated');
     }
-    
+
     if (!storagePath.startsWith(user.id + '/')) {
       throw new Error('Unauthorized: Cannot delete this avatar');
     }
@@ -136,11 +136,11 @@ export async function deleteAvatar(publicUrl: string) {
  * Get avatar URL with transformation parameters
  */
 export function getAvatarUrl(publicUrl?: string | null, size: number | AvatarSize = 64, updatedAt?: string): string | null {
-  if (!publicUrl) return null;
-  
+  if (!publicUrl) return '/img/avatar-fallback.svg';
+
   // Convert size key to pixel value if needed
   const pixelSize = typeof size === 'string' ? AVATAR_SIZES[size] : size;
-  
+
   // If it's already a public URL, return as-is with cache busting
   if (publicUrl.includes('supabase.co') || publicUrl.includes('localhost')) {
     const url = new URL(publicUrl);
@@ -149,13 +149,10 @@ export function getAvatarUrl(publicUrl?: string | null, size: number | AvatarSiz
     }
     return url.toString();
   }
-  
-  // Fallback for old storage paths (deprecated)
-  const { data: { publicUrl: fallbackUrl } } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(publicUrl);
-    
-  return fallbackUrl;
+
+  // For storage paths, build URL with proper encoding (avoid double-encoding)
+  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/` +
+    (publicUrl.includes('%') ? publicUrl : encodeURIComponent(publicUrl));
 }
 
 /**
@@ -163,7 +160,7 @@ export function getAvatarUrl(publicUrl?: string | null, size: number | AvatarSiz
  */
 export function getAvatarBlurUrl(publicUrl?: string | null, updatedAt?: string): string | null {
   if (!publicUrl) return null;
-  
+
   // For public URLs, return a smaller version for blur effect
   if (publicUrl.includes('supabase.co') || publicUrl.includes('localhost')) {
     const url = new URL(publicUrl);
@@ -174,7 +171,7 @@ export function getAvatarBlurUrl(publicUrl?: string | null, updatedAt?: string):
     url.searchParams.set('blur', '10');
     return url.toString();
   }
-  
+
   return publicUrl;
 }
 
@@ -183,15 +180,15 @@ export function getAvatarBlurUrl(publicUrl?: string | null, updatedAt?: string):
  */
 export const preWarmImage = (url: string) => {
   if (typeof window === 'undefined') return;
-  
+
   const link = document.createElement('link');
   link.rel = 'preload';
   link.as = 'image';
   link.href = url;
   link.crossOrigin = 'anonymous';
-  
+
   document.head.appendChild(link);
-  
+
   setTimeout(() => {
     if (link.parentNode) {
       link.parentNode.removeChild(link);
@@ -228,10 +225,10 @@ export const verifyTransformCDN = async (url: string): Promise<boolean> => {
 export const getInitials = (displayName?: string | null, username?: string | null) => {
   const name = displayName || username;
   if (!name) return '🤔';
-  
+
   const chars = Array.from(name.trim());
   if (chars.length === 0) return '🤔';
-  
+
   const words = name.split(' ').filter(word => word.trim().length > 0);
   if (words.length > 0) {
     return words
@@ -240,14 +237,14 @@ export const getInitials = (displayName?: string | null, username?: string | nul
       .slice(0, 2)
       .join('');
   }
-  
+
   return chars[0].toUpperCase();
 };
 
 // Standard avatar sizes for consistency
 export const AVATAR_SIZES = {
   xs: 32,
-  sm: 48, 
+  sm: 48,
   md: 64,
   lg: 96,
   xl: 128,
@@ -257,17 +254,17 @@ export const AVATAR_SIZES = {
 /**
  * Generate deterministic color for user avatar fallback based on user ID
  */
-export const getAvatarFallbackColor = (userId: string) => {
+export const getAvatarFallbackColor = (profileId: string) => {
   // Generate hash from user ID
-  const hash = userId.split('').reduce((a, b) => {
+  const hash = profileId.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a; // Convert to 32bit integer
   }, 0);
-  
+
   // Use hash to pick from predefined color palette
   const colors = [
     'hsl(var(--primary))',
-    'hsl(var(--secondary))', 
+    'hsl(var(--secondary))',
     'hsl(210, 40%, 60%)', // blue
     'hsl(120, 40%, 60%)', // green
     'hsl(30, 40%, 60%)',  // orange
@@ -275,6 +272,6 @@ export const getAvatarFallbackColor = (userId: string) => {
     'hsl(180, 40%, 60%)', // teal
     'hsl(350, 40%, 60%)', // pink
   ];
-  
+
   return colors[Math.abs(hash) % colors.length];
 };

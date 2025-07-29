@@ -32,9 +32,9 @@ export const DynamicVibeToggle: React.FC<DynamicVibeToggleProps> = ({
   showDbData = true
 }) => {
   const { vibe: currentVibe, setVibe } = useVibe();
-  const { motionData, vibeTransitions, activity, speed, confidence } = useMotionBasedVibe();
+  const { motionData, vibeTransitions, activity, speed, confidence } = useMotionBasedVibe(false); // Disabled by default
   const { dbState, currentLevel, getVibeInfluence } = useBatteryOptimizedDbMeter();
-  
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [lastVibeChange, setLastVibeChange] = useState<number>(0);
 
@@ -177,15 +177,15 @@ export const DynamicVibeToggle: React.FC<DynamicVibeToggleProps> = ({
                   const Icon = vibeIcons[vibe as keyof typeof vibeIcons] || Radio;
                   const isActive = vibe === currentVibe;
                   const color = getVibeColor(vibe);
-                  
+
                   return (
                     <motion.button
                       key={vibe}
                       className={cn(
                         "w-12 h-12 rounded-xl flex items-center justify-center",
                         "transition-all duration-200",
-                        isActive 
-                          ? "ring-2 ring-white shadow-lg" 
+                        isActive
+                          ? "ring-2 ring-white shadow-lg"
                           : "hover:bg-white/10"
                       )}
                       style={{

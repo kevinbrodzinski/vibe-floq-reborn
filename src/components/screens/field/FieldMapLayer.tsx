@@ -25,7 +25,11 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   return (
     <div className="absolute inset-0">
       {/* Layer 1: Base Map */}
-      <FieldMapBase visible={true} floqs={walkableFloqs} realtime={realtime} />
+      <FieldMapBase 
+        visible={true} 
+        floqs={walkableFloqs} 
+        realtime={realtime}
+      />
       
       {/* Layer 2: PIXI Canvas Overlay */}
       <FieldCanvasLayer

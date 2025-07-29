@@ -36,13 +36,13 @@ export function usePlanVote(planId?: string) {
           {
             plan_id: params.plan_id,
             stop_id: params.stop_id,
-            user_id: user.user.id,
+            profile_id: user.user.id,
             vote_type: params.vote_type,
             comment: params.comment || null,
             emoji_reaction: params.emoji_reaction || null,
           },
           {
-            onConflict: 'plan_id,stop_id,user_id',
+            onConflict: 'plan_id,stop_id,profile_id',
           }
         )
         .select()
@@ -61,7 +61,7 @@ export function usePlanVote(planId?: string) {
           payload: { 
             stopId: params.stop_id, 
             voteType: params.vote_type,
-            userId: user.user.id,
+            profileId: user.user.id,
             username: user.user.user_metadata?.username || user.user.email?.split('@')[0]
           }
         })

@@ -698,8 +698,8 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "flock_auto_suggestions_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "flock_auto_suggestions_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -746,8 +746,8 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "flock_history_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "flock_history_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -954,7 +954,7 @@ export type Database = {
                     },
                     {
                         foreignKeyName: "fk_floq_boosts_user";
-                        columns: ["user_id"];
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -1245,8 +1245,8 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "floq_participants_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "floq_participants_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -1579,7 +1579,7 @@ export type Database = {
                     },
                     {
                         foreignKeyName: "fk_friend_requests_user";
-                        columns: ["user_id"];
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -2293,8 +2293,8 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "plan_invites_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "plan_invites_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -2355,15 +2355,15 @@ export type Database = {
                 };
                 Relationships: [
                     {
-                        foreignKeyName: "fk_plan_participants_user_id";
-                        columns: ["user_id"];
+                        foreignKeyName: "fk_plan_participants_profile_id";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
                     },
                     {
                         foreignKeyName: "fk_plan_participants_user_profile";
-                        columns: ["user_id"];
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -3183,8 +3183,8 @@ export type Database = {
                         referencedColumns: ["code"];
                     },
                     {
-                        foreignKeyName: "user_achievements_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "user_achievements_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -4088,8 +4088,8 @@ export type Database = {
                 };
                 Relationships: [
                     {
-                        foreignKeyName: "vibes_now_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "vibes_now_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: true;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -4202,8 +4202,8 @@ export type Database = {
                 };
                 Relationships: [
                     {
-                        foreignKeyName: "user_achievements_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "user_achievements_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -4228,8 +4228,8 @@ export type Database = {
                         referencedColumns: ["id"];
                     },
                     {
-                        foreignKeyName: "floq_participants_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "floq_participants_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: false;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];
@@ -4260,8 +4260,8 @@ export type Database = {
                 };
                 Relationships: [
                     {
-                        foreignKeyName: "vibes_now_user_id_fkey";
-                        columns: ["user_id"];
+                        foreignKeyName: "vibes_now_profile_id_fkey";
+                        columns: ["profile_id"];
                         isOneToOne: true;
                         referencedRelation: "profiles";
                         referencedColumns: ["id"];

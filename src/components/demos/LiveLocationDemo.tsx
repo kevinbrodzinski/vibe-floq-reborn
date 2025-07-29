@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 export function LiveLocationDemo() {
   const { pos, isTracking, startTracking, stopTracking } = useUserLocation();
   const [mockFriendIds, setMockFriendIds] = useState<string[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [profileId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     // Get current user ID
@@ -48,7 +48,7 @@ export function LiveLocationDemo() {
           </div>
 
           {/* Friend sharing toggles */}
-          {userId && (
+          {profileId && (
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Share Location With Friends</h3>
               {mockFriendIds.map((friendId, index) => (

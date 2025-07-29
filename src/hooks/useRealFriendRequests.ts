@@ -31,7 +31,7 @@ export function useRealFriendRequests() {
 
       const { data, error } = await supabase
         .from('friend_requests')
-        .select('id, user_id, friend_id, status, created_at')
+        .select('id, profile_id, friend_id, status, created_at')
         .eq('friend_id', user.id)
         .eq('status', 'pending');
 
@@ -75,7 +75,7 @@ export function useRealFriendRequests() {
       const { error } = await supabase
         .from('friend_requests')
         .insert({
-          user_id: user.id,
+          profile_id: user.id,
           friend_id: targetUserId,
           status: 'pending'
         });
@@ -106,7 +106,7 @@ export function useRealFriendRequests() {
       // Get the request details first
       const { data: request, error: fetchError } = await supabase
         .from('friend_requests')
-        .select('user_id, friend_id')
+        .select('profile_id, friend_id')
         .eq('id', requestId)
         .single();
 

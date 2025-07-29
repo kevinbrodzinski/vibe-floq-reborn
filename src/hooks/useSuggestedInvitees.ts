@@ -31,7 +31,7 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
       
       const { data } = await supabase
         .from('floq_participants')
-        .select('user_id')
+        .select('profile_id')
         .eq('floq_id', options.floqId);
       
       return data?.map(p => p.user_id) || [];
@@ -47,7 +47,7 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
       
       const { data } = await supabase
         .from('plan_participants')
-        .select('user_id')
+        .select('profile_id')
         .eq('plan_id', options.planId);
       
       return data?.map(p => p.user_id) || [];

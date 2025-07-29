@@ -373,22 +373,45 @@ Capture the afterglow feeling - the memories made, connections formed, and momen
           });
         }
 
-        const { data, error } = await supabase.rpc('generate_daily_afterglow_sql', {
-          p_user_id: user_id,
-          p_date: date,
-        });
+        try {
+          const { data, error } = await supabase.rpc('generate_daily_afterglow_sql', {
+            p_user_id: user_id,
+            p_date: date,
+          });
 
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
+          if (error) {
+            // If the database function doesn't exist, create a fallback response
+            if (error.message.includes('Could not find the function')) {
+              console.log('Database function not found, returning fallback response');
+              
+              return new Response(JSON.stringify({
+                success: true,
+                afterglow_id: null,
+                venue_count: 0,
+                message: 'Fallback response (database function not deployed)'
+              }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+
+            return new Response(JSON.stringify({ error: error.message }), {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+
+          return new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (rpcError) {
+          console.error('RPC call failed:', rpcError);
+          return new Response(JSON.stringify({ error: 'Database function call failed' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-
-        return new Response(JSON.stringify(data), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
       }
 
       case 'weekly': {

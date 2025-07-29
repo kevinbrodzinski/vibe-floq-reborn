@@ -19,15 +19,15 @@ export function useCheckInStatus(planId: string, stopId: string) {
   return useQuery({
     queryKey: ['check-in-status', planId, stopId],
     queryFn: async () => {
-      const userId = await getCurrentUserId()
-      if (!userId) return null
+      const profileId = await getCurrentUserId()
+      if (!profileId) return null
 
       const { data, error } = await supabase
         .from('plan_check_ins' as any)
         .select('*')
         .eq('plan_id', planId)
         .eq('stop_id', stopId)
-        .eq('participant_id', userId)
+        .eq('participant_id', profileId)
         .maybeSingle()
 
       if (error) {

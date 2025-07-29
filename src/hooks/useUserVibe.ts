@@ -10,17 +10,17 @@ interface UserVibe {
   };
 }
 
-export function useUserVibe(userId: string | null) {
+export function useUserVibe(profileId: string | null) {
   return useQuery({
-    queryKey: ['user-vibe', userId],
+    queryKey: ['user-vibe', profileId],
     queryFn: async (): Promise<UserVibe | null> => {
-      if (!userId) return null;
+      if (!profileId) return null;
       
       try {
         const { data, error } = await supabase
           .from('user_vibe_states')
           .select('vibe_tag, started_at, location')
-          .eq('user_id', userId)
+          .eq('profile_id', profileId)
           .eq('active', true)
           .maybeSingle();
 
@@ -51,7 +51,7 @@ export function useUserVibe(userId: string | null) {
         return null;
       }
     },
-    enabled: !!userId,
+    enabled: !!profileId,
     staleTime: 1 * 60 * 1000, // 1 minute - vibe data changes frequently
   });
 }

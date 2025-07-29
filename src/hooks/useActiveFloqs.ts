@@ -3,8 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { getEnvironmentConfig } from '@/lib/environment';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+
+// Abstract the rounding so every geo-based hook stays consistent
+export const coarse = (n: number | null, m = 20) =>
+  n == null ? null : Math.round(n * m) / m;
+
+// Keep one console.debug helper
+const dbg = (...args: any[]) =>
+  import.meta.env.DEV && console.log('[FLOQS]', ...args);
 
 export interface FloqRow {
   id: string;
@@ -19,8 +28,8 @@ export interface FloqRow {
   boost_count: number; // Added boost count
   starts_in_min: number;
   distance_meters: number | null; // Added distance
-  lat?: number; // Geographic latitude
-  lng?: number; // Geographic longitude
+  lat?: number | null; // Geographic latitude
+  lng?: number | null; // Geographic longitude
   members: {
     avatar_url: string | null;
     id: string;
@@ -107,7 +116,9 @@ const generateMockFloqs = (userLat?: number, userLng?: number): FloqRow[] => {
   // Add distance calculations if user location is available
   return baseFloqs.map((floq, index) => ({
     ...floq,
-    distance_meters: userLat && userLng ? 
+    lat: userLat ?? null,
+    lng: userLng ?? null,
+    distance_meters: userLat && userLng ?
       // Simulate distances between 50m and 2km
       Math.round(50 + (index * 500) + Math.random() * 200) : null,
   }));
@@ -199,23 +210,23 @@ const generateStubFloqs = (userLat?: number, userLng?: number): FloqRow[] => {
   // Add realistic distance calculations if user location is available
   return stubFloqs.map((floq, index) => {
     if (!userLat || !userLng) return { ...floq, distance_meters: null };
-    
+
     // Simulate locations around user with realistic distances
     const offsetLat = (Math.random() - 0.5) * 0.02; // ~1km max
     const offsetLng = (Math.random() - 0.5) * 0.02;
     const floqLat = userLat + offsetLat;
     const floqLng = userLng + offsetLng;
-    
+
     // Calculate distance using Haversine formula approximation
     const R = 6371000; // Earth's radius in meters
     const dLat = (floqLat - userLat) * Math.PI / 180;
     const dLng = (floqLng - userLng) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(userLat * Math.PI / 180) * Math.cos(floqLat * Math.PI / 180) *
-              Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(userLat * Math.PI / 180) * Math.cos(floqLat * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = Math.round(R * c);
-    
+
     return { ...floq, distance_meters: distance, lat: floqLat, lng: floqLng };
   });
 };
@@ -223,142 +234,198 @@ const generateStubFloqs = (userLat?: number, userLng?: number): FloqRow[] => {
 export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
   const { limit = 20, offset = 0, includeDistance = true } = options;
   const { lat, lng } = useGeolocation();
+
+  // Guard with "hasGeoFix" so we debounce only real values
+  const hasFix = lat !== null && lng !== null;
+  const debouncedLat = useDebouncedValue(hasFix ? lat : null, 5000); // 5 second delay
+  const debouncedLng = useDebouncedValue(hasFix ? lng : null, 5000);
+
+  // 1. Memoise the environment object
   const env = getEnvironmentConfig();
+
   const channelRef = useRef<RealtimeChannel | null>(null);
 
-  // Debug logging for hook initialization
-  console.log('[FLOQS_DEBUG] useActiveFloqs called with:', {
-    options,
-    lat,
-    lng,
-    env: env.presenceMode
-  });
+  // Debug logging for hook initialization (commented out to reduce noise)
+  // if (import.meta.env.DEV) {
+  //   console.log('[FLOQS_DEBUG] useActiveFloqs called with:', {
+  //     options,
+  //     lat,
+  //     lng,
+  //     debouncedLat,
+  //     debouncedLng,
+  //     env: env.presenceMode
+  //   });
+  // }
 
   // Round coordinates for better cache key stability
-  const roundedLat = lat ? Math.round(lat * 1000) / 1000 : null;
-  const roundedLng = lng ? Math.round(lng * 1000) / 1000 : null;
+  const roundedLat = coarse(debouncedLat, 20);
+  const roundedLng = coarse(debouncedLng, 20);
 
   const query = useQuery<FloqRow[]>({
     queryKey: ['active-floqs', limit, offset, roundedLat, roundedLng, includeDistance, env.presenceMode],
     staleTime: 10_000,
     refetchOnWindowFocus: false, // Disable auto-refetch on window focus since we have real-time
     queryFn: async () => {
-      console.log('[FLOQS_DEBUG] Query function executing...');
+      if (import.meta.env.DEV) {
+        console.log('[FLOQS_DEBUG] Query function executing...');
+      }
+
       // Offline mode - pure client-side generation (no network required)
       if (env.presenceMode === 'offline') {
-        console.log('✈️ Returning offline mock floq data');
+        if (import.meta.env.DEV) {
+          console.log('✈️ Returning offline mock floq data');
+        }
         const mockData = generateMockFloqs(
-          includeDistance && lat ? lat : undefined,
-          includeDistance && lng ? lng : undefined
+          includeDistance && debouncedLat ? debouncedLat : undefined,
+          includeDistance && debouncedLng ? debouncedLng : undefined
         );
-        console.log('[FLOQS_DEBUG] Offline mode returning:', mockData.length, 'floqs');
+        if (import.meta.env.DEV) {
+          console.log('[FLOQS_DEBUG] Offline mode returning:', mockData.length, 'floqs');
+        }
         return mockData.slice(offset, offset + limit);
       }
 
       // Mock mode - demo schema data via RPC
       if (env.presenceMode === 'mock') {
-        console.log('🎭 Fetching demo floq data from database');
+        if (import.meta.env.DEV) {
+          console.log('🎭 Fetching demo floq data from database');
+        }
         try {
-          const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
+          const { data, error } = await supabase.rpc('get_visible_floqs_with_members', {
             p_use_demo: true,
-            p_limit: limit,
-            p_offset: offset,
-            p_user_lat: includeDistance && lat ? lat : null,
-            p_user_lng: includeDistance && lng ? lng : null
+            p_limit: Number(limit),
+            p_offset: Number(offset),
+            p_user_lat: includeDistance && debouncedLat ? Number(debouncedLat) : null,
+            p_user_lng: includeDistance && debouncedLng ? Number(debouncedLng) : null
           });
-          
-          console.log('[FLOQS_DEBUG] RPC response:', { data, error, dataLength: data?.length });
-          
+
+          if (import.meta.env.DEV) {
+            console.log('[FLOQS_DEBUG] RPC response:', { data, error, dataLength: data?.length });
+          }
+
           if (error) {
-            console.warn('Demo floq function not available, using fallback data:', error);
+            if (import.meta.env.DEV) {
+              console.warn('Demo floq function not available, using fallback data:', error);
+            }
             // Return fallback data instead of throwing
             const fallbackData = generateStubFloqs(
-              includeDistance && lat ? lat : undefined,
-              includeDistance && lng ? lng : undefined
+              includeDistance && debouncedLat ? debouncedLat : undefined,
+              includeDistance && debouncedLng ? debouncedLng : undefined
             );
-            console.log('[FLOQS_DEBUG] Mock mode fallback returning:', fallbackData.length, 'floqs');
+            if (import.meta.env.DEV) {
+              console.log('[FLOQS_DEBUG] Mock mode fallback returning:', fallbackData.length, 'floqs');
+            }
             return fallbackData.slice(offset, offset + limit);
           }
-          
+
           // If RPC returns empty data, use fallback
           if (!data || data.length === 0) {
-            console.warn('Demo floq function returned empty data, using fallback');
+            if (import.meta.env.DEV) {
+              console.warn('Demo floq function returned empty data, using fallback');
+            }
             const fallbackData = generateStubFloqs(
-              includeDistance && lat ? lat : undefined,
-              includeDistance && lng ? lng : undefined
+              includeDistance && debouncedLat ? debouncedLat : undefined,
+              includeDistance && debouncedLng ? debouncedLng : undefined
             );
-            console.log('[FLOQS_DEBUG] Mock mode empty data fallback returning:', fallbackData.length, 'floqs');
+            if (import.meta.env.DEV) {
+              console.log('[FLOQS_DEBUG] Mock mode empty data fallback returning:', fallbackData.length, 'floqs');
+            }
             return fallbackData.slice(offset, offset + limit);
           }
-          
+
           // Transform the data to match our interface
           const transformedData = (data || []).map((floq: any) => ({
             ...floq,
             vibe_tag: floq.primary_vibe,
-            members: Array.isArray(floq.members) ? floq.members : [],
-            boost_count: floq.boost_count || 0,
+            members: Array.isArray(floq.members)
+              ? (floq.members as FloqRow['members'])
+              : [],
+            boost_count: floq.boost_count ?? 0,
             distance_meters: floq.distance_meters
           }));
-          console.log('[FLOQS_DEBUG] Mock mode RPC returning:', transformedData.length, 'floqs');
+          if (import.meta.env.DEV) {
+            console.log('[FLOQS_DEBUG] Mock mode RPC returning:', transformedData.length, 'floqs');
+          }
           return transformedData;
         } catch (err) {
-          console.warn('Demo floq function failed, using fallback data:', err);
+          if (import.meta.env.DEV) {
+            console.warn('Demo floq function failed, using fallback data:', err);
+          }
           // Return fallback data instead of throwing
           const fallbackData = generateStubFloqs(
-            includeDistance && lat ? lat : undefined,
-            includeDistance && lng ? lng : undefined
+            includeDistance && debouncedLat ? debouncedLat : undefined,
+            includeDistance && debouncedLng ? debouncedLng : undefined
           );
-          console.log('[FLOQS_DEBUG] Mock mode catch fallback returning:', fallbackData.length, 'floqs');
+          if (import.meta.env.DEV) {
+            console.log('[FLOQS_DEBUG] Mock mode catch fallback returning:', fallbackData.length, 'floqs');
+          }
           return fallbackData.slice(offset, offset + limit);
         }
       }
 
       // Live mode - production data via RPC
-      console.log('🚀 Fetching live floq data from database');
+      if (import.meta.env.DEV) {
+        console.log('🚀 Fetching live floq data from database');
+      }
       try {
-        const { data, error } = await supabase.rpc('get_active_floqs_with_members', {
+        const { data, error } = await supabase.rpc('get_visible_floqs_with_members', {
           p_use_demo: false,
-          p_limit: limit,
-          p_offset: offset,
-          p_user_lat: includeDistance && lat ? lat : null,
-          p_user_lng: includeDistance && lng ? lng : null
+          p_limit: Number(limit),
+          p_offset: Number(offset),
+          p_user_lat: includeDistance && debouncedLat ? Number(debouncedLat) : null,
+          p_user_lng: includeDistance && debouncedLng ? Number(debouncedLng) : null
         });
-        
+
         if (error) {
-          console.warn('Live floq function not available, using fallback data:', error);
+          if (import.meta.env.DEV) {
+            console.warn('Live floq function not available, using fallback data:', error);
+          }
           // Return fallback data instead of throwing
           const fallbackData = generateStubFloqs(
-            includeDistance && lat ? lat : undefined,
-            includeDistance && lng ? lng : undefined
+            includeDistance && debouncedLat ? debouncedLat : undefined,
+            includeDistance && debouncedLng ? debouncedLng : undefined
           );
-          console.log('[FLOQS_DEBUG] Live mode fallback returning:', fallbackData.length, 'floqs');
+          if (import.meta.env.DEV) {
+            console.log('[FLOQS_DEBUG] Live mode fallback returning:', fallbackData.length, 'floqs');
+          }
           return fallbackData.slice(offset, offset + limit);
         }
-        
+
         // Transform the data to match our interface
         const transformedData = (data || []).map((floq: any) => ({
           ...floq,
           vibe_tag: floq.primary_vibe,
-          members: Array.isArray(floq.members) ? floq.members : [],
-          boost_count: floq.boost_count || 0,
+          members: Array.isArray(floq.members)
+            ? (floq.members as FloqRow['members'])
+            : [],
+          boost_count: floq.boost_count ?? 0,
           distance_meters: floq.distance_meters
         }));
 
-        console.log(`✅ Returning ${transformedData.length} live floqs`);
+        if (import.meta.env.DEV) {
+          console.log(`✅ Returning ${transformedData.length} live floqs`);
+        }
         return transformedData;
       } catch (err) {
-        console.warn('Live floq function failed, using fallback data:', err);
+        if (import.meta.env.DEV) {
+          console.warn('Live floq function failed, using fallback data:', err);
+        }
         // Return fallback data instead of throwing
         const fallbackData = generateStubFloqs(
           includeDistance && lat ? lat : undefined,
           includeDistance && lng ? lng : undefined
         );
-        console.log('[FLOQS_DEBUG] Live mode catch fallback returning:', fallbackData.length, 'floqs');
+        if (import.meta.env.DEV) {
+          console.log('[FLOQS_DEBUG] Live mode catch fallback returning:', fallbackData.length, 'floqs');
+        }
         return fallbackData.slice(offset, offset + limit);
       }
     },
-    // Always enable the query - don't wait for geolocation
-    enabled: true,
+    // 2. Gate the React-Query call until geolocation is ready
+    enabled:
+      env.presenceMode === 'offline'          // offline always allowed
+        ? true
+        : !!lat && !!lng,                       // wait until coords exist
   });
 
   // Set up real-time subscription for live mode
@@ -368,9 +435,13 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
       return;
     }
 
-    // Clean up existing channel
+    // Clean up existing channel with defensive cleanup
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      try {
+        supabase.removeChannel(channelRef.current);
+      } catch (err) {
+        /* no-op */
+      }
       channelRef.current = null;
     }
 
@@ -385,26 +456,34 @@ export const useActiveFloqs = (options: UseActiveFloqsOptions = {}) => {
           table: 'floqs',
         },
         (payload) => {
-          console.log('[FLOQS_REALTIME] Received change:', payload);
-          
+          if (import.meta.env.DEV) {
+            console.log('[FLOQS_REALTIME] Received change:', payload);
+          }
+
           // Invalidate and refetch the query to get updated data
           query.refetch();
         }
       )
       .subscribe((status) => {
-        console.log('[FLOQS_REALTIME] Subscription status:', status);
+        if (import.meta.env.DEV) {
+          console.log('[FLOQS_REALTIME] Subscription status:', status);
+        }
       });
 
     channelRef.current = channel;
 
-    // Cleanup on unmount
+    // Cleanup on unmount with defensive cleanup
     return () => {
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (err) {
+          /* no-op */
+        }
         channelRef.current = null;
       }
     };
-  }, [env.presenceMode, query.refetch]);
+  }, [env.presenceMode, query.refetch]); // 4. Stabilise the real-time effect dependencies
 
   return {
     ...query,

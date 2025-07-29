@@ -14,12 +14,12 @@ export function usePlanInvites() {
   const { toast } = useToast()
 
   const addMember = useMutation({
-    mutationFn: async ({ planId, userId }: { planId: string; userId: string }) => {
+    mutationFn: async ({ planId, profileId }: { planId: string; profileId: string }) => {
       const { data, error } = await supabase
         .from('plan_participants')
         .insert({
           plan_id: planId,
-          user_id: userId,
+          profile_id: profileId,
           is_guest: false,
           role: 'participant',
           rsvp_status: 'pending'
@@ -67,7 +67,7 @@ export function usePlanInvites() {
         .from('plan_participants')
         .insert({
           plan_id: planId,
-          user_id: null,
+          profile_id: null,
           is_guest: true,
           guest_name: guest.name.trim(),
           guest_email: guest.email?.trim() || null,
@@ -151,7 +151,7 @@ export function usePlanInvites() {
         .from('floq_participants')
         .upsert(guests.map(g => ({
           floq_id: targetFloqId,
-          user_id: g.id,
+          profile_id: g.id,
           role: 'member' as const
         })))
 

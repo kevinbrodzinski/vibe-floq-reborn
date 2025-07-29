@@ -58,7 +58,7 @@ export default function SharedPlan() {
         .from('plan_participants')
         .select('id')
         .eq('plan_id', planResolution.plan_id)
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .single();
 
       if (!existingParticipant) {
@@ -67,7 +67,7 @@ export default function SharedPlan() {
           .from('plan_participants')
           .insert({
             plan_id: planResolution.plan_id,
-            user_id: user.id,
+            profile_id: user.id,
             role: 'participant'
           });
 

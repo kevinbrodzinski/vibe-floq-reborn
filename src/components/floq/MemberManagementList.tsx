@@ -67,7 +67,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string, currentRole: string) => {
+  const handleRoleChange = async (profileId: string, newRole: string, currentRole: string) => {
     // Prevent demoting the last co-admin
     if (currentRole === 'co-admin' && newRole === 'member' && coAdminCount === 1) {
       toast.error('Cannot demote the last co-admin. Promote another member first.');
@@ -75,13 +75,13 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
 
     // Check if current user is being demoted - redirect immediately
-    const isDemotingSelf = userId === currentUserId && currentRole === 'co-admin' && newRole === 'member';
+    const isDemotingSelf = profileId === currentUserId && currentRole === 'co-admin' && newRole === 'member';
     
     try {
       const { data, error } = await supabase.functions.invoke('manage-participant-role', {
         body: {
           floqId: floqDetails.id,
-          userId,
+          profileId,
           newRole
         }
       });
@@ -94,7 +94,7 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
         return {
           ...oldData,
           participants: oldData.participants.map((p: any) => 
-            p.user_id === userId ? { ...p, role: newRole } : p
+            p.user_id === profileId ? { ...p, role: newRole } : p
           )
         };
       });
@@ -122,14 +122,14 @@ export const MemberManagementList: React.FC<MemberManagementListProps> = ({ floq
     }
   };
 
-  const handleRemoveMember = async (userId: string) => {
-    setRemovingUserId(userId);
+  const handleRemoveMember = async (profileId: string) => {
+    setRemovingUserId(profileId);
     try {
       const { error } = await supabase
         .from('floq_participants')
         .delete()
         .eq('floq_id', floqDetails.id)
-        .eq('user_id', userId);
+        .eq('profile_id', profileId);
 
       if (error) throw error;
 

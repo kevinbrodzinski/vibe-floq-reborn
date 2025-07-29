@@ -387,7 +387,7 @@ export const CollaborativePlanningScreen = () => {
     // In a real app, this would send to Supabase
     const newMessage = {
       id: Date.now().toString(),
-      userId: 'current-user',
+      profileId: 'current-user',
       userName: 'You',
       userAvatar: '',
       content,

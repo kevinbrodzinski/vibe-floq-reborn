@@ -14,7 +14,7 @@ export interface PlanStop {
   vibeMatch: number;
   participants: string[];
   status: 'confirmed' | 'suggested' | 'voted';
-  votes: { userId: string; vote: 'yes' | 'no' | 'maybe' }[];
+  votes: { profileId: string; vote: 'yes' | 'no' | 'maybe' }[];
   createdBy: string;
   color: string;
 }
@@ -45,7 +45,7 @@ export interface CollaborativePlan {
 export interface PlanActivity {
   id: string;
   type: 'add' | 'remove' | 'edit' | 'vote' | 'join' | 'leave';
-  userId: string;
+  profileId: string;
   stopId?: string;
   timestamp: number;
   description: string;
@@ -102,9 +102,9 @@ export const useCollaborativeState = (planId: string) => {
         participants: ["you", "alex"],
         status: "confirmed",
         votes: [
-          { userId: "you", vote: "yes" },
-          { userId: "alex", vote: "yes" },
-          { userId: "sam", vote: "maybe" }
+          { profileId: "you", vote: "yes" },
+          { profileId: "alex", vote: "yes" },
+          { profileId: "sam", vote: "maybe" }
         ],
         createdBy: "you",
         color: "hsl(200 70% 60%)"
@@ -121,9 +121,9 @@ export const useCollaborativeState = (planId: string) => {
         participants: ["you", "alex", "sam"],
         status: "voted",
         votes: [
-          { userId: "you", vote: "yes" },
-          { userId: "alex", vote: "yes" },
-          { userId: "sam", vote: "yes" }
+          { profileId: "you", vote: "yes" },
+          { profileId: "alex", vote: "yes" },
+          { profileId: "sam", vote: "yes" }
         ],
         createdBy: "alex",
         color: "hsl(280 70% 60%)"
@@ -138,7 +138,7 @@ export const useCollaborativeState = (planId: string) => {
     {
       id: "activity-1",
       type: "add",
-      userId: "alex",
+      profileId: "alex",
       stopId: "stop-2", 
       timestamp: Date.now() - 300000,
       description: "Alex added EP & LP for cocktails"
@@ -146,7 +146,7 @@ export const useCollaborativeState = (planId: string) => {
     {
       id: "activity-2",
       type: "vote",
-      userId: "sam",
+      profileId: "sam",
       stopId: "stop-2",
       timestamp: Date.now() - 180000,
       description: "Sam voted yes on EP & LP"
@@ -176,7 +176,7 @@ export const useCollaborativeState = (planId: string) => {
       id: uuidv4(), // Use UUID instead of Date.now()
       createdBy: "you",
       participants: ["you"],
-      votes: [{ userId: "you", vote: "yes" }]
+      votes: [{ profileId: "you", vote: "yes" }]
     };
 
     setPlan(prev => {
@@ -194,7 +194,7 @@ export const useCollaborativeState = (planId: string) => {
     setActivities(prev => [...prev, {
       id: `activity-${Date.now()}`,
       type: "add",
-      userId: "you",
+      profileId: "you",
       stopId: newStop.id,
       timestamp: Date.now(),
       description: `You added ${newStop.title}`
@@ -222,7 +222,7 @@ export const useCollaborativeState = (planId: string) => {
     setActivities(prev => [...prev, {
       id: `activity-${Date.now()}`,
       type: "remove",
-      userId: "you", 
+      profileId: "you", 
       stopId,
       timestamp: Date.now(),
       description: `You removed ${stop.title}`
@@ -255,8 +255,8 @@ export const useCollaborativeState = (planId: string) => {
           ? {
               ...stop,
               votes: [
-                ...stop.votes.filter(v => v.userId !== "you"),
-                { userId: "you", vote }
+                ...stop.votes.filter(v => v.profileId !== "you"),
+                { profileId: "you", vote }
               ]
             }
           : stop
@@ -266,7 +266,7 @@ export const useCollaborativeState = (planId: string) => {
     setActivities(prev => [...prev, {
       id: `activity-${Date.now()}`,
       type: "vote",
-      userId: "you",
+      profileId: "you",
       stopId,
       timestamp: Date.now(),
       description: `You voted ${vote} on this stop`
@@ -275,11 +275,11 @@ export const useCollaborativeState = (planId: string) => {
     debouncedSync();
   }, [debouncedSync]);
 
-  const updateParticipantStatus = useCallback((userId: string, updates: Partial<PlanParticipant>) => {
+  const updateParticipantStatus = useCallback((profileId: string, updates: Partial<PlanParticipant>) => {
     setPlan(prev => ({
       ...prev,
       participants: prev.participants.map(p => 
-        p.id === userId ? { ...p, ...updates, lastActivity: Date.now() } : p
+        p.id === profileId ? { ...p, ...updates, lastActivity: Date.now() } : p
       )
     }));
   }, []);
@@ -297,7 +297,7 @@ export const useCollaborativeState = (planId: string) => {
               type: 'vote_cast',
               timestamp: new Date().toISOString(),
               stopId: plan.stops[Math.floor(Math.random() * plan.stops.length)]?.id || '',
-              userId: Math.random() > 0.5 ? 'alex' : 'sam',
+              profileId: Math.random() > 0.5 ? 'alex' : 'sam',
               username: Math.random() > 0.5 ? 'Alex' : 'Sam',
               vote: Math.random() > 0.5 ? 'up' : 'down'
             }

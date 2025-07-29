@@ -14,7 +14,7 @@ export function useSyncedVisibility() {
     supabase
       .from('vibes_now')
       .select('visibility')
-      .eq('user_id', user.id)
+      .eq('profile_id', user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data?.visibility) setVisibility(data.visibility as any);
@@ -42,17 +42,17 @@ export function useSyncedVisibility() {
       .channel(`vibe-visibility-${user.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
+        { event: 'INSERT', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
         ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
         ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'vibes_now', filter: `user_id=eq.${user.id}` },
+        { event: 'DELETE', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
         () => setVisibility('public'), // Reset to default when row is deleted
       )
       .subscribe();

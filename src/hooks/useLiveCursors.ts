@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useSession } from '@supabase/auth-helpers-react'
 
 export interface LiveCursor {
-  userId: string
+  profileId: string
   username: string
   x: number
   y: number
@@ -37,11 +37,11 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
         const state = channel.presenceState()
         const newCursors = new Map<string, LiveCursor>()
         
-        Object.entries(state).forEach(([userId, presences]) => {
+        Object.entries(state).forEach(([profileId, presences]) => {
           const presence = presences[0] // Get latest presence
-          if (presence && userId !== user.id) {
-            newCursors.set(userId, {
-              userId,
+          if (presence && profileId !== user.id) {
+            newCursors.set(profileId, {
+              profileId,
               username: (presence as any).username || 'Anonymous',
               x: (presence as any).x || 0,
               y: (presence as any).y || 0,
@@ -56,7 +56,7 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
         newPresences.forEach((presence: any) => {
           if (presence.userId !== user.id) {
             setCursors(prev => new Map(prev.set(presence.userId, {
-              userId: presence.userId,
+              profileId: presence.userId,
               username: presence.username || 'Anonymous',
               x: presence.x || 0,
               y: presence.y || 0,
@@ -85,7 +85,7 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
       if (!intervalRef.current) {
         intervalRef.current = setTimeout(() => {
           channel.track({
-            userId: user.id,
+            profileId: user.id,
             username: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
             x: newPosition.x,
             y: newPosition.y,
@@ -112,7 +112,7 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
     
     const channel = supabase.channel(channelName)
     channel.track({
-      userId: user.id,
+      profileId: user.id,
       username: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Anonymous',
       x: myPosition?.x || 0,
       y: myPosition?.y || 0,
@@ -129,9 +129,9 @@ export function useLiveCursors({ planId, enabled = true }: UseLiveCursorsOptions
         const now = Date.now()
         const filtered = new Map()
         
-        prev.forEach((cursor, userId) => {
+        prev.forEach((cursor, profileId) => {
           if (now - cursor.lastSeen < 5000) { // 5 seconds timeout
-            filtered.set(userId, cursor)
+            filtered.set(profileId, cursor)
           }
         })
         

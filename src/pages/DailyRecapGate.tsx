@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useTodayRecap, shouldShowRecap } from '@/lib/recap'
 import DailyRecapCard from '@/lib/recap/card'
 import CardSkeleton from '@/components/ui/CardSkeleton'
@@ -8,6 +8,13 @@ import { useNavigate } from 'react-router-dom'
 export default function DailyRecapGate() {
   const { data, isLoading, error } = useTodayRecap()
   const navigate = useNavigate()
+
+  // Move navigation logic into useEffect to avoid render-time state updates
+  useEffect(() => {
+    if (!isLoading && (error || !shouldShowRecap(data))) {
+      navigate('/home', { replace: true })
+    }
+  }, [data, error, isLoading, navigate])
 
   // Show skeleton while loading
   if (isLoading) {
@@ -20,9 +27,8 @@ export default function DailyRecapGate() {
     )
   }
 
-  // If error, no data, or shouldn't show recap, forward to home
+  // If error, no data, or shouldn't show recap, return null (navigation handled in useEffect)
   if (error || !shouldShowRecap(data)) {
-    navigate('/home', { replace: true })
     return null
   }
 
@@ -38,17 +44,17 @@ export default function DailyRecapGate() {
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm space-y-6">
         <DailyRecapCard data={data!} />
-        
+
         <div className="flex flex-col gap-3">
-          <Button 
+          <Button
             onClick={handleContinue}
             className="w-full"
             size="lg"
           >
             What's next?
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={handleSkip}
             variant="ghost"
             className="w-full"

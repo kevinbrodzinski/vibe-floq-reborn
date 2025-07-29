@@ -20,13 +20,13 @@ import { vibeEmoji } from "@/utils/vibe";
 import { getVibeColor } from "@/utils/getVibeColor";
 
 interface FloqAutoMatchCardProps {
-  userId: string | null;
+  profileId: string | null;
   venueId: string | null;
   onCreateFloq?: (suggestion: any) => void;
 }
 
-export function FloqAutoMatchCard({ userId, venueId, onCreateFloq }: FloqAutoMatchCardProps) {
-  const { data: matchData, isLoading } = useFloqAutoMatch(userId, venueId);
+export function FloqAutoMatchCard({ profileId, venueId, onCreateFloq }: FloqAutoMatchCardProps) {
+  const { data: matchData, isLoading } = useFloqAutoMatch(profileId, venueId);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
 
   if (isLoading || !matchData || matchData.matchCount === 0) {

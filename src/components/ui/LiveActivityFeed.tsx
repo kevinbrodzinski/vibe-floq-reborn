@@ -1,10 +1,11 @@
 import React from 'react'
-import { Users, MapPin, Clock, TrendingUp, Activity } from 'lucide-react'
-import { secureBoldify } from '@/utils/secureTextRenderer'
+import { Users, MapPin, Clock, TrendingUp, Activity, Heart, MessageCircle } from 'lucide-react'
+import { secureBoldify } from '@/utils/secureTextRenderer'        
+
 
 interface LiveActivity {
   id: string
-  type: 'checkin' | 'venue_activity' | 'friend_joined' | 'trending'
+  type: 'checkin' | 'venue_activity' | 'friend_joined' | 'trending' | 'floq_activity' | 'vibe_activity'
   user_name?: string
   venue_name: string
   activity_text: string
@@ -37,6 +38,10 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
         return <Users className="w-4 h-4 text-purple-400" />
       case 'trending':
         return <TrendingUp className="w-4 h-4 text-orange-400" />
+      case 'floq_activity':
+        return <MessageCircle className="w-4 h-4 text-indigo-400" />
+      case 'vibe_activity':
+        return <Heart className="w-4 h-4 text-pink-400" />
       default:
         return <Clock className="w-4 h-4 text-gray-400" />
     }
@@ -52,6 +57,10 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
         return 'border-purple-500/20 bg-purple-500/10'
       case 'trending':
         return 'border-orange-500/20 bg-orange-500/10'
+      case 'floq_activity':
+        return 'border-indigo-500/20 bg-indigo-500/10'
+      case 'vibe_activity':
+        return 'border-pink-500/20 bg-pink-500/10'
       default:
         return 'border-gray-500/20 bg-gray-500/10'
     }
@@ -61,10 +70,6 @@ export const LiveActivityFeed: React.FC<LiveActivityFeedProps> = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <h3 className="font-semibold text-white">Live Activity</h3>
-      </div>
       {displayedActivities.map((activity) => {
         const cardProps = onCardClick
           ? { onClick: () => onCardClick(activity), role: 'button', tabIndex: 0, className: `cursor-pointer flex items-start gap-3 p-3 rounded-2xl border ${getActivityColor(activity.type)} backdrop-blur-sm transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-primary` }

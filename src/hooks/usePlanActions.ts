@@ -110,7 +110,7 @@ export function useVoteOnStop() {
           stop_id: stopId,
           vote_type: voteType,
           emoji_reaction: emojiReaction,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          profile_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
         .single()

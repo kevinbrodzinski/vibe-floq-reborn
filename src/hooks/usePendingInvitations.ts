@@ -39,7 +39,7 @@ export function usePendingInvitations() {
             avatar_url
           )
         `)
-        .eq('invitee_user_id', user.id)
+        .eq('invitee_profile_id', user.id)
         .eq('status', 'pending')
         .order('invited_at', { ascending: false });
 

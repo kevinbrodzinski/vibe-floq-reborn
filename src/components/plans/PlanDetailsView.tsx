@@ -87,10 +87,10 @@ export const PlanDetailsView: React.FC = () => {
           .from('plan_participants')
           .upsert({
             plan_id: planId,
-            user_id: session.user.id,
+            profile_id: session.user.id,
             role: 'participant'
           }, {
-            onConflict: 'plan_id,user_id'
+            onConflict: 'plan_id,profile_id'
           });
         if (error) throw error;
       } else {
@@ -98,7 +98,7 @@ export const PlanDetailsView: React.FC = () => {
           .from('plan_participants')
           .delete()
           .eq('plan_id', planId)
-          .eq('user_id', session.user.id);
+          .eq('profile_id', session.user.id);
         if (error) throw error;
       }
     },

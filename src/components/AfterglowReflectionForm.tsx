@@ -89,7 +89,7 @@ export const AfterglowReflectionForm = ({
 
       const afterglowData = {
         plan_id: planId,
-        user_id: user.id,
+        profile_id: user.id,
         date: new Date().toISOString().split('T')[0],
         overall_rating: reflection.overall_rating[0],
         energy_level: reflection.energy_level[0],

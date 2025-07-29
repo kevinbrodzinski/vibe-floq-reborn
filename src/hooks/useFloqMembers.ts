@@ -9,7 +9,7 @@ export const useFloqMembers = (floqId: string) => {
       const { data, error } = await supabase
         .from('floq_participants')
         .select(`
-          user_id,
+          profile_id,
           role,
           joined_at,
           profiles!inner (
@@ -22,9 +22,9 @@ export const useFloqMembers = (floqId: string) => {
         .eq('floq_id', floqId);
 
       if (error) throw error;
-      
+
       return data.map(participant => ({
-        user_id: participant.user_id,
+        profile_id: participant.profile_id,
         role: participant.role,
         joined_at: participant.joined_at,
         profile: participant.profiles

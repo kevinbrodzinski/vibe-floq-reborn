@@ -120,7 +120,7 @@ export function useNearbyFlocks({
         const { data: joinedData } = await supabase
           .from('floq_participants')
           .select('floq_id')
-          .eq('user_id', user.id);
+          .eq('profile_id', user.id);
 
         joinedFloqIds = joinedData?.map(item => item.floq_id) || [];
       }

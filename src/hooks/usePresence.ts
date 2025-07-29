@@ -23,15 +23,15 @@ export function usePresence(planId: string) {
     }))
   }, [planId])
 
-  const updateActivity = useCallback((userId: string) => {
+  const updateActivity = useCallback((profileId: string) => {
     setLastActivity(prev => ({
       ...prev,
-      [userId]: Date.now()
+      [profileId]: Date.now()
     }))
   }, [])
 
-  const isUserActive = useCallback((userId: string) => {
-    const activity = lastActivity[userId]
+  const isUserActive = useCallback((profileId: string) => {
+    const activity = lastActivity[profileId]
     if (!activity) return false
     return Date.now() - activity < 60000 // Active if seen in last minute
   }, [lastActivity])

@@ -99,7 +99,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       const { error: progressError } = await supabase
         .from('user_onboarding_progress')
         .upsert({
-          user_id: session.user.id,
+          profile_id: session.user.id,
           onboarding_version: CURRENT_ONBOARDING_VERSION,
           current_step: 6,
           completed_steps: [0, 1, 2, 3, 4, 5],
@@ -115,15 +115,28 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         throw new Error(`Failed to update onboarding progress: ${progressError.message}`);
       }
 
-      // Update user preferences
+      // Update user preferences with all required fields
       const { error: preferencesError } = await supabase
         .from('user_preferences')
         .upsert({
-          user_id: session.user.id,
+          profile_id: session.user.id,
           onboarding_version: CURRENT_ONBOARDING_VERSION,
           onboarding_completed_at: completionTime,
+          prefer_smart_suggestions: true,
+          field_enabled: true,
+          vibe_detection_enabled: true,
+          preferred_vibe: state.selectedVibe,
+          vibe_strength: 0.5,
+          vibe_color: null,
+          checkin_streak: 0,
+          energy_streak_weeks: 0,
+          social_streak_weeks: 0,
+          both_streak_weeks: 0,
+          favorite_locations: [],
+          declined_plan_types: null,
+          feedback_sentiment: null,
         }, {
-          onConflict: 'user_id',
+          onConflict: 'profile_id',
           ignoreDuplicates: false
         });
 

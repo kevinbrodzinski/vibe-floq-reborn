@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs from '@/lib/dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
