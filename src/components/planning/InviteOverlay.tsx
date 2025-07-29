@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VibeRing } from '@/components/VibeRing';
 import { useSuggestedInvitees } from '@/hooks/useSuggestedInvitees';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { safeVibe } from '@/utils/safeVibe';
 import { motion, AnimatePresence } from 'framer-motion';
 import { zIndex } from '@/constants/z';
@@ -51,7 +52,6 @@ export function InviteOverlay({
 }: InviteOverlayProps) {
   const [activeTab, setActiveTab] = useState<'suggested' | 'floq' | 'friends' | 'email'>('suggested');
   const [floqMembers, setFloqMembers] = useState<FloqMember[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [emailList, setEmailList] = useState('');
   const [customMessage, setCustomMessage] = useState('');
@@ -60,6 +60,9 @@ export function InviteOverlay({
   const [showFriendModal, setShowFriendModal] = useState(false);
   const [acceptedFriends, setAcceptedFriends] = useState<Friend[]>([]);
   const { toast } = useToast();
+  
+  // Use the new unified friends hook
+  const { rows: friendsData } = useUnifiedFriends();
 
   // Hook up smart friend suggestions
   const { suggestions, loading: suggestionsLoading } = useSuggestedInvitees({
@@ -69,10 +72,19 @@ export function InviteOverlay({
     planLocation,
   });
 
+  // Convert unified friends data to the format expected by the component
+  const friends: Friend[] = friendsData
+    .filter(row => row.friend_state === 'accepted')
+    .map(row => ({
+      id: row.friend_id,
+      username: row.username || '',
+      display_name: row.display_name,
+      avatar_url: row.avatar_url
+    }));
+
   useEffect(() => {
     if (open) {
       loadFloqMembers();
-      loadFriends();
     }
   }, [open, floqId]);
 
@@ -147,40 +159,7 @@ export function InviteOverlay({
     }
   };
 
-  const loadFriends = async () => {
-    try {
-      const { data: friendshipsData, error } = await supabase
-        .from('friendships')
-        .select('friend_id');
-
-      if (error) throw error;
-
-      if (!friendshipsData || friendshipsData.length === 0) {
-        setFriends([]);
-        return;
-      }
-
-      const friendIds = friendshipsData.map(f => f.friend_id);
-      
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .in('id', friendIds);
-
-      if (profilesError) throw profilesError;
-
-      const friendsList = profilesData?.map(profile => ({
-        id: profile.id,
-        username: profile.username || '',
-        display_name: profile.display_name,
-        avatar_url: profile.avatar_url
-      })) || [];
-
-      setFriends(friendsList);
-    } catch (error) {
-      console.error('Error loading friends:', error);
-    }
-  };
+  // Friends are now loaded via the unified hook, no separate loading needed
 
   const toggleUserSelection = (profileId: string) => {
     setSelectedUsers(prev => 
