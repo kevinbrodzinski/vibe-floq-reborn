@@ -59,8 +59,8 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
       const { data, error } = await supabase
         .from('plan_participants')
         .select(`
-          user_id,
-          profiles:profiles!user_id (
+          profile_id,
+          profiles:profiles!profile_id (
             id,
             username,
             display_name,
@@ -72,7 +72,7 @@ export function usePlanPresence(planId: string, options: UsePlanPresenceOptions 
       if (error) throw error;
 
       // Transform and remove duplicates
-      const transformedParticipants = (data as DBParticipant[] ?? []).map(participant => ({
+      const transformedParticipants = (data as unknown as DBParticipant[] ?? []).map(participant => ({
         profileId: participant.profile_id,
         username: participant.profiles?.username ?? 'Unknown',
         displayName: participant.profiles?.display_name ?? participant.profiles?.username ?? 'Unknown',

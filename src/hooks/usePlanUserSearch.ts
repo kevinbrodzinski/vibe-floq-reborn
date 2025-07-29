@@ -21,7 +21,7 @@ export function usePlanUserSearch(planId: string, query: string) {
 
       if (participantsError) throw participantsError
 
-      const existingUserIds = participants?.map(p => p.user_id).filter(Boolean) || []
+      const existingUserIds = participants?.map(p => p.profile_id).filter(Boolean) || []
 
       // Search users excluding existing participants
       let searchQuery = supabase

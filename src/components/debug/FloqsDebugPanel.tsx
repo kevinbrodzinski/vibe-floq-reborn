@@ -49,13 +49,13 @@ export const FloqsDebugPanel = () => {
           </div>
         )}
         <div>
-          <strong>Count:</strong> {floqs.length} floqs
+          <strong>Count:</strong> {Array.isArray(floqs) ? floqs.length : 'pages' in floqs ? floqs.pages.flat().length : 0} floqs
         </div>
-        {floqs.length > 0 && (
+        {(Array.isArray(floqs) ? floqs.length : 'pages' in floqs ? floqs.pages.flat().length : 0) > 0 && (
           <div className="space-y-1">
             <strong>First Floq:</strong>
             <pre className="text-xs bg-muted p-2 rounded">
-              {JSON.stringify(floqs[0], null, 2)}
+              {JSON.stringify((Array.isArray(floqs) ? floqs : 'pages' in floqs ? floqs.pages.flat() : [])[0], null, 2)}
             </pre>
           </div>
         )}

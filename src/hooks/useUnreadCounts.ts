@@ -5,9 +5,6 @@ import { useAuth } from "@/providers/AuthProvider";
 interface UnreadCounts {
   profile_id: string;
   floq_id: string;
-  unread_chat: number;
-  unread_activity: number;
-  unread_plans: number;
   unread_total: number;
 }
 
@@ -32,16 +29,14 @@ export const useUnreadCounts = (floqId: string) => {
         return null;
       }
 
-      // Return with computed total
+      // Return with total
       return data ? {
-        ...data,
-        unread_total: data.unread_chat + data.unread_activity + data.unread_plans
+        profile_id: data.profile_id || session.user.id,
+        floq_id: data.floq_id || floqId,
+        unread_total: data.unread || 0
       } : {
         profile_id: session.user.id,
         floq_id: floqId,
-        unread_chat: 0,
-        unread_activity: 0,
-        unread_plans: 0,
         unread_total: 0,
       };
     },
@@ -71,10 +66,11 @@ export const useMyFloqsUnreadCounts = () => {
         return [];
       }
 
-      // Return with computed totals
+      // Return with totals mapped
       return data?.map(item => ({
-        ...item,
-        unread_total: item.unread_chat + item.unread_activity + item.unread_plans
+        profile_id: item.profile_id,
+        floq_id: item.floq_id,
+        unread_total: item.unread || 0
       })) || [];
     },
     enabled: !!session?.user?.id,
@@ -104,9 +100,9 @@ export const useFloqTabBadges = (floqId: string) => {
   const unreadCounts = useUnreadCounts(floqId);
   
   return {
-    chatBadge: unreadCounts.data?.unread_chat || 0,
-    activityBadge: unreadCounts.data?.unread_activity || 0,
-    plansBadge: unreadCounts.data?.unread_plans || 0,
+    chatBadge: unreadCounts.data?.unread_total || 0,
+    activityBadge: 0,
+    plansBadge: 0,
     isLoading: unreadCounts.isLoading,
     error: unreadCounts.error
   };

@@ -48,7 +48,7 @@ export function useTrackInviteRSVP() {
       // 3. If declined, log feedback to preferences
       if (!accept) {
         const { error: declineError } = await supabase.rpc('log_invite_decline', {
-          p_user_id: user.id,
+          p_profile_id: user.id,
           p_plan_id: planId,
         })
         if (declineError) throw declineError

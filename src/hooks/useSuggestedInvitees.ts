@@ -34,7 +34,7 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
         .select('profile_id')
         .eq('floq_id', options.floqId);
       
-      return data?.map(p => p.user_id) || [];
+      return data?.map(p => p.profile_id) || [];
     },
     enabled: !!options.floqId,
   });
@@ -50,7 +50,7 @@ export function useSuggestedInvitees(options: UseSuggestedInviteesOptions = {}) 
         .select('profile_id')
         .eq('plan_id', options.planId);
       
-      return data?.map(p => p.user_id) || [];
+      return data?.map(p => p.profile_id) || [];
     },
     enabled: !!options.planId,
   });

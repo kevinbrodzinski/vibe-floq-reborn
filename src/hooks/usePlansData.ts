@@ -16,13 +16,8 @@ export function usePlansData() {
   const { data: userPlans = [], isLoading: isLoadingUserPlans } = useQuery({
     queryKey: ['user-floq-plans'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('v_user_plans')
-        .select('*')
-        .order('planned_at', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
+      // TODO: wire to v_user_plans_profile when view is rebuilt
+      return [];
     },
     staleTime: 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000 // 5 minutes
@@ -57,9 +52,10 @@ export function usePlansData() {
 
   // Combine and categorize plans
   const categorizedPlans = useMemo(() => {
-    const draft = userPlans.filter(plan => plan.status === 'draft');
-    const active = userPlans.filter(plan => plan.status === 'finalized');
-    const completed = userPlans.filter(plan => plan.status === 'completed');
+    // TODO: restore when view is available
+    const draft: any[] = [];
+    const active: any[] = [];
+    const completed: any[] = [];
     const invited = invitedPlans;
 
     return { draft, active, completed, invited };

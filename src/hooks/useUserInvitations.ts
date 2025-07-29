@@ -136,7 +136,7 @@ export function useUserInvitations(groupBy: GroupingMode = 'floq') {
       } else {
         // Log decline for preferences learning
         await supabase.rpc('log_invite_decline', {
-          p_user_id: user.id,
+          p_profile_id: user.id,
           p_plan_id: planId
         });
       }

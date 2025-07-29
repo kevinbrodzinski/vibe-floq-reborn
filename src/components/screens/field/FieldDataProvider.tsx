@@ -112,7 +112,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   useEffect(() => {
     const enhanceFloqsWithAddresses = async () => {
       const enhancedFloqs = await Promise.all(
-        (activeFloqs || []).map(async (floq) => {
+        (Array.isArray(activeFloqs) ? activeFloqs : 'pages' in activeFloqs ? activeFloqs.pages.flat() : []).map(async (floq) => {
           if (floq.lat && floq.lng) {
             const address = await getCachedAddress(floq.lat, floq.lng);
             return {
@@ -126,7 +126,8 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
       setFloqsWithAddresses(enhancedFloqs);
     };
 
-    if (activeFloqs && activeFloqs.length > 0) {
+    const flatActiveFloqs = Array.isArray(activeFloqs) ? activeFloqs : 'pages' in activeFloqs ? activeFloqs.pages.flat() : [];
+    if (flatActiveFloqs.length > 0) {
       enhanceFloqsWithAddresses();
     }
   }, [activeFloqs]);
@@ -213,7 +214,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   console.log('[FIELD_DEBUG] Location and viewport:', {
     location: location ? { lat: location.lat, lng: location.lng } : null,
     viewport,
-    activeFloqsCount: activeFloqs?.length || 0
+    activeFloqsCount: Array.isArray(activeFloqs) ? activeFloqs.length : 'pages' in activeFloqs ? activeFloqs.pages.flat().length : 0
   });
 
   // Floqs are now rendered by Mapbox clustering, not PIXI

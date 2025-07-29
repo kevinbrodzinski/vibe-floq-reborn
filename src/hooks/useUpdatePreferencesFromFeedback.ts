@@ -20,7 +20,7 @@ export function useUpdatePreferencesFromFeedback() {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase.rpc('update_user_preferences_from_feedback', {
-        p_user_id: user.id,
+        p_profile_id: user.id,
         p_vibe: vibe,
         p_moment: moment,
       });

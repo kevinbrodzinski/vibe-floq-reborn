@@ -130,12 +130,9 @@ export const useSmartDiscovery = (
           recommendations.push(...venueRecommendations);
         }
 
-        // 2. Get nearby floqs based on filters
-        const { data: floqs, error: floqError } = await supabase.rpc('get_walkable_floqs', {
-          user_lat: userLocation.lat,
-          user_lng: userLocation.lng,
-          max_walk_meters: filters.radius * 1000,
-        });
+        // 2. Get nearby floqs based on filters (stubbed until RPC is fixed)
+        const floqs: any[] = [];
+        const floqError = null;
 
         if (!floqError && floqs) {
           // Filter floqs based on vibe and group size

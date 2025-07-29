@@ -5,7 +5,7 @@ import { useAuth } from '@/providers/AuthProvider';
 
 export interface RealFriendRequest {
   id: string;
-  user_id: string;
+  profile_id: string;
   friend_id: string;
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
@@ -41,7 +41,7 @@ export function useRealFriendRequests() {
       }
 
       // Get requester profiles separately
-      const requesterIds = data?.map(r => r.user_id) || [];
+      const requesterIds = data?.map(r => r.profile_id) || [];
       if (requesterIds.length === 0) return [];
 
       const { data: profiles, error: profilesError } = await supabase
@@ -57,8 +57,8 @@ export function useRealFriendRequests() {
       // Combine requests with profiles
       return data?.map(request => ({
         ...request,
-        requester_profile: profiles?.find(p => p.id === request.user_id) || {
-          id: request.user_id,
+        requester_profile: profiles?.find(p => p.id === request.profile_id) || {
+          id: request.profile_id,
           username: 'unknown',
           display_name: 'Unknown User',
           avatar_url: null
@@ -124,8 +124,8 @@ export function useRealFriendRequests() {
       const { error: friendshipError } = await supabase
         .from('friends')
         .insert([
-          { user_a: request.user_id, user_b: request.friend_id },
-          { user_a: request.friend_id, user_b: request.user_id }
+          { user_a: request.profile_id, user_b: request.friend_id },
+          { user_a: request.friend_id, user_b: request.profile_id }
         ]);
 
       if (friendshipError) throw friendshipError;

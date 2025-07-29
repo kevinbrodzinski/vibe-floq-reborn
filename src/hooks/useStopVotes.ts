@@ -57,7 +57,7 @@ export function useStopVotes({ planId, stopId }: UseStopVotesParams) {
   }, {} as Record<string, number>)
 
   const userVote = votes.find(vote => 
-    session?.user?.id ? vote.user_id === session.user.id : vote.guest_id === guestId
+    session?.user?.id ? vote.profile_id === session.user.id : vote.guest_id === guestId
   )
 
   return {
