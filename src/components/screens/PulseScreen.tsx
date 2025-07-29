@@ -387,9 +387,9 @@ export const PulseScreen: React.FC = () => {
             <svg viewBox="0 0 220 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
               <defs>
                 <linearGradient id="pulseWaveGradient" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#a5b4fc" />
-                  <stop offset="0.5" stop-color="#f472b6" />
-                  <stop offset="1" stop-color="#facc15" />
+                  <stop stopColor="#a5b4fc" />
+                  <stop offset="0.5" stopColor="#f472b6" />
+                  <stop offset="1" stopColor="#facc15" />
                 </linearGradient>
               </defs>
               <path d="M0 24 Q 55 0 110 24 T 220 24 Q 165 48 110 24 T 0 24" stroke="url(#pulseWaveGradient)" stroke-width="6" fill="none" opacity="0.18"/>
