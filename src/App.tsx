@@ -11,7 +11,10 @@ import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
+import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
+import { useAuth } from "@/providers/AuthProvider";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
+import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { clusterWorker } from "@/lib/clusterWorker";
@@ -71,6 +74,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <AppProviders>
         <EventNotificationsProvider>
           <PlanNotificationProvider>
             <VibeRealtime />
@@ -98,6 +102,7 @@ const App = () => {
             </BannerProvider>
           </PlanNotificationProvider>
         </EventNotificationsProvider>
+        </AppProviders>
       </AuthProvider>
     </QueryClientProvider>
   );

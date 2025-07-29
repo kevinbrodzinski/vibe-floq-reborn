@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useChatTimeline } from '@/hooks/chat/useChatTimeline';
 import { useReactToMessage } from '@/hooks/chat/useReactToMessage';
 import { useSendMessage } from '@/hooks/chat/useSendMessage';
+import { useMarkRead } from '@/hooks/chat/useMarkRead';
 import { useUploadMedia } from '@/hooks/chat/useUploadMedia';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
@@ -59,9 +60,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   });
   const sendMut = useSendMessage(surface, threadId, currentUserId ?? '');
   const reactMut = useReactToMessage(surface, threadId, currentUserId ?? '');
-  const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
+  const markReadMut = useMarkRead(surface, threadId, currentUserId ?? '');
 
-  // Typing indicator state
+  const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
 
@@ -88,14 +89,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     });
   }, []);
 
-  // Mark as read when sheet opens
   useEffect(() => {
     if (open && currentUserId && friendId && threadId) {
-      rpc_markThreadRead({ 
-        p_surface: surface as 'dm' | 'floq' | 'plan', 
-        p_thread_id: threadId, 
-        p_user_id: currentUserId 
-      });
+      markReadMut.mutate();
       
       // Optimistically clear unread badge
       queryClient.setQueryData(
@@ -103,7 +99,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         (rows: any[]) => rows?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
-  }, [open, currentUserId, friendId, threadId, surface, queryClient]);
+  }, [open, currentUserId, friendId, threadId, markReadMut, queryClient]);
 
   // Auto-focus input when sheet opens
   useEffect(() => {

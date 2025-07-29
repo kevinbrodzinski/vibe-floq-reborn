@@ -149,9 +149,8 @@ export const MessagesSheet = ({
   useAvatarPreloader(avatarPaths, [48]);
 
   const getUnreadCount = (threadId: string) => {
-    // Note: The unread counts API changed to use 'kind' and 'cnt' format
-    // This will need to be updated when we have thread-specific unread counts
-    return 0; // Temporary fix
+    const thread = unreadCounts.find(u => u.thread_id === threadId);
+    return thread?.cnt || 0;
   };
 
   const totalUnread = unreadCounts.reduce(
