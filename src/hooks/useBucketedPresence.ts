@@ -5,7 +5,7 @@ import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 
 interface PresenceUser {
-  profile_id: string;
+  user_id: string;
   location: GeometryPoint;
   vibe: string;
   last_seen: string;
@@ -118,7 +118,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           presences.forEach((presence: any) => {
             users.push({
               ...presence,
-              isFriend: friendIds.includes(presence.profile_id)
+              isFriend: friendIds.includes(presence.user_id)
             });
           });
         });

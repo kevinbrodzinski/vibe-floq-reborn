@@ -31,7 +31,8 @@ export function FriendShareToggle({
             // RPC wrapper keeps RLS nice and tight.
             const { error } = await supabase.rpc('set_live_share', {
                 _friend: friendId,
-                _on: val
+                _on: val,
+                _auto_when: ['always'] // Default to always share
             });
 
             if (error) {

@@ -30,7 +30,7 @@ export function useAfterglowData(date?: string) {
           // Properly map the database row to our domain type
           const mappedData: DailyAfterglowData = {
             id: data.id,
-            user_id: data.profile_id || '',
+            profile_id: data.profile_id,
             date: data.date,
             energy_score: data.energy_score || 0,
             social_intensity: data.social_intensity || 0,

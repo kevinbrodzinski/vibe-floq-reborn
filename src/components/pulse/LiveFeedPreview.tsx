@@ -4,7 +4,7 @@ import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
 
 export const LiveFeedPreview = ({ max = 4 }: { max?: number }) => {
   const { data } = useLiveActivity();
-  const items = data?.pages?.[0] ? (Array.isArray(data.pages[0]) ? data.pages[0].slice(0, max) : []) : [];
+  const items = data?.pages[0]?.slice(0, max) ?? [];
   
   // Convert PulseEvent to LiveActivity format
   const activities = items.map(pulseEventToLiveActivity);

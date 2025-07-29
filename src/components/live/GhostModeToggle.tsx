@@ -1,6 +1,5 @@
 import { Switch } from '@/components/ui/switch';
 import dayjs from '@/lib/dayjs';
-import { useLiveSettings } from '@/hooks/useLiveSettings';
 
 export const GhostModeToggle = () => {
     const { data, save, isLoading } = useLiveSettings();

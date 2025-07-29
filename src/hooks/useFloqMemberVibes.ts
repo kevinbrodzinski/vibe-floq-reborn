@@ -14,7 +14,7 @@ export const useFloqMemberVibes = (floqId: string) => {
 
       if (!participants?.length) return [];
 
-      const userIds = participants.map(p => p.profile_id);
+      const userIds = participants.map(p => p.user_id);
       
       const { data: vibes, error } = await supabase
         .from('user_vibe_states')

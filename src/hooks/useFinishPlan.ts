@@ -19,7 +19,7 @@ export function useFinishPlan() {
 
       const { data, error } = await supabase.rpc('finish_plan', {
         p_plan_id: planId,
-        p_profile_id: session.user.id
+        p_user_id: session.user.id
       })
       
       if (error) {

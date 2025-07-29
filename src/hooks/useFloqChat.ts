@@ -59,7 +59,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
           body,
           emoji,
           created_at,
-          profiles!floq_messages_sender_id_fkey (
+          profiles!inner (
             display_name,
             avatar_url,
             username
@@ -198,7 +198,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
               body,
               emoji,
               created_at,
-              profiles!floq_messages_sender_id_fkey (
+              profiles!inner (
                 display_name,
                 avatar_url,
                 username

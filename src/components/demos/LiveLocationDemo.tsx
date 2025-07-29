@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FriendShareToggle } from '@/components/friends/FriendShareToggle';
+import { ShareToggle } from '@/components/friends/ShareToggle';
 import { LiveMap } from '@/components/map/LiveMap';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,7 +54,7 @@ export function LiveLocationDemo() {
               {mockFriendIds.map((friendId, index) => (
                 <div key={friendId} className="flex items-center justify-between p-2 border rounded">
                   <span className="text-sm">Friend {index + 1} ({friendId.slice(0, 8)}...)</span>
-                  <FriendShareToggle friendId={friendId} initial={false} />
+                  <ShareToggle friendId={friendId} initial={false} />
                 </div>
               ))}
             </div>

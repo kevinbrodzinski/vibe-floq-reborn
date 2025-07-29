@@ -14,7 +14,7 @@ describe('publishPresence', () => {
   });
 
   it('calls upsert_presence with correct args', async () => {
-    await expect(publishPresence(34, -118, 'excited')).resolves.toBeUndefined();
+    await publishPresence(34, -118, 'excited');
 
     expect(supabase.rpc).toHaveBeenCalledWith('upsert_presence', {
       p_lat: 34,

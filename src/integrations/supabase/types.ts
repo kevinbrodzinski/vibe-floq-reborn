@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -24,7 +23,6 @@ export type Database = {
           icon: string | null
           metadata: Json | null
           name: string
-          profile_id: string | null
         }
         Insert: {
           code: string
@@ -34,7 +32,6 @@ export type Database = {
           icon?: string | null
           metadata?: Json | null
           name: string
-          profile_id?: string | null
         }
         Update: {
           code?: string
@@ -44,31 +41,8 @@ export type Database = {
           icon?: string | null
           metadata?: Json | null
           name?: string
-          profile_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_achievement_catalogue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_achievement_catalogue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_achievement_catalogue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       achievements: {
         Row: {
@@ -76,45 +50,23 @@ export type Database = {
           earned_at: string
           id: string
           metadata: Json | null
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           achievement_type: string
           earned_at?: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           achievement_type?: string
           earned_at?: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       afterglow_collection_items: {
         Row: {
@@ -122,21 +74,18 @@ export type Database = {
           collection_id: string
           daily_afterglow_id: string
           id: string
-          profile_id: string | null
         }
         Insert: {
           added_at?: string | null
           collection_id: string
           daily_afterglow_id: string
           id?: string
-          profile_id?: string | null
         }
         Update: {
           added_at?: string | null
           collection_id?: string
           daily_afterglow_id?: string
           id?: string
-          profile_id?: string | null
         }
         Relationships: [
           {
@@ -153,27 +102,6 @@ export type Database = {
             referencedRelation: "daily_afterglow"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_afterglow_collection_items_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_collection_items_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_collection_items_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       afterglow_collections: {
@@ -183,8 +111,8 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          profile_id: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           color?: string | null
@@ -192,8 +120,8 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          profile_id?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           color?: string | null
@@ -201,51 +129,29 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          profile_id?: string | null
           updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_afterglow_collections_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_collections_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_collections_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       afterglow_favorites: {
         Row: {
           created_at: string | null
           daily_afterglow_id: string
           id: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           daily_afterglow_id: string
           id?: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           daily_afterglow_id?: string
           id?: string
-          profile_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -253,27 +159,6 @@ export type Database = {
             columns: ["daily_afterglow_id"]
             isOneToOne: false
             referencedRelation: "daily_afterglow"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -288,7 +173,6 @@ export type Database = {
           location_geom: unknown | null
           metadata: Json | null
           moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
-          profile_id: string | null
           timestamp: string
           title: string
         }
@@ -301,7 +185,6 @@ export type Database = {
           location_geom?: unknown | null
           metadata?: Json | null
           moment_type: Database["public"]["Enums"]["afterglow_moment_type"]
-          profile_id?: string | null
           timestamp: string
           title: string
         }
@@ -314,7 +197,6 @@ export type Database = {
           location_geom?: unknown | null
           metadata?: Json | null
           moment_type?: Database["public"]["Enums"]["afterglow_moment_type"]
-          profile_id?: string | null
           timestamp?: string
           title?: string
         }
@@ -326,27 +208,6 @@ export type Database = {
             referencedRelation: "daily_afterglow"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_afterglow_moments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_moments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_moments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       afterglow_people: {
@@ -355,7 +216,6 @@ export type Database = {
           interaction_strength: number | null
           moment_id: string
           person_id: string
-          profile_id: string | null
           shared_moments_count: number | null
         }
         Insert: {
@@ -363,7 +223,6 @@ export type Database = {
           interaction_strength?: number | null
           moment_id: string
           person_id: string
-          profile_id?: string | null
           shared_moments_count?: number | null
         }
         Update: {
@@ -371,7 +230,6 @@ export type Database = {
           interaction_strength?: number | null
           moment_id?: string
           person_id?: string
-          profile_id?: string | null
           shared_moments_count?: number | null
         }
         Relationships: [
@@ -389,41 +247,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "afterglow_people_person_id_fkey"
-            columns: ["person_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "afterglow_people_person_id_fkey"
-            columns: ["person_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_people_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_people_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_people_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       afterglow_share_links: {
@@ -432,7 +255,6 @@ export type Database = {
           daily_afterglow_id: string
           id: string
           og_image_url: string | null
-          profile_id: string | null
           slug: string
         }
         Insert: {
@@ -440,7 +262,6 @@ export type Database = {
           daily_afterglow_id: string
           id?: string
           og_image_url?: string | null
-          profile_id?: string | null
           slug?: string
         }
         Update: {
@@ -448,7 +269,6 @@ export type Database = {
           daily_afterglow_id?: string
           id?: string
           og_image_url?: string | null
-          profile_id?: string | null
           slug?: string
         }
         Relationships: [
@@ -457,27 +277,6 @@ export type Database = {
             columns: ["daily_afterglow_id"]
             isOneToOne: false
             referencedRelation: "daily_afterglow"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -489,7 +288,6 @@ export type Database = {
           lng: number
           moment_id: string
           name: string
-          profile_id: string | null
           venue_id: string | null
           venue_type: string | null
         }
@@ -499,7 +297,6 @@ export type Database = {
           lng: number
           moment_id: string
           name: string
-          profile_id?: string | null
           venue_id?: string | null
           venue_type?: string | null
         }
@@ -509,7 +306,6 @@ export type Database = {
           lng?: number
           moment_id?: string
           name?: string
-          profile_id?: string | null
           venue_id?: string | null
           venue_type?: string | null
         }
@@ -521,27 +317,6 @@ export type Database = {
             referencedRelation: "afterglow_moments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_afterglow_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_afterglow_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       app_user_notification: {
@@ -549,50 +324,27 @@ export type Database = {
           created_at: string | null
           id: number
           payload: Json
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: number
           payload: Json
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           id?: number
           payload?: Json
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_app_user_notification_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_app_user_notification_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_app_user_notification_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       crossed_paths: {
         Row: {
           created_at: string | null
           encounter_date: string
           id: number
-          profile_id: string | null
           ts: string
           user_a: string
           user_b: string
@@ -602,7 +354,6 @@ export type Database = {
           created_at?: string | null
           encounter_date: string
           id?: number
-          profile_id?: string | null
           ts: string
           user_a: string
           user_b: string
@@ -612,35 +363,12 @@ export type Database = {
           created_at?: string | null
           encounter_date?: string
           id?: number
-          profile_id?: string | null
           ts?: string
           user_a?: string
           user_b?: string
           venue_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_crossed_paths_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       daily_afterglow: {
         Row: {
@@ -658,12 +386,12 @@ export type Database = {
           is_stale: boolean
           moments: Json | null
           peak_vibe_time: string | null
-          profile_id: string | null
           regenerated_at: string | null
           social_intensity: number | null
           summary_text: string | null
           total_floqs: number | null
           total_venues: number | null
+          user_id: string
           vibe_path: string[] | null
         }
         Insert: {
@@ -681,12 +409,12 @@ export type Database = {
           is_stale?: boolean
           moments?: Json | null
           peak_vibe_time?: string | null
-          profile_id?: string | null
           regenerated_at?: string | null
           social_intensity?: number | null
           summary_text?: string | null
           total_floqs?: number | null
           total_venues?: number | null
+          user_id: string
           vibe_path?: string[] | null
         }
         Update: {
@@ -704,80 +432,36 @@ export type Database = {
           is_stale?: boolean
           moments?: Json | null
           peak_vibe_time?: string | null
-          profile_id?: string | null
           regenerated_at?: string | null
           social_intensity?: number | null
           summary_text?: string | null
           total_floqs?: number | null
           total_venues?: number | null
+          user_id?: string
           vibe_path?: string[] | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_daily_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_daily_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_daily_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       daily_recap_cache: {
         Row: {
           created_at: string | null
           day: string
           payload: Json
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           day: string
           payload: Json
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           day?: string
           payload?: Json
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_daily_recap_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_daily_recap_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_daily_recap_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       direct_messages: {
         Row: {
@@ -785,7 +469,6 @@ export type Database = {
           created_at: string | null
           id: string
           metadata: Json | null
-          profile_id: string | null
           sender_id: string
           thread_id: string
         }
@@ -794,7 +477,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           sender_id: string
           thread_id: string
         }
@@ -803,7 +485,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           sender_id?: string
           thread_id?: string
         }
@@ -813,27 +494,6 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "direct_threads"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_direct_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -847,7 +507,6 @@ export type Database = {
           last_read_at_b: string
           member_a: string
           member_b: string
-          profile_id: string | null
           unread_a: number | null
           unread_b: number | null
         }
@@ -859,7 +518,6 @@ export type Database = {
           last_read_at_b?: string
           member_a: string
           member_b: string
-          profile_id?: string | null
           unread_a?: number | null
           unread_b?: number | null
         }
@@ -871,33 +529,10 @@ export type Database = {
           last_read_at_b?: string
           member_a?: string
           member_b?: string
-          profile_id?: string | null
           unread_a?: number | null
           unread_b?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_direct_threads_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       edge_invocation_logs: {
         Row: {
@@ -907,7 +542,6 @@ export type Database = {
           function_name: string
           id: string
           metadata: Json | null
-          profile_id: string | null
           status: string
         }
         Insert: {
@@ -917,7 +551,6 @@ export type Database = {
           function_name: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           status: string
         }
         Update: {
@@ -927,32 +560,9 @@ export type Database = {
           function_name?: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           status?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_edge_invocation_logs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_edge_invocation_logs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_edge_invocation_logs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       event_areas: {
         Row: {
@@ -961,7 +571,6 @@ export type Database = {
           lat: number
           lng: number
           name: string
-          profile_id: string | null
           radius_m: number
           shape: Database["public"]["Enums"]["event_shape"] | null
           starts_at: string | null
@@ -973,7 +582,6 @@ export type Database = {
           lat: number
           lng: number
           name: string
-          profile_id?: string | null
           radius_m: number
           shape?: Database["public"]["Enums"]["event_shape"] | null
           starts_at?: string | null
@@ -985,35 +593,12 @@ export type Database = {
           lat?: number
           lng?: number
           name?: string
-          profile_id?: string | null
           radius_m?: number
           shape?: Database["public"]["Enums"]["event_shape"] | null
           starts_at?: string | null
           vibe?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_event_areas_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_event_areas_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_event_areas_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       event_notifications: {
         Row: {
@@ -1022,8 +607,8 @@ export type Database = {
           id: string
           kind: string
           payload: Json | null
-          profile_id: string | null
           seen_at: string | null
+          user_id: string
         }
         Insert: {
           accepted_at?: string | null
@@ -1031,8 +616,8 @@ export type Database = {
           id?: string
           kind: string
           payload?: Json | null
-          profile_id?: string | null
           seen_at?: string | null
+          user_id: string
         }
         Update: {
           accepted_at?: string | null
@@ -1040,39 +625,16 @@ export type Database = {
           id?: string
           kind?: string
           payload?: Json | null
-          profile_id?: string | null
           seen_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_event_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_event_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_event_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       field_tiles: {
         Row: {
           active_floq_ids: string[]
           avg_vibe: Json
           crowd_count: number
-          profile_id: string | null
           tile_id: string
           updated_at: string
         }
@@ -1080,7 +642,6 @@ export type Database = {
           active_floq_ids?: string[]
           avg_vibe?: Json
           crowd_count?: number
-          profile_id?: string | null
           tile_id: string
           updated_at?: string
         }
@@ -1088,33 +649,10 @@ export type Database = {
           active_floq_ids?: string[]
           avg_vibe?: Json
           crowd_count?: number
-          profile_id?: string | null
           tile_id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_field_tiles_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_field_tiles_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_field_tiles_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       flock_auto_suggestions: {
         Row: {
@@ -1122,62 +660,41 @@ export type Database = {
           created_at: string | null
           expires_at: string | null
           id: string
-          profile_id: string | null
           reasoning_data: Json | null
           status: Database["public"]["Enums"]["suggestion_status_enum"] | null
           suggested_users: string[] | null
           suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
           target_floq_id: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           confidence_score?: number | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
-          profile_id?: string | null
           reasoning_data?: Json | null
           status?: Database["public"]["Enums"]["suggestion_status_enum"] | null
           suggested_users?: string[] | null
           suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
           target_floq_id?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           confidence_score?: number | null
           created_at?: string | null
           expires_at?: string | null
           id?: string
-          profile_id?: string | null
           reasoning_data?: Json | null
           status?: Database["public"]["Enums"]["suggestion_status_enum"] | null
           suggested_users?: string[] | null
           suggestion_type?: Database["public"]["Enums"]["suggestion_type_enum"]
           target_floq_id?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_flock_auto_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_flock_auto_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_flock_auto_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
             columns: ["target_floq_id"]
@@ -1186,10 +703,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flock_auto_suggestions_target_floq_id_fkey"
-            columns: ["target_floq_id"]
+            foreignKeyName: "flock_auto_suggestions_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_public_floqs"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1203,7 +720,6 @@ export type Database = {
           metadata: Json | null
           new_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -1214,7 +730,6 @@ export type Database = {
           metadata?: Json | null
           new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1225,31 +740,9 @@ export type Database = {
           metadata?: Json | null
           new_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           previous_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id?: string | null
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_flock_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_flock_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_flock_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "flock_history_floq_id_fkey"
             columns: ["floq_id"]
@@ -1258,10 +751,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "flock_history_floq_id_fkey"
-            columns: ["floq_id"]
+            foreignKeyName: "flock_history_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_public_floqs"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1272,7 +765,6 @@ export type Database = {
           id: string
           interaction_count: number | null
           last_interaction_at: string | null
-          profile_id: string | null
           relationship_strength: number | null
           updated_at: string | null
           user_a_id: string
@@ -1283,7 +775,6 @@ export type Database = {
           id?: string
           interaction_count?: number | null
           last_interaction_at?: string | null
-          profile_id?: string | null
           relationship_strength?: number | null
           updated_at?: string | null
           user_a_id: string
@@ -1294,7 +785,6 @@ export type Database = {
           id?: string
           interaction_count?: number | null
           last_interaction_at?: string | null
-          profile_id?: string | null
           relationship_strength?: number | null
           updated_at?: string | null
           user_a_id?: string
@@ -1302,50 +792,8 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_flock_relationships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_flock_relationships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_flock_relationships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_user_a"
             columns: ["user_a_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_a"
-            columns: ["user_a_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_a"
-            columns: ["user_a_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_b"
-            columns: ["user_b_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1354,14 +802,7 @@ export type Database = {
             foreignKeyName: "fk_user_b"
             columns: ["user_b_id"]
             isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_b"
-            columns: ["user_b_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1375,7 +816,7 @@ export type Database = {
           id: string
           kind: string
           plan_id: string | null
-          profile_id: string | null
+          user_id: string | null
         }
         Insert: {
           content?: string | null
@@ -1385,7 +826,7 @@ export type Database = {
           id?: string
           kind: string
           plan_id?: string | null
-          profile_id?: string | null
+          user_id?: string | null
         }
         Update: {
           content?: string | null
@@ -1395,42 +836,14 @@ export type Database = {
           id?: string
           kind?: string
           plan_id?: string | null
-          profile_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_activity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_activity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_activity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_activity_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_activity_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },
           {
@@ -1441,24 +854,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_activity_profile_id_fkey"
-            columns: ["profile_id"]
+            foreignKeyName: "floq_activity_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_activity_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_activity_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -1476,7 +875,7 @@ export type Database = {
           location_name: string | null
           peak_moment_text: string | null
           people_seen: string[] | null
-          profile_id: string | null
+          user_id: string
           vibe_at_join: string | null
           vibe_at_leave: string | null
           vibe_changes: Json | null
@@ -1493,7 +892,7 @@ export type Database = {
           location_name?: string | null
           peak_moment_text?: string | null
           people_seen?: string[] | null
-          profile_id?: string | null
+          user_id: string
           vibe_at_join?: string | null
           vibe_at_leave?: string | null
           vibe_changes?: Json | null
@@ -1510,7 +909,7 @@ export type Database = {
           location_name?: string | null
           peak_moment_text?: string | null
           people_seen?: string[] | null
-          profile_id?: string | null
+          user_id?: string
           vibe_at_join?: string | null
           vibe_at_leave?: string | null
           vibe_changes?: Json | null
@@ -1523,34 +922,6 @@ export type Database = {
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_floq_afterglow_floq"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       floq_boosts: {
@@ -1560,8 +931,7 @@ export type Database = {
           expires_at: string
           floq_id: string
           id: string
-          profile_id: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           boost_type?: string
@@ -1569,8 +939,7 @@ export type Database = {
           expires_at?: string
           floq_id: string
           id?: string
-          profile_id?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           boost_type?: string
@@ -1578,8 +947,7 @@ export type Database = {
           expires_at?: string
           floq_id?: string
           id?: string
-          profile_id?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -1590,31 +958,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_floq_boosts_floq"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_boosts_profile_id"
+            foreignKeyName: "fk_floq_boosts_user"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_boosts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_boosts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1623,52 +970,24 @@ export type Database = {
         Row: {
           floq_id: string
           ignored_at: string | null
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           floq_id: string
           ignored_at?: string | null
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           floq_id?: string
           ignored_at?: string | null
-          profile_id?: string | null
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_ignored_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_ignored_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_ignored_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_ignored_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_ignored_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },
         ]
@@ -1680,10 +999,8 @@ export type Database = {
           id: string
           invitee_id: string
           inviter_id: string
-          profile_id: string | null
           responded_at: string | null
           status: Database["public"]["Enums"]["invitation_status"]
-          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1691,10 +1008,8 @@ export type Database = {
           id?: string
           invitee_id: string
           inviter_id: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
-          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1702,33 +1017,10 @@ export type Database = {
           id?: string
           invitee_id?: string
           inviter_id?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: Database["public"]["Enums"]["invitation_status"]
-          user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_invitations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_invitations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_invitations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_invitations_floq_id_fkey"
             columns: ["floq_id"]
@@ -1737,13 +1029,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_invitations_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_invitations_invitee_id_fkey"
             columns: ["invitee_id"]
             isOneToOne: false
@@ -1751,38 +1036,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_invitations_invitee_id_fkey"
-            columns: ["invitee_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_invitations_invitee_id_fkey"
-            columns: ["invitee_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_invitations_inviter_id_fkey"
             columns: ["inviter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_invitations_inviter_id_fkey"
-            columns: ["inviter_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_invitations_inviter_id_fkey"
-            columns: ["inviter_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1791,48 +1048,25 @@ export type Database = {
         Row: {
           floq_id: string
           last_mention_at: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           floq_id: string
           last_mention_at?: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           floq_id?: string
           last_mention_at?: string
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_floq_mention_cooldown_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_mention_cooldown_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_mention_cooldown_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       floq_message_mentions: {
         Row: {
           created_at: string | null
           end_idx: number
           message_id: string
-          profile_id: string | null
           start_idx: number
           target_id: string
           target_type: Database["public"]["Enums"]["mention_target"]
@@ -1841,7 +1075,6 @@ export type Database = {
           created_at?: string | null
           end_idx: number
           message_id: string
-          profile_id?: string | null
           start_idx: number
           target_id: string
           target_type: Database["public"]["Enums"]["mention_target"]
@@ -1850,33 +1083,11 @@ export type Database = {
           created_at?: string | null
           end_idx?: number
           message_id?: string
-          profile_id?: string | null
           start_idx?: number
           target_id?: string
           target_type?: Database["public"]["Enums"]["mention_target"]
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_message_mentions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_message_mentions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_message_mentions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_message_mentions_message_id_fkey"
             columns: ["message_id"]
@@ -1899,44 +1110,23 @@ export type Database = {
           emoji: string
           id: string
           message_id: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           emoji: string
           id?: string
           message_id: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
           emoji?: string
           id?: string
           message_id?: string
-          profile_id?: string | null
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_message_reactions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_message_reactions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_message_reactions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_message_reactions_message_id_fkey"
             columns: ["message_id"]
@@ -1961,7 +1151,6 @@ export type Database = {
           emoji: string | null
           floq_id: string
           id: string
-          profile_id: string | null
           reply_to_id: string | null
           sender_id: string
           status: string | null
@@ -1973,7 +1162,6 @@ export type Database = {
           emoji?: string | null
           floq_id: string
           id?: string
-          profile_id?: string | null
           reply_to_id?: string | null
           sender_id: string
           status?: string | null
@@ -1985,33 +1173,11 @@ export type Database = {
           emoji?: string | null
           floq_id?: string
           id?: string
-          profile_id?: string | null
           reply_to_id?: string | null
           sender_id?: string
           status?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_messages_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "fk_floq_reply"
             columns: ["reply_to_id"]
@@ -2034,13 +1200,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_messages_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_messages_reply_to_id_fkey"
             columns: ["reply_to_id"]
             isOneToOne: false
@@ -2059,20 +1218,6 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2081,49 +1226,22 @@ export type Database = {
         Row: {
           floq_id: string
           joined_at: string | null
-          last_read_message_at: string
-          profile_id: string | null
           role: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           floq_id: string
           joined_at?: string | null
-          last_read_message_at?: string
-          profile_id?: string | null
           role?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           floq_id?: string
           joined_at?: string | null
-          last_read_message_at?: string
-          profile_id?: string | null
           role?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "floq_participants_floq_id_fkey"
             columns: ["floq_id"]
@@ -2132,31 +1250,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_participants_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2184,7 +1281,6 @@ export type Database = {
           plan_mode: Database["public"]["Enums"]["plan_mode"]
           plan_summary: string | null
           planned_at: string
-          profile_id: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
@@ -2215,7 +1311,6 @@ export type Database = {
           plan_mode?: Database["public"]["Enums"]["plan_mode"]
           plan_summary?: string | null
           planned_at: string
-          profile_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title: string
@@ -2246,7 +1341,6 @@ export type Database = {
           plan_mode?: Database["public"]["Enums"]["plan_mode"]
           plan_summary?: string | null
           planned_at?: string
-          profile_id?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["plan_status_enum"] | null
           title?: string
@@ -2257,45 +1351,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floq_plans_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_plans_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_plans_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_plans_creator_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_plans_creator_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_plans_creator_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2312,13 +1371,6 @@ export type Database = {
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "floq_plans_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
         ]
       }
       floq_settings: {
@@ -2328,7 +1380,6 @@ export type Database = {
           join_approval_required: boolean
           mention_permissions: Database["public"]["Enums"]["mention_permissions_enum"]
           notifications_enabled: boolean
-          profile_id: string | null
           updated_at: string
           welcome_message: string | null
         }
@@ -2338,7 +1389,6 @@ export type Database = {
           join_approval_required?: boolean
           mention_permissions?: Database["public"]["Enums"]["mention_permissions_enum"]
           notifications_enabled?: boolean
-          profile_id?: string | null
           updated_at?: string
           welcome_message?: string | null
         }
@@ -2348,44 +1398,15 @@ export type Database = {
           join_approval_required?: boolean
           mention_permissions?: Database["public"]["Enums"]["mention_permissions_enum"]
           notifications_enabled?: boolean
-          profile_id?: string | null
           updated_at?: string
           welcome_message?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floq_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_settings_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: true
             referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_settings_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: true
-            referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },
         ]
@@ -2413,7 +1434,6 @@ export type Database = {
           parent_flock_id: string | null
           pinned_note: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          profile_id: string | null
           radius_m: number | null
           recurrence_pattern: Json | null
           starts_at: string | null
@@ -2446,7 +1466,6 @@ export type Database = {
           parent_flock_id?: string | null
           pinned_note?: string | null
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          profile_id?: string | null
           radius_m?: number | null
           recurrence_pattern?: Json | null
           starts_at?: string | null
@@ -2479,7 +1498,6 @@ export type Database = {
           parent_flock_id?: string | null
           pinned_note?: string | null
           primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
-          profile_id?: string | null
           radius_m?: number | null
           recurrence_pattern?: Json | null
           starts_at?: string | null
@@ -2492,45 +1510,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floqs_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floqs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floqs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2540,13 +1523,6 @@ export type Database = {
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "floqs_parent_flock_id_fkey"
-            columns: ["parent_flock_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
         ]
       }
       friend_last_points: {
@@ -2554,74 +1530,49 @@ export type Database = {
           accuracy_m: number | null
           captured_at: string | null
           geom: unknown | null
-          profile_id: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           accuracy_m?: number | null
           captured_at?: string | null
           geom?: unknown | null
-          profile_id: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           accuracy_m?: number | null
           captured_at?: string | null
           geom?: unknown | null
-          profile_id?: string
           updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_friend_last_points_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_last_points_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_last_points_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       friend_requests: {
         Row: {
           created_at: string | null
           friend_id: string
           id: string
-          profile_id: string | null
           responded_at: string | null
           status: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           friend_id: string
           id?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           friend_id?: string
           id?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -2632,38 +1583,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_profile_id"
+            foreignKeyName: "fk_friend_requests_user"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2673,164 +1596,72 @@ export type Database = {
           ends_at: string | null
           friend_id: string
           is_live: boolean
-          profile_id: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           ends_at?: string | null
           friend_id: string
           is_live?: boolean
-          profile_id?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           ends_at?: string | null
           friend_id?: string
           is_live?: boolean
-          profile_id?: string | null
           updated_at?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_friend_share_pref_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_share_pref_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_share_pref_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       friend_trails: {
         Row: {
           lat: number
           lng: number
-          profile_id: string | null
           ts: string
+          user_id: string
         }
         Insert: {
           lat: number
           lng: number
-          profile_id?: string | null
           ts?: string
+          user_id: string
         }
         Update: {
           lat?: number
           lng?: number
-          profile_id?: string | null
           ts?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_friend_trails_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_trails_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_trails_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       friends: {
         Row: {
           created_at: string
-          profile_id: string | null
           responded_at: string | null
           status: string
           user_a: string
           user_b: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string
           user_a: string
           user_b: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string
           user_a?: string
           user_b?: string
-          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_friends_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friends_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friends_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "friends_user_a_fkey"
             columns: ["user_a"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friends_user_a_fkey"
-            columns: ["user_a"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "friends_user_a_fkey"
-            columns: ["user_a"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "friends_user_b_fkey"
-            columns: ["user_b"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2839,14 +1670,7 @@ export type Database = {
             foreignKeyName: "friends_user_b_fkey"
             columns: ["user_b"]
             isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "friends_user_b_fkey"
-            columns: ["user_b"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2855,87 +1679,17 @@ export type Database = {
         Row: {
           created_at: string | null
           friend_id: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           friend_id: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           friend_id?: string
-          profile_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_friendships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friendships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friendships_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      function_replacements: {
-        Row: {
-          function_name: string | null
-          modified_definition: string | null
-          original_definition: string | null
-          schema_name: string | null
-        }
-        Insert: {
-          function_name?: string | null
-          modified_definition?: string | null
-          original_definition?: string | null
-          schema_name?: string | null
-        }
-        Update: {
-          function_name?: string | null
-          modified_definition?: string | null
-          original_definition?: string | null
-          schema_name?: string | null
-        }
-        Relationships: []
-      }
-      function_rewrite_log: {
-        Row: {
-          function_name: string
-          id: number
-          new_definition: string
-          original_definition: string
-          rewritten_at: string | null
-          schema_name: string
-        }
-        Insert: {
-          function_name: string
-          id?: never
-          new_definition: string
-          original_definition: string
-          rewritten_at?: string | null
-          schema_name: string
-        }
-        Update: {
-          function_name?: string
-          id?: never
-          new_definition?: string
-          original_definition?: string
-          rewritten_at?: string | null
-          schema_name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2946,8 +1700,8 @@ export type Database = {
           id: string
           payload: Json
           processed_at: string | null
-          profile_id: string | null
           status: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -2955,8 +1709,8 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
-          profile_id?: string | null
           status?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -2964,37 +1718,14 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
-          profile_id?: string | null
           status?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_notification_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_notification_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_notification_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       ping_requests: {
         Row: {
           id: string
-          profile_id: string | null
           requested_at: string
           requester_id: string
           responded_at: string | null
@@ -3003,7 +1734,6 @@ export type Database = {
         }
         Insert: {
           id?: string
-          profile_id?: string | null
           requested_at?: string
           requester_id: string
           responded_at?: string | null
@@ -3012,36 +1742,13 @@ export type Database = {
         }
         Update: {
           id?: string
-          profile_id?: string | null
           requested_at?: string
           requester_id?: string
           responded_at?: string | null
           status?: string
           target_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_ping_requests_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_ping_requests_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_ping_requests_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       place_banners: {
         Row: {
@@ -3052,7 +1759,6 @@ export type Database = {
           headline: string
           id: string
           metadata: Json | null
-          profile_id: string | null
           venue_id: string
         }
         Insert: {
@@ -3063,7 +1769,6 @@ export type Database = {
           headline: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           venue_id: string
         }
         Update: {
@@ -3074,31 +1779,9 @@ export type Database = {
           headline?: string
           id?: string
           metadata?: Json | null
-          profile_id?: string | null
           venue_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_place_banners_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_place_banners_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_place_banners_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "place_banners_venue_id_fkey"
             columns: ["venue_id"]
@@ -3117,7 +1800,7 @@ export type Database = {
           id: string
           metadata: Json | null
           plan_id: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           activity_type: string
@@ -3127,7 +1810,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           plan_id: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           activity_type?: string
@@ -3137,35 +1820,21 @@ export type Database = {
           id?: string
           metadata?: Json | null
           plan_id?: string
-          profile_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_activities_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_activities_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_activities_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_activities_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_activities_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3180,8 +1849,8 @@ export type Database = {
           id: string
           my_contribution: string | null
           plan_id: string
-          profile_id: string | null
           shared_moments: Json | null
+          user_id: string
           would_repeat_score: number | null
         }
         Insert: {
@@ -3193,8 +1862,8 @@ export type Database = {
           id?: string
           my_contribution?: string | null
           plan_id: string
-          profile_id?: string | null
           shared_moments?: Json | null
+          user_id: string
           would_repeat_score?: number | null
         }
         Update: {
@@ -3206,8 +1875,8 @@ export type Database = {
           id?: string
           my_contribution?: string | null
           plan_id?: string
-          profile_id?: string | null
           shared_moments?: Json | null
+          user_id?: string
           would_repeat_score?: number | null
         }
         Relationships: [
@@ -3219,24 +1888,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_plan_afterglow_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "fk_plan_afterglow_plan"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_afterglow_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3246,7 +1901,6 @@ export type Database = {
           created_at: string | null
           error_message: string | null
           plan_id: string
-          profile_id: string | null
           status: string
           suggestions: Json | null
           summary_md: string | null
@@ -3256,7 +1910,6 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           plan_id: string
-          profile_id?: string | null
           status?: string
           suggestions?: Json | null
           summary_md?: string | null
@@ -3266,7 +1919,6 @@ export type Database = {
           created_at?: string | null
           error_message?: string | null
           plan_id?: string
-          profile_id?: string | null
           status?: string
           suggestions?: Json | null
           summary_md?: string | null
@@ -3274,31 +1926,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_ai_summaries_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_ai_summaries_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_ai_summaries_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            foreignKeyName: "plan_ai_summaries_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: true
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_ai_summaries_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: true
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3314,7 +1952,6 @@ export type Database = {
           location: unknown | null
           participant_id: string
           plan_id: string
-          profile_id: string | null
           stop_id: string
         }
         Insert: {
@@ -3327,7 +1964,6 @@ export type Database = {
           location?: unknown | null
           participant_id: string
           plan_id: string
-          profile_id?: string | null
           stop_id: string
         }
         Update: {
@@ -3340,36 +1976,21 @@ export type Database = {
           location?: unknown | null
           participant_id?: string
           plan_id?: string
-          profile_id?: string | null
           stop_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_check_ins_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_check_ins_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_check_ins_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_check_ins_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_check_ins_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -3388,11 +2009,10 @@ export type Database = {
           id: string
           mentioned_users: string[] | null
           plan_id: string
-          profile_id: string | null
           reply_to_id: string | null
           stop_id: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           content: string
@@ -3400,11 +2020,10 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           plan_id: string
-          profile_id?: string | null
           reply_to_id?: string | null
           stop_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           content?: string
@@ -3412,39 +2031,24 @@ export type Database = {
           id?: string
           mentioned_users?: string[] | null
           plan_id?: string
-          profile_id?: string | null
           reply_to_id?: string | null
           stop_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_comments_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_comments_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_comments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_comments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_comments_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -3470,7 +2074,7 @@ export type Database = {
           id: string
           last_saved_at: string
           plan_id: string
-          profile_id: string | null
+          user_id: string
           version: number
         }
         Insert: {
@@ -3479,7 +2083,7 @@ export type Database = {
           id?: string
           last_saved_at?: string
           plan_id: string
-          profile_id?: string | null
+          user_id: string
           version?: number
         }
         Update: {
@@ -3488,36 +2092,22 @@ export type Database = {
           id?: string
           last_saved_at?: string
           plan_id?: string
-          profile_id?: string | null
+          user_id?: string
           version?: number
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_drafts_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_drafts_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_drafts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_drafts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_drafts_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3528,8 +2118,7 @@ export type Database = {
           favorite_moment: string | null
           id: string
           plan_id: string
-          profile_id: string | null
-          user_id: string | null
+          user_id: string
           vibe_rating: number | null
           would_repeat: boolean | null
         }
@@ -3538,8 +2127,7 @@ export type Database = {
           favorite_moment?: string | null
           id?: string
           plan_id: string
-          profile_id?: string | null
-          user_id?: string | null
+          user_id: string
           vibe_rating?: number | null
           would_repeat?: boolean | null
         }
@@ -3548,38 +2136,23 @@ export type Database = {
           favorite_moment?: string | null
           id?: string
           plan_id?: string
-          profile_id?: string | null
-          user_id?: string | null
+          user_id?: string
           vibe_rating?: number | null
           would_repeat?: boolean | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_feedback_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_feedback_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_feedback_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_feedback_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_feedback_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3590,44 +2163,20 @@ export type Database = {
           created_at: string
           floq_id: string
           plan_id: string
-          profile_id: string | null
         }
         Insert: {
           auto_disband?: boolean
           created_at?: string
           floq_id: string
           plan_id: string
-          profile_id?: string | null
         }
         Update: {
           auto_disband?: boolean
           created_at?: string
           floq_id?: string
           plan_id?: string
-          profile_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_plan_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "plan_floqs_floq_id_fkey"
             columns: ["floq_id"]
@@ -3636,17 +2185,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "plan_floqs_floq_id_fkey"
-            columns: ["floq_id"]
+            foreignKeyName: "plan_floqs_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "v_public_floqs"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_floqs_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3659,10 +2208,9 @@ export type Database = {
           invitation_type: string | null
           invited_at: string | null
           invitee_email: string | null
-          invitee_profile_id: string | null
+          invitee_user_id: string | null
           inviter_id: string
           plan_id: string
-          profile_id: string | null
           responded_at: string | null
           status: string | null
           token: string | null
@@ -3674,10 +2222,9 @@ export type Database = {
           invitation_type?: string | null
           invited_at?: string | null
           invitee_email?: string | null
-          invitee_profile_id?: string | null
+          invitee_user_id?: string | null
           inviter_id: string
           plan_id: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string | null
           token?: string | null
@@ -3689,62 +2236,26 @@ export type Database = {
           invitation_type?: string | null
           invited_at?: string | null
           invitee_email?: string | null
-          invitee_profile_id?: string | null
+          invitee_user_id?: string | null
           inviter_id?: string
           plan_id?: string
-          profile_id?: string | null
           responded_at?: string | null
           status?: string | null
           token?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_invitations_profile_id"
-            columns: ["invitee_profile_id"]
+            foreignKeyName: "plan_invitations_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invitations_profile_id"
-            columns: ["invitee_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invitations_profile_id"
-            columns: ["invitee_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invite_profile"
-            columns: ["invitee_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invite_profile"
-            columns: ["invitee_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invite_profile"
-            columns: ["invitee_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_invitations_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3753,54 +2264,44 @@ export type Database = {
         Row: {
           inserted_at: string
           plan_id: string
-          profile_id: string | null
           status: Database["public"]["Enums"]["invite_status"]
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           inserted_at?: string
           plan_id: string
-          profile_id?: string | null
           status?: Database["public"]["Enums"]["invite_status"]
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           inserted_at?: string
           plan_id?: string
-          profile_id?: string | null
           status?: Database["public"]["Enums"]["invite_status"]
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_invites_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_invites_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_invites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_invites_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_invites_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3817,12 +2318,11 @@ export type Database = {
           joined_at: string | null
           notes: string | null
           plan_id: string
-          profile_id: string | null
           reminded_at: string | null
           responded_at: string | null
           role: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           guest_email?: string | null
@@ -3835,12 +2335,11 @@ export type Database = {
           joined_at?: string | null
           notes?: string | null
           plan_id: string
-          profile_id?: string | null
           reminded_at?: string | null
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           guest_email?: string | null
@@ -3853,12 +2352,11 @@ export type Database = {
           joined_at?: string | null
           notes?: string | null
           plan_id?: string
-          profile_id?: string | null
           reminded_at?: string | null
           responded_at?: string | null
           role?: Database["public"]["Enums"]["plan_role_enum"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status_enum"] | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -3869,17 +2367,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "fk_plan_participants_profile_id"
+            foreignKeyName: "fk_plan_participants_user_profile"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -3887,6 +2378,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_participants_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -3899,7 +2397,6 @@ export type Database = {
           id: string
           last_accessed_at: string | null
           plan_id: string
-          profile_id: string | null
           slug: string
         }
         Insert: {
@@ -3909,7 +2406,6 @@ export type Database = {
           id?: string
           last_accessed_at?: string | null
           plan_id: string
-          profile_id?: string | null
           slug: string
         }
         Update: {
@@ -3919,32 +2415,9 @@ export type Database = {
           id?: string
           last_accessed_at?: string | null
           plan_id?: string
-          profile_id?: string | null
           slug?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_plan_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_share_links_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       plan_stop_comments: {
         Row: {
@@ -3952,58 +2425,44 @@ export type Database = {
           guest_id: string | null
           id: string
           plan_id: string
-          profile_id: string | null
           stop_id: string
           text: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           guest_id?: string | null
           id?: string
           plan_id: string
-          profile_id?: string | null
           stop_id: string
           text: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           guest_id?: string | null
           id?: string
           plan_id?: string
-          profile_id?: string | null
           stop_id?: string
           text?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_stop_comments_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_stop_comments_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stop_comments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stop_comments_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_stop_comments_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -4022,9 +2481,9 @@ export type Database = {
           guest_id: string | null
           id: string
           plan_id: string
-          profile_id: string | null
           stop_id: string
           updated_at: string | null
+          user_id: string | null
           vote_type: string
         }
         Insert: {
@@ -4033,9 +2492,9 @@ export type Database = {
           guest_id?: string | null
           id?: string
           plan_id: string
-          profile_id?: string | null
           stop_id: string
           updated_at?: string | null
+          user_id?: string | null
           vote_type: string
         }
         Update: {
@@ -4044,34 +2503,12 @@ export type Database = {
           guest_id?: string | null
           id?: string
           plan_id?: string
-          profile_id?: string | null
           stop_id?: string
           updated_at?: string | null
+          user_id?: string | null
           vote_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_plan_stop_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stop_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stop_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       plan_stops: {
         Row: {
@@ -4086,7 +2523,6 @@ export type Database = {
           id: string
           location: unknown | null
           plan_id: string
-          profile_id: string | null
           sort_order: number
           start_time: string | null
           stop_order: number
@@ -4107,7 +2543,6 @@ export type Database = {
           id?: string
           location?: unknown | null
           plan_id: string
-          profile_id?: string | null
           sort_order?: number
           start_time?: string | null
           stop_order: number
@@ -4128,7 +2563,6 @@ export type Database = {
           id?: string
           location?: unknown | null
           plan_id?: string
-          profile_id?: string | null
           sort_order?: number
           start_time?: string | null
           stop_order?: number
@@ -4139,31 +2573,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_stops_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_stops_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stops_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_stops_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_stops_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -4182,7 +2602,6 @@ export type Database = {
           id: string
           mode: Database["public"]["Enums"]["summary_mode"]
           plan_id: string
-          profile_id: string | null
           summary: string
         }
         Insert: {
@@ -4191,7 +2610,6 @@ export type Database = {
           id?: string
           mode: Database["public"]["Enums"]["summary_mode"]
           plan_id: string
-          profile_id?: string | null
           summary: string
         }
         Update: {
@@ -4200,36 +2618,21 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["summary_mode"]
           plan_id?: string
-          profile_id?: string | null
           summary?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_plan_summaries_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "plan_summaries_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_summaries_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_summaries_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "plan_summaries_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -4243,7 +2646,6 @@ export type Database = {
           from_stop_id: string
           id: string
           plan_id: string
-          profile_id: string | null
           to_geom: unknown
           to_stop_id: string
           transit_data: Json
@@ -4257,7 +2659,6 @@ export type Database = {
           from_stop_id: string
           id?: string
           plan_id: string
-          profile_id?: string | null
           to_geom: unknown
           to_stop_id: string
           transit_data: Json
@@ -4271,34 +2672,12 @@ export type Database = {
           from_stop_id?: string
           id?: string
           plan_id?: string
-          profile_id?: string | null
           to_geom?: unknown
           to_stop_id?: string
           transit_data?: Json
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_plan_transit_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_transit_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_transit_cache_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "plan_transit_cache_from_stop_id_fkey"
             columns: ["from_stop_id"]
@@ -4311,6 +2690,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "floq_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_transit_cache_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -4330,10 +2716,9 @@ export type Database = {
           guest_name: string | null
           id: string
           plan_id: string
-          profile_id: string | null
           stop_id: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           vote_type: string
         }
         Insert: {
@@ -4343,10 +2728,9 @@ export type Database = {
           guest_name?: string | null
           id?: string
           plan_id: string
-          profile_id?: string | null
           stop_id: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           vote_type: string
         }
         Update: {
@@ -4356,34 +2740,12 @@ export type Database = {
           guest_name?: string | null
           id?: string
           plan_id?: string
-          profile_id?: string | null
           stop_id?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           vote_type?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_plan_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_plan_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_plan_votes_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "plan_votes_plan_id_fkey"
             columns: ["plan_id"]
@@ -4392,53 +2754,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "plan_votes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "plan_votes_stop_id_fkey"
             columns: ["stop_id"]
             isOneToOne: false
             referencedRelation: "plan_stops"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      presence_log: {
-        Row: {
-          location: unknown
-          profile_id: string
-          ts: string
-          vibe: Database["public"]["Enums"]["vibe_enum"]
-        }
-        Insert: {
-          location: unknown
-          profile_id: string
-          ts?: string
-          vibe?: Database["public"]["Enums"]["vibe_enum"]
-        }
-        Update: {
-          location?: unknown
-          profile_id?: string
-          ts?: string
-          vibe?: Database["public"]["Enums"]["vibe_enum"]
-        }
-        Relationships: [
-          {
-            foreignKeyName: "presence_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "presence_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "presence_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -4456,17 +2782,8 @@ export type Database = {
           id: string
           interests: string[] | null
           last_name: string | null
-          live_accuracy: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when: string[] | null
-          live_muted_until: string | null
-          live_scope: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags: Json | null
-          profile_created: boolean | null
-          profile_id: string | null
           push_token: string | null
-          updated_at: string
           username: string
-          vibe_preference: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -4480,17 +2797,8 @@ export type Database = {
           id?: string
           interests?: string[] | null
           last_name?: string | null
-          live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when?: string[] | null
-          live_muted_until?: string | null
-          live_scope?: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags?: Json | null
-          profile_created?: boolean | null
-          profile_id?: string | null
           push_token?: string | null
-          updated_at?: string
           username: string
-          vibe_preference?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -4504,119 +2812,10 @@ export type Database = {
           id?: string
           interests?: string[] | null
           last_name?: string | null
-          live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when?: string[] | null
-          live_muted_until?: string | null
-          live_scope?: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags?: Json | null
-          profile_created?: boolean | null
-          profile_id?: string | null
           push_token?: string | null
-          updated_at?: string
           username?: string
-          vibe_preference?: string | null
         }
         Relationships: []
-      }
-      proximity_events: {
-        Row: {
-          event_ts: string
-          id: string
-          profile_id_a: string
-          profile_id_b: string
-        }
-        Insert: {
-          event_ts?: string
-          id?: string
-          profile_id_a: string
-          profile_id_b: string
-        }
-        Update: {
-          event_ts?: string
-          id?: string
-          profile_id_a?: string
-          profile_id_b?: string
-        }
-        Relationships: []
-      }
-      pulse_events: {
-        Row: {
-          created_at: string | null
-          event_type: Database["public"]["Enums"]["pulse_event_type"]
-          floq_id: string | null
-          id: number
-          meta: Json | null
-          people_count: number | null
-          profile_id: string | null
-          venue_id: string | null
-          vibe_tag: Database["public"]["Enums"]["vibe_tag"] | null
-        }
-        Insert: {
-          created_at?: string | null
-          event_type: Database["public"]["Enums"]["pulse_event_type"]
-          floq_id?: string | null
-          id?: number
-          meta?: Json | null
-          people_count?: number | null
-          profile_id?: string | null
-          venue_id?: string | null
-          vibe_tag?: Database["public"]["Enums"]["vibe_tag"] | null
-        }
-        Update: {
-          created_at?: string | null
-          event_type?: Database["public"]["Enums"]["pulse_event_type"]
-          floq_id?: string | null
-          id?: number
-          meta?: Json | null
-          people_count?: number | null
-          profile_id?: string | null
-          venue_id?: string | null
-          vibe_tag?: Database["public"]["Enums"]["vibe_tag"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pulse_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pulse_events_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pulse_events_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pulse_events_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "pulse_events_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pulse_events_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       raw_locations: {
         Row: {
@@ -4626,7 +2825,7 @@ export type Database = {
           geohash5: string | null
           geom: unknown | null
           id: number
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           acc?: number | null
@@ -4635,7 +2834,7 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           acc?: number | null
@@ -4644,31 +2843,9 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_raw_locations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       raw_locations_202507: {
         Row: {
@@ -4678,7 +2855,7 @@ export type Database = {
           geohash5: string | null
           geom: unknown | null
           id: number
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           acc?: number | null
@@ -4687,7 +2864,7 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           acc?: number | null
@@ -4696,31 +2873,9 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_raw_locations_202507_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202507_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202507_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       raw_locations_202508: {
         Row: {
@@ -4730,7 +2885,7 @@ export type Database = {
           geohash5: string | null
           geom: unknown | null
           id: number
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           acc?: number | null
@@ -4739,7 +2894,7 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           acc?: number | null
@@ -4748,31 +2903,9 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_raw_locations_202508_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202508_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202508_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       raw_locations_202509: {
         Row: {
@@ -4782,7 +2915,7 @@ export type Database = {
           geohash5: string | null
           geom: unknown | null
           id: number
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           acc?: number | null
@@ -4791,7 +2924,7 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           acc?: number | null
@@ -4800,31 +2933,9 @@ export type Database = {
           geohash5?: string | null
           geom?: unknown | null
           id?: never
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_raw_locations_202509_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202509_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_202509_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       raw_locations_staging: {
         Row: {
@@ -4832,52 +2943,29 @@ export type Database = {
           captured_at: string | null
           lat: number | null
           lng: number | null
-          profile_id: string | null
+          user_id: string | null
         }
         Insert: {
           acc?: number | null
           captured_at?: string | null
           lat?: number | null
           lng?: number | null
-          profile_id?: string | null
+          user_id?: string | null
         }
         Update: {
           acc?: number | null
           captured_at?: string | null
           lat?: number | null
           lng?: number | null
-          profile_id?: string | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_raw_locations_staging_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_staging_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_raw_locations_staging_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       refresh_metrics: {
         Row: {
           created_at: string
           duration_ms: number
           id: string
-          profile_id: string | null
           started_at: string
           view_name: string
         }
@@ -4885,7 +2973,6 @@ export type Database = {
           created_at?: string
           duration_ms: number
           id?: string
-          profile_id?: string | null
           started_at: string
           view_name: string
         }
@@ -4893,140 +2980,20 @@ export type Database = {
           created_at?: string
           duration_ms?: number
           id?: string
-          profile_id?: string | null
           started_at?: string
           view_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_refresh_metrics_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_refresh_metrics_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_refresh_metrics_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rename_user_id_to_profile_id_log: {
-        Row: {
-          column_name: string | null
-          error_message: string | null
-          executed_at: string | null
-          id: number
-          new_definition: string | null
-          object_name: string | null
-          object_type: string | null
-          original_definition: string | null
-          schema_name: string | null
-          status: string | null
-        }
-        Insert: {
-          column_name?: string | null
-          error_message?: string | null
-          executed_at?: string | null
-          id?: number
-          new_definition?: string | null
-          object_name?: string | null
-          object_type?: string | null
-          original_definition?: string | null
-          schema_name?: string | null
-          status?: string | null
-        }
-        Update: {
-          column_name?: string | null
-          error_message?: string | null
-          executed_at?: string | null
-          id?: number
-          new_definition?: string | null
-          object_name?: string | null
-          object_type?: string | null
-          original_definition?: string | null
-          schema_name?: string | null
-          status?: string | null
         }
         Relationships: []
       }
       reserved_usernames: {
         Row: {
           name: string
-          profile_id: string | null
         }
         Insert: {
           name: string
-          profile_id?: string | null
         }
         Update: {
           name?: string
-          profile_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_reserved_usernames_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_reserved_usernames_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_reserved_usernames_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      security_audit_log: {
-        Row: {
-          created_at: string
-          details: Json
-          event_type: string
-          id: string
-          ip_address: string | null
-          profile_id: string | null
-          severity: string
-          user_agent: string | null
-        }
-        Insert: {
-          created_at?: string
-          details?: Json
-          event_type: string
-          id?: string
-          ip_address?: string | null
-          profile_id?: string | null
-          severity?: string
-          user_agent?: string | null
-        }
-        Update: {
-          created_at?: string
-          details?: Json
-          event_type?: string
-          id?: string
-          ip_address?: string | null
-          profile_id?: string | null
-          severity?: string
-          user_agent?: string | null
         }
         Relationships: []
       }
@@ -5037,7 +3004,6 @@ export type Database = {
           geom: unknown
           id: string
           owner_id: string
-          profile_id: string | null
           viewer_id: string
         }
         Insert: {
@@ -5046,7 +3012,6 @@ export type Database = {
           geom: unknown
           id?: string
           owner_id: string
-          profile_id?: string | null
           viewer_id: string
         }
         Update: {
@@ -5055,32 +3020,9 @@ export type Database = {
           geom?: unknown
           id?: string
           owner_id?: string
-          profile_id?: string | null
           viewer_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_shared_location_pins_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_shared_location_pins_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_shared_location_pins_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       snap_suggestion_logs: {
         Row: {
@@ -5088,64 +3030,50 @@ export type Database = {
           id: string
           original_time: string
           plan_id: string
-          profile_id: string | null
           reason: string | null
           snapped_time: string
           source: string
           stop_id: string | null
           used_at: string
+          user_id: string
         }
         Insert: {
           confidence?: number | null
           id?: string
           original_time: string
           plan_id: string
-          profile_id?: string | null
           reason?: string | null
           snapped_time: string
           source?: string
           stop_id?: string | null
           used_at?: string
+          user_id: string
         }
         Update: {
           confidence?: number | null
           id?: string
           original_time?: string
           plan_id?: string
-          profile_id?: string | null
           reason?: string | null
           snapped_time?: string
           source?: string
           stop_id?: string | null
           used_at?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_snap_suggestion_logs_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "snap_suggestion_logs_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_snap_suggestion_logs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_snap_suggestion_logs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "snap_suggestion_logs_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
           {
@@ -5187,7 +3115,6 @@ export type Database = {
           kind: string
           lat: number
           lng: number
-          profile_id: string | null
           ts: string
         }
         Insert: {
@@ -5195,7 +3122,6 @@ export type Database = {
           kind: string
           lat: number
           lng: number
-          profile_id?: string | null
           ts?: string
         }
         Update: {
@@ -5203,32 +3129,9 @@ export type Database = {
           kind?: string
           lat?: number
           lng?: number
-          profile_id?: string | null
           ts?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_sync_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_sync_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_sync_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       task_queue: {
         Row: {
@@ -5236,7 +3139,6 @@ export type Database = {
           id: string
           payload: Json
           processed_at: string | null
-          profile_id: string | null
           status: string
           task: string
         }
@@ -5245,7 +3147,6 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
-          profile_id?: string | null
           status?: string
           task: string
         }
@@ -5254,75 +3155,31 @@ export type Database = {
           id?: string
           payload?: Json
           processed_at?: string | null
-          profile_id?: string | null
           status?: string
           task?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_task_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_task_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_task_queue_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_achievements: {
         Row: {
           code: string
           earned_at: string | null
-          profile_id: string | null
           progress: number | null
+          user_id: string
         }
         Insert: {
           code: string
           earned_at?: string | null
-          profile_id?: string | null
           progress?: number | null
+          user_id: string
         }
         Update: {
           code?: string
           earned_at?: string | null
-          profile_id?: string | null
           progress?: number | null
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_user_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_achievements_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "user_achievements_code_fkey"
             columns: ["code"]
@@ -5330,47 +3187,32 @@ export type Database = {
             referencedRelation: "achievement_catalogue"
             referencedColumns: ["code"]
           },
+          {
+            foreignKeyName: "user_achievements_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_action_log: {
         Row: {
           action: string
           happened_at: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           action: string
           happened_at?: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           action?: string
           happened_at?: string
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_action_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_action_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_action_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_encounter: {
         Row: {
@@ -5379,7 +3221,6 @@ export type Database = {
           first_seen: string
           id: number
           last_seen: string
-          profile_id: string | null
           user_a: string
           user_b: string
           venue_id: string | null
@@ -5390,7 +3231,6 @@ export type Database = {
           first_seen: string
           id?: number
           last_seen: string
-          profile_id?: string | null
           user_a: string
           user_b: string
           venue_id?: string | null
@@ -5401,34 +3241,11 @@ export type Database = {
           first_seen?: string
           id?: number
           last_seen?: string
-          profile_id?: string | null
           user_a?: string
           user_b?: string
           venue_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_favorites: {
         Row: {
@@ -5437,8 +3254,8 @@ export type Database = {
           image_url: string | null
           item_id: string
           item_type: string
-          profile_id: string | null
           title: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -5446,8 +3263,8 @@ export type Database = {
           image_url?: string | null
           item_id: string
           item_type: string
-          profile_id?: string | null
           title?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -5455,32 +3272,10 @@ export type Database = {
           image_url?: string | null
           item_id?: string
           item_type?: string
-          profile_id?: string | null
           title?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_favorites_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_floq_activity_tracking: {
         Row: {
@@ -5489,8 +3284,8 @@ export type Database = {
           last_activity_viewed_at: string
           last_chat_viewed_at: string
           last_plans_viewed_at: string
-          profile_id: string | null
           updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -5498,8 +3293,8 @@ export type Database = {
           last_activity_viewed_at?: string
           last_chat_viewed_at?: string
           last_plans_viewed_at?: string
-          profile_id?: string | null
           updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -5507,8 +3302,8 @@ export type Database = {
           last_activity_viewed_at?: string
           last_chat_viewed_at?: string
           last_plans_viewed_at?: string
-          profile_id?: string | null
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -5516,34 +3311,6 @@ export type Database = {
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_tracking_floq"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_floq_activity_tracking_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_floq_activity_tracking_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_floq_activity_tracking_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -5556,10 +3323,10 @@ export type Database = {
           kind: string
           message_id: string | null
           plan_id: string | null
-          profile_id: string | null
           read_at: string | null
           subtitle: string | null
           title: string
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -5568,10 +3335,10 @@ export type Database = {
           kind: string
           message_id?: string | null
           plan_id?: string | null
-          profile_id?: string | null
           read_at?: string | null
           subtitle?: string | null
           title: string
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -5580,45 +3347,17 @@ export type Database = {
           kind?: string
           message_id?: string | null
           plan_id?: string | null
-          profile_id?: string | null
           read_at?: string | null
           subtitle?: string | null
           title?: string
+          user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_user_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_notifications_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "user_notifications_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_notifications_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
             referencedColumns: ["id"]
           },
           {
@@ -5642,6 +3381,13 @@ export type Database = {
             referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_notifications_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plans"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_onboarding_progress: {
@@ -5654,10 +3400,10 @@ export type Database = {
           id: string
           onboarding_version: Database["public"]["Enums"]["onboarding_version_enum"]
           profile_data: Json | null
-          profile_id: string | null
           selected_vibe: string | null
           started_at: string
           updated_at: string
+          user_id: string
         }
         Insert: {
           avatar_url?: string | null
@@ -5668,10 +3414,10 @@ export type Database = {
           id?: string
           onboarding_version?: Database["public"]["Enums"]["onboarding_version_enum"]
           profile_data?: Json | null
-          profile_id?: string | null
           selected_vibe?: string | null
           started_at?: string
           updated_at?: string
+          user_id: string
         }
         Update: {
           avatar_url?: string | null
@@ -5682,34 +3428,12 @@ export type Database = {
           id?: string
           onboarding_version?: Database["public"]["Enums"]["onboarding_version_enum"]
           profile_data?: Json | null
-          profile_id?: string | null
           selected_vibe?: string | null
           started_at?: string
           updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_onboarding_progress_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_onboarding_progress_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_onboarding_progress_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_preferences: {
         Row: {
@@ -5725,10 +3449,9 @@ export type Database = {
           onboarding_version: string | null
           prefer_smart_suggestions: boolean
           preferred_vibe: string | null
-          profile_id: string | null
           social_streak_weeks: number | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
           vibe_color: string | null
           vibe_detection_enabled: boolean | null
           vibe_strength: number | null
@@ -5746,10 +3469,9 @@ export type Database = {
           onboarding_version?: string | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
-          profile_id?: string | null
           social_streak_weeks?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
           vibe_color?: string | null
           vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
@@ -5767,37 +3489,14 @@ export type Database = {
           onboarding_version?: string | null
           prefer_smart_suggestions?: boolean
           preferred_vibe?: string | null
-          profile_id?: string | null
           social_streak_weeks?: number | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
           vibe_color?: string | null
           vibe_detection_enabled?: boolean | null
           vibe_strength?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_preferences_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_preferences_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_preferences_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_push_tokens: {
         Row: {
@@ -5805,48 +3504,26 @@ export type Database = {
           device_id: string
           last_seen_at: string
           platform: string
-          profile_id: string | null
           token: string
+          user_id: string
         }
         Insert: {
           badge_count?: number
           device_id: string
           last_seen_at?: string
           platform: string
-          profile_id?: string | null
           token: string
+          user_id: string
         }
         Update: {
           badge_count?: number
           device_id?: string
           last_seen_at?: string
           platform?: string
-          profile_id?: string | null
           token?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_push_tokens_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_push_tokens_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_push_tokens_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_settings: {
         Row: {
@@ -5860,10 +3537,9 @@ export type Database = {
             | Database["public"]["Enums"]["welcome_template_enum"]
             | null
           privacy_settings: Json | null
-          profile_id: string | null
           theme_preferences: Json | null
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           available_until?: string | null
@@ -5876,10 +3552,9 @@ export type Database = {
             | Database["public"]["Enums"]["welcome_template_enum"]
             | null
           privacy_settings?: Json | null
-          profile_id?: string | null
           theme_preferences?: Json | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           available_until?: string | null
@@ -5892,42 +3567,19 @@ export type Database = {
             | Database["public"]["Enums"]["welcome_template_enum"]
             | null
           privacy_settings?: Json | null
-          profile_id?: string | null
           theme_preferences?: Json | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_settings_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_vibe_states: {
         Row: {
           active: boolean | null
           gh5: string | null
           location: unknown | null
-          profile_id: string | null
           started_at: string
+          user_id: string
           vibe_h: number | null
           vibe_l: number | null
           vibe_s: number | null
@@ -5938,8 +3590,8 @@ export type Database = {
           active?: boolean | null
           gh5?: string | null
           location?: unknown | null
-          profile_id?: string | null
           started_at?: string
+          user_id: string
           vibe_h?: number | null
           vibe_l?: number | null
           vibe_s?: number | null
@@ -5950,81 +3602,45 @@ export type Database = {
           active?: boolean | null
           gh5?: string | null
           location?: unknown | null
-          profile_id?: string | null
           started_at?: string
+          user_id?: string
           vibe_h?: number | null
           vibe_l?: number | null
           vibe_s?: number | null
           vibe_tag?: Database["public"]["Enums"]["vibe_enum"]
           visible_to?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_vibe_states_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_watchlist: {
         Row: {
           created_at: string
           plan_id: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           plan_id: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
           plan_id?: string
-          profile_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "fk_user_watchlist_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "user_watchlist_plan_id_fkey"
+            columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_watchlist_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_watchlist_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
+            referencedRelation: "floq_plans"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "user_watchlist_plan_id_fkey"
             columns: ["plan_id"]
             isOneToOne: false
-            referencedRelation: "floq_plans"
+            referencedRelation: "v_user_plans"
             referencedColumns: ["id"]
           },
         ]
@@ -6037,7 +3653,6 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
-          profile_id: string | null
           venue_count: number | null
         }
         Insert: {
@@ -6047,7 +3662,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
-          profile_id?: string | null
           venue_count?: number | null
         }
         Update: {
@@ -6057,85 +3671,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           name?: string
-          profile_id?: string | null
           venue_count?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_venue_clusters_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_clusters_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_clusters_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      venue_discoveries: {
-        Row: {
-          day_key: string
-          discovered_at: string | null
-          id: number
-          profile_id: string | null
-          venue_id: string | null
-        }
-        Insert: {
-          day_key: string
-          discovered_at?: string | null
-          id?: number
-          profile_id?: string | null
-          venue_id?: string | null
-        }
-        Update: {
-          day_key?: string
-          discovered_at?: string | null
-          id?: number
-          profile_id?: string | null
-          venue_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_discoveries_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_discoveries_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "venue_discoveries_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_discoveries_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       venue_feed_posts: {
         Row: {
@@ -6145,10 +3683,10 @@ export type Database = {
           id: string
           location: unknown
           mood_tags: string[] | null
-          profile_id: string | null
           reaction_count: number | null
           storage_path: string | null
           text_content: string | null
+          user_id: string
           venue_id: string
           vibe: Database["public"]["Enums"]["vibe_enum"]
           view_count: number | null
@@ -6160,10 +3698,10 @@ export type Database = {
           id?: string
           location: unknown
           mood_tags?: string[] | null
-          profile_id?: string | null
           reaction_count?: number | null
           storage_path?: string | null
           text_content?: string | null
+          user_id: string
           venue_id: string
           vibe: Database["public"]["Enums"]["vibe_enum"]
           view_count?: number | null
@@ -6175,36 +3713,15 @@ export type Database = {
           id?: string
           location?: unknown
           mood_tags?: string[] | null
-          profile_id?: string | null
           reaction_count?: number | null
           storage_path?: string | null
           text_content?: string | null
+          user_id?: string
           venue_id?: string
           vibe?: Database["public"]["Enums"]["vibe_enum"]
           view_count?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_venue_feed_posts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_feed_posts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_feed_posts_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venue_feed_posts_venue_id_fkey"
             columns: ["venue_id"]
@@ -6220,8 +3737,8 @@ export type Database = {
           checked_in_at: string
           expires_at: string
           last_heartbeat: string
-          profile_id: string | null
           session_duration: unknown | null
+          user_id: string
           venue_id: string
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
@@ -6230,8 +3747,8 @@ export type Database = {
           checked_in_at?: string
           expires_at?: string
           last_heartbeat?: string
-          profile_id?: string | null
           session_duration?: unknown | null
+          user_id: string
           venue_id: string
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
@@ -6240,33 +3757,12 @@ export type Database = {
           checked_in_at?: string
           expires_at?: string
           last_heartbeat?: string
-          profile_id?: string | null
           session_duration?: unknown | null
+          user_id?: string
           venue_id?: string
           vibe?: Database["public"]["Enums"]["vibe_enum"]
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_venue_live_presence_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_live_presence_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_live_presence_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venue_live_presence_venue_id_fkey"
             columns: ["venue_id"]
@@ -6283,8 +3779,7 @@ export type Database = {
           departed_at: string | null
           distance_m: number | null
           id: number
-          profile_id: string | null
-          user_id: string | null
+          user_id: string
           venue_id: string
         }
         Insert: {
@@ -6293,8 +3788,7 @@ export type Database = {
           departed_at?: string | null
           distance_m?: number | null
           id?: number
-          profile_id?: string | null
-          user_id?: string | null
+          user_id: string
           venue_id: string
         }
         Update: {
@@ -6303,32 +3797,10 @@ export type Database = {
           departed_at?: string | null
           distance_m?: number | null
           id?: number
-          profile_id?: string | null
-          user_id?: string | null
+          user_id?: string
           venue_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_venue_stays_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_stays_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_stays_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venue_stays_venue_id_fkey"
             columns: ["venue_id"]
@@ -6345,9 +3817,7 @@ export type Database = {
           departed_at: string | null
           distance_m: number | null
           id: number
-          left_at: string | null
-          profile_id: string | null
-          source: string | null
+          user_id: string
           venue_id: string
         }
         Insert: {
@@ -6356,9 +3826,7 @@ export type Database = {
           departed_at?: string | null
           distance_m?: number | null
           id?: never
-          left_at?: string | null
-          profile_id?: string | null
-          source?: string | null
+          user_id: string
           venue_id: string
         }
         Update: {
@@ -6367,33 +3835,10 @@ export type Database = {
           departed_at?: string | null
           distance_m?: number | null
           id?: never
-          left_at?: string | null
-          profile_id?: string | null
-          source?: string | null
+          user_id?: string
           venue_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venue_visits_venue_id_fkey"
             columns: ["venue_id"]
@@ -6416,16 +3861,14 @@ export type Database = {
           lat: number
           live_count: number
           lng: number
-          location: unknown | null
           name: string
           photo_url: string | null
           popularity: number
-          profile_id: string | null
           provider: string
           provider_id: string
           radius_m: number | null
           rating: number | null
-          slug: string
+          slug: string | null
           source: string | null
           updated_at: string | null
           vibe: string | null
@@ -6443,16 +3886,14 @@ export type Database = {
           lat: number
           live_count?: number
           lng: number
-          location?: unknown | null
           name: string
           photo_url?: string | null
           popularity?: number
-          profile_id?: string | null
           provider: string
           provider_id: string
           radius_m?: number | null
           rating?: number | null
-          slug: string
+          slug?: string | null
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
@@ -6470,44 +3911,20 @@ export type Database = {
           lat?: number
           live_count?: number
           lng?: number
-          location?: unknown | null
           name?: string
           photo_url?: string | null
           popularity?: number
-          profile_id?: string | null
           provider?: string
           provider_id?: string
           radius_m?: number | null
           rating?: number | null
-          slug?: string
+          slug?: string | null
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
           vibe_score?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venues_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       venues_near_me: {
         Row: {
@@ -6517,7 +3934,7 @@ export type Database = {
           lat: number
           lng: number
           name: string
-          profile_id: string | null
+          user_id: string
           venue_id: string
           vibe_score: number
         }
@@ -6528,7 +3945,7 @@ export type Database = {
           lat: number
           lng: number
           name: string
-          profile_id?: string | null
+          user_id: string
           venue_id: string
           vibe_score?: number
         }
@@ -6539,32 +3956,11 @@ export type Database = {
           lat?: number
           lng?: number
           name?: string
-          profile_id?: string | null
+          user_id?: string
           venue_id?: string
           vibe_score?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_venues_near_me_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venues_near_me_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venues_near_me_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "venues_near_me_venue_id_fkey"
             columns: ["venue_id"]
@@ -6578,173 +3974,76 @@ export type Database = {
         Row: {
           checksum: string
           id: number
-          profile_id: string | null
         }
         Insert: {
           checksum: string
           id?: number
-          profile_id?: string | null
         }
         Update: {
           checksum?: string
           id?: number
-          profile_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vibe_clusters_checksum_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_clusters_checksum_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_clusters_checksum_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vibe_clusters_history: {
         Row: {
           gh6: string
-          profile_id: string | null
           snapshot_at: string
           total: number
         }
         Insert: {
           gh6: string
-          profile_id?: string | null
           snapshot_at?: string
           total: number
         }
         Update: {
           gh6?: string
-          profile_id?: string | null
           snapshot_at?: string
           total?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vibe_clusters_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_clusters_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_clusters_history_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vibe_similarity: {
         Row: {
-          profile_id: string | null
           score: number
           vibe_high: Database["public"]["Enums"]["vibe_enum"]
           vibe_low: Database["public"]["Enums"]["vibe_enum"]
         }
         Insert: {
-          profile_id?: string | null
           score: number
           vibe_high: Database["public"]["Enums"]["vibe_enum"]
           vibe_low: Database["public"]["Enums"]["vibe_enum"]
         }
         Update: {
-          profile_id?: string | null
           score?: number
           vibe_high?: Database["public"]["Enums"]["vibe_enum"]
           vibe_low?: Database["public"]["Enums"]["vibe_enum"]
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vibe_similarity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_similarity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibe_similarity_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vibes_log: {
         Row: {
           location: unknown
-          profile_id: string | null
           ts: string
+          user_id: string
           venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
         Insert: {
           location: unknown
-          profile_id?: string | null
           ts?: string
+          user_id: string
           venue_id?: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
         }
         Update: {
           location?: unknown
-          profile_id?: string | null
           ts?: string
+          user_id?: string
           venue_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"]
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vibes_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_log_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vibes_now: {
         Row: {
@@ -6754,8 +4053,8 @@ export type Database = {
           geohash6: string | null
           gh5: string | null
           location: unknown
-          profile_id: string | null
           updated_at: string | null
+          user_id: string
           venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
           vibe_h: number | null
@@ -6770,8 +4069,8 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           location: unknown
-          profile_id?: string | null
           updated_at?: string | null
+          user_id: string
           venue_id?: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
           vibe_h?: number | null
@@ -6786,8 +4085,8 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           location?: unknown
-          profile_id?: string | null
           updated_at?: string | null
+          user_id?: string
           venue_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"]
           vibe_h?: number | null
@@ -6797,24 +4096,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_vibes_now_profile_id"
+            foreignKeyName: "vibes_now_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -6830,170 +4115,49 @@ export type Database = {
         Row: {
           created_at: string
           last_regenerated_at: string
-          profile_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string
           last_regenerated_at?: string
-          profile_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string
           last_regenerated_at?: string
-          profile_id?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_weekly_ai_suggestion_cooldowns_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_weekly_ai_suggestion_cooldowns_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_weekly_ai_suggestion_cooldowns_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       weekly_ai_suggestions: {
         Row: {
           created_at: string | null
           json: Json | null
-          profile_id: string | null
+          user_id: string
           week_ending: string
         }
         Insert: {
           created_at?: string | null
           json?: Json | null
-          profile_id?: string | null
+          user_id: string
           week_ending: string
         }
         Update: {
           created_at?: string | null
           json?: Json | null
-          profile_id?: string | null
+          user_id?: string
           week_ending?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_weekly_ai_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_weekly_ai_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_weekly_ai_suggestions_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
-      floq_participants_legacy: {
+      achievement_system_metrics: {
         Row: {
-          floq_id: string | null
-          joined_at: string | null
-          last_read_message_at: string | null
-          profile_id: string | null
-          role: string | null
-          user_id: string | null
+          metric: string | null
+          value: string | null
         }
-        Insert: {
-          floq_id?: string | null
-          joined_at?: string | null
-          last_read_message_at?: string | null
-          profile_id?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          floq_id?: string | null
-          joined_at?: string | null
-          last_read_message_at?: string | null
-          profile_id?: string | null
-          role?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       geography_columns: {
         Row: {
@@ -7037,67 +4201,45 @@ export type Database = {
         }
         Relationships: []
       }
-      user_floq_unread_counts: {
+      leaderboard_cache: {
         Row: {
-          floq_id: string | null
-          profile_id: string | null
-          unread: number | null
+          earned_count: number | null
+          rank: number | null
+          total_users: number | null
+          user_id: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floq_participants_profile_id"
+            foreignKeyName: "user_achievements_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      user_floq_unread_counts: {
+        Row: {
+          floq_id: string | null
+          unread_activity: number | null
+          unread_chat: number | null
+          unread_plans: number | null
+          unread_total: number | null
+          user_id: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_messages_floq_id_fkey"
+            foreignKeyName: "floq_participants_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
             referencedRelation: "floqs"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_messages_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_participants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_participants_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7106,44 +4248,30 @@ export type Database = {
         Row: {
           lat: number | null
           lng: number | null
-          profile_id: string | null
           updated_at: string | null
+          user_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"] | null
         }
         Insert: {
           lat?: never
           lng?: never
-          profile_id?: string | null
           updated_at?: string | null
+          user_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"] | null
         }
         Update: {
           lat?: never
           lng?: never
-          profile_id?: string | null
           updated_at?: string | null
+          user_id?: string | null
           vibe?: Database["public"]["Enums"]["vibe_enum"] | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_vibes_now_profile_id"
+            foreignKeyName: "vibes_now_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7169,31 +4297,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "floq_messages_floq_id_fkey"
-            columns: ["floq_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floq_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floq_messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7209,381 +4316,45 @@ export type Database = {
       }
       v_friend_last_seen: {
         Row: {
-          first_seen_at: string | null
           last_seen_at: string | null
-          profile_id: string | null
-        }
-        Insert: {
-          first_seen_at?: string | null
-          last_seen_at?: string | null
-          profile_id?: string | null
-        }
-        Update: {
-          first_seen_at?: string | null
-          last_seen_at?: string | null
-          profile_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_user_encounter_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_friend_requests: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          display_name: string | null
-          friend_id: string | null
-          id: string | null
-          requester_id: string | null
-          status: string | null
           user_id: string | null
-          username: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_friend_requests_friend"
-            columns: ["friend_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_profiles: {
-        Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
-          custom_status: string | null
-          display_name: string | null
-          email: string | null
-          first_name: string | null
-          full_name: string | null
-          id: string | null
-          interests: string[] | null
-          last_name: string | null
-          live_accuracy: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when: string[] | null
-          live_muted_until: string | null
-          live_scope: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags: Json | null
-          profile_created: boolean | null
-          profile_id: string | null
-          push_token: string | null
-          updated_at: string | null
-          username: string | null
-          vibe_preference: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          custom_status?: string | null
-          display_name?: string | null
-          email?: string | null
-          first_name?: string | null
-          full_name?: string | null
-          id?: string | null
-          interests?: string[] | null
-          last_name?: string | null
-          live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when?: string[] | null
-          live_muted_until?: string | null
-          live_scope?: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags?: Json | null
-          profile_created?: boolean | null
-          profile_id?: string | null
-          push_token?: string | null
-          updated_at?: string | null
-          username?: string | null
-          vibe_preference?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          custom_status?: string | null
-          display_name?: string | null
-          email?: string | null
-          first_name?: string | null
-          full_name?: string | null
-          id?: string | null
-          interests?: string[] | null
-          last_name?: string | null
-          live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when?: string[] | null
-          live_muted_until?: string | null
-          live_scope?: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags?: Json | null
-          profile_created?: boolean | null
-          profile_id?: string | null
-          push_token?: string | null
-          updated_at?: string | null
-          username?: string | null
-          vibe_preference?: string | null
         }
         Relationships: []
       }
-      v_public_floqs: {
+      v_friend_sparkline: {
         Row: {
-          activity_score: number | null
+          points: Json | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_time_in_venue_daily: {
+        Row: {
+          day: string | null
+          minutes_spent: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      v_user_plans: {
+        Row: {
           archived_at: string | null
-          auto_created: boolean | null
-          catchment_area: unknown | null
-          created_at: string | null
-          creator_id: string | null
-          deleted_at: string | null
-          description: string | null
-          ends_at: string | null
-          expires_at: string | null
-          flock_tags: string[] | null
-          flock_type: Database["public"]["Enums"]["flock_type_enum"] | null
-          geo: unknown | null
+          current_stop_id: string | null
+          execution_started_at: string | null
           id: string | null
-          last_activity_at: string | null
-          location: unknown | null
-          max_participants: number | null
-          name: string | null
-          parent_flock_id: string | null
-          pinned_note: string | null
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id: string | null
-          radius_m: number | null
-          recurrence_pattern: Json | null
-          starts_at: string | null
+          participant_count: number | null
+          planned_at: string | null
+          status: Database["public"]["Enums"]["plan_mode"] | null
+          stops_count: number | null
           title: string | null
-          type: string | null
-          updated_at: string | null
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility: string | null
-          walkable_zone: unknown | null
-        }
-        Insert: {
-          activity_score?: number | null
-          archived_at?: string | null
-          auto_created?: boolean | null
-          catchment_area?: unknown | null
-          created_at?: string | null
-          creator_id?: string | null
-          deleted_at?: string | null
-          description?: string | null
-          ends_at?: string | null
-          expires_at?: string | null
-          flock_tags?: string[] | null
-          flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
-          geo?: unknown | null
-          id?: string | null
-          last_activity_at?: string | null
-          location?: unknown | null
-          max_participants?: number | null
-          name?: string | null
-          parent_flock_id?: string | null
-          pinned_note?: string | null
-          primary_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id?: string | null
-          radius_m?: number | null
-          recurrence_pattern?: Json | null
-          starts_at?: string | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-          vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility?: string | null
-          walkable_zone?: unknown | null
-        }
-        Update: {
-          activity_score?: number | null
-          archived_at?: string | null
-          auto_created?: boolean | null
-          catchment_area?: unknown | null
-          created_at?: string | null
-          creator_id?: string | null
-          deleted_at?: string | null
-          description?: string | null
-          ends_at?: string | null
-          expires_at?: string | null
-          flock_tags?: string[] | null
-          flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
-          geo?: unknown | null
-          id?: string | null
-          last_activity_at?: string | null
-          location?: unknown | null
-          max_participants?: number | null
-          name?: string | null
-          parent_flock_id?: string | null
-          pinned_note?: string | null
-          primary_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          profile_id?: string | null
-          radius_m?: number | null
-          recurrence_pattern?: Json | null
-          starts_at?: string | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-          vibe_tag?: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility?: string | null
-          walkable_zone?: unknown | null
+          vibe_tag: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
+            foreignKeyName: "floq_plans_current_stop_id_fkey"
+            columns: ["current_stop_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_floqs_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floqs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floqs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "floqs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floqs_parent_flock_id_fkey"
-            columns: ["parent_flock_id"]
-            isOneToOne: false
-            referencedRelation: "floqs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "floqs_parent_flock_id_fkey"
-            columns: ["parent_flock_id"]
-            isOneToOne: false
-            referencedRelation: "v_public_floqs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_today_venue_discoveries: {
-        Row: {
-          discovered_at: string | null
-          profile_id: string | null
-          venue_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_venue_visits_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "venue_visits_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_trending_venues: {
-        Row: {
-          last_seen_at: string | null
-          people_now: number | null
-          trend_score: number | null
-          venue_id: string | null
-          visits_15m: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_visits_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      v_venue_people_now: {
-        Row: {
-          last_seen_at: string | null
-          people_now: number | null
-          venue_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "venue_visits_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
+            referencedRelation: "plan_stops"
             referencedColumns: ["id"]
           },
         ]
@@ -7611,74 +4382,8 @@ export type Database = {
         }
         Relationships: []
       }
-      vibes_now_user_id_bridge: {
-        Row: {
-          expires_at: string | null
-          location: unknown | null
-          updated_at: string | null
-          user_id: string | null
-          vibe: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility: string | null
-        }
-        Insert: {
-          expires_at?: string | null
-          location?: unknown | null
-          updated_at?: string | null
-          user_id?: string | null
-          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility?: string | null
-        }
-        Update: {
-          expires_at?: string | null
-          location?: unknown | null
-          updated_at?: string | null
-          user_id?: string | null
-          vibe?: Database["public"]["Enums"]["vibe_enum"] | null
-          visibility?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_friend_requests"
-            referencedColumns: ["requester_id"]
-          },
-          {
-            foreignKeyName: "fk_vibes_now_profile_id"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Functions: {
-      _create_policy: {
-        Args: {
-          p_schema: string
-          p_table: string
-          p_pol_name: string
-          p_cmd: string
-        }
-        Returns: undefined
-      }
-      _enable_rls_if_table: {
-        Args: { p_schema: string; p_table: string }
-        Returns: undefined
-      }
-      _ensure_profile_id: {
-        Args: { tname: string }
-        Returns: undefined
-      }
       _postgis_deprecate: {
         Args: { oldname: string; newname: string; version: string }
         Returns: undefined
@@ -7946,15 +4651,11 @@ export type Database = {
         Returns: number
       }
       call_weekly_ai_suggestion: {
-        Args: { p_profile_id: string }
+        Args: { p_user_id: string }
         Returns: undefined
       }
       check_floq_admin_role: {
-        Args: { p_floq_id: string; p_profile_id?: string }
-        Returns: boolean
-      }
-      check_floq_admin_role_safe: {
-        Args: { p_floq_id: string; p_profile_id?: string }
+        Args: { p_floq_id: string; p_user_id?: string }
         Returns: boolean
       }
       check_floq_visibility: {
@@ -7962,13 +4663,7 @@ export type Database = {
         Returns: string
       }
       check_rate_limit: {
-        Args:
-          | {
-              action_type: string
-              max_attempts?: number
-              window_minutes?: number
-            }
-          | { p_action: string; p_limit?: number; p_window?: unknown }
+        Args: { p_action: string; p_limit?: number; p_window?: unknown }
         Returns: boolean
       }
       citext: {
@@ -8105,15 +4800,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      drop_and_recreate_policies: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          table_name: string
-          policy_name: string
-          action: string
-          status: string
-        }[]
-      }
       dropgeometrycolumn: {
         Args:
           | {
@@ -8163,11 +4849,7 @@ export type Database = {
         }[]
       }
       export_afterglow_data: {
-        Args: {
-          p_profile_id?: string
-          p_start_date?: string
-          p_end_date?: string
-        }
+        Args: { p_user_id?: string; p_start_date?: string; p_end_date?: string }
         Returns: Json
       }
       fetch_floq_messages: {
@@ -8191,15 +4873,11 @@ export type Database = {
         Returns: string
       }
       finish_plan: {
-        Args: { p_plan_id: string; p_profile_id: string }
+        Args: { p_plan_id: string; p_user_id: string }
         Returns: Json
       }
-      fix_problematic_function: {
-        Args: { func_name: string }
-        Returns: string
-      }
       fn_emit_notification: {
-        Args: { p_profile_id: string; p_kind: string; p_payload: Json }
+        Args: { p_user_id: string; p_kind: string; p_payload: Json }
         Returns: undefined
       }
       friend_count: {
@@ -8214,10 +4892,7 @@ export type Database = {
         }[]
       }
       friends_nearby: {
-        Args:
-          | { p_lat: number; p_lng: number; p_radius_km?: number }
-          | { radius_m?: number }
-          | { user_lat: number; user_lng: number; radius_km?: number }
+        Args: { user_lat: number; user_lng: number; radius_km?: number }
         Returns: {
           id: string
           display_name: string
@@ -8231,10 +4906,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      gen_pk_profile_statements: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
       gen_plan_share_slug: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -8244,18 +4915,12 @@ export type Database = {
         Returns: string
       }
       generate_daily_afterglow_sql: {
-        Args: { p_profile_id: string; p_date: string }
+        Args: { p_user_id: string; p_date: string }
         Returns: Json
-      }
-      generate_drop_statements: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          drop_statement: string
-        }[]
       }
       generate_floq_suggestions: {
         Args: {
-          p_profile_id: string
+          p_user_id: string
           p_user_lat: number
           p_user_lng: number
           p_limit?: number
@@ -8272,13 +4937,13 @@ export type Database = {
       }
       generate_friend_suggestions: {
         Args: {
-          p_profile_id: string
+          p_user_id: string
           p_user_lat: number
           p_user_lng: number
           p_limit?: number
         }
         Returns: {
-          profile_id: string
+          user_id: string
           username: string
           display_name: string
           avatar_url: string
@@ -8286,42 +4951,9 @@ export type Database = {
           reasoning: Json
         }[]
       }
-      generate_function_replacement_scripts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          function_id: number
-          drop_statement: string
-          create_statement: string
-        }[]
-      }
-      generate_function_rewrites: {
-        Args: { target_schema?: string }
-        Returns: {
-          function_name: string
-          rewritten_sql: string
-        }[]
-      }
       generate_personal_insights: {
-        Args: { p_profile_id?: string }
+        Args: { p_user_id?: string }
         Returns: Json
-      }
-      generate_replacement_sql: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          function_number: number
-          function_name: string
-          drop_statement: string
-          create_statement: string
-        }[]
-      }
-      generate_replacement_sql_v2: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          function_number: number
-          function_fullname: string
-          drop_statement: string
-          create_statement: string
-        }[]
       }
       geography: {
         Args: { "": string } | { "": unknown }
@@ -8548,11 +5180,11 @@ export type Database = {
         Returns: unknown
       }
       get_achievement_progress: {
-        Args: { _profile_id?: string; _codes?: string[] }
+        Args: { _user_id?: string; _codes?: string[] }
         Returns: Json
       }
       get_achievement_stats: {
-        Args: { target_profile_id?: string }
+        Args: { target_user_id?: string }
         Returns: Json
       }
       get_achievement_system_health: {
@@ -8587,22 +5219,13 @@ export type Database = {
               p_user_lat?: number
               p_user_lng?: number
             }
-          | {
-              p_use_demo?: boolean
-              p_limit?: number
-              p_offset?: number
-              p_user_lat?: number
-              p_user_lng?: number
-            }
         Returns: {
           id: string
           title: string
           name: string
-          description: string
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
           type: string
-          flock_type: Database["public"]["Enums"]["flock_type_enum"]
           starts_at: string
           ends_at: string
           participant_count: number
@@ -8610,11 +5233,10 @@ export type Database = {
           starts_in_min: number
           distance_meters: number
           members: Json
-          creator_id: string
         }[]
       }
       get_afterglow_daily_trends: {
-        Args: { p_profile_id?: string }
+        Args: { p_user_id?: string }
         Returns: {
           day: string
           energy_score: number
@@ -8625,19 +5247,19 @@ export type Database = {
         }[]
       }
       get_afterglow_location_insights: {
-        Args: { p_profile_id?: string; p_days_back?: number }
+        Args: { p_user_id?: string; p_days_back?: number }
         Returns: Json
       }
       get_afterglow_monthly_trends: {
-        Args: { p_profile_id?: string; p_months_back?: number }
+        Args: { p_user_id?: string; p_months_back?: number }
         Returns: Json
       }
       get_afterglow_weekly_patterns: {
-        Args: { p_profile_id?: string; p_weeks_back?: number }
+        Args: { p_user_id?: string; p_weeks_back?: number }
         Returns: Json
       }
       get_afterglow_weekly_trends: {
-        Args: { p_profile_id?: string }
+        Args: { p_user_id?: string }
         Returns: {
           week_start: string
           avg_energy: number
@@ -8648,11 +5270,11 @@ export type Database = {
         }[]
       }
       get_afterglow_with_moments: {
-        Args: { p_afterglow_id: string; p_profile_id?: string }
+        Args: { p_afterglow_id: string; p_user_id?: string }
         Returns: Json
       }
       get_archive_stats: {
-        Args: { p_profile_id?: string }
+        Args: { p_user_id?: string }
         Returns: Json
       }
       get_cluster_venues: {
@@ -8747,17 +5369,6 @@ export type Database = {
           participant_count: number
         }[]
       }
-      get_floq_participants: {
-        Args: { p_floq_id: string; p_limit?: number }
-        Returns: {
-          user_id: string
-          avatar_url: string
-        }[]
-      }
-      get_floq_visibility_safe: {
-        Args: { p_floq_id: string }
-        Returns: string
-      }
       get_friend_feed: {
         Args: { _since?: string; _limit?: number; _uid?: string }
         Returns: {
@@ -8774,7 +5385,7 @@ export type Database = {
       }
       get_friend_trail: {
         Args: {
-          friend_profile_id: string
+          friend_user_id: string
           hours_back?: number
           point_limit?: number
         }
@@ -8829,20 +5440,12 @@ export type Database = {
         }[]
       }
       get_nearby_presence: {
-        Args:
-          | { p_profile: string; metres?: number }
-          | { user_lat: number; user_lng: number; radius_meters?: number }
+        Args: { user_lat: number; user_lng: number; radius_meters?: number }
         Returns: {
-          friend_id: string
-          distance_m: number
+          user_id: string
           vibe: Database["public"]["Enums"]["vibe_enum"]
-        }[]
-      }
-      get_nearest_venue: {
-        Args: { p_lat: number; p_lng: number; p_radius?: number }
-        Returns: {
-          venue_id: string
-          distance_m: number
+          distance_meters: number
+          updated_at: string
         }[]
       }
       get_pending_friend_requests: {
@@ -8875,7 +5478,7 @@ export type Database = {
         }[]
       }
       get_profile_stats: {
-        Args: { target_profile_id: string; metres?: number; seconds?: number }
+        Args: { target_user_id: string; metres?: number; seconds?: number }
         Returns: Json
       }
       get_proj4_from_srid: {
@@ -8894,27 +5497,12 @@ export type Database = {
           started_at: string
         }[]
       }
-      get_trending_venues: {
-        Args: {
-          p_user_lat: number
-          p_user_lng: number
-          p_radius_m?: number
-          p_limit?: number
-        }
-        Returns: {
-          venue_id: string
-          name: string
-          distance_m: number
-          people_now: number
-          last_seen_at: string
-          trend_score: number
-        }[]
-      }
       get_unread_counts: {
-        Args: { p_profile: string }
+        Args: { user_id_param: string }
         Returns: {
-          kind: string
-          cnt: number
+          thread_id: string
+          friend_id: string
+          unread_count: number
         }[]
       }
       get_user_accessible_plans: {
@@ -8982,12 +5570,14 @@ export type Database = {
         }[]
       }
       get_walkable_floqs: {
-        Args: { lat: number; lng: number; metres?: number }
+        Args: { user_lat: number; user_lng: number; max_walk_meters?: number }
         Returns: {
-          floq_id: string
+          id: string
           title: string
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          distance_m: number
+          participant_count: number
+          distance_meters: number
+          starts_at: string
         }[]
       }
       get_yearly_stats: {
@@ -9030,20 +5620,8 @@ export type Database = {
         Args: { "": unknown }
         Returns: unknown
       }
-      identify_problematic_policies: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          schema_name: string
-          table_name: string
-          policy_name: string
-          command: string
-          using_clause: string
-          check_clause: string
-          issue_description: string
-        }[]
-      }
       invite_friends: {
-        Args: { p_plan_id: string; p_profile_ids: string[] }
+        Args: { p_plan_id: string; p_user_ids: string[] }
         Returns: Json
       }
       is_live_now: {
@@ -9051,7 +5629,7 @@ export type Database = {
         Returns: boolean
       }
       join_floq: {
-        Args: { p_floq_id: string; p_profile_id?: string; p_use_demo?: boolean }
+        Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
       }
       join_or_leave_plan: {
@@ -9067,31 +5645,11 @@ export type Database = {
         Returns: Json
       }
       leave_floq: {
-        Args: { p_floq_id: string; p_profile_id?: string; p_use_demo?: boolean }
+        Args: { p_floq_id: string; p_user_id?: string; p_use_demo?: boolean }
         Returns: Json
       }
       log_invite_decline: {
-        Args: { p_profile_id: string; p_plan_id: string }
-        Returns: undefined
-      }
-      log_presence_if_needed: {
-        Args: { p_profile: string; p_location: unknown }
-        Returns: undefined
-      }
-      log_pulse_event: {
-        Args: {
-          p_event_type: Database["public"]["Enums"]["pulse_event_type"]
-          p_profile_id?: string
-          p_floq_id?: string
-          p_venue_id?: string
-          p_vibe_tag?: Database["public"]["Enums"]["vibe_tag"]
-          p_people_count?: number
-          p_meta?: Json
-        }
-        Returns: undefined
-      }
-      log_security_event: {
-        Args: { event_type: string; details?: Json; severity?: string }
+        Args: { p_user_id: string; p_plan_id: string }
         Returns: undefined
       }
       longtransactionsenabled: {
@@ -9118,14 +5676,6 @@ export type Database = {
         Args: { _lookback?: unknown }
         Returns: number
       }
-      migrate_rls_policies_profile_id_to_profile_id: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          policy_name: string
-          table_name: string
-          status: string
-        }[]
-      }
       path: {
         Args: { "": unknown }
         Returns: unknown
@@ -9133,7 +5683,7 @@ export type Database = {
       people_crossed_paths_today: {
         Args: { in_me: string; proximity_meters?: number }
         Returns: {
-          profile_id: string
+          user_id: string
           username: string
           display_name: string
           avatar_url: string
@@ -9330,22 +5880,23 @@ export type Database = {
         Returns: string
       }
       presence_nearby: {
-        Args:
-          | { lat: number; lng: number; km: number; include_self?: boolean }
-          | { lat: number; lng: number; metres?: number }
+        Args: { lat: number; lng: number; km: number; include_self?: boolean }
         Returns: {
-          profile_id: string
+          broadcast_radius: number | null
+          expires_at: string | null
+          geo: unknown | null
+          geohash6: string | null
+          gh5: string | null
+          location: unknown
+          updated_at: string | null
+          user_id: string
+          venue_id: string | null
           vibe: Database["public"]["Enums"]["vibe_enum"]
-          distance_m: number
+          vibe_h: number | null
+          vibe_l: number | null
+          vibe_s: number | null
+          visibility: string | null
         }[]
-      }
-      print_pk_profile_statements: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      process_function_definition: {
-        Args: { function_oid: unknown }
-        Returns: string
       }
       publish_cluster_deltas: {
         Args: Record<PropertyKey, never>
@@ -9394,7 +5945,6 @@ export type Database = {
       reorder_plan_stops: {
         Args:
           | { _plan_id: string; _ordered_stop_ids: string[] }
-          | { p_plan: string; p_order: string[]; p_actor?: string }
           | { p_plan_id: string; p_stop_orders: Json }
         Returns: undefined
       }
@@ -9402,17 +5952,9 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      rewrite_profile_id_to_profile_id: {
-        Args: { target_schema?: string; dry_run?: boolean }
-        Returns: {
-          schema_name: string
-          function_name: string
-          status: string
-        }[]
-      }
       search_afterglows: {
         Args: {
-          p_profile_id?: string
+          p_user_id?: string
           p_search_query?: string
           p_start_date?: string
           p_end_date?: string
@@ -9523,12 +6065,8 @@ export type Database = {
         Args: { _friend: string; _on?: boolean }
         Returns: undefined
       }
-      set_live_share_bulk: {
-        Args: { _friend_ids: string[]; _on?: boolean; _auto_when?: string }
-        Returns: undefined
-      }
       set_participant_role: {
-        Args: { p_floq_id: string; p_profile_id: string; p_new_role: string }
+        Args: { p_floq_id: string; p_user_id: string; p_new_role: string }
         Returns: undefined
       }
       set_user_vibe: {
@@ -9541,8 +6079,8 @@ export type Database = {
           active: boolean | null
           gh5: string | null
           location: unknown | null
-          profile_id: string | null
           started_at: string
+          user_id: string
           vibe_h: number | null
           vibe_l: number | null
           vibe_s: number | null
@@ -9551,9 +6089,7 @@ export type Database = {
         }
       }
       should_log_presence: {
-        Args:
-          | { p_profile: string }
-          | { p_user: string; p_loc: unknown; p_now?: string }
+        Args: { p_user: string; p_loc: unknown; p_now?: string }
         Returns: boolean
       }
       show_limit: {
@@ -9798,10 +6334,6 @@ export type Database = {
       }
       st_clusterintersecting: {
         Args: { "": unknown[] }
-        Returns: unknown[]
-      }
-      st_clusterwithin_garray_app: {
-        Args: { geoms: unknown[]; maxdist: number }
         Returns: unknown[]
       }
       st_collect: {
@@ -10646,7 +7178,7 @@ export type Database = {
         Returns: undefined
       }
       suggest_friends: {
-        Args: { p_profile_id: string; p_limit?: number }
+        Args: { p_user_id: string; p_limit?: number }
         Returns: {
           id: string
           username: string
@@ -10667,13 +7199,9 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: undefined
       }
-      update_last_read_message: {
-        Args: { p_floq_id: string }
-        Returns: undefined
-      }
       update_suggestion_metrics: {
         Args: {
-          p_profile_id: string
+          p_user_id: string
           p_suggestion_type: Database["public"]["Enums"]["suggestion_type_enum"]
           p_action: string
           p_suggestion_id?: string
@@ -10685,7 +7213,7 @@ export type Database = {
         Returns: undefined
       }
       update_user_preferences_from_feedback: {
-        Args: { p_profile_id: string; p_vibe: string; p_moment: string }
+        Args: { p_user_id: string; p_vibe: string; p_moment: string }
         Returns: undefined
       }
       update_username: {
@@ -10715,18 +7243,13 @@ export type Database = {
         Returns: string
       }
       upsert_presence: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_vibe: string
-          p_visibility?: string
-        }
+        Args: { p_lat: number; p_lng: number; p_vibe?: string }
         Returns: undefined
       }
       upsert_venue_presence_smart: {
         Args: {
           _venue_id: string
-          _profile_id: string
+          _user_id: string
           _vibe: Database["public"]["Enums"]["vibe_enum"]
           _heartbeat_ts?: string
         }
@@ -10734,7 +7257,7 @@ export type Database = {
       }
       upsert_vibes_now_smart: {
         Args: {
-          _profile_id: string
+          _user_id: string
           _vibe: Database["public"]["Enums"]["vibe_enum"]
           _location: unknown
           _venue_id?: string
@@ -10771,7 +7294,7 @@ export type Database = {
         Returns: boolean
       }
       user_is_floq_participant: {
-        Args: { p_floq_id: string; p_profile_id?: string }
+        Args: { p_floq_id: string; p_user_id?: string }
         Returns: boolean
       }
       user_is_member_of_floq: {
@@ -10785,10 +7308,6 @@ export type Database = {
       username_available: {
         Args: { p_username: string } | { u: string }
         Returns: boolean
-      }
-      validate_and_sanitize_text: {
-        Args: { input_text: string; max_length?: number }
-        Returns: string
       }
       validate_stop_times: {
         Args: { p_plan_id: string }
@@ -10833,15 +7352,6 @@ export type Database = {
           distance_m: number
         }[]
       }
-      verify_profile_id_rewrite: {
-        Args: { target_schema?: string }
-        Returns: {
-          schema_name: string
-          function_name: string
-          kind: string
-          issue: string
-        }[]
-      }
       vibe_similarity: {
         Args: {
           a: Database["public"]["Enums"]["vibe_enum"]
@@ -10850,10 +7360,7 @@ export type Database = {
         Returns: number
       }
       walkable_floqs: {
-        Args:
-          | { lat: number; lng: number; max_walk_meters: number }
-          | { lat: number; lng: number; metres?: number }
-          | { radius_m?: number }
+        Args: { lat: number; lng: number; max_walk_meters: number }
         Returns: {
           id: string
           title: string
@@ -10865,7 +7372,6 @@ export type Database = {
       }
     }
     Enums: {
-      acc_enum: "exact" | "street" | "area"
       achievement_family:
         | "social"
         | "location"
@@ -10927,15 +7433,7 @@ export type Database = {
         | "executing"
         | "completed"
         | "invited"
-      pulse_event_type:
-        | "check_in"
-        | "check_out"
-        | "vibe_join"
-        | "vibe_leave"
-        | "floq_join"
-        | "floq_leave"
       rsvp_status_enum: "attending" | "maybe" | "not_attending" | "pending"
-      scope_enum: "friends" | "mutuals" | "none"
       suggestion_status_enum: "pending" | "accepted" | "dismissed" | "expired"
       suggestion_type_enum:
         | "merge_flocks"
@@ -10955,27 +7453,6 @@ export type Database = {
         | "down"
         | "flowing"
         | "open"
-      vibe_tag:
-        | "social"
-        | "hype"
-        | "energetic"
-        | "curious"
-        | "mindful"
-        | "creative"
-        | "competitive"
-        | "chill"
-        | "steady"
-        | "solo"
-        | "focused"
-        | "romantic"
-        | "cozy"
-        | "lux"
-        | "weird"
-        | "down"
-        | "flowing"
-        | "exploring"
-        | "open"
-        | "supportive"
       vibe_visibility: "public" | "friends" | "off"
       welcome_template_enum:
         | "casual-hangout"
@@ -10995,310 +7472,6 @@ export type Database = {
         reason: string | null
         location: unknown | null
       }
-    }
-  }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          owner_id: string | null
-          public: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
-      objects: {
-        Row: {
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          owner_id: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          user_metadata: Json | null
-          version: string | null
-        }
-        Insert: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Update: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          id: string
-          in_progress_size: number
-          key: string
-          owner_id: string | null
-          upload_signature: string
-          user_metadata: Json | null
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          id: string
-          in_progress_size?: number
-          key: string
-          owner_id?: string | null
-          upload_signature: string
-          user_metadata?: Json | null
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          id?: string
-          in_progress_size?: number
-          key?: string
-          owner_id?: string | null
-          upload_signature?: string
-          user_metadata?: Json | null
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads_parts: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          etag: string
-          id: string
-          key: string
-          owner_id: string | null
-          part_number: number
-          size: number
-          upload_id: string
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          etag: string
-          id?: string
-          key: string
-          owner_id?: string | null
-          part_number: number
-          size?: number
-          upload_id: string
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          etag?: string
-          id?: string
-          key?: string
-          owner_id?: string | null
-          part_number?: number
-          size?: number
-          upload_id?: string
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      can_insert_object: {
-        Args: { bucketid: string; name: string; owner: string; metadata: Json }
-        Returns: undefined
-      }
-      extension: {
-        Args: { name: string }
-        Returns: string
-      }
-      filename: {
-        Args: { name: string }
-        Returns: string
-      }
-      foldername: {
-        Args: { name: string }
-        Returns: string[]
-      }
-      get_size_by_bucket: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          size: number
-          bucket_id: string
-        }[]
-      }
-      list_multipart_uploads_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-        }
-        Returns: {
-          key: string
-          id: string
-          created_at: string
-        }[]
-      }
-      list_objects_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          start_after?: string
-          next_token?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          metadata: Json
-          updated_at: string
-        }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      search: {
-        Args: {
-          prefix: string
-          bucketname: string
-          limits?: number
-          levels?: number
-          offsets?: number
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          updated_at: string
-          created_at: string
-          last_accessed_at: string
-          metadata: Json
-        }[]
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
     }
   }
 }
@@ -11423,7 +7596,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      acc_enum: ["exact", "street", "area"],
       achievement_family: [
         "social",
         "location",
@@ -11490,16 +7662,7 @@ export const Constants = {
         "completed",
         "invited",
       ],
-      pulse_event_type: [
-        "check_in",
-        "check_out",
-        "vibe_join",
-        "vibe_leave",
-        "floq_join",
-        "floq_leave",
-      ],
       rsvp_status_enum: ["attending", "maybe", "not_attending", "pending"],
-      scope_enum: ["friends", "mutuals", "none"],
       suggestion_status_enum: ["pending", "accepted", "dismissed", "expired"],
       suggestion_type_enum: [
         "merge_flocks",
@@ -11521,28 +7684,6 @@ export const Constants = {
         "flowing",
         "open",
       ],
-      vibe_tag: [
-        "social",
-        "hype",
-        "energetic",
-        "curious",
-        "mindful",
-        "creative",
-        "competitive",
-        "chill",
-        "steady",
-        "solo",
-        "focused",
-        "romantic",
-        "cozy",
-        "lux",
-        "weird",
-        "down",
-        "flowing",
-        "exploring",
-        "open",
-        "supportive",
-      ],
       vibe_visibility: ["public", "friends", "off"],
       welcome_template_enum: [
         "casual-hangout",
@@ -11553,8 +7694,5 @@ export const Constants = {
         "support-group",
       ],
     },
-  },
-  storage: {
-    Enums: {},
   },
 } as const

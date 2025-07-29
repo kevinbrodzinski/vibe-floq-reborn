@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User } from 'lucide-react';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Block, Flag, User } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -26,10 +26,6 @@ import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
-import { Z } from '@/constants/z';
-import { getAvatarUrl } from '@/lib/avatar';
-import { UserTag } from '@/components/ui/user-tag';
-import { MessageBubble } from '@/components/MessageBubble';
 
 interface DMQuickSheetProps {
   open: boolean;

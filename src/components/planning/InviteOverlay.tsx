@@ -119,8 +119,8 @@ export function InviteOverlay({
       const { data, error } = await supabase
         .from('floq_participants')
         .select(`
-          profile_id,
-          profiles!floq_participants_profile_id_fkey (
+          user_id,
+          profiles:user_id (
             id,
             username,
             display_name,

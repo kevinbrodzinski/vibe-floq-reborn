@@ -14,18 +14,8 @@ export function formatEvent(ev: PulseEvent, meName = 'You') {
 }
 
 // Convert PulseEvent to LiveActivity format for existing UI components
-export function pulseEventToLiveActivity(ev: PulseEvent): {
-  id: string;
-  type: 'checkin' | 'venue_activity' | 'friend_joined' | 'trending' | 'floq_activity' | 'vibe_activity';
-  user_name?: string;
-  venue_name: string;
-  activity_text: string;
-  timestamp: string;
-  avatar_url?: string;
-  vibe?: string;
-  venue_id?: string;
-} {
-  const getActivityType = (eventType: string): 'checkin' | 'venue_activity' | 'friend_joined' | 'trending' | 'floq_activity' | 'vibe_activity' => {
+export function pulseEventToLiveActivity(ev: PulseEvent) {
+  const getActivityType = (eventType: string) => {
     switch (eventType) {
       case 'check_in':
       case 'check_out':

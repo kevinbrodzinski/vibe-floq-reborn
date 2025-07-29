@@ -16,7 +16,7 @@ export function useFriendSuggestions(limit = 10) {
     queryFn : async (): Promise<FriendSuggestion[]> => {
       const { data, error } = await supabase
         .rpc('suggest_friends', {
-          p_profile_id: session!.user.id,
+          p_user_id: session!.user.id,
           p_limit  : limit,
         })
 
