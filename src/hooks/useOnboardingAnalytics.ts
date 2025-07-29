@@ -36,7 +36,7 @@ export function useOnboardingAnalytics() {
   const { user } = useAuth();
   const sessionId = getSessionId();
 
-  const trackEvent = useCallback(async (event: Omit<OnboardingEvent, 'profile_id' | 'session_id'>) => {
+  const trackEvent = useCallback(async (event: Omit<OnboardingEvent, 'session_id'>) => {
     if (!user) return;
 
     try {
@@ -77,40 +77,45 @@ export function useOnboardingAnalytics() {
     trackEvent({
       event_type: 'started',
       step_number: 0,
-      step_name: 'welcome'
+      step_name: 'welcome',
+      user_id: user?.id || ''
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   const trackStepCompleted = useCallback((stepNumber: number, stepName: string, metadata?: Record<string, any>) => {
     trackEvent({
       event_type: 'step_completed',
       step_number: stepNumber,
       step_name: stepName,
+      user_id: user?.id || '',
       metadata
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   const trackStepDropped = useCallback((stepNumber: number, stepName: string) => {
     trackEvent({
       event_type: 'step_dropped',
       step_number: stepNumber,
-      step_name: stepName
+      step_name: stepName,
+      user_id: user?.id || ''
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   const trackOnboardingCompleted = useCallback((metadata?: Record<string, any>) => {
     trackEvent({
       event_type: 'completed',
+      user_id: user?.id || '',
       metadata: {
         ...metadata,
         completion_time: Date.now()
       }
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   const trackUsernameCreated = useCallback((username: string, attempts: number = 1) => {
     trackEvent({
       event_type: 'username_created',
+      user_id: user?.id || '',
       metadata: {
         username_length: username.length,
         attempts_taken: attempts,
@@ -118,17 +123,18 @@ export function useOnboardingAnalytics() {
         contains_special: /[_.-]/.test(username)
       }
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   const trackUsernameFailed = useCallback((reason: string, attempted_username?: string) => {
     trackEvent({
       event_type: 'username_failed',
+      user_id: user?.id || '',
       metadata: {
         failure_reason: reason,
         attempted_username: attempted_username?.substring(0, 3) + '***' // Privacy
       }
     });
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   // Auto-track page visibility for dropout detection
   useEffect(() => {

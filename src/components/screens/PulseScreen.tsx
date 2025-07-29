@@ -138,7 +138,7 @@ export const PulseScreen: React.FC = () => {
 
   // Data fetching hooks
   const { coords } = useGeolocation();
-  const { data: activeFloqs = [] } = useActiveFloqs({ limit: 50 });
+  const { data: activeFloqs = [] } = useActiveFloqs();
   const { data: nearbyVenues = [] } = useNearbyVenues(coords?.lat ?? 0, coords?.lng ?? 0, 0.3);
   const { data: myFloqs = [] } = useMyActiveFloqs();
   // const { suggestion: aiSuggestion, loading: aiLoading, refetch: refetchAI, source: aiSource } = useWeeklyAI();
@@ -147,7 +147,7 @@ export const PulseScreen: React.FC = () => {
   // Real-time Pulse data
   const radiusArg = filters.has('walking') ? WALKING_THRESHOLD_M : 2000;
   const { data: trendingVenues = [] } = useTrendingVenues(radiusArg, 5);
-  const { data: liveActivity, fetchNextPage, hasNextPage, isFetchingNextPage } = useLiveActivity();
+  const { data: liveActivity, fetchNextPage, hasNextPage, isFetchingNextPage } = useLiveActivity(coords?.lat ?? 0, coords?.lng ?? 0, 1);
   const { data: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather();
   const { data: pulseBadges } = usePulseBadges(user?.id);
 

@@ -5,7 +5,31 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getEnvironmentConfig } from "@/lib/environment";
 import { storage } from "@/lib/storage";
-import { useActiveFloqs, type FloqRow } from "@/hooks/useActiveFloqs";
+import { useActiveFloqs } from "@/hooks/useActiveFloqs";
+
+export interface FloqRow {
+  id: string;
+  title: string;
+  name?: string;
+  description?: string;
+  primary_vibe: string;
+  vibe_tag: string;
+  type: string;
+  flock_type?: string;
+  starts_at: string;
+  ends_at?: string;
+  participant_count: number;
+  boost_count: number;
+  starts_in_min: number;
+  distance_meters?: number;
+  members: Array<{
+    id: string;
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  }>;
+  creator_id: string;
+}
 import { useFloqJoin } from "@/hooks/useFloqJoin";
 import { useAvatarClusterUpdates } from "@/hooks/useAvatarClusterUpdates";
 import { RecommendationsStrip } from "@/components/RecommendationsStrip";
@@ -245,10 +269,7 @@ export const FloqsScreen = () => {
   useEffect(() => {
     getStoredRadius().then(setRadiusKm);
   }, []);
-  const { data: floqs = [], isLoading, error } = useActiveFloqs({
-    limit: 50,
-    includeDistance: true
-  });
+  const { data: floqs = [], isLoading, error } = useActiveFloqs();
   const { join, isPending } = useFloqJoin();
 
   // Add debug logging

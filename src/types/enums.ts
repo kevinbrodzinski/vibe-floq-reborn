@@ -1,12 +1,14 @@
-// Stub file for enum types
-// TODO: Replace with actual enum definitions when available
+export const VibeEnum = [
+  'chill', 'hype', 'curious', 'social', 'solo',
+  'romantic', 'weird', 'down', 'flowing', 'open',
+] as const;
 
-export enum VibeEnum {
-  chill = 'chill',
-  social = 'social',
-  energetic = 'energetic',
-  focused = 'focused',
-  excited = 'excited'
+export type Vibe = typeof VibeEnum[number];
+
+export enum MotionVibe {
+  Idle = 'idle',
+  Walking = 'walking',
+  Running = 'running',
+  Cycling = 'cycling',
+  Vehicle = 'vehicle',
 }
-
-export type Vibe = VibeEnum | keyof typeof VibeEnum;

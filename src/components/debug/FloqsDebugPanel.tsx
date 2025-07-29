@@ -7,10 +7,7 @@ import { useEnvironmentDebug } from "@/hooks/useEnvironmentDebug";
 import { zIndex } from "@/constants/z";
 
 export const FloqsDebugPanel = () => {
-  const { data: floqs = [], isLoading, error } = useActiveFloqs({
-    limit: 5,
-    includeDistance: true
-  });
+  const { data: floqs = [], isLoading, error } = useActiveFloqs();
   const { setIsDebugPanelOpen, environmentConfig } = useEnvironmentDebug();
 
   return (

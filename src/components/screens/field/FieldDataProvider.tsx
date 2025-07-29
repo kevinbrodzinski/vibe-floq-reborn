@@ -105,7 +105,7 @@ interface FieldDataProviderInnerProps {
 
 const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { location } = useFieldLocation();
-  const { data: activeFloqs = [], realtime } = useActiveFloqs();
+  const { data: activeFloqs = [] } = useActiveFloqs();
   const [floqsWithAddresses, setFloqsWithAddresses] = useState<any[]>([]);
 
   // Enhance floqs with addresses
@@ -240,7 +240,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     tileIds,
     viewport,
     // Real-time status
-    realtime,
+    realtime: true,
   };
 
   return children(data);

@@ -5,7 +5,7 @@ import { useRef, useEffect } from 'react';
 import type { PulseEvent } from '@/types/pulse';
 
 export const LiveFeedFull = () => {
-  const { data, fetchNextPage, hasNextPage, isFetching } = useLiveActivity();
+  const { data, fetchNextPage, hasNextPage, isFetching } = useLiveActivity(0, 0, 1);
   const feed = data?.pages.flat() ?? [];
   
   // Convert PulseEvent to LiveActivity format
