@@ -138,7 +138,7 @@ export const PublicFloqPreview: React.FC<PublicFloqPreviewProps> = ({
           
           <div className="grid grid-cols-4 gap-3">
             {floqDetails.participants.slice(0, 8).map((participant) => (
-              <div key={participant.user_id} className="flex flex-col items-center gap-1">
+              <div key={participant.profile_id} className="flex flex-col items-center gap-1">
                 <Avatar className="w-12 h-12">
                   <AvatarImage src={participant.avatar_url} alt={participant.display_name} />
                   <AvatarFallback className="text-xs">

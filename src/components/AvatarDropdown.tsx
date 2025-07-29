@@ -47,7 +47,7 @@ export const AvatarDropdown = () => {
   const { data: unreadCounts = [] } = useUnreadDMCounts(user?.id || null);
 
   // Total notifications = pending friend requests + unread messages
-  const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + uc.unread_count, 0);
+  const totalUnreadMessages = unreadCounts.reduce((sum, uc) => sum + (uc.unread_count || uc.cnt || 0), 0);
   const totalNotifications = pendingRequests.length + totalUnreadMessages;
   const { data: profile } = useProfile(user?.id);
 

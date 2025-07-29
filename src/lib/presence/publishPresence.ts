@@ -17,4 +17,5 @@ export async function publishPresence(
     // TODO: add exponential back-off + Sentry breadcrumb
     throw error;
   }
+  // Function now returns void - no return value
 }

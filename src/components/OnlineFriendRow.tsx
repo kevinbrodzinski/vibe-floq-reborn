@@ -20,7 +20,7 @@ import { useLongPress } from '@/hooks/useLongPress';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/lib/toast';
+import { useToast } from '@/hooks/use-toast';
 import dayjs from '@/lib/dayjs';
 import { FriendRowSkeleton } from '@/components/skeletons';
 import { AvatarWithLoading } from '@/components/ui/avatar-with-loading';
@@ -49,14 +49,15 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   // pull the initial preference once; you probably already fetch profile extras here
   const { data: pref, error: prefError } = useQuery({
     queryKey: ['share-pref', profileId],
-    queryFn: () =>
-      supabase
+    queryFn: async () => {
+      const { data } = await supabase
         .from('friend_share_pref')
         .select('is_live')
         .eq('friend_id', profileId)
-        .maybeSingle()
-        .then(r => r.data?.is_live ?? false),
-    retry: false, // Don't retry if QueryClient isn't ready
+        .maybeSingle();
+      return data?.is_live ?? false;
+    },
+    retry: false,
   });
 
   // Get current user ID for unread counts
@@ -64,7 +65,8 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
   const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
 
   // Get unread count for this friend
-  const unreadCount = unreadCounts.find(c => c.friend_id === profileId)?.unread_count || 0;
+  const unreadCount = unreadCounts.find(c => c.friend_id === profileId)?.unread_count || 
+                      unreadCounts.find(c => c.friend_id === profileId)?.cnt || 0;
 
   // Get current user ID on mount
   useEffect(() => {
@@ -178,7 +180,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
               <div className="text-xs text-muted-foreground mb-1">
                 {pref ? 'Live' : 'Hidden'}
               </div>
-              <FriendShareToggle friendId={profileId} initial={pref} />
+              <FriendShareToggle friendId={profileId} initial={!!pref} />
             </div>
           )}
         </div>

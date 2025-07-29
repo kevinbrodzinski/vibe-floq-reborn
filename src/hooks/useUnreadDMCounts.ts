@@ -5,6 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 interface UnreadCount {
   kind: string;
   cnt: number;
+  // Additional fields that might be returned by the RPC
+  thread_id?: string;
+  friend_id?: string;
+  unread_count?: number;
 }
 
 export const useUnreadDMCounts = (selfId: string | null) => {
