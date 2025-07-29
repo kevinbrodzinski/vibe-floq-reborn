@@ -198,7 +198,7 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
               body,
               emoji,
               created_at,
-              profiles!inner (
+              profiles!floq_messages_sender_id_fkey (
                 display_name,
                 avatar_url,
                 username
