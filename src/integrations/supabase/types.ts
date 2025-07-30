@@ -12160,34 +12160,13 @@ export type Database = {
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_presence: {
-        Args:
-          | {
-              p_venue_id: string
-              p_lat: number
-              p_lng: number
-              p_vibe: Database["public"]["Enums"]["vibe_enum"]
-              p_profile_id?: string
-            }
-          | {
-              p_venue_id: string
-              p_lat: number
-              p_lng: number
-              p_vibe: Database["public"]["Enums"]["vibe_enum"]
-              p_visibility?: string
-              p_profile_id?: string
-            }
-        Returns: {
-          accuracy_m: number | null
-          lat: number | null
-          lng: number | null
-          location: unknown | null
-          profile_id: string
-          started_at: string | null
-          updated_at: string
-          venue_id: string | null
-          vibe: Database["public"]["Enums"]["vibe_enum"] | null
-          vibe_tag: string | null
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_vibe: string
+          p_visibility?: string
         }
+        Returns: undefined
       }
       upsert_presence__old5: {
         Args: {

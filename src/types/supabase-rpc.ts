@@ -58,7 +58,7 @@ export interface SupabaseRPCTypes {
       p_vibe: string;
       p_visibility?: string;
     };
-    Returns: undefined;
+    Returns: void;
   };
   get_trending_venues: {
     Args: {
