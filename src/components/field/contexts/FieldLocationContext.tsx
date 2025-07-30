@@ -24,12 +24,13 @@ const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProvid
   const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
   const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
 
-  // Automatically start location tracking when component mounts
+  // Automatically start location tracking when component mounts if not already granted
   useEffect(() => {
-    if (!location.isTracking && !location.error) {
+    if (!location.isTracking && !location.error && !location.pos) {
+      // Only auto-start if we don't have a position yet (first time)
       location.startTracking();
     }
-  }, [location.isTracking, location.error, location.startTracking]);
+  }, [location.isTracking, location.error, location.startTracking, location.pos]);
 
   const value = {
     location,

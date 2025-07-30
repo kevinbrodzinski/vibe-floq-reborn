@@ -62,7 +62,14 @@ export function usePeopleSource(
   /* Push to Mapbox every time geojson changes */
   useEffect(() => {
     if (!map) return;
-    const src = map.getSource('people') as mapboxgl.GeoJSONSource | undefined;
-    if (src) src.setData(geojson);
+    
+    try {
+      const src = map.getSource('people') as mapboxgl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData(geojson);
+      }
+    } catch (error) {
+      console.warn('[usePeopleSource] Failed to update people source:', error);
+    }
   }, [map, geojson]);
 }
