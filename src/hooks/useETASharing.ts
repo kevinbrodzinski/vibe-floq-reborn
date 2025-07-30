@@ -50,8 +50,8 @@ export const useETASharing = () => {
       const newETAMap = new Map<string, ETAShare>();
       data?.etas?.forEach((eta: any) => {
         if (eta.distance <= MAX_ETA_DISTANCE) {
-          newETAMap.set(eta.friend_id, {
-            friendId: eta.friend_id,
+          newETAMap.set(eta.other_profile_id, {
+            friendId: eta.other_profile_id,
             eta: eta.eta_minutes,
             distance: eta.distance_meters,
             mode: eta.travel_mode,

@@ -33,7 +33,7 @@ serve(async (req) => {
     // TODO: Get friend locations and calculate actual ETAs
     // For now, return mock data
     const mockETAs = friend_ids.map((friendId: string) => ({
-      friend_id: friendId,
+      other_profile_id: friendId,
       eta_minutes: Math.floor(Math.random() * 30) + 5, // 5-35 minutes
       distance_meters: Math.floor(Math.random() * 3000) + 200, // 200-3200 meters  
       travel_mode: 'walking'
