@@ -8570,12 +8570,16 @@ export type Database = {
       }
       v_friends_with_presence: {
         Row: {
-          lat: number | null
-          lng: number | null
-          other_profile_id: string | null
-          profile_id: string | null
-          updated_at: string | null
-          vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          friend_id: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          online: boolean | null
+          responded_at: string | null
+          started_at: string | null
+          username: string | null
+          vibe_tag: string | null
         }
         Relationships: []
       }
