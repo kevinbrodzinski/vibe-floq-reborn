@@ -7054,7 +7054,7 @@ export type Database = {
           active: boolean | null
           gh5: string | null
           location: unknown | null
-          profile_id: string | null
+          profile_id: string
           started_at: string
           vibe_h: number | null
           vibe_l: number | null
@@ -7066,7 +7066,7 @@ export type Database = {
           active?: boolean | null
           gh5?: string | null
           location?: unknown | null
-          profile_id?: string | null
+          profile_id: string
           started_at?: string
           vibe_h?: number | null
           vibe_l?: number | null
@@ -7078,7 +7078,7 @@ export type Database = {
           active?: boolean | null
           gh5?: string | null
           location?: unknown | null
-          profile_id?: string | null
+          profile_id?: string
           started_at?: string
           vibe_h?: number | null
           vibe_l?: number | null
@@ -7090,28 +7090,28 @@ export type Database = {
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "presence_view"
             referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_vibe_states_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
@@ -10959,7 +10959,7 @@ export type Database = {
           active: boolean | null
           gh5: string | null
           location: unknown | null
-          profile_id: string | null
+          profile_id: string
           started_at: string
           vibe_h: number | null
           vibe_l: number | null
