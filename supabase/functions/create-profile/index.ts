@@ -154,20 +154,47 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if profile already exists for this user
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (existingProfile) {
+      console.error('Profile already exists for user:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Profile already exists', 
+          message: 'A profile has already been created for this user'
+        }), 
+        { 
+          status: 409, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+
     // Build insert payload
     const insertPayload = {
       id: user.id,
       username,
       display_name: displayName,
       bio,
-      avatar_url: avatarUrl,
+      avatar_url: avatarUrl, // Will be empty string if not provided due to default
       vibe_preference: payload.vibe_preference,
       interests: payload.interests?.length ? payload.interests : [],
       email: payload.email || user.email || null,
       profile_created: true,
     };
 
-    // Insert profile
+    console.log('Final insert payload:', {
+      ...insertPayload,
+      avatar_url_length: avatarUrl?.length || 0,
+      avatar_url_type: avatarUrl ? (avatarUrl.startsWith('data:') ? 'data_url' : 'regular_url') : 'empty'
+    });
+
+    // Insert profile - no UPSERT to avoid conflict errors
     const { data, error } = await supabase
       .from('profiles')
       .insert(insertPayload)
