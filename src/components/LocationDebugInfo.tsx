@@ -20,6 +20,25 @@ export function LocationDebugInfo() {
   const [browserInfo, setBrowserInfo] = useState<any>(null)
   const [permissionState, setPermissionState] = useState<string>('unknown')
 
+  // Add global location reset function
+  const resetAllLocation = () => {
+    console.log('[LocationDebugInfo] Resetting all location services...')
+    
+    // Clear global flags
+    ;(window as any).__geoLocationActive = false
+    ;(window as any).__userLocationActive = false
+    
+    // Reset useUserLocation state
+    resetLocation()
+    
+    // Force reload location permissions
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then(permission => {
+        setPermissionState(permission.state)
+      }).catch(() => setPermissionState('unknown'))
+    }
+  }
+
   useEffect(() => {
     const isCapacitor = !!(window as any).Capacitor
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -140,8 +159,8 @@ export function LocationDebugInfo() {
           <Button onClick={handleCheckPermission} size="sm" variant="outline">
             Check Permission
           </Button>
-          <Button onClick={resetLocation} size="sm" variant="outline">
-            Reset State
+          <Button onClick={resetAllLocation} size="sm" variant="destructive">
+            Reset All Location
           </Button>
           {isTracking ? (
             <Button onClick={stopTracking} size="sm" variant="destructive">

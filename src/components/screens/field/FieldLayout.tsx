@@ -54,7 +54,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   };
 
   // ---- helper flags ---------------------------------------------
-  const geoReady = isLocationReady && location?.coords?.lat != null;
+  const geoReady = isLocationReady && location?.pos?.lat != null;
   const geoLoading = !isLocationReady;
   const geoError = false; // Remove error handling for now, let FieldLocationContext handle it
 
@@ -65,7 +65,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         <div className="relative h-svh w-full bg-background">
         <div className="flex items-center justify-center h-full p-4">
           <GeolocationPrompt
-            onRequestLocation={() => location.requestLocation()}
+            onRequestLocation={() => location.startTracking()}
             error="denied"
             loading={false}
             onSetDebugLocation={handleDebugLocation}
@@ -82,7 +82,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         <div className="relative h-svh w-full bg-background">
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
-              onRequestLocation={() => location.requestLocation()}
+              onRequestLocation={() => location.startTracking()}
               error={null}
               loading={geoLoading}
               onSetDebugLocation={handleDebugLocation}

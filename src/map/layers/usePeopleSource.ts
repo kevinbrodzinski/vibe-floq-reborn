@@ -18,23 +18,16 @@ export function usePeopleSource(
   map: mapboxgl.Map | null,        // Mapbox instance ref
   people: Person[],                // incoming dots
 ) {
-  const { pos } = useUserLocation();      // live location from user gesture
-  const { location: fieldLocation } = useFieldLocation(); // Field location context
+  const { location: fieldLocation } = useFieldLocation(); // Use consolidated field location
   const { user } = useAuth();            // to tag the feature with our id
 
-  // Use field location if user tracking is not available
-  const userPos = pos || (fieldLocation?.coords?.lat && fieldLocation?.coords?.lng ? {
-    lat: fieldLocation.coords.lat,
-    lng: fieldLocation.coords.lng,
-    accuracy: fieldLocation.accuracy || 50
-  } : null);
+  // Field location now uses useUserLocation internally
+  const userPos = fieldLocation.pos;
 
   /** Build the feature-collection every time inputs change */
   const geojson = useMemo(() => {
     console.log('[usePeopleSource] Debug - Building GeoJSON:', {
       peopleCount: people.length,
-      hasPos: !!pos,
-      posValue: pos,
       hasUserPos: !!userPos,
       userPosValue: userPos,
       hasFieldLocation: !!fieldLocation,

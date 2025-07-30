@@ -1,12 +1,12 @@
 
 import { createContext, useContext } from 'react';
-import { useGeo } from '@/hooks/useGeo';
+import { useUserLocation } from '@/hooks/useUserLocation';
 import { useBucketedPresence } from '@/hooks/useBucketedPresence';
 import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
 import { FieldLocationErrorBoundary } from './FieldLocationErrorBoundary';
 
 interface FieldLocationContextValue {
-  location: ReturnType<typeof useGeo>;
+  location: ReturnType<typeof useUserLocation>;
   isLocationReady: boolean;
   presenceData: any[];
   lastHeartbeat: number | null;
@@ -20,9 +20,9 @@ interface FieldLocationProviderProps {
 }
 
 const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProviderProps) => {
-  const location = useGeo();
-  const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.coords?.lat, location.coords?.lng, friendIds);
-  const isLocationReady = !!(location.coords?.lat && location.coords?.lng);
+  const location = useUserLocation();
+  const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
+  const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
 
   const value = {
     location,

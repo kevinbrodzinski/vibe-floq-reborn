@@ -88,7 +88,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     selectedFloqMembers: selectedFloqMembers.map(member => member.profile_id)
   }), [selectedMyFloq, selectedFloqMembers]);
 
-  const initialCenter: [number, number] = location?.coords ? [location.coords.lng, location.coords.lat] : [-118.4912, 34.0224];
+  const initialCenter: [number, number] = location?.pos ? [location.pos.lng, location.pos.lat] : [-118.4912, 34.0224];
 
   const [status,setStatus] = useState<'loading'|'ready'|'error'>('loading');
   const [err,setErr]       = useState<string>();
@@ -193,14 +193,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
   // Memoize center on user location function
   const centerOnUserLocation = useCallback(() => {
-    if (!mapRef.current || !location.coords?.lat || !location.coords?.lng) return;
+    if (!mapRef.current || !location.pos?.lat || !location.pos?.lng) return;
     
     mapRef.current.flyTo({
-      center: [location.coords.lng, location.coords.lat],
+      center: [location.pos.lng, location.pos.lat],
       zoom: 14,
       duration: 1000
     });
-  }, [location.coords?.lat, location.coords?.lng]);
+  }, [location.pos?.lat, location.pos?.lng]);
 
   useEffect(()=>{
     if(!mapContainerRef.current||mapRef.current) return;
@@ -228,8 +228,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         mapboxgl.accessToken=token;
 
         // Get initial center from user location or fallback to Venice Beach
-        const initialCenter: [number, number] = location.coords?.lat && location.coords?.lng 
-          ? [location.coords.lng, location.coords.lat] 
+        const initialCenter: [number, number] = location.pos?.lat && location.pos?.lng 
+          ? [location.pos.lng, location.pos.lat] 
           : [-118.4695, 33.9850]; // Venice Beach fallback
 
         // Create map with guaranteed-to-exist style
@@ -714,9 +714,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         `;
         
         locationButton.addEventListener('click', () => {
-          if (location?.coords?.lat && location.coords?.lng) {
+          if (location?.pos?.lat && location.pos?.lng) {
             map.flyTo({
-              center: [location.coords.lng, location.coords.lat],
+              center: [location.pos.lng, location.pos.lat],
               zoom: 15,
               duration: 1000,
               easing: (t) => t * (2 - t)
@@ -780,14 +780,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         userMarkerRef.current=null;
       }
     };
-  },[onRegionChange, location.coords?.lat, location.coords?.lng]);
+  },[onRegionChange, location.pos?.lat, location.pos?.lng]);
 
   // Use the people source hook to manage self feature
   usePeopleSource(mapRef.current, []);
 
   // Update user location when it changes
   useEffect(() => {
-    if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
+    if (!mapRef.current || !isLocationReady || !location.pos?.lat || !location.pos?.lng) return;
     
     const map = mapRef.current;
     const source = map.getSource('user-location') as mapboxgl.GeoJSONSource;
@@ -801,10 +801,10 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
             type: 'Feature',
             geometry: {
               type: 'Point',
-              coordinates: [location.coords.lng, location.coords.lat]
+              coordinates: [location.pos.lng, location.pos.lat]
             },
             properties: {
-              accuracy: location.accuracy || 10
+              accuracy: location.pos.accuracy || 10
             }
           }
         ]
@@ -813,13 +813,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       // Center map on user location if it's the first time
       if (!map.isMoving()) {
         map.flyTo({
-          center: [location.coords.lng, location.coords.lat],
+          center: [location.pos.lng, location.pos.lat],
           zoom: 14,
           duration: 2000
         });
       }
     }
-  }, [location.coords?.lat, location.coords?.lng, location.accuracy, isLocationReady]);
+  }, [location.pos?.lat, location.pos?.lng, location.pos?.accuracy, isLocationReady]);
 
   // Update floqs data when floqs change
   useEffect(() => {
@@ -1008,11 +1008,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         )}
 
         {/* Location Debug Info */}
-        {import.meta.env.DEV && isLocationReady && location.coords?.lat && location.coords?.lng && (
+        {import.meta.env.DEV && isLocationReady && location.pos?.lat && location.pos?.lng && (
           <div className="absolute bottom-4 left-4 z-10 bg-black/70 text-white px-3 py-2 rounded text-xs font-mono">
-            <div>Lat: {location.coords.lat.toFixed(6)}</div>
-            <div>Lng: {location.coords.lng.toFixed(6)}</div>
-            <div>Accuracy: {location.accuracy?.toFixed(0)}m</div>
+            <div>Lat: {location.pos.lat.toFixed(6)}</div>
+            <div>Lng: {location.pos.lng.toFixed(6)}</div>
+            <div>Accuracy: {location.pos.accuracy?.toFixed(0)}m</div>
           </div>
         )}
 
