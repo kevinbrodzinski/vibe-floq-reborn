@@ -9,6 +9,8 @@ import { navigation } from '@/lib/navigation';
 import { CURRENT_ONBOARDING_VERSION, ONBOARDING_CONFLICT_COLUMNS } from '@/constants/onboarding';
 import { useOnboardingToasts } from '@/lib/toastHelpers';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { getDefaultAvatar } from '@/lib/avatarGenerator';
+import { type Vibe } from '@/types/vibes';
 
 interface OnboardingCompletionStepProps {
   onDone: () => void;
@@ -104,13 +106,41 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         throw new Error(`Missing required fields: ${missingFields.join(', ')}. Please complete all onboarding steps.`);
       }
 
+      // Generate default avatar if none selected
+      let avatarUrl = state.avatarUrl;
+      if (!avatarUrl) {
+        console.log('🎨 Generating default avatar with initials...');
+        avatarUrl = getDefaultAvatar(
+          state.profileData.display_name.trim(),
+          state.profileData.username.trim(), 
+          session.user.id,
+          256
+        );
+        console.log('✅ Generated default avatar');
+      }
+
+      // Validate and map vibe preference to ensure it's valid
+      const validVibes: Vibe[] = ['chill', 'hype', 'curious', 'social', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open'];
+      let vibePreference: Vibe = state.selectedVibe as Vibe;
+      
+      // Map invalid vibes to valid ones - use string comparison to avoid type errors
+      if ((state.selectedVibe as string) === 'energetic') {
+        vibePreference = 'hype';
+        console.log('🔄 Mapped "energetic" to "hype" for database compatibility');
+      }
+      
+      if (!validVibes.includes(vibePreference)) {
+        vibePreference = 'chill';
+        console.log('🔄 Invalid vibe detected, defaulting to "chill"');
+      }
+
       // Prepare payload for edge function with validated data
       const payload = {
         username: state.profileData.username.trim().toLowerCase(),
         display_name: state.profileData.display_name.trim(),
         bio: state.profileData.bio?.trim().substring(0, 280) || null,
-        avatar_url: state.avatarUrl || null, // Use null if no avatar (consistent with DB)
-        vibe_preference: state.selectedVibe!, // Already validated above
+        avatar_url: avatarUrl, // Use generated avatar if none provided
+        vibe_preference: vibePreference, // Use validated vibe
         interests: state.profileData.interests?.length ? state.profileData.interests : [],
         email: session.user.email,
       };
