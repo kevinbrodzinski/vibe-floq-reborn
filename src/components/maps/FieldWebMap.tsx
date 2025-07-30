@@ -432,7 +432,6 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
             layers: ['floq-clusters']
           });
           const clusterId = features[0].properties?.cluster_id;
-          const source = map.getSource('floqs') as mapboxgl.GeoJSONSource;
           
           // Close the hover tooltip first
           popup.remove();
@@ -440,19 +439,25 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           // Set transition state
           setIsTransitioning(true);
           
-          source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-            if (err) return;
+          // Safe source access
+          if (map.isStyleLoaded()) {
+            const source = map.getSource('floqs') as mapboxgl.GeoJSONSource;
+            if (source) {
+              source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+                if (err) return;
             
-            map.easeTo({
-              center: (features[0].geometry as any).coordinates,
-              zoom: zoom,
-              duration: 800,
-              easing: (t) => t * (2 - t) // Smooth ease-out
-            });
-           
-           // Clear transition state after animation
-           setTimeout(() => setIsTransitioning(false), 800);
-          });
+                map.easeTo({
+                  center: (features[0].geometry as any).coordinates,
+                  zoom: zoom,
+                  duration: 800,
+                  easing: (t) => t * (2 - t) // Smooth ease-out
+                });
+               
+                // Clear transition state after animation
+                setTimeout(() => setIsTransitioning(false), 800);
+              });
+            }
+          }
         });
         
         // Change cursor on cluster hover
@@ -782,17 +787,26 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     };
   },[onRegionChange, location.pos?.lat, location.pos?.lng]);
 
-  // Use the people source hook to manage self feature
-  usePeopleSource(mapRef.current, []);
+  // Helper to safely access map source
+  const withUserLocationSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
+    if (!mapRef.current) return;
+    
+    // Wait until style & source are ready
+    if (mapRef.current.isStyleLoaded()) {
+      const src = mapRef.current.getSource('user-location') as mapboxgl.GeoJSONSource | undefined;
+      if (src) return cb(src);
+    }
+    // Not ready yet – try again on the next style/load event
+    mapRef.current.once('styledata', () => withUserLocationSource(cb));
+  }, []);
 
   // Update user location when it changes
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.pos?.lat || !location.pos?.lng) return;
     
     const map = mapRef.current;
-    const source = map.getSource('user-location') as mapboxgl.GeoJSONSource;
     
-    if (source) {
+    withUserLocationSource((source) => {
       // Update user location data
       source.setData({
         type: 'FeatureCollection',
@@ -818,8 +832,21 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           duration: 2000
         });
       }
+    });
+  }, [location.pos?.lat, location.pos?.lng, location.pos?.accuracy, isLocationReady, withUserLocationSource]);
+
+  // Helper to safely access floqs source
+  const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
+    if (!mapRef.current) return;
+    
+    // Wait until style & source are ready
+    if (mapRef.current.isStyleLoaded()) {
+      const src = mapRef.current.getSource('floqs') as mapboxgl.GeoJSONSource | undefined;
+      if (src) return cb(src);
     }
-  }, [location.pos?.lat, location.pos?.lng, location.pos?.accuracy, isLocationReady]);
+    // Not ready yet – try again on the next style/load event
+    mapRef.current.once('styledata', () => withFloqsSource(cb));
+  }, []);
 
   // Update floqs data when floqs change
   useEffect(() => {
@@ -828,17 +855,17 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     // Set loading state for data updates
     setIsLoading(true);
     
-    const map = mapRef.current;
-    const source = map.getSource('floqs') as mapboxgl.GeoJSONSource;
-    
-    if (source) {
+    withFloqsSource((source) => {
       // Use memoized GeoJSON data
       source.setData(floqsGeoJSON);
       
       // Clear loading state after data is updated
       setTimeout(() => setIsLoading(false), 300);
-    }
-  }, [floqsGeoJSON]);
+    });
+  }, [floqsGeoJSON, withFloqsSource]);
+
+  // Use the people source hook to manage self feature
+  usePeopleSource(mapRef.current, []);
 
   /* render */
   return (

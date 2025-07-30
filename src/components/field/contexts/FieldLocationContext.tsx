@@ -24,11 +24,21 @@ const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProvid
   const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
   const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
 
-  // Automatically start location tracking when component mounts if not already granted
+  // Only auto-start location tracking if permission hasn't been determined yet
   useEffect(() => {
+    // Only auto-start if we don't have location data and no explicit error
     if (!location.isTracking && !location.error && !location.pos) {
-      // Only auto-start if we don't have a position yet (first time)
-      location.startTracking();
+      // Check permissions first to avoid re-prompting
+      if ('permissions' in navigator) {
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+          if (result.state === 'granted') {
+            location.startTracking();
+          }
+          // Don't auto-start if denied or prompt - let user manually trigger
+        }).catch(() => {
+          // If permissions API fails, don't auto-start to avoid re-prompts
+        });
+      }
     }
   }, [location.isTracking, location.error, location.startTracking, location.pos]);
 

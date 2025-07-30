@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useAuth } from '@/providers/AuthProvider';
@@ -59,17 +59,25 @@ export function usePeopleSource(
     return { type: 'FeatureCollection', features } as const;
   }, [people, userPos?.lng, userPos?.lat, user?.id]);
 
+  /* Helper to safely access map source */
+  const withPeopleSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
+    if (!map) return;
+    
+    // Wait until style & source are ready
+    if (map.isStyleLoaded()) {
+      const src = map.getSource('people') as mapboxgl.GeoJSONSource | undefined;
+      if (src) return cb(src);
+    }
+    // Not ready yet – try again on the next style/load event
+    map.once('styledata', () => withPeopleSource(cb));
+  }, [map]);
+
   /* Push to Mapbox every time geojson changes */
   useEffect(() => {
     if (!map) return;
     
-    try {
-      const src = map.getSource('people') as mapboxgl.GeoJSONSource | undefined;
-      if (src) {
-        src.setData(geojson);
-      }
-    } catch (error) {
-      console.warn('[usePeopleSource] Failed to update people source:', error);
-    }
-  }, [map, geojson]);
+    withPeopleSource((src) => {
+      src.setData(geojson);
+    });
+  }, [map, geojson, withPeopleSource]);
 }
