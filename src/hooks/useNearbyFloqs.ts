@@ -36,10 +36,10 @@ export function useNearbyFloqs(
   }
 
   const { data: floqs = [], isLoading: loading, error } = useQuery({
-    queryKey: ['floqs', lastLatRef.current, lastLngRef.current, lastKmRef.current],
+    queryKey: ['walkable', lastLatRef.current, lastLngRef.current, lastKmRef.current],
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async () => {
-      const { data, error: rpcError } = await supabase.rpc('get_walkable_floqs', {
+      const { data, error: rpcError } = await supabase.rpc('walkable_floqs', {
         lat: lat!,
         lng: lng!,
         metres: km * 1000,
@@ -88,7 +88,7 @@ export function useNearbyFloqs(
         schema: 'public',
         table: 'floqs',
       }, ({ new: row, old, eventType }) => {
-        const key = ['floqs', lastLatRef.current, lastLngRef.current, lastKmRef.current];
+        const key = ['walkable', lastLatRef.current, lastLngRef.current, lastKmRef.current];
         queryClient.setQueryData<WalkableFloq[]>(key, current => {
           if (!current) return current;
 

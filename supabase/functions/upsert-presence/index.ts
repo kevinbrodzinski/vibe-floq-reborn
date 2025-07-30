@@ -62,10 +62,10 @@ serve(async (req) => {
     }
 
     // Get walkable floqs
-    const { data: floqs, error: floqsError } = await supabase.rpc('get_walkable_floqs', {
-      user_lat: lat,
-      user_lng: lng,
-      max_walk_meters: 1200
+    const { data: floqs, error: floqsError } = await supabase.rpc('walkable_floqs', {
+      lat: lat,
+      lng: lng,
+      metres: 1200
     });
 
     if (floqsError) {

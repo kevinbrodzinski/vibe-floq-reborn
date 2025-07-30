@@ -37,7 +37,7 @@ export function useFloqSuggestions({
         p_user_lat: geo.lat,
         p_user_lng: geo.lng,
         p_limit: limit,
-      });
+      } as any);
 
       if (error) {
         console.error("Floq suggestions error:", error);
