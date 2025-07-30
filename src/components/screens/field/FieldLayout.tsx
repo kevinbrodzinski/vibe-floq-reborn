@@ -55,35 +55,37 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
   // ---- helper flags ---------------------------------------------
   const geoReady = isLocationReady && location?.pos?.lat != null;
-  const geoLoading = !isLocationReady;
-  const geoError = false; // Remove error handling for now, let FieldLocationContext handle it
+  const geoLoading = location?.loading || (!isLocationReady && !location?.error);
+  const geoError = location?.error && location.error !== 'unavailable';
 
   // ---- UI --------------------------------------------------------
-  if (geoError) {
-    return (
-      <ErrorBoundary>
-        <div className="relative h-svh w-full bg-background">
-        <div className="flex items-center justify-center h-full p-4">
-          <GeolocationPrompt
-            onRequestLocation={() => location.startTracking()}
-            error="denied"
-            loading={false}
-            onSetDebugLocation={handleDebugLocation}
-          />
-        </div>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
-  if (!geoReady) {
+  // Only show prompt if there's a permission error or persistent failure
+  if (geoError && location.error === 'denied') {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
               onRequestLocation={() => location.startTracking()}
-              error={null}
+              error="denied"
+              loading={false}
+              onSetDebugLocation={handleDebugLocation}
+            />
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  // Show loading prompt while initializing or if unavailable signal
+  if (!geoReady && (geoLoading || location?.error === 'unavailable')) {
+    return (
+      <ErrorBoundary>
+        <div className="relative h-svh w-full bg-background">
+          <div className="flex items-center justify-center h-full p-4">
+            <GeolocationPrompt
+              onRequestLocation={() => location.startTracking()}
+              error={location?.error || null}
               loading={geoLoading}
               onSetDebugLocation={handleDebugLocation}
             />

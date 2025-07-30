@@ -1,5 +1,5 @@
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useBucketedPresence } from '@/hooks/useBucketedPresence';
 import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
@@ -23,6 +23,13 @@ const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProvid
   const location = useUserLocation();
   const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
   const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
+
+  // Automatically start location tracking when component mounts
+  useEffect(() => {
+    if (!location.isTracking && !location.error) {
+      location.startTracking();
+    }
+  }, [location.isTracking, location.error, location.startTracking]);
 
   const value = {
     location,
