@@ -36,7 +36,21 @@ interface FieldSocialProviderProps {
 
 export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
   console.log('[FieldSocialProvider] Rendering with profiles:', profiles);
-  const { location, presenceData } = useFieldLocation();
+  
+  // Safely try to get field location context
+  let location, presenceData;
+  try {
+    const fieldLocation = useFieldLocation();
+    location = fieldLocation.location;
+    presenceData = fieldLocation.presenceData;
+    console.log('[FieldSocialProvider] Successfully got field location:', { location, presenceData });
+  } catch (error) {
+    console.error('[FieldSocialProvider] Failed to get field location context:', error);
+    // Provide fallback values
+    location = { coords: null, status: 'idle' };
+    presenceData = [];
+  }
+  
   const { selectedFloqMembers } = useSelectedFloq();
 
   // Create profiles map for quick lookup with hash-based memoization

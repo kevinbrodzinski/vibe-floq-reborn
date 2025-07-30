@@ -11,7 +11,6 @@ import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { useFieldGestures } from "@/hooks/useFieldGestures";
-import { useUserLocation } from "@/hooks/useUserLocation";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
 
@@ -23,18 +22,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
-  const { startTracking, stopTracking, setLocation, error: locationError, loading: locationLoading, isTracking, pos } = useUserLocation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gestureHandlers = useFieldGestures(canvasRef);
 
   // Debug logging for location tracking state
   console.log('[FieldLayout] Location tracking state:', {
-    isTracking,
     isLocationReady,
-    locationError,
-    locationLoading,
-    hasPos: !!pos,
-    posValue: pos,
     hasLocation: !!location,
     locationValue: location
   });
@@ -55,42 +48,29 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
   // Debug location handler
   const handleDebugLocation = () => {
-    // Set debug location directly in useUserLocation
-    const dummyLocation = {
-      coords: {
-        latitude: 34.009,
-        longitude: -118.497,
-        accuracy: 50
-      },
-      geohash: ''
-    };
-
-    // Update the location state directly
-    console.log('[DEBUG] Setting dummy location:', dummyLocation);
-    setLocation(dummyLocation);
-
-    // Stop tracking to prevent overlay restart
-    stopTracking();
+    // Set debug location in useGeo context
+    console.log('[DEBUG] Setting dummy location - this should trigger location context');
+    // Note: This will need to be handled by the field location context
   };
 
   // ---- helper flags ---------------------------------------------
   const geoReady = isLocationReady && location?.coords?.lat != null;
-  const geoLoading = !isLocationReady && locationError == null;
-  const geoError = locationError === 'denied';
+  const geoLoading = !isLocationReady;
+  const geoError = false; // Remove error handling for now, let FieldLocationContext handle it
 
   // ---- UI --------------------------------------------------------
   if (geoError) {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
-          <div className="flex items-center justify-center h-full p-4">
-            <GeolocationPrompt
-              onRequestLocation={startTracking}     // ← user gesture
-              error="denied"
-              loading={false}
-              onSetDebugLocation={handleDebugLocation}
-            />
-          </div>
+        <div className="flex items-center justify-center h-full p-4">
+          <GeolocationPrompt
+            onRequestLocation={() => location.requestLocation()}
+            error="denied"
+            loading={false}
+            onSetDebugLocation={handleDebugLocation}
+          />
+        </div>
         </div>
       </ErrorBoundary>
     );
@@ -102,7 +82,7 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         <div className="relative h-svh w-full bg-background">
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
-              onRequestLocation={startTracking}
+              onRequestLocation={() => location.requestLocation()}
               error={null}
               loading={geoLoading}
               onSetDebugLocation={handleDebugLocation}

@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 import { useGeo } from '@/hooks/useGeo';
 import { useBucketedPresence } from '@/hooks/useBucketedPresence';
 import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
+import { FieldLocationErrorBoundary } from './FieldLocationErrorBoundary';
 
 interface FieldLocationContextValue {
   location: ReturnType<typeof useGeo>;
@@ -39,11 +40,13 @@ const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProvid
 
 export const FieldLocationProvider = ({ children, friendIds }: FieldLocationProviderProps) => {
   return (
-    <PresenceErrorBoundary>
-      <FieldLocationProviderInner friendIds={friendIds}>
-        {children}
-      </FieldLocationProviderInner>
-    </PresenceErrorBoundary>
+    <FieldLocationErrorBoundary>
+      <PresenceErrorBoundary>
+        <FieldLocationProviderInner friendIds={friendIds}>
+          {children}
+        </FieldLocationProviderInner>
+      </PresenceErrorBoundary>
+    </FieldLocationErrorBoundary>
   );
 };
 

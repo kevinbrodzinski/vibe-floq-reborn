@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+// Detect if we're running in Capacitor native environment
+const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
+const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 /* ––––– public API ––––– */
 export interface GeoOpts {
   enableHighAccuracy?: boolean;
@@ -23,10 +27,10 @@ export interface GeoState {
 
 /* ––––– defaults ––––– */
 const DEF: Required<GeoOpts> = {
-  enableHighAccuracy: true,
+  enableHighAccuracy: false, // Start with coarse location for faster fix
   watch: true,
   minDistanceM: 10,
-  debounceMs: 2000,
+  debounceMs: 1000, // Reduced for better responsiveness
 };
 
 /* ––––– helpers ––––– */
@@ -116,11 +120,24 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   }, [o.minDistanceM, o.debounceMs]);
 
   const fail = useCallback((err: GeolocationPositionError) => {
+    console.error('[useGeo] Geolocation error:', err.code, err.message);
+    
     const msg = {
       [err.PERMISSION_DENIED]: 'Permission denied',
       [err.POSITION_UNAVAILABLE]: 'Position unavailable',
       [err.TIMEOUT]: 'Timeout',
     }[err.code] ?? err.message;
+    
+    // Log detailed error info for debugging
+    if (isCapacitor || isIOS) {
+      console.error('[useGeo] iOS/Capacitor error details:', {
+        code: err.code,
+        message: err.message,
+        isCapacitor,
+        isIOS,
+        userAgent: navigator.userAgent
+      });
+    }
     
     set(s => ({
       ...s,
@@ -136,17 +153,35 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     asked.current = true;
     set(s => ({ ...s, status: 'loading' }));
 
+    console.log('[useGeo] Requesting location - Capacitor:', isCapacitor, 'iOS:', isIOS);
+
+    // iOS/Capacitor-friendly settings
+    const geoOptions = {
+      enableHighAccuracy: o.enableHighAccuracy,
+      timeout: isIOS || isCapacitor ? 20000 : 15000, // More time for iOS CoreLocation
+      maximumAge: isIOS || isCapacitor ? 30000 : 0,   // Allow cached results on iOS
+    };
+
+    const watchOptions = {
+      enableHighAccuracy: o.enableHighAccuracy,
+      timeout: isIOS || isCapacitor ? 25000 : 15000, // Even more time for watch
+      maximumAge: 60000,
+    };
+
+    console.log('[useGeo] Using geo options:', geoOptions);
+
     navigator.geolocation.getCurrentPosition(
       apply,
       fail,
-      { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 0 },
+      geoOptions,
     );
     
     if (o.watch) {
+      console.log('[useGeo] Starting watchPosition with options:', watchOptions);
       watchId.current = navigator.geolocation.watchPosition(
         apply,
         fail,
-        { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 60000 },
+        watchOptions,
       );
     }
   }, [apply, fail, o.enableHighAccuracy, o.watch]);
