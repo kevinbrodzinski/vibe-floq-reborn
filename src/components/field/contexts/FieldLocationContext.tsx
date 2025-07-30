@@ -66,7 +66,13 @@ const FieldLocationProviderInner = ({
       navigator.permissions
         .query({ name: 'geolocation' })
         .then((p) => {
-          if (p.state === 'granted') startTracking();
+          if (p.state === 'granted') {
+            try {
+              startTracking();
+            } catch (err) {
+              console.warn('[FieldLocationContext] Auto-start failed:', err);
+            }
+          }
           /* if 'prompt' or 'denied', let UI button handle it */
         })
         .catch(() => {

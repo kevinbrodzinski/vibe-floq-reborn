@@ -117,7 +117,9 @@ export function useUserLocation() {
       geo.requestLocation()
 
       // Flush buffer every 15 seconds
-      flushIntervalRef.current = setInterval(flushBuffer, 15_000)
+      if (!flushIntervalRef.current) {
+        flushIntervalRef.current = setInterval(flushBuffer, 15_000)
+      }
 
     } catch (err: any) {
       console.error('[useUserLocation] Start tracking error:', err)
@@ -227,7 +229,7 @@ export function useUserLocation() {
       }
       broadcastPresence()
     }
-  }, [geo.coords, geo.accuracy, shareTo, liveSettings, detectContext])
+  }, [geo.coords, geo.accuracy, shareTo.length, liveSettings, detectContext])
 
   useEffect(() => {
     return () => {
@@ -250,7 +252,7 @@ export function useUserLocation() {
     location,
     isTracking: geo.status === 'success' || geo.status === 'loading',
     loading: geo.status === 'loading',
-    error: geo.error || null,
+    error: geo.error,
     hasPermission: geo.hasPermission || false,
     pos,
     startTracking,

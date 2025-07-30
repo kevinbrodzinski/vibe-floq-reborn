@@ -56,12 +56,12 @@ export const useContextDetection = () => {
       if (requiredContexts.includes('in_floq')) {
         try {
           if (!floqPromiseRef.current) {
-            floqPromiseRef.current = (supabase as any).rpc('get_visible_floqs_with_members', {
+            floqPromiseRef.current = Promise.resolve(supabase.rpc('get_visible_floqs_with_members', {
               p_lat: lat,
               p_lng: lng,
               p_limit: 20,
               p_offset: 0
-            }) as Promise<any>;
+            }));
           }
           
           const { data: floqs } = await floqPromiseRef.current;
@@ -69,7 +69,7 @@ export const useContextDetection = () => {
           
           // Consider user "in floq" if within 50m of any active floq
           contextRef.current.inFloq = (floqs ?? []).some((f: any) =>
-            f.distance_meters != null && f.distance_meters < 50
+            f.distance_m != null && f.distance_m < 50
           );
         } catch (error) {
           console.error('Error checking floq context:', error);
@@ -81,12 +81,11 @@ export const useContextDetection = () => {
       if (requiredContexts.includes('at_venue')) {
         try {
           if (!venuePromiseRef.current) {
-            venuePromiseRef.current = (supabase as any).rpc('get_nearby_venues', {
-              p_lat: lat,
-              p_lng: lng,
-              p_radius_km: 0.1, // 100m radius
-              p_limit: 1
-            }) as Promise<any>;
+            venuePromiseRef.current = Promise.resolve(supabase.rpc('venues_within_radius', {
+              center_lat: lat,
+              center_lng: lng,
+              r_m: 100 // 100m radius
+            }));
           }
           
           const { data: venues } = await venuePromiseRef.current;

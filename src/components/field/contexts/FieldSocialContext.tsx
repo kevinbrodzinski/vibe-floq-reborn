@@ -66,19 +66,21 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     
     // Filter by selected floq members if a floq is selected
     if (selectedFloqMembers && selectedFloqMembers.length > 0) {
-      filteredPresenceData = presenceData.filter(presence => 
-        presence.user_id && selectedFloqMembers.includes(presence.user_id)
-      );
+      filteredPresenceData = presenceData.filter(presence => {
+        const userId = presence.profile_id || presence.user_id;
+        return userId && selectedFloqMembers.includes(userId);
+      });
     }
     
     return filteredPresenceData.map((presence) => {
-      // Skip if no user_id
-      if (!presence.user_id) {
-        console.warn('[FieldSocialContext] Presence data missing user_id:', presence);
+      // Use profile_id for new data structure, fallback to user_id for legacy data
+      const userId = presence.profile_id || presence.user_id;
+      if (!userId) {
+        console.warn('[FieldSocialContext] Presence data missing profile_id/user_id:', presence);
         return null;
       }
       
-      const profile = profilesMap.get(presence.user_id);
+      const profile = profilesMap.get(userId);
       
       // Extract lat/lng from presence data (handle both geometry and lat/lng formats)
       let presenceLat: number, presenceLng: number;
@@ -111,8 +113,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       const y = Math.min(Math.max(-(yMeters / 1000) * scale + 50, 5), 95);
       
       return {
-        id: presence.user_id,
-        name: profile?.display_name || `User ${presence.user_id?.slice(-4) || 'unknown'}`,
+        id: userId,
+        name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
         x,
         y,
         color: getVibeColor(presence.vibe || 'social'),

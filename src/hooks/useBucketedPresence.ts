@@ -16,48 +16,14 @@ interface PresenceUser {
 const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds: string[] = []): PresenceUser[] => {
   if (!userLat || !userLng) return [];
   
-  const mockUsers = [
-    {
-      profile_id: 'mock-user-1',
-      vibe: 'social',
-      isFriend: friendIds.includes('mock-user-1')
-    },
-    {
-      profile_id: 'mock-user-2', 
-      vibe: 'chill',
-      isFriend: friendIds.includes('mock-user-2')
-    },
-    {
-      profile_id: 'mock-user-3',
-      vibe: 'hype',
-      isFriend: friendIds.includes('mock-user-3')
-    },
-    {
-      profile_id: 'mock-user-4',
-      vibe: 'flowing',
-      isFriend: friendIds.includes('mock-user-4')
-    },
-    {
-      profile_id: 'mock-user-5',
-      vibe: 'social',
-      isFriend: friendIds.includes('mock-user-5')
-    },
-    {
-      profile_id: 'mock-user-6',
-      vibe: 'chill',
-      isFriend: friendIds.includes('mock-user-6')
-    },
-    {
-      profile_id: 'mock-user-7',
-      vibe: 'hype',
-      isFriend: friendIds.includes('mock-user-7')
-    },
-    {
-      profile_id: 'mock-user-8',
-      vibe: 'flowing',
-      isFriend: friendIds.includes('mock-user-8')
-    }
-  ];
+  // Use real friend IDs if available to make mock data more realistic
+  const realFriendIds = friendIds.length > 0 ? friendIds.slice(0, 3) : ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
+  
+  const mockUsers = realFriendIds.map((friendId, index) => ({
+    profile_id: friendId,
+    vibe: ['social', 'chill', 'hype', 'flowing'][index % 4],
+    isFriend: true
+  }));
 
   // Generate realistic positions around the user (within ~1km radius)
   return mockUsers.map((user, index) => {
