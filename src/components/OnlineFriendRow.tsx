@@ -52,7 +52,7 @@ export const OnlineFriendRow = memo(({ profileId, isNearby, distance }: OnlineFr
       const { data } = await supabase
         .from('friend_share_pref')
         .select('is_live')
-        .eq('friend_id', profileId)
+        .eq('other_profile_id', profileId)
         .maybeSingle();
       return data?.is_live ?? false;
     },

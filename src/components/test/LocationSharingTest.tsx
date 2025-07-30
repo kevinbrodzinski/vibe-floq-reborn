@@ -18,7 +18,7 @@ export const LocationSharingTest: React.FC = () => {
       console.log('🔍 Fetching share prefs...');
       const { data, error } = await supabase
         .from('friend_share_pref')
-        .select('friend_id,is_live');
+        .select('other_profile_id,is_live');
 
       if (error) {
         console.error('❌ Error fetching share prefs:', error);

@@ -30,11 +30,11 @@ export const LocationSharingScreen: React.FC = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('friend_share_pref')
-        .select('friend_id,is_live');
+        .select('other_profile_id,is_live');
 
       if (!data) return {};
 
-      return Object.fromEntries(data.map(r => [r.friend_id, r.is_live]));
+      return Object.fromEntries(data.map(r => [r.other_profile_id, r.is_live]));
     }
   });
 

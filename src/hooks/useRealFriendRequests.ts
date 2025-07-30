@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 export interface RealFriendRequest {
   id: string;
   profile_id: string;
-  friend_id: string;
+  other_profile_id: string;
   status: 'pending' | 'accepted' | 'declined';
   created_at: string;
   requester_profile: {
@@ -31,8 +31,8 @@ export function useRealFriendRequests() {
 
       const { data, error } = await supabase
         .from('friend_requests')
-        .select('id, profile_id, friend_id, status, created_at')
-        .eq('friend_id', user.id)
+        .select('id, profile_id, other_profile_id, status, created_at')
+        .eq('other_profile_id', user.id)
         .eq('status', 'pending');
 
       if (error) {
@@ -76,7 +76,7 @@ export function useRealFriendRequests() {
         .from('friend_requests')
         .insert({
           profile_id: user.id,
-          friend_id: targetUserId,
+          other_profile_id: targetUserId,
           status: 'pending'
         });
 
@@ -106,7 +106,7 @@ export function useRealFriendRequests() {
       // Get the request details first
       const { data: request, error: fetchError } = await supabase
         .from('friend_requests')
-        .select('profile_id, friend_id')
+        .select('profile_id, other_profile_id')
         .eq('id', requestId)
         .single();
 
@@ -124,8 +124,8 @@ export function useRealFriendRequests() {
       const { error: friendshipError } = await supabase
         .from('friends')
         .insert([
-          { user_a: request.profile_id, user_b: request.friend_id },
-          { user_a: request.friend_id, user_b: request.profile_id }
+          { user_a: request.profile_id, user_b: request.other_profile_id },
+          { user_a: request.other_profile_id, user_b: request.profile_id }
         ]);
 
       if (friendshipError) throw friendshipError;

@@ -9,7 +9,7 @@ export function useLastSeen(profileId:string){
       const { data, error } = await supabase
         .from('v_friend_last_seen')
         .select('last_seen_at')
-        .eq('friend_id', profileId)
+        .eq('other_profile_id', profileId)
         .maybeSingle();
       if(error) throw error;
       return (data as { last_seen_at?: string })?.last_seen_at;

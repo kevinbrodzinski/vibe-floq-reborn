@@ -66,14 +66,14 @@ export const useETASharing = () => {
       if (newETAMap.size > 0 && user) {
         const etaEntries = Array.from(newETAMap.values()).map(eta => ({
           sharer_id: user.id,
-          friend_id: eta.friendId,
+          other_profile_id: eta.friendId,
           eta_minutes: eta.eta,
           distance_meters: eta.distance,
           travel_mode: eta.mode
         }));
 
         const { error: etaError } = await supabase.from('eta_shares')
-          .upsert(etaEntries, { onConflict: 'sharer_id,friend_id' });
+          .upsert(etaEntries, { onConflict: 'sharer_id,other_profile_id' });
         
         if (etaError) {
           console.error('Error storing ETA shares:', etaError);
