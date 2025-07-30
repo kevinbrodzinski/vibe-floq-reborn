@@ -10079,13 +10079,14 @@ export type Database = {
       get_friends_with_presence: {
         Args: Record<PropertyKey, never>
         Returns: {
-          friend_id: string
+          friend_profile_id: string
           username: string
-          avatar_url: string
           display_name: string
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
-          started_at: string
-          online: boolean
+          avatar_url: string
+          last_seen: string
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+          location: unknown
+          is_live: boolean
         }[]
       }
       get_friends_with_profile: {
