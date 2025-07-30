@@ -35,6 +35,7 @@ interface FieldSocialProviderProps {
 }
 
 export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderProps) => {
+  console.log('[FieldSocialProvider] Rendering with profiles:', profiles);
   const { location, presenceData } = useFieldLocation();
   const { selectedFloqMembers } = useSelectedFloq();
 
@@ -121,8 +122,11 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
 };
 
 export const useFieldSocial = () => {
+  console.log('[FieldSocialContext] Hook called, context value:', FieldSocialContext);
   const context = useContext(FieldSocialContext);
+  console.log('[FieldSocialContext] Context result:', context);
   if (!context) {
+    console.error('[FieldSocialContext] No context found! Provider not working?');
     throw new Error('useFieldSocial must be used within a FieldSocialProvider');
   }
   return context;

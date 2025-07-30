@@ -95,6 +95,8 @@ export const FieldDataProvider = ({ children }: FieldDataProviderProps) => {
     bio: null // Not available in unified friends
   }));
 
+  console.log('[FieldDataProvider] Rendering with friendIds:', friendIds, 'profiles:', profiles);
+
   return (
     <FieldLocationProvider friendIds={friendIds}>
       <FieldSocialProvider profiles={profiles}>
@@ -253,5 +255,9 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     realtime: true,
   };
 
-  return children(data);
+  return (
+    <>
+      {children(data)}
+    </>
+  );
 };
