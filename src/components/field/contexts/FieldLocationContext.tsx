@@ -1,48 +1,81 @@
+/* FieldLocationContext.tsx
+ * – Keeps useUserLocation as-is
+ * – Guards undefined lat/lng before presence query
+ * – Safer auto-start logic to avoid double-prompt
+ */
 
-import { createContext, useContext, useEffect } from 'react';
-import { useUserLocation } from '@/hooks/useUserLocation';
-import { useBucketedPresence } from '@/hooks/useBucketedPresence';
-import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
-import { FieldLocationErrorBoundary } from './FieldLocationErrorBoundary';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  ReactNode,
+} from 'react';
+
+import { useUserLocation }             from '@/hooks/useUserLocation';
+import { useBucketedPresence }         from '@/hooks/useBucketedPresence';
+import { PresenceErrorBoundary }       from '@/components/presence/PresenceErrorBoundary';
+import { FieldLocationErrorBoundary }  from './FieldLocationErrorBoundary';
+
+/* ---------- types ---------- */
 
 interface FieldLocationContextValue {
   location: ReturnType<typeof useUserLocation>;
   isLocationReady: boolean;
-  presenceData: any[];
+  presenceData: any[];          // refine later if you have a Presence type
   lastHeartbeat: number | null;
 }
 
-const FieldLocationContext = createContext<FieldLocationContextValue | null>(null);
+const FieldLocationContext = createContext<FieldLocationContextValue | null>(
+  null
+);
 
 interface FieldLocationProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   friendIds: string[];
 }
 
-const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProviderProps) => {
+/* ---------- inner provider ---------- */
+
+const FieldLocationProviderInner = ({
+  children,
+  friendIds,
+}: FieldLocationProviderProps) => {
   const location = useUserLocation();
-  const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
-  const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
+  const { pos, error, isTracking, startTracking } = location;
 
-  // Only auto-start location tracking if permission hasn't been determined yet
+  /* lat/lng may be undefined until the first fix arrives */
+  const lat = pos?.lat ?? null;
+  const lng = pos?.lng ?? null;
+
+  const {
+    people: presenceData,
+    lastHeartbeat,
+  } = useBucketedPresence(
+    lat ?? undefined,
+    lng ?? undefined,
+    friendIds
+  );
+
+  const isLocationReady = lat !== null && lng !== null;
+
+  /* auto-start only if permission already granted and we're idle */
   useEffect(() => {
-    // Only auto-start if we don't have location data and no explicit error
-    if (!location.isTracking && !location.error && !location.pos) {
-      // Check permissions first to avoid re-prompting
-      if ('permissions' in navigator) {
-        navigator.permissions.query({ name: 'geolocation' }).then(result => {
-          if (result.state === 'granted') {
-            location.startTracking();
-          }
-          // Don't auto-start if denied or prompt - let user manually trigger
-        }).catch(() => {
-          // If permissions API fails, don't auto-start to avoid re-prompts
-        });
-      }
-    }
-  }, [location.isTracking, location.error, location.startTracking, location.pos]);
+    if (isTracking || pos || error) return;
 
-  const value = {
+    if ('permissions' in navigator) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((p) => {
+          if (p.state === 'granted') startTracking();
+          /* if 'prompt' or 'denied', let UI button handle it */
+        })
+        .catch(() => {
+          /* ignore Permissions API failure */
+        });
+    }
+  }, [isTracking, pos, error, startTracking]);
+
+  const value: FieldLocationContextValue = {
     location,
     isLocationReady,
     presenceData,
@@ -56,22 +89,27 @@ const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProvid
   );
 };
 
-export const FieldLocationProvider = ({ children, friendIds }: FieldLocationProviderProps) => {
-  return (
-    <FieldLocationErrorBoundary>
-      <PresenceErrorBoundary>
-        <FieldLocationProviderInner friendIds={friendIds}>
-          {children}
-        </FieldLocationProviderInner>
-      </PresenceErrorBoundary>
-    </FieldLocationErrorBoundary>
-  );
-};
+/* ---------- exported wrapper ---------- */
+
+export const FieldLocationProvider = ({
+  children,
+  friendIds,
+}: FieldLocationProviderProps) => (
+  <FieldLocationErrorBoundary>
+    <PresenceErrorBoundary>
+      <FieldLocationProviderInner friendIds={friendIds}>
+        {children}
+      </FieldLocationProviderInner>
+    </PresenceErrorBoundary>
+  </FieldLocationErrorBoundary>
+);
+
+/* ---------- convenience hook ---------- */
 
 export const useFieldLocation = () => {
-  const context = useContext(FieldLocationContext);
-  if (!context) {
+  const ctx = useContext(FieldLocationContext);
+  if (!ctx) {
     throw new Error('useFieldLocation must be used within a FieldLocationProvider');
   }
-  return context;
+  return ctx;
 };
