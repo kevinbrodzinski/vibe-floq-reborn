@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { trackLocationPermission } from '@/lib/analytics';
+import { toast } from 'sonner';
 
 /* ––––– public API ––––– */
 export interface GeoOpts {
@@ -138,6 +139,13 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       [err.TIMEOUT]: 'timeout',
     }[err.code] ?? err.message;
     
+    // Show user-friendly toast for timeout
+    if (err.code === err.TIMEOUT) {
+      toast.error('Location timeout', {
+        description: 'Turn on GPS or try again'
+      });
+    }
+    
     set(s => ({
       ...s,
       status: 'error',
@@ -155,14 +163,14 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     navigator.geolocation.getCurrentPosition(
       apply,
       fail,
-      { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: o.enableHighAccuracy, timeout: 25000, maximumAge: 0 },
     );
     
     if (o.watch) {
       watchId.current = navigator.geolocation.watchPosition(
         apply,
         fail,
-        { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 60000 },
+        { enableHighAccuracy: o.enableHighAccuracy, timeout: 25000, maximumAge: 60000 },
       );
     }
   }, [apply, fail, o.enableHighAccuracy, o.watch]);
