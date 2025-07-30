@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-// Detect if we're running in Capacitor native environment
-const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
-const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+import { trackLocationPermission } from '@/lib/analytics';
 
 /* ––––– public API ––––– */
 export interface GeoOpts {
@@ -27,10 +24,10 @@ export interface GeoState {
 
 /* ––––– defaults ––––– */
 const DEF: Required<GeoOpts> = {
-  enableHighAccuracy: false, // Start with coarse location for faster fix
+  enableHighAccuracy: true,
   watch: true,
   minDistanceM: 10,
-  debounceMs: 1000, // Reduced for better responsiveness
+  debounceMs: 2000,
 };
 
 /* ––––– helpers ––––– */
@@ -84,13 +81,28 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'geolocation' }).then(p => {
         set(s => ({ ...s, hasPermission: p.state === 'granted' }));
-        if (p.state === 'granted' && o.watch) {
+        // Auto-start if permission is granted OR prompt (to trigger permission dialog)
+        if ((p.state === 'granted' || p.state === 'prompt') && o.watch) {
+          trackLocationPermission(true, 'auto');
           requestLocation();
         }
+        if (p.state === 'denied') {
+          trackLocationPermission(false, 'auto');
+        }
       }).catch(() => {
-        // Fallback if permissions API fails
+        // Fallback if permissions API fails - try anyway
         set(s => ({ ...s, hasPermission: undefined }));
+        if (o.watch) {
+          trackLocationPermission(true, 'fallback');
+          requestLocation();
+        }
       });
+    } else {
+      // No permissions API - try anyway
+      if (o.watch) {
+        trackLocationPermission(true, 'no-permissions-api');
+        requestLocation();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -120,24 +132,11 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   }, [o.minDistanceM, o.debounceMs]);
 
   const fail = useCallback((err: GeolocationPositionError) => {
-    console.error('[useGeo] Geolocation error:', err.code, err.message);
-    
     const msg = {
-      [err.PERMISSION_DENIED]: 'Permission denied',
-      [err.POSITION_UNAVAILABLE]: 'Position unavailable',
-      [err.TIMEOUT]: 'Timeout',
+      [err.PERMISSION_DENIED]: 'denied',
+      [err.POSITION_UNAVAILABLE]: 'unavailable',
+      [err.TIMEOUT]: 'timeout',
     }[err.code] ?? err.message;
-    
-    // Log detailed error info for debugging
-    if (isCapacitor || isIOS) {
-      console.error('[useGeo] iOS/Capacitor error details:', {
-        code: err.code,
-        message: err.message,
-        isCapacitor,
-        isIOS,
-        userAgent: navigator.userAgent
-      });
-    }
     
     set(s => ({
       ...s,
@@ -150,39 +149,20 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   /* public API */
   const requestLocation = useCallback(() => {
     if (asked.current) return;
-    
     asked.current = true;
     set(s => ({ ...s, status: 'loading' }));
-
-    console.log('[useGeo] Requesting location - Capacitor:', isCapacitor, 'iOS:', isIOS);
-
-    // iOS/Capacitor-friendly settings
-    const geoOptions = {
-      enableHighAccuracy: o.enableHighAccuracy,
-      timeout: isIOS || isCapacitor ? 20000 : 15000, // More time for iOS CoreLocation
-      maximumAge: isIOS || isCapacitor ? 30000 : 0,   // Allow cached results on iOS
-    };
-
-    const watchOptions = {
-      enableHighAccuracy: o.enableHighAccuracy,
-      timeout: isIOS || isCapacitor ? 25000 : 15000, // Even more time for watch
-      maximumAge: 60000,
-    };
-
-    console.log('[useGeo] Using geo options:', geoOptions);
 
     navigator.geolocation.getCurrentPosition(
       apply,
       fail,
-      geoOptions,
+      { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 0 },
     );
     
     if (o.watch) {
-      console.log('[useGeo] Starting watchPosition with options:', watchOptions);
       watchId.current = navigator.geolocation.watchPosition(
         apply,
         fail,
-        watchOptions,
+        { enableHighAccuracy: o.enableHighAccuracy, timeout: 15000, maximumAge: 60000 },
       );
     }
   }, [apply, fail, o.enableHighAccuracy, o.watch]);
@@ -190,6 +170,10 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   const clearWatch = useCallback(() => {
     if (watchId.current !== null) {
       navigator.geolocation.clearWatch(watchId.current);
+    }
+    if (debTimer.current) {
+      clearTimeout(debTimer.current);
+      debTimer.current = null;
     }
     watchId.current = null;
     asked.current = false;
@@ -214,3 +198,18 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
 // Convenience selectors for common use cases
 export const useLatLng = () => useGeo({ watch: false }).coords;
 export const useLocation = () => useGeo();
+
+// Convenience hook that provides the same interface as useUserLocation's pos
+export const useGeoPos = () => {
+  const geo = useGeo();
+  return {
+    pos: geo.coords ? {
+      lat: geo.coords.lat,
+      lng: geo.coords.lng,
+      accuracy: geo.accuracy || 0
+    } : null,
+    loading: geo.status === 'loading',
+    error: geo.error,
+    // Note: No tracking controls - use useUserLocation for that
+  };
+};
