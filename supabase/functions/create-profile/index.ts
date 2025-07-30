@@ -47,8 +47,8 @@ Deno.serve(async (req) => {
     const displayName = payload.display_name?.trim();
     const bio = payload.bio?.trim().substring(0, 280) || null; // Trim to 280 chars
     
-    // Set avatar_url to null if empty or missing to maintain consistency
-    const avatarUrl = payload.avatar_url && payload.avatar_url.trim() ? payload.avatar_url.trim() : null;
+    // Set avatar_url to empty string if empty or missing to satisfy constraint
+    const avatarUrl = payload.avatar_url && payload.avatar_url.trim() ? payload.avatar_url.trim() : '';
     
     console.log('Creating profile with validated data:', {
       user_id: 'pending_auth',
