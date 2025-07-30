@@ -83,23 +83,33 @@ export function useUserLocation() {
     }
   }
 
-  /** Returns a *coarse* fix or null in ≤7 s. */
+  /** Returns a *coarse* fix or null in ≤7 s. iOS-friendly settings. */
   const getCoarseFix = (): Promise<GeolocationPosition | null> => {
+    const isCapacitor = !!(window as any).Capacitor
+    const isIOS = isCapacitor && (window as any).Capacitor?.getPlatform?.() === 'ios'
+    
     return new Promise(res => {
       navigator.geolocation.getCurrentPosition(
         p => res(p),              // may be 1–3 km accurate – good enough to start
         _ => res(null),           // ignore error -> null
-        { enableHighAccuracy: false, timeout: 7_000, maximumAge: 60_000 }
+        { 
+          enableHighAccuracy: false, 
+          timeout: isIOS ? 10_000 : 7_000, 
+          maximumAge: isIOS ? 30_000 : 60_000 
+        }
       );
     });
   }
 
-  // Adaptive geo options based on retry count
+  // iOS-friendly geo options with Capacitor detection
   const getGeoOptions = (): PositionOptions => {
+    const isCapacitor = !!(window as any).Capacitor
+    const isIOS = isCapacitor && (window as any).Capacitor?.getPlatform?.() === 'ios'
+    
     return {
-      enableHighAccuracy: false,   // faster first fix, less battery
-      timeout: 40_000,             // give Core-Location more time
-      maximumAge: 15_000           // reuse recent fix if we have one
+      enableHighAccuracy: false,   // faster first fix, less battery drain
+      timeout: isIOS ? 20_000 : 40_000,  // iOS CoreLocation friendly timeout
+      maximumAge: isIOS ? 10_000 : 15_000  // fresher fixes on iOS
     }
   }
 
@@ -283,6 +293,9 @@ export function useUserLocation() {
         setIsTracking(false)
       }
 
+      // Mark that useUserLocation is active to avoid conflicts with useGeo
+      (window as any).__userLocationActive = true;
+      
       watchIdRef.current = navigator.geolocation.watchPosition(onPos, onErr, getGeoOptions())
 
       // Flush buffer every 15 seconds
@@ -315,6 +328,9 @@ export function useUserLocation() {
       supabase.removeChannel(channelRef.current)
       channelRef.current = null
     }
+
+    // Mark that useUserLocation is no longer active
+    (window as any).__userLocationActive = false;
 
     // Final flush
     flushBuffer()

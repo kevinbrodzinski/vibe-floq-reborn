@@ -85,7 +85,11 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       navigator.permissions.query({ name: 'geolocation' }).then(p => {
         set(s => ({ ...s, hasPermission: p.state === 'granted' }));
         if (p.state === 'granted' && o.watch) {
-          requestLocation();
+          // Check if useUserLocation is already active to avoid conflicts
+          const isUserLocationActive = (window as any).__userLocationActive;
+          if (!isUserLocationActive) {
+            requestLocation();
+          }
         }
       }).catch(() => {
         // Fallback if permissions API fails
