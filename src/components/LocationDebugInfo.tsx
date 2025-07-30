@@ -20,23 +20,34 @@ export function LocationDebugInfo() {
   const [browserInfo, setBrowserInfo] = useState<any>(null)
   const [permissionState, setPermissionState] = useState<string>('unknown')
 
-  // Add global location reset function
+  // Enhanced location reset functionality
   const resetAllLocation = () => {
     console.log('[LocationDebugInfo] Resetting all location services...')
     
-    // Clear global flags
-    ;(window as any).__geoLocationActive = false
-    ;(window as any).__userLocationActive = false
-    
-    // Reset useUserLocation state
+    // Reset the location hook first
     resetLocation()
     
-    // Force reload location permissions
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then(permission => {
-        setPermissionState(permission.state)
-      }).catch(() => setPermissionState('unknown'))
+    // Force clear any stuck geolocation watches
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      // Clear any potential stuck watch IDs (brute force approach)
+      for (let i = 0; i < 1000; i++) {
+        try {
+          navigator.geolocation.clearWatch(i)
+        } catch (e) {
+          // Ignore errors from invalid watch IDs
+        }
+      }
     }
+    
+    // Try to check permission again
+    navigator.permissions?.query({ name: 'geolocation' })
+      .then(permission => {
+        console.log('[LocationDebugInfo] Permission state after reset:', permission.state)
+        setPermissionState(permission.state)
+      })
+      .catch(() => {
+        console.log('[LocationDebugInfo] Could not query permission after reset')
+      })
   }
 
   useEffect(() => {
@@ -54,9 +65,7 @@ export function LocationDebugInfo() {
       isChrome,
       hasGeolocation,
       hasPermissions,
-      userAgent: navigator.userAgent,
-      geoActive: !!(window as any).__geoLocationActive,
-      userLocationActive: !!(window as any).__userLocationActive
+      userAgent: navigator.userAgent
     })
 
     // Check permission state
@@ -147,8 +156,7 @@ export function LocationDebugInfo() {
                 <Badge variant={browserInfo.hasPermissions ? "default" : "destructive"}>Permissions API</Badge>
               </div>
               <div className="flex gap-2">
-                <Badge variant={browserInfo.geoActive ? "destructive" : "outline"}>useGeo Active</Badge>
-                <Badge variant={browserInfo.userLocationActive ? "default" : "outline"}>useUserLocation Active</Badge>
+                <Badge variant={isTracking ? "default" : "outline"}>Location Tracking</Badge>
               </div>
             </div>
           </div>

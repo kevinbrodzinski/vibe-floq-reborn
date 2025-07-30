@@ -123,19 +123,7 @@ export function useUserLocation() {
       return
     }
 
-    // Check if useGeo is already active to avoid conflicts
-    if ((window as any).__geoLocationActive) {
-      console.warn('[useUserLocation] useGeo is active, waiting for it to clear...')
-      // Wait a bit and try again
-      setTimeout(() => {
-        if (!(window as any).__geoLocationActive) {
-          startTracking()
-        } else {
-          setError('Location service busy - please try again')
-        }
-      }, 1000)
-      return
-    }
+    // Remove conflict checking - let both hooks operate independently
 
     setLoading(true)
     setError(null)
@@ -356,8 +344,7 @@ export function useUserLocation() {
         setIsTracking(false)
       }
 
-      // Mark that useUserLocation is active to avoid conflicts with useGeo
-      (window as any).__userLocationActive = true;
+      // No global flag needed - proper cleanup on unmount is sufficient
       
       watchIdRef.current = navigator.geolocation.watchPosition(onPos, onErr, getGeoOptions())
 
@@ -392,8 +379,7 @@ export function useUserLocation() {
       channelRef.current = null
     }
 
-    // Mark that useUserLocation is no longer active
-    (window as any).__userLocationActive = false;
+    // Cleanup completed
 
     // Final flush
     flushBuffer()

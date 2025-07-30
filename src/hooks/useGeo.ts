@@ -85,11 +85,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       navigator.permissions.query({ name: 'geolocation' }).then(p => {
         set(s => ({ ...s, hasPermission: p.state === 'granted' }));
         if (p.state === 'granted' && o.watch) {
-          // Check if useUserLocation is already active to avoid conflicts
-          const isUserLocationActive = (window as any).__userLocationActive;
-          if (!isUserLocationActive) {
-            requestLocation();
-          }
+          requestLocation();
         }
       }).catch(() => {
         // Fallback if permissions API fails
@@ -155,19 +151,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   const requestLocation = useCallback(() => {
     if (asked.current) return;
     
-    // Check if useUserLocation is already active to avoid conflicts
-    if ((window as any).__userLocationActive) {
-      console.warn('[useGeo] useUserLocation is active, skipping request to avoid conflicts');
-      set(s => ({
-        ...s,
-        status: 'error',
-        error: 'Location service busy with live sharing'
-      }));
-      return;
-    }
-    
     asked.current = true;
-    (window as any).__geoLocationActive = true;
     set(s => ({ ...s, status: 'loading' }));
 
     console.log('[useGeo] Requesting location - Capacitor:', isCapacitor, 'iOS:', isIOS);
@@ -209,7 +193,6 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     }
     watchId.current = null;
     asked.current = false;
-    (window as any).__geoLocationActive = false;
   }, []);
 
   /* stop watch when tab hidden */
