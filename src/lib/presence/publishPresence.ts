@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export async function publishPresence(
   lat: number,
   lng: number,
-  vibe: string,
+  vibe: 'social' | 'chill' | 'hype' | 'curious' | 'solo' | 'romantic' | 'weird' | 'down' | 'flowing' | 'open',
   visibility: 'public' | 'friends' = 'public',
 ) {
   // Check authentication
@@ -37,6 +37,7 @@ export async function publishPresence(
   // Log parameters being sent
   console.log('[publishPresence] Calling upsert_presence with:', {
     user_id: user.id,
+    p_venue_id: null,
     p_lat: lat,
     p_lng: lng,
     p_vibe: vibe,
@@ -44,11 +45,12 @@ export async function publishPresence(
   });
 
   const { error } = await supabase.rpc('upsert_presence', {
+    p_venue_id: null,
     p_lat: lat,
     p_lng: lng,
     p_vibe: vibe,
     p_visibility: visibility,
-  });
+  } as any);
 
   if (error) {
     console.error('[publishPresence] RPC error:', error);

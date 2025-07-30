@@ -79,10 +79,11 @@ export const usePresencePublisher = (isActive: boolean) => {
 
       try {
         const { data, error } = await supabase.rpc('upsert_presence', {
+          p_venue_id: null,
           p_lat: latitude,
           p_lng: longitude,
           p_vibe: vibe
-        })
+        } as any)
 
         if (error) {
           console.error('[PRESENCE_PUBLISHER] Error upserting presence:', error)
