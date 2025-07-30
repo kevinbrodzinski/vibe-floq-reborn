@@ -12155,29 +12155,33 @@ export type Database = {
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_presence: {
-        Args: {
-          p_venue_id: string
-          p_lat: number
-          p_lng: number
-          p_vibe: Database["public"]["Enums"]["vibe_enum"]
-          p_visibility?: string
-          p_profile_id?: string
-        }
+        Args:
+          | {
+              p_venue_id: string
+              p_lat: number
+              p_lng: number
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_profile_id?: string
+            }
+          | {
+              p_venue_id: string
+              p_lat: number
+              p_lng: number
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_visibility?: string
+              p_profile_id?: string
+            }
         Returns: {
-          broadcast_radius: number | null
-          expires_at: string | null
-          geo: unknown | null
-          geohash6: string | null
-          gh5: string | null
-          location: unknown
-          profile_id: string | null
-          updated_at: string | null
+          accuracy_m: number | null
+          lat: number | null
+          lng: number | null
+          location: unknown | null
+          profile_id: string
+          started_at: string | null
+          updated_at: string
           venue_id: string | null
-          vibe: Database["public"]["Enums"]["vibe_enum"]
-          vibe_h: number | null
-          vibe_l: number | null
-          vibe_s: number | null
-          visibility: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"] | null
+          vibe_tag: string | null
         }
       }
       upsert_presence__old5: {
