@@ -73,10 +73,10 @@ serve(async (req) => {
     // Get user's friend network for mutual connections
     const { data: userFriends, error: friendsError } = await supabase
       .from('friendships')
-      .select('friend_id')
-      .eq('user_id', userId);
+      .select('user_low, user_high')
+      .or(`user_low.eq.${userId},user_high.eq.${userId}`);
 
-    const friendIds = userFriends?.map(f => f.friend_id) || [];
+    const friendIds = userFriends?.map(f => f.user_low === userId ? f.user_high : f.user_low) || [];
 
     // Get user profile for interest matching
     const { data: userProfile, error: profileError } = await supabase

@@ -8,7 +8,7 @@ export interface FriendActivity {
   role: string;
   floq_title: string;
   primary_vibe: string;
-  friend_id: string;
+  friend_id: string; // Keep as friend_id since this comes from unified view
   friend_username: string;
   friend_display_name: string;
   friend_avatar_url: string;

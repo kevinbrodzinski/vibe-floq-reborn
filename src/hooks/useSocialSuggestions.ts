@@ -2,7 +2,7 @@ import useSWR from 'swr'
 import { supabase } from '@/integrations/supabase/client'
 
 export interface SocialSuggestion {
-  friend_id: string
+  friend_id: string // Keep as friend_id since this comes from unified view
   display_name: string
   avatar_url: string | null
   vibe_tag: string

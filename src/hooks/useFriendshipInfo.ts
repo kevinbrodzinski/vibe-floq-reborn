@@ -23,7 +23,7 @@ export const useFriendshipInfo = (profileId: string | undefined) => {
       const { data: friends } = await supabase
         .from('friendships')
         .select('*')
-        .or(`and(user_id.eq.${currentUserId},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${currentUserId})`)
+        .or(`and(user_a.eq.${currentUserId},user_b.eq.${profileId}),and(user_a.eq.${profileId},user_b.eq.${currentUserId})`)
         .maybeSingle();
 
       if (!friends) {

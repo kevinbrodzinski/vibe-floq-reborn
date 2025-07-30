@@ -109,8 +109,8 @@ async function processUserAchievements(
   // 1. Check and award friend achievements
   const { data: friendCount } = await supabase
     .from('friendships')
-    .select('friend_id', { count: 'exact' })
-    .eq('user_id', userId);
+    .select('*', { count: 'exact' })
+    .or(`user_low.eq.${userId},user_high.eq.${userId}`);
 
   if (friendCount && friendCount.length > 0) {
     const { data: wasEarned } = await supabase.rpc('award_if_goal_met', {
