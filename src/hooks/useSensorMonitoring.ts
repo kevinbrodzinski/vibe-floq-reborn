@@ -105,7 +105,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
       newPermissions.motion = 'DeviceMotionEvent' in window;
     }
 
-    // Location permission handled by useGeolocation
+    // Location permission handled by useGeo
     newPermissions.location = true;
 
     setPermissions(newPermissions);
