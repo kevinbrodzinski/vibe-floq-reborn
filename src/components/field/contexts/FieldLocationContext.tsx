@@ -1,47 +1,53 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
-import { useUserLocation }       from '@/hooks/useUserLocation';       // ← remains
-import { useBucketedPresence }   from '@/hooks/useBucketedPresence';
+import { createContext, useContext, useEffect } from 'react';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { useBucketedPresence } from '@/hooks/useBucketedPresence';
 import { PresenceErrorBoundary } from '@/components/presence/PresenceErrorBoundary';
 import { FieldLocationErrorBoundary } from './FieldLocationErrorBoundary';
 
-/* …types unchanged… */
+interface FieldLocationContextValue {
+  location: ReturnType<typeof useUserLocation>;
+  isLocationReady: boolean;
+  presenceData: any[];
+  lastHeartbeat: number | null;
+}
 
 const FieldLocationContext = createContext<FieldLocationContextValue | null>(null);
 
-/* …props unchanged… */
+interface FieldLocationProviderProps {
+  children: React.ReactNode;
+  friendIds: string[];
+}
 
 const FieldLocationProviderInner = ({ children, friendIds }: FieldLocationProviderProps) => {
-  const location = useUserLocation();                     // same hook
-  const { pos, error, isTracking, startTracking } = location;
+  const location = useUserLocation();
+  const { people: presenceData, lastHeartbeat } = useBucketedPresence(location.pos?.lat, location.pos?.lng, friendIds);
+  const isLocationReady = !!(location.pos?.lat && location.pos?.lng);
 
-  /* 1️⃣  Presence: only call when we truly have coordinates */
-  const lat = pos?.lat ?? null;
-  const lng = pos?.lng ?? null;
-  const { people: presenceData, lastHeartbeat } = useBucketedPresence(
-    lat ?? undefined,
-    lng ?? undefined,
-    friendIds
-  );
-
-  const isLocationReady = lat !== null && lng !== null;
-
-  /* 2️⃣  Auto-start only if permission already granted AND we’re idle */
+  // Only auto-start location tracking if permission hasn't been determined yet
   useEffect(() => {
-    if (isTracking || pos || error) return;
-
-    if ('permissions' in navigator) {
-      navigator.permissions
-        .query({ name: 'geolocation' })
-        .then(p => {
-          if (p.state === 'granted') startTracking();
-        })
-        .catch(() => {/* silent */});
+    // Only auto-start if we don't have location data and no explicit error
+    if (!location.isTracking && !location.error && !location.pos) {
+      // Check permissions first to avoid re-prompting
+      if ('permissions' in navigator) {
+        navigator.permissions.query({ name: 'geolocation' }).then(result => {
+          if (result.state === 'granted') {
+            location.startTracking();
+          }
+          // Don't auto-start if denied or prompt - let user manually trigger
+        }).catch(() => {
+          // If permissions API fails, don't auto-start to avoid re-prompts
+        });
+      }
     }
-  }, [isTracking, pos, error, startTracking]);
+  }, [location.isTracking, location.error, location.startTracking, location.pos]);
 
-  /* –– context value –– */
-  const value = { location, isLocationReady, presenceData, lastHeartbeat };
+  const value = {
+    location,
+    isLocationReady,
+    presenceData,
+    lastHeartbeat,
+  };
 
   return (
     <FieldLocationContext.Provider value={value}>
