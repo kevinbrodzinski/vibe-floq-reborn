@@ -32,6 +32,7 @@ export function useUserLocation() {
   const [isTracking, setIsTracking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [hasPermission, setHasPermission] = useState(false)
   const bufferRef = useRef<LocationPing[]>([])
   const watchIdRef = useRef<number | null>(null)
   const flushIntervalRef = useRef<number | null>(null)
@@ -114,8 +115,25 @@ export function useUserLocation() {
   }
 
   const startTracking = async () => {
+    console.log('[useUserLocation] Starting location tracking...')
+    
     if (!navigator.geolocation) {
+      console.error('[useUserLocation] Geolocation not supported')
       setError('Geolocation not supported')
+      return
+    }
+
+    // Check if useGeo is already active to avoid conflicts
+    if ((window as any).__geoLocationActive) {
+      console.warn('[useUserLocation] useGeo is active, waiting for it to clear...')
+      // Wait a bit and try again
+      setTimeout(() => {
+        if (!(window as any).__geoLocationActive) {
+          startTracking()
+        } else {
+          setError('Location service busy - please try again')
+        }
+      }, 1000)
       return
     }
 
@@ -126,28 +144,55 @@ export function useUserLocation() {
       // Get user ID once at startup
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        console.error('[useUserLocation] Not authenticated')
         setError('Not authenticated')
         setLoading(false)
         return
       }
       userRef.current = user.id
+      console.log('[useUserLocation] User authenticated:', user.id)
 
       // Create and cache the presence channel
       if (!channelRef.current) {
+        console.log('[useUserLocation] Creating presence channel...')
         channelRef.current = supabase
           .channel(`presence_${user.id}`)
           .on('broadcast', { event: 'error' }, () => console.error('[RT] channel error'))
           .on('broadcast', { event: 'close' }, () => console.warn('[RT] channel closed'))
           .subscribe(status => {
+            console.log('[useUserLocation] Channel status:', status)
             if (status === 'SUBSCRIBED') console.debug('[RT] presence channel ready')
           })
       }
 
-      const permission = await navigator.permissions?.query({ name: 'geolocation' })
-      if (permission?.state === 'denied') {
-        setError('Location permission denied')
-        setLoading(false)
-        return
+      // Enhanced permission checking with better iOS Safari detection
+      let hasPermission = false
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      
+      console.log('[useUserLocation] Browser detection - iOS:', isIOS, 'Safari:', isSafari)
+
+      if (navigator.permissions) {
+        try {
+          const permission = await navigator.permissions.query({ name: 'geolocation' })
+          console.log('[useUserLocation] Permission state:', permission.state)
+          
+          if (permission.state === 'denied') {
+            setError(isIOS && isSafari 
+              ? 'Location blocked. Go to Settings > Safari > Location to enable.' 
+              : 'Location permission denied. Please enable in browser settings.')
+            setLoading(false)
+            return
+          }
+          hasPermission = permission.state === 'granted'
+        } catch (err) {
+          console.warn('[useUserLocation] Permission query failed:', err)
+          // Continue with manual permission check
+        }
+      }
+
+      if (!hasPermission) {
+        console.log('[useUserLocation] No explicit permission, will request via geolocation API')
       }
 
       // --- priming ---------------------------------------------------
@@ -267,28 +312,46 @@ export function useUserLocation() {
       }
 
       const onErr = (err: GeolocationPositionError) => {
-        console.error('Geolocation error:', err)
+        console.error('[useUserLocation] Geolocation error:', err.code, err.message)
+        
+        if (err.code === err.PERMISSION_DENIED) {
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+          
+          if (isIOS && isSafari) {
+            setError('Location access denied. Open Settings > Safari > Location Services and allow location access.')
+          } else {
+            setError('Location permission denied. Please enable location access in your browser settings and refresh the page.')
+          }
+          setLoading(false)
+          setIsTracking(false)
+          return
+        }
+        
         if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
           if (!retried.current) {
             retried.current = true
-            console.warn('[GEO] CoreLocation error, retrying with relaxed settings');
+            console.warn('[useUserLocation] GPS timeout/unavailable, retrying with relaxed settings')
             if (watchIdRef.current) {
-              navigator.geolocation.clearWatch(watchIdRef.current);
+              navigator.geolocation.clearWatch(watchIdRef.current)
             }
             watchIdRef.current = navigator.geolocation.watchPosition(
               onPos,
               onErr,
               {
-                enableHighAccuracy: false,   // fall-back
+                enableHighAccuracy: false,   // fall-back to network/wifi location
                 timeout: 60_000,
-                maximumAge: 30_000
+                maximumAge: 60_000
               }
             )
-            return                 // give CoreLocation another chance
+            return
+          } else {
+            setError('GPS unavailable. Try moving to an area with better signal or enabling WiFi location.')
           }
+        } else {
+          setError(`Location error: ${err.message}`)
         }
-        // PERMISSION_DENIED etc…
-        setError('denied');
+        
         setLoading(false)
         setIsTracking(false)
       }
@@ -347,14 +410,43 @@ export function useUserLocation() {
     }
   }, [])
 
+  // Add permission check utility
+  const checkPermission = async () => {
+    if (!navigator.permissions) return false
+    try {
+      const permission = await navigator.permissions.query({ name: 'geolocation' })
+      const granted = permission.state === 'granted'
+      setHasPermission(granted)
+      return granted
+    } catch {
+      return false
+    }
+  }
+
+  // Add reset utility for stuck states
+  const resetLocation = () => {
+    console.log('[useUserLocation] Resetting location state...')
+    stopTracking()
+    setError(null)
+    setLoading(false)
+    setLocation(null)
+    setHasPermission(false)
+    retryRef.current = 0
+    triesRef.current = 0
+    retried.current = false
+  }
+
   return {
     location,
     isTracking,
     loading,
     error,
+    hasPermission,
     pos,
     startTracking,
     stopTracking,
-    setLocation
+    setLocation,
+    checkPermission,
+    resetLocation
   }
 }
