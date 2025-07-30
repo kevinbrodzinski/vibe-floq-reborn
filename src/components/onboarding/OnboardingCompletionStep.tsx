@@ -29,6 +29,9 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
   } = useOnboardingToasts();
   const [isCompleting, setIsCompleting] = useState(false);
   const toastIdsRef = useRef<string[]>([]);
+  
+  // Enable test mode for debugging (set to true to enable detailed logging)
+  const TEST_MODE = false;
 
   // Cleanup toasts on unmount
   useEffect(() => {
@@ -58,6 +61,24 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
     try {
       setIsCompleting(true);
       console.log('🎯 Starting onboarding completion for user:', session.user.id);
+      console.log('📊 Current onboarding state:', {
+        currentStep: state.currentStep,
+        selectedVibe: state.selectedVibe,
+        profileData: state.profileData,
+        avatarUrl: state.avatarUrl,
+        hasProgress: state.currentStep > 0
+      });
+
+      if (TEST_MODE) {
+        console.log('🧪 TEST MODE: Detailed onboarding state:', {
+          session: session?.user?.id,
+          state: JSON.stringify(state, null, 2),
+          constants: {
+            CURRENT_ONBOARDING_VERSION,
+            ONBOARDING_CONFLICT_COLUMNS
+          }
+        });
+      }
 
       // Comprehensive validation of required onboarding data
       const missingFields = [];
@@ -74,9 +95,10 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         missingFields.push('vibe selection');
       }
       
-      if (!state.avatarUrl) {
-        missingFields.push('avatar');
-      }
+      // Avatar is optional - don't block completion if missing
+      // if (!state.avatarUrl) {
+      //   missingFields.push('avatar');
+      // }
       
       if (missingFields.length > 0) {
         throw new Error(`Missing required fields: ${missingFields.join(', ')}. Please complete all onboarding steps.`);
@@ -87,7 +109,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         username: state.profileData.username.trim().toLowerCase(),
         display_name: state.profileData.display_name.trim(),
         bio: state.profileData.bio?.trim().substring(0, 280) || null,
-        avatar_url: state.avatarUrl!, // Already validated above
+        avatar_url: state.avatarUrl || '', // Use empty string if no avatar
         vibe_preference: state.selectedVibe!, // Already validated above
         interests: state.profileData.interests?.length ? state.profileData.interests : [],
         email: session.user.email,
@@ -100,6 +122,11 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       // Create profile using edge function
       console.log('📝 Creating user profile via edge function...');
+      console.log('📋 Edge function payload:', {
+        ...payload,
+        avatar_url: payload.avatar_url ? 'present' : 'missing'
+      });
+      
       const { data: profile, error: profileError } = await supabase.functions.invoke('create-profile', {
         body: payload
       });
@@ -109,7 +136,9 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         console.error('❌ Profile error details:', {
           message: profileError.message,
           details: profileError.details,
-          hint: profileError.hint
+          hint: profileError.hint,
+          status: profileError.status,
+          code: profileError.code
         });
         
         // Handle specific edge function errors
@@ -130,6 +159,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
       const completionTime = new Date().toISOString();
 
       // Mark onboarding progress as completed
+      console.log('📝 Updating onboarding progress...');
       const { error: progressError } = await supabase
         .from('user_onboarding_progress')
         .upsert({
@@ -145,11 +175,18 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (progressError) {
         console.error('❌ Error updating onboarding progress:', progressError);
+        console.error('❌ Progress error details:', {
+          message: progressError.message,
+          details: progressError.details,
+          hint: progressError.hint,
+          code: progressError.code
+        });
         showOnboardingSaveFailed(progressError.details || progressError.message);
         throw new Error(`Failed to update onboarding progress: ${progressError.message}`);
       }
 
       // Update user preferences with all required fields
+      console.log('📝 Updating user preferences...');
       const { error: preferencesError } = await supabase
         .from('user_preferences')
         .upsert({
@@ -176,6 +213,12 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
 
       if (preferencesError) {
         console.error('❌ Error updating user preferences:', preferencesError);
+        console.error('❌ Preferences error details:', {
+          message: preferencesError.message,
+          details: preferencesError.details,
+          hint: preferencesError.hint,
+          code: preferencesError.code
+        });
         showUserPreferencesFailed(preferencesError.details || preferencesError.message);
         throw new Error(`Failed to update user preferences: ${preferencesError.message}`);
       }

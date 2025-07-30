@@ -19,7 +19,7 @@ interface CreateProfilePayload {
   username: string;
   display_name: string;
   bio?: string | null;
-  avatar_url: string;
+  avatar_url?: string | null;
   vibe_preference: string;
   interests?: string[];
   email?: string | null;
@@ -46,13 +46,16 @@ Deno.serve(async (req) => {
     const username = payload.username?.trim().toLowerCase();
     const displayName = payload.display_name?.trim();
     const bio = payload.bio?.trim().substring(0, 280) || null; // Trim to 280 chars
+    const avatarUrl = payload.avatar_url?.trim() || null; // Allow empty/null avatar
     
     // Check for missing required fields
     const missingFields = [];
     if (!username) missingFields.push('username');
     if (!displayName) missingFields.push('display_name');
-    if (!payload.avatar_url) missingFields.push('avatar_url');
     if (!payload.vibe_preference) missingFields.push('vibe_preference');
+    
+    // Avatar is optional - don't require it
+    // if (!avatarUrl) missingFields.push('avatar_url');
     
     if (missingFields.length > 0) {
       console.error('Missing required fields:', missingFields);
@@ -145,7 +148,7 @@ Deno.serve(async (req) => {
       username,
       display_name: displayName,
       bio,
-      avatar_url: payload.avatar_url,
+      avatar_url: avatarUrl,
       vibe_preference: payload.vibe_preference,
       interests: payload.interests?.length ? payload.interests : [],
       email: payload.email || user.email || null,
