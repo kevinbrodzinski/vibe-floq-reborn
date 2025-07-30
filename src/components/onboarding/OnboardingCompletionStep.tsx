@@ -31,7 +31,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
   const toastIdsRef = useRef<string[]>([]);
   
   // Enable test mode for debugging (set to true to enable detailed logging)
-  const TEST_MODE = false;
+  const TEST_MODE = true;
 
   // Cleanup toasts on unmount
   useEffect(() => {
@@ -109,7 +109,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
         username: state.profileData.username.trim().toLowerCase(),
         display_name: state.profileData.display_name.trim(),
         bio: state.profileData.bio?.trim().substring(0, 280) || null,
-        avatar_url: state.avatarUrl || '', // Use empty string if no avatar
+        avatar_url: state.avatarUrl || null, // Use null if no avatar (consistent with DB)
         vibe_preference: state.selectedVibe!, // Already validated above
         interests: state.profileData.interests?.length ? state.profileData.interests : [],
         email: session.user.email,

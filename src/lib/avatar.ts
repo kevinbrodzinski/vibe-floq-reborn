@@ -63,7 +63,7 @@ export async function uploadAvatar(file: File) {
       avatarTelemetry.uploadCompleted(file.size, duration, publicUrl);
 
       return {
-        path: publicUrl,  // Return public URL instead of storage path
+        path: path,  // Return storage path for database consistency
         publicUrl,
         error: null
       };
@@ -135,24 +135,32 @@ export async function deleteAvatar(publicUrl: string) {
 /**
  * Get avatar URL with transformation parameters
  */
-export function getAvatarUrl(publicUrl?: string | null, size: number | AvatarSize = 64, updatedAt?: string): string | null {
-  if (!publicUrl) return '/img/avatar-fallback.svg';
+export function getAvatarUrl(avatarPath?: string | null, size: number | AvatarSize = 64, updatedAt?: string): string | null {
+  if (!avatarPath) return null;
 
   // Convert size key to pixel value if needed
   const pixelSize = typeof size === 'string' ? AVATAR_SIZES[size] : size;
 
   // If it's already a public URL, return as-is with cache busting
-  if (publicUrl.includes('supabase.co') || publicUrl.includes('localhost')) {
-    const url = new URL(publicUrl);
+  if (avatarPath.includes('supabase.co') || avatarPath.includes('localhost')) {
+    const url = new URL(avatarPath);
     if (updatedAt) {
       url.searchParams.set('t', updatedAt);
     }
     return url.toString();
   }
 
-  // For storage paths, build URL with proper encoding (avoid double-encoding)
-  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/` +
-    (publicUrl.includes('%') ? publicUrl : encodeURIComponent(publicUrl));
+  // For storage paths, build public URL
+  const baseUrl = "https://reztyrrafsmlvvlqvsqt.supabase.co";
+  const fullUrl = `${baseUrl}/storage/v1/object/public/avatars/${avatarPath}`;
+  
+  if (updatedAt) {
+    const url = new URL(fullUrl);
+    url.searchParams.set('t', updatedAt);
+    return url.toString();
+  }
+  
+  return fullUrl;
 }
 
 /**

@@ -46,7 +46,19 @@ Deno.serve(async (req) => {
     const username = payload.username?.trim().toLowerCase();
     const displayName = payload.display_name?.trim();
     const bio = payload.bio?.trim().substring(0, 280) || null; // Trim to 280 chars
-    const avatarUrl = payload.avatar_url?.trim() || null; // Allow empty/null avatar
+    
+    // Set avatar_url to null if empty or missing to maintain consistency
+    const avatarUrl = payload.avatar_url && payload.avatar_url.trim() ? payload.avatar_url.trim() : null;
+    
+    console.log('Creating profile with validated data:', {
+      user_id: 'pending_auth',
+      username: payload.username,
+      display_name: payload.display_name,
+      has_avatar: !!avatarUrl,
+      avatar_type: avatarUrl ? (avatarUrl.includes('supabase.co') ? 'public_url' : 'storage_path') : 'none',
+      vibe_preference: payload.vibe_preference,
+      interests_count: payload.interests?.length || 0
+    });
     
     // Check for missing required fields
     const missingFields = [];
