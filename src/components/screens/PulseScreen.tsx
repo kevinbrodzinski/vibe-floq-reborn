@@ -33,6 +33,8 @@ import { PulseFilter, WALKING_THRESHOLD_M, HIGH_ENERGY_SCORE } from '@/pages/pul
 import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
 import { LiveFeedPreview } from '@/components/pulse/LiveFeedPreview';
 import { LiveActivitySheet } from '@/components/pulse/LiveActivitySheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { PersonalizationSettings } from '@/components/planning/PersonalizationSettings';
 
 // Minimal brain outline SVG
 const BrainOutlineIcon = ({ className = '', size = 24, color = 'currentColor' }) => (
@@ -86,6 +88,7 @@ export const PulseScreen: React.FC = () => {
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
   const [modalFriends, setModalFriends] = useState<{name: string, avatar?: string}[]>([]);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
+  const [personalizationSheetOpen, setPersonalizationSheetOpen] = useState(false);
   
   // Smart suggestions state
   const { preferSmartSuggestions } = useNovaSnap();
@@ -104,6 +107,7 @@ export const PulseScreen: React.FC = () => {
   const handleSmartBrowseOpen = () => {
     // Replace with real analytics: posthog.capture('smart_browse_open') or analytics.track('smart_browse_open')
     console.log('Analytics: smart_browse_open');
+    setPersonalizationSheetOpen(true);
   };
 
   // Realtime live activity updates
@@ -444,6 +448,16 @@ export const PulseScreen: React.FC = () => {
         open={activitySheetOpen} 
         onClose={() => setActivitySheetOpen(false)} 
       />
+
+      {/* Personalization Settings Sheet */}
+      <Sheet open={personalizationSheetOpen} onOpenChange={setPersonalizationSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[90vh] p-0 rounded-t-2xl">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Personalization Settings</h2>
+            <PersonalizationSettings />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* AI Summary Collapsible (controlled) */}
       <div className="px-6">

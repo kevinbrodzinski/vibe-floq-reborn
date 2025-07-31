@@ -1,32 +1,19 @@
-import { useState } from 'react'
-import { Sparkles, ChevronDown } from 'lucide-react'
-import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet'
+import { Sparkles } from 'lucide-react'
 import { useNovaSnap } from '@/hooks/useNovaSnap'
 import { cn } from '@/lib/utils'
-import { PersonalizationSettings } from '@/components/planning/PersonalizationSettings'
 import { triggerHaptic } from '@/utils/haptics'
 
 export const SmartFilterPill = () => {
   const { preferSmartSuggestions, toggleSmartSuggestions } = useNovaSnap()
-  const [open, setOpen] = useState(false)
 
   const handleToggle = () => {
     triggerHaptic(30) // Haptic feedback
     toggleSmartSuggestions()
   }
 
-  const handleSettingsOpen = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setOpen(true)
-  }
-
-  const Pill = (
+  return (
     <button
       onClick={handleToggle}
-      onContextMenu={(e) => {              // Long-press on mobile shows sheet
-        e.preventDefault()
-        setOpen(true)
-      }}
       aria-pressed={preferSmartSuggestions}
       aria-label="Toggle smart suggestions"
       className={cn(
@@ -42,26 +29,6 @@ export const SmartFilterPill = () => {
         preferSmartSuggestions && 'animate-pulse'
       )} />
       Smart
-      <ChevronDown
-        className={cn(
-          'h-3 w-3 transition-transform duration-200 hover:scale-110',
-          open && 'rotate-180'
-        )}
-        onClick={handleSettingsOpen}
-      />
     </button>
-  )
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{Pill}</SheetTrigger>
-
-      <SheetContent side="bottom" className="max-h-[90vh] p-0 rounded-t-2xl">
-        <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Personalization Settings</h2>
-          <PersonalizationSettings />
-        </div>
-      </SheetContent>
-    </Sheet>
   )
 }
