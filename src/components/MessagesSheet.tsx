@@ -6,6 +6,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import { getAvatarUrl } from '@/lib/avatar';
 import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { useAvatarPreloader } from '@/hooks/useAvatarPreloader';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface MessagesSheetProps {
   open: boolean;
@@ -183,6 +185,10 @@ export const MessagesSheet = ({
                 <Badge variant="destructive">{totalUnread}</Badge>
               )}
             </SheetTitle>
+            
+            <VisuallyHidden asChild>
+              <SheetDescription>This panel lists your direct-message threads.</SheetDescription>
+            </VisuallyHidden>
           </SheetHeader>
 
           <div className="flex-1 py-4">

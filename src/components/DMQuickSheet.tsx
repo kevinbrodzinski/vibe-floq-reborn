@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
 import { MessageList } from '@/components/chat/MessageList';
 import { getMediaURL } from '@/utils/mediaHelpers';
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface DMQuickSheetProps {
   open: boolean;
@@ -253,6 +254,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         {...swipeGestures.handlers}
       >
         <SheetHeader className="pb-4 border-b border-border/50">
+          <VisuallyHidden asChild>
+            <SheetTitle>Direct message with {friend?.display_name ?? 'user'}</SheetTitle>
+          </VisuallyHidden>
+          
+          <VisuallyHidden asChild>
+            <SheetDescription>Conversation panel</SheetDescription>
+          </VisuallyHidden>
+
           <div className="flex items-center gap-3">
             {friendLoading ? (
               <>
@@ -271,8 +280,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <SheetTitle className="text-left text-sm">{friend.display_name}</SheetTitle>
-                  <SheetDescription className="text-xs text-muted-foreground">@{friend.username}</SheetDescription>
+                  <div className="text-left text-sm font-semibold">{friend.display_name}</div>
+                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
                 </div>
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>
@@ -291,8 +300,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <SheetTitle className="text-left">Direct Message</SheetTitle>
-                  <SheetDescription className="text-xs text-muted-foreground">Chat privately with your friend</SheetDescription>
+                  <div className="text-left text-sm font-semibold">Direct Message</div>
+                  <div className="text-xs text-muted-foreground">Chat privately with your friend</div>
                 </div>
               </>
             )}
