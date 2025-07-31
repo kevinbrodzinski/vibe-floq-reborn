@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { useDebounce } from 'use-debounce';
 import { DISCOVERY_CONFIG } from '@/config/discovery';
 import { VenueSchema, FloqSchema, AiSuggestionSchema } from '@/schemas/discovery';
 import { 
@@ -21,11 +22,14 @@ export const useSmartDiscovery = (
   filters: DiscoveryFilters
 ) => {
   const { user } = useAuth();
+  
+  // Debounce filters to prevent excessive requests (250ms debounce)
+  const [debouncedFilters] = useDebounce(filters, 250);
 
   // Stabilize query key to prevent cache thrashing
   const queryKey = useMemo(() => 
-    createDiscoveryQueryKey(userLocation, filters, user?.id),
-    [userLocation?.lat, userLocation?.lng, filters.radius, filters.vibe, filters.activityType, filters.groupSize, filters.budget, user?.id]
+    createDiscoveryQueryKey(userLocation, debouncedFilters, user?.id),
+    [userLocation?.lat, userLocation?.lng, debouncedFilters.radius, debouncedFilters.vibe, debouncedFilters.activityType, debouncedFilters.groupSize, debouncedFilters.budget, user?.id]
   );
 
   return useQuery({
@@ -45,12 +49,19 @@ export const useSmartDiscovery = (
 
         // Execute all requests in parallel with proper error handling
         const [venuesResult, floqsResult, aiSuggestionsResult] = await Promise.allSettled([
-          // 1. Get nearby venues
+          // 1. Get personalized nearby venues
           Promise.race([
             supabase.rpc('venues_within_radius', {
-              center_lat: userLocation.lat,
-              center_lng: userLocation.lng,
-              r_m: filters.radius // Remove the * 1000 - RPC expects meters
+              p_lat: userLocation.lat,
+              p_lng: userLocation.lng,
+              p_radius_m: debouncedFilters.radius,
+              p_limit: DISCOVERY_CONFIG.DEFAULT_LIMIT,
+              p_profile_id: user?.id || null,
+              p_categories: debouncedFilters.activityType !== 'all' ? [debouncedFilters.activityType] : null,
+              p_price_tier_max: debouncedFilters.budget === 'free' ? '1' : 
+                                debouncedFilters.budget === 'budget' ? '2' :
+                                debouncedFilters.budget === 'moderate' ? '3' : '4',
+              p_vibe: debouncedFilters.vibe !== 'all' ? debouncedFilters.vibe : null
             }),
             timeoutPromise
           ]),
@@ -60,8 +71,8 @@ export const useSmartDiscovery = (
             supabase.rpc('get_nearby_floqs', {
               p_lat: userLocation.lat,
               p_lng: userLocation.lng,
-              p_radius_m: filters.radius,
-              p_primary_vibe: filters.vibe === 'all' ? null : filters.vibe as any,
+              p_radius_m: debouncedFilters.radius,
+              p_primary_vibe: debouncedFilters.vibe === 'all' ? null : debouncedFilters.vibe as any,
               p_limit: DISCOVERY_CONFIG.DEFAULT_LIMIT
             }),
             timeoutPromise
@@ -71,7 +82,7 @@ export const useSmartDiscovery = (
           user ? Promise.race([
             supabase.functions.invoke('get-social-suggestions', {
               body: {
-                radius: filters.radius, // Pass radius in meters
+                radius: debouncedFilters.radius, // Pass radius in meters
                 limit: DISCOVERY_CONFIG.DEFAULT_LIMIT
               }
             }),
@@ -79,39 +90,36 @@ export const useSmartDiscovery = (
           ]) : Promise.resolve({ data: null, error: null })
         ]);
 
-        // Process venues
+        // Process venues (now personalized)
         if (venuesResult.status === 'fulfilled' && venuesResult.value && typeof venuesResult.value === 'object' && 'data' in venuesResult.value && venuesResult.value.data) {
           try {
-            const validatedVenues = (venuesResult.value.data as any[]).map((venue: any) => VenueSchema.parse(venue));
-            
-            const filteredVenues = validatedVenues.filter(venue => matchesActivity(venue, filters.activityType));
-            
-            const venueRecommendations: SmartRecommendation[] = filteredVenues.map(venue => {
+            // The new RPC returns personalized venues that are already filtered
+            const venueRecommendations: SmartRecommendation[] = (venuesResult.value.data as any[]).map((venue: any) => {
               const recommendation = {
-                id: venue.id,
+                id: venue.venue_id,
                 title: venue.name,
                 type: 'venue' as const,
                 distance: venue.distance_m,
-                vibe: venue.vibe || filters.vibe,
+                vibe: debouncedFilters.vibe,
                 status: 'open' as const,
-                description: venue.description || `${venue.categories.join(', ') || 'Local venue'}`,
+                description: venue.description || `${venue.categories?.join(', ') || 'Local venue'}`,
                 location: venue.address || 'Nearby',
-                price: getPriceForBudget(filters.budget, venue.rating),
+                price: venue.price_tier === '1' ? '$' : 
+                       venue.price_tier === '2' ? '$$' :
+                       venue.price_tier === '3' ? '$$$' : '$$$$',
                 rating: venue.rating,
-                venueType: venue.categories[0] || 'venue',
-                tags: venue.categories,
+                venueType: venue.categories?.[0] || 'venue',
+                tags: venue.categories || [],
                 address: venue.address,
-                categories: venue.categories,
+                categories: venue.categories || [],
                 photo_url: venue.photo_url,
-                live_count: venue.live_count,
+                live_count: venue.live_count || 0,
                 isFavorite: false,
-                isWatching: false
+                isWatching: false,
+                score: venue.personalized_score || 0.5 // Use personalized score from RPC
               };
               
-              return {
-                ...recommendation,
-                score: calculateRecommendationScore(recommendation)
-              };
+              return recommendation;
             });
             
             recommendations.push(...venueRecommendations);
@@ -126,8 +134,8 @@ export const useSmartDiscovery = (
             const validatedFloqs = (floqsResult.value.data as any[]).map((floq: any) => FloqSchema.parse(floq));
             
             const filteredFloqs = validatedFloqs.filter(floq => {
-              if (filters.vibe && floq.primary_vibe !== filters.vibe) return false;
-              if (filters.groupSize > 1 && floq.participant_count < 2) return false;
+              if (debouncedFilters.vibe !== 'all' && floq.primary_vibe !== debouncedFilters.vibe) return false;
+              if (debouncedFilters.groupSize > 1 && floq.participant_count < 2) return false;
               return true;
             });
             
@@ -137,7 +145,7 @@ export const useSmartDiscovery = (
                 title: floq.title,
                 type: 'floq' as const,
                 distance: floq.distance_m,
-                vibe: floq.primary_vibe || filters.vibe,
+                vibe: floq.primary_vibe || debouncedFilters.vibe,
                 participants: floq.participant_count,
                 maxParticipants: floq.max_participants,
                 status: getFloqStatus(floq),
@@ -182,7 +190,7 @@ export const useSmartDiscovery = (
               title: suggestion.title,
               type: suggestion.type,
               distance: suggestion.distance,
-              vibe: suggestion.vibe || filters.vibe,
+              vibe: suggestion.vibe || debouncedFilters.vibe,
               status: 'upcoming' as const,
               description: suggestion.description || 'AI-recommended based on your preferences',
               location: suggestion.location || 'Nearby',

@@ -7099,6 +7099,72 @@ export type Database = {
           },
         ]
       }
+      user_venue_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_count: number
+          interaction_type: string
+          last_interaction_at: string
+          profile_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_count?: number
+          interaction_type: string
+          last_interaction_at?: string
+          profile_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_count?: number
+          interaction_type?: string
+          last_interaction_at?: string
+          profile_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_venue_interactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_venue_interactions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_vibe_states: {
         Row: {
           active: boolean | null
@@ -7672,6 +7738,7 @@ export type Database = {
           name: string
           photo_url: string | null
           popularity: number
+          price_tier: Database["public"]["Enums"]["price_enum"] | null
           profile_id: string | null
           provider: string
           provider_id: string
@@ -7699,6 +7766,7 @@ export type Database = {
           name: string
           photo_url?: string | null
           popularity?: number
+          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider: string
           provider_id: string
@@ -7726,6 +7794,7 @@ export type Database = {
           name?: string
           photo_url?: string | null
           popularity?: number
+          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider?: string
           provider_id?: string
@@ -10248,6 +10317,14 @@ export type Database = {
           requested_at: string
         }[]
       }
+      get_personalized_venue_score: {
+        Args: {
+          p_profile_id: string
+          p_venue_id: string
+          p_base_score?: number
+        }
+        Returns: number
+      }
       get_plan_metadata: {
         Args: { p_plan_id: string }
         Returns: {
@@ -12343,7 +12420,18 @@ export type Database = {
         }[]
       }
       venues_within_radius: {
-        Args: { center_lat: number; center_lng: number; r_m?: number }
+        Args:
+          | { center_lat: number; center_lng: number; r_m?: number }
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_m?: number
+              p_limit?: number
+              p_profile_id?: string
+              p_categories?: string[]
+              p_price_tier_max?: Database["public"]["Enums"]["price_enum"]
+              p_vibe?: string
+            }
         Returns: {
           id: string
           name: string
@@ -12452,6 +12540,7 @@ export type Database = {
         | "executing"
         | "completed"
         | "invited"
+      price_enum: "1" | "2" | "3" | "4"
       pulse_event_type:
         | "check_in"
         | "check_out"
@@ -12718,6 +12807,7 @@ export const Constants = {
         "completed",
         "invited",
       ],
+      price_enum: ["1", "2", "3", "4"],
       pulse_event_type: [
         "check_in",
         "check_out",

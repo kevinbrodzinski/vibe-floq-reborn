@@ -1,0 +1,72 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
+
+export type InteractionType = 'check_in' | 'favorite' | 'share' | 'view';
+
+interface VenueInteraction {
+  venue_id: string;
+  interaction_type: InteractionType;
+  interaction_count?: number;
+}
+
+export const useVenueInteractions = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const trackInteraction = useMutation({
+    mutationFn: async ({ venue_id, interaction_type, interaction_count = 1 }: VenueInteraction) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_venue_interactions')
+        .upsert({
+          profile_id: user.id,
+          venue_id,
+          interaction_type,
+          interaction_count,
+          last_interaction_at: new Date().toISOString()
+        }, {
+          onConflict: 'profile_id,venue_id,interaction_type'
+        });
+
+      if (error) throw error;
+
+      return { venue_id, interaction_type };
+    },
+    onSuccess: () => {
+      // Invalidate personalized venue queries to update recommendations
+      queryClient.invalidateQueries({ queryKey: ['personalized-venues'] });
+      queryClient.invalidateQueries({ queryKey: ['smart-discovery'] });
+    }
+  });
+
+  const checkIn = (venue_id: string) => trackInteraction.mutate({ 
+    venue_id, 
+    interaction_type: 'check_in' 
+  });
+
+  const favorite = (venue_id: string) => trackInteraction.mutate({ 
+    venue_id, 
+    interaction_type: 'favorite' 
+  });
+
+  const share = (venue_id: string) => trackInteraction.mutate({ 
+    venue_id, 
+    interaction_type: 'share' 
+  });
+
+  const view = (venue_id: string) => trackInteraction.mutate({ 
+    venue_id, 
+    interaction_type: 'view' 
+  });
+
+  return {
+    trackInteraction: trackInteraction.mutate,
+    checkIn,
+    favorite,
+    share,
+    view,
+    isLoading: trackInteraction.isPending
+  };
+};
