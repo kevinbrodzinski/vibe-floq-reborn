@@ -1,5 +1,5 @@
 // Deno runtime • Foursquare Nearby → integrations.place_feed_raw
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
 const CORS = {
@@ -28,31 +28,18 @@ serve(async (req) => {
       );
     }
 
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { persistSession: false } },
-    );
+    /* ---- 1. server-stored FSQ key --------------------------------- */
+    const API_KEY = Deno.env.get("FOURSQUARE_ADMIN_API");
+    if (!API_KEY) {
+      console.error("FOURSQUARE_ADMIN_API missing");
+      return new Response("server mis-config", { status: 500, headers: CORS });
+    }
 
-    /* 1 ─ fetch FSQ key */
-    const { data: cred } = await sb
-      .from("integrations.user_credential")
-      .select("api_key")
-      .eq("profile_id", profile_id)
-      .eq("provider_id", 2)      // 2 = foursquare
-      .maybeSingle();
-
-    if (!cred)
-      return new Response(JSON.stringify({ error: "no Foursquare key" }), {
-        status: 400,
-        headers: CORS,
-      });
-
-    /* 2 ─ call FSQ */
+    /* ---- 2. call Foursquare “Nearby” ------------------------------ */
     const url =
       `https://api.foursquare.com/v3/places/nearby?ll=${lat},${lng}&radius=150&limit=25`;
     const fsq = await fetch(url, {
-      headers: { Accept: "application/json", Authorization: cred.api_key },
+      headers: { Accept: "application/json", Authorization: API_KEY },
     }).then((r) => r.json());
 
     if (fsq.message)
@@ -61,9 +48,18 @@ serve(async (req) => {
         headers: CORS,
       });
 
-    /* 3 ─ dump */
-    await sb.from("integrations.place_feed_raw")
-      .insert({ profile_id, provider_id: 2, payload: fsq });
+    /* ---- 3. dump raw payload -------------------------------------- */
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+
+    await sb.from("integrations.place_feed_raw").insert({
+      profile_id,
+      provider_id: 2,               // 2 = foursquare
+      payload: fsq,
+    });
 
     return new Response(
       JSON.stringify({ ok: true, count: fsq.results?.length ?? 0 }),
