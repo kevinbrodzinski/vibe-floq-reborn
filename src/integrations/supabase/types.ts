@@ -7072,28 +7072,28 @@ export type Database = {
           {
             foreignKeyName: "fk_user_settings_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_settings_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "presence_view"
             referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_settings_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_settings_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
@@ -10355,8 +10355,26 @@ export type Database = {
       }
       get_social_suggestions: {
         Args:
-          | { max_dist_m?: number; limit_n?: number; p_profile_id?: string }
-          | { p_uid: string; max_dist_m?: number; limit_n?: number }
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km?: number
+              p_limit?: number
+              p_vibe?: string
+              p_activity?: string
+              p_group_size?: number
+              p_profile_id?: string
+            }
+          | {
+              p_profile_id?: string
+              p_lat?: number
+              p_lng?: number
+              p_radius_km?: number
+              p_limit?: number
+              p_vibe?: string
+              p_activity?: string
+              p_group_size?: number
+            }
         Returns: Json
       }
       get_trending_venues: {
@@ -12572,6 +12590,9 @@ export type Database = {
         | "down"
         | "flowing"
         | "open"
+        | "energetic"
+        | "excited"
+        | "focused"
       vibe_tag:
         | "social"
         | "hype"
@@ -12841,6 +12862,9 @@ export const Constants = {
         "down",
         "flowing",
         "open",
+        "energetic",
+        "excited",
+        "focused",
       ],
       vibe_tag: [
         "social",
