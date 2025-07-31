@@ -419,7 +419,7 @@ export const PulseScreen: React.FC = () => {
                   <stop offset="1" stopColor="#facc15" />
                 </linearGradient>
               </defs>
-              <path d="M0 24 Q 55 0 110 24 T 220 24 Q 165 48 110 24 T 0 24" stroke="url(#pulseWaveGradient)" stroke-width="6" fill="none" opacity="0.18"/>
+              <path d="M0 24 Q 55 0 110 24 T 220 24 Q 165 48 110 24 T 0 24" stroke="url(#pulseWaveGradient)" strokeWidth="6" fill="none" opacity="0.18"/>
             </svg>
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-indigo-300 via-pink-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-lg z-10">
