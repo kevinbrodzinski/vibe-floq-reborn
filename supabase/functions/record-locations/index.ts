@@ -42,10 +42,17 @@ Deno.serve(async (req) => {
     const { batch } = await req.json() as { batch: LocationPing[] };
     
     if (!batch || !Array.isArray(batch)) {
-      return new Response('Invalid batch data', { 
+      return new Response(JSON.stringify({ 
+        error: 'Invalid batch data' 
+      }), { 
         status: 400, 
-        headers: corsHeaders 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // Enforce batch size limit
+    if (batch.length > 50) {
+      console.warn(`[${user.id}] Large batch size: ${batch.length} entries (max 50 recommended)`);
     }
 
     // Process in chunks of 500
@@ -73,9 +80,12 @@ Deno.serve(async (req) => {
       
       if (error) {
         console.error('Database insert error:', error);
-        return new Response(JSON.stringify(error), { 
+        return new Response(JSON.stringify({ 
+          error: 'Database insert failed',
+          details: error.message
+        }), { 
           status: 500, 
-          headers: corsHeaders 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
       

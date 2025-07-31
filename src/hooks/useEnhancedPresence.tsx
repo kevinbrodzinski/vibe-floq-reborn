@@ -134,10 +134,15 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     // Initial update
     updatePresence();
 
-    // Debug: Test spatial query directly
+    // Debug: Test spatial query directly with new PostGIS function
     supabase
-      .rpc('presence_nearby', { lat: location.coords!.lat, lng: location.coords!.lng, metres: 1000, include_self: true } as any)
-      .then(({ data }) => console.log('Nearby rows from DB ->', data?.length || 0));
+      .rpc('get_nearby_live_positions', { 
+        p_latitude: location.coords!.lat, 
+        p_longitude: location.coords!.lng, 
+        p_radius_m: 1000, 
+        p_limit: 50 
+      })
+      .then(({ data }) => console.log('Nearby positions from PostGIS ->', data?.length || 0));
 
     // Set up interval for automatic updates (reduced frequency)
     updateIntervalRef.current = setInterval(() => {

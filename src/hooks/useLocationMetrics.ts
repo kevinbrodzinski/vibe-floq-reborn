@@ -35,8 +35,7 @@ export function useLocationMetrics() {
     value: number,
     metadata: Record<string, any> = {}
   ) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
+    // Don't set loading state for metrics to avoid constant UI flicker
     try {
       const { error } = await supabase
         .from('location_metrics')
@@ -50,18 +49,15 @@ export function useLocationMetrics() {
       if (error) {
         throw error;
       }
-
-      setState(prev => ({ ...prev, isLoading: false }));
     } catch (error) {
       console.error('Error recording metric:', error);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        isLoading: false
+        error: error instanceof Error ? error.message : 'Unknown error'
       }));
       throw error;
     }
-  }, [user]);
+  }, [user?.id]);
 
   /**
    * Get location metrics for the current user

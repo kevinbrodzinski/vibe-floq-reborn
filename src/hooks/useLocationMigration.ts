@@ -27,7 +27,7 @@ export function useLocationMigration() {
     const startTime = Date.now();
     
     try {
-      // Use the new PostGIS system
+      // Use the new PostGIS system - coords has lat/lng not latitude/longitude
       const result = await updateLivePosition(
         coords.lat,
         coords.lng,

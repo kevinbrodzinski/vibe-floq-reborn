@@ -60,7 +60,7 @@ export function usePostGISLocation() {
     }
 
     return data;
-  }, [user]);
+  }, [user?.id]);
 
   /**
    * Get nearby live positions using PostGIS function
@@ -71,8 +71,6 @@ export function usePostGISLocation() {
     radiusMeters: number = 250,
     limit: number = 50
   ) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
     try {
       const { data, error } = await supabase.rpc('get_nearby_live_positions', {
         p_latitude: latitude,
@@ -85,10 +83,12 @@ export function usePostGISLocation() {
         throw error;
       }
 
+      // Update state only for the hook's internal positions, return data directly
       setState(prev => ({
         ...prev,
         positions: data || [],
-        isLoading: false
+        isLoading: false,
+        error: null
       }));
 
       return data || [];
@@ -97,7 +97,8 @@ export function usePostGISLocation() {
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Unknown error',
-        isLoading: false
+        isLoading: false,
+        positions: []
       }));
       throw error;
     }
