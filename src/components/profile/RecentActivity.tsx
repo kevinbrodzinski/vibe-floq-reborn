@@ -47,13 +47,14 @@ export function RecentActivity() {
 
       // Get recent friendships (approximate by creation date)
       const { data: recentFriends } = await supabase
-        .from('friends')
+        .from('friendships')
         .select(`
-          user_b,
-          created_at,
-          profiles!friends_user_b_fkey(display_name, avatar_url)
+          user_low,
+          user_high,
+          created_at
         `)
-        .eq('user_a', user.id)
+        .or(`user_low.eq.${user.id},user_high.eq.${user.id}`)
+        .eq('friend_state', 'accepted')
         .gte('created_at', yesterday.toISOString())
         .order('created_at', { ascending: false })
         .limit(3);
@@ -71,15 +72,16 @@ export function RecentActivity() {
 
       // Add new friends
       recentFriends?.forEach((friendship) => {
-        const profile = friendship.profiles as any;
+        // Get the other user's ID
+        const friendId = friendship.user_low === user.id ? friendship.user_high : friendship.user_low;
         activities.push({
           id: `friend-${friendship.created_at}`,
           type: 'friend_added',
           timestamp: friendship.created_at,
-          description: `Connected with ${profile?.display_name || 'a new friend'}`,
+          description: `Connected with a new friend`,
           metadata: {
-            friend_name: profile?.display_name,
-            friend_avatar: profile?.avatar_url
+            friend_name: 'New friend',
+            friend_avatar: null
           }
         });
       });

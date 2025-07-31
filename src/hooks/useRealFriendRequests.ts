@@ -120,13 +120,11 @@ export function useRealFriendRequests() {
 
       if (updateError) throw updateError;
 
-      // Create the friendship (both directions)
-      const { error: friendshipError } = await supabase
-        .from('friends')
-        .insert([
-          { user_a: request.profile_id, user_b: request.other_profile_id },
-          { user_a: request.other_profile_id, user_b: request.profile_id }
-        ]);
+      // Create the friendship using the upsert_friendship function
+      const { error: friendshipError } = await supabase.rpc('upsert_friendship', {
+        _other: request.profile_id,
+        _action: 'accepted'
+      });
 
       if (friendshipError) throw friendshipError;
     },
