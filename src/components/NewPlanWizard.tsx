@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { PlanDetailsForm, type PlanDetails } from './PlanDetailsForm';
 import { InviteFriendsModal } from './InviteFriendsModal';
 import { Progress } from '@/components/ui/progress';
@@ -82,6 +82,9 @@ export const NewPlanWizard = ({ isOpen, onClose, onComplete, floqId }: NewPlanWi
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Plan</DialogTitle>
+          <DialogDescription>
+            Plan an activity with your friends by setting up stops and inviting them to join.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Progress indicator */}
