@@ -23,7 +23,7 @@ export const PersonalizedVenueSection = ({
   onConfigureClick
 }: PersonalizedVenueSectionProps) => {
   const { user } = useAuth();
-  const { coords } = useGeo();
+  const { coords, status: geoStatus } = useGeo();
   const { calculateScore } = useWeightedScoring();
   
   const { data: personalizedVenues = [], isLoading, error } = usePersonalizedVenues(
@@ -34,6 +34,9 @@ export const PersonalizedVenueSection = ({
       limit: maxResults * 2, // Get extra to filter and sort
     }
   );
+
+  // Show location-specific messaging when location is the issue
+  const isLocationIssue = !coords && (geoStatus === 'error' || geoStatus === 'loading');
 
   // Memoize sorted venues to avoid re-sorting on every render
   const sortedVenues = useMemo(() => {
@@ -117,8 +120,17 @@ export const PersonalizedVenueSection = ({
         )}
         <div className="text-center py-8 text-white/70 bg-white/5 rounded-2xl border border-white/10">
           <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm font-medium mb-1">No smart picks yet</p>
-          <p className="text-xs opacity-75">Try adjusting your preferences or explore more venues</p>
+          {isLocationIssue ? (
+            <>
+              <p className="text-sm font-medium mb-1">Location needed for smart picks</p>
+              <p className="text-xs opacity-75">Enable location services to get personalized venue recommendations</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium mb-1">No smart picks yet</p>
+              <p className="text-xs opacity-75">Try adjusting your preferences or explore more venues</p>
+            </>
+          )}
         </div>
       </motion.section>
     );

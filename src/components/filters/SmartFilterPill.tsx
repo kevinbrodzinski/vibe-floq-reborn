@@ -7,6 +7,7 @@ export const SmartFilterPill = () => {
   const { preferSmartSuggestions, toggleSmartSuggestions } = useNovaSnap()
 
   const handleToggle = () => {
+    console.log('SmartFilterPill: Toggle clicked, current state:', preferSmartSuggestions)
     triggerHaptic(30) // Haptic feedback
     toggleSmartSuggestions()
   }

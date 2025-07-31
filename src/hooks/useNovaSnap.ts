@@ -38,6 +38,7 @@ export function useNovaSnap() {
   }, [prefs, updatePrefs, logSnapSuggestion])
 
   const toggleSmartSuggestions = useCallback(() => {
+    console.log('useNovaSnap: Toggling smart suggestions from', preferSmartSuggestions, 'to', !preferSmartSuggestions)
     updatePrefs({
       prefer_smart_suggestions: !preferSmartSuggestions,
     })
