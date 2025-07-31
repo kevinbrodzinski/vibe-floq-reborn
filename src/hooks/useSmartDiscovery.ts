@@ -82,7 +82,9 @@ export const useSmartDiscovery = (
           user ? Promise.race([
             supabase.functions.invoke('get-social-suggestions', {
               body: {
-                radius: debouncedFilters.radius, // Pass radius in meters
+                lat: userLocation.lat,
+                lng: userLocation.lng,
+                radiusKm: debouncedFilters.radius / 1000, // Convert meters to kilometers
                 limit: DISCOVERY_CONFIG.DEFAULT_LIMIT
               }
             }),

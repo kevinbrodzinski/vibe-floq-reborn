@@ -11,19 +11,19 @@ export interface SocialSuggestion {
   last_activity: string
 }
 
-const fetchSocialSuggestions = async (radiusM: number): Promise<SocialSuggestion[]> => {
+const fetchSocialSuggestions = async (lat: number, lng: number, radiusKm: number = 1): Promise<SocialSuggestion[]> => {
   const { data, error } = await supabase.functions.invoke('get-social-suggestions', {
-    body: { radiusM }
+    body: { lat, lng, radiusKm }
   })
 
   if (error) throw error
   return data as SocialSuggestion[]
 }
 
-export const useSocialSuggestions = (radiusM: number = 1000) => {
+export const useSocialSuggestions = (lat?: number, lng?: number, radiusKm: number = 1) => {
   const { data, error, mutate } = useSWR(
-    `social-suggestions-${radiusM}`,
-    () => fetchSocialSuggestions(radiusM),
+    lat && lng ? `social-suggestions-${lat}-${lng}-${radiusKm}` : null,
+    lat && lng ? () => fetchSocialSuggestions(lat, lng, radiusKm) : null,
     {
       refreshInterval: 30000, // Refresh every 30 seconds
       revalidateOnFocus: true,

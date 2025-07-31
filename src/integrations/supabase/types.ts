@@ -7738,6 +7738,7 @@ export type Database = {
           name: string
           photo_url: string | null
           popularity: number
+          price_tier: Database["public"]["Enums"]["price_enum"] | null
           profile_id: string | null
           provider: string
           provider_id: string
@@ -7765,6 +7766,7 @@ export type Database = {
           name: string
           photo_url?: string | null
           popularity?: number
+          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider: string
           provider_id: string
@@ -7792,6 +7794,7 @@ export type Database = {
           name?: string
           photo_url?: string | null
           popularity?: number
+          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider?: string
           provider_id?: string
@@ -10536,6 +10539,17 @@ export type Database = {
           check_clause: string
           issue_description: string
         }[]
+      }
+      import_venues: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_source: string
+          p_radius_m?: number
+          p_categories?: string[]
+          p_limit?: number
+        }
+        Returns: number
       }
       ingest_place_feed: {
         Args: Record<PropertyKey, never>
