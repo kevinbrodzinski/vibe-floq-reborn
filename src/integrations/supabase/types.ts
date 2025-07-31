@@ -3645,6 +3645,108 @@ export type Database = {
         }
         Relationships: []
       }
+      live_positions: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          expires_at: string
+          geog: unknown | null
+          id: string
+          last_updated: string
+          latitude: number
+          longitude: number
+          profile_id: string
+          vibe: string | null
+          visibility: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          expires_at?: string
+          geog?: unknown | null
+          id?: string
+          last_updated?: string
+          latitude: number
+          longitude: number
+          profile_id: string
+          vibe?: string | null
+          visibility?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          expires_at?: string
+          geog?: unknown | null
+          id?: string
+          last_updated?: string
+          latitude?: number
+          longitude?: number
+          profile_id?: string
+          vibe?: string | null
+          visibility?: string
+        }
+        Relationships: []
+      }
+      location_history: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          geog: unknown | null
+          id: string
+          latitude: number
+          longitude: number
+          profile_id: string
+          recorded_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          geog?: unknown | null
+          id?: string
+          latitude: number
+          longitude: number
+          profile_id: string
+          recorded_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          geog?: unknown | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          profile_id?: string
+          recorded_at?: string
+        }
+        Relationships: []
+      }
+      location_metrics: {
+        Row: {
+          id: string
+          metadata: Json
+          metric_name: string
+          metric_value: number
+          profile_id: string | null
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json
+          metric_name: string
+          metric_value: number
+          profile_id?: string | null
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json
+          metric_name?: string
+          metric_value?: number
+          profile_id?: string | null
+          recorded_at?: string
+        }
+        Relationships: []
+      }
       location_requests: {
         Row: {
           created_at: string
@@ -9476,6 +9578,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_expired_live_positions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_presence: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -10304,6 +10410,23 @@ export type Database = {
           creator_avatar: string
           is_private: boolean
           is_joined: boolean
+        }[]
+      }
+      get_nearby_live_positions: {
+        Args: {
+          p_latitude: number
+          p_longitude: number
+          p_radius_m?: number
+          p_limit?: number
+        }
+        Returns: {
+          profile_id: string
+          latitude: number
+          longitude: number
+          distance_m: number
+          accuracy: number
+          vibe: string
+          last_updated: string
         }[]
       }
       get_nearby_presence: {
@@ -12371,6 +12494,17 @@ export type Database = {
               _new_state?: Database["public"]["Enums"]["friend_state"]
             }
         Returns: Database["public"]["Enums"]["friend_state"]
+      }
+      upsert_live_position: {
+        Args: {
+          p_profile_id: string
+          p_latitude: number
+          p_longitude: number
+          p_accuracy?: number
+          p_vibe?: string
+          p_visibility?: string
+        }
+        Returns: string
       }
       upsert_presence: {
         Args: {
