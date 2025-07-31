@@ -8482,9 +8482,10 @@ export type Database = {
       }
       v_friend_last_seen: {
         Row: {
+          current_profile_id: string | null
+          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          last_seen_at: string | null
           other_profile_id: string | null
-          profile_id: string | null
-          updated_at: string | null
         }
         Relationships: []
       }
