@@ -1,11 +1,5 @@
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL')!,
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  { auth: { persistSession: false } }
-);
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,9 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   if (req.method !== 'POST') {
     return new Response('POST only', { status: 405, headers: corsHeaders });
@@ -33,56 +25,47 @@ serve(async (req) => {
       );
     }
 
-    // Get Foursquare API key from secrets
-    const foursquareApiKey = Deno.env.get('FOURSQUARE_ADMIN_API');
-    if (!foursquareApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'Foursquare API key not configured' }),
-        { status: 500, headers: corsHeaders }
-      );
-    }
-
-    // Call Foursquare Places API
-    const url = new URL('https://api.foursquare.com/v3/places/search');
-    url.searchParams.set('ll', `${lat},${lng}`);
-    url.searchParams.set('radius', '150');
-    url.searchParams.set('limit', '50');
-
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': foursquareApiKey,
-        'Accept': 'application/json'
-      }
-    });
-
-    const body = await response.json();
-
-    if (!response.ok) {
-      console.error('Foursquare API error:', body);
-      return new Response(
-        JSON.stringify({ error: body.message || 'Foursquare API error' }),
-        { status: 500, headers: corsHeaders }
-      );
-    }
-
-    // Store raw response
-    await supabase
-      .from('integrations.place_feed_raw')
-      .insert({
-        user_id,
-        provider_id: 2,
-        payload: body
-      });
-
-    console.log(`Fetched ${body.results?.length || 0} places from Foursquare for user ${user_id}`);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        count: body.results?.length || 0 
-      }),
-      { headers: corsHeaders }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } }
     );
+
+    const { data: cred } = await supabase
+      .from("integrations.user_credential")
+      .select("api_key, provider_id")
+      .eq("user_id", user_id)
+      .eq("provider_id", 2)          // 2 = foursquare
+      .maybeSingle();
+
+    if (!cred) {
+      return new Response(
+        JSON.stringify({ error: "no Foursquare key" }), 
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const fsq = await fetch(
+      `https://api.foursquare.com/v3/places/nearby?ll=${lat},${lng}&radius=150&limit=25`,
+      { headers: { Accept: "application/json", Authorization: cred.api_key } }
+    ).then(r => r.json());
+
+    if (fsq.message) {
+      console.error('Foursquare API error:', fsq.message);
+      return new Response(
+        JSON.stringify({ error: fsq.message }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    await supabase.from("integrations.place_feed_raw")
+                  .insert({ user_id, provider_id: 2, payload: fsq });
+
+    console.log(`Fetched ${fsq.results?.length || 0} places from Foursquare for user ${user_id}`);
+
+    return new Response(JSON.stringify({ ok: true, count: fsq.results?.length || 0 }), {
+      headers: corsHeaders
+    });
 
   } catch (error) {
     console.error('fetch_foursquare error:', error);
