@@ -9245,7 +9245,7 @@ export type Database = {
       }
       bulk_upsert_relationships: {
         Args: { relationship_pairs: Json }
-        Returns: Json
+        Returns: number
       }
       bump_interaction: {
         Args: { p_profile_id: string; p_venue_id: string; p_type: string }
@@ -10552,12 +10552,15 @@ export type Database = {
         Returns: unknown
       }
       people_crossed_paths_today: {
-        Args: { in_me: string; proximity_meters?: number }
+        Args: { in_me?: string; proximity_meters?: number }
         Returns: {
-          other_profile_id: string
-          first_seen: string
-          last_seen: string
-          close_contacts: number
+          profile_id: string
+          username: string
+          display_name: string
+          avatar_url: string
+          last_seen_at: string
+          distance_meters: number
+          overlap_duration_minutes: number
         }[]
       }
       pgis_asflatgeobuf_finalfn: {
