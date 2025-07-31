@@ -2,6 +2,7 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import type { TimerId, IntervalId } from '@/types/Timer';
 import { useBucketedPresence } from './useBucketedPresence';
 import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
 import { getEnvironmentConfig } from '@/lib/environment';
 import { useVibeSessionTracker } from './useVibeSessionTracker';
 import type { Vibe } from '@/types';
@@ -79,17 +80,19 @@ export const useOptimizedPresence = ({
     setUpdating(true);
     try {
       // Use Supabase edge function for presence updates
-      const { error } = await supabase.functions.invoke('upsert-presence', {
-        body: {
-          vibe,
-          lat,
-          lng,
-          broadcast_radius: broadcastRadius,
-        },
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+      
+      const res = await supaFn('upsert-presence', session.access_token, {
+        vibe,
+        lat,
+        lng,
+        broadcast_radius: broadcastRadius,
       });
 
-      if (error) {
-        throw new Error(`Presence update failed: ${error.message}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Presence update failed: ${errorText}`);
       }
 
       lastUpdateRef.current = now;

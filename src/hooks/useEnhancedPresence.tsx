@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useGeo } from './useGeo';
@@ -66,21 +67,23 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
     setPresenceData(prev => ({ ...prev, updating: true, error: null }));
     
     try {
-      const { data, error } = await supabase.functions.invoke('upsert-presence', {
-        body: {
-          vibe: vibeToUse,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+      
+      const res = await supaFn('upsert-presence', session.access_token, {
+        vibe: vibeToUse,
         lat: location.coords!.lat,
         lng: location.coords!.lng,
-          broadcast_radius: broadcastRadius,
-        },
+        broadcast_radius: broadcastRadius,
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Failed to update presence');
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Edge function error:', errorText);
+        throw new Error('Failed to update presence');
       }
 
-      const response = data as PresenceResponse;
+      const response = await res.json() as PresenceResponse;
       
       setPresenceData(prev => ({
         ...prev,
