@@ -6889,28 +6889,28 @@ export type Database = {
           {
             foreignKeyName: "fk_user_preferences_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "leaderboard_cache"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_preferences_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "presence_view"
             referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "fk_user_preferences_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "fk_user_preferences_profile_id"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
