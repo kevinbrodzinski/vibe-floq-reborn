@@ -4,7 +4,7 @@ import { LiveActivityFeed } from '@/components/ui/LiveActivityFeed';
 import type { PulseEvent } from '@/types/pulse';
 
 export const LiveFeedPreview = ({ max = 4 }: { max?: number }) => {
-  const { data: liveEvents = [] } = useLiveActivity();
+  const { data: liveEvents = [] } = useLiveActivity(max);
   
   // Convert PulseEvent to LiveActivity format
   const activities = liveEvents
