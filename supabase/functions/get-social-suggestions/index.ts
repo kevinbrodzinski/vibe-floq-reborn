@@ -78,9 +78,9 @@ serve(async req => {
     );
 
     /* ---------------------------------------------------------------
-       Call the updated SQL function with new signature:
+       Call the renamed SQL function (lat/lng first version):
        
-       get_social_suggestions(
+       get_social_suggestions_by_loc(
          p_lat numeric,
          p_lng numeric, 
          p_radius_km numeric DEFAULT 1,
@@ -91,7 +91,7 @@ serve(async req => {
          p_profile_id uuid DEFAULT auth.uid()
        )
        ------------------------------------------------------------- */
-    const { data, error } = await sb.rpc("get_social_suggestions", {
+    const { data, error } = await sb.rpc("get_social_suggestions_by_loc", {
       p_lat: lat,
       p_lng: lng,
       p_radius_km: radiusKm,
