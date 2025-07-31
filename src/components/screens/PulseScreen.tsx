@@ -26,6 +26,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { SmartFilterPill } from '@/components/filters/SmartFilterPill';
+import { PersonalizedVenueSection } from '@/components/pulse/PersonalizedVenueSection';
+import { useNovaSnap } from '@/hooks/useNovaSnap';
 import { PulseFilter, WALKING_THRESHOLD_M, HIGH_ENERGY_SCORE } from '@/pages/pulse/filters';
 import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
 import { LiveFeedPreview } from '@/components/pulse/LiveFeedPreview';
@@ -83,6 +85,9 @@ export const PulseScreen: React.FC = () => {
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
   const [modalFriends, setModalFriends] = useState<{name: string, avatar?: string}[]>([]);
   const [activitySheetOpen, setActivitySheetOpen] = useState(false);
+  
+  // Smart suggestions state
+  const { preferSmartSuggestions } = useNovaSnap();
 
   // Realtime live activity updates
   useLiveActivityRealtime();
@@ -599,79 +604,86 @@ export const PulseScreen: React.FC = () => {
 
 
         {/* Main Recommendations List */}
-        {filteredRecommendations.length > 0 && (
+        {preferSmartSuggestions ? (
           <div className="px-6">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-5 h-5 text-white" />
-              <h2 className="font-bold text-white text-lg">Recommended for you</h2>
-            </div>
-            <div className="space-y-4">
-              {filteredRecommendations.map((rec) => {
-                // Mock host and vibe match for demo
-                const host = rec.type === 'floq' ? {
-                  name: 'Alex Johnson',
-                  avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
-                } : rec.type === 'venue' ? {
-                  name: 'Venue Host',
-                  avatar: '',
-                } : undefined;
-                
-                // Use real vibe match data
-                const vibeMatchPercentage = getVibeMatchForRecommendation(rec);
-                
-                // Friends going mock (replace with real data if available)
-                const friends = (rec.friends_going_names || rec.friends || []).map((name: string, i: number) => ({
-                  name,
-                  avatar: rec.friends_going_avatars?.[i],
-                }));
-                return (
-                  <EnhancedRecommendationCard
-                    key={rec.id}
-                    item={{
-                      id: rec.id,
-                      title: rec.title,
-                      type: rec.type,
-                      distance: rec.distance_meters || 0,
-                      vibe: rec.vibe,
-                      participants: rec.participant_count || rec.participants,
-                      maxParticipants: rec.maxParticipants,
-                      startTime: rec.starts_at || rec.startTime,
-                      endTime: rec.ends_at || rec.endTime,
-                      status: 'open',
-                      description: rec.description,
-                      location: getCityFromAddress(rec.address ? String(rec.address) : ''),
-                      host,
-                      tags: rec.tags,
-                      friends,
-                      vibeMatch: vibeMatchPercentage,
-                    }}
-                    onAction={(action, id) => {
-                      if (action === 'friends') {
-                        setModalFriends(friends);
-                        setFriendsModalOpen(true);
-                      }
-                      // ...other actions
-                    }}
-                  />
-                );
-              })}
-            </div>
-            {/* Friends Modal */}
-            <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>
-              <DialogContent>
-                <h3 className="font-bold text-lg mb-4">Friends Going</h3>
-                <div className="space-y-2">
-                  {modalFriends.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      {f.avatar && <img src={f.avatar} alt={f.name} className="w-8 h-8 rounded-full" />}
-                      <span className="text-base text-foreground">{f.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </DialogContent>
-            </Dialog>
+            <PersonalizedVenueSection maxResults={5} />
           </div>
+        ) : (
+          filteredRecommendations.length > 0 && (
+            <div className="px-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-5 h-5 text-white" />
+                <h2 className="font-bold text-white text-lg">Recommended for you</h2>
+              </div>
+              <div className="space-y-4">
+                {filteredRecommendations.map((rec) => {
+                  // Mock host and vibe match for demo
+                  const host = rec.type === 'floq' ? {
+                    name: 'Alex Johnson',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
+                  } : rec.type === 'venue' ? {
+                    name: 'Venue Host',
+                    avatar: '',
+                  } : undefined;
+                  
+                  // Use real vibe match data
+                  const vibeMatchPercentage = getVibeMatchForRecommendation(rec);
+                  
+                  // Friends going mock (replace with real data if available)
+                  const friends = (rec.friends_going_names || rec.friends || []).map((name: string, i: number) => ({
+                    name,
+                    avatar: rec.friends_going_avatars?.[i],
+                  }));
+                  return (
+                    <EnhancedRecommendationCard
+                      key={rec.id}
+                      item={{
+                        id: rec.id,
+                        title: rec.title,
+                        type: rec.type,
+                        distance: rec.distance_meters || 0,
+                        vibe: rec.vibe,
+                        participants: rec.participant_count || rec.participants,
+                        maxParticipants: rec.maxParticipants,
+                        startTime: rec.starts_at || rec.startTime,
+                        endTime: rec.ends_at || rec.endTime,
+                        status: 'open',
+                        description: rec.description,
+                        location: getCityFromAddress(rec.address ? String(rec.address) : ''),
+                        host,
+                        tags: rec.tags,
+                        friends,
+                        vibeMatch: vibeMatchPercentage,
+                      }}
+                      onAction={(action, id) => {
+                        if (action === 'friends') {
+                          setModalFriends(friends);
+                          setFriendsModalOpen(true);
+                        }
+                        // ...other actions
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )
         )}
+
+        {/* Friends Modal */}
+        <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>
+          <DialogContent>
+            <h3 className="font-bold text-lg mb-4">Friends Going</h3>
+            <div className="space-y-2">
+              {modalFriends.map((f, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  {f.avatar && <img src={f.avatar} alt={f.name} className="w-8 h-8 rounded-full" />}
+                  <span className="text-base text-foreground">{f.name}</span>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Loading State */}
         {isLoading && (
