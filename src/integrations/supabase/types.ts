@@ -10537,6 +10537,10 @@ export type Database = {
           issue_description: string
         }[]
       }
+      ingest_place_feed: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       invite_friends: {
         Args: { p_plan_id: string; p_profile_ids: string[] }
         Returns: Json
@@ -10972,28 +10976,16 @@ export type Database = {
         }[]
       }
       search_floqs: {
-        Args:
-          | {
-              p_lat: number
-              p_lng: number
-              p_radius_km: number
-              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
-              p_query?: string
-              p_time_from?: string
-              p_time_to?: string
-              p_visibilities?: string[]
-              p_limit?: number
-            }
-          | {
-              p_lat: number
-              p_lng: number
-              p_radius_km?: number
-              p_query?: string
-              p_vibe_ids?: string[]
-              p_time_from?: string
-              p_time_to?: string
-              p_limit?: number
-            }
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_km?: number
+          p_query?: string
+          p_vibe_ids?: string[]
+          p_time_from?: string
+          p_time_to?: string
+          p_limit?: number
+        }
         Returns: {
           id: string
           title: string
