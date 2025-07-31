@@ -15,7 +15,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
 
   // Display logic with username fallback
   const label = person.username ? `@${person.username}` : person.display_name ?? 'Unknown';
-  const mins = Math.round(person.overlap_sec / 60);
+  const mins = person.overlap_duration_minutes;
   const dist = person.distance_meters < 50 ? 'very close'
              : person.distance_meters < 200 ? '~1 block'
              : `${(person.distance_meters/1000).toFixed(1)} km`;
@@ -69,7 +69,7 @@ export function CrossedPathsCard({ person }: CrossedPathsCardProps) {
           
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Clock className="w-3 h-3" />
-            <span>Last seen: {formatTime(person.last_seen_ts)}</span>
+            <span>Last seen: {formatTime(person.last_seen_at)}</span>
           </div>
           
           <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">

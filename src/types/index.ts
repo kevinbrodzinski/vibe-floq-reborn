@@ -47,8 +47,7 @@ export interface CrossedPath {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
-  last_seen_ts: string;
-  overlap_sec: number;
-  venue_id: string | null;
+  last_seen_at: string;  // Updated to match function return
   distance_meters: number;
+  overlap_duration_minutes: number;  // Updated to match function return
 }

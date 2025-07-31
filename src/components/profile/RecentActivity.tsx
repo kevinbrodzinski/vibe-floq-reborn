@@ -89,7 +89,7 @@ export function RecentActivity() {
         activities.push({
           id: `crossed-${person.profile_id}`,
           type: 'crossed_path',
-          timestamp: person.last_seen_ts,
+          timestamp: person.last_seen_at,
           description: `Crossed paths with ${person.display_name || person.username || 'someone'}`,
           metadata: {
             person_name: person.display_name || person.username
