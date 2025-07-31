@@ -58,9 +58,9 @@ export const useSmartDiscovery = (
               p_limit: DISCOVERY_CONFIG.DEFAULT_LIMIT,
               p_profile_id: user?.id || null,
               p_categories: debouncedFilters.activityType !== 'all' ? [debouncedFilters.activityType] : null,
-              p_price_tier_max: debouncedFilters.budget === 'free' ? '1' : 
-                                debouncedFilters.budget === 'budget' ? '2' :
-                                debouncedFilters.budget === 'moderate' ? '3' : '4',
+              p_price_tier_max: debouncedFilters.budget === 'free' ? '$' : 
+                                debouncedFilters.budget === 'budget' ? '$$' :
+                                debouncedFilters.budget === 'moderate' ? '$$$' : '$$$$',
               p_vibe: debouncedFilters.vibe !== 'all' ? debouncedFilters.vibe : null
             }),
             timeoutPromise
@@ -104,9 +104,7 @@ export const useSmartDiscovery = (
                 status: 'open' as const,
                 description: venue.description || `${venue.categories?.join(', ') || 'Local venue'}`,
                 location: venue.address || 'Nearby',
-                price: venue.price_tier === '1' ? '$' : 
-                       venue.price_tier === '2' ? '$$' :
-                       venue.price_tier === '3' ? '$$$' : '$$$$',
+                price: venue.price_tier || '$',
                 rating: venue.rating,
                 venueType: venue.categories?.[0] || 'venue',
                 tags: venue.categories || [],

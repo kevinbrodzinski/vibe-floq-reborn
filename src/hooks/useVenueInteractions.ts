@@ -15,21 +15,15 @@ export const useVenueInteractions = () => {
   const queryClient = useQueryClient();
 
   const trackInteraction = useMutation({
-    mutationFn: async ({ venue_id, interaction_type, interaction_count = 1 }: VenueInteraction) => {
+    mutationFn: async ({ venue_id, interaction_type }: VenueInteraction) => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('user_venue_interactions')
-        .upsert({
-          profile_id: user.id,
-          venue_id,
-          interaction_type,
-          interaction_count,
-          last_interaction_at: new Date().toISOString()
-        }, {
-          onConflict: 'profile_id,venue_id,interaction_type'
-        });
-
+      
+      const { error } = await supabase.rpc('bump_interaction', {
+        p_profile_id: user.id,
+        p_venue_id: venue_id,
+        p_type: interaction_type
+      });
+      
       if (error) throw error;
 
       return { venue_id, interaction_type };

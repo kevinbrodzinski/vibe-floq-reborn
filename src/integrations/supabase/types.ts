@@ -7738,7 +7738,6 @@ export type Database = {
           name: string
           photo_url: string | null
           popularity: number
-          price_tier: Database["public"]["Enums"]["price_enum"] | null
           profile_id: string | null
           provider: string
           provider_id: string
@@ -7766,7 +7765,6 @@ export type Database = {
           name: string
           photo_url?: string | null
           popularity?: number
-          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider: string
           provider_id: string
@@ -7794,7 +7792,6 @@ export type Database = {
           name?: string
           photo_url?: string | null
           popularity?: number
-          price_tier?: Database["public"]["Enums"]["price_enum"] | null
           profile_id?: string | null
           provider?: string
           provider_id?: string
@@ -9357,6 +9354,10 @@ export type Database = {
       bulk_upsert_relationships: {
         Args: { relationship_pairs: Json }
         Returns: Json
+      }
+      bump_interaction: {
+        Args: { p_profile_id: string; p_venue_id: string; p_type: string }
+        Returns: undefined
       }
       bytea: {
         Args: { "": unknown } | { "": unknown }
@@ -12540,7 +12541,7 @@ export type Database = {
         | "executing"
         | "completed"
         | "invited"
-      price_enum: "1" | "2" | "3" | "4"
+      price_enum: "$" | "$$" | "$$$" | "$$$$"
       pulse_event_type:
         | "check_in"
         | "check_out"
@@ -12807,7 +12808,7 @@ export const Constants = {
         "completed",
         "invited",
       ],
-      price_enum: ["1", "2", "3", "4"],
+      price_enum: ["$", "$$", "$$$", "$$$$"],
       pulse_event_type: [
         "check_in",
         "check_out",

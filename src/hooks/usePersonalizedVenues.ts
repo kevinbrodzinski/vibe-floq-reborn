@@ -4,6 +4,8 @@ import { useAuth } from '@/providers/AuthProvider';
 
 const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // 4 dp ≈ 11 m
 
+export type PriceTier = '$' | '$$' | '$$$' | '$$$$';
+
 export interface PersonalizedVenue {
   venue_id: string;
   name: string;
@@ -14,7 +16,7 @@ export interface PersonalizedVenue {
   address: string | null;
   photo_url: string | null;
   live_count: number;
-  price_tier: '1' | '2' | '3' | '4';
+  price_tier: PriceTier;
   personalized_score: number;
 }
 
@@ -25,7 +27,7 @@ export const usePersonalizedVenues = (
     radius?: number;
     limit?: number;
     categories?: string[];
-    maxPriceTier?: '1' | '2' | '3' | '4';
+    maxPriceTier?: PriceTier;
     vibe?: string;
   } = {}
 ) => {
@@ -34,7 +36,7 @@ export const usePersonalizedVenues = (
     radius = 1000,
     limit = 20,
     categories,
-    maxPriceTier = '4',
+    maxPriceTier = '$$$$',
     vibe
   } = options;
 
@@ -64,7 +66,7 @@ export const usePersonalizedVenues = (
         p_limit: limit,
         p_profile_id: user?.id || null,
         p_categories: categories || null,
-        p_price_tier_max: maxPriceTier,
+        p_price_tier_max: maxPriceTier ?? '$$$$',
         p_vibe: vibe || null
       });
 
