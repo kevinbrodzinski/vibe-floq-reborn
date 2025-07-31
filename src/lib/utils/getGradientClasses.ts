@@ -30,6 +30,9 @@ export function getVibeGradient(kind: StopKind, vibe?: Vibe): string {
     romantic: 'romantic',
     weird: 'wild',
     down: 'chill',
+    energetic: 'wild',
+    excited: 'wild',
+    focused: 'chill',
   };
 
   // Handle undefined vibe with fallback

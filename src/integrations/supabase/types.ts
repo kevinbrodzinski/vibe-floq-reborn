@@ -10228,13 +10228,7 @@ export type Database = {
       }
       get_leaderboard_rank: {
         Args: { p_profile_id: string }
-        Returns: {
-          id: string
-          checkins_30d: number
-          rank: number
-          total_users: number
-          percentile: number
-        }[]
+        Returns: Json
       }
       get_live_activity: {
         Args: { p_radius_km: number; p_lat: number; p_lng: number }

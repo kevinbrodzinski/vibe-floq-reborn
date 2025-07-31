@@ -13,6 +13,9 @@ const emojiMap: Record<Vibe, string> = {
   down: "😔",
   flowing: "🌊",
   open: "🌟",
+  energetic: "⚡",
+  excited: "🤩",
+  focused: "🎯",
 };
 
 // SVG icon map (ready for future SVG icons)
@@ -30,6 +33,9 @@ const svgIconMap: Record<Vibe, ReactNode> = {
   down: emojiMap.down,
   flowing: emojiMap.flowing,
   open: emojiMap.open,
+  energetic: emojiMap.energetic,
+  excited: emojiMap.excited,
+  focused: emojiMap.focused,
 };
 
 // Main icon function - stable API that can swap between emoji and SVG

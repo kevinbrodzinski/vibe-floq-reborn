@@ -3,7 +3,7 @@ import type { Vibe } from '@/types/vibes';
 
 // Mapping vibes to Tailwind border classes for avatar rings
 export const vibeToBorder = (vibe: Vibe): string => {
-  const borderMap: Record<Vibe, string> = {
+const borderMap: Record<Vibe, string> = {
     hype: 'border-purple-500',
     social: 'border-orange-400', 
     chill: 'border-blue-400',
@@ -14,6 +14,9 @@ export const vibeToBorder = (vibe: Vibe): string => {
     romantic: 'border-pink-500',
     weird: 'border-yellow-400',
     down: 'border-slate-400',
+    energetic: 'border-amber-500',
+    excited: 'border-purple-500',
+    focused: 'border-emerald-500',
   };
   
   return borderMap[vibe] ?? 'border-border';

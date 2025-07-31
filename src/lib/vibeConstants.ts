@@ -23,6 +23,9 @@ export const vibeOptions: VibeMeta[] = VibeEnum.options.map((vibe) => {
     down:      { label: 'Down',      emoji: '🫠', color: 'rose',   energy: 'low',    social: 'solo', timeOfDay: 'any' },
     flowing:   { label: 'Flowing',   emoji: '🌊', color: 'cyan',   energy: 'medium', social: 'any',  timeOfDay: 'day' },
     open:      { label: 'Open',      emoji: '🌈', color: 'green',  energy: 'medium', social: 'any',  timeOfDay: 'any' },
+    energetic: { label: 'Energetic', emoji: '⚡', color: 'amber',  energy: 'high',   social: 'group', timeOfDay: 'day' },
+    excited:   { label: 'Excited',   emoji: '🤩', color: 'purple', energy: 'high',   social: 'group', timeOfDay: 'any' },
+    focused:   { label: 'Focused',   emoji: '🎯', color: 'emerald', energy: 'medium', social: 'solo', timeOfDay: 'day' },
   };
 
   return {

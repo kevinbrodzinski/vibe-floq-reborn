@@ -205,7 +205,10 @@ export class VibeAnalysisEngine {
       flowing: 0,
       open: 0,
       curious: 0,
-      weird: 0
+      weird: 0,
+      energetic: 0,
+      excited: 0,
+      focused: 0
     };
 
     // Base sensor-driven scores

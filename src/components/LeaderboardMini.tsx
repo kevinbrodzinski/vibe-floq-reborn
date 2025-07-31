@@ -24,8 +24,12 @@ const LeaderboardMiniContent = () => {
     );
   }
 
-  const { percentile, total_users } = data;
+  const { percentile = 0, total_users = 1 } = data;
   const chartData = [{ name: 'You', value: percentile }];
+
+  // Safe string formatting with null checks
+  const safePercentile = Number(percentile) || 0;
+  const safeTotalUsers = Number(total_users) || 1;
 
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3">
@@ -36,7 +40,7 @@ const LeaderboardMiniContent = () => {
             outerRadius="100%" 
             data={chartData}
             role="img"
-            aria-label={`Leaderboard position: You are in the top ${percentile}% of ${total_users.toLocaleString()} players`}
+            aria-label={`Leaderboard position: You are in the top ${safePercentile}% of ${safeTotalUsers.toLocaleString()} players`}
           >
             <RadialBar
               background
@@ -50,9 +54,9 @@ const LeaderboardMiniContent = () => {
 
       <p className="text-xs sm:text-sm text-center text-muted-foreground leading-tight">
         Top&nbsp;
-        <span className="font-semibold text-foreground">{percentile}%</span>
+        <span className="font-semibold text-foreground">{safePercentile}%</span>
         &nbsp;of&nbsp;
-        <span className="font-mono text-foreground">{total_users.toLocaleString()}</span>
+        <span className="font-mono text-foreground">{safeTotalUsers.toLocaleString()}</span>
         <span className="sm:inline"> players</span>
       </p>
     </div>

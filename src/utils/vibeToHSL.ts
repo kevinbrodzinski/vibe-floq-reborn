@@ -12,6 +12,9 @@ const palette: Record<Vibe, [number, number, number]> = {
   weird:    [280,  70, 65],  // violet
   down:     [220,  15, 45],  // muted blue
   flowing:  [180,  60, 55],  // cyan
+  energetic: [45,  90, 58],  // bright yellow
+  excited:  [280,  80, 60],  // purple
+  focused:  [160,  70, 45],  // green
 };
 
 export function vibeToColor(vibe: Vibe, alpha = 0.5): number {
