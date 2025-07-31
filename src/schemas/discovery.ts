@@ -19,7 +19,7 @@ export const FloqSchema = z.object({
   id: z.string(),
   title: z.string(),
   distance_m: z.number().optional().default(0),
-  primary_vibe: z.string().optional(),
+  primary_vibe: z.enum(['social', 'chill', 'hype', 'curious', 'solo', 'romantic', 'weird', 'down', 'flowing', 'open']).optional(),
   participant_count: z.number().optional().default(0),
   max_participants: z.number().optional(),
   description: z.string().optional(),

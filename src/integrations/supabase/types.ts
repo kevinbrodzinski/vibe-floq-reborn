@@ -10182,6 +10182,31 @@ export type Database = {
           cnt: number
         }[]
       }
+      get_nearby_floqs: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_m?: number
+          p_primary_vibe?: Database["public"]["Enums"]["vibe_enum"]
+          p_limit?: number
+        }
+        Returns: {
+          id: string
+          title: string
+          distance_m: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          participant_count: number
+          max_participants: number
+          description: string
+          address: string
+          starts_at: string
+          ends_at: string
+          creator_name: string
+          creator_avatar: string
+          is_private: boolean
+          is_joined: boolean
+        }[]
+      }
       get_nearby_presence: {
         Args: { user_lat: number; user_lng: number; radius_meters?: number }
         Returns: {
@@ -10251,16 +10276,10 @@ export type Database = {
         Returns: string
       }
       get_social_suggestions: {
-        Args: { p_uid: string; max_dist_m?: number; limit_n?: number }
-        Returns: {
-          friend_id: string
-          display_name: string
-          avatar_url: string
-          vibe_tag: Database["public"]["Enums"]["vibe_enum"]
-          vibe_match: number
-          distance_m: number
-          started_at: string
-        }[]
+        Args:
+          | { max_dist_m?: number; limit_n?: number; p_profile_id?: string }
+          | { p_uid: string; max_dist_m?: number; limit_n?: number }
+        Returns: Json
       }
       get_trending_venues: {
         Args: {

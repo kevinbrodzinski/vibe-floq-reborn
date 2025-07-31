@@ -55,13 +55,15 @@ export const useSmartDiscovery = (
             timeoutPromise
           ]),
           
-          // 2. Get nearby floqs (will be implemented with proper RPC)
+          // 2. Get nearby floqs using the new RPC
           Promise.race([
-            supabase.rpc('walkable_floqs', {
-              lat: userLocation.lat,
-              lng: userLocation.lng,
-              metres: filters.radius
-            }).then(result => result, () => ({ data: [], error: null })), // Graceful fallback
+            supabase.rpc('get_nearby_floqs', {
+              p_lat: userLocation.lat,
+              p_lng: userLocation.lng,
+              p_radius_m: filters.radius,
+              p_primary_vibe: filters.vibe === 'all' ? null : filters.vibe as any,
+              p_limit: DISCOVERY_CONFIG.DEFAULT_LIMIT
+            }),
             timeoutPromise
           ]),
           
