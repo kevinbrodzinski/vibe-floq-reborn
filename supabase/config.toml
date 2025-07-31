@@ -99,3 +99,6 @@ verify_jwt = false
 
 [functions.get-transit]
 verify_jwt = true
+
+[functions.get-social-suggestions]
+verify_jwt = true
