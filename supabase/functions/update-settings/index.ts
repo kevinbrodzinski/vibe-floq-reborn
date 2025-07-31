@@ -99,8 +99,7 @@ serve(async (req) => {
             field_trails,
             privacy_settings,
             updated_at: new Date().toISOString(),
-          })
-          .eq('profile_id', user.id);
+          });
 
         if (updateError) {
           console.error('Error updating user settings:', updateError);
@@ -126,8 +125,7 @@ serve(async (req) => {
             floq_id,
             ...updates,
             updated_at: new Date().toISOString()
-          })
-          .eq('floq_id', floq_id);
+          });
 
         if (updateError) {
           console.error('Error updating floq settings:', updateError);
@@ -153,8 +151,7 @@ serve(async (req) => {
             profile_id: user.id,
             available_until,
             updated_at: new Date().toISOString(),
-          })
-          .eq('profile_id', user.id);
+          });
 
         if (updateError) {
           console.error('Error updating availability:', updateError);
@@ -204,8 +201,7 @@ serve(async (req) => {
             vibe_detection_enabled,
             favorite_locations,
             updated_at: new Date().toISOString(),
-          })
-          .eq('profile_id', user.id);
+          });
 
         if (updateError) {
           console.error('Error updating user preferences:', updateError);
