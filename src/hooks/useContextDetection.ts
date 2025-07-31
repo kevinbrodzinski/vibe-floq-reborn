@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { metersBetween } from '@/lib/location/geo';
+import { calculateDistance } from '@/lib/location/standardGeo';
 
 interface ContextState {
   inFloq: boolean;
@@ -113,7 +113,10 @@ export const useContextDetection = () => {
           const prev = recentPings[i - 1];
           const curr = recentPings[i];
           
-          const distance = metersBetween(curr.lat, curr.lng, prev.lat, prev.lng);
+          const distance = calculateDistance(
+            { lat: curr.lat, lng: curr.lng }, 
+            { lat: prev.lat, lng: prev.lng }
+          );
           const time = (curr.ts - prev.ts) / 1000; // seconds
           
           totalDistance += distance;

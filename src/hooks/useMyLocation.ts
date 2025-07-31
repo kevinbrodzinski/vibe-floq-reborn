@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 
-/** Live GPS as `[lng, lat]` (or `null` while we wait) */
+/** 
+ * Live GPS as {lat, lng} object (standardized format)
+ * @deprecated Consider using useGeo or useUserLocation for more robust location handling
+ */
 export function useMyLocation() {
-  const [pos, setPos] = useState<[number, number] | null>(null);
+  const [pos, setPos] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     if (!('geolocation' in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition(
-      p => setPos([p.coords.longitude, p.coords.latitude]),
+      p => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
       () => { /* ignore errors */ },
       { enableHighAccuracy: true, maximumAge: 20_000, timeout: 20_000 },
     );

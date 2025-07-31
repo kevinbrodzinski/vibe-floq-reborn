@@ -1,4 +1,5 @@
 // Helper functions for location and distance calculations
+import { calculateDistance as standardCalculateDistance, fromGeoJSON, type GPSCoords, formatDistance as standardFormatDistance } from '@/lib/location/standardGeo';
 
 export interface Coordinates {
   lng: number
@@ -7,26 +8,15 @@ export interface Coordinates {
 
 /**
  * Calculate the distance between two coordinates using the Haversine formula
- * @param coords1 First coordinate pair [lng, lat]
- * @param coords2 Second coordinate pair [lng, lat]
+ * @param coords1 First coordinate pair [lng, lat] (GeoJSON format)
+ * @param coords2 Second coordinate pair [lng, lat] (GeoJSON format)
  * @returns Distance in meters
  */
 export function calculateDistance(coords1: [number, number], coords2: [number, number]): number {
-  const [lng1, lat1] = coords1
-  const [lng2, lat2] = coords2
-  
-  const R = 6371e3 // Earth's radius in meters
-  const φ1 = lat1 * Math.PI / 180 // φ, λ in radians
-  const φ2 = lat2 * Math.PI / 180
-  const Δφ = (lat2 - lat1) * Math.PI / 180
-  const Δλ = (lng2 - lng1) * Math.PI / 180
-
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ/2) * Math.sin(Δλ/2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-
-  return R * c // Distance in meters
+  // Convert GeoJSON [lng, lat] to GPS {lat, lng} format
+  const from = fromGeoJSON(coords1);
+  const to = fromGeoJSON(coords2);
+  return standardCalculateDistance(from, to);
 }
 
 /**
@@ -78,10 +68,7 @@ export function calculateMomentDistances(moments: any[]): any[] {
  * @returns Formatted distance string
  */
 export function formatDistance(meters: number): string {
-  if (meters < 1000) {
-    return `${Math.round(meters)}m`
-  }
-  return `${(meters / 1000).toFixed(1)}km`
+  return standardFormatDistance(meters);
 }
 
 /**
