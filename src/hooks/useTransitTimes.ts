@@ -5,6 +5,7 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { memoizeTransit } from "@/lib/cache/transitLRU";
+import { calculateDistance } from "@/lib/location/standardGeo";
 
 interface UseTransitOpts extends Partial<UseQueryOptions<TransitResult>> {
   mode?: "driving" | "walking" | "cycling";
@@ -104,18 +105,7 @@ export function useSimpleTransitTime({ from, to, mode = 'walking', enabled = tru
 
 // Helper function to calculate straight-line distance and estimate time
 export function calculateHaversineTime(from: { lat: number; lng: number }, to: { lat: number; lng: number }, mode: 'walking' | 'driving' | 'cycling' = 'walking'): TransitResult {
-  const R = 6371000; // Earth's radius in meters
-  const φ1 = from.lat * Math.PI / 180;
-  const φ2 = to.lat * Math.PI / 180;
-  const Δφ = (to.lat - from.lat) * Math.PI / 180;
-  const Δλ = (to.lng - from.lng) * Math.PI / 180;
-
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-  const distance = R * c; // Distance in meters
+  const distance = calculateDistance(from, to); // Distance in meters
 
   // Speed assumptions (meters per minute)
   const speeds = {

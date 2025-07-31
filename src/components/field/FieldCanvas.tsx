@@ -255,7 +255,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       lastPeopleHash = currentPeopleHash;
       lastFieldTilesHash = currentFieldTilesHash;
       
-      console.log('[ANIMATION] Data changed, re-rendering...');
+      // Removed flood-log as per review
       
       // ---- TILE CLUSTERING ----
       if (viewportGeo && fieldTiles.length > 0) {

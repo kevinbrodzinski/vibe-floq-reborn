@@ -9,6 +9,9 @@ export interface GPSCoords {
   lng: number;
 }
 
+// Canonical GPS type for consistent usage across the app
+export type GPS = GPSCoords;
+
 export type GeoJSONCoords = [number, number]; // [lng, lat] - GeoJSON standard
 
 /**
@@ -49,6 +52,7 @@ export function isWithinRadius(
 
 /**
  * Convert GPS coordinates to GeoJSON format
+ * @internal
  * @param coords GPS coordinates {lat, lng}
  * @returns GeoJSON coordinates [lng, lat]
  */
@@ -58,6 +62,7 @@ export function toGeoJSON(coords: GPSCoords): GeoJSONCoords {
 
 /**
  * Convert GeoJSON coordinates to GPS format
+ * @internal
  * @param coords GeoJSON coordinates [lng, lat]
  * @returns GPS coordinates {lat, lng}
  */
@@ -79,6 +84,7 @@ export function formatDistance(meters: number): string {
 
 /**
  * Validate GPS coordinates
+ * @internal
  * @param coords GPS coordinates to validate
  * @returns True if coordinates are valid
  */
@@ -92,6 +98,7 @@ export function isValidGPSCoords(coords: GPSCoords): boolean {
 
 /**
  * Validate GeoJSON coordinates
+ * @internal
  * @param coords GeoJSON coordinates to validate  
  * @returns True if coordinates are valid
  */
@@ -105,12 +112,22 @@ export function isValidGeoJSONCoords(coords: GeoJSONCoords): boolean {
 }
 
 // Legacy compatibility exports - mark as deprecated
+let deprecationWarned = false;
+
 /** @deprecated Use calculateDistance instead */
 export const metersBetween = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  if (!deprecationWarned) {
+    console.warn('⚠️ metersBetween is deprecated. Use calculateDistance from @/lib/location/standardGeo instead.');
+    deprecationWarned = true;
+  }
   return calculateDistance({ lat: lat1, lng: lng1 }, { lat: lat2, lng: lng2 });
 };
 
 /** @deprecated Use calculateDistance instead */
 export const distance = (a: GPSCoords, b: GPSCoords): number => {
+  if (!deprecationWarned) {
+    console.warn('⚠️ distance is deprecated. Use calculateDistance from @/lib/location/standardGeo instead.');
+    deprecationWarned = true;
+  }
   return calculateDistance(a, b);
 };
