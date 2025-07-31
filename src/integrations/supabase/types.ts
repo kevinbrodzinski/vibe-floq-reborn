@@ -1335,6 +1335,34 @@ export type Database = {
             referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_dm_reactions_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_dm_reactions_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_dm_reactions_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_dm_reactions_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       edge_invocation_logs: {
@@ -12407,7 +12435,7 @@ export type Database = {
         Returns: boolean
       }
       user_in_floq_or_creator: {
-        Args: { p_plan: string }
+        Args: { p_plan: string } | { p_plan_id: string; p_user_id?: string }
         Returns: boolean
       }
       user_is_floq_participant: {
