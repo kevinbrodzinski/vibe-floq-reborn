@@ -1,71 +1,110 @@
-import { useRef } from 'react';
+/* ──────────────────────────────────────────────
+   EnhancedTimeline
+   – smooth scroll + keyboard / swipe navigation
+   – vertical path + horizontal scrubber
+────────────────────────────────────────────── */
+import {
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+} from 'react';
 import { motion, useMotionValue } from 'framer-motion';
-import { DynamicTimelinePath } from '@/components/timeline/DynamicTimelinePath';
-import { TimelineScrubber } from '@/components/timeline/TimelineScrubber';
+
+import { DynamicTimelinePath }  from '@/components/timeline/DynamicTimelinePath';
+import { TimelineScrubber }     from '@/components/timeline/TimelineScrubber';
 import { useTimelineNavigation } from '@/hooks/useTimelineNavigation';
-import { useTimelineProgress } from '@/hooks/useTimelineProgress';
+import { useTimelineProgress }   from '@/hooks/useTimelineProgress';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { AfterglowMomentCard } from '@/components/AfterglowMomentCard';
-import type { AfterglowMoment } from '@/types/afterglow';
+import { AfterglowMomentCard }   from '@/components/AfterglowMomentCard';
+import type { AfterglowMoment }  from '@/types/afterglow';
 
 interface EnhancedTimelineProps {
   moments: AfterglowMoment[];
 }
 
-export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
+/**
+ * NOTE – The component **always** calls every hook on every render.
+ * If there are no moments we bail out *after* the hooks have run,
+ * which preserves React’s hook ordering contract and fixes the
+ * “Rendered fewer hooks than expected” runtime error.
+ */
+export const EnhancedTimeline = memo(function EnhancedTimeline ({
+  moments,
+}: EnhancedTimelineProps) {
+  /* ──────────────────────────────────────────
+     1. Refs / basic state
+  ────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
-  /* ──────────────────────────────────────────────
-     1. scroll progress / current moment
-  ────────────────────────────────────────────── */
-  const { scrollProgress, currentMomentIndex } = useTimelineProgress(
-    containerRef,
-    moments,
+  /* ──────────────────────────────────────────
+     2. Scroll-progress → index mapping
+  ────────────────────────────────────────── */
+  const {
+    scrollProgress,
+    currentMomentIndex,
+  } = useTimelineProgress(containerRef, moments);
+
+  /* ──────────────────────────────────────────
+     3. Framer-motion value (stable instance)
+  ────────────────────────────────────────── */
+  const progressMV = useMotionValue(scrollProgress);
+
+  /* keep MV in sync without creating a new one */
+  useEffect(() => {
+    progressMV.set(scrollProgress);
+  }, [scrollProgress, progressMV]);
+
+  /* ──────────────────────────────────────────
+     4. Jump helpers  (index  ↔︎ percentage)
+  ────────────────────────────────────────── */
+  const jumpToIndex = useCallback(
+    (idx: number) => {
+      const el = document.querySelector(
+        `[data-moment-index='${idx}']`,
+      ) as HTMLElement | null;
+
+      if (el) {
+        el.scrollIntoView({
+          behavior: prefersReducedMotion ? 'auto' : 'smooth',
+          block:    'center',
+        });
+      }
+    },
+    [prefersReducedMotion],
   );
 
-  /* ──────────────────────────────────────────────
-     2. scrubber motion-value (kept in sync)
-  ────────────────────────────────────────────── */
-  const progressMV = useMotionValue(scrollProgress);
-  progressMV.set(scrollProgress); // keep MV fresh every render
+  const jumpToPct = useCallback(
+    (pct: number) => {
+      if (moments.length === 0) return;
+      const idx = Math.round(pct * (moments.length - 1));
+      jumpToIndex(idx);
+    },
+    [moments.length, jumpToIndex],
+  );
 
-  /* ──────────────────────────────────────────────
-     3. jumping helpers
-  ────────────────────────────────────────────── */
-  const prefersReduced = usePrefersReducedMotion();
-
-  const jumpToIndex = (idx: number) => {
-    const el = document.querySelector(
-      `[data-moment-index='${idx}']`,
-    ) as HTMLElement | null;
-    if (el) {
-      el.scrollIntoView({
-        behavior: prefersReduced ? 'auto' : 'smooth',
-        block: 'center',
-      });
-    }
-  };
-
-  const jumpToPct = (pct: number) => {
-    const idx = Math.round(pct * (moments.length - 1));
-    jumpToIndex(idx);
-  };
-
-  /* ──────────────────────────────────────────────
-     4. keyboard / swipe navigation hook
-  ────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────
+     5. Keyboard / swipe navigation
+  ────────────────────────────────────────── */
   useTimelineNavigation({
-    total: moments.length,
+    total:   moments.length,
     current: currentMomentIndex,
-    onJump: jumpToIndex,
+    onJump:  jumpToIndex,
   });
 
-  /* ──────────────────────────────────────────────
-     5. render
-  ────────────────────────────────────────────── */
+  /* ──────────────────────────────────────────
+     6. If there’s nothing to show, render null
+        (hooks have already run – safe)
+  ────────────────────────────────────────── */
+  if (moments.length === 0) return null;
+
+  /* ──────────────────────────────────────────
+     7. Render
+  ────────────────────────────────────────── */
   return (
     <>
-      {/* scrollable wrapper gets the ref for IO tracking */}
+      {/* scrollable wrapper – needed for IntersectionObservers */}
       <div
         ref={containerRef}
         className="relative flex flex-col gap-12 pb-24"
@@ -77,7 +116,7 @@ export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
           moments={moments}
         />
 
-        {/* moment cards */}
+        {/* individual moment cards */}
         {moments.map((m, i) => (
           <div
             key={m.id ?? i}
@@ -96,11 +135,11 @@ export function EnhancedTimeline({ moments }: EnhancedTimelineProps) {
           progressVal={progressMV}
           onSeek={jumpToPct}
           moments={moments.map(m => ({
-            title: m.title || 'Moment',
-            color: m.color || 'hsl(var(--primary))',
+            title: m.title  ?? 'Moment',
+            color: m.color ?? 'hsl(var(--primary))',
           }))}
         />
       )}
     </>
   );
-}
+});
