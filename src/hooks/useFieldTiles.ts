@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
-import { supabase } from '@/integrations/supabase/client'
-import { viewportToTileIds } from '@/lib/geo'
-import type { FieldTile } from '@/types/field'
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
+import { viewportToTileIds } from '@/lib/geo';
+import type { FieldTile } from '@/types/field';
 
 interface TileBounds {
   minLat: number
@@ -27,20 +28,25 @@ export function useFieldTiles(bounds?: TileBounds) {
     queryFn: async (): Promise<FieldTile[]> => {
       if (!tileIds.length) return [];
       
-      const { data, error } = await supabase.functions.invoke('get_field_tiles', {
-        body: { tile_ids: tileIds }
-      })
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+      
+      const res = await supaFn('get_field_tiles', session.access_token, { 
+        tile_ids: tileIds 
+      });
 
-      if (error) {
+      if (!res.ok) {
+        const errorText = await res.text();
         console.error('[FIELD_TILES] invoke err', {
-          message: error.message,
-          status: String(error.status),
+          message: errorText,
+          status: res.status,
         });
-        throw new Error(error.message ?? error.details ?? 'field_tiles invoke failed');
+        throw new Error('field_tiles invoke failed');
       }
       
+      const data = await res.json();
       // Handle the response structure from the edge function
-      const tiles = data?.tiles || []
+      const tiles = data?.tiles || [];
       
       // Transform the data to match our FieldTile interface
       return tiles.map((tile: any): FieldTile => ({

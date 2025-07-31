@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import type { Vibe, NearbyUser, WalkableFloq } from '@/types';
@@ -32,17 +33,22 @@ export const usePresence = () => {
 
     setUpdating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('upsert-presence', {
-        body: {
-          vibe,
-          lat,
-          lng,
-          broadcast_radius: broadcastRadius,
-        },
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+      
+      const res = await supaFn('upsert-presence', session.access_token, {
+        vibe,
+        lat,
+        lng,
+        broadcast_radius: broadcastRadius,
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText);
+      }
 
+      const data = await res.json();
       return data as PresenceResponse;
     } catch (error: any) {
       console.error('Presence update error:', error);

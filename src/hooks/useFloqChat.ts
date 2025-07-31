@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useSession } from "@supabase/auth-helpers-react";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supaFn } from "@/lib/supaFn";
 import { useToast } from "@/hooks/use-toast";
 
 export interface FloqMessage {
@@ -104,14 +105,20 @@ export function useFloqChat(floqId: string | null): FloqChatReturn {
     mutationFn: async (payload: { body?: string; emoji?: string }) => {
       if (!floqId || !user) throw new Error("Not authenticated or no floq");
       
-      const { data, error } = await supabase.functions.invoke('post-floq-message', {
-        body: {
-          floq_id: floqId,
-          ...payload,
-        },
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+      
+      const res = await supaFn('post-floq-message', session.access_token, {
+        floq_id: floqId,
+        ...payload,
       });
 
-      if (error) throw error;
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText);
+      }
+      
+      const data = await res.json();
       return data;
     },
     onSuccess: (newMessage) => {

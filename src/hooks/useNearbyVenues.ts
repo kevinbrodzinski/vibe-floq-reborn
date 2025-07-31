@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
 
 const bucket = (n: number) => Math.round(n * 1e4) / 1e4; // 4 dp ≈ 11 m
 const SYNC_COOLDOWN_MIN = 15;     // don't hit Google more often than this
@@ -52,21 +53,23 @@ export const useNearbyVenues = (
 
       /* ------------------------------------------------- deduped sync */
       if (await needsSync('google_places', lat, lng)) {
-        const { error } = await supabase.functions.invoke('sync-places', {
-          body: { lat, lng }
-        });
-        if (!error) {
-          // Record the sync so other calls skip
-          try {
-            await supabase
-              .from('sync_log')
-              .insert({ kind: 'google_places', lat, lng });
-          } catch (insertError) {
-            // Ignore duplicate errors - race condition is harmless
-            console.debug('Sync log insert (ignored):', insertError);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          const res = await supaFn('sync-places', session.access_token, { lat, lng });
+          if (res.ok) {
+            // Record the sync so other calls skip
+            try {
+              await supabase
+                .from('sync_log')
+                .insert({ kind: 'google_places', lat, lng });
+            } catch (insertError) {
+              // Ignore duplicate errors - race condition is harmless
+              console.debug('Sync log insert (ignored):', insertError);
+            }
+          } else {
+            const errorText = await res.text();
+            console.warn('Places sync error:', errorText);
           }
-        } else {
-          console.warn('Places sync error:', error.message);
         }
       }
 
@@ -96,7 +99,10 @@ export const useNearbyVenues = (
       }>;
       if (rawVenues.length < MIN_EXPECTED) {
         // Fire-and-forget: ask backend to refresh again
-        supabase.functions.invoke('sync-places', { body: { lat, lng } });
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          supaFn('sync-places', session.access_token, { lat, lng }).catch(console.warn);
+        }
       }
       
       const venues: Venue[] = rawVenues.map(v => ({
