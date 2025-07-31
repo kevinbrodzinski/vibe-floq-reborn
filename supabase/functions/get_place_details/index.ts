@@ -43,7 +43,7 @@ serve(async (req) => {
       `https://places.googleapis.com/v1/places/${place_id}?fields=${FIELDS}`,
       {
         headers: {
-          "X-Goog-Api-Key": Deno.env.get("GOOGLE_PLACES_API_KEY")!,
+          "X-Goog-Api-Key": Deno.env.get("GOOGLE_PLACES_KEY")!,
           "X-Goog-FieldMask": FIELDS,
         },
       },
