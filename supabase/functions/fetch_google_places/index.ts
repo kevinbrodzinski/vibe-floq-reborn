@@ -1,4 +1,4 @@
-// Deno runtime • Foursquare Nearby → integrations.place_feed_raw
+// Deno runtime • Google NearbySearch → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
@@ -28,41 +28,46 @@ serve(async (req) => {
       );
     }
 
-    /* ---- 1. server-stored FSQ key --------------------------------- */
-    const API_KEY = Deno.env.get("FOURSQUARE_ADMIN_API");
+    /* ---- 1. server-stored API key --------------------------------- */
+    const API_KEY = Deno.env.get("GOOGLE_PLACES_KEY");
     if (!API_KEY) {
-      console.error("FOURSQUARE_ADMIN_API missing");
+      console.error("GOOGLE_PLACES_KEY missing");
       return new Response("server mis-config", { status: 500, headers: CORS });
     }
 
-    /* ---- 2. call Foursquare “Nearby” ------------------------------ */
-    const url =
-      `https://api.foursquare.com/v3/places/nearby?ll=${lat},${lng}&radius=150&limit=25`;
-    const fsq = await fetch(url, {
-      headers: { Accept: "application/json", Authorization: API_KEY },
-    }).then((r) => r.json());
+    /* ---- 2. call Google Places NearbySearch ----------------------- */
+    const url = new URL(
+      "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+    );
+    url.searchParams.set("key", API_KEY);
+    url.searchParams.set("location", `${lat},${lng}`);
+    url.searchParams.set("radius", "150");            // metres
+    url.searchParams.set("type", "point_of_interest");
 
-    if (fsq.message)
-      return new Response(JSON.stringify({ error: fsq.message }), {
+    const gp = await fetch(url).then((r) => r.json());
+    if (gp.status !== "OK" && gp.status !== "ZERO_RESULTS") {
+      console.error("Google error", gp);
+      return new Response(JSON.stringify({ error: gp.error_message }), {
         status: 502,
         headers: CORS,
       });
+    }
 
     /* ---- 3. dump raw payload -------------------------------------- */
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,     // bypass RLS
       { auth: { persistSession: false } },
     );
 
     await sb.from("integrations.place_feed_raw").insert({
       profile_id,
-      provider_id: 2,               // 2 = foursquare
-      payload: fsq,
+      provider_id: 1,               // 1 = google row in integrations.provider
+      payload: gp,
     });
 
     return new Response(
-      JSON.stringify({ ok: true, count: fsq.results?.length ?? 0 }),
+      JSON.stringify({ ok: true, count: gp.results?.length ?? 0 }),
       { headers: CORS },
     );
   } catch (e) {
