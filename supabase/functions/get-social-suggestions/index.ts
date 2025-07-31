@@ -34,10 +34,35 @@ serve(async req => {
   }
 
   try {
-    /* body is optional – we only care about an optional radius param */
-    const { radius = 1_000, limit = 5 } =
-      (await req.json().catch(() => ({}))) as
-        { radius?: number; limit?: number };
+    /* Parse request body for location and filters */
+    const { 
+      lat, 
+      lng, 
+      radiusKm = 1, 
+      limit = 10,
+      vibe = null,
+      activity = null,
+      groupSize = null 
+    } = (await req.json().catch(() => ({}))) as {
+      lat?: number;
+      lng?: number;
+      radiusKm?: number;
+      limit?: number;
+      vibe?: string;
+      activity?: string;
+      groupSize?: number;
+    };
+
+    // Validate required parameters
+    if (!lat || !lng) {
+      return new Response(
+        JSON.stringify({ error: "lat and lng are required parameters" }), 
+        {
+          status: 400,
+          headers: cors
+        }
+      );
+    }
 
     /* ----------------------------------------------------------------
        Use the caller's JWT so auth.uid() is available inside the RPC.
@@ -53,19 +78,28 @@ serve(async req => {
     );
 
     /* ---------------------------------------------------------------
-       Call the SQL function:
-
-         CREATE FUNCTION public.get_social_suggestions(
-             p_profile_id uuid DEFAULT auth.uid(),
-             max_dist_m   integer,
-             limit_n      integer)
-
-       We let SQL default p_profile_id by passing `null`.
+       Call the updated SQL function with new signature:
+       
+       get_social_suggestions(
+         p_lat numeric,
+         p_lng numeric, 
+         p_radius_km numeric DEFAULT 1,
+         p_limit integer DEFAULT 10,
+         p_vibe text DEFAULT NULL,
+         p_activity text DEFAULT NULL,
+         p_group_size integer DEFAULT NULL,
+         p_profile_id uuid DEFAULT auth.uid()
+       )
        ------------------------------------------------------------- */
     const { data, error } = await sb.rpc("get_social_suggestions", {
-      p_profile_id: null,        // ⇠ use auth.uid() inside the function
-      max_dist_m  : radius,
-      limit_n     : limit
+      p_lat: lat,
+      p_lng: lng,
+      p_radius_km: radiusKm,
+      p_limit: limit,
+      p_vibe: vibe,
+      p_activity: activity,
+      p_group_size: groupSize
+      // p_profile_id will use auth.uid() default
     });
 
     if (error) {

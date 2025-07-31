@@ -89,7 +89,7 @@ serve(async (req) => {
         const { error: updateError } = await supabase
           .from('user_settings')
           .upsert({
-            user_id: user.id,
+            profile_id: user.id,
             available_until: userAvailableUntil,
             preferred_welcome_template,
             notification_preferences,
@@ -100,10 +100,14 @@ serve(async (req) => {
             privacy_settings,
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', user.id);
+          .eq('profile_id', user.id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Error updating user settings' }), {
+          console.error('Error updating user settings:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Error updating user settings', 
+            details: updateError.message 
+          }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -126,7 +130,11 @@ serve(async (req) => {
           .eq('floq_id', floq_id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Failed to update floq settings' }), {
+          console.error('Error updating floq settings:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to update floq settings', 
+            details: updateError.message 
+          }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -142,14 +150,18 @@ serve(async (req) => {
         const { error: updateError } = await supabase
           .from('user_settings')
           .upsert({
-            user_id: user.id,
+            profile_id: user.id,
             available_until,
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', user.id);
+          .eq('profile_id', user.id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Error updating availability' }), {
+          console.error('Error updating availability:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Error updating availability', 
+            details: updateError.message 
+          }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -196,7 +208,11 @@ serve(async (req) => {
           .eq('profile_id', user.id);
 
         if (updateError) {
-          return new Response(JSON.stringify({ error: 'Error updating user preferences' }), {
+          console.error('Error updating user preferences:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Error updating user preferences', 
+            details: updateError.message 
+          }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
