@@ -183,7 +183,21 @@ export const useSmartDiscovery = (
               ? (aiSuggestionsResult.value as any).data 
               : [];
               
-            const validatedSuggestions = aiData.map((suggestion: any) => AiSuggestionSchema.parse(suggestion));
+            const validatedSuggestions = aiData.map((suggestion: any, index: number) => {
+              // Provide defaults for required fields if missing
+              const processedSuggestion = {
+                id: suggestion.id || suggestion.venue_id || suggestion.floq_id || `ai-suggestion-${index}`,
+                title: suggestion.title || suggestion.name || 'AI Suggestion',
+                type: suggestion.type || 'venue',
+                distance: suggestion.distance || suggestion.distance_m || 0,
+                vibe: suggestion.vibe || suggestion.primary_vibe || undefined,
+                description: suggestion.description || undefined,
+                location: suggestion.location || suggestion.address || undefined,
+                rating: suggestion.rating || undefined,
+                tags: suggestion.tags || suggestion.categories || []
+              };
+              return AiSuggestionSchema.parse(processedSuggestion);
+            }).filter(Boolean);
             
             const aiRecommendations: SmartRecommendation[] = validatedSuggestions.map(suggestion => ({
               id: `ai-${suggestion.id}`,

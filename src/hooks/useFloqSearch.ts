@@ -31,6 +31,7 @@ export function useFloqSearch(
       if (error) throw error;
       return (data ?? []).map(floq => ({
         ...floq,
+        distance_m: (floq as any).distance_m || 0, // Add missing distance_m field
         friends_going_count: (floq as any).friends_going_count || 0,
         friends_going_avatars: (floq as any).friends_going_avatars || [],
         friends_going_names: (floq as any).friends_going_names || [],
