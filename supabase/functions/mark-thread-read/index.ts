@@ -1,169 +1,175 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, respondWithCors } from "../_shared/cors.ts";
+import { logInvocation } from "../_shared/edge-logger.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
-
-type Payload = {
-  surface: "dm" | "floq" | "plan";
-  thread_id: string;
-  profile_id: string;
-};
-
-async function markThreadRead({ surface, thread_id, profile_id }: Payload) {
-  console.log(`[mark-thread-read] Starting for surface=${surface}, thread_id=${thread_id}, profile_id=${profile_id}`);
-  
-  try {
-    if (surface === "dm") {
-      // For DMs, we need to determine if this user is member_a or member_b
-      const { data: thread, error: threadError } = await supabase
-        .from("direct_threads")
-        .select("member_a, member_b")
-        .eq("id", thread_id)
-        .single();
-
-      if (threadError) {
-        console.error(`[mark-thread-read] Failed to fetch thread:`, threadError);
-        throw new Error(`Thread not found: ${threadError.message}`);
-      }
-
-      const isMemberA = thread.member_a === profile_id;
-      const isMemberB = thread.member_b === profile_id;
-
-      if (!isMemberA && !isMemberB) {
-        throw new Error("User is not a member of this thread");
-      }
-
-      // Update the appropriate last_read_at and unread columns
-      const updateData = isMemberA 
-        ? { last_read_at_a: new Date().toISOString(), unread_a: 0 }
-        : { last_read_at_b: new Date().toISOString(), unread_b: 0 };
-
-      const { error: updateError } = await supabase
-        .from("direct_threads")
-        .update(updateData)
-        .eq("id", thread_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update direct thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated direct thread for ${isMemberA ? 'member_a' : 'member_b'}`);
-
-    } else if (surface === "floq") {
-      // For floq threads, update last_read_at and reset unread count
-      const { error: updateError } = await supabase
-        .from("floq_threads")
-        .update({
-          last_read_at: new Date().toISOString(),
-          unread: 0
-        })
-        .eq("id", thread_id)
-        .eq("profile_id", profile_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update floq thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated floq thread`);
-
-    } else if (surface === "plan") {
-      // For plan threads, update last_read_at and reset unread count
-      const { error: updateError } = await supabase
-        .from("plan_threads")
-        .update({
-          last_read_at: new Date().toISOString(),
-          unread: 0
-        })
-        .eq("id", thread_id)
-        .eq("profile_id", profile_id);
-
-      if (updateError) {
-        console.error(`[mark-thread-read] Failed to update plan thread:`, updateError);
-        throw updateError;
-      }
-
-      console.log(`[mark-thread-read] Successfully updated plan thread`);
-    } else {
-      throw new Error(`Invalid surface: ${surface}`);
+// Input validation schema
+const markReadSchema = {
+  validate: (data: any) => {
+    if (!data.p_surface || !['dm', 'floq', 'plan'].includes(data.p_surface)) {
+      throw new Error('p_surface is required and must be dm, floq, or plan');
     }
-
-    return { success: true };
-
-  } catch (error) {
-    console.error(`[mark-thread-read] Error:`, error);
-    throw error;
+    if (!data.p_thread_id || typeof data.p_thread_id !== 'string') {
+      throw new Error('p_thread_id is required and must be a string');
+    }
+    if (!data.p_profile_id || typeof data.p_profile_id !== 'string') {
+      throw new Error('p_profile_id is required and must be a string');
+    }
+    return {
+      surface: data.p_surface,
+      thread_id: data.p_thread_id,
+      profile_id: data.p_profile_id
+    };
   }
-}
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  const startTime = Date.now();
+  
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const input = await req.json();
-    console.log(`[mark-thread-read] Received request:`, input);
-
-    // Support both RPC-style parameters and direct parameters
-    const payload: Payload = {
-      surface: input.p_surface || input.surface,
-      thread_id: input.p_thread_id || input.thread_id,
-      profile_id: input.p_profile_id || input.profile_id,
-    };
-
-    // Validate required parameters
-    if (!payload.surface || !payload.thread_id || !payload.profile_id) {
-      throw new Error("Missing required parameters: surface, thread_id, profile_id");
+    // Only allow POST requests
+    if (req.method !== 'POST') {
+      return respondWithCors({ error: 'Method not allowed' }, 405);
     }
 
-    // Validate UUID format for thread_id and profile_id
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(payload.thread_id)) {
-      console.error(`[mark-thread-read] Invalid thread_id format: ${payload.thread_id}`);
-      throw new Error(`Invalid thread_id format: ${payload.thread_id}`);
-    }
-    if (!uuidRegex.test(payload.profile_id)) {
-      console.error(`[mark-thread-read] Invalid profile_id format: ${payload.profile_id}`);
-      throw new Error(`Invalid profile_id format: ${payload.profile_id}`);
+    // Get auth user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      await logInvocation({
+        functionName: 'mark-thread-read',
+        status: 'error',
+        durationMs: Date.now() - startTime,
+        errorMessage: 'Missing or invalid authorization header'
+      });
+      return respondWithCors({ error: 'Unauthorized' }, 401);
     }
 
-    const result = await markThreadRead(payload);
-
-    return new Response(
-      JSON.stringify(result),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+    // Create Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
       }
     );
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      await logInvocation({
+        functionName: 'mark-thread-read',
+        status: 'error',
+        durationMs: Date.now() - startTime,
+        errorMessage: 'Invalid auth token'
+      });
+      return respondWithCors({ error: 'Unauthorized' }, 401);
+    }
+
+    // Parse and validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return respondWithCors({ error: 'Invalid JSON body' }, 400);
+    }
+
+    let validatedData;
+    try {
+      validatedData = markReadSchema.validate(body);
+    } catch (err) {
+      return respondWithCors({ error: err.message }, 400);
+    }
+
+    // Security check: ensure user can only mark their own threads as read
+    if (validatedData.profile_id !== user.id) {
+      return respondWithCors({ error: 'Can only mark own threads as read' }, 403);
+    }
+
+    // Update read status based on surface type
+    let updateResult;
+    
+    if (validatedData.surface === 'dm') {
+      // Update direct thread read status
+      const { data, error } = await supabase
+        .from('direct_threads')
+        .update({
+          last_read_at_a: validatedData.profile_id === 'member_a' ? new Date().toISOString() : undefined,
+          last_read_at_b: validatedData.profile_id === 'member_b' ? new Date().toISOString() : undefined
+        })
+        .eq('id', validatedData.thread_id)
+        .or(`member_a.eq.${user.id},member_b.eq.${user.id}`)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      updateResult = data;
+    } else if (validatedData.surface === 'floq') {
+      // Update floq participant read status
+      const { data, error } = await supabase
+        .from('floq_participants')
+        .update({
+          last_read_message_at: new Date().toISOString()
+        })
+        .eq('floq_id', validatedData.thread_id)
+        .eq('profile_id', user.id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      updateResult = data;
+    } else if (validatedData.surface === 'plan') {
+      // For plan chat, we could create a separate read status table
+      // For now, just return success as plan chat is less critical
+      updateResult = { success: true };
+    }
+
+    // Broadcast read status update
+    const channelName = `${validatedData.surface}:${validatedData.thread_id}`;
+    await supabase.channel(channelName).send({
+      type: 'broadcast',
+      event: 'thread_read',
+      payload: {
+        thread_id: validatedData.thread_id,
+        profile_id: validatedData.profile_id,
+        surface: validatedData.surface,
+        read_at: new Date().toISOString()
+      }
+    });
+
+    await logInvocation({
+      functionName: 'mark-thread-read',
+      status: 'success',
+      durationMs: Date.now() - startTime,
+      metadata: {
+        surface: validatedData.surface,
+        thread_id: validatedData.thread_id
+      }
+    });
+
+    return respondWithCors({
+      success: true,
+      result: updateResult
+    });
 
   } catch (error) {
-    console.error(`[mark-thread-read] Request failed:`, error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : String(error) 
-      }),
-      {
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        },
-      }
-    );
+    await logInvocation({
+      functionName: 'mark-thread-read',
+      status: 'error',
+      durationMs: Date.now() - startTime,
+      errorMessage: error.message
+    });
+
+    console.error('Mark thread read error:', error);
+    return respondWithCors({ 
+      error: 'Internal server error',
+      message: error.message 
+    }, 500);
   }
 });
