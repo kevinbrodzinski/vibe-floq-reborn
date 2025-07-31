@@ -1,3 +1,9 @@
+/**
+ * @deprecated Use new location hooks from @/hooks/location/
+ * - useLocationCore() for GPS only
+ * - useLocationTracking() for GPS + recording
+ * - useLocationSharing() for GPS + recording + sharing
+ */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { trackLocationPermission } from '@/lib/analytics';
 import { toast } from 'sonner';

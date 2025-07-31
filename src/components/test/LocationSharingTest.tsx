@@ -1,3 +1,7 @@
+/**
+ * @deprecated This is test/demo code - moved to @/lib/location/mockData
+ * Use the standardized mock data utilities instead
+ */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

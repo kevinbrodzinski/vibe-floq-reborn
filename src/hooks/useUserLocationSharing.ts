@@ -21,23 +21,14 @@ export function useUserLocationSharing(profileId: string | undefined) {
 
       console.log('[DEBUG] Checking location sharing for profile:', profileId);
 
-      // For demo - show location sharing for active profiles
-      // In a real app, this would check actual sharing permissions
-      const demoUsers = ['kaleb', 'beata', 'alex', 'sam']; // Add more demo user IDs as needed
+      // Use standardized mock data utilities instead of inline demo logic
+      const { isDemoProfile, generateDemoLocationSharing } = await import('@/lib/location/mockData');
       
+      if (isDemoProfile(profileId)) {
+        return generateDemoLocationSharing();
+      }
+
       try {
-        // Check if this is a demo profile we want to show as sharing
-        const isDemo = demoUsers.some(username => profileId.includes(username)) || 
-                       Math.random() > 0.3; // 70% chance to show sharing for any profile
-
-        if (isDemo) {
-          return {
-            isSharing: true,
-            accuracyLevel: 'exact',
-            sharedSince: new Date(),
-          };
-        }
-
         // For non-demo users, check actual database (original logic)
         const { data: sharePrefs, error: shareError } = await supabase
           .from('friend_share_pref')

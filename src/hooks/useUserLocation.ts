@@ -1,3 +1,11 @@
+/**
+ * @deprecated Use new location hooks from @/hooks/location/
+ * 
+ * MIGRATION:
+ * - For GPS only: useLocationCore()
+ * - For GPS + tracking: useLocationTracking() 
+ * - For GPS + tracking + sharing: useLocationSharing()
+ */
 import { useState, useRef, useEffect } from 'react'
 import { useGeo } from './useGeo'
 import { supabase } from '@/integrations/supabase/client'
@@ -6,7 +14,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings'
 import { useContextDetection } from '@/hooks/useContextDetection'
 import dayjs from '@/lib/dayjs'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import { metersBetween } from '@/lib/location/geo'
+import { calculateDistance } from '@/lib/location/standardGeo'
 import { applyPrivacyFilter } from '@/lib/location/privacy'
 
 interface LocationCoords {
@@ -164,9 +172,12 @@ export function useUserLocation() {
     // ---- distance gate 10 m + 20 s ----
     const lastPing = bufferRef.current.at(-1)
     if (lastPing) {
-      const dt = now - new Date(lastPing.ts).valueOf();
-      const dist = metersBetween(lat, lng, lastPing.lat, lastPing.lng);
-      if (dist < 10 && dt < 20_000) return;   // skip jitter
+      const timeDiff = now - new Date(lastPing.ts).valueOf();
+      const distance = calculateDistance(
+        { lat, lng },
+        { lat: lastPing.lat, lng: lastPing.lng }
+      );
+      if (distance < 10 && timeDiff < 20_000) return;   // skip jitter
     }
 
     bufferRef.current.push(newPing)
