@@ -3888,6 +3888,56 @@ export type Database = {
           },
         ]
       }
+      place_details: {
+        Row: {
+          data: Json
+          fetched_at: string | null
+          place_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          data: Json
+          fetched_at?: string | null
+          place_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          data?: Json
+          fetched_at?: string | null
+          place_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "place_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_activities: {
         Row: {
           activity_type: string
