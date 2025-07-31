@@ -1,5 +1,7 @@
+-- Fix set_live_share_bulk function to use correct column names
 BEGIN;
 
+-- Drop the existing function with all its overloads
 DO $$
 DECLARE
     r RECORD;
@@ -18,6 +20,7 @@ BEGIN
     END LOOP;
 END $$;
 
+-- Create the corrected function using other_profile_id instead of friend_id
 CREATE FUNCTION public.set_live_share_bulk(
   _friend_ids UUID[],
   _on         BOOLEAN,
