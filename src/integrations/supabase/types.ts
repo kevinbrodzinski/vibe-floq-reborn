@@ -12194,11 +12194,16 @@ export type Database = {
         Returns: string
       }
       upsert_friendship: {
-        Args: {
-          _other_user: string
-          _new_state: Database["public"]["Enums"]["friend_state"]
-          _is_close?: boolean
-        }
+        Args:
+          | {
+              _other_user: string
+              _new_state: Database["public"]["Enums"]["friend_state"]
+              _is_close?: boolean
+            }
+          | {
+              _other_user: string
+              _new_state?: Database["public"]["Enums"]["friend_state"]
+            }
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_presence: {
