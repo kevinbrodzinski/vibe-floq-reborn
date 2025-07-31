@@ -31,7 +31,7 @@ export interface SmartRecommendation {
   startTime?: string;
   endTime?: string;
   status: 'open' | 'invite_only' | 'upcoming' | 'active' | 'full' | 'private';
-  price?: string;
+  price?: '$' | '$$' | '$$$' | '$$$$';
   rating?: number;
   description?: string;
   location?: string;
