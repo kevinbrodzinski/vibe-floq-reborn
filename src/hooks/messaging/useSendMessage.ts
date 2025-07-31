@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supaFn } from "@/lib/supaFn";
 import type { Database } from "@/integrations/supabase/types";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
@@ -54,27 +55,18 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No auth session");
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-message`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          surface,
-          thread_id: threadId,
-          sender_id: user.id,
-          content,
-          client_id,
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
+      const res = await supaFn(
+        "send-message",
+        session.access_token,
+        { surface, thread_id: threadId, sender_id: user.id, content, client_id }
+      );
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to send message: ${res.status} ${errorText}`);
       }
-
-      const data = await response.json();
+      
+      const data = await res.json();
       return { ...data, client_id, threadId };
     },
 

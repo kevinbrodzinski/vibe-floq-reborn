@@ -28,6 +28,7 @@ import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { rpc_markThreadRead, type Surface } from '@/lib/chat/api';
+import isUuid from '@/lib/utils/isUuid';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
 import { MessageList } from '@/components/chat/MessageList';
@@ -81,15 +82,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       if (error) throw error;
       return newThread.id;
     } catch (error) {
-      console.error('Failed to create/get thread:', error);
-      // Fallback to deterministic ID for now
-      return [userId, friendId].sort().join('-');
+      throw error;  // let the sheet show a toast instead
     }
   };
 
-  // Unified messaging hooks
-  const messages = useMessages(threadId || '', 'dm');
-  const sendMut = useSendMessage('dm');
+   // Unified messaging hooks - guard queries until thread is ready
+   const enabled = threadId ? isUuid(threadId) : false;
+   const messages = useMessages(threadId || '', 'dm');
+   const sendMut = useSendMessage('dm');
   const markReadMut = useMarkThreadRead();
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
@@ -118,13 +118,22 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   }, []);
 
   // Initialize thread when both user and friend are available
-  useEffect(() => {
-    if (currentUserId && friendId && open) {
-      threadIdFrom(currentUserId, friendId).then(setThreadId);
-    } else {
-      setThreadId(null);
-    }
-  }, [currentUserId, friendId, open]);
+   useEffect(() => {
+     if (currentUserId && friendId && open) {
+       threadIdFrom(currentUserId, friendId)
+         .then(setThreadId)
+         .catch((error) => {
+           console.error('Failed to create/get thread:', error);
+           toast({
+             title: "Could not start chat",
+             description: "Please try again later.",
+             variant: "destructive",
+           });
+         });
+     } else {
+       setThreadId(null);
+     }
+   }, [currentUserId, friendId, open, toast]);
 
   useEffect(() => {
     if (open && currentUserId && friendId && threadId) {
@@ -291,12 +300,21 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         </SheetHeader>
 
         {/* Messages */}
-        <MessageList
-          messages={messages}
-          currentUserId={currentUserId}
-          onReply={setReplyTo}
-          className="flex-1"
-        />
+        {enabled ? (
+          <MessageList
+            messages={messages}
+            currentUserId={currentUserId}
+            onReply={setReplyTo}
+            className="flex-1"
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm">Setting up chat...</p>
+            </div>
+          </div>
+        )}
         
         {isTyping && (
           <div className="text-sm text-muted-foreground italic animate-pulse px-4">
