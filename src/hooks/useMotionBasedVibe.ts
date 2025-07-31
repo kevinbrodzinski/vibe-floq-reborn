@@ -48,12 +48,12 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
     const lng2 = pos2.coords.longitude;
 
     // Use standardized distance calculation
-    const distance = calculateDistance(
+    const distanceMeters = calculateDistance(
       { lat: lat1, lng: lng1 },
       { lat: lat2, lng: lng2 }
     );
 
-    return distance / timeDiff; // m/s
+    return distanceMeters / timeDiff; // m/s
   };
 
   // Determine activity from speed

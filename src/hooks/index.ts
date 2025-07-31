@@ -1,4 +1,15 @@
 
+// Location hooks - new architecture
+export { useLocationCore, useLocationTracking, useLocationSharing } from './location';
+export { useLocationDisplay } from './useLocationDisplay';
+export { useFriendLocations } from './useFriendLocations';
+export type { LocationCoreOptions, LocationCoreState, LocationTrackingOptions, LocationSharingOptions } from './location';
+
+// Legacy location hooks (deprecated - use location/ exports above)
+export { useGeo, useLatLng, useLocation, useGeoPos } from './useGeo';
+export { useMyLocation } from './useMyLocation';
+export { useUserLocation } from './useUserLocation';
+
 export { useShakeDetection } from './useShakeDetection';
 export { useHapticFeedback } from './useHapticFeedback';
 export { useFloqJoin } from './useFloqJoin';

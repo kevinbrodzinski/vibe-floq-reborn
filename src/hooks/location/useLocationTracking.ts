@@ -68,8 +68,9 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
   }, []);
 
   const startTracking = useCallback(async () => {
-    console.log('[LocationTracking] Starting location tracking...');
-    
+    if (import.meta.env.DEV) {
+      console.log('[LocationTracking] Starting location tracking...');
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -92,8 +93,9 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
   }, [core, flushBuffer, trackingOpts.flushIntervalMs]);
 
   const stopTracking = useCallback(() => {
-    console.log('[LocationTracking] Stopping location tracking...');
-    
+    if (import.meta.env.DEV) {
+      console.log('[LocationTracking] Stopping location tracking...');
+    }
     // Stop core GPS
     core.clearWatch();
 

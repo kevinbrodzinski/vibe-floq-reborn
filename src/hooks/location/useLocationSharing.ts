@@ -70,14 +70,15 @@ export function useLocationSharing(options: LocationSharingOptions = {}) {
     }
   }, [tracking]);
 
-  const stopSharing = useCallback(() => {
+  const stopSharing = useCallback(async () => {
     console.log('[LocationSharing] Stopping location sharing...');
     
     // Stop tracking
     tracking.stopTracking();
 
-    // Clean up presence channel
+    // Clean up presence channel with proper unsubscribe
     if (channelRef.current) {
+      await channelRef.current.unsubscribe();
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
@@ -99,6 +100,7 @@ export function useLocationSharing(options: LocationSharingOptions = {}) {
 
     const broadcastPresence = async () => {
       try {
+        // Null check for user and channel before proceeding
         if (!userIdRef.current || !channelRef.current || !tracking.coords) return;
 
         // Privacy checks - fail fast if no sharing allowed

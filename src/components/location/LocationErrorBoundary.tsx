@@ -53,7 +53,7 @@ export class LocationErrorBoundary extends React.Component<
       const locationError = normalizeLocationError(this.state.error);
 
       return (
-        <div className="p-4">
+        <div className="p-4 fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Location Error</AlertTitle>
@@ -71,7 +71,8 @@ export class LocationErrorBoundary extends React.Component<
                 </Button>
               )}
             </AlertDescription>
-          </Alert>
+            </Alert>
+          </div>
         </div>
       );
     }

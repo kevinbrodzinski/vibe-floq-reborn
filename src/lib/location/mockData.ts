@@ -147,8 +147,10 @@ export function generateDemoFriendLocations(center: GPS, count = 5) {
  */
 export function getMockLocationConfig(): MockLocationOptions {
   const isDev = process.env.NODE_ENV === 'development';
-  const isDemo = window.location.hostname.includes('demo') || 
-                 window.location.search.includes('demo=true');
+  const isDemo = typeof window !== 'undefined' && (
+    window.location.hostname.includes('demo') || 
+    window.location.search.includes('demo=true')
+  );
   
   return {
     enabled: isDev || isDemo,
