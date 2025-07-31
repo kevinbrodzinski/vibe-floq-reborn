@@ -16,14 +16,14 @@ serve(async (req) => {
     return new Response("POST only", { status: 405, headers: CORS });
 
   try {
-    const { user_id, lat, lng } = await req.json() as {
-      user_id?: string;
+    const { profile_id, lat, lng } = await req.json() as {
+      profile_id?: string;
       lat?: number;
       lng?: number;
     };
-    if (!user_id || lat == null || lng == null) {
+    if (!profile_id || lat == null || lng == null) {
       return new Response(
-        JSON.stringify({ error: "user_id, lat & lng required" }),
+        JSON.stringify({ error: "profile_id, lat & lng required" }),
         { status: 400, headers: CORS },
       );
     }
@@ -63,7 +63,7 @@ serve(async (req) => {
 
     /* 3 ─ dump */
     await sb.from("integrations.place_feed_raw")
-      .insert({ user_id, provider_id: 2, payload: fsq });
+      .insert({ profile_id, provider_id: 2, payload: fsq });
 
     return new Response(
       JSON.stringify({ ok: true, count: fsq.results?.length ?? 0 }),
