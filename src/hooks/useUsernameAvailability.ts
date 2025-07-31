@@ -17,7 +17,7 @@ export function useUsernameAvailability(raw: string) {
 
     queryFn : async () => {
       const { data, error } = await supabase.rpc('username_available', {
-        p_username: debounced,                     // ❹ param name matches SQL
+        u: debounced,                              // ❹ param name matches citext version
       })
       if (error) throw error
       return data as boolean                       // true → available

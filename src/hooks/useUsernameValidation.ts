@@ -72,7 +72,7 @@ export function useUsernameValidation(username: string) {
     const checkAvailability = async () => {
       try {
         const { data: isAvailable, error } = await supabase
-          .rpc('username_available', { p_username: debouncedUsername });
+          .rpc('username_available', { u: debouncedUsername });
 
         if (error) throw error;
 

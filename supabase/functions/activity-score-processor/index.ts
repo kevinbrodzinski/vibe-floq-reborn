@@ -82,7 +82,7 @@ serve(async (req) => {
         // Calculate activity score using our SQL function
         const { data: scoreData, error: scoreError } = await supabase.rpc('calculate_floq_activity_score', {
           p_floq_id: event.floq_id,
-          p_event_type: event.event_type,
+          p_event_type: event.event_type as 'join' | 'leave' | 'vibe_change' | 'proximity_update',
           p_proximity_boost: event.proximity_users || 0
         });
 

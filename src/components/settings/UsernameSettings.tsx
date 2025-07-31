@@ -73,7 +73,7 @@ export default function UsernameSettings() {
     setIsCheckingAvailability(true);
     try {
       const { data, error } = await supabase
-        .rpc('username_available', { p_username: candidate.toLowerCase() });
+        .rpc('username_available', { u: candidate.toLowerCase() });
       
       if (error) throw error;
       
