@@ -10892,16 +10892,18 @@ export type Database = {
           id: string
           title: string
           description: string
-          primary_vibe: string
           starts_at: string
           ends_at: string
-          distance_m: number
-          participant_count: number
+          location: unknown
+          lat: number
+          lng: number
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           creator_id: string
           creator_username: string
           creator_display_name: string
           creator_avatar_url: string
-          user_joined_floq_id: string
+          participant_count: number
+          distance_m: number
           friends_going_count: number
           friends_going_avatars: string[]
           friends_going_names: string[]

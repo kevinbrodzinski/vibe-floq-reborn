@@ -27,7 +27,7 @@ export interface UnifiedRow {
 
 /* ---------- small helper for SUPABASE RPC ------------------------- */
 const callUpsert = async (other: string, state: 'pending'|'accepted'|'blocked') => {
-  const { data, error } = await (supabase.rpc as any)('upsert_friendship', { _other: other, _action: state });
+  const { data, error } = await (supabase.rpc as any)('upsert_friendship', { _other_user: other, _new_state: state });
   if (error) throw error;
   return data;
 };

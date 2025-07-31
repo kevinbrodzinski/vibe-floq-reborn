@@ -122,8 +122,8 @@ export function useRealFriendRequests() {
 
       // Create the friendship using the upsert_friendship function
       const { error: friendshipError } = await supabase.rpc('upsert_friendship', {
-        _other: request.profile_id,
-        _action: 'accepted'
+        _other_user: request.profile_id,
+        _new_state: 'accepted'
       });
 
       if (friendshipError) throw friendshipError;
