@@ -11,6 +11,9 @@ export const VibeEnum = z.enum([
   'down',
   'flowing',
   'open',
+  'energetic',
+  'excited',
+  'focused',
 ]);
 
 export type Vibe = z.infer<typeof VibeEnum>;

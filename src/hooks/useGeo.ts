@@ -80,6 +80,26 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       return;
     }
 
+    // 1. Check cached coords in sessionStorage first
+    const cached = sessionStorage.getItem('floq-coords');
+    if (cached) {
+      try {
+        const coords = JSON.parse(cached);
+        set(s => ({
+          ...s,
+          coords,
+          status: 'success',
+          hasPermission: true,
+          ts: Date.now(),
+        }));
+        lastFix.current = coords;
+        return; // Skip calling geolocation API
+      } catch {
+        // Invalid cached data, remove it
+        sessionStorage.removeItem('floq-coords');
+      }
+    }
+
     const handleGranted = () => {
       set(s => ({ ...s, hasPermission: true }));
       if (o.watch) {
@@ -100,7 +120,10 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
           /* initial state */
           if (perm.state === 'granted') handleGranted();
           else if (perm.state === 'denied') handleDenied();
-          else set(s => ({ ...s, hasPermission: undefined })); // 'prompt'
+          else {
+            set(s => ({ ...s, hasPermission: undefined })); // 'prompt'
+            // Don't auto-request on 'prompt' state to avoid repeated prompts
+          }
 
           /* listen for future changes (Allow / Block clicked) */
           perm.onchange = () => {
@@ -148,6 +171,13 @@ const apply = useCallback(
         hasPermission: true,
       }));
       lastFix.current = p;
+      
+      // Cache coords in sessionStorage for this tab session
+      try {
+        sessionStorage.setItem('floq-coords', JSON.stringify(p));
+      } catch {
+        // sessionStorage might be disabled or full, ignore silently
+      }
     }, o.debounceMs);
   },
   [o.minDistanceM, o.debounceMs],
