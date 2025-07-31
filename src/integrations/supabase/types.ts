@@ -11005,10 +11005,10 @@ export type Database = {
           title: string
           description: string
           primary_vibe: string
-          participant_count: number
-          distance_meters: number
           starts_at: string
           ends_at: string
+          distance_m: number
+          participant_count: number
           creator_id: string
           creator_username: string
           creator_display_name: string
