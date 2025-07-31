@@ -82,9 +82,9 @@ export const useContextDetection = () => {
         try {
           if (!venuePromiseRef.current) {
             venuePromiseRef.current = Promise.resolve(supabase.rpc('venues_within_radius', {
-              center_lat: lat,
-              center_lng: lng,
-              r_m: 100 // 100m radius
+              p_lat: lat,
+              p_lng: lng,
+              p_radius_m: 100 // 100m radius
             }));
           }
           

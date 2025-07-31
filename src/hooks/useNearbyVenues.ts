@@ -73,9 +73,9 @@ export const useNearbyVenues = (
       /* ------------------------------------------------- query venues */
       const { data, error } = await supabase
         .rpc('venues_within_radius', {
-          center_lat: lat,
-          center_lng: lng,
-          r_m: km * 1_000
+          p_lat: lat,
+          p_lng: lng,
+          p_radius_m: km * 1_000
         });
 
       if (error) throw new Error(error.message ?? 'Venue fetch failed');
