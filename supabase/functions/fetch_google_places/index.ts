@@ -16,14 +16,14 @@ serve(async (req) => {
     return new Response("POST only", { status: 405, headers: CORS });
 
   try {
-    const { user_id, lat, lng } = await req.json() as {
-      user_id?: string;
+    const { profile_id, lat, lng } = await req.json() as {
+      profile_id?: string;
       lat?: number;
       lng?: number;
     };
-    if (!user_id || lat == null || lng == null) {
+    if (!profile || lat == null || lng == null) {
       return new Response(
-        JSON.stringify({ error: "user_id, lat & lng required" }),
+        JSON.stringify({ error: "profile_id, lat & lng required" }),
         { status: 400, headers: CORS },
       );
     }
@@ -39,7 +39,7 @@ serve(async (req) => {
     const { data: cred } = await sb
       .from("integrations.user_credential")
       .select("api_key")
-      .eq("user_id", user_id)
+      .eq("profile_id", profile_id)
       .eq("provider_id", 1)      // 1 = google
       .maybeSingle();
 
@@ -69,7 +69,7 @@ serve(async (req) => {
 
     /* 3 ─ dump raw payload */
     await sb.from("integrations.place_feed_raw")
-      .insert({ user_id, provider_id: 1, payload: gp });
+      .insert({ profile_id, provider_id: 1, payload: gp });
 
     return new Response(
       JSON.stringify({ ok: true, count: gp.results?.length ?? 0 }),
