@@ -25,6 +25,13 @@ export type { LocationSharingOptions } from './useLocationSharing';
 export { useLocationDisplay } from '../useLocationDisplay';
 export { useReverseGeocode } from '../useReverseGeocode';
 
+// PostGIS-powered location functions
+export { usePostGISLocation } from '../usePostGISLocation';
+export { useLocationMetrics } from '../useLocationMetrics';
+
+// Migration helper for transitioning to PostGIS
+export { useLocationMigration } from '../useLocationMigration';
+
 // Friend location subscriptions
 export { useFriendLocations } from '../useFriendLocations';
 
@@ -44,9 +51,21 @@ export { useMyLocation } from '../useMyLocation';
  * 3. For GPS + recording + live sharing:
  *    useUserLocation() → useLocationSharing()
  * 
- * 4. For coordinate display:
+ * 4. For PostGIS-powered location features:
+ *    useLocationMigration() - provides unified interface
+ *    usePostGISLocation() - direct PostGIS access
+ *    useLocationMetrics() - performance monitoring
+ * 
+ * 5. For coordinate display:
  *    Continue using useLocationDisplay()
  * 
- * 5. For friend locations:
+ * 6. For friend locations:
  *    Continue using useFriendLocations()
+ * 
+ * PHASE 4 COMPLETE ✅
+ * - PostGIS functions deployed
+ * - Edge function updated
+ * - React hooks created
+ * - Migration helper available
+ * - Existing code partially migrated
  */

@@ -22,22 +22,22 @@ export default function useFriendTrails(friendIds: string[]) {
     if (!friendIds?.length) return;
 
     const channel = supabase
-      .channel(`vibes_now_trails_${Date.now()}`)
+      .channel(`live_positions_trails_${Date.now()}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'vibes_now',
-          filter: `id=in.(${friendIds.join(',')})`,
+          table: 'live_positions',
+          filter: `profile_id=in.(${friendIds.join(',')})`,
         },
         ({ new: row }) => {
-          if (!row?.lat || !row?.lng) return;
+          if (!row?.latitude || !row?.longitude) return;
 
-          const arr = buffer.current.get(row.id) ?? [];
-          arr.push({ lat: row.lat, lng: row.lng, ts: row.updated_at });
+          const arr = buffer.current.get(row.profile_id) ?? [];
+          arr.push({ lat: row.latitude, lng: row.longitude, ts: row.last_updated });
           if (arr.length > 5) arr.shift(); // keep 5
-          buffer.current.set(row.id, arr);
+          buffer.current.set(row.profile_id, arr);
 
           force(v => v + 1);               // trigger re-render
         },

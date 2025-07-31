@@ -166,10 +166,10 @@ export const useEnhancedPresence = (defaultVibe: Vibe = 'social') => {
         {
           event: '*',
           schema: 'public',
-          table: 'vibes_now'
+          table: 'live_positions'
         },
         (payload) => {
-          console.log('Presence update received:', payload);
+          console.log('Live position update received:', payload);
           // Don't trigger immediate updates on realtime events to prevent spam
           // The interval will catch changes naturally
         }

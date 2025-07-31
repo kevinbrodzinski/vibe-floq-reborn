@@ -27,7 +27,7 @@ export function useSyncedVisibility() {
     (async () => {
       try {
         // Note: This should be using a different table that matches the visibility concept
-        // For now, we'll skip the database sync as vibes_now has different schema
+        // For now, we'll skip the database sync as live_positions has different schema
         console.log('Visibility updated locally:', visibility);
       } catch (error) {
         console.warn('Failed to sync visibility to database:', error);
@@ -42,17 +42,17 @@ export function useSyncedVisibility() {
       .channel(`vibe-visibility-${user.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
+        { event: 'INSERT', schema: 'public', table: 'live_positions', filter: `profile_id=eq.${user.id}` },
         ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'live_positions', filter: `profile_id=eq.${user.id}` },
         ({ new: row }) => row.visibility && setVisibility(row.visibility as any),
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'vibes_now', filter: `profile_id=eq.${user.id}` },
+        { event: 'DELETE', schema: 'public', table: 'live_positions', filter: `profile_id=eq.${user.id}` },
         () => setVisibility('public'), // Reset to default when row is deleted
       )
       .subscribe();

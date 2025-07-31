@@ -55,21 +55,24 @@ Deno.serve(async (req) => {
     }
 
     let totalInserted = 0;
+    
+    console.log(`[${user.id}] Recording ${batch.length} location entries`);
+    
     for (const chunk of chunks) {
       const rows = chunk.map(ping => ({
-        user_id: user.id,
-        captured_at: ping.ts,
-        lat: ping.lat,
-        lng: ping.lng,
-        acc: ping.acc
+        profile_id: user.id,
+        latitude: ping.lat,
+        longitude: ping.lng,
+        accuracy: ping.acc,
+        recorded_at: ping.ts
       }));
 
       const { error } = await supabaseAdmin
-        .from('raw_locations_staging')
+        .from('location_history')
         .insert(rows);
       
       if (error) {
-        console.error('Insert error:', error);
+        console.error('Database insert error:', error);
         return new Response(JSON.stringify(error), { 
           status: 500, 
           headers: corsHeaders 
@@ -78,6 +81,8 @@ Deno.serve(async (req) => {
       
       totalInserted += rows.length;
     }
+    
+    console.log(`[${user.id}] Successfully recorded ${totalInserted} locations`);
 
     return new Response(JSON.stringify({ 
       success: true, 
