@@ -22,6 +22,7 @@ import { EnhancedRecommendationCard } from './EnhancedRecommendationCard';
 import { useRecommendationActions } from '@/hooks/useRecommendationActions';
 import { useSmartDiscovery, type DiscoveryFilters, type SmartRecommendation } from '@/hooks/useSmartDiscovery';
 import { useFloqJoin } from '@/hooks/useFloqJoin';
+import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -90,6 +91,7 @@ export const SmartDiscoveryModal: React.FC<SmartDiscoveryModalProps> = ({
   const [activeTab, setActiveTab] = useState<'filters' | 'results'>('filters');
   const { handleAction } = useRecommendationActions();
   const { join, isPending } = useFloqJoin();
+  const { view, favorite, share } = useVenueInteractions();
 
   // Use real data hook
   const { 
@@ -141,7 +143,11 @@ export const SmartDiscoveryModal: React.FC<SmartDiscoveryModalProps> = ({
           break;
         
         case 'favorite':
-          handleAction(action, itemId, item);
+          if (item.type === 'venue') {
+            favorite(itemId);
+          } else {
+            handleAction(action, itemId, item);
+          }
           toast.success(`Added ${item.title} to favorites!`);
           break;
         
@@ -151,6 +157,9 @@ export const SmartDiscoveryModal: React.FC<SmartDiscoveryModalProps> = ({
           break;
         
         case 'share':
+          if (item.type === 'venue') {
+            share(itemId);
+          }
           if (navigator.share) {
             await navigator.share({
               title: item.title,

@@ -17,6 +17,7 @@ import { Card } from '@/components/ui/card';
 import { useSmartDiscovery, type DiscoveryFilters, type SmartRecommendation } from '@/hooks/useSmartDiscovery';
 import { useRecommendationActions } from '@/hooks/useRecommendationActions';
 import { useFloqJoin } from '@/hooks/useFloqJoin';
+import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -64,6 +65,7 @@ export const ProfileSmartDiscovery: React.FC<ProfileSmartDiscoveryProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const { handleAction } = useRecommendationActions();
   const { join } = useFloqJoin();
+  const { view, favorite, share } = useVenueInteractions();
 
   // Use real data hook
   const { 
@@ -108,7 +110,11 @@ export const ProfileSmartDiscovery: React.FC<ProfileSmartDiscoveryProps> = ({
           break;
         
         case 'favorite':
-          handleAction(action, itemId, item);
+          if (item.type === 'venue') {
+            favorite(itemId);
+          } else {
+            handleAction(action, itemId, item);
+          }
           toast.success(`Added ${item.title} to favorites!`);
           break;
         
@@ -118,6 +124,9 @@ export const ProfileSmartDiscovery: React.FC<ProfileSmartDiscoveryProps> = ({
           break;
         
         case 'share':
+          if (item.type === 'venue') {
+            share(itemId);
+          }
           if (navigator.share) {
             await navigator.share({
               title: item.title,
