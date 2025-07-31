@@ -1,5 +1,5 @@
-// Deno runtime • Google NearbySearch → integrations.place_feed_raw
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// Deno runtime • Foursquare Nearby → integrations.place_feed_raw
+import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
 const CORS = {
@@ -21,58 +21,48 @@ serve(async (req) => {
       lat?: number;
       lng?: number;
     };
-    if (!profile || lat == null || lng == null) {
+    if (!profile_id || lat == null || lng == null) {
       return new Response(
         JSON.stringify({ error: "profile_id, lat & lng required" }),
         { status: 400, headers: CORS },
       );
     }
 
-    /* ── Supabase (service-role, bypass RLS) ───────────────────── */
+    /* ---- 1. server-stored FSQ key --------------------------------- */
+    const API_KEY = Deno.env.get("FOURSQUARE_ADMIN_API");
+    if (!API_KEY) {
+      console.error("FOURSQUARE_ADMIN_API missing");
+      return new Response("server mis-config", { status: 500, headers: CORS });
+    }
+
+    /* ---- 2. call Foursquare “Nearby” ------------------------------ */
+    const url =
+      `https://api.foursquare.com/v3/places/nearby?ll=${lat},${lng}&radius=150&limit=25`;
+    const fsq = await fetch(url, {
+      headers: { Accept: "application/json", Authorization: API_KEY },
+    }).then((r) => r.json());
+
+    if (fsq.message)
+      return new Response(JSON.stringify({ error: fsq.message }), {
+        status: 502,
+        headers: CORS,
+      });
+
+    /* ---- 3. dump raw payload -------------------------------------- */
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } },
     );
 
-    /* 1 ─ fetch caller's Google key */
-    const { data: cred } = await sb
-      .from("integrations.user_credential")
-      .select("api_key")
-      .eq("profile_id", profile_id)
-      .eq("provider_id", 1)      // 1 = google
-      .maybeSingle();
-
-    if (!cred)
-      return new Response(JSON.stringify({ error: "no Google key" }), {
-        status: 400,
-        headers: CORS,
-      });
-
-    /* 2 ─ call Google Places NearbySearch (Essentials) */
-    const url = new URL(
-      "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
-    );
-    url.searchParams.set("key", cred.api_key);
-    url.searchParams.set("location", `${lat},${lng}`);
-    url.searchParams.set("radius", "150");
-    url.searchParams.set("type", "point_of_interest");
-
-    const gp = await fetch(url).then((r) => r.json());
-    if (gp.status !== "OK" && gp.status !== "ZERO_RESULTS") {
-      console.error("Google error", gp);
-      return new Response(JSON.stringify({ error: gp.error_message }), {
-        status: 502,
-        headers: CORS,
-      });
-    }
-
-    /* 3 ─ dump raw payload */
-    await sb.from("integrations.place_feed_raw")
-      .insert({ profile_id, provider_id: 1, payload: gp });
+    await sb.from("integrations.place_feed_raw").insert({
+      profile_id,
+      provider_id: 2,               // 2 = foursquare
+      payload: fsq,
+    });
 
     return new Response(
-      JSON.stringify({ ok: true, count: gp.results?.length ?? 0 }),
+      JSON.stringify({ ok: true, count: fsq.results?.length ?? 0 }),
       { headers: CORS },
     );
   } catch (e) {
