@@ -42,18 +42,32 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         };
       });
 
-      // Send via edge function
-      const { data, error } = await supabase.functions.invoke('send-message', {
-        body: {
+      // Send via edge function using direct fetch
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No auth session");
+
+      const response = await fetch('https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck'
+        },
+        body: JSON.stringify({
           surface,
           thread_id: threadId,
           sender_id: user.id,
           content,
           client_id,
-        }
+        })
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
       return { ...data, client_id, threadId };
     },
 
