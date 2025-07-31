@@ -121,6 +121,8 @@ export function useSendDirectMessage() {
           .insert({
             member_a: user.id,
             member_b: recipientId,
+            member_a_profile_id: user.id,  // Required field
+            member_b_profile_id: recipientId,  // Required field
           })
           .select('id')
           .single();
@@ -135,6 +137,7 @@ export function useSendDirectMessage() {
         .insert({
           thread_id: threadId,
           sender_id: user.id,
+          profile_id: user.id,  // Required field
           content,
         });
 
@@ -190,6 +193,8 @@ export function useCreateDirectThread() {
         .insert({
           member_a: user.id,
           member_b: recipientId,
+          member_a_profile_id: user.id,  // Required field
+          member_b_profile_id: recipientId,  // Required field
         })
         .select('id')
         .single();

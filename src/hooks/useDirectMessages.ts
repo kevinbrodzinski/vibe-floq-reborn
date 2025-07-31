@@ -141,6 +141,7 @@ export async function sendDm({
   const { error } = await supabase.from('direct_messages').insert({
     thread_id: threadId,
     sender_id: user.user.id,
+    profile_id: user.user.id,  // Required field
     content: content ?? null,
     metadata: {
       image_url: imageUrl,

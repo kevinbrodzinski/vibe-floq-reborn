@@ -71,6 +71,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         .insert({
           member_a: userId,
           member_b: friendId,
+          member_a_profile_id: userId,  // Required field
+          member_b_profile_id: friendId,  // Required field
           last_message_at: new Date().toISOString(),
           unread_a: 0,
           unread_b: 0

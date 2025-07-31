@@ -127,10 +127,13 @@ export function useDMThread(friendId: string | null) {
         .insert({
           thread_id: threadId,
           sender_id: selfId,
+          profile_id: selfId,  // Required field
           content: p.emojiOnly ? null : p.content ?? null,
-          image_url: imageUrl,
+          metadata: {
+            image_url: imageUrl,
+            emoji_only: !!p.emojiOnly,
+          },
           reply_to_id: p.reply_to ?? null,
-          emoji_only: !!p.emojiOnly,
         })
         .select()
         .single();
