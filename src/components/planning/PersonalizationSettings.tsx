@@ -126,9 +126,9 @@ export const PersonalizationSettings: React.FC<PersonalizationSettingsProps> = (
                   <Slider
                     value={[weights[config.key]]}
                     onValueChange={(value) => updateWeight(config.key, value[0])}
-                    max={1}
-                    min={0}
-                    step={0.05}
+                  max={1}
+                  min={0}
+                  step={0.01}
                     className="w-full"
                   />
                 </div>

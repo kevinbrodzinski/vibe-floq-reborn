@@ -7,7 +7,6 @@ export type InteractionType = 'check_in' | 'favorite' | 'share' | 'view';
 interface VenueInteraction {
   venue_id: string;
   interaction_type: InteractionType;
-  interaction_count?: number;
 }
 
 export const useVenueInteractions = () => {
@@ -30,8 +29,11 @@ export const useVenueInteractions = () => {
     },
     onSuccess: () => {
       // Invalidate personalized venue queries to update recommendations
-      queryClient.invalidateQueries({ queryKey: ['personalized-venues'] });
-      queryClient.invalidateQueries({ queryKey: ['smart-discovery'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === 'personalized-venues' || 
+          query.queryKey[0] === 'smart-discovery'
+      });
     }
   });
 

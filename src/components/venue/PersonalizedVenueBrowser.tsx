@@ -60,6 +60,9 @@ export const PersonalizedVenueBrowser: React.FC<PersonalizedVenueBrowserProps> =
     vibe: selectedVibe
   });
 
+  // Don't render filters or fetch data until coordinates are available
+  const hasCoordinates = lat !== null && lng !== null;
+
   const handleCategoryToggle = (category: string) => {
     setSelectedCategories(prev =>
       prev.includes(category)
@@ -130,7 +133,7 @@ export const PersonalizedVenueBrowser: React.FC<PersonalizedVenueBrowserProps> =
         </div>
 
         {/* Filters */}
-        {showFilters && (
+        {showFilters && hasCoordinates && (
           <div className="space-y-4 mb-4 p-3 border border-border/30 rounded-lg bg-muted/20">
             {/* Radius */}
             <div>
@@ -223,7 +226,12 @@ export const PersonalizedVenueBrowser: React.FC<PersonalizedVenueBrowserProps> =
         )}
 
         {/* Results */}
-        {isLoading ? (
+        {!hasCoordinates ? (
+          <div className="text-center py-8">
+            <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">Getting your location...</p>
+          </div>
+        ) : isLoading ? (
           <div className="text-center py-8">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">Finding venues...</p>
