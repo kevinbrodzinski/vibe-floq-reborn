@@ -20,19 +20,17 @@ import { useNearbyFriends } from '@/hooks/useNearbyFriends';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useToast } from '@/hooks/use-toast';
-import { useChatTimeline } from '@/hooks/chat/useChatTimeline';
-import { useReactToMessage } from '@/hooks/chat/useReactToMessage';
-import { useSendDM } from '@/hooks/chat/useSendDM';
-import { useMarkRead } from '@/hooks/chat/useMarkRead';
-import { useUploadMedia } from '@/hooks/chat/useUploadMedia';
+import { useMessages } from '@/hooks/messaging/useMessages';
+import { useSendMessage } from '@/hooks/messaging/useSendMessage';
+import { useMarkThreadRead } from '@/hooks/messaging/useMarkThreadRead';
+import { useThreads } from '@/hooks/messaging/useThreads';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
 import { rpc_markThreadRead, type Surface } from '@/lib/chat/api';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
-import { ChatMediaBubble } from '@/components/chat/ChatMediaBubble';
-import { ReplySnippet } from '@/components/chat/ReplySnippet';
+import { MessageList } from '@/components/chat/MessageList';
 import { getMediaURL } from '@/utils/mediaHelpers';
 
 interface DMQuickSheetProps {
@@ -89,16 +87,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
   };
 
-  // New chat hooks
-  const surface: Surface = 'dm';
-  const timeline = useChatTimeline(surface, threadId || '', currentUserId ?? '', { 
-    enabled: !!currentUserId && !!friendId && !!threadId 
-  });
-  const sendMut = useSendDM(threadId || '', currentUserId ?? '');
-  const reactMut = useReactToMessage(threadId || '', currentUserId ?? '');
-  const markReadMut = useMarkRead(surface, threadId || '', currentUserId ?? '');
-
-  const uploadMut = useUploadMedia(threadId, sendMut.mutateAsync);
+  // Unified messaging hooks
+  const messages = useMessages(threadId || '', 'dm');
+  const sendMut = useSendMessage('dm');
+  const markReadMut = useMarkThreadRead();
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
 
@@ -136,7 +128,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   useEffect(() => {
     if (open && currentUserId && friendId && threadId) {
-      markReadMut.mutate();
+      markReadMut.mutate({ surface: 'dm', threadId });
       
       // Optimistically clear unread badge
       queryClient.setQueryData(
@@ -145,16 +137,6 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       );
     }
   }, [open, currentUserId, friendId, threadId, markReadMut, queryClient]);
-
-  // Auto-focus input when sheet opens
-  useEffect(() => {
-    if (open && !timeline.isLoading) {
-      const timer = setTimeout(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [open, timeline.isLoading]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
@@ -166,17 +148,6 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       });
     }
   }, [friendError, open, toast]);
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    const messages = timeline.data?.pages?.flatMap(p => p) ?? [];
-    if (messages.length > 0) {
-      const id = requestAnimationFrame(() =>
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      );
-      return () => cancelAnimationFrame(id);
-    }
-  }, [timeline.data?.pages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -225,15 +196,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
     try {
       await sendMut.mutateAsync({ 
-        text: input.trim(), 
-        replyTo: replyTo 
+        threadId: threadId!,
+        content: input.trim()
       });
       setInput('');
       setReplyTo(null);
       
       // Note: sendMut already invalidates queries optimistically, but keeping for safety
-      queryClient.invalidateQueries({ queryKey: ['dm-threads', currentUserId] });
-      queryClient.invalidateQueries({ queryKey: ['dm-unread', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
@@ -308,104 +278,18 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         </SheetHeader>
 
         {/* Messages */}
-        <div
-          className="flex-1 overflow-y-auto p-4 space-y-4"
-          role="log"
-          aria-label="Direct message conversation"
-        >
-          {timeline.hasNextPage && (
-            <Waypoint onEnter={() => timeline.fetchNextPage()}>
-              <div className="flex justify-center p-4">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
-            </Waypoint>
-          )}
-
-          {timeline.isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin" />
-            </div>
-          ) : (
-            (timeline.data?.pages?.flatMap(p => p) ?? []).map((message) => {
-              const isOwn = message.sender_id === currentUserId;
-              return (
-                <div
-                  key={message.id}
-                  className={cn(
-                    "max-w-[70%] p-3 rounded-lg group",
-                    isOwn
-                      ? "bg-primary text-primary-foreground ml-auto"
-                      : "bg-muted"
-                  )}
-                  onDoubleClick={() => setReplyTo(message.id)}
-                >
-                  {/* Reply context */}
-                  {message.reply_to_id && (
-                    <ReplySnippet messageId={message.reply_to_id} />
-                  )}
-
-                  {/* Main content / media */}
-                  {message.metadata?.media ? (
-                    <ChatMediaBubble 
-                      media={message.metadata.media}
-                      className="max-w-xs"
-                    />
-                  ) : (
-                    <div className="text-sm">{message.content}</div>
-                  )}
-
-                  {/* Reactions */}
-                  {message.reactions && Object.keys(message.reactions).length > 0 && (
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      {Object.entries(message.reactions).map(([emoji, arr]) => (
-                        <button
-                          key={emoji}
-                          onClick={() => reactMut.mutate({ messageId: message.id, emoji })}
-                          className={cn(
-                            "px-2 py-1 rounded-full text-xs bg-muted hover:bg-muted/80 transition-colors",
-                            Array.isArray(arr) && arr.includes(currentUserId || '') ? 'ring-1 ring-primary' : ''
-                          )}
-                        >
-                          {emoji} {Array.isArray(arr) ? arr.length : 0}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between mt-1">
-                    <div className="text-xs opacity-70">
-                      {dayjs(message.created_at).format('HH:mm')}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
-                        onClick={() => reactMut.mutate({ messageId: message.id, emoji: '👍' })}
-                      >
-                        👍
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="p-1 opacity-0 group-hover:opacity-100 transition h-6 w-6"
-                        onClick={() => setReplyTo(message.id)}
-                      >
-                        ↩️
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-          {isTyping && (
-            <div className="text-sm text-muted-foreground italic animate-pulse">
-              {friend?.display_name} is typing...
-            </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
+        <MessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          onReply={setReplyTo}
+          className="flex-1"
+        />
+        
+        {isTyping && (
+          <div className="text-sm text-muted-foreground italic animate-pulse px-4">
+            {friend?.display_name} is typing...
+          </div>
+        )}
 
         {/* Input with reply preview */}
         <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
@@ -429,10 +313,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
             accept="image/*,video/*"
             hidden
             ref={fileRef}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) uploadMut.mutate(file);
-            }}
+            disabled
           />
           <div className="flex gap-2">
             <Button
@@ -440,6 +321,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               size="icon"
               onClick={() => fileRef.current?.click()}
               className="shrink-0"
+              disabled
             >
               <Paperclip className="h-4 w-4" />
             </Button>

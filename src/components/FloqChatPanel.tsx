@@ -1,5 +1,5 @@
-import { useFloqMessages, useSendFloqMessage } from '@/hooks/useFloqMessages'
-import type { FloqMessage } from '@/hooks/useFloqMessages'
+import { useMessages } from '@/hooks/messaging/useMessages'
+import { useSendMessage } from '@/hooks/messaging/useSendMessage'
 import { supabase } from '@/integrations/supabase/client'
 import { renderMentions } from '@/utils/mentions'
 import { Link } from 'react-router-dom'
@@ -30,22 +30,12 @@ import {
 import { useEffect, useState, useRef } from 'react'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
-  const { 
-    data, 
-    fetchNextPage, 
-    hasNextPage, 
-    typingUsers, 
-    readReceipts, 
-    messageReactions,
-    sendTypingIndicator,
-    sendReaction,
-    sendReadReceipt
-  } = useFloqMessages(floqId)
-  const { mutate: send } = useSendFloqMessage()
+  const messages = useMessages(floqId, 'floq')
+  const { mutate: send } = useSendMessage('floq')
   
   // Get current user for styling own messages
   const [me, setMe] = useState<string | null>(null)
-  const [replyingTo, setReplyingTo] = useState<FloqMessage | null>(null)
+  const [replyingTo, setReplyingTo] = useState<any | null>(null)
   const [showThread, setShowThread] = useState<string | null>(null)
   
   useEffect(() => {
@@ -56,7 +46,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     getUser()
   }, [])
 
-  const msgs = (data?.pages.flat() ?? [])
+  const msgs = (messages.data?.pages.flat() ?? [])
   
   // Mention popover hook
   const { target, open, close } = useMentionPopover()
@@ -121,11 +111,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     const value = e.target.value
     setInputValue(value)
     
-    // Send typing indicator
-    if (value.length > 0 && !isComposing) {
-      sendTypingIndicator(true)
-      setTimeout(() => sendTypingIndicator(false), 3000)
-    }
+    // TODO: Send typing indicator when available
     
     // Mention autocomplete
     const sel = e.target.selectionStart ?? 0
@@ -141,16 +127,12 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
 
   // Handle message reactions
   const handleReaction = (messageId: string, reaction: string) => {
-    if (!me) return
-    
-    const currentReactions = messageReactions[messageId] || []
-    const hasReacted = currentReactions.includes(me)
-    
-    sendReaction(messageId, reaction, !hasReacted)
+    // TODO: Implement reactions when available
+    console.log('React to message:', messageId, reaction)
   }
 
   // Handle reply to message
-  const handleReply = (message: FloqMessage) => {
+  const handleReply = (message: any) => {
     setReplyingTo(message)
     inputRef.current?.focus()
   }
@@ -176,13 +158,8 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
   // Get read receipt status
   const getReadStatus = (messageId: string, isOwn: boolean) => {
     if (!isOwn) return null
-    
-    const reads = readReceipts[messageId] || []
-    const totalMembers = 5 // This should come from floq data
-    
-    if (reads.length === 0) return <Clock className="w-3 h-3 text-muted-foreground" />
-    if (reads.length < totalMembers) return <Check className="w-3 h-3 text-blue-500" />
-    return <CheckCheck className="w-3 h-3 text-blue-500" />
+    // TODO: Implement read receipts when available
+    return <Clock className="w-3 h-3 text-muted-foreground" />
   }
 
   // Mark message as read when it comes into view
@@ -191,9 +168,10 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     
     const lastMessage = msgs[0] // Messages are in reverse order
     if (lastMessage && lastMessage.sender_id !== me) {
-      sendReadReceipt(lastMessage.id)
+      // TODO: Implement read receipts when available
+      console.log('Mark as read:', lastMessage.id)
     }
-  }, [msgs, me, sendReadReceipt])
+  }, [msgs, me])
 
   // Render reply preview
   const renderReplyPreview = () => {
@@ -228,10 +206,10 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
   }
 
   // Render message with reply context
-  const renderMessage = (m: FloqMessage) => {
+  const renderMessage = (m: any) => {
     const mine = m.sender_id === me
     const name = m.sender?.display_name || m.sender?.username || 'Someone'
-    const reactions = messageReactions[m.id] || []
+    const reactions = [] // TODO: Get from message reactions when available
 
     return (
       <motion.li
@@ -280,17 +258,9 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
                 ? 'bg-primary text-primary-foreground rounded-br-md' 
                 : 'bg-muted rounded-bl-md'
             )}>
-              {/* Rich text with mentions */}
+              {/* Message content */}
               <p className="text-sm leading-relaxed">
-                {renderMentions(m.body || '', (handle) => (
-                  <Link
-                    key={handle}
-                    to={`/u/${handle}`}
-                    className="text-primary/80 font-medium cursor-pointer hover:underline"
-                  >
-                    @{handle}
-                  </Link>
-                ))}
+                {m.content || m.body || ''}
               </p>
               
               {/* Message footer */}
@@ -385,33 +355,12 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
             // Show scroll-to-bottom button if scrolled up (scrollTop > 100)
             setShowScrollToBottom(target.scrollTop > 100);
             
-            if (target.scrollTop === 0 && hasNextPage) fetchNextPage()
+            if (target.scrollTop === 0 && messages.hasNextPage) messages.fetchNextPage()
           }}
         >
           {msgs.map(renderMessage)}
           
-          {/* Typing indicators */}
-          <AnimatePresence>
-            {typingUsers.size > 0 && (
-              <motion.li
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="flex gap-3 max-w-[75%]"
-              >
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarFallback className="text-xs">?</AvatarFallback>
-                </Avatar>
-                <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  </div>
-                </div>
-              </motion.li>
-            )}
-          </AnimatePresence>
+          {/* TODO: Typing indicators when available */}
         </ul>
 
         {/* Scroll to bottom button */}
@@ -445,13 +394,12 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
             const body = textarea.value.trim()
             if (body) {
               send({ 
-                floqId, 
-                body
+                threadId: floqId, 
+                content: body
               })
               textarea.value = ''
               setInputValue('')
               setReplyingTo(null)
-              sendTypingIndicator(false)
             }
             ac.close()
           }}
