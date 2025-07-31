@@ -26,8 +26,13 @@ export const useWeightedScoring = () => {
     }
   });
 
+  // Debounced localStorage write to prevent race conditions
   useEffect(() => {
-    localStorage.setItem('scoring-weights', JSON.stringify(weights));
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem('scoring-weights', JSON.stringify(weights));
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [weights]);
 
   const updateWeight = useCallback((key: keyof ScoringWeights, value: number) => {
@@ -83,12 +88,17 @@ export const useWeightedScoring = () => {
     return distanceScore + ratingScore + activityScore + personalizationScore + recencyScore;
   }, [weights]);
 
+  // Improved isDefault check that's order-independent
+  const isDefault = Object.entries(DEFAULT_WEIGHTS).every(([key, value]) => 
+    Math.abs(weights[key as keyof ScoringWeights] - value) < 0.01
+  );
+
   return {
     weights,
     updateWeight,
     resetWeights,
     normalizeWeights,
     calculateScore,
-    isDefault: JSON.stringify(weights) === JSON.stringify(DEFAULT_WEIGHTS)
+    isDefault
   };
 };

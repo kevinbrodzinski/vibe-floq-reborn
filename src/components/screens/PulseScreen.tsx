@@ -90,15 +90,20 @@ export const PulseScreen: React.FC = () => {
   // Smart suggestions state
   const { preferSmartSuggestions } = useNovaSnap();
   
-  // Analytics - fire smart_enabled events
+  // Analytics - fire real events (replace with your analytics service)
   const handleSmartToggle = () => {
     if (preferSmartSuggestions) {
-      // Analytics: smart_disabled
+      // Replace with real analytics: posthog.capture('smart_disabled') or analytics.track('smart_disabled')
       console.log('Analytics: smart_disabled');
     } else {
-      // Analytics: smart_enabled  
+      // Replace with real analytics: posthog.capture('smart_enabled') or analytics.track('smart_enabled')  
       console.log('Analytics: smart_enabled');
     }
+  };
+
+  const handleSmartBrowseOpen = () => {
+    // Replace with real analytics: posthog.capture('smart_browse_open') or analytics.track('smart_browse_open')
+    console.log('Analytics: smart_browse_open');
   };
 
   // Realtime live activity updates
@@ -615,8 +620,9 @@ export const PulseScreen: React.FC = () => {
 
 
 
-        {/* Main Recommendations List with Smooth Transitions */}
-        <AnimatePresence mode="wait">
+        {/* Main Recommendations List with Smooth Transitions & Consistent Height */}
+        <div className="min-h-[500px]"> {/* Prevent layout shift between different list lengths */}
+          <AnimatePresence mode="wait">
           {preferSmartSuggestions ? (
             <motion.div 
               key="smart-recommendations"
@@ -628,12 +634,7 @@ export const PulseScreen: React.FC = () => {
             >
               <PersonalizedVenueSection 
                 maxResults={5} 
-                onConfigureClick={() => {
-                  // Analytics: smart_browse_open
-                  console.log('Analytics: smart_browse_open');
-                  // This would open the PersonalizationSettings sheet
-                  // For now, we'll just log it
-                }}
+                onConfigureClick={handleSmartBrowseOpen}
               />
             </motion.div>
           ) : (
@@ -711,7 +712,8 @@ export const PulseScreen: React.FC = () => {
               </motion.div>
             )
           )}
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
 
         {/* Friends Modal */}
         <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>
