@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface UserPreferences {
-  user_id: string;
+  profile_id: string;
   preferred_vibe: string;
   vibe_color: string;
   vibe_strength: number;

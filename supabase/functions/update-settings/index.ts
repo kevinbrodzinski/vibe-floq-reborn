@@ -179,7 +179,7 @@ serve(async (req) => {
         const { error: updateError } = await supabase
           .from('user_preferences')
           .upsert({
-            user_id: user.id,
+            profile_id: user.id,
             preferred_vibe,
             prefer_smart_suggestions,
             feedback_sentiment,
@@ -193,7 +193,7 @@ serve(async (req) => {
             favorite_locations,
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', user.id);
+          .eq('profile_id', user.id);
 
         if (updateError) {
           return new Response(JSON.stringify({ error: 'Error updating user preferences' }), {
