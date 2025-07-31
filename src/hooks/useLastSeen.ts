@@ -18,9 +18,10 @@ export function useLastSeen(profileId: string) {
         .maybeSingle();
       
       if (error) throw error;
-      return data?.last_seen_at;
+      return data?.last_seen_at || null; // Always return string | null, never undefined
     },
-    refetchInterval: 30_000
+    refetchInterval: 30_000,
+    staleTime: 10_000 // Prevent excessive refetching
   });
-  return data; // ISO timestamp | undefined
+  return data ?? null; // Ensure we never return undefined
 }

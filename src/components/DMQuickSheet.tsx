@@ -186,6 +186,16 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   const handleSend = async () => {
     if (!input.trim() || sendMut.isPending) return;
+    
+    // Ensure we have a valid thread ID before sending
+    if (!threadId) {
+      toast({
+        title: "Cannot send message",
+        description: "Thread not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Clear typing state immediately
     setIsTyping(false);
@@ -196,7 +206,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
     try {
       await sendMut.mutateAsync({ 
-        threadId: threadId!,
+        threadId,
         content: input.trim()
       });
       setInput('');

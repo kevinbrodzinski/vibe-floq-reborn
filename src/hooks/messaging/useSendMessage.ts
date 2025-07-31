@@ -10,6 +10,14 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
 
   return useMutation({
     mutationFn: async ({ threadId, content }: { threadId: string; content: string }) => {
+      // Validate required parameters
+      if (!threadId || threadId === 'null') {
+        throw new Error("Thread ID is required and cannot be null");
+      }
+      if (!content?.trim()) {
+        throw new Error("Message content is required");
+      }
+
       // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Authentication required");
