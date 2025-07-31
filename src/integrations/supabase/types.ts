@@ -10495,7 +10495,9 @@ export type Database = {
         Returns: unknown
       }
       people_crossed_paths_today: {
-        Args: { in_me: string; proximity_meters?: number }
+        Args:
+          | { in_me: string; proximity_meters?: number }
+          | { in_me: string; proximity_meters?: number }
         Returns: {
           profile_id: string
           username: string
