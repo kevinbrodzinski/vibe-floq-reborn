@@ -95,8 +95,8 @@ export function PlanFloqStep({ value, onChange, onNext, combinedName, onCombined
   }
 
   const getInvitedFriends = () => {
-    return rows.filter(row => invitedIds.includes(row.friend_id)).map(row => ({
-      id: row.friend_id,
+    return rows.filter(row => invitedIds.includes(row.id)).map(row => ({
+      id: row.id,
       display_name: row.display_name,
       username: row.username,
       avatar_url: row.avatar_url

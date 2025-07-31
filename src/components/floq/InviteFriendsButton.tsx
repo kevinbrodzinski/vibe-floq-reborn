@@ -33,7 +33,7 @@ import { VariantProps } from 'class-variance-authority'
 /* -------------------------------------------------------------------------- */
 
 interface Friend {
-  friend_id: string
+  id: string
   username: string
   display_name: string
   avatar_url?: string
@@ -82,7 +82,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
 
       return (
         data?.map((r: any) => ({
-          friend_id   : r.friend_id,
+          id          : r.friend_id,
           username    : r.username ?? '',
           display_name: r.display_name ?? '',
           avatar_url  : r.avatar_url ?? undefined,
@@ -104,7 +104,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
       ? [
           ...filtered,
           ...searchResults.filter(
-            u => !filtered.some(f => f.friend_id === u.id)
+            u => !filtered.some(f => f.id === u.id)
           ),
         ]
       : filtered
@@ -137,7 +137,7 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
   /* ---------------------------- Friend card ----------------------------- */
 
   const FriendCard: React.FC<{ friend: Friend }> = ({ friend }) => {
-    const isSelected = selected.has(friend.friend_id)
+    const isSelected = selected.has(friend.id)
     return (
       <Card
         className={cn(
@@ -146,14 +146,14 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
             ? 'border-primary bg-primary/5'
             : 'hover:bg-muted/50'
         )}
-        onClick={() => toggle(friend.friend_id)}
+        onClick={() => toggle(friend.id)}
         role="button"
         tabIndex={0}
         aria-label={`${isSelected ? 'Remove' : 'Add'} ${friend.display_name}`}
         onKeyDown={e => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            toggle(friend.friend_id)
+            toggle(friend.id)
           }
         }}
       >
@@ -262,12 +262,12 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
               ) : (
                 merged.map((u: any) => (
                   <FriendCard
-                    key={u.friend_id ?? u.id}
+                    key={u.id}
                     friend={
-                      'friend_id' in u
+                      'id' in u
                         ? (u as Friend)
                         : {
-                            friend_id: u.id,
+                            id: u.id,
                             username: u.username,
                             display_name: u.display_name ?? u.full_name ?? 'User',
                             avatar_url: u.avatar_url,

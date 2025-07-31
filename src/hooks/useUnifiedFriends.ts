@@ -10,8 +10,24 @@ import { useAuth }             from '@/providers/AuthProvider';
 import { useToast }            from '@/hooks/use-toast';
 
 /* ---------- shape returned by view -------------------------------- */
-export interface UnifiedRow {
+interface ViewRow {
   friend_id      : string;                 // other user's id
+  display_name   : string | null;
+  username       : string | null;
+  avatar_url     : string | null;
+
+  online         : boolean;                // presence flag
+  started_at     : string | null;          // presence.started_at
+  vibe_tag       : string | null;          // presence.vibe_tag
+
+  friend_state   : 'pending' | 'accepted' | 'blocked';
+  created_at     : string | null;
+  responded_at   : string | null;
+}
+
+/* ---------- shape exposed to components --------------------------- */
+export interface UnifiedRow {
+  id             : string;                 // mapped from friend_id
   display_name   : string | null;
   username       : string | null;
   avatar_url     : string | null;
@@ -51,7 +67,20 @@ export function useUnifiedFriends() {
         .order('display_name', { ascending: true });
 
       if (error) throw error;
-      return (data as unknown as UnifiedRow[]) ?? [];
+      
+      // Map friend_id to id for component consumption
+      return (data as unknown as ViewRow[])?.map(row => ({
+        id: row.friend_id,
+        display_name: row.display_name,
+        username: row.username,
+        avatar_url: row.avatar_url,
+        online: row.online,
+        started_at: row.started_at,
+        vibe_tag: row.vibe_tag,
+        friend_state: row.friend_state,
+        created_at: row.created_at,
+        responded_at: row.responded_at,
+      })) ?? [];
     },
   });
 
@@ -99,13 +128,13 @@ export function useUnifiedFriends() {
   /* ── 4. derived helpers -------------------------------------------- */
   const acceptedIds = data
     .filter(r => r.friend_state === 'accepted')
-    .map   (r => r.friend_id);
+    .map   (r => r.id);
 
   const pendingIn  = data
-    .filter(r => r.friend_state === 'pending' && r.friend_id === uid);
+    .filter(r => r.friend_state === 'pending' && r.id === uid);
 
   const pendingOut = data
-    .filter(r => r.friend_state === 'pending' && r.friend_id !== uid);
+    .filter(r => r.friend_state === 'pending' && r.id !== uid);
 
   /* ── 5. public API --------------------------------------------------- */
   return {

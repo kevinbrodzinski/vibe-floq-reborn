@@ -177,11 +177,11 @@ export const FriendsSheet = ({
                           </h3>
                           <div className="space-y-1">
                             {online.map((f) => {
-                              const near = friendsNearby.find((n) => n.id === f.friend_id);
+                              const near = friendsNearby.find((n) => n.id === f.id);
                               return (
                                 <OnlineFriendRow
-                                  key={f.friend_id}
-                                  profileId={f.friend_id}
+                                  key={f.id}
+                                  profileId={f.id}
                                   isNearby={!!near}
                                   distance={near?.distance_m}
                                 />
@@ -198,11 +198,11 @@ export const FriendsSheet = ({
                           </h3>
                           <div className="space-y-1">
                             {offline.map((f) => {
-                              const near = friendsNearby.find((n) => n.id === f.friend_id);
+                              const near = friendsNearby.find((n) => n.id === f.id);
                               return (
                                 <OnlineFriendRow
-                                  key={f.friend_id}
-                                  profileId={f.friend_id}
+                                  key={f.id}
+                                  profileId={f.id}
                                   isNearby={!!near}
                                   distance={near?.distance_m}
                                 />
@@ -240,7 +240,7 @@ export const FriendsSheet = ({
               <div className="space-y-2">
                 {pendingIn.map((req) => (
                   <div
-                    key={req.friend_id}
+                    key={req.id}
                     className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
                   >
                     <AvatarWithFallback
@@ -263,7 +263,7 @@ export const FriendsSheet = ({
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => accept(req.friend_id)}
+                        onClick={() => accept(req.id)}
                         disabled={updating}
                       >
                         <Check className="w-3 h-3" />
@@ -271,7 +271,7 @@ export const FriendsSheet = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => accept(req.friend_id)} // TODO: decline
+                        onClick={() => accept(req.id)} // TODO: decline
                         disabled={updating}
                       >
                         <X className="w-3 h-3" />

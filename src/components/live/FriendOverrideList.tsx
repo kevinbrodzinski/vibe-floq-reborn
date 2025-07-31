@@ -40,7 +40,7 @@ export const FriendOverrideList = () => {
             // If no preferences exist yet and user selected friends + always, 
             // automatically enable sharing for all friends
             const enableAllFriends = async () => {
-                const friendIds = friendsWithPresence.map(f => f.friend_id);
+                const friendIds = friendsWithPresence.map(f => f.id);
                 
                 try {
                     const { error } = await supabase.rpc('set_live_share_bulk', {
@@ -117,13 +117,13 @@ export const FriendOverrideList = () => {
     
     // Apply smart defaults based on scope settings
     friendsWithPresence.forEach(friend => {
-        if (!(friend.friend_id in effectiveSharePrefs)) {
+        if (!(friend.id in effectiveSharePrefs)) {
             // If no explicit preference exists, default based on scope
             if (liveSettings?.live_scope === 'friends' && 
                 liveSettings.live_auto_when.includes('always')) {
-                effectiveSharePrefs[friend.friend_id] = true; // Default to sharing
+                effectiveSharePrefs[friend.id] = true; // Default to sharing
             } else {
-                effectiveSharePrefs[friend.friend_id] = false; // Default to not sharing
+                effectiveSharePrefs[friend.id] = false; // Default to not sharing
             }
         }
     });
@@ -145,10 +145,10 @@ export const FriendOverrideList = () => {
 
             <div className="space-y-3">
                 {friendsWithPresence.map((friend) => {
-                    const isSharing = effectiveSharePrefs[friend.friend_id] || false;
+                    const isSharing = effectiveSharePrefs[friend.id] || false;
 
                     return (
-                        <Card key={friend.friend_id} className="border-gray-200 dark:border-gray-700">
+                        <Card key={friend.id} className="border-gray-200 dark:border-gray-700">
                             <CardContent className="p-4">
                                 <div className="flex items-center justify-between">
                                     {/* Left: Avatar and Name */}
@@ -157,7 +157,7 @@ export const FriendOverrideList = () => {
                                             src={friend.avatar_url ? getAvatarUrl(friend.avatar_url) : null}
                                             fallbackText={friend.display_name || 'Friend'}
                                             username={friend.username}
-                                            profileId={friend.friend_id}
+                                            profileId={friend.id}
                                             className="h-10 w-10"
                                         />
                                         <div className="min-w-0">
@@ -177,7 +177,7 @@ export const FriendOverrideList = () => {
                                     <Switch
                                         checked={isSharing}
                                         disabled={mutation.isPending}
-                                        onCheckedChange={() => toggleFriend(friend.friend_id, isSharing)}
+                                        onCheckedChange={() => toggleFriend(friend.id, isSharing)}
                                         className="data-[state=unchecked]:bg-gray-600 data-[state=checked]:bg-primary"
                                     />
                                 </div>

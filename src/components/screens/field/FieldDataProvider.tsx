@@ -88,7 +88,7 @@ export const FieldDataProvider = ({ children }: FieldDataProviderProps) => {
   
   // Convert to expected profile format
   const profiles = rows.filter(row => row.friend_state === 'accepted').map(row => ({
-    id: row.friend_id,
+    id: row.id,
     username: row.username || '',
     display_name: row.display_name || row.username || '',
     avatar_url: row.avatar_url,

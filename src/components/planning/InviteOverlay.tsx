@@ -76,7 +76,7 @@ export function InviteOverlay({
   const friends: Friend[] = friendsData
     .filter(row => row.friend_state === 'accepted')
     .map(row => ({
-      id: row.friend_id,
+      id: row.id,
       username: row.username || '',
       display_name: row.display_name,
       avatar_url: row.avatar_url

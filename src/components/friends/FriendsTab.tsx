@@ -22,7 +22,7 @@ export function FriendsTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             {pendingIn.map(request => (
-              <div key={request.friend_id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarImage src={request.avatar_url || undefined} />
@@ -40,7 +40,7 @@ export function FriendsTab() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => accept(request.friend_id)}
+                    onClick={() => accept(request.id)}
                     disabled={updating}
                   >
                     Accept
@@ -48,7 +48,7 @@ export function FriendsTab() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => accept(request.friend_id)}
+                    onClick={() => accept(request.id)}
                     disabled={updating}
                   >
                     Decline
@@ -73,7 +73,7 @@ export function FriendsTab() {
           ) : (
             <div className="space-y-4">
               {friends.map(friend => (
-                <div key={friend.friend_id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div key={friend.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={friend.avatar_url || undefined} />

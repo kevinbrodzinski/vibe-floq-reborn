@@ -46,7 +46,7 @@ export const InviteFriendsModal = ({
   
   // Convert unified friends to simple profile format
   const friends = friendsWithPresence.filter(row => row.friend_state === 'accepted').map(row => ({
-    id: row.friend_id,
+    id: row.id,
     username: row.username || '',
     display_name: row.display_name || row.username || '',
     avatar_url: row.avatar_url
