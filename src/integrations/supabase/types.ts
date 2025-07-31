@@ -700,6 +700,7 @@ export type Database = {
           edited_at: string | null
           id: string
           metadata: Json | null
+          profile_id: string
           reply_to_id: string | null
           sender_id: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
@@ -712,6 +713,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           metadata?: Json | null
+          profile_id: string
           reply_to_id?: string | null
           sender_id: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
@@ -724,6 +726,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           metadata?: Json | null
+          profile_id?: string
           reply_to_id?: string | null
           sender_id?: string
           surface?: Database["public"]["Enums"]["chat_surface_enum"]
@@ -735,6 +738,34 @@ export type Database = {
             columns: ["reply_to_id"]
             isOneToOne: false
             referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_chat_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_chat_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_chat_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_chat_messages_profile_id"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -959,7 +990,7 @@ export type Database = {
           id: string
           message_type: Database["public"]["Enums"]["dm_msg_type"]
           metadata: Json | null
-          profile_id: string | null
+          profile_id: string
           reply_to_id: string | null
           sender_id: string
           status: string
@@ -971,7 +1002,7 @@ export type Database = {
           id?: string
           message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
-          profile_id?: string | null
+          profile_id: string
           reply_to_id?: string | null
           sender_id: string
           status?: string
@@ -983,7 +1014,7 @@ export type Database = {
           id?: string
           message_type?: Database["public"]["Enums"]["dm_msg_type"]
           metadata?: Json | null
-          profile_id?: string | null
+          profile_id?: string
           reply_to_id?: string | null
           sender_id?: string
           status?: string
@@ -1042,7 +1073,9 @@ export type Database = {
           last_read_at_a: string
           last_read_at_b: string
           member_a: string
+          member_a_profile_id: string
           member_b: string
+          member_b_profile_id: string
           profile_id: string | null
           unread_a: number | null
           unread_b: number | null
@@ -1054,7 +1087,9 @@ export type Database = {
           last_read_at_a?: string
           last_read_at_b?: string
           member_a: string
+          member_a_profile_id: string
           member_b: string
+          member_b_profile_id: string
           profile_id?: string | null
           unread_a?: number | null
           unread_b?: number | null
@@ -1066,12 +1101,70 @@ export type Database = {
           last_read_at_a?: string
           last_read_at_b?: string
           member_a?: string
+          member_a_profile_id?: string
           member_b?: string
+          member_b_profile_id?: string
           profile_id?: string | null
           unread_a?: number | null
           unread_b?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_direct_threads_member_a_profile"
+            columns: ["member_a_profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_a_profile"
+            columns: ["member_a_profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_a_profile"
+            columns: ["member_a_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_a_profile"
+            columns: ["member_a_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_b_profile"
+            columns: ["member_b_profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_b_profile"
+            columns: ["member_b_profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_b_profile"
+            columns: ["member_b_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_direct_threads_member_b_profile"
+            columns: ["member_b_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_direct_threads_profile_id"
             columns: ["profile_id"]
@@ -1113,6 +1206,7 @@ export type Database = {
           object_path: string
           thread_id: string
           uploader_id: string
+          uploader_profile_id: string
           width: number | null
         }
         Insert: {
@@ -1125,6 +1219,7 @@ export type Database = {
           object_path: string
           thread_id: string
           uploader_id: string
+          uploader_profile_id: string
           width?: number | null
         }
         Update: {
@@ -1137,6 +1232,7 @@ export type Database = {
           object_path?: string
           thread_id?: string
           uploader_id?: string
+          uploader_profile_id?: string
           width?: number | null
         }
         Relationships: [
@@ -1152,6 +1248,34 @@ export type Database = {
             columns: ["thread_id"]
             isOneToOne: false
             referencedRelation: "direct_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_dm_media_uploader_profile"
+            columns: ["uploader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_dm_media_uploader_profile"
+            columns: ["uploader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "fk_dm_media_uploader_profile"
+            columns: ["uploader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_dm_media_uploader_profile"
+            columns: ["uploader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -10946,7 +11070,7 @@ export type Database = {
           id: string
           message_type: Database["public"]["Enums"]["dm_msg_type"]
           metadata: Json | null
-          profile_id: string | null
+          profile_id: string
           reply_to_id: string | null
           sender_id: string
           status: string
@@ -10983,6 +11107,7 @@ export type Database = {
           edited_at: string | null
           id: string
           metadata: Json | null
+          profile_id: string
           reply_to_id: string | null
           sender_id: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
