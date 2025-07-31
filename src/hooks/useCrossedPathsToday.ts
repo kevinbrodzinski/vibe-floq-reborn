@@ -37,8 +37,8 @@ export function useCrossedPathsToday() {
       try {
         // Use typedRpc for better error handling and type safety
         const data = await typedRpc<CrossedPath[]>('people_crossed_paths_today', {
-          in_me: user.id,
-          proximity_meters: 25
+          profileId: user.id,
+          proximityMeters: 25
         });
 
         return data || [];
