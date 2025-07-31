@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Loader2, Calendar as CalendarIcon, Sparkles, TrendingUp, Zap, Heart } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -84,6 +84,9 @@ export default function AfterglowCalendarDialog({ open, onOpenChange }: Afterglo
           <CalendarIcon className="w-5 h-5 text-primary" />
           Choose Your Day
         </DialogTitle>
+        <DialogDescription>
+          Select a date to view your afterglow timeline and energy data.
+        </DialogDescription>
 
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DailyInsightsTab from '@/components/afterglow/DailyInsightsTab';
 import WeeklyTrendsTab from '@/components/afterglow/WeeklyTrendsTab';
@@ -35,6 +35,9 @@ export default function AfterglowInsightsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg sm:max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogTitle>Insights</DialogTitle>
+        <DialogDescription>
+          View detailed analytics and AI-powered insights about your activities and trends.
+        </DialogDescription>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
           <TabsList className="grid w-full grid-cols-3">

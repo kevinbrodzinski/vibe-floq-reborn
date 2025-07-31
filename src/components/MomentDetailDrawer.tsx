@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useMomentDrawer } from '@/state/momentDrawer';
 import { Badge } from '@/components/ui/badge';
 import { formatMomentTime } from '@/utils/afterglowHelpers';
@@ -16,9 +16,9 @@ export function MomentDetailDrawer() {
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle>{moment.title}</DialogTitle>
-              <p className="text-sm text-muted-foreground">
+              <DialogDescription>
                 {formatMomentTime(moment.timestamp)}
-              </p>
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>

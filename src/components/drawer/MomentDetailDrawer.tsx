@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { X } from 'lucide-react';
 import { useMomentDrawer } from '@/state/momentDrawer';
@@ -32,13 +33,12 @@ export function MomentDetailDrawer() {
           <DialogTitle 
             id="moment-detail-title"
             tabIndex={-1}
-            className="flex items-center gap-2"
           >
-            <span>{title}</span>
-            <span className="text-muted-foreground text-sm">
-              {format(new Date(timestamp), 'p')}
-            </span>
+            {title}
           </DialogTitle>
+          <DialogDescription>
+            {format(new Date(timestamp), 'p')}
+          </DialogDescription>
           <button
             onClick={close}
             aria-label="Close detail"
