@@ -38,5 +38,24 @@ export const rpc_markThreadRead = (payload: {
   p_profile_id: string;
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
-export const fn_uploadChatMedia = (body: Record<string, unknown>) =>
-  supabase.functions.invoke('upload-chat-media', { body });
+export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error("No auth session");
+  
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-chat-media`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to upload media: ${response.status} ${errorText}`);
+  }
+  
+  const data = await response.json();
+  return { data, error: null };
+};
