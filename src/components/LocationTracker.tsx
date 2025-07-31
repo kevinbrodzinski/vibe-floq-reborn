@@ -6,16 +6,16 @@ import { Badge } from '@/components/ui/badge';
 
 export function LocationTracker() {
   const { user } = useAuth();
-  const { location, loading, error } = useUserLocation();
+  const { pos, loading, error } = useUserLocation();
   const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
-    if (user && location && !error) {
+    if (user && pos && !error) {
       setIsTracking(true);
     } else {
       setIsTracking(false);
     }
-  }, [user, location, error]);
+  }, [user, pos, error]);
 
   if (!user) return null;
 
@@ -51,9 +51,9 @@ export function LocationTracker() {
           {error && <Badge variant="destructive">GPS error</Badge>}
           {!loading && !error && <Badge variant="outline">Tracking ON</Badge>}
           
-          {location && (
+          {pos && (
             <div className="text-xs text-muted-foreground">
-              ±{Math.round(location.coords.accuracy)}m
+              ±{Math.round(pos.accuracy)}m
             </div>
           )}
         </div>
