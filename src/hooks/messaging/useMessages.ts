@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import isUuid from "@/lib/utils/isUuid";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
@@ -14,6 +15,7 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
   // Paginated history fetch
   const history = useInfiniteQuery({
     queryKey: ["messages", surface, threadId],
+    enabled: isUuid(threadId), // Only run when threadId is a valid UUID
     queryFn: async ({ pageParam = 0 }): Promise<any[]> => {
       if (surface === "dm") {
         const { data, error } = await supabase

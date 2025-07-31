@@ -50,16 +50,15 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
         };
       });
 
-      // Send via edge function using direct fetch
+      // Send via direct fetch to avoid DataCloneError with supabase.functions.invoke()
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No auth session");
 
-      const response = await fetch('https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/send-message', {
+      const response = await fetch('/functions/v1/send-message', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           surface,
