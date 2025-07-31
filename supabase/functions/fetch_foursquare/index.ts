@@ -38,7 +38,7 @@ serve(async (req) => {
     const { data: cred } = await sb
       .from("integrations.user_credential")
       .select("api_key")
-      .eq("user_id", user_id)
+      .eq("profile_id", profile_id)
       .eq("provider_id", 2)      // 2 = foursquare
       .maybeSingle();
 
