@@ -25,6 +25,7 @@ import { AvatarStack } from '@/components/ui/AvatarStack';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { FilterChip } from '@/components/ui/FilterChip';
+import { SmartFilterPill } from '@/components/filters/SmartFilterPill';
 import { PulseFilter, WALKING_THRESHOLD_M, HIGH_ENERGY_SCORE } from '@/pages/pulse/filters';
 import { useLiveActivityRealtime } from '@/hooks/useLiveActivityRealtime';
 import { LiveFeedPreview } from '@/components/pulse/LiveFeedPreview';
@@ -519,6 +520,8 @@ export const PulseScreen: React.FC = () => {
           >
             My floqs
           </FilterChip>
+
+          <SmartFilterPill />
         </div>
       </div>
 
