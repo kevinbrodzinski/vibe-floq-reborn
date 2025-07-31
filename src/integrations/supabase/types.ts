@@ -10495,18 +10495,15 @@ export type Database = {
         Returns: unknown
       }
       people_crossed_paths_today: {
-        Args:
-          | { in_me: string; proximity_meters?: number }
-          | { in_me: string; proximity_meters?: number }
+        Args: { in_me: string; proximity_meters?: number }
         Returns: {
           profile_id: string
           username: string
           display_name: string
           avatar_url: string
-          last_seen_ts: string
-          last_seen_vibe: Database["public"]["Enums"]["vibe_enum"]
-          venue_name: string
+          last_seen_at: string
           distance_meters: number
+          overlap_duration_minutes: number
         }[]
       }
       pgis_asflatgeobuf_finalfn: {
