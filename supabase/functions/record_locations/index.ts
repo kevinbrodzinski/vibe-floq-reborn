@@ -71,8 +71,9 @@ serve(async (req) => {
         throw new Error(`Invalid location data at index ${index}`);
       }
 
-      // Validate coordinate bounds
-      if (location.lat < -90 || location.lat > 90 || location.lng < -180 || location.lng > 180) {
+      // Validate coordinate bounds and finite values
+      if (!Number.isFinite(location.lat) || !Number.isFinite(location.lng) || 
+          location.lat < -90 || location.lat > 90 || location.lng < -180 || location.lng > 180) {
         throw new Error(`Invalid coordinates at index ${index}`);
       }
 
@@ -96,10 +97,10 @@ serve(async (req) => {
       };
     });
 
-    // Insert locations into database
+    // Insert locations into database with minimal return
     const { error: insertError } = await supabase
       .from('location_history')
-      .insert(processedLocations);
+      .insert(processedLocations, { returning: 'minimal' });
 
     if (insertError) {
       console.error('Database insert error:', insertError);
@@ -116,6 +117,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Location recording error:", error);
+    
+    // Log full error details for debugging
+    if (error instanceof Error && error.stack) {
+      console.error("Error stack:", error.stack);
+    }
     
     if (error instanceof Error) {
       if (error.message.includes('authorization') || error.message.includes('token')) {

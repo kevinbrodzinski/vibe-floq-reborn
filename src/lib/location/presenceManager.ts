@@ -24,12 +24,14 @@ interface PresenceBatch {
 export class OptimizedPresenceManager {
   private batchBuffer = new Map<string, PresenceBroadcast[]>();
   private channels = new Map<string, RealtimeChannel>();
-  private batchTimer: ReturnType<typeof setTimeout> | null = null;
+  private batchTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly BATCH_SIZE = 5;
   private readonly BATCH_TIMEOUT_MS = 2000;
   private readonly MAX_BROADCASTS_PER_MINUTE = 30;
+  private readonly CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
   
   private rateLimiter = new Map<string, number[]>();
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Subscribe to a presence channel with optimized management
@@ -87,11 +89,13 @@ export class OptimizedPresenceManager {
     // Check if we should flush immediately
     if (this.batchBuffer.get(channelId)!.length >= this.BATCH_SIZE) {
       await this.flushBatch(channelId);
-    } else if (!this.batchTimer) {
-      // Set timer for batch flush
-      this.batchTimer = setTimeout(() => {
-        this.flushAllBatches();
+    } else if (!this.batchTimers.has(channelId)) {
+      // Set timer for this specific channel
+      const timer = setTimeout(() => {
+        this.flushBatch(channelId);
+        this.batchTimers.delete(channelId);
       }, this.BATCH_TIMEOUT_MS);
+      this.batchTimers.set(channelId, timer);
     }
 
     return true;
@@ -103,12 +107,22 @@ export class OptimizedPresenceManager {
   async unsubscribeFromPresence(channelId: string): Promise<void> {
     const channel = this.channels.get(channelId);
     if (channel) {
-      await channel.unsubscribe();
-      supabase.removeChannel(channel);
+      try {
+        await channel.unsubscribe();
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn(`[PresenceManager] Error unsubscribing from ${channelId}:`, error);
+      }
+      
       this.channels.delete(channelId);
       
-      // Clean up any pending batches
+      // Clean up any pending batches and timers
       this.batchBuffer.delete(channelId);
+      const timer = this.batchTimers.get(channelId);
+      if (timer) {
+        clearTimeout(timer);
+        this.batchTimers.delete(channelId);
+      }
       
       console.log(`[PresenceManager] Unsubscribed from ${channelId}`);
     }
@@ -118,10 +132,17 @@ export class OptimizedPresenceManager {
    * Clean up all channels and timers
    */
   async cleanup(): Promise<void> {
-    if (this.batchTimer) {
-      clearTimeout(this.batchTimer);
-      this.batchTimer = null;
+    // Clear cleanup timer
+    if (this.cleanupTimer) {
+      clearTimeout(this.cleanupTimer);
+      this.cleanupTimer = null;
     }
+
+    // Clear all batch timers
+    for (const timer of this.batchTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.batchTimers.clear();
 
     // Flush any remaining batches
     await this.flushAllBatches();
@@ -182,14 +203,13 @@ export class OptimizedPresenceManager {
 
     try {
       // Encrypt sensitive coordinates
-      const encryptedBroadcasts = broadcasts.map(broadcast => ({
-        ...broadcast,
-        encrypted: encryptCoordinates(broadcast.lat, broadcast.lng, broadcast.accuracy),
-        // Remove raw coordinates after encryption
-        lat: undefined,
-        lng: undefined,
-        accuracy: undefined,
-      }));
+      const encryptedBroadcasts = broadcasts.map(broadcast => {
+        const { lat, lng, accuracy, ...rest } = broadcast;
+        return {
+          ...rest,
+          encrypted: encryptCoordinates(lat, lng, accuracy)
+        };
+      });
 
       await channel.send({
         type: 'broadcast',
@@ -214,16 +234,43 @@ export class OptimizedPresenceManager {
    * Flush all pending batches
    */
   private async flushAllBatches(): Promise<void> {
-    if (this.batchTimer) {
-      clearTimeout(this.batchTimer);
-      this.batchTimer = null;
-    }
-
     const flushPromises = Array.from(this.batchBuffer.keys()).map(
       channelId => this.flushBatch(channelId)
     );
     
     await Promise.allSettled(flushPromises);
+  }
+
+  /**
+   * Start periodic cleanup of old rate limit entries
+   */
+  private startCleanupTimer(): void {
+    if (this.cleanupTimer) return;
+    
+    this.cleanupTimer = setTimeout(() => {
+      this.cleanupOldEntries();
+      this.cleanupTimer = null;
+      this.startCleanupTimer(); // Restart timer
+    }, this.CLEANUP_INTERVAL_MS);
+  }
+
+  /**
+   * Clean up old rate limiter entries to prevent memory growth
+   */
+  private cleanupOldEntries(): void {
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000);
+    
+    for (const [userId, timestamps] of this.rateLimiter.entries()) {
+      const recentTimestamps = timestamps.filter(ts => ts > oneHourAgo);
+      if (recentTimestamps.length === 0) {
+        this.rateLimiter.delete(userId);
+      } else {
+        this.rateLimiter.set(userId, recentTimestamps);
+      }
+    }
+    
+    console.log(`[PresenceManager] Cleaned up rate limiter, ${this.rateLimiter.size} users remaining`);
   }
 
   /**
@@ -248,18 +295,18 @@ export class OptimizedPresenceManager {
   /**
    * Decrypt broadcast data
    */
-  private decryptBroadcast(broadcast: any): any | null {
+  private async decryptBroadcast(broadcast: any): Promise<any | null> {
     try {
-      const { decryptCoordinates } = require('./encryption');
+      const { decryptCoordinates } = await import('./encryption');
       const coords = decryptCoordinates(broadcast.encrypted);
       
       if (coords) {
+        const { encrypted, ...rest } = broadcast;
         return {
-          ...broadcast,
+          ...rest,
           lat: coords.lat,
           lng: coords.lng,
-          accuracy: coords.accuracy,
-          encrypted: undefined // Remove encrypted data
+          accuracy: coords.accuracy
         };
       }
       return null;
@@ -272,3 +319,6 @@ export class OptimizedPresenceManager {
 
 // Singleton instance for global use
 export const presenceManager = new OptimizedPresenceManager();
+
+// Start cleanup timer when module loads
+presenceManager['startCleanupTimer']();

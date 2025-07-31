@@ -35,7 +35,7 @@ describe('Distance Calculations', () => {
     expect(distance).toBe(0);
   });
 
-  test('calculates correct distance SF to NYC (~3935km)', () => {
+  test('calculates correct distance SF to NYC (~4129km)', () => {
     const distance = calculateDistance(sanFrancisco, newYork);
     expect(distance).toBeCloseTo(4129000, -4); // ~4129km with 100m tolerance
   });
@@ -174,8 +174,8 @@ describe('Location Tokens', () => {
   test('rejects expired tokens', async () => {
     const token = generateLocationToken(testCoords.lat, testCoords.lng, 0.001); // 0.06 seconds
     
-    // Wait for token to expire
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Wait for token to expire with larger buffer for CI
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     const validated = validateLocationToken(token);
     expect(validated).toBeNull();

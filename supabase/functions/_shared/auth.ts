@@ -109,7 +109,8 @@ export function checkRateLimit(
   const current = rateLimitStore.get(key);
   
   if (!current || now > current.resetTime) {
-    // First request or window expired
+    // Clean up expired entry and create new one
+    rateLimitStore.delete(key);
     rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
     return true;
   }
@@ -134,7 +135,7 @@ export function validatePayload<T>(
   }
   
   for (const field of requiredFields) {
-    if (payload[field] === undefined || payload[field] === null) {
+    if (!Object.hasOwn(payload, field) || payload[field] == null) {
       throw new Error(`Missing required field: ${String(field)}`);
     }
   }
@@ -150,13 +151,15 @@ export const securityHeaders = {
   'X-Frame-Options': 'DENY',
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Permissions-Policy': 'geolocation=()',
 };
 
 /**
  * Create Supabase client with request context
  */
-export function createAuthenticatedClient(req: Request, supabaseUrl: string, supabaseKey: string) {
-  const { createClient } = require('@supabase/supabase-js');
+export async function createAuthenticatedClient(req: Request, supabaseUrl: string, supabaseKey: string) {
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
   
   return createClient(supabaseUrl, supabaseKey, {
     global: {
