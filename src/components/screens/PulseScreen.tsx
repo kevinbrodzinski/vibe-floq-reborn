@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, MapPin, Users, Clock, Star, TrendingUp, Sparkles, Flame, Activity, Coffee, Zap } from 'lucide-react';
 import { useGeo } from '@/hooks/useGeo';
 import { useActiveFloqs } from '@/hooks/useActiveFloqs';
@@ -88,6 +89,17 @@ export const PulseScreen: React.FC = () => {
   
   // Smart suggestions state
   const { preferSmartSuggestions } = useNovaSnap();
+  
+  // Analytics - fire smart_enabled events
+  const handleSmartToggle = () => {
+    if (preferSmartSuggestions) {
+      // Analytics: smart_disabled
+      console.log('Analytics: smart_disabled');
+    } else {
+      // Analytics: smart_enabled  
+      console.log('Analytics: smart_enabled');
+    }
+  };
 
   // Realtime live activity updates
   useLiveActivityRealtime();
@@ -603,72 +615,103 @@ export const PulseScreen: React.FC = () => {
 
 
 
-        {/* Main Recommendations List */}
-        {preferSmartSuggestions ? (
-          <div className="px-6">
-            <PersonalizedVenueSection maxResults={5} />
-          </div>
-        ) : (
-          filteredRecommendations.length > 0 && (
-            <div className="px-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-white" />
-                <h2 className="font-bold text-white text-lg">Recommended for you</h2>
-              </div>
-              <div className="space-y-4">
-                {filteredRecommendations.map((rec) => {
-                  // Mock host and vibe match for demo
-                  const host = rec.type === 'floq' ? {
-                    name: 'Alex Johnson',
-                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
-                  } : rec.type === 'venue' ? {
-                    name: 'Venue Host',
-                    avatar: '',
-                  } : undefined;
-                  
-                  // Use real vibe match data
-                  const vibeMatchPercentage = getVibeMatchForRecommendation(rec);
-                  
-                  // Friends going mock (replace with real data if available)
-                  const friends = (rec.friends_going_names || rec.friends || []).map((name: string, i: number) => ({
-                    name,
-                    avatar: rec.friends_going_avatars?.[i],
-                  }));
-                  return (
-                    <EnhancedRecommendationCard
-                      key={rec.id}
-                      item={{
-                        id: rec.id,
-                        title: rec.title,
-                        type: rec.type,
-                        distance: rec.distance_meters || 0,
-                        vibe: rec.vibe,
-                        participants: rec.participant_count || rec.participants,
-                        maxParticipants: rec.maxParticipants,
-                        startTime: rec.starts_at || rec.startTime,
-                        endTime: rec.ends_at || rec.endTime,
-                        status: 'open',
-                        description: rec.description,
-                        location: getCityFromAddress(rec.address ? String(rec.address) : ''),
-                        host,
-                        tags: rec.tags,
-                        friends,
-                        vibeMatch: vibeMatchPercentage,
-                      }}
-                      onAction={(action, id) => {
-                        if (action === 'friends') {
-                          setModalFriends(friends);
-                          setFriendsModalOpen(true);
-                        }
-                        // ...other actions
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          )
-        )}
+        {/* Main Recommendations List with Smooth Transitions */}
+        <AnimatePresence mode="wait">
+          {preferSmartSuggestions ? (
+            <motion.div 
+              key="smart-recommendations"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.15 }}
+              className="px-6"
+            >
+              <PersonalizedVenueSection 
+                maxResults={5} 
+                onConfigureClick={() => {
+                  // Analytics: smart_browse_open
+                  console.log('Analytics: smart_browse_open');
+                  // This would open the PersonalizationSettings sheet
+                  // For now, we'll just log it
+                }}
+              />
+            </motion.div>
+          ) : (
+            filteredRecommendations.length > 0 && (
+              <motion.div 
+                key="regular-recommendations"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.15 }}
+                className="px-6"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                  <h2 className="font-bold text-white text-lg">Recommended for you</h2>
+                </div>
+                <div className="space-y-4">
+                  {filteredRecommendations.map((rec, index) => {
+                    // Mock host and vibe match for demo
+                    const host = rec.type === 'floq' ? {
+                      name: 'Alex Johnson',
+                      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex',
+                    } : rec.type === 'venue' ? {
+                      name: 'Venue Host',
+                      avatar: '',
+                    } : undefined;
+                    
+                    // Use real vibe match data
+                    const vibeMatchPercentage = getVibeMatchForRecommendation(rec);
+                    
+                    // Friends going mock (replace with real data if available)
+                    const friends = (rec.friends_going_names || rec.friends || []).map((name: string, i: number) => ({
+                      name,
+                      avatar: rec.friends_going_avatars?.[i],
+                    }));
+                    
+                    return (
+                      <motion.div
+                        key={rec.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <EnhancedRecommendationCard
+                          item={{
+                            id: rec.id,
+                            title: rec.title,
+                            type: rec.type,
+                            distance: rec.distance_meters || 0,
+                            vibe: rec.vibe,
+                            participants: rec.participant_count || rec.participants,
+                            maxParticipants: rec.maxParticipants,
+                            startTime: rec.starts_at || rec.startTime,
+                            endTime: rec.ends_at || rec.endTime,
+                            status: 'open',
+                            description: rec.description,
+                            location: getCityFromAddress(rec.address ? String(rec.address) : ''),
+                            host,
+                            tags: rec.tags,
+                            friends,
+                            vibeMatch: vibeMatchPercentage,
+                          }}
+                          onAction={(action, id) => {
+                            if (action === 'friends') {
+                              setModalFriends(friends);
+                              setFriendsModalOpen(true);
+                            }
+                            // ...other actions
+                          }}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )
+          )}
+        </AnimatePresence>
 
         {/* Friends Modal */}
         <Dialog open={friendsModalOpen} onOpenChange={setFriendsModalOpen}>

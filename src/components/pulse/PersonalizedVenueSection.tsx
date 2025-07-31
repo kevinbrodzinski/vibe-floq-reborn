@@ -3,21 +3,23 @@ import { useGeo } from '@/hooks/useGeo';
 import { usePersonalizedVenues } from '@/hooks/usePersonalizedVenues';
 import { useWeightedScoring } from '@/hooks/useWeightedScoring';
 import { TrendingVenueCard } from '@/components/ui/TrendingVenueCard';
-import { EnhancedRecommendationCard } from '@/components/ui/EnhancedRecommendationCard';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, TrendingUp } from 'lucide-react';
+import { Sparkles, TrendingUp, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PersonalizedVenueSectionProps {
   className?: string;
   maxResults?: number;
   showTitle?: boolean;
+  onConfigureClick?: () => void;
 }
 
 export const PersonalizedVenueSection = ({ 
   className, 
   maxResults = 5,
-  showTitle = true 
+  showTitle = true,
+  onConfigureClick
 }: PersonalizedVenueSectionProps) => {
   const { user } = useAuth();
   const { coords } = useGeo();
@@ -52,62 +54,112 @@ export const PersonalizedVenueSection = ({
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-4", className)}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.15 }}
+        className={cn("space-y-4", className)}
+      >
         {showTitle && (
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="w-5 h-5 text-white animate-pulse" />
-            <h2 className="font-bold text-white text-lg">Smart Recommendations</h2>
+            <h2 className="font-bold text-white text-lg">⚡ Personalized picks</h2>
             <Badge variant="secondary" className="bg-white/10 text-white/80 border-white/20">
-              AI Powered
+              Loading...
             </Badge>
           </div>
         )}
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div
+            <motion.div
               key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: i * 0.1 }}
               className="h-24 bg-white/10 rounded-2xl animate-pulse border border-white/20"
             />
           ))}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (error || sortedVenues.length === 0) {
     return (
-      <div className={cn("space-y-4", className)}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.15 }}
+        className={cn("space-y-4", className)}
+      >
         {showTitle && (
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-white/70" />
-            <h2 className="font-bold text-white text-lg">Recommended for you</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-white/70" />
+              <h2 className="font-bold text-white text-lg">⚡ Personalized picks</h2>
+            </div>
+            {onConfigureClick && (
+              <button
+                onClick={onConfigureClick}
+                className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1"
+              >
+                <Settings className="w-3 h-3" />
+                Configure
+              </button>
+            )}
           </div>
         )}
-        <div className="text-center py-8 text-white/70">
+        <div className="text-center py-8 text-white/70 bg-white/5 rounded-2xl border border-white/10">
           <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No personalized venues available right now</p>
+          <p className="text-sm font-medium mb-1">No smart picks yet</p>
+          <p className="text-xs opacity-75">Try adjusting your preferences or explore more venues</p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.15 }}
+      className={cn("space-y-4", className)}
+    >
       {showTitle && (
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-white" />
-          <h2 className="font-bold text-white text-lg">Smart Recommendations</h2>
-          <Badge variant="secondary" className="bg-white/10 text-white/80 border-white/20">
-            AI Powered
-          </Badge>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-white" />
+            <h2 className="font-bold text-white text-lg">⚡ Personalized picks</h2>
+            <Badge variant="secondary" className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white/90 border-white/30 text-xs">
+              Smart
+            </Badge>
+          </div>
+          {onConfigureClick && (
+            <button
+              onClick={onConfigureClick}
+              className="text-xs text-white/70 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <Settings className="w-3 h-3" />
+              Configure
+            </button>
+          )}
         </div>
       )}
       
-      <div className="space-y-4">
-        {sortedVenues.map((venue) => {
-          // Use TrendingVenueCard for consistent styling
-          return (
-            <div key={venue.venue_id} className="relative">
+      <AnimatePresence mode="popLayout">
+        <div className="space-y-4">
+          {sortedVenues.map((venue, index) => (
+            <motion.div 
+              key={venue.venue_id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: index * 0.05, duration: 0.15 }}
+              className="relative"
+            >
               <TrendingVenueCard
                 venue={{
                   id: venue.venue_id,
@@ -125,19 +177,24 @@ export const PersonalizedVenueSection = ({
               />
               
               {/* Smart badge overlay */}
-              <div className="absolute top-3 right-3">
+              <motion.div 
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: (index * 0.05) + 0.2 }}
+                className="absolute top-3 right-3"
+              >
                 <Badge 
                   variant="secondary" 
-                  className="bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-white border-white/30 text-xs"
+                  className="bg-gradient-to-r from-indigo-500/30 to-purple-500/30 text-white border-white/40 text-xs backdrop-blur-sm"
                 >
                   <Sparkles className="w-3 h-3 mr-1" />
-                  {Math.round(venue.personalized_score * 100)}% match
+                  {Math.round(venue.personalized_score * 100)}%
                 </Badge>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+              </motion.div>
+            </motion.div>
+          ))}
+        </div>
+      </AnimatePresence>
+    </motion.div>
   );
 };
