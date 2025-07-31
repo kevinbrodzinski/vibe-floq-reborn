@@ -123,32 +123,35 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   }, []);
 
   /* ----- position handlers ----------------------------------------- */
-  const apply = useCallback(
-    (pos: GeolocationPosition) => {
-      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+const apply = useCallback(
+  (pos: GeolocationPosition) => {
+    const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-      if (
-        lastFix.current &&
-        o.minDistanceM > 0 &&
-        haversine(lastFix.current, p) < o.minDistanceM
-      )
-        return;
+    /* 1 ─ distance gate ------------------------------------------------ */
+    if (
+      lastFix.current &&
+      o.minDistanceM > 0 &&
+      haversine(lastFix.current, p) < o.minDistanceM   // ⚠️  see units note
+    )
+      return;
 
-      if (debTimer.current) clearTimeout(debTimer.current);
-      debTimer.current = setTimeout(() => {
-        set(s => ({
-          ...s,
-          coords: p,
-          accuracy: pos.coords.accuracy,
-          ts: Date.now(),
-          status: 'success',
-          hasPermission: true,
-        }));
-        lastFix.current = p;
-      }, o.debounceMs);
-    },
-    [o.minDistanceM, o.debounceMs],
-  );
+    /* 2 ─ debounce-and-update ----------------------------------------- */
+    if (debTimer.current) clearTimeout(debTimer.current);
+
+    debTimer.current = setTimeout(() => {
+      set(s => ({
+        ...s,
+        coords: p,
+        accuracy: pos.coords.accuracy,
+        ts: Date.now(),                // ⚠️  maybe use pos.timestamp?
+        status: 'success',
+        hasPermission: true,
+      }));
+      lastFix.current = p;
+    }, o.debounceMs);
+  },
+  [o.minDistanceM, o.debounceMs],
+);
 
   const fail = useCallback((err: GeolocationPositionError) => {
     const msg =
