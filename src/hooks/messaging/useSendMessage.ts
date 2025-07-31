@@ -54,7 +54,7 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No auth session");
 
-      const response = await fetch('/functions/v1/send-message', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-message`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
