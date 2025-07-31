@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -9,8 +10,18 @@ export function SmartSuggestionsToggle() {
   const { preferSmartSuggestions, toggleSmartSuggestions } = useNovaSnap()
   const { weights, isDefault } = useWeightedScoring()
 
-  // Calculate overall personalization strength
-  const personalizationStrength = Math.round(weights.personalization * 100)
+  // Calculate overall personalization strength with memoization
+  const personalizationStrength = useMemo(() => {
+    const nonDefaultWeights = Object.values(weights).filter((weight, index) => {
+      const defaultValues = [0.3, 0.25, 0.2, 0.15, 0.1];
+      return Math.abs(weight - defaultValues[index]) > 0.01;
+    });
+    
+    if (nonDefaultWeights.length === 0) return 'Standard';
+    if (nonDefaultWeights.length <= 2) return 'Light';
+    if (nonDefaultWeights.length <= 3) return 'Moderate';
+    return 'Heavy';
+  }, [weights]);
 
   return (
     <div className="space-y-2">
@@ -32,7 +43,7 @@ export function SmartSuggestionsToggle() {
             <div className="flex items-center gap-1">
               <Zap className="h-3 w-3 text-accent" />
               <span className="text-xs text-muted-foreground">
-                Personalization: {personalizationStrength}%
+                {personalizationStrength} personalization
               </span>
             </div>
             {!isDefault && (
