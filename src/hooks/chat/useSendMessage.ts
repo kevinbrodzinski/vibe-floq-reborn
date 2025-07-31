@@ -1,3 +1,4 @@
+// TODO: DEPRECATED - Remove after migration to src/hooks/messaging/useSendMessage.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuid } from 'uuid';
 import {

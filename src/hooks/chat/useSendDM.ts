@@ -1,3 +1,4 @@
+// TODO: DEPRECATED - Remove after migration to src/hooks/messaging/useSendMessage.ts
 import { useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatMessage } from '@/lib/chat/api';
@@ -15,7 +16,7 @@ export const useSendDM = (threadId: string, selfId: string) => {
     }) => {
       // Try the new edge function first, fallback to direct insert
       try {
-        const { data, error } = await supabase.functions.invoke('send-dm-message', {
+        const { data, error } = await supabase.functions.invoke('send-message', {
           body: {
             p_thread_id   : threadId,
             p_sender_id   : selfId,
@@ -36,6 +37,7 @@ export const useSendDM = (threadId: string, selfId: string) => {
           .insert({
             thread_id: threadId,
             sender_id: selfId,
+            profile_id: selfId,
             content: payload.text,
             reply_to_id: payload.replyTo || null,
             message_type: payload.media ? 'image' : 'text',

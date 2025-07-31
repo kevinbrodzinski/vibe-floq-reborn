@@ -102,3 +102,9 @@ verify_jwt = true
 
 [functions.get-social-suggestions]
 verify_jwt = true
+
+[functions.send-message]
+verify_jwt = true
+
+[functions.mark-thread-read]
+verify_jwt = true
