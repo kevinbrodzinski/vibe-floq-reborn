@@ -117,6 +117,7 @@ let deprecationWarned = false;
 /** @deprecated Use calculateDistance instead */
 export const metersBetween = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   if (!deprecationWarned) {
+    // eslint-disable-next-line no-console
     console.warn('⚠️ metersBetween is deprecated. Use calculateDistance from @/lib/location/standardGeo instead.');
     deprecationWarned = true;
   }
@@ -126,6 +127,7 @@ export const metersBetween = (lat1: number, lng1: number, lat2: number, lng2: nu
 /** @deprecated Use calculateDistance instead */
 export const distance = (a: GPSCoords, b: GPSCoords): number => {
   if (!deprecationWarned) {
+    // eslint-disable-next-line no-console
     console.warn('⚠️ distance is deprecated. Use calculateDistance from @/lib/location/standardGeo instead.');
     deprecationWarned = true;
   }
