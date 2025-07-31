@@ -164,7 +164,7 @@ export async function createAuthenticatedClient(req: Request, supabaseUrl: strin
   return createClient(supabaseUrl, supabaseKey, {
     global: {
       headers: {
-        Authorization: req.headers.get('Authorization') || '',
+        Authorization: req.headers.get('Authorization') ?? '',
       },
     },
   });

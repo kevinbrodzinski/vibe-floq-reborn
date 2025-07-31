@@ -33,6 +33,10 @@ export class OptimizedPresenceManager {
   private rateLimiter = new Map<string, number[]>();
   private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
 
+  constructor() {
+    this.startCleanupTimer(); // Start the sweeper
+  }
+
   /**
    * Subscribe to a presence channel with optimized management
    */
@@ -65,6 +69,9 @@ export class OptimizedPresenceManager {
     accuracy: number,
     userId: string
   ): Promise<boolean> {
+    // Ensure cleanup timer is running
+    this.startCleanupTimer();
+    
     // Rate limiting check
     if (!this.checkRateLimit(userId)) {
       console.warn(`[PresenceManager] Rate limit exceeded for user ${userId}`);
@@ -120,7 +127,7 @@ export class OptimizedPresenceManager {
       this.batchBuffer.delete(channelId);
       const timer = this.batchTimers.get(channelId);
       if (timer) {
-        clearTimeout(timer);
+        clearTimeout(timer); // Clear timer before deleting map entry
         this.batchTimers.delete(channelId);
       }
       
@@ -319,6 +326,3 @@ export class OptimizedPresenceManager {
 
 // Singleton instance for global use
 export const presenceManager = new OptimizedPresenceManager();
-
-// Start cleanup timer when module loads
-presenceManager['startCleanupTimer']();
