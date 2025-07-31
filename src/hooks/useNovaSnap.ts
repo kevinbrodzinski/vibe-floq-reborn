@@ -7,7 +7,7 @@ export function useNovaSnap() {
   const { mutate: updatePrefs } = useUpdateUserPreferences()
   const { logSnapSuggestion } = useLogSnapSuggestion()
 
-  const preferSmartSuggestions = prefs?.prefer_smart_suggestions ?? true
+  const preferSmartSuggestions = prefs?.prefer_smart_suggestions ?? false
 
   const recordNovaSnap = useCallback(async (planId: string, stopId: string, matchStrength: number, originalTime?: string, snappedTime?: string) => {
     // Log to the new snap_suggestion_logs table
