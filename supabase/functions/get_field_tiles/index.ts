@@ -1,109 +1,86 @@
+// deno ≥1.41  • Edge Function  • returns crowd stats for a list of tile_ids
+import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { corsHeaders } from '../_shared/cors.ts';
+/* ------------------------------------------------------------------ */
+/*  CORS helper – no external import, echoes caller’s Origin           */
+/* ------------------------------------------------------------------ */
+function cors(origin = "*") {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+    "Content-Type": "application/json",
+  } as const;
+}
 
-const TTL = 30; // seconds - aligned with React Query staleTime
+/* ------------------------------------------------------------------ */
+/*  config                                                             */
+/* ------------------------------------------------------------------ */
+const TTL_SECONDS = 30;              // align with React-Query staleTime
+const SB_URL      = Deno.env.get("SUPABASE_URL")!;
+const SR_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; // service-role
 
+/* ------------------------------------------------------------------ */
+/*  handler                                                            */
+/* ------------------------------------------------------------------ */
 serve(async (req) => {
-  // Log incoming request safely
-  console.log('[FIELD_TILES] incoming', {
-    method: req.method,
-    ua: req.headers.get('user-agent'),
-  });
+  const headers = cors(req.headers.get("Origin") ?? "*");
 
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { 
-      headers: { 
-        ...corsHeaders,
-        'Vary': 'Origin'
-      }
-    });
-  }
+  /* CORS pre-flight */
+  if (req.method === "OPTIONS") return new Response(null, { headers });
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'POST only' }), { 
-      status: 405, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+  /* only POST */
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "POST only" }),
+      { status: 405, headers });
   }
 
   try {
+    /* ---------- input ------------------------------------------------ */
     const { tile_ids = [], since } = await req.json().catch(() => ({}));
-    if (!Array.isArray(tile_ids) || !tile_ids.length) {
-      return new Response(JSON.stringify({ error: 'tile_ids[] required' }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    if (!Array.isArray(tile_ids) || tile_ids.length === 0) {
+      return new Response(JSON.stringify({ error: "tile_ids[] required" }),
+        { status: 400, headers });
     }
 
-    // KV cache layer (2 seconds) - only if cache is available
-    const cacheKey = `field_tiles:${tile_ids.sort().join(',')}`;
-    if (typeof caches !== 'undefined' && caches.default) {
-      const cached = await caches.default.match(cacheKey);
-      if (cached) {
-        return new Response(cached.body, { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-cache': 'hit' }
-        });
-      }
+    /* ---------- edge-KV micro-cache (CF Workers / Supabase platform) -- */
+    const cacheKey = `field_tiles:${tile_ids.sort().join(",")}:${since ?? "0"}`;
+    const hasKV    = typeof caches !== "undefined" && caches.default;
+    if (hasKV) {
+      const hit = await caches.default.match(cacheKey);
+      if (hit) return new Response(hit.body, { headers: { ...headers, "x-cache": "hit" } });
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    /* ---------- Supabase query --------------------------------------- */
+    const sb     = createClient(SB_URL, SR_KEY, { auth: { persistSession: false } });
+    const { data, error } = await sb
+      .from("field_tiles")
+      .select("tile_id,crowd_count,avg_vibe,updated_at")
+      .in("tile_id", tile_ids)
+      .gt("updated_at", since ?? "epoch");
 
-    // Query field tiles from database - select only needed columns
-    const { data, error } = await supabase
-      .from('field_tiles')
-      .select('tile_id,crowd_count,avg_vibe,updated_at')
-      .in('tile_id', tile_ids)
-      .gt('updated_at', since ?? 'epoch');
-      
     if (error) {
-      console.error('[FIELD_TILES] DB err', { 
-        msg: error.message, 
-        code: error.code,
-        hint: error.hint,
-      });
-      return new Response(JSON.stringify({ tiles: [] }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error("[get_field_tiles] DB error", error);
+      return new Response(JSON.stringify({ tiles: [] }), { status: 200, headers });
     }
 
-    const tiles = data || [];
-    if (Deno.env.get('ENV') !== 'prod') {
-      console.log(`[FIELD_TILES] Returning ${tiles.length} tiles for ${tile_ids.length} requested IDs`);
+    const body = JSON.stringify({ tiles: data ?? [] });
+    const resp = new Response(body, { status: 200, headers });
+
+    /* ---------- write micro-cache ------------------------------------ */
+    if (hasKV) {
+      caches.default.put(cacheKey, resp.clone(), { expirationTtl: TTL_SECONDS }).catch((e) =>
+        console.warn("[get_field_tiles] cache put failed", e.message)
+      );
     }
-    
-    const resp = new Response(JSON.stringify({ tiles }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-    
-    // Cache for 30 seconds - aligned with React Query staleTime
-    const hasCache = typeof caches !== 'undefined' && caches.default;
-    if (hasCache) {
-      try {
-        await caches.default.put(cacheKey, resp.clone(), { expirationTtl: TTL });
-      } catch (err) {
-        console.warn('[FIELD_TILES] cache put failed', {
-          message: (err as Error).message,
-        });
-      }
-    }
+
     return resp;
 
-  } catch (error) {
-    console.error('[FIELD_TILES] Error:', {
-      message: (error as Error).message,
-      name: (error as Error).name,
-    });
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  } catch (e) {
+    console.error("[get_field_tiles] fatal", e);
+    return new Response(JSON.stringify({ error: "internal" }),
+      { status: 500, headers });
   }
 });
