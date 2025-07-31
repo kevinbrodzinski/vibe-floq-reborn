@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Waypoint } from 'react-waypoint';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -263,7 +263,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                 </Avatar>
                 <div className="flex-1">
                   <SheetTitle className="text-left text-sm">{friend.display_name}</SheetTitle>
-                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                  <SheetDescription className="text-xs text-muted-foreground">@{friend.username}</SheetDescription>
                 </div>
                 {online
                   ? <span className="ml-2 text-xs text-green-400">● Online</span>
@@ -281,7 +281,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
                     <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
-                <SheetTitle className="text-left">Direct Message</SheetTitle>
+                <div className="flex-1">
+                  <SheetTitle className="text-left">Direct Message</SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground">Chat privately with your friend</SheetDescription>
+                </div>
               </>
             )}
           </div>
