@@ -10882,35 +10882,44 @@ export type Database = {
         }[]
       }
       search_floqs: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_km?: number
-          p_query?: string
-          p_vibe_ids?: string[]
-          p_time_from?: string
-          p_time_to?: string
-          p_limit?: number
-        }
+        Args:
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km?: number
+              p_query?: string
+              p_vibe_ids?: string[]
+              p_time_from?: string
+              p_time_to?: string
+              p_limit?: number
+            }
+          | {
+              p_lat?: number
+              p_lng?: number
+              p_radius_meters?: number
+              p_query?: string
+              p_vibes?: string[]
+              p_start_time?: string
+              p_end_time?: string
+              p_limit?: number
+              p_offset?: number
+            }
         Returns: {
           id: string
           title: string
           description: string
           starts_at: string
           ends_at: string
-          location: unknown
-          lat: number
-          lng: number
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          location: unknown
+          distance_m: number
+          participant_count: number
           creator_id: string
           creator_username: string
           creator_display_name: string
           creator_avatar_url: string
-          participant_count: number
-          distance_m: number
-          friends_going_count: number
-          friends_going_avatars: string[]
-          friends_going_names: string[]
+          is_participant: boolean
+          friend_participants: Json
         }[]
       }
       search_users: {
