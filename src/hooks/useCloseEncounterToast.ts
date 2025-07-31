@@ -15,14 +15,14 @@ export function useCloseEncounterToast() {
       .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
-          table: 'user_encounter',
+          table: 'crossed_paths',
           filter: `user_a=eq.${user.id}`
         },
         ({ new: row }: { new: any }) => {
           toast({
             title: 'Ran into a friend!',
             description: `You and ${row.user_b.slice(0, 8)}... were nearby at ${
-              new Date(row.first_seen).toLocaleTimeString()
+              new Date(row.ts).toLocaleTimeString()
             }`
           });
         }
@@ -30,14 +30,14 @@ export function useCloseEncounterToast() {
       .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public', 
-          table: 'user_encounter',
+          table: 'crossed_paths',
           filter: `user_b=eq.${user.id}`
         },
         ({ new: row }: { new: any }) => {
           toast({
             title: 'Ran into a friend!',
             description: `You and ${row.user_a.slice(0, 8)}... were nearby at ${
-              new Date(row.first_seen).toLocaleTimeString()
+              new Date(row.ts).toLocaleTimeString()
             }`
           });
         }
