@@ -20,7 +20,7 @@ export function useRealtimeFriends() {
           event: '*',
           schema: 'public',
           table: 'friends',
-          filter: `or=(user_a.eq.${user.id},user_b.eq.${user.id})`,
+          filter: `or=(user_low.eq.${user.id},user_high.eq.${user.id})`,
         },
         (payload) => {
           console.log('Friend change received:', payload);
