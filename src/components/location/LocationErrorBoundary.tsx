@@ -71,8 +71,7 @@ export class LocationErrorBoundary extends React.Component<
                 </Button>
               )}
             </AlertDescription>
-            </Alert>
-          </div>
+          </Alert>
         </div>
       );
     }
