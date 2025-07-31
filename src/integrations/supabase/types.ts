@@ -9288,7 +9288,7 @@ export type Database = {
         Returns: undefined
       }
       attempt_claim_username: {
-        Args: { desired: string } | { desired: string }
+        Args: { desired: string }
         Returns: boolean
       }
       award_achievement_optimized: {
@@ -9368,19 +9368,12 @@ export type Database = {
         Returns: number
       }
       calculate_floq_activity_score: {
-        Args:
-          | {
-              p_floq_id: string
-              p_event_type: Database["public"]["Enums"]["flock_event_type_enum"]
-              p_proximity_boost?: number
-              p_decay_hours?: number
-            }
-          | {
-              p_floq_id: string
-              p_event_type: string
-              p_proximity_boost?: number
-              p_decay_hours?: number
-            }
+        Args: {
+          p_floq_id: string
+          p_event_type: Database["public"]["Enums"]["flock_event_type_enum"]
+          p_proximity_boost?: number
+          p_decay_hours?: number
+        }
         Returns: Json
       }
       calculate_relationship_strength: {
@@ -9404,13 +9397,11 @@ export type Database = {
         Returns: string
       }
       check_rate_limit: {
-        Args:
-          | {
-              action_type: string
-              max_attempts?: number
-              window_minutes?: number
-            }
-          | { p_action: string; p_limit?: number; p_window?: unknown }
+        Args: {
+          action_type: string
+          max_attempts?: number
+          window_minutes?: number
+        }
         Returns: boolean
       }
       citext: {
@@ -10347,28 +10338,30 @@ export type Database = {
         Args: { "": number }
         Returns: string
       }
-      get_social_suggestions: {
-        Args:
-          | {
-              p_lat: number
-              p_lng: number
-              p_radius_km?: number
-              p_limit?: number
-              p_vibe?: string
-              p_activity?: string
-              p_group_size?: number
-              p_profile_id?: string
-            }
-          | {
-              p_profile_id?: string
-              p_lat?: number
-              p_lng?: number
-              p_radius_km?: number
-              p_limit?: number
-              p_vibe?: string
-              p_activity?: string
-              p_group_size?: number
-            }
+      get_social_suggestions_by_loc: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_km?: number
+          p_limit?: number
+          p_vibe?: string
+          p_activity?: string
+          p_group_size?: number
+          p_profile_id?: string
+        }
+        Returns: Json
+      }
+      get_social_suggestions_by_profile: {
+        Args: {
+          p_profile_id?: string
+          p_lat?: number
+          p_lng?: number
+          p_radius_km?: number
+          p_limit?: number
+          p_vibe?: string
+          p_activity?: string
+          p_group_size?: number
+        }
         Returns: Json
       }
       get_trending_venues: {
@@ -10613,9 +10606,7 @@ export type Database = {
         Returns: undefined
       }
       mark_thread_read: {
-        Args:
-          | { p_surface: string; p_thread_id: string; p_profile_id: string }
-          | { thread_id: number; user_id: string }
+        Args: { p_surface: string; p_thread_id: string; p_profile_id: string }
         Returns: undefined
       }
       match_locations_batch: {
@@ -10656,13 +10647,10 @@ export type Database = {
       people_crossed_paths_today: {
         Args: { in_me: string; proximity_meters?: number }
         Returns: {
-          profile_id: string
-          username: string
-          display_name: string
-          avatar_url: string
-          last_seen_at: string
-          distance_meters: number
-          overlap_duration_minutes: number
+          other_profile_id: string
+          first_seen: string
+          last_seen: string
+          close_contacts: number
         }[]
       }
       pgis_asflatgeobuf_finalfn: {
@@ -10984,25 +10972,42 @@ export type Database = {
         }[]
       }
       search_floqs: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_radius_km: number
-          p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
-          p_query?: string
-          p_time_from?: string
-          p_time_to?: string
-          p_visibilities?: string[]
-          p_limit?: number
-        }
+        Args:
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km: number
+              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+              p_query?: string
+              p_time_from?: string
+              p_time_to?: string
+              p_visibilities?: string[]
+              p_limit?: number
+            }
+          | {
+              p_lat: number
+              p_lng: number
+              p_radius_km?: number
+              p_query?: string
+              p_vibe_ids?: string[]
+              p_time_from?: string
+              p_time_to?: string
+              p_limit?: number
+            }
         Returns: {
           id: string
           title: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
+          description: string
+          primary_vibe: string
+          participant_count: number
+          distance_meters: number
           starts_at: string
           ends_at: string
-          distance_m: number
-          participant_count: number
+          creator_id: string
+          creator_username: string
+          creator_display_name: string
+          creator_avatar_url: string
+          user_joined_floq_id: string
           friends_going_count: number
           friends_going_avatars: string[]
           friends_going_names: string[]
@@ -11018,22 +11023,14 @@ export type Database = {
         }[]
       }
       send_dm_message: {
-        Args:
-          | {
-              p_thread_id: string
-              p_sender_id: string
-              p_body?: string
-              p_reply_to?: string
-              p_media?: Json
-            }
-          | {
-              p_thread_id: string
-              p_sender_id: string
-              p_body?: string
-              p_reply_to?: string
-              p_media?: Json
-              p_type?: Database["public"]["Enums"]["dm_msg_type"]
-            }
+        Args: {
+          p_thread_id: string
+          p_sender_id: string
+          p_body?: string
+          p_reply_to?: string
+          p_media?: Json
+          p_type?: Database["public"]["Enums"]["dm_msg_type"]
+        }
         Returns: {
           content: string | null
           created_at: string | null
@@ -11127,9 +11124,7 @@ export type Database = {
         }
       }
       should_log_presence: {
-        Args:
-          | { p_profile: string }
-          | { p_user: string; p_loc: unknown; p_now?: string }
+        Args: { p_user: string; p_loc: unknown; p_now?: string }
         Returns: boolean
       }
       show_limit: {
@@ -12240,9 +12235,7 @@ export type Database = {
         Returns: undefined
       }
       toggle_dm_reaction: {
-        Args:
-          | { message_id: number; user_id: string; reaction_type: string }
-          | { p_message_id: string; p_user_id: string; p_emoji: string }
+        Args: { p_message_id: string; p_user_id: string; p_emoji: string }
         Returns: undefined
       }
       trim_weather_cache: {
@@ -12305,16 +12298,11 @@ export type Database = {
         Returns: string
       }
       upsert_friendship: {
-        Args:
-          | {
-              _other_user: string
-              _new_state: Database["public"]["Enums"]["friend_state"]
-            }
-          | {
-              _other_user: string
-              _new_state: Database["public"]["Enums"]["friend_state"]
-              _is_close?: boolean
-            }
+        Args: {
+          _other_user: string
+          _new_state: Database["public"]["Enums"]["friend_state"]
+          _is_close?: boolean
+        }
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_presence: {
@@ -12396,7 +12384,7 @@ export type Database = {
         Returns: boolean
       }
       username_available: {
-        Args: { p_username: string } | { u: string }
+        Args: { u: string }
         Returns: boolean
       }
       validate_and_sanitize_text: {
@@ -12433,28 +12421,28 @@ export type Database = {
         }[]
       }
       venues_within_radius: {
-        Args:
-          | { center_lat: number; center_lng: number; r_m?: number }
-          | {
-              p_lat: number
-              p_lng: number
-              p_radius_m?: number
-              p_limit?: number
-              p_profile_id?: string
-              p_categories?: string[]
-              p_price_tier_max?: Database["public"]["Enums"]["price_enum"]
-              p_vibe?: string
-            }
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_m?: number
+          p_limit?: number
+          p_profile_id?: string
+          p_categories?: string[]
+          p_price_tier_max?: Database["public"]["Enums"]["price_enum"]
+          p_vibe?: string
+        }
         Returns: {
-          id: string
+          venue_id: string
           name: string
-          address: string
-          categories: string[]
-          rating: number
-          photo_url: string
-          lat: number
-          lng: number
           distance_m: number
+          rating: number
+          categories: string[]
+          description: string
+          address: string
+          photo_url: string
+          live_count: number
+          price_tier: Database["public"]["Enums"]["price_enum"]
+          personalized_score: number
         }[]
       }
       verify_profile_id_rewrite: {
