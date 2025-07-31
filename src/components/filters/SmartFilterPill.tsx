@@ -17,11 +17,10 @@ export const SmartFilterPill = () => {
       aria-pressed={preferSmartSuggestions}
       aria-label="Toggle smart suggestions"
       className={cn(
-        'flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-200',
-        'relative overflow-hidden',
+        'flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200',
         preferSmartSuggestions
           ? 'bg-white text-gray-900 shadow-md animate-pulse-once'
-          : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white border-white/20'
+          : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
       )}
     >
       <Sparkles className={cn(
