@@ -11,12 +11,12 @@ export function useCloseEncounterToast() {
     if (!user) return;
 
     const channel = supabase
-      .channel(`encounter_${profile.id}`)
+      .channel(`encounter_${user.id}`)
       .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'user_encounter',
-          filter: `user_low=eq.${profile.id}`
+          filter: `user_a=eq.${user.id}`
         },
         ({ new: row }: { new: any }) => {
           toast({
@@ -31,7 +31,7 @@ export function useCloseEncounterToast() {
           event: 'INSERT',
           schema: 'public', 
           table: 'user_encounter',
-          filter: `user_high=eq.${profile.id}`
+          filter: `user_b=eq.${user.id}`
         },
         ({ new: row }: { new: any }) => {
           toast({
