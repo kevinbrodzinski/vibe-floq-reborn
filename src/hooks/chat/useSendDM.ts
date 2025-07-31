@@ -1,6 +1,7 @@
 // TODO: DEPRECATED - Remove after migration to src/hooks/messaging/useSendMessage.ts
 import { useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { supaFn } from '@/lib/supaFn';
 import { ChatMessage } from '@/lib/chat/api';
 
 export const useSendDM = (threadId: string, selfId: string) => {
@@ -16,17 +17,24 @@ export const useSendDM = (threadId: string, selfId: string) => {
     }) => {
       // Try the new edge function first, fallback to direct insert
       try {
-        const { data, error } = await supabase.functions.invoke('send-message', {
-          body: {
-            p_thread_id   : threadId,
-            p_sender_id   : selfId,
-            p_message_type: payload.media ? 'image' : 'text',
-            p_body        : payload.text,              // can be null for media-only
-            p_reply_to_id : payload.replyTo ?? null,
-            p_media_meta  : payload.media  ?? {}
-          }
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("No auth session");
+
+        const response = await supaFn('send-message', session.access_token, {
+          p_thread_id   : threadId,
+          p_sender_id   : selfId,
+          p_message_type: payload.media ? 'image' : 'text',
+          p_body        : payload.text,              // can be null for media-only
+          p_reply_to_id : payload.replyTo ?? null,
+          p_media_meta  : payload.media  ?? {}
         });
-        if (error) throw error;
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Edge function failed: ${response.status} ${errorText}`);
+        }
+        
+        const data = await response.json();
         return data.message;
       } catch (edgeError) {
         console.warn('Edge function failed, using fallback:', edgeError);
