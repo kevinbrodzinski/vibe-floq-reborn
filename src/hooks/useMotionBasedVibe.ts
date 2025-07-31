@@ -27,6 +27,8 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
 
   const [vibeTransitions, setVibeTransitions] = useState<VibeTransition[]>([]);
   const [currentVibe, setVibe] = useState<Vibe>('solo' as Vibe);
+  const [geolocationError, setGeolocationError] = useState<GeolocationPositionError | null>(null);
+  const [isTracking, setIsTracking] = useState<boolean>(false);
 
   const lastPosition = useRef<GeolocationPosition | null>(null);
   const geolocationRef = useRef<GeolocationPosition | null>(null);
@@ -99,6 +101,10 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
   // Handle geolocation updates
   const handleGeolocationUpdate = (position: GeolocationPosition) => {
     const now = Date.now();
+    
+    // Clear any previous error state
+    setGeolocationError(null);
+    setIsTracking(true);
 
     if (lastPosition.current) {
       const speed = calculateSpeed(lastPosition.current, position);
@@ -152,6 +158,26 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
     geolocationRef.current = position;
   };
 
+  // Handle geolocation errors
+  const handleGeolocationError = (error: GeolocationPositionError) => {
+    console.error('[MOTION_VIBE] Geolocation error:', error);
+    setGeolocationError(error);
+    setIsTracking(false);
+    
+    // Provide user-friendly error messages
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        console.warn('[MOTION_VIBE] Location permission denied');
+        break;
+      case error.POSITION_UNAVAILABLE:
+        console.warn('[MOTION_VIBE] Location unavailable');
+        break;
+      case error.TIMEOUT:
+        console.warn('[MOTION_VIBE] Location request timeout - will retry');
+        break;
+    }
+  };
+
   // Start geolocation tracking only when enabled
   useEffect(() => {
     if (!enabled || !navigator.geolocation) {
@@ -167,13 +193,11 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
 
     const watchId = navigator.geolocation.watchPosition(
       handleGeolocationUpdate,
-      (error) => {
-        console.error('[MOTION_VIBE] Geolocation error:', error);
-      },
+      handleGeolocationError,
       {
-        enableHighAccuracy: true,
-        maximumAge: 5000, // 5 seconds
-        timeout: 10000 // 10 seconds
+        enableHighAccuracy: false, // Less battery intensive
+        maximumAge: 30000, // 30 seconds - more lenient
+        timeout: 20000 // 20 seconds - longer timeout
       }
     );
 
@@ -185,7 +209,7 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
         watchIdRef.current = null;
       }
     };
-  }, [enabled, currentVibe]);
+  }, [enabled]); // ✅ Removed currentVibe to prevent loops
 
   return {
     motionData,
@@ -194,6 +218,8 @@ export const useMotionBasedVibe = (enabled: boolean = false) => {
     isMoving: motionData.isMoving,
     activity: motionData.activity,
     speed: motionData.speed,
-    confidence: motionData.confidence
+    confidence: motionData.confidence,
+    geolocationError,
+    isTracking
   };
 }; 
