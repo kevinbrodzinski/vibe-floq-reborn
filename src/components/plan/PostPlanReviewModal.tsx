@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,9 @@ export function PostPlanReviewModal({
             <Heart className="w-5 h-5 text-pink-500" />
             How was "{planTitle}"?
           </DialogTitle>
+          <DialogDescription>
+            Share your feedback about this plan to help us improve future recommendations.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -131,6 +131,9 @@ export function PeopleEncountersModal({
             <User className="w-5 h-5" />
             People at {momentTitle}
           </DialogTitle>
+          <DialogDescription>
+            View the people you encountered during this moment and your interaction details.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

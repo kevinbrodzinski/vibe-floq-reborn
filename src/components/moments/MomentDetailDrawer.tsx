@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -255,6 +255,9 @@ export const MomentDetailDrawer = memo(({
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
+            <DialogDescription>
+              View detailed information about this moment including location, people, and metadata.
+            </DialogDescription>
           </DialogHeader>
           <Content />
         </DialogContent>

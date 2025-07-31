@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Copy, Check, Mail, Link as LinkIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -161,6 +161,9 @@ export function PlanInviteSystem({ planId, isHost = false }: PlanInviteSystemPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Invite to Plan</DialogTitle>
+          <DialogDescription>
+            Invite friends to join your plan by username, email, or share a link.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">

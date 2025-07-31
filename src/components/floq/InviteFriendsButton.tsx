@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -210,6 +211,9 @@ export const InviteFriendsButton: React.FC<InviteFriendsButtonProps> = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Invite Friends</DialogTitle>
+            <DialogDescription>
+              Search for friends to invite to this floq or discover new people to connect with.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

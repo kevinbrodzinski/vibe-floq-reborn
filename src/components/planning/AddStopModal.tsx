@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -147,6 +147,9 @@ export function AddStopModal({
             <MapPin className="h-5 w-5" />
             Add Stop
           </DialogTitle>
+          <DialogDescription>
+            Add a new stop to your plan with details like timing and estimated cost.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

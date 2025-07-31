@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useUpdatePlanSummary, type SummaryMode } from '@/hooks/usePlanSummaries';
@@ -56,6 +56,9 @@ export function PlanSummaryEditModal({
           <DialogTitle>
             Edit {mode === 'finalized' ? 'Plan Summary' : 'Experience Summary'}
           </DialogTitle>
+          <DialogDescription>
+            {mode === 'finalized' ? 'Edit the summary for your plan before sharing it.' : 'Edit your experience summary to capture how the plan went.'}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
