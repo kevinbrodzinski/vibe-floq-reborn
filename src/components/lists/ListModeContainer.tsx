@@ -34,7 +34,16 @@ export const ListModeContainer = () => {
       {nearby.map((v) => (
         <VenueListItem
           key={v.id}
-          venue={v}
+          venue={{
+            id: v.id,
+            name: v.name,
+            lat: v.lat,
+            lng: v.lng,
+            vibe: v.categories?.[0] || 'venue',
+            source: 'google',
+            distance_m: v.distance_m,
+            live_count: 0
+          }}
           onTap={() => setSelectedVenueId(v.id)}
           onMouseEnter={() => prefetchVenue(v.id)}
           onFocus={() => prefetchVenue(v.id)}

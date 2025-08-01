@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/providers/AuthProvider';
+import { sendFriendRequest, acceptFriendRequest } from '@/lib/friends';
 
 export interface RealFriendRequest {
   id: string;
@@ -69,19 +70,7 @@ export function useRealFriendRequests() {
 
   // Send friend request mutation
   const sendRequest = useMutation({
-    mutationFn: async (targetUserId: string) => {
-      if (!user?.id) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('friend_requests')
-        .insert({
-          profile_id: user.id,
-          other_profile_id: targetUserId,
-          status: 'pending'
-        });
-
-      if (error) throw error;
-    },
+    mutationFn: sendFriendRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['real-friend-requests'] });
       toast({
@@ -98,35 +87,20 @@ export function useRealFriendRequests() {
     },
   });
 
-  // Accept friend request mutation
+  // Accept friend request mutation  
   const acceptRequest = useMutation({
     mutationFn: async (requestId: string) => {
-      if (!user?.id) throw new Error('Not authenticated');
-
-      // Get the request details first
+      // Get the request details first to find the requester
       const { data: request, error: fetchError } = await supabase
         .from('friend_requests')
-        .select('profile_id, other_profile_id')
+        .select('profile_id')
         .eq('id', requestId)
         .single();
 
       if (fetchError) throw fetchError;
 
-      // Update the request status
-      const { error: updateError } = await supabase
-        .from('friend_requests')
-        .update({ status: 'accepted' })
-        .eq('id', requestId);
-
-      if (updateError) throw updateError;
-
-      // Create the friendship using the upsert_friendship function
-      const { error: friendshipError } = await supabase.rpc('upsert_friendship', {
-        _other_user: request.profile_id,
-        _new_state: 'accepted'
-      });
-
-      if (friendshipError) throw friendshipError;
+      // Use the improved accept function
+      await acceptFriendRequest(request.profile_id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['real-friend-requests'] });

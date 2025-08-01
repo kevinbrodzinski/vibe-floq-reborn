@@ -273,11 +273,11 @@ export const PulseScreen: React.FC = () => {
       title: venue.name,
       type: 'venue' as const,
       distance: venue.distance_m ? `${(venue.distance_m / 1000).toFixed(1)}km` : 'Nearby',
-      vibe: venue.vibe || 'Venue',
+      vibe: venue.categories?.[0] || 'Venue',
       category: venue.categories?.[0],
       rating: venue.rating,
       address: venue.address,
-      live_count: venue.live_count,
+      live_count: 0, // Default live count since it's not in the new venue type
       venue_id: venue.id
     }));
 
