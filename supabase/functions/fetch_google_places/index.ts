@@ -1,6 +1,7 @@
 // Deno runtime • Google NearbySearch → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
+import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -53,18 +54,9 @@ serve(async (req) => {
       });
     }
 
-    /* ---- 3. dump raw payload -------------------------------------- */
-    const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,     // bypass RLS
-      { auth: { persistSession: false } },
-    );
-
-    await sb.from("integrations.place_feed_raw").insert({
-      profile_id,
-      provider_id: 1,               // 1 = google row in integrations.provider
-      payload: gp,
-    });
+    /* ---- 3. transform + upsert venues ----------------------------- */
+    const mapped = gp.results.map((r: any) => mapToVenue({ provider: "google", r }));
+    await upsertVenues(mapped);
 
     return new Response(
       JSON.stringify({ ok: true, count: gp.results?.length ?? 0 }),
