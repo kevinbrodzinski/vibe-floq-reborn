@@ -10432,15 +10432,19 @@ export type Database = {
         Args: {
           p_lat: number
           p_lng: number
-          p_radius_km?: number
+          p_radius?: number
           p_limit?: number
         }
         Returns: {
-          venue_id: string
+          id: string
           name: string
+          lat: number
+          lng: number
+          address: string
+          categories: string[]
+          rating: number
+          price_tier: string
           distance_m: number
-          vibe_tag: string
-          people_now: number
         }[]
       }
       get_nearest_venue: {
