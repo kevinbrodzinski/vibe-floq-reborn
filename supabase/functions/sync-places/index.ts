@@ -263,9 +263,13 @@ serve(async (req) => {
       );
     }
 
-    // Map venues using shared infrastructure
+    // Map venues using shared infrastructure with fallback coordinates
     const rows = results.map((p) => {
       try {
+        // Ensure coordinates exist with fallbacks
+        if (!p.geometry?.location?.lat || !p.geometry?.location?.lng) {
+          p.geometry = { location: { lat, lng } };
+        }
         return mapToVenue({ provider: "google", r: p });
       } catch (mapError) {
         console.error(`[Sync Places] Failed to map place:`, p, mapError);

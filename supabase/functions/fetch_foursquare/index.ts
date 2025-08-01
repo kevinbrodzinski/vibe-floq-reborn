@@ -127,6 +127,10 @@ serve(async (req) => {
     console.log(`[Foursquare] Transforming ${fsq.results.length} results`);
     const mapped = fsq.results.map((r: any) => {
       try {
+        // Ensure coordinates exist with fallbacks
+        if (!r.geocodes?.main?.latitude || !r.geocodes?.main?.longitude) {
+          r.geocodes = { main: { latitude: lat, longitude: lng } };
+        }
         return mapToVenue({ provider: "foursquare", r });
       } catch (mapError) {
         console.error(`[Foursquare] Failed to map venue:`, r, mapError);
