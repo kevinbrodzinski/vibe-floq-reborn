@@ -85,7 +85,8 @@ serve(async (req) => {
       );
     }
 
-    // Check API key availability
+    // Check API key availability with debug info
+    console.log('[DEBUG] GP key len:', (Deno.env.get('GOOGLE_PLACES_KEY')||'').length);
     if (!PLACES_KEY) {
       console.error('[Sync Places] GOOGLE_PLACES_KEY missing from environment');
       return new Response(

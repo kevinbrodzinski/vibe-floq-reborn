@@ -56,7 +56,8 @@ serve(async (req) => {
       );
     }
 
-    /* ---- 1. server-stored FSQ key --------------------------------- */
+    /* ---- 1. server-stored FSQ key with debug info --------------------------------- */
+    console.log('[DEBUG] FSQ key len:', (Deno.env.get('FSQ_SERVICE_KEY')||'').length);
     const API_KEY = Deno.env.get("FSQ_SERVICE_KEY");
     if (!API_KEY) {
       console.error("[Foursquare] FSQ_SERVICE_KEY missing from environment");
