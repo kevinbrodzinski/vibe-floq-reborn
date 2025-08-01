@@ -29,7 +29,12 @@ export function useUserSearch(query: string, enabled: boolean = true) {
       })
 
       if (error) throw error
-      return data || []
+      if (!data) return []
+      
+      return data.map(profile => ({
+        ...profile,
+        created_at: new Date().toISOString() // Default value since search_profiles doesn't return created_at
+      }))
     },
     staleTime: 60_000,
   })
