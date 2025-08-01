@@ -25,12 +25,12 @@ serve(async (req) => {
       lng?: number;
     };
     
-    // Enhanced input validation
-    if (!profile_id || lat == null || lng == null) {
+    // Enhanced input validation - profile_id is now optional
+    if (lat == null || lng == null) {
       console.error(`[Foursquare] Invalid input: profile_id=${profile_id}, lat=${lat}, lng=${lng}`);
       return new Response(
         JSON.stringify({ 
-          error: "profile_id, lat & lng required",
+          error: "lat & lng required",
           details: { profile_id: !!profile_id, lat: lat != null, lng: lng != null }
         }),
         { status: 400, headers: CORS },

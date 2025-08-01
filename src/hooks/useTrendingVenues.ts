@@ -20,7 +20,7 @@ export const useTrendingVenues = (
       
       // Auto-sync venues in the background if enabled
       if (autoSync) {
-        autoSyncVenues(coords.lat, coords.lng, user?.id).catch(error => {
+        autoSyncVenues(coords.lat, coords.lng).catch(error => {
           console.warn('Background venue sync failed:', error);
           // Don't throw - we still want to return existing trending venues
         });

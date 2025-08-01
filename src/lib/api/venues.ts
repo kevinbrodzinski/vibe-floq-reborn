@@ -61,11 +61,7 @@ export async function syncGooglePlaces(
 ): Promise<VenueSyncResult> {
   try {
     const { data, error } = await supabase.functions.invoke('fetch_google_places', {
-      body: { 
-        profile_id: profileId || null,
-        lat, 
-        lng 
-      }
+      body: { lat, lng }  // Removed profile_id requirement
     });
 
     if (error) throw error;
@@ -91,11 +87,7 @@ export async function syncFoursquareVenues(
 ): Promise<VenueSyncResult> {
   try {
     const { data, error } = await supabase.functions.invoke('fetch_foursquare', {
-      body: { 
-        profile_id: profileId || null,
-        lat, 
-        lng 
-      }
+      body: { lat, lng }  // Removed profile_id requirement
     });
 
     if (error) throw error;
@@ -162,7 +154,7 @@ export async function checkSyncNeeded(lat: number, lng: number): Promise<boolean
 }
 
 /**
- * Auto-sync venues if needed for a location
+ * Auto-sync venues with cascading fallback strategy
  */
 export async function autoSyncVenues(
   lat: number, 
@@ -175,15 +167,24 @@ export async function autoSyncVenues(
     return [{ ok: true, count: 0, source: 'sync-places', error: 'Already synced recently' }];
   }
 
-  // Run both Google and Foursquare syncs in parallel
-  const results = await Promise.allSettled([
-    syncGooglePlaces(lat, lng, profileId),
-    syncFoursquareVenues(lat, lng, profileId)
-  ]);
+  // Try cascading approach: Google -> Foursquare -> Universal sync
+  const results: VenueSyncResult[] = [];
+  
+  // Try Google Places first
+  const googleResult = await syncGooglePlaces(lat, lng, profileId);
+  results.push(googleResult);
+  
+  // If Google fails or returns no results, try Foursquare
+  if (!googleResult.ok || googleResult.count === 0) {
+    const foursquareResult = await syncFoursquareVenues(lat, lng, profileId);
+    results.push(foursquareResult);
+    
+    // If both fail, try universal sync as last resort
+    if (!foursquareResult.ok || foursquareResult.count === 0) {
+      const syncResult = await syncNearbyVenues(lat, lng);
+      results.push(syncResult);
+    }
+  }
 
-  return results.map(result => 
-    result.status === 'fulfilled' 
-      ? result.value 
-      : { ok: false, count: 0, source: 'google' as const, error: 'Sync failed' }
-  );
+  return results;
 }
