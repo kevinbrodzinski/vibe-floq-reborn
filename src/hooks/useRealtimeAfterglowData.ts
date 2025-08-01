@@ -15,6 +15,7 @@ type DailyAfterglow = {
   total_floqs: number;
   crossed_paths_count: number;
   is_pinned: boolean;
+  is_stale: boolean;
   created_at: string;
   regenerated_at: string | null;
   ai_summary: string | null;
@@ -36,6 +37,7 @@ const EMPTY_STATE: DailyAfterglow = {
   total_floqs: 0,
   crossed_paths_count: 0,
   is_pinned: false,
+  is_stale: false,
   created_at: '',
   regenerated_at: null,
   ai_summary: null,
