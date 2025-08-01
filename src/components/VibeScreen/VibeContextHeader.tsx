@@ -60,7 +60,7 @@ export const VibeContextHeader: React.FC = () => {
         <FilterChip 
           active={true}
           onClick={() => console.log('Show vibe selector')}
-          className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 text-cyan-300"
+          className="min-w-[80px] bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 text-cyan-300"
         >
           {getVibeIcon(currentVibe)} Flowing
         </FilterChip>
@@ -69,7 +69,7 @@ export const VibeContextHeader: React.FC = () => {
         <FilterChip 
           active={false}
           onClick={() => console.log('Show match details')}
-          className="border-purple-400/30 text-purple-300"
+          className="min-w-[80px] border-purple-400/30 text-purple-300"
         >
           {matchPercentage}% match
         </FilterChip>
@@ -78,7 +78,7 @@ export const VibeContextHeader: React.FC = () => {
         <FilterChip 
           active={false}
           onClick={() => console.log('Show hotspots map')}
-          className="border-yellow-400/30 text-yellow-300"
+          className="min-w-[90px] border-yellow-400/30 text-yellow-300"
         >
           <MapPin className="w-3 h-3" />
           {hotspotCount} hotspots
@@ -95,7 +95,7 @@ export const VibeContextHeader: React.FC = () => {
             onCheckedChange={setAutoVibeEnabled}
             className="data-[state=checked]:bg-yellow-500"
           />
-          <span className="text-xs text-white/70">Auto-Vibe</span>
+          <span className="text-xs text-white/70 whitespace-nowrap">Auto-Vibe</span>
         </div>
       </div>
     </motion.div>
