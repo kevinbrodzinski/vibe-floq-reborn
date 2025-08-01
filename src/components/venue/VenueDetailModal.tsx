@@ -3,10 +3,12 @@ import { AnimatePresence } from 'framer-motion';
 import { X, Heart } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useVenueActions } from '@/hooks/useVenueActions';
+import { useVenueDetails } from '@/hooks/useVenueDetails';
+import { useEnhancedVenueDetails } from '@/hooks/useEnhancedVenueDetails';
 import { useAuth } from '@/providers/AuthProvider';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useNavigate } from 'react-router-dom';
@@ -39,9 +41,9 @@ interface EnhancedIntel {
 
 function toEnhanced(details: any): EnhancedIntel {
   return {
-    socialTexture: details?.social_texture ? { moodDescription: details.social_texture.moodDescription } : undefined,
-    dominantVibe: details?.dominant_vibe ?? undefined,
-    recentPosts: details?.recent_posts ?? [],
+    socialTexture: details?.socialTexture ? { moodDescription: details.socialTexture.moodDescription } : undefined,
+    dominantVibe: details?.dominantVibe ?? undefined,
+    recentPosts: details?.recentPosts ?? [],
   };
 }
 
@@ -59,27 +61,12 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
   const redirectedRef = React.useRef(false);
   const queryClient = useQueryClient();
 
-  // Parallel queries for better performance
-  const [
-    { data: venueDetails, isLoading: venueLoading },
-    { data: rawIntel, isLoading: intelLoading }
-  ] = useQueries({
-    queries: [
-      {
-        queryKey: ['venue', venueId],
-        queryFn: () => fetch(`/api/venues/${venueId}`).then(r => r.json()),
-        enabled: !!venueId,
-      },
-      {
-        queryKey: ['intel', venueId],
-        queryFn: () => fetch(`/api/venues/${venueId}/intel`).then(r => r.json()),
-        enabled: !!venueId,
-      },
-    ],
-  });
+  // Use existing hooks for data fetching
+  const { data: venueDetails, isLoading: venueLoading, error: venueError } = useVenueDetails(venueId);
+  const { data: enhancedIntel, isLoading: intelLoading } = useEnhancedVenueDetails(venueId);
 
   const isLoading = venueLoading || intelLoading;
-  const enhancedDetails = rawIntel ? toEnhanced(rawIntel) : null;
+  const enhancedDetails = enhancedIntel ? toEnhanced(enhancedIntel) : null;
 
   // Track view interaction when modal opens - GUARD against invalid venueId
   React.useEffect(() => {
@@ -186,6 +173,10 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
               {isLoading ? (
                 <div className="flex items-center justify-center h-96">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : venueError ? (
+                <div className="flex items-center justify-center h-96">
+                  <p className="text-muted-foreground">Failed to load venue details</p>
                 </div>
               ) : venueDetails ? (
                 <div className="p-4 space-y-6">
