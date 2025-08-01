@@ -7,6 +7,9 @@ export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
+    // SSR safety check
+    if (typeof window === 'undefined') return;
+    
     const media = window.matchMedia(query);
     
     // Set initial value

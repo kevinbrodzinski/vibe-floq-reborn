@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { X, Heart } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useVenueActions } from '@/hooks/useVenueActions';
@@ -56,6 +56,8 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
   const venueActions = useVenueActions();
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 640px)');
+  const redirectedRef = React.useRef(false);
+  const queryClient = useQueryClient();
 
   // Parallel queries for better performance
   const [
@@ -79,9 +81,9 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
   const isLoading = venueLoading || intelLoading;
   const enhancedDetails = rawIntel ? toEnhanced(rawIntel) : null;
 
-  // Track view interaction when modal opens
+  // Track view interaction when modal opens - GUARD against invalid venueId
   React.useEffect(() => {
-    if (isOpen && venueId) {
+    if (isOpen && venueId?.length && typeof venueId === 'string') {
       view(venueId);
     }
   }, [isOpen, venueId, view]);
@@ -97,7 +99,11 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
       description: venueDetails?.description || '',
       imageUrl: undefined,
     });
-  }, [venueId, user, isToggling, toggleFavorite, venueDetails]);
+
+    // Invalidate queries to sync favorite state
+    queryClient.invalidateQueries({ queryKey: ['venue', venueId] });
+    queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
+  }, [venueId, user, isToggling, toggleFavorite, venueDetails, queryClient]);
 
   // Defensive modal close with slight delay to prevent race conditions
   const handleClose = useCallback(() => {
@@ -107,11 +113,14 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
 
   // Responsive behavior: mobile gets bottom sheet, desktop gets routed page
   React.useEffect(() => {
-    if (isOpen && venueId && !isMobile) {
-      // On desktop, navigate to full page instead of modal
-      navigate(`/venues/${venueId}`);
-      onClose(); // Close the modal since we're navigating
-    }
+    if (!isOpen || !venueId || isMobile || redirectedRef.current) return;
+
+    redirectedRef.current = true;
+    // Wait one animation frame so ResizeObserver cleanup finishes
+    requestAnimationFrame(() => {
+      navigate(`/venues/${venueId}`, { replace: true });
+      onClose();
+    });
   }, [isOpen, venueId, isMobile, navigate, onClose]);
 
   if (!venueId) return null;
@@ -124,7 +133,7 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
       <AnimatePresence>
         {isOpen && (
           <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="fixed bottom-0 left-0 right-0 z-[81] p-0 max-w-none max-h-[90vh] border-0 bg-background rounded-t-xl overflow-hidden data-[state=open]:animate-slide-in-bottom data-[state=closed]:animate-slide-out-bottom">
+            <DialogContent className="fixed bottom-0 left-0 right-0 z-[81] p-0 max-w-none max-h-[90vh] border-0 bg-background rounded-t-xl overflow-y-auto data-[state=open]:animate-slide-in-bottom data-[state=closed]:animate-slide-out-bottom">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/30">
               <div className="flex items-center justify-between p-4">
