@@ -88,14 +88,14 @@ async function sendMessage(payload: SendMessagePayload) {
     } else if (payload.surface === 'floq') {
       messageData = {
         ...base,
-        floq_id:   payload.thread_id,
+        thread_id: payload.thread_id,   // ✅ existing column
         surface:   'floq',
         body:      payload.content || null,   // column = body
       };
     } else { /* plan */
       messageData = {
         ...base,
-        plan_id:   payload.thread_id,
+        thread_id: payload.thread_id,   // ✅ existing column
         surface:   'plan',
         body:      payload.content || null,
       };
