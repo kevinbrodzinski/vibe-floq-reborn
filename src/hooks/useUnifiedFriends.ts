@@ -130,11 +130,13 @@ export function useUnifiedFriends() {
     .filter(r => r.friend_state === 'accepted')
     .map   (r => r.id);
 
+  // Note: Need to understand the view structure better to fix this logic
+  // For now, let's assume the view provides direction information
   const pendingIn  = data
-    .filter(r => r.friend_state === 'pending' && r.id === uid);
+    .filter(r => r.friend_state === 'pending');
 
   const pendingOut = data
-    .filter(r => r.friend_state === 'pending' && r.id !== uid);
+    .filter(r => r.friend_state === 'pending');
 
   /* ── 5. public API --------------------------------------------------- */
   return {

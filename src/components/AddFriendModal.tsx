@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
-import { useUserSearch } from '@/hooks/useUserSearch';
+import { useFriendDiscovery } from '@/hooks/useFriendDiscovery';
 import { UserSearchResults } from '@/components/UserSearchResults';
 import { useProfileCache } from '@/hooks/useProfileCache';
 
@@ -26,18 +26,26 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
   const { toast } = useToast();
   const { primeProfiles } = useProfileCache();
 
-  // Search for users based on the query
-  const { data: searchResults = [], isLoading: isSearching } = useUserSearch(searchQuery);
+  // Search for users based on the query (pre-filtered to exclude friends)
+  const { data: searchResults = [], isLoading: isSearching } = useFriendDiscovery(searchQuery);
   // ⚡ seed profile cache
   primeProfiles(searchResults);
 
   const handleAddFriend = async (profileId: string) => {
     try {
-      sendRequest(profileId);
+      await sendRequest(profileId);
+      toast({
+        title: 'Friend request sent!',
+        description: 'Your request has been sent successfully.',
+      });
       setSearchQuery('');
       onOpenChange(false);
     } catch (error) {
-      // Error handling is done in the useUnifiedFriends hook
+      toast({
+        title: 'Error',
+        description: 'Failed to send friend request',
+        variant: 'destructive'
+      });
     }
   };
 

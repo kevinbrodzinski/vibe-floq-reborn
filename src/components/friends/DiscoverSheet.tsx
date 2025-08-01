@@ -9,7 +9,7 @@ import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
 import { useAuth } from '@/providers/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
 
-export default function DiscoverSheet() {
+export function DiscoverSheet() {
   const [searchQuery, setSearchQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuth()

@@ -29,7 +29,7 @@ import { FavoritesSheet } from './ui/FavoritesSheet';
 import { WatchlistSheet } from './ui/WatchlistSheet';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchlist } from '@/hooks/useWatchlist';
-import DiscoverSheet from './friends/DiscoverSheet';
+import { DiscoverSheet } from './friends/DiscoverSheet';
 
 // Type for tracking which sheet is currently open
 type ActiveSheet = 'friends' | 'discover' | 'messages' | 'favorites' | 'watchlist' | null
