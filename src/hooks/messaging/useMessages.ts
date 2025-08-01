@@ -44,37 +44,47 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
     initialPageParam: 0,
   });
 
-  // Realtime subscription
+  // Realtime subscription - listen to database INSERT events
   useEffect(() => {
+    if (!isUuid(threadId)) return;
+
+    const tableName = surface === "dm" ? "direct_messages" : "chat_messages";
+    
     const channel = supabase
-      .channel(`${surface}:${threadId}`)
-      .on("broadcast", { event: "message_sent" }, ({ payload }) => {
-        queryClient.setQueryData(
-          ["messages", surface, threadId],
-          (old: any) => {
-            if (!old) return old;
-            const pages = old.pages || [];
-            const lastPage = pages[pages.length - 1] || [];
-            
-            // Check if message already exists (prevent duplicates)
-            const messageExists = pages.some((page: any[]) =>
-              page.some(msg => msg.id === payload.message.id)
-            );
-            
-            if (!messageExists) {
-              return {
-                ...old,
-                pages: [...pages.slice(0, -1), [...lastPage, payload.message]]
-              };
+      .channel(`${surface}_messages_${threadId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: tableName,
+          filter: `thread_id=eq.${threadId}`
+        },
+        (payload) => {
+          console.log('📨 New message received:', payload);
+          queryClient.setQueryData(
+            ["messages", surface, threadId],
+            (old: any) => {
+              if (!old) return old;
+              const pages = old.pages || [];
+              const lastPage = pages[pages.length - 1] || [];
+              
+              // Check if message already exists (prevent duplicates)
+              const messageExists = pages.some((page: any[]) =>
+                page.some(msg => msg.id === payload.new.id)
+              );
+              
+              if (!messageExists) {
+                return {
+                  ...old,
+                  pages: [...pages.slice(0, -1), [...lastPage, payload.new]]
+                };
+              }
+              return old;
             }
-            return old;
-          }
-        );
-      })
-      .on("broadcast", { event: "thread_read" }, ({ payload }) => {
-        // Handle read receipts if needed
-        console.log("Thread read:", payload);
-      })
+          );
+        }
+      )
       .subscribe();
       
     return () => { supabase.removeChannel(channel); };
