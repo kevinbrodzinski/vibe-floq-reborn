@@ -1,4 +1,5 @@
 import React from 'react';
+import { ScrollView } from 'react-native';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -8,55 +9,53 @@ import { Button } from '@/components/ui/button';
  */
 export const SocialMode: React.FC = () => {
   return (
-    <div className="flex-1 pt-4">
-      <div className="px-4 space-y-4">
-        {/* Friend Alignment Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Friend Vibe Matches</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              Coming soon: See friends with matching vibes
-            </p>
-            <Button variant="outline" disabled>
-              Find Matches
-            </Button>
-          </CardContent>
-        </Card>
+    <ScrollView style={{ paddingHorizontal: 16, paddingTop: 16 }} showsVerticalScrollIndicator={false}>
+      {/* Friend Alignment Placeholder */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Friend Vibe Matches</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            Coming soon: See friends with matching vibes
+          </p>
+          <Button variant="outline" disabled>
+            Find Matches
+          </Button>
+        </CardContent>
+      </Card>
 
-        {/* Mini Density Map Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vibe Clusters Nearby</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center mb-3">
-              <p className="text-sm text-muted-foreground">
-                Map preview coming soon
-              </p>
-            </div>
-            <Button variant="outline" disabled>
-              Explore Clusters
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Suggested Actions Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Suggested Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              Coming soon: Personalized suggestions based on your vibe
+      {/* Mini Density Map Placeholder */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Vibe Clusters Nearby</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center mb-3">
+            <p className="text-sm text-muted-foreground">
+              Map preview coming soon
             </p>
-            <Button variant="outline" disabled>
-              Get Suggestions
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+          <Button variant="outline" disabled>
+            Explore Clusters
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Suggested Actions Placeholder */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Suggested Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            Coming soon: Personalized suggestions based on your vibe
+          </p>
+          <Button variant="outline" disabled>
+            Get Suggestions
+          </Button>
+        </CardContent>
+      </Card>
+    </ScrollView>
   );
 };

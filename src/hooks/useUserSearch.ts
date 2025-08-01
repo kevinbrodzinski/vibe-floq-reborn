@@ -12,7 +12,7 @@ export interface SearchProfilesFunction {
     display_name: string
     username: string
     avatar_url: string | null
-    created_at: string
+    created_at?: string // Optional since search_profiles doesn't return this
   }[]
 }
 
@@ -29,12 +29,7 @@ export function useUserSearch(query: string, enabled: boolean = true) {
       })
 
       if (error) throw error
-      if (!data) return []
-      
-      return data.map(profile => ({
-        ...profile,
-        created_at: new Date().toISOString() // Default value since search_profiles doesn't return created_at
-      }))
+      return data || []
     },
     staleTime: 60_000,
   })

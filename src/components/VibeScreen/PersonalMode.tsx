@@ -1,5 +1,5 @@
 import React from 'react';
-import { LegacyVibeScreen } from '@/components/screens/LegacyVibeScreen';
+import { LegacyVibeScreen } from '@/screens/LegacyVibeScreen';
 
 /**
  * PersonalMode - Contains all the existing vibe functionality

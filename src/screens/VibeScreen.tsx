@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Haptics from 'expo-haptics';
 import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PersonalMode } from '@/components/VibeScreen/PersonalMode';
@@ -13,6 +14,16 @@ import { useVibeScreenMode } from '@/hooks/useVibeScreenMode';
 export const VibeScreen: React.FC = () => {
   const { mode, setMode } = useVibeScreenMode();
 
+  const handleModeChange = (value: 'personal' | 'social') => {
+    setMode(value);
+    // Haptic feedback on toggle
+    try {
+      Haptics.selectionAsync();
+    } catch (error) {
+      // Silently fail on web or unsupported platforms
+    }
+  };
+
   return (
     <div className="flex-1 bg-gradient-to-b from-background to-secondary/20">
       {/* Mode Toggle */}
@@ -20,7 +31,7 @@ export const VibeScreen: React.FC = () => {
         <ToggleGroup
           type="single"
           value={mode}
-          onValueChange={setMode}
+          onValueChange={handleModeChange}
           className="w-full bg-card/40 backdrop-blur-sm rounded-full border border-border/30"
         >
           <ToggleGroupItem

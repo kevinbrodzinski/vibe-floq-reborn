@@ -17,7 +17,7 @@ export const prefetchTab = (tab: FloqTab) => {
       import('@/components/screens/PulseScreen').catch(() => {});
       break;
     case 'vibe':
-      import('@/components/screens/VibeScreen').catch(() => {});
+      import('@/screens/VibeScreen').catch(() => {});
       break;
     case 'afterglow':
       import('@/components/screens/AfterglowScreen').catch(() => {});

@@ -8,7 +8,7 @@ import { FlocksHome } from '@/components/FlocksHome';
 import FloqDetail from '@/pages/FloqDetail';
 import FloqManage from '@/pages/FloqManage';
 import { PulseScreen } from '@/components/screens/PulseScreen';
-import { VibeScreen } from '@/components/screens/VibeScreen';
+import { VibeScreen } from '@/screens/VibeScreen';
 import AfterglowRoutes from '@/routes/AfterglowRoutes';
 import { CollaborativePlanningScreen } from '@/components/screens/CollaborativePlanningScreen';
 import FloqPlanExecutionScreen from '@/pages/FloqPlanExecutionScreen';
