@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { VenueDetailModal } from '@/components/venue/VenueDetailModal';
 
 interface FavoritesSheetProps {
   open: boolean;
@@ -21,14 +22,22 @@ export const FavoritesSheet: React.FC<FavoritesSheetProps> = ({
 }) => {
   const navigate = useNavigate();
   const { favorites, isLoading, removeFavorite, isRemoving } = useFavorites();
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const [venueModalOpen, setVenueModalOpen] = useState(false);
 
   const handleItemClick = (item: any) => {
     if (item.item_type === 'venue') {
-      navigate(`/venues/${item.item_id}`);
+      setSelectedVenueId(item.item_id);
+      setVenueModalOpen(true);
     } else if (item.item_type === 'plan') {
       navigate(`/plans/${item.item_id}`);
+      onOpenChange(false);
     }
-    onOpenChange(false);
+  };
+
+  const handleVenueModalClose = () => {
+    setVenueModalOpen(false);
+    setSelectedVenueId(null);
   };
 
   const handleRemoveFavorite = (e: React.MouseEvent, itemId: string) => {
@@ -193,6 +202,12 @@ export const FavoritesSheet: React.FC<FavoritesSheetProps> = ({
           )}
         </div>
       </SheetContent>
+      
+      <VenueDetailModal
+        isOpen={venueModalOpen}
+        onClose={handleVenueModalClose}
+        venueId={selectedVenueId}
+      />
     </Sheet>
   );
-}; 
+};
