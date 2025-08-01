@@ -12693,14 +12693,14 @@ export type Database = {
         Returns: number
       }
       walkable_floqs: {
-        Args: { lat: number; lng: number; metres?: number }
+        Args: { p_lat: number; p_lng: number; p_metres?: number }
         Returns: {
-          floq_id: string
+          id: string
           title: string
           starts_at: string
           primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          distance_m: number
-          participant_cnt: number
+          distance_meters: number
+          participant_count: number
         }[]
       }
     }
