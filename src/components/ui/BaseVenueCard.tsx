@@ -52,7 +52,7 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
     
     return Array.from({ length: 5 }, (_, i) => (
       <Star 
-        key={i} 
+        key={`star-${i}`} 
         className={cn(
           "w-3 h-3",
           i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
@@ -77,7 +77,7 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
       layout
       initial={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
-      className={className}
+      className={cn(onClick && "cursor-pointer", className)}
       ref={ref}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -108,9 +108,6 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
           </div>
         ) : (
           <div className={cn("relative overflow-hidden bg-gradient-to-br from-muted to-muted-foreground/20", imageHeight)}>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-muted-foreground text-sm font-medium">{name}</div>
-            </div>
             {headerBadge && (
               <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
                 {headerBadge}
@@ -141,16 +138,16 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
               </div>
             </div>
             {rightBadge && (
-              <div className="flex items-center gap-1 text-green-600 text-xs p-1 bg-green-50 rounded">
+              <Badge variant="outline" className="text-green-600 text-xs bg-green-50 border-green-200">
                 {rightBadge}
-              </div>
+              </Badge>
             )}
           </div>
         </CardHeader>
 
         <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
           {/* Content Sections */}
-          {contentSections.map((section, index) => (
+          {contentSections.filter(Boolean).map((section, index) => (
             <div key={index}>
               {section}
             </div>

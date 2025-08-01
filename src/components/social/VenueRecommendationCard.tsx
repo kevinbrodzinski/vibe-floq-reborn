@@ -166,13 +166,23 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
     });
   }, [user, venue.id, venue.name, venue.category, venue.imageUrl, toggleFavorite]);
 
+  const handleDirections = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onVisit(venue.id);
+  }, [onVisit, venue.id]);
+
+  const handleFavoriteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleToggleFavorite();
+  }, [handleToggleFavorite]);
+
   const actionButtons = (
     <>
       <Button 
         variant="secondary" 
         size="sm"
         className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
-        onClick={() => onVisit(venue.id)}
+        onClick={handleDirections}
       >
         <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
         Directions
@@ -184,7 +194,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
           "flex-1 text-xs sm:text-sm h-8 sm:h-10",
           isFavorite(venue.id) && "bg-red-500 hover:bg-red-600 text-white"
         )}
-        onClick={handleToggleFavorite}
+        onClick={handleFavoriteClick}
         disabled={!user || isToggling}
       >
         <Heart className={cn(
@@ -286,7 +296,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
         statsSection,
         realTimeSection,
         warningsSection
-      ].filter(Boolean)}
+      ]}
       actionButtons={actionButtons}
       expandableContent={expandableContent}
     />
