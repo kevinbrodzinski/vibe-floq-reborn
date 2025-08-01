@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Search, UserPlus } from 'lucide-react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { Input } from '@/components/ui/input'
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { UserSearchResults } from '@/components/UserSearchResults'
@@ -24,6 +25,12 @@ export default function DiscoverSheet() {
     
     return () => clearTimeout(timeout)
   }, [])
+
+  // Keyboard shortcut to focus search bar
+  useHotkeys('mod+k', (e) => {
+    e.preventDefault()
+    inputRef.current?.focus()
+  }, { enableOnFormTags: true })
 
   const handleAddFriend = async (profileId: string) => {
     try {
