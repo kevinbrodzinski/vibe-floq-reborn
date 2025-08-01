@@ -6,14 +6,19 @@ import { supabase } from "@/integrations/supabase/client";
 export async function sendFriendRequest(targetUserId: string) {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw authErr ?? new Error("Not authenticated");
+  if (targetUserId === user.id) throw new Error("Cannot add yourself");
 
-  const { error } = await supabase.from("friend_requests").insert({
-    profile_id:       user.id,        // requester
-    other_profile_id: targetUserId,   // addressee
-    status:           "pending",
-  });
+  const { error } = await supabase.from("friend_requests")
+    .upsert(
+      {
+        profile_id:       user.id,        // requester
+        other_profile_id: targetUserId,   // addressee
+        status:           "pending",
+      },
+      { onConflict: "profile_id,other_profile_id", ignoreDuplicates: true }
+    );
 
-  if (error) throw error;
+  if (error && error.code !== "23505") throw error; // ignore duplicate error if it bubbles
 }
 
 /* -------------------------------------------------- */
