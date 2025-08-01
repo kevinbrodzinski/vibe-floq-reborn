@@ -11209,10 +11209,9 @@ export type Database = {
         Args: { p_query: string; p_limit?: number }
         Returns: {
           id: string
-          display_name: string
           username: string
+          display_name: string
           avatar_url: string
-          created_at: string
         }[]
       }
       search_users: {
