@@ -49,11 +49,50 @@ export interface UnifiedRow {
   is_incoming_request : boolean;
 }
 
-/* ---------- small helper for SUPABASE RPC ------------------------- */
-const callUpsert = async (other: string, state: 'pending'|'accepted'|'blocked') => {
-  const { data, error } = await (supabase.rpc as any)('upsert_friendship', { _other_user: other, _new_state: state });
+/* ---------- mutation helpers ---------------------------------------- */
+const sendFriendRequest = async (targetUserId: string) => {
+  const { error } = await supabase
+    .from('friend_requests')
+    .insert({
+      profile_id: (await supabase.auth.getUser()).data.user?.id,
+      other_profile_id: targetUserId,
+      status: 'pending'
+    });
+  
   if (error) throw error;
-  return data;
+};
+
+const acceptFriendRequest = async (fromUserId: string) => {
+  // Get the current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Update the friend request to accepted
+  const { error: updateError } = await supabase
+    .from('friend_requests')
+    .update({ status: 'accepted', responded_at: new Date().toISOString() })
+    .eq('profile_id', fromUserId)
+    .eq('other_profile_id', user.id)
+    .eq('status', 'pending');
+
+  if (updateError) throw updateError;
+
+  // Create the bidirectional friendship
+  const { error: friendshipError } = await supabase.rpc('upsert_friendship', {
+    _other_user: fromUserId,
+    _new_state: 'accepted'
+  });
+
+  if (friendshipError) throw friendshipError;
+};
+
+const blockUser = async (targetUserId: string) => {
+  const { error } = await supabase.rpc('upsert_friendship', {
+    _other_user: targetUserId,
+    _new_state: 'blocked'
+  });
+  
+  if (error) throw error;
 };
 
 /* ------------------------------------------------------------------ */
@@ -110,6 +149,12 @@ export function useUnifiedFriends() {
       )
       .on(
         'postgres_changes',
+        { event:'*', schema:'public', table:'friend_requests',
+          filter:`or(profile_id.eq.${uid},other_profile_id.eq.${uid})` },
+        invalidate
+      )
+      .on(
+        'postgres_changes',
         { event:'*', schema:'public', table:'presence' },
         invalidate         // we filter in JS: only friends' presence rows are in the view
       )
@@ -120,8 +165,18 @@ export function useUnifiedFriends() {
 
   /* ── 3. mutate helper ------------------------------------------------ */
   const mutation = useMutation({
-    mutationFn : ({ other, state }: { other:string; state:'pending'|'accepted'|'blocked' }) =>
-      callUpsert(other, state),
+    mutationFn : ({ other, state }: { other:string; state:'pending'|'accepted'|'blocked' }) => {
+      switch (state) {
+        case 'pending':
+          return sendFriendRequest(other);
+        case 'accepted':
+          return acceptFriendRequest(other);
+        case 'blocked':
+          return blockUser(other);
+        default:
+          throw new Error(`Unknown state: ${state}`);
+      }
+    },
 
     onSuccess  : (_, vars) => {
       qc.invalidateQueries({ queryKey:['friends-unified', uid] });
