@@ -1,0 +1,65 @@
+import { useState } from 'react'
+import { Search, UserPlus } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { UserSearchResults } from '@/components/UserSearchResults'
+import { useFriendDiscovery } from '@/hooks/useFriendDiscovery'
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
+import { useToast } from '@/hooks/use-toast'
+
+export default function DiscoverSheet() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const { data: searchResults, isLoading } = useFriendDiscovery(searchQuery)
+  const { sendRequest, updating } = useUnifiedFriends()
+  const { toast } = useToast()
+
+  const handleAddFriend = async (profileId: string) => {
+    try {
+      await sendRequest(profileId)
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send friend request',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  return (
+    <SheetContent side="left" className="max-w-sm w-full p-6 space-y-6">
+      <SheetHeader>
+        <SheetTitle className="flex items-center gap-2">
+          <UserPlus className="w-5 h-5" />
+          Discover People
+        </SheetTitle>
+      </SheetHeader>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by name or username..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+          autoFocus
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {searchQuery.length >= 2 ? (
+          <UserSearchResults
+            users={searchResults || []}
+            onAddFriend={handleAddFriend}
+            isLoading={isLoading || updating}
+          />
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <UserPlus className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>Start typing to discover people</p>
+            <p className="text-sm mt-1">Search by name or username</p>
+          </div>
+        )}
+      </div>
+    </SheetContent>
+  )
+}
