@@ -1,32 +1,34 @@
-import { useMemo } from 'react'
-import { useUserSearch, SearchedUser } from './useUserSearch'
-import { useUnifiedFriends } from './useUnifiedFriends'
-import { useAuth } from '@/providers/AuthProvider'
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export type DiscoverProfile = {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  req_status: 'none' | 'pending' | 'accepted' | 'blocked';
+};
 
 export function useFriendDiscovery(query: string, enabled: boolean = true) {
-  const { user } = useAuth()
-  const userSearch = useUserSearch(query, enabled)
-  const { rows: friendRows } = useUnifiedFriends()
+  return useQuery({
+    queryKey: ['discover', query],
+    enabled: enabled && query.length >= 2,
+    queryFn: async (): Promise<DiscoverProfile[]> => {
+      const { data, error } = await supabase
+        .rpc('search_profiles', {
+          p_query: query,
+          p_limit: 10
+        });
 
-  // Filter out current user and existing friends/requests
-  const filteredResults = useMemo(() => {
-    if (!userSearch.data || !user) return []
-
-    const existingConnections = new Set(friendRows.map(row => row.id))
-    
-    return userSearch.data.filter((searchUser: SearchedUser) => {
-      // Remove self (defensive filter in case RPC doesn't exclude current user)
-      if (searchUser.id === user.id) return false
+      if (error) throw error;
       
-      // Remove existing friends/requests
-      if (existingConnections.has(searchUser.id)) return false
-      
-      return true
-    })
-  }, [userSearch.data, user, friendRows])
-
-  return {
-    ...userSearch,
-    data: filteredResults
-  }
+      // For now, add a default req_status since the RPC doesn't include it yet
+      // TODO: Replace with v_discover_profiles view once it's available
+      return (data || []).map((user: any) => ({
+        ...user,
+        req_status: 'none' as const
+      }));
+    },
+    staleTime: 30_000,
+  });
 }

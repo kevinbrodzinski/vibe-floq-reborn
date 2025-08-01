@@ -1,24 +1,52 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
-import { SearchedUser } from '@/hooks/useUserSearch';
 import { UserTag } from '@/components/ui/user-tag';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
+import { AddFriendButton } from '@/components/friends/AddFriendButton';
+import { DiscoverProfile } from '@/hooks/useFriendDiscovery';
+import { useQueryClient } from '@tanstack/react-query';
+import { sendFriendRequest } from '@/lib/friends';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserSearchResultsProps {
-  users: SearchedUser[];
-  onAddFriend: (profileId: string) => void;
+  users: DiscoverProfile[];
+  searchQuery: string;
   isLoading?: boolean;
   selectedIndex?: number;
 }
 
 export const UserSearchResults = ({ 
   users, 
-  onAddFriend, 
+  searchQuery,
   isLoading = false,
   selectedIndex = -1 
 }: UserSearchResultsProps) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleAddFriend = async (targetId: string) => {
+    try {
+      await sendFriendRequest(targetId);
+      
+      // Optimistic cache update
+      queryClient.setQueryData(['discover', searchQuery], (old: DiscoverProfile[] | undefined) =>
+        old?.map((p) =>
+          p.id === targetId ? { ...p, req_status: 'pending' as const } : p
+        )
+      );
+
+      toast({
+        title: "Friend request sent",
+        description: "Your request has been sent successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send friend request",
+        variant: "destructive",
+      });
+    }
+  };
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -44,13 +72,13 @@ export const UserSearchResults = ({
   return (
     <div className="space-y-1">
       {users.map((user) => {
-        // Convert SearchedUser to Profile format for UserTag
+        // Convert DiscoverProfile to Profile format for UserTag
         const userAsProfile = {
           id: user.id,
           username: user.username,
           display_name: user.display_name,
           avatar_url: user.avatar_url,
-          created_at: user.created_at,
+          created_at: new Date().toISOString(), // Default value since DiscoverProfile doesn't have this
         };
 
         return (
@@ -71,15 +99,10 @@ export const UserSearchResults = ({
               <UserTag profile={userAsProfile} />
             </div>
             
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onAddFriend(user.id)}
-              className="flex items-center gap-1"
-            >
-              <UserPlus className="w-3 h-3" />
-              Add
-            </Button>
+            <AddFriendButton
+              status={user.req_status}
+              onAdd={() => handleAddFriend(user.id)}
+            />
           </div>
         );
       })}

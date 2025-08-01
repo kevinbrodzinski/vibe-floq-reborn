@@ -75,7 +75,7 @@ export function DiscoverSheet() {
         {searchQuery.length >= 2 ? (
           <UserSearchResults
             users={searchResults || []}
-            onAddFriend={handleAddFriend}
+            searchQuery={searchQuery}
             isLoading={isLoading || updating}
           />
         ) : (

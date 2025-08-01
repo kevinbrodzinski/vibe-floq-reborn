@@ -84,7 +84,7 @@ export const AddFriendModal = ({ open, onOpenChange }: AddFriendModalProps) => {
             {searchQuery.trim().length >= 2 ? (
               <UserSearchResults
                 users={searchResults}
-                onAddFriend={handleAddFriend}
+                searchQuery={searchQuery}
                 isLoading={isSearching}
               />
             ) : (
