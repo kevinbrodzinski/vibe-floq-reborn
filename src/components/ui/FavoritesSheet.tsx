@@ -74,10 +74,10 @@ export const FavoritesSheet: React.FC<FavoritesSheetProps> = ({
                     Venues ({venueFavorites.length})
                   </h3>
                   <div className="space-y-3">
-                    {venueFavorites.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
+                     {venueFavorites.map((item) => (
+                       <div
+                         key={item.item_id}
+                         className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
                         onClick={() => handleItemClick(item)}
                       >
                         <div className="flex-shrink-0">
@@ -136,10 +136,10 @@ export const FavoritesSheet: React.FC<FavoritesSheetProps> = ({
                     Plans ({planFavorites.length})
                   </h3>
                   <div className="space-y-3">
-                    {planFavorites.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
+                     {planFavorites.map((item) => (
+                       <div
+                         key={item.item_id}
+                         className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
                         onClick={() => handleItemClick(item)}
                       >
                         <div className="flex-shrink-0">

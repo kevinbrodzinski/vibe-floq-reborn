@@ -4,7 +4,6 @@ import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
 
 export interface FavoriteItem {
-  id: string;
   user_id: string;
   item_id: string;
   item_type: 'venue' | 'plan';
@@ -38,7 +37,6 @@ export const useFavorites = () => {
 
       if (error) throw error;
       return data?.map(item => ({
-        id: item.item_id,
         user_id: user.id,
         item_id: item.item_id,
         item_type: item.item_type as 'venue' | 'plan',
@@ -76,7 +74,6 @@ export const useFavorites = () => {
 
       if (error) throw error;
       return {
-        id: data.item_id,
         user_id: user.id,
         item_id: data.item_id,
         item_type: data.item_type as 'venue' | 'plan',
@@ -118,6 +115,31 @@ export const useFavorites = () => {
     },
   });
 
+  const toggleFavorite = useMutation({
+    mutationFn: async (params: {
+      itemId: string;
+      itemType: 'venue' | 'plan';
+      title?: string;
+      description?: string;
+      imageUrl?: string;
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      if (isFavorite(params.itemId)) {
+        await removeFavorite.mutateAsync(params.itemId);
+      } else {
+        await addFavorite.mutateAsync(params);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Failed to toggle favorite:', error);
+      toast.error('Failed to update favorites');
+    },
+  });
+
   const isFavorite = (itemId: string) => {
     return favorites.some(fav => fav.item_id === itemId);
   };
@@ -128,8 +150,10 @@ export const useFavorites = () => {
     error,
     addFavorite: addFavorite.mutate,
     removeFavorite: removeFavorite.mutate,
+    toggleFavorite: toggleFavorite.mutate,
     isFavorite,
     isAdding: addFavorite.isPending,
     isRemoving: removeFavorite.isPending,
+    isToggling: toggleFavorite.isPending,
   };
 }; 

@@ -32,23 +32,35 @@ export const VenueCard = ({
   className = ""
 }: VenueCardProps) => {
   const [showMatchDetails, setShowMatchDetails] = useState(false);
-  const { addFavorite, removeFavorite, isFavorite, isAdding, isRemoving } = useFavorites();
+  const { toggleFavorite, isFavorite, isToggling } = useFavorites();
   const { favorite } = useVenueInteractions();
   
   const isVenueFavorited = isFavorite(venue.id);
   
-  const handleHeartClick = () => {
-    if (isVenueFavorited) {
-      removeFavorite(venue.id);
-    } else {
-      addFavorite({
-        itemId: venue.id,
-        itemType: 'venue',
-        title: venue.name,
-        description: venue.description || `Venue in ${venue.vibe}`,
-        imageUrl: undefined
-      });
-      favorite(venue.id); // Track for recommendations
+  const handleHeartClick = async () => {
+    const favData = {
+      itemId: venue.id,
+      itemType: 'venue' as const,
+      title: venue.name,
+      description: venue.description || `Venue in ${venue.vibe || 'unknown location'}`,
+      imageUrl: undefined
+    };
+    
+    try {
+      await Promise.all([
+        new Promise<void>((resolve, reject) => {
+          toggleFavorite(favData, {
+            onSuccess: () => resolve(),
+            onError: reject
+          });
+        }),
+        new Promise<void>((resolve) => {
+          favorite(venue.id);
+          resolve();
+        })
+      ]);
+    } catch (error) {
+      console.error('Failed to update favorite:', error);
     }
   };
 
@@ -118,13 +130,13 @@ export const VenueCard = ({
         <div className="ml-3 flex items-center gap-1">
           <button
             onClick={handleHeartClick}
-            disabled={isAdding || isRemoving}
+            disabled={isToggling}
             className={cn(
               "flex items-center justify-center w-8 h-8 rounded-full transition-colors duration-200",
               isVenueFavorited 
                 ? "bg-pink-500/20 text-pink-500 hover:bg-pink-500/30" 
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
-              (isAdding || isRemoving) && "opacity-50 cursor-not-allowed"
+              isToggling && "opacity-50 cursor-not-allowed"
             )}
             aria-label={isVenueFavorited ? `Remove ${venue.name} from favorites` : `Add ${venue.name} to favorites`}
           >

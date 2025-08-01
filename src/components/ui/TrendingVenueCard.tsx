@@ -31,26 +31,38 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
   onLike,
   onChat
 }) => {
-  const { addFavorite, removeFavorite, isFavorite, isAdding, isRemoving } = useFavorites()
+  const { toggleFavorite, isFavorite, isToggling } = useFavorites()
   const { favorite } = useVenueInteractions()
   
   const isVenueFavorited = isFavorite(venue.venue_id || venue.id)
   
-  const handleHeartClick = () => {
+  const handleHeartClick = async () => {
     const venueId = venue.venue_id || venue.id
     
-    if (isVenueFavorited) {
-      removeFavorite(venueId)
-    } else {
-      // Add to both favorites and track interaction
-      addFavorite({
-        itemId: venueId,
-        itemType: 'venue',
-        title: venue.name,
-        description: `Trending venue with ${venue.people_now} people`,
-        imageUrl: undefined
-      })
-      favorite(venueId) // Track for recommendations
+    const favData = {
+      itemId: venueId,
+      itemType: 'venue' as const,
+      title: venue.name,
+      description: `Trending venue with ${venue.people_now} people`,
+      imageUrl: undefined
+    }
+    
+    try {
+      await Promise.all([
+        new Promise<void>((resolve, reject) => {
+          toggleFavorite(favData, {
+            onSuccess: () => resolve(),
+            onError: reject
+          })
+        }),
+        new Promise<void>((resolve, reject) => {
+          // Track interaction for ML recommendations
+          favorite(venueId)
+          resolve()
+        })
+      ])
+    } catch (error) {
+      console.error('Failed to update favorite:', error)
     }
     
     // Call original onLike callback if provided
@@ -116,13 +128,13 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
         <div className="flex gap-1">
           <button
             onClick={handleHeartClick}
-            disabled={isAdding || isRemoving}
+            disabled={isToggling}
             className={cn(
               "p-3 rounded-2xl transition-colors",
               isVenueFavorited 
                 ? "bg-pink-500/20 hover:bg-pink-500/30" 
                 : "bg-white/10 hover:bg-white/20",
-              (isAdding || isRemoving) && "opacity-50 cursor-not-allowed"
+              isToggling && "opacity-50 cursor-not-allowed"
             )}
           >
             <Heart className={cn(
