@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { devLog, devError, devWarn } from "@/utils/devLog";
+import { devLog, devError, devWarn } from "@/lib/devLog";
 
 export interface VenueDetails {
   id: string;

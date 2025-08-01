@@ -8,14 +8,36 @@ import { Loader2, MapPin, Users, Star, Heart, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { devLog, devError } from "@/utils/devLog";
+import { devLog, devError } from "@/lib/devLog";
 
 export default function VenuePage() {
   const { id } = useParams() as { id?: string };
   const queryClient = useQueryClient();
   
+  // Early return for missing ID
+  if (!id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Venue ID Required</h3>
+              <p className="text-muted-foreground mb-4">
+                No venue ID provided in the URL.
+              </p>
+              <Button onClick={() => window.history.back()}>
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   // Validate the venue ID format
-  if (!id || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+  if (!id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -230,8 +252,8 @@ export default function VenuePage() {
             </CardHeader>
             <CardContent>
               <div className="text-muted-foreground space-y-1">
-                <p>Latitude: {venue.lat ?? 'Unknown'}</p>
-                <p>Longitude: {venue.lng ?? 'Unknown'}</p>
+                <p>Latitude: {venue.lat !== null ? venue.lat : 'Unknown'}</p>
+                <p>Longitude: {venue.lng !== null ? venue.lng : 'Unknown'}</p>
               </div>
             </CardContent>
           </Card>

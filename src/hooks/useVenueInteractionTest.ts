@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { devLog, devError } from '@/utils/devLog';
+import { devLog, devError } from '@/lib/devLog';
 
 /**
  * Test hook to verify venue interaction functionality
