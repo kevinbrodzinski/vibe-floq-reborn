@@ -12,7 +12,7 @@
  * 50  system       Live-regions, viewport helpers
  * 60  navigation   Top header & bottom nav
  * 70  modal        Sheets, dialogs, pop-overs
- * 80  dmSheet      DM quick-sheet (urgent overlay)
+ * 80  dmSheet      Modal-over-modal scenarios (venue details over favorites)
  * 90  toast        Toasts & notifications
  * 9999 debug       Dev-only debug panels
  */

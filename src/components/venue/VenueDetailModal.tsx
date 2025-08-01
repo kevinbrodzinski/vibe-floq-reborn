@@ -88,7 +88,7 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
             onClick={onClose}
-            {...zIndex('modal')}
+            {...zIndex('dmSheet')}
           />
           
           {/* Modal */}
@@ -98,7 +98,7 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed inset-0 bg-background overflow-hidden"
-            {...zIndex('modal')}
+            {...zIndex('dmSheet')}
           >
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/30">
