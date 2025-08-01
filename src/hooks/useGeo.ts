@@ -1,273 +1,237 @@
 /**
- * @deprecated Use new location hooks from @/hooks/location/
- * - useLocationCore() for GPS only
- * - useLocationTracking() for GPS + recording
- * - useLocationSharing() for GPS + recording + sharing
+ * Lightweight geolocation hook (deprecated in favour of the newer location
+ * hooks under @/hooks/location/ — kept for legacy views).
+ *
+ *  • Single “get fix” with high accuracy (10 s window)
+ *  • Optional watch with no timeout (browser decides when it can update)
+ *  • Distance gate + debounce to reduce state churn
+ *  • Session-storage cache for faster re-mounts
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { trackLocationPermission } from '@/lib/analytics';
-import { toast } from 'sonner';
 
-/* ––––– public API ––––– */
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { calculateDistance }     from '@/lib/location/standardGeo';
+import { trackLocationPermission } from '@/lib/analytics';
+
+/* ────────────────────────────────────────────────────────── */
+/* Types                                                     */
+/* ────────────────────────────────────────────────────────── */
+
 export interface GeoOpts {
   enableHighAccuracy?: boolean;
   watch?: boolean;
-  /** ignore updates closer than N metres (0 = every update) */
+  /** ignore updates closer than N m (0 = every update)            */
   minDistanceM?: number;
-  /** debounce successive updates (ms) */
+  /** debounce successive updates (ms)                             */
   debounceMs?: number;
 }
 
 export interface GeoState {
-  coords: { lat: number; lng: number } | null;
+  coords:  { lat: number; lng: number } | null;
   accuracy: number | null;
-  ts: number | null;
-  status: 'idle' | 'loading' | 'success' | 'error';
-  error?: string;
+  ts:       number | null;
+  status:   'idle' | 'loading' | 'success' | 'error';
+  error?:   string;
   hasPermission?: boolean;
   requestLocation: () => void;
-  clearWatch: () => void;
+  clearWatch:     () => void;
 }
 
-/* ––––– defaults ––––– */
+/* ────────────────────────────────────────────────────────── */
+/* Defaults                                                  */
+/* ────────────────────────────────────────────────────────── */
+
 const DEF: Required<GeoOpts> = {
   enableHighAccuracy: true,
-  watch: true,
-  minDistanceM: 10,
-  debounceMs: 2000,
+  watch:              true,
+  minDistanceM:       10,
+  debounceMs:         2_000,
 };
 
-/* ––––– helpers ––––– */
-import { calculateDistance } from '@/lib/location/standardGeo';
+/* ────────────────────────────────────────────────────────── */
+/* Hook                                                      */
+/* ────────────────────────────────────────────────────────── */
 
-/* ––––– main hook ––––– */
 export function useGeo(opts: GeoOpts = {}): GeoState {
   const o = { ...DEF, ...opts };
 
-  const [state, set] = useState<Omit<GeoState, 'requestLocation' | 'clearWatch'>>({
-    coords: null,
-    accuracy: null,
-    ts: null,
-    status: 'idle',
+  /* state skeleton */
+  const [state, set] = useState<Omit<GeoState, 'requestLocation'|'clearWatch'>>({
+    coords:        null,
+    accuracy:      null,
+    ts:            null,
+    status:        'idle',
     hasPermission: undefined,
   });
 
-  /* SSR guard – return inert object during static render */
+  /* SSR guard */
   if (typeof window === 'undefined') {
-    return {
-      ...state,
-      requestLocation: () => {},
-      clearWatch: () => {},
-    };
+    return { ...state, requestLocation: () => {}, clearWatch: () => {} };
   }
 
-  const watchId = useRef<number | null>(null);
-  const lastFix = useRef<{ lat: number; lng: number } | null>(null);
-  const debTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const asked = useRef(false);          // user-gesture guard
+  /* refs */
+  const watchId    = useRef<number | null>(null);
+  const debTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastFix    = useRef<{lat:number; lng:number}|null>(null);
+  const asked      = useRef(false);
 
-  /* ----- permission probe (once) ----------------------------------- */
+  /* ── 1. probe permissions (runs once) ───────────────────── */
   useEffect(() => {
     if (!('geolocation' in navigator)) {
       set(s => ({ ...s, status: 'error', error: 'Geolocation unsupported' }));
       return;
     }
 
-    // 1. Check cached coords in sessionStorage first
-    const cached = sessionStorage.getItem('floq-coords');
-    if (cached) {
-      try {
+    /* cached coords speed-up (session-scope) */
+    try {
+      const cached = sessionStorage.getItem('floq-coords');
+      if (cached) {
         const coords = JSON.parse(cached);
-        set(s => ({
-          ...s,
-          coords,
-          status: 'success',
-          hasPermission: true,
-          ts: Date.now(),
-        }));
+        set(s => ({ ...s, coords, status:'success', hasPermission:true, ts:Date.now() }));
         lastFix.current = coords;
-        return; // Skip calling geolocation API
-      } catch {
-        // Invalid cached data, remove it
-        sessionStorage.removeItem('floq-coords');
+        return;
       }
-    }
+    } catch {/* ignore */}
 
     const handleGranted = () => {
-      set(s => ({ ...s, hasPermission: true }));
+      set(s => ({ ...s, hasPermission:true }));
       if (o.watch) {
         trackLocationPermission(true, 'auto-granted');
         requestLocation();
       }
     };
 
-    const handleDenied = () => {
-      set(s => ({ ...s, hasPermission: false }));
+    const handleDenied  = () => {
+      set(s => ({ ...s, hasPermission:false }));
       trackLocationPermission(false, 'auto');
     };
 
-    const probe = async () => {
+    (async () => {
       try {
         if ('permissions' in navigator) {
-          const perm = await navigator.permissions.query({ name: 'geolocation' });
-          /* initial state */
-          if (perm.state === 'granted') handleGranted();
-          else if (perm.state === 'denied') handleDenied();
-          else {
-            set(s => ({ ...s, hasPermission: undefined })); // 'prompt'
-            // Don't auto-request on 'prompt' state to avoid repeated prompts
-          }
+          const perm = await navigator.permissions.query({ name:'geolocation' as PermissionName });
+          if (perm.state === 'granted')      handleGranted();
+          else if (perm.state === 'denied')  handleDenied();
+          else set(s => ({ ...s, hasPermission:undefined }));  // 'prompt'
 
-          /* listen for future changes (Allow / Block clicked) */
           perm.onchange = () => {
-            if (perm.state === 'granted') handleGranted();
-            else if (perm.state === 'denied') handleDenied();
-            else set(s => ({ ...s, hasPermission: undefined }));
+            if (perm.state === 'granted')      handleGranted();
+            else if (perm.state === 'denied')  handleDenied();
+            else set(s => ({ ...s, hasPermission:undefined }));
           };
-        } else {
-          // Safari / insecure origins → we don't know yet
-          set(s => ({ ...s, hasPermission: undefined }));
         }
-      } catch {
-        /* Permissions API threw – treat as unknown */
-        set(s => ({ ...s, hasPermission: undefined }));
-      }
-    };
-
-    probe();
+      } catch {/* fallback: we just wait for user interaction */}
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ----- position handlers ----------------------------------------- */
-const apply = useCallback(
-  (pos: GeolocationPosition) => {
+  /* ── 2. success handler ─────────────────────────────────── */
+  const apply = useCallback((pos: GeolocationPosition) => {
     const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-    /* 1 ─ distance gate ------------------------------------------------ */
-    if (
-      lastFix.current &&
-      o.minDistanceM > 0 &&
-      calculateDistance(lastFix.current, p) < o.minDistanceM
-    )
-      return;
+    /* distance gate */
+    if (lastFix.current && o.minDistanceM > 0 &&
+        calculateDistance(lastFix.current, p) < o.minDistanceM) return;
 
-    /* 2 ─ debounce-and-update ----------------------------------------- */
+    /* debounce successive updates */
     if (debTimer.current) clearTimeout(debTimer.current);
-
     debTimer.current = setTimeout(() => {
       set(s => ({
         ...s,
-        coords: p,
+        coords:  p,
         accuracy: pos.coords.accuracy,
-        ts: Date.now(),                // ⚠️  maybe use pos.timestamp?
-        status: 'success',
+        ts:       Date.now(),
+        status:   'success',
         hasPermission: true,
       }));
       lastFix.current = p;
-      
-      // Cache coords in sessionStorage for this tab session
       try {
         sessionStorage.setItem('floq-coords', JSON.stringify(p));
-      } catch {
-        // sessionStorage might be disabled or full, ignore silently
-      }
+      } catch {/* ignore quota / private-mode errors */}
     }, o.debounceMs);
-  },
-  [o.minDistanceM, o.debounceMs],
-);
+  }, [o.minDistanceM, o.debounceMs]);
 
+  /* ── 3. failure handler (no side-effects) ───────────────── */
   const fail = useCallback((err: GeolocationPositionError) => {
-    const msg =
-      {
-        [err.PERMISSION_DENIED]: 'denied',
-        [err.POSITION_UNAVAILABLE]: 'unavailable',
-        [err.TIMEOUT]: 'timeout',
-      }[err.code] ?? err.message;
-
-    // Show user-friendly toast for timeout
-    if (err.code === err.TIMEOUT) {
-      toast.error('Location timeout', {
-        description: 'Turn on GPS or try again',
-      });
+    /* reset “asked” when the prompt is soft-dismissed */
+    if (err.code === err.PERMISSION_DENIED && err.message.includes('User denied')) {
+      asked.current = false;
     }
+
+    /* let caller react to timeout; we just update state */
+    if (err.code === err.TIMEOUT) {
+      set(s => ({ ...s, status:'error', error:'timeout' }));
+      return;
+    }
+
+    const msg =
+      err.code === err.PERMISSION_DENIED ? 'denied' :
+      err.code === err.POSITION_UNAVAILABLE ? 'unavailable' :
+      err.message;
 
     set(s => ({
       ...s,
-      status: 'error',
+      status:'error',
       error: msg,
-      hasPermission:
-        err.code === err.PERMISSION_DENIED ? false : s.hasPermission,
+      hasPermission: err.code === err.PERMISSION_DENIED ? false : s.hasPermission,
     }));
   }, []);
 
-  /* ----- public API ------------------------------------------------- */
+  /* ── 4. public API ──────────────────────────────────────── */
   const requestLocation = useCallback(() => {
-    if (asked.current) return; // ensure user gesture only once
+    if (asked.current) return;
     asked.current = true;
+    set(s => ({ ...s, status:'loading' }));
 
-    set(s => ({ ...s, status: 'loading' }));
-
+    /* one-shot high-accuracy window (10 s) */
     navigator.geolocation.getCurrentPosition(
       apply,
       fail,
-      { enableHighAccuracy: o.enableHighAccuracy, timeout: 25_000, maximumAge: 0 },
+      { enableHighAccuracy:o.enableHighAccuracy, timeout:10_000, maximumAge:0 },
     );
 
+    /* continuous updates (no timeout) */
     if (o.watch) {
       watchId.current = navigator.geolocation.watchPosition(
         apply,
         fail,
-        { enableHighAccuracy: o.enableHighAccuracy, timeout: 25_000, maximumAge: 60_000 },
+        { enableHighAccuracy:o.enableHighAccuracy, maximumAge:15_000 },
       );
     }
   }, [apply, fail, o.enableHighAccuracy, o.watch]);
 
   const clearWatch = useCallback(() => {
-    if (watchId.current !== null) {
-      navigator.geolocation.clearWatch(watchId.current);
-    }
-    if (debTimer.current) {
-      clearTimeout(debTimer.current);
-      debTimer.current = null;
-    }
+    if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+    if (debTimer.current) clearTimeout(debTimer.current);
     watchId.current = null;
+    debTimer.current = null;
     asked.current = false;
   }, []);
 
-  /* stop watch when tab is hidden */
+  /* stop watch when tab hidden / resume on focus */
   useEffect(() => {
     const onVis = () => {
-      if (document.visibilityState === 'hidden') {
-        clearWatch();
-      } else if (o.watch && state.status !== 'loading') {
-        requestLocation();
-      }
+      if (document.visibilityState === 'hidden') clearWatch();
+      else if (o.watch && state.status !== 'loading') requestLocation();
     };
     document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
+    return () => { document.removeEventListener('visibilitychange', onVis); clearWatch(); };
   }, [clearWatch, requestLocation, o.watch, state.status]);
 
   return { ...state, requestLocation, clearWatch };
 }
 
-/* ------------------------------------------------------------------ */
-/* Convenience selectors                                              */
-export const useLatLng = () => useGeo({ watch: false }).coords;
+/* ────────────────────────────────────────────────────────── */
+/* Convenience selectors                                      */
+/* ────────────────────────────────────────────────────────── */
+
+export const useLatLng   = () => useGeo({ watch:false }).coords;
 export const useLocation = () => useGeo();
 
-/* Same interface as useUserLocation's `pos`                          */
-export const useGeoPos = () => {
+export const useGeoPos   = () => {
   const geo = useGeo();
   return {
-    pos: geo.coords
-      ? {
-          lat: geo.coords.lat,
-          lng: geo.coords.lng,
-          accuracy: geo.accuracy || 0,
-        }
-      : null,
+    pos: geo.coords ? { lat:geo.coords.lat, lng:geo.coords.lng, accuracy:geo.accuracy||0 } : null,
     loading: geo.status === 'loading',
-    error: geo.error,
-    // Note: No tracking controls – use useUserLocation for that
+    error:   geo.error,
   };
 };
