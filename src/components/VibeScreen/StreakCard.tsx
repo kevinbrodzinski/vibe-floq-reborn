@@ -20,7 +20,7 @@ export const StreakCard: React.FC = () => {
 
   return (
     <motion.div
-      className="px-3 mb-4"
+      className="px-4 mb-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
@@ -32,11 +32,11 @@ export const StreakCard: React.FC = () => {
             Progress & Insights
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {/* Streak Display */}
           {hasVisualStreak && (
-            <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg border border-orange-400/30">
-              <div className="text-xl">🔥</div>
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl border border-orange-400/30">
+              <div className="text-2xl">🔥</div>
               <div>
                 <div className="text-sm font-semibold text-orange-300">
                   {bothStreak}-day streak!
