@@ -30,6 +30,12 @@ export default defineConfig(({ mode, command }) => {
       hmr: getHMRConfig(),
     },
 
+    /* --------------- define globals --------------- */
+    define: {
+      // Expose the flag exactly like Metro does for React Native
+      __DEV__: process.env.NODE_ENV !== 'production',
+    },
+
     plugins: [
       react(),
       mode === "development" && componentTagger(),
