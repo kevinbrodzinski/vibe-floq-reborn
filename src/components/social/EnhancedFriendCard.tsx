@@ -64,8 +64,9 @@ export const EnhancedFriendCard: React.FC<EnhancedFriendCardProps> = ({
                 </div>
               </div>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-base truncate">{friend.name}</CardTitle>
-                <p className="text-sm text-muted-foreground truncate">matches your vibe</p>
+                <CardTitle className="text-base truncate">{friend.displayName}</CardTitle>
+                <p className="text-sm text-muted-foreground truncate">{friend.username}</p>
+                <p className="text-xs text-muted-foreground/80 truncate">matches your vibe</p>
               </div>
             </div>
             <div className="flex flex-col items-end gap-1 flex-shrink-0">

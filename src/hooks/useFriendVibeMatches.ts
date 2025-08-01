@@ -1,6 +1,8 @@
 export interface FriendMatch {
   id: string;
   name: string;
+  displayName: string;
+  username: string;
   avatar: string;
   match: number;  // 0-1
   location: string;
@@ -30,6 +32,8 @@ export const useFriendVibeMatches = () => {
     {
       id: 'kai',
       name: 'Kai',
+      displayName: 'Kai Thompson',
+      username: '@kaiiflows',
       avatar: 'https://i.pravatar.cc/72?u=kai',
       match: 0.92,
       location: 'Silver Lake',
@@ -56,6 +60,8 @@ export const useFriendVibeMatches = () => {
     {
       id: 'jo',
       name: 'Jo',
+      displayName: 'Jordan Martinez',
+      username: '@jomartinez',
       avatar: 'https://i.pravatar.cc/72?u=jo',
       match: 0.78,
       location: 'Downtown LA',
