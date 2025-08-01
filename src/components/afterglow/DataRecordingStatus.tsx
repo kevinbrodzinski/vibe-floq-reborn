@@ -110,11 +110,28 @@ export const DataRecordingStatus = () => {
         createChannelWithStatus('afterglow-staleness', 'daily_afterglow')
       ];
 
-      // Subscribe to all channels
+      // Subscribe to all channels and track successful subscriptions
       if (mounted) {
-        await Promise.all(activeChannels.map(channel => channel.subscribe()));
-        setRealtimeChannels(activeChannels.length);
-        console.log(`✅ Step 3: ${activeChannels.length} real-time channels active`);
+        const subscriptionResults = await Promise.allSettled(
+          activeChannels.map(async (channel, index) => {
+            const tableName = ['venue_live_presence', 'user_vibe_states', 'floq_participants', 'plan_participants', 'daily_afterglow'][index];
+            try {
+              await channel.subscribe();
+              console.log(`✅ Channel ${tableName} subscribed successfully`);
+              return true;
+            } catch (error) {
+              console.warn(`⚠️ Channel ${tableName} failed to subscribe:`, error);
+              return false;
+            }
+          })
+        );
+        
+        const successfulSubs = subscriptionResults.filter(result => 
+          result.status === 'fulfilled' && result.value === true
+        ).length;
+        
+        setRealtimeChannels(successfulSubs);
+        console.log(`✅ Step 3: ${successfulSubs} of ${activeChannels.length} real-time channels active`);
         
         cleanup = () => {
           activeChannels.forEach(channel => supabase.removeChannel(channel));
