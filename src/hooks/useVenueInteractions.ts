@@ -17,7 +17,12 @@ export const useVenueInteractions = () => {
 
   const trackInteraction = useMutation({
     mutationFn: async ({ venue_id, interaction_type }: VenueInteraction) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!user?.id) {
+        console.error('❌ User not authenticated for venue interaction');
+        throw new Error('User not authenticated');
+      }
+      
+      console.log(`🎯 Tracking ${interaction_type} interaction for venue ${venue_id} by user ${user.id}`);
       
       const { error } = await supabase.rpc('bump_interaction', {
         p_profile_id: user.id,
@@ -25,37 +30,52 @@ export const useVenueInteractions = () => {
         p_type: interaction_type
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`❌ Failed to track ${interaction_type} interaction:`, error);
+        throw error;
+      }
+
+      console.log(`✅ Successfully tracked ${interaction_type} interaction for venue ${venue_id}`);
 
       // If this is a check-in, also record to venue_live_presence for afterglow
       if (interaction_type === 'check_in') {
+        console.log(`📍 Recording venue presence for check-in at ${venue_id}`);
         const { error: presenceError } = await supabase
           .from('venue_live_presence')
           .upsert({
             venue_id: venue_id,
-            vibe: currentVibe || 'social', // Required field - use current vibe or default
+            profile_id: user.id,
+            vibe: currentVibe || 'social',
             checked_in_at: new Date().toISOString(),
             last_heartbeat: new Date().toISOString(),
             expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours
-          }, {
-            onConflict: 'venue_id' // Based on table schema
           });
 
         if (presenceError) {
-          console.error('Failed to record venue presence:', presenceError);
+          console.error('⚠️ Failed to record venue presence:', presenceError);
           // Continue even if presence recording fails
+        } else {
+          console.log('✅ Successfully recorded venue presence');
         }
       }
 
       return { venue_id, interaction_type };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log(`🔄 Invalidating queries after ${data.interaction_type} interaction`);
+      // Invalidate venue details to update live count
+      queryClient.invalidateQueries({ 
+        queryKey: ['venue-details', data.venue_id]
+      });
       // Invalidate personalized venue queries to update recommendations
       queryClient.invalidateQueries({ 
         predicate: (query) => 
           query.queryKey[0] === 'personalized-venues' || 
           query.queryKey[0] === 'smart-discovery'
       });
+    },
+    onError: (error, variables) => {
+      console.error(`🚨 Venue interaction failed for ${variables.interaction_type}:`, error);
     }
   });
 

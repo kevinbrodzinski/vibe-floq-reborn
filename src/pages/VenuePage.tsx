@@ -1,8 +1,10 @@
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useVenueDetails } from "@/hooks/useVenueDetails";
 import { useVenueInteractions } from "@/hooks/useVenueInteractions";
+import { useVenueInteractionTest } from "@/hooks/useVenueInteractionTest";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, MapPin, Users, Star, Heart } from "lucide-react";
+import { Loader2, MapPin, Users, Star, Heart, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -34,10 +36,13 @@ export default function VenuePage() {
   }
 
   const { data: venue, isLoading, error } = useVenueDetails(id);
-  const { trackInteraction, isLoading: isTrackingInteraction } = useVenueInteractions();
+  const { trackInteraction, checkIn, favorite, view, isLoading: isTrackingInteraction } = useVenueInteractions();
+  const { data: testData } = useVenueInteractionTest(id);
 
   const handleFavorite = async () => {
     if (!venue || !id) return;
+    
+    console.log(`❤️ Favoriting venue: ${venue.name} (${id})`);
     
     // Optimistic update
     queryClient.setQueryData(['venue-details', id], (old: any) => ({
@@ -52,6 +57,7 @@ export default function VenuePage() {
       });
       toast.success("Added to favorites!");
     } catch (error) {
+      console.error('Failed to favorite venue:', error);
       // Rollback on error
       queryClient.setQueryData(['venue-details', id], (old: any) => ({
         ...old,
@@ -60,6 +66,39 @@ export default function VenuePage() {
       toast.error("Failed to favorite venue");
     }
   };
+
+  const handleCheckIn = async () => {
+    if (!venue || !id) return;
+    
+    console.log(`📍 Checking in to venue: ${venue.name} (${id})`);
+    
+    try {
+      await checkIn(venue.id);
+      toast.success("Checked in successfully!");
+    } catch (error) {
+      console.error('Failed to check in:', error);
+      toast.error("Failed to check in");
+    }
+  };
+
+  const handleView = async () => {
+    if (!venue || !id) return;
+    
+    console.log(`👁️ Recording view for venue: ${venue.name} (${id})`);
+    
+    try {
+      await view(venue.id);
+    } catch (error) {
+      console.error('Failed to record view:', error);
+    }
+  };
+
+  // Record view when venue loads
+  React.useEffect(() => {
+    if (venue && !isLoading) {
+      handleView();
+    }
+  }, [venue, isLoading]);
 
   if (isLoading) {
     return (
@@ -107,15 +146,27 @@ export default function VenuePage() {
                 </div>
               )}
             </div>
-            <Button 
-              onClick={handleFavorite}
-              disabled={isTrackingInteraction}
-              size="sm"
-              className="ml-4"
-            >
-              <Heart className="h-4 w-4 mr-2" />
-              {isTrackingInteraction ? "Adding..." : "Favorite"}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleFavorite}
+                disabled={isTrackingInteraction}
+                size="sm"
+                className="flex-1"
+              >
+                <Heart className="h-4 w-4 mr-2" />
+                {isTrackingInteraction ? "Adding..." : `Favorite${testData?.favoriteCount ? ` (${testData.favoriteCount})` : ''}`}
+              </Button>
+              <Button 
+                onClick={handleCheckIn}
+                disabled={isTrackingInteraction}
+                size="sm"
+                variant="outline"
+                className="flex-1"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                {isTrackingInteraction ? "Checking..." : `Check In${testData?.checkInCount ? ` (${testData.checkInCount})` : ''}`}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -188,6 +239,28 @@ export default function VenuePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Debug Info - Show interaction data in development */}
+          {process.env.NODE_ENV === 'development' && testData && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <TestTube className="h-5 w-5 mr-2" />
+                  Debug: Interaction Data
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm space-y-2">
+                  <div>Views: {testData.viewCount}</div>
+                  <div>Favorites: {testData.favoriteCount}</div>
+                  <div>Check-ins: {testData.checkInCount}</div>
+                  <div>Shares: {testData.shareCount}</div>
+                  <div>Currently Present: {testData.isCurrentlyPresent ? 'Yes' : 'No'}</div>
+                  <div>Total Interactions: {testData.interactions.length}</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </main>

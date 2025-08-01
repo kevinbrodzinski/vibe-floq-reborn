@@ -34,6 +34,7 @@ import RecapActionSheet from '@/pages/RecapActionSheet';
 import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
 import VenuePage from '@/pages/VenuePage';
+import VenueTestPage from '@/pages/VenueTestPage';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -84,7 +85,10 @@ export const AppRoutes = () => {
       <Route path="/venues/:id" element={<VenuePage />} />
       {/* Test/Debug Routes - only in development */}
       {process.env.NODE_ENV !== 'production' && (
-        <Route path="/afterglow-test" element={<AfterglowTestPage />} />
+        <>
+          <Route path="/afterglow-test" element={<AfterglowTestPage />} />
+          <Route path="/venue-test" element={<VenueTestPage />} />
+        </>
       )}
       <Route path="/location-sharing" element={<LocationSharingScreen />} />
       <Route path="*" element={<NotFound />} />
