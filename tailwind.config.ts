@@ -167,6 +167,14 @@ export default {
 					"50%": { transform: "scale(1.05)", opacity: "0.8" },
 					"100%": { transform: "scale(1)", opacity: "1" },
 				},
+				"slide-in-bottom": {
+					"0%": { transform: "translateY(100%)" },
+					"100%": { transform: "translateY(0%)" },
+				},
+				"slide-out-bottom": {
+					"0%": { transform: "translateY(0%)" },
+					"100%": { transform: "translateY(100%)" },
+				},
 			},
 
 			animation: {
@@ -177,6 +185,8 @@ export default {
 				float: "float 3s ease-in-out infinite",
 				ripple: "ripple 2s infinite",
 				"pulse-once": "pulse-once 0.6s ease-out",
+				"slide-in-bottom": "slide-in-bottom 0.3s ease-out",
+				"slide-out-bottom": "slide-out-bottom 0.3s ease-out",
 			},
 		},
 	},

@@ -8,6 +8,8 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useVenueInteractions } from '@/hooks/useVenueInteractions';
 import { useVenueActions } from '@/hooks/useVenueActions';
 import { useAuth } from '@/providers/AuthProvider';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { HeroSection } from './HeroSection';
 import { StatsRow } from './StatsRow';
@@ -52,6 +54,8 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
   const { isFavorite, toggleFavorite, isToggling } = useFavorites();
   const { view } = useVenueInteractions();
   const venueActions = useVenueActions();
+  const navigate = useNavigate();
+  const isMobile = useMediaQuery('(max-width: 640px)');
 
   // Parallel queries for better performance
   const [
@@ -101,14 +105,26 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
     setTimeout(() => onClose(), 16); // One frame delay
   }, [onClose]);
 
+  // Responsive behavior: mobile gets bottom sheet, desktop gets routed page
+  React.useEffect(() => {
+    if (isOpen && venueId && !isMobile) {
+      // On desktop, navigate to full page instead of modal
+      navigate(`/venues/${venueId}`);
+      onClose(); // Close the modal since we're navigating
+    }
+  }, [isOpen, venueId, isMobile, navigate, onClose]);
+
   if (!venueId) return null;
+
+  // Only render modal on mobile
+  if (!isMobile) return null;
 
   return (
     <VenueModalErrorBoundary onClose={onClose}>
       <AnimatePresence>
         {isOpen && (
           <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="fixed inset-0 z-[80] p-0 max-w-none h-full border-0 bg-background overflow-hidden">
+            <DialogContent className="fixed bottom-0 left-0 right-0 z-[81] p-0 max-w-none max-h-[90vh] border-0 bg-background rounded-t-xl overflow-hidden data-[state=open]:animate-slide-in-bottom data-[state=closed]:animate-slide-out-bottom">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/30">
               <div className="flex items-center justify-between p-4">
