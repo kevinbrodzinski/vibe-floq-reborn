@@ -39,11 +39,18 @@ export function useNearbyFloqs(
     queryKey: ['walkable', lastLatRef.current, lastLngRef.current, lastKmRef.current],
     enabled: Number.isFinite(lat) && Number.isFinite(lng),
     queryFn: async () => {
+      const startTime = performance.now();
       const { data, error: rpcError } = await supabase.rpc('walkable_floqs', {
-        lat: lat!,
-        lng: lng!,
-        metres: km * 1000,
+        p_lat: lat!,
+        p_lng: lng!,
+        p_metres: km * 1000,
       });
+      
+      // Add observability tracking
+      const duration = performance.now() - startTime;
+      if (typeof window !== 'undefined' && duration > 100) {
+        console.warn(`Slow walkable_floqs query: ${duration.toFixed(2)}ms`);
+      }
 
       if (rpcError) {
         console.error('Failed to fetch nearby floqs:', rpcError);
