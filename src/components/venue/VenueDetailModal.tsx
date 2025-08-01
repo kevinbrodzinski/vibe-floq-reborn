@@ -14,6 +14,7 @@ import { StatsRow } from './StatsRow';
 import { IntelBlock } from './IntelBlock';
 import { ActionBar } from './ActionBar';
 import { RecentActivity } from './RecentActivity';
+import { VenueModalErrorBoundary } from './VenueModalErrorBoundary';
 
 interface VenueDetailModalProps {
   isOpen: boolean;
@@ -94,13 +95,20 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
     });
   }, [venueId, user, isToggling, toggleFavorite, venueDetails]);
 
+  // Defensive modal close with slight delay to prevent race conditions
+  const handleClose = useCallback(() => {
+    // Small delay prevents instant mount/unmount cycles that trigger ResizeObserver errors
+    setTimeout(() => onClose(), 16); // One frame delay
+  }, [onClose]);
+
   if (!venueId) return null;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="fixed inset-0 z-[80] p-0 max-w-none h-full border-0 bg-background overflow-hidden">
+    <VenueModalErrorBoundary onClose={onClose}>
+      <AnimatePresence>
+        {isOpen && (
+          <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent className="fixed inset-0 z-[80] p-0 max-w-none h-full border-0 bg-background overflow-hidden">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/30">
               <div className="flex items-center justify-between p-4">
@@ -108,7 +116,7 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="p-2 h-8 w-8"
                   >
                     <X className="h-4 w-4" />
@@ -162,9 +170,10 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
                 </div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </AnimatePresence>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
+    </VenueModalErrorBoundary>
   );
 };

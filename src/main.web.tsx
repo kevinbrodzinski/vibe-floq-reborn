@@ -5,10 +5,13 @@
 // Import ResizeObserver polyfill FIRST
 import 'resize-observer-polyfill/dist/ResizeObserver.global';
 
-// Additional SSR guard for ResizeObserver
-if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
-
-  (window as any).ResizeObserver = require('resize-observer-polyfill').default;
+// Enhanced ResizeObserver polyfill with stubbed instance detection
+if (typeof window !== 'undefined') {
+  if (!window.ResizeObserver || 
+      (window.ResizeObserver && !window.ResizeObserver.prototype?.observe)) {
+    // Handle missing or stubbed ResizeObserver (Safari/iOS content blockers)
+    (window as any).ResizeObserver = require('resize-observer-polyfill').default;
+  }
 }
 
 // Initialize Sentry for web
