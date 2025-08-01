@@ -9614,17 +9614,26 @@ export type Database = {
         }[]
       }
       create_floq: {
-        Args: {
-          p_lat: number
-          p_lng: number
-          p_starts_at: string
-          p_ends_at: string
-          p_vibe: Database["public"]["Enums"]["vibe_enum"]
-          p_visibility: string
-          p_title: string
-          p_invitees: string[]
-          p_flock_type: string
-        }
+        Args:
+          | {
+              p_lat: number
+              p_lng: number
+              p_starts_at: string
+              p_ends_at: string
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_visibility: string
+              p_title: string
+              p_invitees: string[]
+              p_flock_type: string
+            }
+          | {
+              p_lat: number
+              p_lng: number
+              p_starts_at: string
+              p_vibe: Database["public"]["Enums"]["vibe_enum"]
+              p_visibility?: string
+              p_flock_type?: string
+            }
         Returns: string
       }
       create_or_replace_cron_job: {
