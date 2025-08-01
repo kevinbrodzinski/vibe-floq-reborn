@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PersonalMode } from '@/components/VibeScreen/PersonalMode';
@@ -15,16 +15,21 @@ export const VibeScreen: React.FC = () => {
   const { mode, setMode } = useVibeScreenMode();
   const lastHapticTime = React.useRef(0);
 
-  const handleModeChange = (value: 'personal' | 'social') => {
+  const handleModeChange = async (value: 'personal' | 'social') => {
     setMode(value);
-    // Throttled haptic feedback (prevent spam)
-    const now = Date.now();
-    if (now - lastHapticTime.current > 200) {
-      lastHapticTime.current = now;
-      try {
-        Haptics.selectionAsync();
-      } catch (error) {
-        // Silently fail on web or unsupported platforms
+    
+    // Throttled haptic feedback - native only
+    if (Platform.OS !== 'web') {
+      const now = Date.now();
+      if (now - lastHapticTime.current > 200) {
+        lastHapticTime.current = now;
+        try {
+          // Dynamic import so the module never loads on web
+          const { selectionAsync } = await import('expo-haptics');
+          await selectionAsync();
+        } catch (error) {
+          // Silently fail on rare devices
+        }
       }
     }
   };

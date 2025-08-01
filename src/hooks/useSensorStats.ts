@@ -35,11 +35,14 @@ export const useSensorStats = () => {
       startInterval();
     }
 
+    // Handle different AppState API versions
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       clearInterval(intervalId);
-      subscription?.remove();
+      if (subscription && typeof subscription === 'object' && 'remove' in subscription) {
+        (subscription as any).remove();
+      }
     };
   }, []);
 
