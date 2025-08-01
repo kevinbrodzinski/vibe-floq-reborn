@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { useCurrentVibe } from '@/lib/store/useVibe';
 
 export type InteractionType = 'check_in' | 'favorite' | 'share' | 'view';
 
@@ -12,6 +13,7 @@ interface VenueInteraction {
 export const useVenueInteractions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const currentVibe = useCurrentVibe();
 
   const trackInteraction = useMutation({
     mutationFn: async ({ venue_id, interaction_type }: VenueInteraction) => {
@@ -24,6 +26,26 @@ export const useVenueInteractions = () => {
       });
       
       if (error) throw error;
+
+      // If this is a check-in, also record to venue_live_presence for afterglow
+      if (interaction_type === 'check_in') {
+        const { error: presenceError } = await supabase
+          .from('venue_live_presence')
+          .upsert({
+            venue_id: venue_id,
+            vibe: currentVibe || 'social', // Required field - use current vibe or default
+            checked_in_at: new Date().toISOString(),
+            last_heartbeat: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours
+          }, {
+            onConflict: 'venue_id' // Based on table schema
+          });
+
+        if (presenceError) {
+          console.error('Failed to record venue presence:', presenceError);
+          // Continue even if presence recording fails
+        }
+      }
 
       return { venue_id, interaction_type };
     },

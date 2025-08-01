@@ -1,13 +1,36 @@
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useCurrentVibe } from '@/lib/store/useVibe';
 
 export const useVenueJoin = () => {
   const { toast } = useToast();
+  const currentVibe = useCurrentVibe();
 
-  const checkInToVenue = useCallback(async (venueId: string) => {
+  const checkInToVenue = useCallback(async (venueId: string, lat?: number, lng?: number) => {
     try {
-      // Note: Full implementation requires venue presence system integration
-      console.log('Checking in to venue:', venueId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Record venue presence for afterglow generation
+      const { error: presenceError } = await supabase
+        .from('venue_live_presence')
+        .upsert({
+          venue_id: venueId,
+          vibe: currentVibe || 'social', // Required field
+          checked_in_at: new Date().toISOString(),
+          last_heartbeat: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(), // 3 hours
+        }, {
+          onConflict: 'venue_id'
+        });
+
+      if (presenceError) {
+        console.error('Failed to record venue presence:', presenceError);
+        // Continue with check-in even if presence recording fails
+      }
+
+      console.log('Successfully checked in to venue:', venueId);
       
       toast({
         title: "Checked In!",
@@ -16,6 +39,7 @@ export const useVenueJoin = () => {
       
       return { success: true };
     } catch (error) {
+      console.error('Check-in error:', error);
       toast({
         title: "Error",
         description: "Failed to check in. Please try again.",

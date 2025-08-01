@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlanParticipationRecorder } from './usePlanParticipationRecorder';
 
 export interface PlanCheckIn {
   id: string;
@@ -23,6 +24,25 @@ export async function checkIntoStop(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.id) throw new Error('Not authenticated');
 
+  // First ensure plan participation is recorded for afterglow
+  const { data: existingParticipant } = await supabase
+    .from('plan_participants')
+    .select('id')
+    .eq('plan_id', planId)
+    .eq('profile_id', user.id)
+    .single();
+
+  if (!existingParticipant) {
+    await supabase
+      .from('plan_participants')
+      .insert({
+        plan_id: planId,
+        profile_id: user.id,
+        joined_at: new Date().toISOString(),
+      });
+  }
+
+  // Then record the check-in
   const { error } = await supabase.from('plan_check_ins' as any).insert({
     plan_id: planId,
     stop_id: stopId,
