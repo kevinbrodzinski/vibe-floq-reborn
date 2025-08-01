@@ -2811,21 +2811,21 @@ export type Database = {
           floq_id: string
           joined_at: string | null
           last_read_message_at: string
-          profile_id: string | null
+          profile_id: string
           role: string | null
         }
         Insert: {
           floq_id: string
           joined_at?: string | null
           last_read_message_at?: string
-          profile_id?: string | null
+          profile_id: string
           role?: string | null
         }
         Update: {
           floq_id?: string
           joined_at?: string | null
           last_read_message_at?: string
-          profile_id?: string | null
+          profile_id?: string
           role?: string | null
         }
         Relationships: [
