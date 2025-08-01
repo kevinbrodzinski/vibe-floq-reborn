@@ -34,11 +34,11 @@ export const DataRecordingStatus = () => {
         const [venueResult, vibeResult, floqResult, planResult, stalenessResult] = await Promise.all([
           supabase
             .from('venue_live_presence')
-            .select('id', { count: 'exact' })
+            .select('profile_id', { count: 'exact' })
             .eq('profile_id', user.id),
           supabase
             .from('user_vibe_states')
-            .select('id', { count: 'exact' })
+            .select('profile_id', { count: 'exact' })
             .eq('profile_id', user.id),
           supabase
             .from('floq_participants')
@@ -53,7 +53,7 @@ export const DataRecordingStatus = () => {
             .select('is_stale')
             .eq('profile_id', user.id)
             .eq('date', new Date().toISOString().split('T')[0])
-            .single()
+            .maybeSingle()
         ]);
 
         setStats({
