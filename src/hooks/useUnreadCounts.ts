@@ -114,7 +114,7 @@ export const invalidateNotifications = (queryClient: any, profileId?: string) =>
   queryClient.invalidateQueries({ queryKey: ['notification-counts', profileId] });
 };
 
-// Hook for notification counts (from user_notifications table)
+// Hook for notification counts (from event_notifications table)
 export const useNotificationCounts = (profileId?: string) => {
   return useQuery({
     queryKey: ['notification-counts', profileId],
@@ -122,10 +122,11 @@ export const useNotificationCounts = (profileId?: string) => {
       if (!profileId) return { total: 0 };
 
       const { count, error } = await supabase
-        .from('user_notifications')
+        .from('event_notifications')
         .select('id', { count: 'exact', head: true })
         .eq('profile_id', profileId)
-        .is('read_at', null);
+        .is('seen_at', null)
+        .in('kind', ['friend_request', 'floq_invite', 'plan_invite', 'dm', 'floq_reaction', 'floq_reply', 'plan_comment_new', 'plan_checkin']);
 
       if (error) {
         console.error('Error fetching notification counts:', error);

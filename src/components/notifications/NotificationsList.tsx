@@ -1,39 +1,44 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, MessageCircle, Calendar, Users, Trophy } from 'lucide-react';
+import { Bell, MessageCircle, Calendar, Users, Trophy, UserPlus, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { invalidateNotifications } from '@/hooks/useUnreadCounts';
+import { useEventNotifications } from '@/providers/EventNotificationsProvider';
 
-interface Notification {
+interface EventNotification {
   id: string;
+  profile_id: string;
   kind: string;
-  title: string;
-  subtitle?: string;
-  floq_id?: string;
-  message_id?: string;
-  plan_id?: string;
-  read_at?: string;
+  payload: any;
   created_at: string;
+  seen_at?: string;
 }
 
 const getNotificationIcon = (kind: string) => {
   switch (kind) {
-    case 'floq_mention':
-      return <MessageCircle className="w-4 h-4" />;
-    case 'plan_rsvp':
-      return <Calendar className="w-4 h-4" />;
     case 'friend_request':
+      return <UserPlus className="w-4 h-4" />;
+    case 'friend_request_accepted':
+    case 'friend_request_declined':
       return <Users className="w-4 h-4" />;
-    case 'floq_invitation':
+    case 'floq_invite':
+    case 'floq_invite_accepted':
+    case 'floq_invite_declined':
       return <Users className="w-4 h-4" />;
-    case 'achievement_earned':
-      return <Trophy className="w-4 h-4" />;
+    case 'plan_invite':
+    case 'plan_invite_accepted':
+    case 'plan_invite_declined':
+      return <Calendar className="w-4 h-4" />;
+    case 'floq_reaction':
+    case 'floq_reply':
+      return <MessageCircle className="w-4 h-4" />;
+    case 'dm':
+      return <Mail className="w-4 h-4" />;
+    case 'plan_comment_new':
+    case 'plan_checkin':
+      return <Calendar className="w-4 h-4" />;
     default:
       return <Bell className="w-4 h-4" />;
   }
@@ -41,109 +46,97 @@ const getNotificationIcon = (kind: string) => {
 
 const getNotificationColor = (kind: string) => {
   switch (kind) {
-    case 'floq_mention':
-      return 'text-blue-500';
-    case 'plan_rsvp':
-      return 'text-green-500';
     case 'friend_request':
+    case 'friend_request_accepted':
+    case 'friend_request_declined':
       return 'text-purple-500';
-    case 'floq_invitation':
+    case 'floq_invite':
+    case 'floq_invite_accepted':
+    case 'floq_invite_declined':
       return 'text-orange-500';
-    case 'achievement_earned':
-      return 'text-yellow-500';
+    case 'plan_invite':
+    case 'plan_invite_accepted':
+    case 'plan_invite_declined':
+    case 'plan_comment_new':
+    case 'plan_checkin':
+      return 'text-green-500';
+    case 'floq_reaction':
+    case 'floq_reply':
+      return 'text-blue-500';
+    case 'dm':
+      return 'text-indigo-500';
     default:
       return 'text-muted-foreground';
   }
 };
 
+const getNotificationTitle = (notification: EventNotification) => {
+  const { kind, payload } = notification;
+  
+  switch (kind) {
+    case 'friend_request':
+      return `New friend request from ${payload?.from_username || 'someone'}`;
+    case 'friend_request_accepted':
+      return `${payload?.from_username || 'Someone'} accepted your friend request`;
+    case 'friend_request_declined':
+      return `${payload?.from_username || 'Someone'} declined your friend request`;
+    case 'floq_invite':
+      return `${payload?.from_username || 'Someone'} invited you to join a floq`;
+    case 'floq_invite_accepted':
+      return `${payload?.from_username || 'Someone'} accepted your floq invitation`;
+    case 'floq_invite_declined':
+      return `${payload?.from_username || 'Someone'} declined your floq invitation`;
+    case 'plan_invite':
+      return `${payload?.from_username || 'Someone'} invited you to a plan`;
+    case 'plan_invite_accepted':
+      return `${payload?.from_username || 'Someone'} accepted your plan invitation`;
+    case 'plan_invite_declined':
+      return `${payload?.from_username || 'Someone'} declined your plan invitation`;
+    case 'floq_reaction':
+      return `${payload?.from_username || 'Someone'} reacted to your message`;
+    case 'floq_reply':
+      return `${payload?.from_username || 'Someone'} replied to your message`;
+    case 'dm':
+      return `New message from ${payload?.from_username || 'someone'}`;
+    case 'plan_comment_new':
+      return `New comment on ${payload?.plan_title || 'your plan'}`;
+    case 'plan_checkin':
+      return `${payload?.from_username || 'Someone'} checked in to ${payload?.plan_title || 'a plan'}`;
+    default:
+      return 'Notification';
+  }
+};
+
+const getNotificationSubtitle = (notification: EventNotification) => {
+  const { kind, payload } = notification;
+  
+  switch (kind) {
+    case 'dm':
+      return payload?.preview ? `"${payload.preview}"` : undefined;
+    case 'floq_invite':
+      return payload?.floq_title ? `Floq: ${payload.floq_title}` : undefined;
+    case 'plan_invite':
+      return payload?.plan_title ? `Plan: ${payload.plan_title}` : undefined;
+    default:
+      return undefined;
+  }
+};
+
 export const NotificationsList = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('user_notifications')
-        .select('*')
-        .eq('profile_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) {
-        console.error('Error fetching notifications:', error);
-        throw error;
-      }
-
-      return data as Notification[];
-    },
-    enabled: !!user?.id,
-  });
-
-  const markAsReadMutation = useMutation({
-    mutationFn: async (notificationIds: string[]) => {
-      const { error } = await supabase.rpc('mark_notifications_read', {
-        notification_ids: notificationIds,
-        mark_all_for_user: false
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidateNotifications(queryClient, user?.id);
-    },
-    onError: (error) => {
-      console.error('Error marking notifications as read:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark notifications as read",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.rpc('mark_notifications_read', {
-        notification_ids: null,
-        mark_all_for_user: true
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      invalidateNotifications(queryClient, user?.id);
-      toast({
-        title: "All notifications marked as read"
-      });
-    },
-    onError: (error) => {
-      console.error('Error marking all notifications as read:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to mark all notifications as read",
-        variant: "destructive"
-      });
-    }
-  });
+  const { unseen: notifications, markAsSeen, markAllSeen } = useEventNotifications();
 
   const handleMarkAsRead = (notificationIds: string[]) => {
-    markAsReadMutation.mutate(notificationIds);
+    markAsSeen(notificationIds);
   };
 
   const handleMarkAllAsRead = () => {
-    markAllAsReadMutation.mutate();
+    markAllSeen();
+    toast({
+      title: "All notifications marked as read"
+    });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8 text-muted-foreground h-48">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Loading notifications...
-      </div>
-    );
-  }
 
   if (notifications.length === 0) {
     return (
@@ -155,7 +148,7 @@ export const NotificationsList = () => {
     );
   }
 
-  const unreadNotifications = notifications.filter(n => !n.read_at);
+  const unreadNotifications = notifications.filter(n => !n.seen_at);
 
   return (
     <div className="space-y-4">
@@ -173,17 +166,9 @@ export const NotificationsList = () => {
             size="sm" 
             variant="outline"
             onClick={handleMarkAllAsRead}
-            disabled={markAllAsReadMutation.isPending}
             className="text-xs"
           >
-            {markAllAsReadMutation.isPending ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                Marking...
-              </>
-            ) : (
-              'Mark all read'
-            )}
+            Mark all read
           </Button>
         </div>
       )}
@@ -194,11 +179,11 @@ export const NotificationsList = () => {
             <div
               key={notification.id}
               className={`p-3 rounded-lg border transition-colors ${
-                notification.read_at 
+                notification.seen_at 
                   ? 'bg-muted/20 border-border/50' 
                   : 'bg-card border-border cursor-pointer hover:bg-muted/30'
               }`}
-              onClick={() => !notification.read_at && handleMarkAsRead([notification.id])}
+              onClick={() => !notification.seen_at && handleMarkAsRead([notification.id])}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex-shrink-0 ${getNotificationColor(notification.kind)}`}>
@@ -209,13 +194,13 @@ export const NotificationsList = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className={`text-sm font-medium ${
-                        notification.read_at ? 'text-muted-foreground' : 'text-foreground'
+                        notification.seen_at ? 'text-muted-foreground' : 'text-foreground'
                       }`}>
-                        {notification.title}
+                        {getNotificationTitle(notification)}
                       </p>
-                      {notification.subtitle && (
+                      {getNotificationSubtitle(notification) && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {notification.subtitle}
+                          {getNotificationSubtitle(notification)}
                         </p>
                       )}
                     </div>
@@ -224,7 +209,7 @@ export const NotificationsList = () => {
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                       </span>
-                      {!notification.read_at && (
+                      {!notification.seen_at && (
                         <div className="w-2 h-2 bg-primary rounded-full" />
                       )}
                     </div>
