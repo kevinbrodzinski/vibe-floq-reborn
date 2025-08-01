@@ -275,8 +275,8 @@ export const PulseScreen: React.FC = () => {
       distance: venue.distance_m ? `${(venue.distance_m / 1000).toFixed(1)}km` : 'Nearby',
       vibe: venue.categories?.[0] || 'Venue',
       category: venue.categories?.[0],
-      rating: venue.rating,
-      address: venue.address,
+      // rating: venue.rating, // Not available in new venue type
+      // address: venue.address, // Not available in new venue type
       live_count: 0, // Default live count since it's not in the new venue type
       venue_id: venue.id
     }));

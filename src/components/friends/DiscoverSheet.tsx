@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, UserPlus } from 'lucide-react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { Input } from '@/components/ui/input'
-import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { UserSearchResults } from '@/components/UserSearchResults'
 import { useFriendDiscovery } from '@/hooks/useFriendDiscovery'
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
@@ -55,6 +55,9 @@ export function DiscoverSheet() {
           <UserPlus className="w-5 h-5" />
           Discover People
         </SheetTitle>
+        <SheetDescription>
+          Search for new friends by name or username to expand your social network
+        </SheetDescription>
       </SheetHeader>
 
       <div className="relative">

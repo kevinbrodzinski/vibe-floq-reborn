@@ -26,6 +26,6 @@ export const fetchTrendingVenues = async (lat: number, lng: number,
 /* fetch nearby venues with new signature */
 export async function fetchNearbyVenues(lat: number, lng: number, radiusKm = 2) {
   const { data } = await supabase
-    .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius: radiusKm * 1000, p_limit: 30 }).throwOnError();
+    .rpc('get_nearby_venues', { p_lat: lat, p_lng: lng, p_radius_m: radiusKm * 1000, p_limit: 30 }).throwOnError();
   return data;
 }
