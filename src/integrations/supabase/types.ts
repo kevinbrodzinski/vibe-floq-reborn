@@ -8842,7 +8842,9 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           friend_id: string | null
-          friend_state: Database["public"]["Enums"]["friend_state"] | null
+          friend_state: string | null
+          is_incoming_request: boolean | null
+          is_outgoing_request: boolean | null
           online: boolean | null
           responded_at: string | null
           started_at: string | null

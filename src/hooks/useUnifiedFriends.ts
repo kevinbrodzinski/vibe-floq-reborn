@@ -23,6 +23,10 @@ interface ViewRow {
   friend_state   : 'pending' | 'accepted' | 'blocked';
   created_at     : string | null;
   responded_at   : string | null;
+  
+  // Direction flags for pending requests
+  is_outgoing_request : boolean;
+  is_incoming_request : boolean;
 }
 
 /* ---------- shape exposed to components --------------------------- */
@@ -39,6 +43,10 @@ export interface UnifiedRow {
   friend_state   : 'pending' | 'accepted' | 'blocked';
   created_at     : string | null;
   responded_at   : string | null;
+  
+  // Direction flags for pending requests
+  is_outgoing_request : boolean;
+  is_incoming_request : boolean;
 }
 
 /* ---------- small helper for SUPABASE RPC ------------------------- */
@@ -80,6 +88,8 @@ export function useUnifiedFriends() {
         friend_state: row.friend_state,
         created_at: row.created_at,
         responded_at: row.responded_at,
+        is_outgoing_request: row.is_outgoing_request,
+        is_incoming_request: row.is_incoming_request,
       })) ?? [];
     },
   });
@@ -130,13 +140,12 @@ export function useUnifiedFriends() {
     .filter(r => r.friend_state === 'accepted')
     .map   (r => r.id);
 
-  // Note: Need to understand the view structure better to fix this logic
-  // For now, let's assume the view provides direction information
+  // Use the direction flags from the updated view
   const pendingIn  = data
-    .filter(r => r.friend_state === 'pending');
+    .filter(r => r.friend_state === 'pending' && r.is_incoming_request);
 
   const pendingOut = data
-    .filter(r => r.friend_state === 'pending');
+    .filter(r => r.friend_state === 'pending' && r.is_outgoing_request);
 
   /* ── 5. public API --------------------------------------------------- */
   return {
