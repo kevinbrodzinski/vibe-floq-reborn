@@ -5,16 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { Vibe } from "@/types";
 
-interface CreateFloqData {
+export type FlockType = 'momentary' | 'persistent' | 'recurring' | 'template';
+
+export interface CreateFloqParams {
   title: string;
   description?: string;
   primary_vibe: Vibe;
   location: { lat: number; lng: number };
   starts_at: string;
-  ends_at?: string | null; // Optional - null for persistent floqs
-  flock_type?: 'momentary' | 'persistent'; // Optional - defaults to momentary
-  max_participants: number;
+  ends_at?: string | null;
   visibility: 'public' | 'private';
+  flock_type: FlockType;
+  invitees?: string[];
+  max_participants?: number;
 }
 
 export function useCreateFloq() {
@@ -24,23 +27,28 @@ export function useCreateFloq() {
 
   return useMutation({
     retry: 1, // Bail quickly on 409 duplicate key errors
-    mutationFn: async (data: CreateFloqData) => {
+    mutationFn: async (params: CreateFloqParams) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Use the lat/lng parameter format
+      const {
+        location, title, primary_vibe, visibility,
+        starts_at, ends_at = null,
+        flock_type, invitees = [], max_participants, description,
+      } = params;
+
       const rpcParams = {
-        p_lat: data.location.lat,
-        p_lng: data.location.lng,
-        p_starts_at: data.starts_at,
-        p_vibe: data.primary_vibe,
-        p_visibility: data.visibility,
-        p_title: data.title,
-        p_invitees: [],
-        p_ends_at: data.ends_at,
-        p_flock_type: data.flock_type
-      } as any;
+        p_lat: location.lat,
+        p_lng: location.lng,
+        p_starts_at: starts_at,
+        p_ends_at: ends_at,
+        p_vibe: primary_vibe,
+        p_visibility: visibility,
+        p_title: title,
+        p_invitees: invitees,
+        p_flock_type: flock_type,
+      };
       
-      console.log('🔍 create_floq RPC params (lat/lng):', rpcParams);
+      console.log('🔍 create_floq RPC params:', rpcParams);
 
       const { data: result, error } = await supabase.rpc('create_floq', rpcParams);
 
@@ -50,7 +58,7 @@ export function useCreateFloq() {
         throw error;
       }
 
-      return result;
+      return result as string; // floq_id
     },
     onSuccess: (newFloqId, vars) => {
       // Seed the cache so the first paint is correct
@@ -86,8 +94,8 @@ export function useCreateFloq() {
         exact: true,
       });
 
-      // Invalidate list caches - fix query key to match useMyFlocks
-      queryClient.invalidateQueries({ queryKey: ["my-floqs", user?.id] });
+      // Invalidate list caches
+      queryClient.invalidateQueries({ queryKey: ["my-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["nearby-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["active-floqs"] });
       queryClient.invalidateQueries({ queryKey: ["floq-suggestions"] });

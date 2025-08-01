@@ -10,7 +10,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useFloqUI } from '@/contexts/FloqUIContext';
-import { useCreateFloq } from '@/hooks/useCreateFloq';
+import { useCreateFloq, type CreateFloqParams, type FlockType } from '@/hooks/useCreateFloq';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { WELCOME_MESSAGE_TEMPLATES } from '@/constants/welcomeMessageTemplates';
 import { trackFloqCreated } from '@/lib/analytics';
@@ -104,7 +104,7 @@ export function CreateFloqSheet() {
 
       const now = new Date();
       let endsAt: string | null = null;
-      let floqType: 'momentary' | 'persistent' = 'momentary';
+      let floqType: FlockType = 'momentary';
 
       // Calculate end time based on duration mode
       if (durationMode === 'persistent') {
@@ -121,18 +121,20 @@ export function CreateFloqSheet() {
         floqType = 'momentary';
       }
 
-      const floqId = await createFloq({
+      const floqParams: CreateFloqParams = {
         title: title.trim(),
         description: description.trim() || undefined,
         primary_vibe: selectedVibe,
         location,
         starts_at: now.toISOString(),
         ends_at: endsAt,
-        // Backend expects flock_type not floq_type
         flock_type: floqType,
+        visibility: isPrivate ? 'private' : 'public',
+        invitees: [],
         max_participants: maxParticipants,
-        visibility: isPrivate ? 'private' : 'public'
-      });
+      };
+
+      const floqId = await createFloq(floqParams);
 
       // Track floq creation
       trackFloqCreated(floqId, title.trim(), selectedVibe, isPrivate, floqType, endsAt);
