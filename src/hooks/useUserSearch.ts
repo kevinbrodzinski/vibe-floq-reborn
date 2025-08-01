@@ -14,11 +14,11 @@ export function useUserSearch(query: string, enabled: boolean = true) {
     queryKey: ['user-search', query],
     enabled: enabled && query.length >= 2,
     queryFn: async (): Promise<SearchedUser[]> => {
-      // Use new search_profiles RPC function for better search results
-      const { data, error } = await supabase.rpc('search_profiles', {
-        p_query: query,
-        p_limit: 10
-      })
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, username, avatar_url, created_at')
+        .or(`display_name.ilike.%${query}%,username.ilike.%${query}%`)
+        .limit(10)
 
       if (error) throw error
       return data || []

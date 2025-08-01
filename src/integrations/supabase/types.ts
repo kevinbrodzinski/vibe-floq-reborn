@@ -5627,7 +5627,6 @@ export type Database = {
           full_name: string | null
           id: string
           interests: string[] | null
-          is_searchable: boolean
           last_name: string | null
           live_accuracy: Database["public"]["Enums"]["acc_enum"] | null
           live_auto_when: string[] | null
@@ -5637,7 +5636,6 @@ export type Database = {
           profile_created: boolean | null
           profile_id: string | null
           push_token: string | null
-          search_vec: unknown | null
           updated_at: string
           username: string
           vibe_preference: string | null
@@ -5653,7 +5651,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           interests?: string[] | null
-          is_searchable?: boolean
           last_name?: string | null
           live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
           live_auto_when?: string[] | null
@@ -5663,7 +5660,6 @@ export type Database = {
           profile_created?: boolean | null
           profile_id?: string | null
           push_token?: string | null
-          search_vec?: unknown | null
           updated_at?: string
           username: string
           vibe_preference?: string | null
@@ -5679,7 +5675,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           interests?: string[] | null
-          is_searchable?: boolean
           last_name?: string | null
           live_accuracy?: Database["public"]["Enums"]["acc_enum"] | null
           live_auto_when?: string[] | null
@@ -5689,7 +5684,6 @@ export type Database = {
           profile_created?: boolean | null
           profile_id?: string | null
           push_token?: string | null
-          search_vec?: unknown | null
           updated_at?: string
           username?: string
           vibe_preference?: string | null
@@ -11201,35 +11195,6 @@ export type Database = {
           creator_avatar_url: string
           is_participant: boolean
           friend_participants: Json
-        }[]
-      }
-      search_profiles: {
-        Args: { p_query: string; p_limit?: number }
-        Returns: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
-          custom_status: string | null
-          display_name: string
-          email: string | null
-          first_name: string | null
-          full_name: string | null
-          id: string
-          interests: string[] | null
-          is_searchable: boolean
-          last_name: string | null
-          live_accuracy: Database["public"]["Enums"]["acc_enum"] | null
-          live_auto_when: string[] | null
-          live_muted_until: string | null
-          live_scope: Database["public"]["Enums"]["scope_enum"] | null
-          live_smart_flags: Json | null
-          profile_created: boolean | null
-          profile_id: string | null
-          push_token: string | null
-          search_vec: unknown | null
-          updated_at: string
-          username: string
-          vibe_preference: string | null
         }[]
       }
       search_users: {
