@@ -18,6 +18,23 @@ export function DiscoverSheet() {
   const { data: searchResults, isLoading } = useFriendDiscovery(searchQuery)
   const { sendRequest, updating } = useUnifiedFriends()
   const { toast } = useToast()
+  const invalidateDiscover = useInvalidateDiscover()
+
+  // Real-time subscription for friend_requests changes
+  useEffect(() => {
+    if (!user?.id) return
+
+    const sub = supabase
+      .channel('friend-req-discover')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'friend_requests' },
+        () => invalidateDiscover()
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(sub) }
+  }, [user?.id, invalidateDiscover])
 
   // Auto-focus the search input when sheet opens
   useEffect(() => {
