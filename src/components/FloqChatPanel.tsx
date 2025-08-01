@@ -211,9 +211,13 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     const name = m.sender?.display_name || m.sender?.username || 'Someone'
     const reactions = [] // TODO: Get from message reactions when available
 
+    const key = m.status === 'sending' && m.metadata?.client_id
+      ? `tmp-${m.metadata.client_id}`
+      : m.id;
+
     return (
       <motion.li
-        key={m.id}
+        key={key}
         className={cn(
           'group relative',
           mine ? 'ml-auto' : 'mr-auto'
