@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2 } from 'lucide-react';
+import { Heart, Users, UserPlus, Settings, Upload, MessageSquare, User, Eye, AudioLines, Share2, Search } from 'lucide-react';
 import { useDebug } from '@/lib/useDebug';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
@@ -29,10 +29,12 @@ import { FavoritesSheet } from './ui/FavoritesSheet';
 import { WatchlistSheet } from './ui/WatchlistSheet';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchlist } from '@/hooks/useWatchlist';
+import DiscoverSheet from './friends/DiscoverSheet';
 
 export const AvatarDropdown = () => {
   const [debug, setDebug] = useDebug();
   const [friendsSheetOpen, setFriendsSheetOpen] = useState(false);
+  const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
   const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
   const [favoritesSheetOpen, setFavoritesSheetOpen] = useState(false);
@@ -117,6 +119,11 @@ export const AvatarDropdown = () => {
             )}
           </DropdownMenuItem>
 
+          <DropdownMenuItem onSelect={() => setDiscoverSheetOpen(true)} className="h-11">
+            <UserPlus className="w-6 h-6 mr-3" />
+            Discover People
+          </DropdownMenuItem>
+
           {/* Personal Curation Section */}
           <DropdownMenuItem onSelect={() => setFavoritesSheetOpen(true)} className="h-11">
             <Heart className="w-6 h-6 mr-3" />
@@ -178,6 +185,10 @@ export const AvatarDropdown = () => {
         open={watchlistSheetOpen}
         onOpenChange={setWatchlistSheetOpen}
       />
+
+      <Sheet open={discoverSheetOpen} onOpenChange={setDiscoverSheetOpen}>
+        <DiscoverSheet />
+      </Sheet>
 
       {/* Avatar upload sheet */}
       <Sheet open={avatarMgr.open} onOpenChange={avatarMgr.setOpen}>
