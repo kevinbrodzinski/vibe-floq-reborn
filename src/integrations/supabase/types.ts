@@ -7109,6 +7109,7 @@ export type Database = {
       }
       sync_log: {
         Row: {
+          created_at: string | null
           id: number
           kind: string
           lat: number
@@ -7117,6 +7118,7 @@ export type Database = {
           ts: string
         }
         Insert: {
+          created_at?: string | null
           id?: number
           kind: string
           lat: number
@@ -7125,6 +7127,7 @@ export type Database = {
           ts?: string
         }
         Update: {
+          created_at?: string | null
           id?: number
           kind?: string
           lat?: number
