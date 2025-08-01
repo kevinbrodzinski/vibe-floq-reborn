@@ -96,95 +96,154 @@ serve(async (req) => {
       );
     }
 
-    /* ---- Google pagination loop --------------------------------------- */
+    /* ---- Try New Google Places API First, fallback to legacy --------- */
     const results: any[] = [];
-    let pageToken: string | undefined;
-    let pageCount = 0;
-    const maxPages = 3; // Prevent infinite loops
+    let useNewAPI = true;
+    let apiAttempts = 0;
+    const maxRetries = 2;
 
-    do {
-      pageCount++;
-      if (pageCount > maxPages) {
-        console.warn(`[Sync Places] Reached maximum page limit (${maxPages}), stopping pagination`);
-        break;
-      }
-
-      const u = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-      u.searchParams.set('location', `${lat},${lng}`);
-      u.searchParams.set('radius',   String(RADIUS_M));
-      u.searchParams.set('key',      PLACES_KEY);
-      if (keyword)  u.searchParams.set('keyword', encodeURIComponent(keyword));
-      if (pageToken) u.searchParams.set('pagetoken', pageToken);
-
-      console.log(`[Sync Places] Requesting page ${pageCount}: ${u.toString().replace(PLACES_KEY, '[REDACTED]')}`);
-
-      const resp = await fetch(u);
-      const responseText = await resp.text();
+    while (apiAttempts < maxRetries) {
+      apiAttempts++;
       
-      if (!resp.ok) {
-        console.error(`[Sync Places] HTTP error: ${resp.status} ${resp.statusText}`, {
-          status: resp.status,
-          statusText: resp.statusText,
-          body: responseText
-        });
-        return new Response(
-          JSON.stringify({ 
-            error: `Google Places API HTTP error: ${resp.status}`,
-            details: responseText,
-            help: 'Check your API key permissions and ensure Places API is enabled'
-          }),
-          { status: 502, headers: corsHeaders }
-        );
-      }
-
-      let json;
       try {
-        json = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error(`[Sync Places] Failed to parse API response:`, parseError, responseText);
-        return new Response(
-          JSON.stringify({ 
-            error: 'Invalid API response format',
-            details: 'Could not parse Google Places API response'
-          }),
-          { status: 502, headers: corsHeaders }
-        );
-      }
-      
-      if (json.status === 'REQUEST_DENIED') {
-        console.error(`[Sync Places] Request denied: ${json.error_message}`, {
-          status: json.status,
-          error_message: json.error_message,
-          full_response: json
-        });
-        return new Response(
-          JSON.stringify({ 
-            error: 'Google Places API access denied. Please check your API key permissions.',
-            details: json.error_message,
-            help: 'Ensure Places API (Legacy) is enabled in Google Cloud Console and your API key has proper restrictions configured.',
-            google_response: json
-          }),
-          { status: 403, headers: corsHeaders }
-        );
-      }
-      
-      if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
-        console.error(`[Sync Places] API error: ${json.status} - ${json.error_message}`);
-        throw new Error(`Google Places API error: ${json.status} - ${json.error_message}`);
-      }
+        if (useNewAPI) {
+          console.log(`[Sync Places] Attempting new Places API (attempt ${apiAttempts})`);
+          
+          // Try new Places API with better error handling
+          const newApiResp = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': PLACES_KEY,
+              'X-Goog-FieldMask': 'places.id,places.displayName,places.location,places.rating,places.types,places.photos'
+            },
+            body: JSON.stringify({
+              includedTypes: keyword ? [] : ['restaurant', 'bar', 'cafe', 'tourist_attraction'],
+              maxResultCount: 20,
+              locationRestriction: {
+                circle: {
+                  center: { latitude: lat, longitude: lng },
+                  radius: RADIUS_M
+                }
+              }
+            })
+          });
 
-      console.log(`[Sync Places] Page ${pageCount}: status=${json.status}, found ${json.results?.length || 0} places`);
-      
-      if (json.results && json.results.length > 0) {
-        results.push(...json.results);
+          const newApiText = await newApiResp.text();
+          
+          if (newApiResp.ok) {
+            const newApiData = JSON.parse(newApiText);
+            console.log(`[Sync Places] New API success: ${newApiData.places?.length || 0} places found`);
+            
+            // Transform new API response to legacy format
+            if (newApiData.places) {
+              for (const place of newApiData.places) {
+                results.push({
+                  place_id: place.id,
+                  name: place.displayName?.text || 'Unknown Place',
+                  types: place.types || [],
+                  rating: place.rating,
+                  geometry: {
+                    location: {
+                      lat: place.location?.latitude || lat,
+                      lng: place.location?.longitude || lng
+                    }
+                  },
+                  photos: place.photos ? [{
+                    photo_reference: place.photos[0]?.name?.split('/')[3] // Extract photo reference
+                  }] : []
+                });
+              }
+            }
+            break; // Success, exit retry loop
+          } else {
+            console.error(`[Sync Places] New API failed: ${newApiResp.status}`, newApiText);
+            if (newApiResp.status === 403 || newApiResp.status === 401) {
+              useNewAPI = false; // Switch to legacy API
+              console.log(`[Sync Places] Switching to legacy API due to auth failure`);
+            } else {
+              throw new Error(`New API HTTP error: ${newApiResp.status}`);
+            }
+          }
+        }
+
+        if (!useNewAPI) {
+          console.log(`[Sync Places] Using legacy Places API (attempt ${apiAttempts})`);
+          
+          // Legacy API with enhanced error handling
+          const legacyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
+          legacyUrl.searchParams.set('location', `${lat},${lng}`);
+          legacyUrl.searchParams.set('radius', String(RADIUS_M));
+          legacyUrl.searchParams.set('key', PLACES_KEY);
+          if (keyword) legacyUrl.searchParams.set('keyword', encodeURIComponent(keyword));
+
+          console.log(`[Sync Places] Legacy API call: ${legacyUrl.toString().replace(PLACES_KEY, '[REDACTED]')}`);
+
+          const legacyResp = await fetch(legacyUrl);
+          const legacyText = await legacyResp.text();
+          
+          if (!legacyResp.ok) {
+            console.error(`[Sync Places] Legacy API HTTP error: ${legacyResp.status}`, legacyText);
+            if (legacyResp.status === 403 || legacyResp.status === 401) {
+              return new Response(
+                JSON.stringify({ 
+                  error: 'Google Places API access denied. Please check your API key permissions.',
+                  details: legacyText,
+                  help: 'Ensure both "Places API" and "Places API (New)" are enabled in Google Cloud Console'
+                }),
+                { status: 403, headers: corsHeaders }
+              );
+            }
+            throw new Error(`Legacy API HTTP error: ${legacyResp.status}`);
+          }
+
+          const legacyData = JSON.parse(legacyText);
+          
+          if (legacyData.status === 'REQUEST_DENIED') {
+            console.error(`[Sync Places] Legacy API request denied:`, legacyData);
+            return new Response(
+              JSON.stringify({ 
+                error: 'Google Places API access denied',
+                details: legacyData.error_message,
+                help: 'Enable "Places API (Legacy)" in Google Cloud Console and check API key restrictions'
+              }),
+              { status: 403, headers: corsHeaders }
+            );
+          }
+          
+          if (legacyData.status === 'OK' || legacyData.status === 'ZERO_RESULTS') {
+            console.log(`[Sync Places] Legacy API success: ${legacyData.results?.length || 0} places found`);
+            if (legacyData.results) {
+              results.push(...legacyData.results);
+            }
+            break; // Success, exit retry loop
+          } else {
+            console.error(`[Sync Places] Legacy API error: ${legacyData.status} - ${legacyData.error_message}`);
+            throw new Error(`Legacy API error: ${legacyData.status}`);
+          }
+        }
+      } catch (error) {
+        console.error(`[Sync Places] API attempt ${apiAttempts} failed:`, error);
+        
+        if (apiAttempts >= maxRetries) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'All Google Places API attempts failed',
+              details: error instanceof Error ? error.message : String(error),
+              tried_new_api: useNewAPI,
+              tried_legacy_api: !useNewAPI || apiAttempts > 1
+            }),
+            { status: 502, headers: corsHeaders }
+          );
+        }
+        
+        // Try alternative API on next attempt
+        if (useNewAPI) {
+          useNewAPI = false;
+          console.log(`[Sync Places] Retrying with legacy API after new API failure`);
+        }
       }
-      
-      pageToken = json.next_page_token;
-      if (pageToken) {
-        console.log('[Sync Places] Next page token received, waiting for token activation...');
-        await new Promise(r => setTimeout(r, 2_000)); // token warm-up
-      }
-    } while (pageToken);
+    }
 
     console.log(`[Sync Places] Total places found across all pages: ${results.length}`);
 
