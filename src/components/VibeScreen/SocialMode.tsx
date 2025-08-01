@@ -3,6 +3,7 @@ import { ScrollView } from 'react-native';
 import { FriendAlignmentList } from '@/components/VibeScreen/FriendAlignmentList';
 import { PreviewButtonsRow } from '@/components/VibeScreen/PreviewButtonsRow';
 import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
+import { VibeContextHeader } from '@/components/VibeScreen/VibeContextHeader';
 import { VenueRecommendationsModal } from '@/components/social/VenueRecommendationsModal';
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 import { NearbyFloqsModal } from '@/components/social/NearbyFloqsModal';
@@ -33,6 +34,7 @@ export const SocialMode: React.FC = () => {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 32 }}
     >
+      <VibeContextHeader />
       <FriendAlignmentList />
       
       <PreviewButtonsRow
