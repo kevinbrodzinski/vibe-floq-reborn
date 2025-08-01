@@ -26,8 +26,10 @@ export const FriendAlignmentList: React.FC = () => {
               <p className="text-sm mb-3 text-muted-foreground">
                 Match {(m.match * 100).toFixed(0)}% · {m.location}
               </p>
-              <Button variant="secondary" className="mr-2">Plan</Button>
-              <Button variant="outline">Ping</Button>
+              <div className="flex gap-2">
+                <Button variant="secondary">Plan</Button>
+                <Button variant="outline">Ping</Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

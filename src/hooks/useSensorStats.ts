@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { AppState } from 'react-native';
 
 /* Mock sensor-strip stats for Personal mode. */
 export const useSensorStats = () => {
@@ -9,14 +10,37 @@ export const useSensorStats = () => {
   });
 
   React.useEffect(() => {
-    const id = setInterval(() => {
-      setStats((s) => ({
-        ...s,
-        accuracy: Math.max(0.4, Math.min(0.9, s.accuracy + (Math.random() - 0.5) * 0.05)),
-        sound: 55 + Math.floor(Math.random() * 8),
-      }));
-    }, 5000);
-    return () => clearInterval(id);
+    let intervalId: ReturnType<typeof setInterval>;
+
+    const startInterval = () => {
+      intervalId = setInterval(() => {
+        setStats((s) => ({
+          ...s,
+          accuracy: Math.max(0.4, Math.min(0.9, s.accuracy + (Math.random() - 0.5) * 0.05)),
+          sound: 55 + Math.floor(Math.random() * 8),
+        }));
+      }, 5000);
+    };
+
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        startInterval();
+      } else {
+        clearInterval(intervalId);
+      }
+    };
+
+    // Start immediately if app is active
+    if (AppState.currentState === 'active') {
+      startInterval();
+    }
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      clearInterval(intervalId);
+      subscription?.remove();
+    };
   }, []);
 
   return stats;

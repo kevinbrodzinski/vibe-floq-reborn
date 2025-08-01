@@ -8,8 +8,9 @@ interface Props { className?: string; onPress?: () => void }
 
 export const MiniDensityMapCard: React.FC<Props> = ({ className, onPress }) => {
   const { clusterCount, personCount } = useVibeClusterStats();
-  // For now, use a static dark map as placeholder
-  const staticSrc = 'https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/pin-s-a+9ed4bd(-122.46,37.77),pin-s-b+000(-122.42,37.78),pin-s-c+000(-122.48,37.76)/0,0,2/400x200?access_token=pk.placeholder';
+  // Use environment variable for Mapbox static API, fallback to placeholder
+  const mapboxToken = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || 'pk.placeholder';
+  const staticSrc = `https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/pin-s-a+9ed4bd(-122.46,37.77),pin-s-b+000(-122.42,37.78),pin-s-c+000(-122.48,37.76)/-122.4194,37.7749,11/400x200?access_token=${mapboxToken}`;
 
   return (
     <motion.div

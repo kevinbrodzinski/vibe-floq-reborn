@@ -26,7 +26,15 @@ export const SuggestedAlignmentActions: React.FC<Props> = ({ className }) => {
             </CardHeader>
             <CardContent>
               <p className="text-sm mb-3 text-muted-foreground">{a.subtitle}</p>
-              <Button variant={a.primary ? 'secondary' : 'outline'}>{a.cta}</Button>
+              <Button 
+                variant={a.primary ? 'secondary' : 'outline'}
+                onClick={() => {
+                  // TODO: Add navigation logic based on action type
+                  console.log(`Action pressed: ${a.id}`);
+                }}
+              >
+                {a.cta}
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

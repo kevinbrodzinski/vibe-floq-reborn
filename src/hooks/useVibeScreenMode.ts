@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface VibeScreenState {
@@ -16,7 +17,10 @@ export const useVibeScreenMode = create<VibeScreenState>()(
     }),
     {
       name: 'vibe-screen-mode',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: Platform.select({
+        web: undefined, // falls back to localStorage
+        default: createJSONStorage(() => AsyncStorage),
+      }),
     }
   )
 );
