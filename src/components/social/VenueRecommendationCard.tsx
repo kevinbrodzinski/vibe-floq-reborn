@@ -76,8 +76,8 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
     </>
   );
 
-  // Score indicator for header
-  const scoreIndicator = (
+  // Right badge for header
+  const rightBadge = (
     <div className="text-right flex-shrink-0">
       <div className="flex items-center gap-1 text-green-600 font-medium text-xs sm:text-sm">
         <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -272,7 +272,6 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
 
   return (
     <BaseVenueCard
-      id={venue.id}
       name={venue.name}
       imageUrl={venue.imageUrl}
       category={venue.category}
@@ -280,7 +279,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
       headerBadge={headerBadge}
       distanceBadge={distanceBadge}
       metadataExtra={metadataExtra}
-      scoreIndicator={scoreIndicator}
+      rightBadge={rightBadge}
       imageHeight="h-32"
       contentSections={[
         vibeMatchSection,

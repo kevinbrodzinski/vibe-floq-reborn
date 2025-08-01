@@ -5,11 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ImageHeight = 'h-20' | 'h-24' | 'h-28' | 'h-32' | 'h-36' | 'h-40';
+export type ImageHeight = 'h-20' | 'h-24' | 'h-28' | 'h-32' | 'h-36' | 'h-40';
 
 interface BaseVenueCardProps {
   // Core venue data
-  id: string;
   name: string;
   imageUrl?: string;
   category?: string;
@@ -19,7 +18,7 @@ interface BaseVenueCardProps {
   headerBadge?: React.ReactNode;
   distanceBadge?: React.ReactNode;
   metadataExtra?: React.ReactNode;
-  scoreIndicator?: React.ReactNode;
+  rightBadge?: React.ReactNode;
   contentSections?: React.ReactNode[];
   actionButtons?: React.ReactNode;
   expandableContent?: React.ReactNode;
@@ -33,7 +32,6 @@ interface BaseVenueCardProps {
 }
 
 export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps>(({
-  id,
   name,
   imageUrl,
   category,
@@ -41,7 +39,7 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
   headerBadge,
   distanceBadge,
   metadataExtra,
-  scoreIndicator,
+  rightBadge,
   contentSections = [],
   actionButtons,
   expandableContent,
@@ -49,7 +47,9 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
   imageHeight = "h-24",
   onClick
 }, ref) => {
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number | null) => {
+    if (rating == null) return null;
+    
     return Array.from({ length: 5 }, (_, i) => (
       <Star 
         key={i} 
@@ -61,6 +61,17 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
     ));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
+  const handleActionClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     <motion.div
       layout
@@ -68,17 +79,38 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
       animate={{ opacity: 1, translateY: 0 }}
       className={className}
       ref={ref}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
     >
-      <Card className="overflow-hidden" onClick={onClick}>
+      <Card className="overflow-hidden">
         {/* Header Image with Overlays */}
-        {imageUrl && (
+        {imageUrl ? (
           <div className={cn("relative overflow-hidden", imageHeight)}>
             <img 
               src={imageUrl} 
               alt={`Venue photo of ${name}`}
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
+            {headerBadge && (
+              <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+                {headerBadge}
+              </div>
+            )}
+            {distanceBadge && (
+              <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2">
+                {distanceBadge}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className={cn("relative overflow-hidden bg-gradient-to-br from-muted to-muted-foreground/20", imageHeight)}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-muted-foreground text-sm font-medium">{name}</div>
+            </div>
             {headerBadge && (
               <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
                 {headerBadge}
@@ -108,9 +140,9 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
                 {metadataExtra}
               </div>
             </div>
-            {scoreIndicator && (
-              <div className="flex items-center gap-1 text-right flex-shrink-0">
-                {scoreIndicator}
+            {rightBadge && (
+              <div className="flex items-center gap-1 text-green-600 text-xs p-1 bg-green-50 rounded">
+                {rightBadge}
               </div>
             )}
           </div>
@@ -126,13 +158,17 @@ export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps
 
           {/* Action Buttons */}
           {actionButtons && (
-            <div className="flex gap-2">
+            <div className="flex gap-2" onClick={handleActionClick}>
               {actionButtons}
             </div>
           )}
 
           {/* Expandable Content */}
-          {expandableContent}
+          {expandableContent && (
+            <div onClick={handleActionClick}>
+              {expandableContent}
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
