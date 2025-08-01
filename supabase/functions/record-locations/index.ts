@@ -1,113 +1,102 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0'
+/**
+ * Secure location recording edge function with authentication + CORS.
+ * Accepts payload: { batch: [{ ts, lat, lng, acc? }] }
+ * Inserts up to 50 rows into public.location_history
+ */
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  handleCors,
+  validateAuth,
+  createErrorResponse,
+  checkRateLimit,
+  validatePayload,
+  corsHeaders,
+  securityHeaders,
+} from "../_shared/helpers.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface LocationPing {
-  lat: number;
-  lng: number;
-  acc: number;
-  ts: string;
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+serve(async (req) => {
+  /* 1️⃣  CORS pre-flight */
+  const cors = handleCors(req);
+  if (cors) return cors;
 
   try {
-    const url = Deno.env.get('SUPABASE_URL')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    /* 2️⃣  Supabase client (service-role not required here) */
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!, // anon is fine; user JWT in header
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } },
+    );
 
-    // 1. Authenticate user with anon client
-    const supabaseUser = createClient(url, anonKey, { auth: { persistSession: false } });
-    const jwt = req.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
-    const { data: { user }, error: authErr } = await supabaseUser.auth.getUser(jwt);
-    
-    if (authErr || !user) {
-      console.error('Authentication error:', authErr);
-      return new Response('Unauthorized', { 
-        status: 401, 
-        headers: corsHeaders 
-      });
+    /* 3️⃣  Auth */
+    const { user } = await validateAuth(req, supabase);
+
+    /* 4️⃣  Rate-limit */
+    if (!checkRateLimit(user.id, 100, 1)) {
+      return createErrorResponse("Rate limit exceeded", 429);
     }
 
-    // 2. Use admin client for database operations
-    const supabaseAdmin = createClient(url, serviceKey, { auth: { persistSession: false } });
-
-    const { batch } = await req.json() as { batch: LocationPing[] };
-    
-    if (!batch || !Array.isArray(batch)) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid batch data' 
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    /* 5️⃣  Parse + validate JSON */
+    const body = await req.json();
+    const { batch } = validatePayload(body, ["batch"]);
+    if (!Array.isArray(batch) || batch.length === 0) {
+      return createErrorResponse("Batch must be a non-empty array");
     }
-
-    // Enforce batch size limit
     if (batch.length > 50) {
-      console.warn(`[${user.id}] Large batch size: ${batch.length} entries (max 50 recommended)`);
+      return createErrorResponse("Batch too large – max 50 locations");
     }
 
-    // Process in chunks of 500
-    const chunks = [];
-    for (let i = 0; i < batch.length; i += 500) {
-      chunks.push(batch.slice(i, i + 500));
-    }
+    /* 6️⃣  Sanitize each entry */
+    const now = Date.now();
+    const oneHourAgo = now - 60 * 60 * 1000;
+    const oneMinuteAhead = now + 60 * 1000;
 
-    let totalInserted = 0;
-    
-    console.log(`[${user.id}] Recording ${batch.length} location entries`);
-    
-    for (const chunk of chunks) {
-      const rows = chunk.map(ping => ({
-        profile_id: user.id,
-        latitude: ping.lat,
-        longitude: ping.lng,
-        accuracy: ping.acc,
-        recorded_at: ping.ts
-      }));
+    const rows = batch.map((loc: any, i: number) => {
+      if (
+        typeof loc.lat !== "number" || typeof loc.lng !== "number" ||
+        !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)
+      ) throw new Error(`Invalid coords at index ${i}`);
 
-      const { error } = await supabaseAdmin
-        .from('location_history')
-        .insert(rows);
-      
-      if (error) {
-        console.error('Database insert error:', error);
-        return new Response(JSON.stringify({ 
-          error: 'Database insert failed',
-          details: error.message
-        }), { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+      if (loc.lat < -90 || loc.lat > 90 || loc.lng < -180 || loc.lng > 180) {
+        throw new Error(`Coords out of bounds at index ${i}`);
       }
-      
-      totalInserted += rows.length;
+
+      const ts = new Date(loc.ts).getTime();
+      if (Number.isNaN(ts)) throw new Error(`Bad timestamp at index ${i}`);
+      if (ts < oneHourAgo || ts > oneMinuteAhead) {
+        console.warn(`[record-locations] timestamp out of range idx=${i}`);
+      }
+
+      return {
+        profile_id:  user.id,
+        latitude:    loc.lat,
+        longitude:   loc.lng,
+        accuracy:    loc.acc ?? 0,
+        recorded_at: new Date(loc.ts).toISOString(),
+        created_at:  new Date().toISOString(),
+      };
+    });
+
+    /* 7️⃣  Insert */
+    const { error } = await supabase
+      .from("location_history")
+      .insert(rows, { returning: "minimal" });
+
+    if (error) {
+      console.error("[record-locations] DB error:", error);
+      return createErrorResponse("Failed to record locations", 500);
     }
-    
-    console.log(`[${user.id}] Successfully recorded ${totalInserted} locations`);
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      inserted: totalInserted 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    /* 8️⃣  Success */
+    return new Response(null, {
+      status: 204,
+      headers: { ...corsHeaders, ...securityHeaders },
     });
-
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return new Response(JSON.stringify({ 
-      error: 'Internal server error' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+  } catch (err) {
+    console.error("[record-locations] error:", err);
+    return createErrorResponse(
+      err instanceof Error ? err.message : String(err),
+      err?.status ?? 500,
+    );
   }
 });
