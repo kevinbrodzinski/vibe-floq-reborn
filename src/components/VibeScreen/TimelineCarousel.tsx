@@ -37,9 +37,9 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
   };
 
   return (
-    <div className="px-4 mb-4">
+    <div className="px-3 mb-3">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-foreground">Today's Vibe Journey</h3>
+        <h3 className="text-xs font-medium text-foreground">Today's Vibe Journey</h3>
         <span className="text-xs text-muted-foreground">Tap to jump</span>
       </div>
       
@@ -49,7 +49,7 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
             <motion.button
               key={`${entry.time}-${entry.vibe}`}
               className={cn(
-                "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all",
+                "flex items-center gap-1.5 px-2 py-1 rounded-lg border transition-all",
                 "bg-card/40 backdrop-blur-sm border-border/30",
                 "hover:bg-card/60 hover:scale-105 active:scale-95"
               )}
@@ -62,7 +62,7 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
               transition={{ delay: index * 0.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-sm">{getVibeIcon(entry.vibe)}</span>
+              <span className="text-xs">{getVibeIcon(entry.vibe)}</span>
               <div className="text-left">
                 <div className="text-xs font-medium text-foreground">
                   {entry.time}

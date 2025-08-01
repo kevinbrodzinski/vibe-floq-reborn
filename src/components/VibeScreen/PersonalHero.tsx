@@ -23,7 +23,7 @@ export const PersonalHero: React.FC = () => {
   
   return (
     <motion.div 
-      className="flex items-center gap-3 px-4 py-3 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl mx-4 mb-4"
+      className="flex items-center gap-2 px-3 py-2 bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl mx-3 mb-3"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -31,14 +31,14 @@ export const PersonalHero: React.FC = () => {
       {/* Accuracy Ring */}
       <div className="relative">
         <motion.div 
-          className="w-10 h-10 rounded-full border-3 flex items-center justify-center"
+          className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
           style={{
             borderColor: getVibeColor(vibe || 'chill'),
             scale: pulseScale,
           }}
         >
           <div 
-            className="w-3 h-3 rounded-full"
+            className="w-2 h-2 rounded-full"
             style={{ backgroundColor: getVibeColor(vibe || 'chill') }}
           />
         </motion.div>
@@ -54,12 +54,12 @@ export const PersonalHero: React.FC = () => {
       {/* Vibe Status */}
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-base font-semibold capitalize text-foreground">
+          <h3 className="text-sm font-semibold capitalize text-foreground">
             {vibe || 'chill'}
           </h3>
           {streakDays > 0 && (
             <div className="flex items-center gap-1 text-orange-400">
-              <span className="text-sm">🔥</span>
+              <span className="text-xs">🔥</span>
               <span className="text-xs font-medium">{streakDays}</span>
             </div>
           )}
