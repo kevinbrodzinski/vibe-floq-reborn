@@ -10442,6 +10442,10 @@ export type Database = {
         Args: { relationship_pairs: Json }
         Returns: number
       }
+      bump_interaction: {
+        Args: { p_profile_id: string; p_venue_id: string; p_type: string }
+        Returns: undefined
+      }
       bytea: {
         Args: { "": unknown } | { "": unknown }
         Returns: string
