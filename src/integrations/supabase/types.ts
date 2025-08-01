@@ -2802,34 +2802,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_participants_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
@@ -8532,34 +8504,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_floq_participants_profile_id"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "floq_messages_floq_id_fkey"
             columns: ["floq_id"]
             isOneToOne: false
@@ -11165,57 +11109,28 @@ export type Database = {
         }[]
       }
       search_floqs: {
-        Args:
-          | {
-              p_lat: number
-              p_lng: number
-              p_radius_km?: number
-              p_query?: string
-              p_vibe_ids?: string[]
-              p_time_from?: string
-              p_time_to?: string
-              p_limit?: number
-            }
-          | {
-              p_lat?: number
-              p_lng?: number
-              p_radius_meters?: number
-              p_query?: string
-              p_vibes?: string[]
-              p_start_time?: string
-              p_end_time?: string
-              p_limit?: number
-              p_offset?: number
-            }
-          | {
-              p_query?: string
-              p_lat?: number
-              p_lng?: number
-              p_radius_km?: number
-              p_time_from?: string
-              p_time_to?: string
-              p_visibilities?: string[]
-              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
-              p_limit?: number
-              p_offset?: number
-              _viewer_id?: string
-            }
+        Args: {
+          p_query?: string
+          p_lat?: number
+          p_lng?: number
+          p_radius_km?: number
+          p_time_from?: string
+          p_time_to?: string
+          p_visibilities?: string[]
+          p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+          p_limit?: number
+          p_offset?: number
+          _viewer_id?: string
+        }
         Returns: {
           id: string
           title: string
-          description: string
+          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
           starts_at: string
           ends_at: string
-          primary_vibe: Database["public"]["Enums"]["vibe_enum"]
-          location: unknown
           distance_m: number
           participant_count: number
-          creator_id: string
-          creator_username: string
-          creator_display_name: string
-          creator_avatar_url: string
-          is_participant: boolean
-          friend_participants: Json
+          user_joined_floq_id: string
         }[]
       }
       search_profiles: {
