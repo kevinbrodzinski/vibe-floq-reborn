@@ -94,12 +94,11 @@ export function useNearbyFlocks({
         p_lat: geo.lat,
         p_lng: geo.lng,
         p_radius_km: 25,
-        p_query: '',
-        p_vibe_ids: [],
+        p_query: filters.searchQuery || '',
+        p_vibe_ids: filters.vibe ? [filters.vibe] : [],
         p_time_from: new Date().toISOString(),
         p_time_to: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        p_limit: limit,
-        // _viewer_id: user?.id || null, // commented out - not in current RPC signature
+        p_limit: limit
       });
 
       if (error) {

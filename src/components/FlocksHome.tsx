@@ -100,11 +100,6 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     error: myFlocksError
   } = useMyFlocks();
 
-  // Error logging for My Flocks
-  useEffect(() => {
-    if (myFlocksError) console.error('[MyFlocks] query failed', myFlocksError);
-  }, [myFlocksError]);
-
   // Advanced search hook
   const {
     data: advancedSearchResults = [],
@@ -115,16 +110,25 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     vibes: advancedFilters.vibes,
     timeRange: advancedFilters.timeRange
   }, useAdvancedSearch && geo !== null);
+  
   const {
     data: nearbyFlocks = [],
-    isLoading: nearbyLoading
+    isLoading: nearbyLoading,
+    error: nearbyError
   } = useNearbyFlocks({
     geo,
     filters: {
       ...filters,
       searchQuery
-    } // Include search query in filters
+    }, // Include search query in filters
+    enabled: !!geo && !useAdvancedSearch
   });
+
+  // Error logging for data hooks
+  useEffect(() => {
+    if (myFlocksError) console.error('[MyFlocks] query failed', myFlocksError);
+    if (nearbyError) console.error('[NearbyFlocks] query failed', nearbyError);
+  }, [myFlocksError, nearbyError]);
   const {
     data: suggestions = [],
     isLoading: suggestionsLoading

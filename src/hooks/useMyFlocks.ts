@@ -176,13 +176,15 @@ const fetchMyFloqs = async (profileId: string): Promise<MyFloq[]> => {
         console.warn('⚠️ Error fetching participant counts:', error);
       }
     } else if (data) {
-      // Validate and transform the count data
+      // Validate and transform the count data - handle both string and bigint
       const validCounts = (data as unknown[])
         .map((row) => CountRowSchema.safeParse(row))
         .filter((res): res is { success: true; data: z.infer<typeof CountRowSchema> } => res.success)
         .map(res => ({
           floq_id: res.data.floq_id,
-          participant_count: parseInt(res.data.count, 10) || 0
+          participant_count: typeof res.data.count === 'string' ? 
+            parseInt(res.data.count, 10) || 0 : 
+            Number(res.data.count) || 0
         }));
       
       participantCounts = validCounts;
