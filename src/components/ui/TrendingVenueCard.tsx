@@ -1,6 +1,9 @@
 import React from 'react'
 import { Flame, Users, MapPin, Clock, Share2, Heart, MessageCircle } from 'lucide-react'
 import { vibeToBorder } from '@/utils/vibeColors'
+import { useFavorites } from '@/hooks/useFavorites'
+import { useVenueInteractions } from '@/hooks/useVenueInteractions'
+import { cn } from '@/lib/utils'
 
 interface TrendingVenue {
   id: string
@@ -28,6 +31,31 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
   onLike,
   onChat
 }) => {
+  const { addFavorite, removeFavorite, isFavorite, isAdding, isRemoving } = useFavorites()
+  const { favorite } = useVenueInteractions()
+  
+  const isVenueFavorited = isFavorite(venue.venue_id || venue.id)
+  
+  const handleHeartClick = () => {
+    const venueId = venue.venue_id || venue.id
+    
+    if (isVenueFavorited) {
+      removeFavorite(venueId)
+    } else {
+      // Add to both favorites and track interaction
+      addFavorite({
+        itemId: venueId,
+        itemType: 'venue',
+        title: venue.name,
+        description: `Trending venue with ${venue.people_now} people`,
+        imageUrl: undefined
+      })
+      favorite(venueId) // Track for recommendations
+    }
+    
+    // Call original onLike callback if provided
+    onLike?.()
+  }
   const getTrendingIcon = (score: number) => {
     if (score >= 90) return '🔥🔥🔥'
     if (score >= 70) return '🔥🔥'
@@ -86,14 +114,22 @@ export const TrendingVenueCard: React.FC<TrendingVenueCardProps> = ({
           </button>
         )}
         <div className="flex gap-1">
-          {onLike && (
-            <button
-              onClick={onLike}
-              className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              <Heart className="w-4 h-4 text-white" />
-            </button>
-          )}
+          <button
+            onClick={handleHeartClick}
+            disabled={isAdding || isRemoving}
+            className={cn(
+              "p-3 rounded-2xl transition-colors",
+              isVenueFavorited 
+                ? "bg-pink-500/20 hover:bg-pink-500/30" 
+                : "bg-white/10 hover:bg-white/20",
+              (isAdding || isRemoving) && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <Heart className={cn(
+              "w-4 h-4 transition-colors",
+              isVenueFavorited ? "text-pink-400 fill-current" : "text-white"
+            )} />
+          </button>
           {onChat && (
             <button
               onClick={onChat}
