@@ -94,6 +94,19 @@ export interface SupabaseRPCTypes {
     };
     Returns: { floq_id: string };
   };
+  search_profiles: {
+    Args: {
+      p_query: string;
+      p_limit?: number;
+    };
+    Returns: Array<{
+      id: string;
+      display_name: string | null;
+      username: string | null;
+      avatar_url: string | null;
+      created_at: string;
+    }>;
+  };
 }
 
 // Note: These types will be used via 'as any' until official types are regenerated
