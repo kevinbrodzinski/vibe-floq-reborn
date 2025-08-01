@@ -20,10 +20,6 @@ export const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>
     // TODO: Open maps with directions
   };
 
-  const handleSave = (venueId: string) => {
-    console.log(`Saving venue for later: ${venueId}`);
-    // TODO: Add to saved venues list
-  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -42,7 +38,6 @@ export const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>
                 key={venue.id}
                 venue={venue}
                 onVisit={handleVisit}
-                onSave={handleSave}
               />
             ))}
           </div>

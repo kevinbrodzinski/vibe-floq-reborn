@@ -20,20 +20,22 @@ import {
   Utensils
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/providers/AuthProvider';
 import type { VenueRecommendation } from '@/hooks/useVenueRecommendations';
 
 interface VenueRecommendationCardProps {
   venue: VenueRecommendation;
   onVisit: (venueId: string) => void;
-  onSave: (venueId: string) => void;
 }
 
 export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = ({
   venue,
-  onVisit,
-  onSave
+  onVisit
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite, isToggling } = useFavorites();
 
   const getAtmosphereColor = (level: string) => {
     const colors = {
@@ -218,13 +220,29 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
               Directions
             </Button>
             <Button 
-              variant="outline" 
+              variant={isFavorite(venue.id) ? "default" : "outline"}
               size="sm"
-              className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
-              onClick={() => onSave(venue.id)}
+              className={cn(
+                "flex-1 text-xs sm:text-sm h-8 sm:h-10",
+                isFavorite(venue.id) && "bg-red-500 hover:bg-red-600 text-white"
+              )}
+              onClick={() => {
+                if (!user) return;
+                toggleFavorite({
+                  itemId: venue.id,
+                  itemType: 'venue',
+                  title: venue.name,
+                  description: venue.category,
+                  imageUrl: venue.imageUrl
+                });
+              }}
+              disabled={!user || isToggling}
             >
-              <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Save
+              <Heart className={cn(
+                "w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2",
+                isFavorite(venue.id) && "fill-current"
+              )} />
+              {isToggling ? '...' : isFavorite(venue.id) ? 'Saved' : 'Save'}
             </Button>
           </div>
 
