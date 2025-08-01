@@ -4,6 +4,7 @@ import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 import { useFieldTiles } from "@/hooks/useFieldTiles";
+import { useAutoVenueSync } from "@/hooks/useVenueSync";
 import { usePresencePublisher } from "@/hooks/usePresencePublisher";
 import { viewportToTileIds } from "@/lib/geo";
 import { getCachedAddress } from '@/utils/geoUtils';
@@ -216,6 +217,13 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     tilesCount: fieldTiles?.length || 0,
     tiles: fieldTiles
   });
+
+  // Auto-sync venues when location changes
+  const venueSync = useAutoVenueSync(
+    location?.pos?.lat, 
+    location?.pos?.lng, 
+    { showToasts: false, minDistanceM: 300 }
+  );
 
   // Get nearby venues for chip and current event
   const { data: nearbyVenues = [] } = useNearbyVenues(location?.pos?.lat ?? 0, location?.pos?.lng ?? 0, 0.3);

@@ -2,9 +2,12 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { CheckCircle, AlertCircle, Zap, Building2, Loader2 } from 'lucide-react';
 import { debounce } from 'lodash-es';
+import { useVenueSync } from '@/hooks/useVenueSync';
+import { useGeo } from '@/hooks/useGeo';
 
 interface DataStats {
   venuePresence: number;
@@ -13,6 +16,7 @@ interface DataStats {
   planParticipants: number;
   isStale: boolean;
   realtimeActive: boolean;
+  totalVenues: number;
 }
 
 /**
@@ -23,6 +27,10 @@ export const DataRecordingStatus = () => {
   const [loading, setLoading] = useState(true);
   const [realtimeChannels, setRealtimeChannels] = useState<number>(0);
   const [connectionStatus, setConnectionStatus] = useState<string>('disconnected');
+  
+  // Location and venue sync
+  const { coords } = useGeo();
+  const venueSync = useVenueSync({ showToasts: true });
 
   // Debounced stats fetching to prevent excessive API calls
   const debouncedFetchStats = useMemo(
@@ -31,7 +39,7 @@ export const DataRecordingStatus = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user?.id) return;
 
-        const [venueResult, vibeResult, floqResult, planResult, stalenessResult] = await Promise.all([
+        const [venueResult, vibeResult, floqResult, planResult, stalenessResult, venueCountResult] = await Promise.all([
           supabase
             .from('venue_live_presence')
             .select('profile_id', { count: 'exact' })
@@ -53,7 +61,10 @@ export const DataRecordingStatus = () => {
             .select('is_stale')
             .eq('profile_id', user.id)
             .eq('date', new Date().toISOString().split('T')[0])
-            .maybeSingle()
+            .maybeSingle(),
+          supabase
+            .from('venues')
+            .select('id', { count: 'exact' })
         ]);
 
         setStats({
@@ -63,6 +74,7 @@ export const DataRecordingStatus = () => {
           planParticipants: planResult.count || 0,
           isStale: stalenessResult.data?.is_stale || false,
           realtimeActive: realtimeChannels > 0 && connectionStatus === 'connected',
+          totalVenues: venueCountResult.count || 0,
         });
       } catch (error) {
         console.error('Failed to fetch data stats:', error);
@@ -211,6 +223,13 @@ export const DataRecordingStatus = () => {
             </Badge>
           </div>
           <div className="flex items-center justify-between">
+            <span>Venues in Database:</span>
+            <Badge variant={stats?.totalVenues ? "default" : "secondary"}>
+              {stats?.totalVenues || 0}
+              <Building2 className="ml-1 h-3 w-3" />
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
             <span>Today's Afterglow Status:</span>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -224,13 +243,43 @@ export const DataRecordingStatus = () => {
               </TooltipContent>
             </Tooltip>
           </div>
+          {/* Venue Sync Controls */}
+          {coords && (
+            <div className="mt-4 space-y-2">
+              <Button
+                onClick={() => venueSync.manualSync(coords.lat, coords.lng)}
+                disabled={venueSync.isLoading}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                {venueSync.isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing Venues...
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="mr-2 h-4 w-4" />
+                    Sync Nearby Venues
+                  </>
+                )}
+              </Button>
+              {venueSync.results.length > 0 && (
+                <div className="text-xs text-emerald-400">
+                  Last sync: +{venueSync.results.reduce((sum, r) => sum + r.count, 0)} venues found
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-4 text-sm text-muted-foreground">
             <p>✅ Venue check-ins now record to venue_live_presence</p>
             <p>✅ Vibe changes record to user_vibe_states</p>
             <p>✅ Floq joins record to floq_participants</p>
             <p>✅ Plan participation records to plan_participants</p>
             <p>✅ Triggers mark afterglow stale when data changes</p>
-            <p className="font-semibold text-primary">⚡ NEW: Real-time subscriptions active for instant updates!</p>
+            <p className="font-semibold text-primary">⚡ NEW: Real-time subscriptions + venue sync active!</p>
           </div>
         </CardContent>
       </Card>
