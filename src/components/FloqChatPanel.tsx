@@ -48,7 +48,7 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
 
   const msgs = useMemo(() => {
     const seen = new Set<string>();
-    const flat = messages.data?.pages.flat() ?? [];
+    const flat = (messages.data?.pages.flat() ?? []).reverse(); // Reverse to show oldest→newest, then flex-col-reverse shows newest at bottom
 
     return flat.filter((m) => {
       const key =
