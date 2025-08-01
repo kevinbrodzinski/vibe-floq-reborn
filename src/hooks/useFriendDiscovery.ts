@@ -1,34 +1,32 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/providers/AuthProvider'
 
-export type DiscoverProfile = {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string | null;
-  req_status: 'none' | 'pending' | 'accepted' | 'blocked';
-};
+type ReqStatus = 'none' | 'pending_out' | 'pending_in' | 'friends'
 
-export function useFriendDiscovery(query: string, enabled: boolean = true) {
-  return useQuery({
-    queryKey: ['discover', query],
-    enabled: enabled && query.length >= 2,
-    queryFn: async (): Promise<DiscoverProfile[]> => {
+export interface DiscoverUser {
+  id: string
+  display_name: string
+  username: string
+  avatar_url: string | null
+  created_at: string
+  req_status: ReqStatus
+}
+
+export function useFriendDiscovery(query: string) {
+  const { user } = useAuth()
+  const key = ['discover', user?.id ?? 'anon', query.trim()]
+
+  return useQuery<DiscoverUser[]>({
+    queryKey: key,
+    enabled: !!query.trim() && query.length >= 2,
+    queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('search_profiles', {
-          p_query: query,
-          p_limit: 10
-        });
+        .rpc('search_profiles_with_status', { p_query: query, p_limit: 20 })
 
-      if (error) throw error;
-      
-      // For now, add a default req_status since the RPC doesn't include it yet
-      // TODO: Replace with v_discover_profiles view once it's available
-      return (data || []).map((user: any) => ({
-        ...user,
-        req_status: 'none' as const
-      }));
+      if (error) throw error
+      return data as DiscoverUser[]
     },
     staleTime: 30_000,
-  });
+  })
 }

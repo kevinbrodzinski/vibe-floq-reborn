@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus } from 'lucide-react';
 
-type Status = 'none' | 'pending' | 'accepted' | 'blocked';
+type Status = 'none' | 'pending_out' | 'pending_in' | 'friends';
 
 interface AddFriendButtonProps {
   status: Status;
@@ -11,16 +11,16 @@ interface AddFriendButtonProps {
 }
 
 export function AddFriendButton({ status, onAdd, isLoading }: AddFriendButtonProps) {
-  if (status === 'accepted') {
+  if (status === 'friends') {
     return <Badge variant="secondary">Friends</Badge>;
   }
 
-  if (status === 'pending') {
+  if (status === 'pending_out') {
     return <Badge variant="outline">Requested</Badge>;
   }
 
-  if (status === 'blocked') {
-    return <Badge variant="destructive">Blocked</Badge>;
+  if (status === 'pending_in') {
+    return <Badge variant="default">Accept</Badge>;
   }
 
   // status === 'none'

@@ -3,13 +3,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserTag } from '@/components/ui/user-tag';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { AddFriendButton } from '@/components/friends/AddFriendButton';
-import { DiscoverProfile } from '@/hooks/useFriendDiscovery';
+import { DiscoverUser } from '@/hooks/useFriendDiscovery';
 import { useQueryClient } from '@tanstack/react-query';
 import { sendFriendRequest } from '@/lib/friends';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserSearchResultsProps {
-  users: DiscoverProfile[];
+  users: DiscoverUser[];
   searchQuery: string;
   isLoading?: boolean;
   selectedIndex?: number;
@@ -29,9 +29,9 @@ export const UserSearchResults = ({
       await sendFriendRequest(targetId);
       
       // Optimistic cache update
-      queryClient.setQueryData(['discover', searchQuery], (old: DiscoverProfile[] | undefined) =>
+      queryClient.setQueryData(['discover', searchQuery], (old: DiscoverUser[] | undefined) =>
         old?.map((p) =>
-          p.id === targetId ? { ...p, req_status: 'pending' as const } : p
+          p.id === targetId ? { ...p, req_status: 'pending_out' as const } : p
         )
       );
 

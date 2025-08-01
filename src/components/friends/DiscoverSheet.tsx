@@ -8,6 +8,8 @@ import { useFriendDiscovery } from '@/hooks/useFriendDiscovery'
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
 import { useAuth } from '@/providers/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
+import { useInvalidateDiscover } from '@/hooks/useInvalidateDiscover'
+import { supabase } from '@/integrations/supabase/client'
 
 export function DiscoverSheet() {
   const [searchQuery, setSearchQuery] = useState('')

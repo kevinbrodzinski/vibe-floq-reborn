@@ -12149,6 +12149,17 @@ export type Database = {
           avatar_url: string
         }[]
       }
+      search_profiles_with_status: {
+        Args: { p_query: string; p_limit?: number; p_viewer_id?: string }
+        Returns: {
+          id: string
+          display_name: string
+          username: string
+          avatar_url: string
+          created_at: string
+          req_status: string
+        }[]
+      }
       search_users: {
         Args: { search_query: string }
         Returns: {

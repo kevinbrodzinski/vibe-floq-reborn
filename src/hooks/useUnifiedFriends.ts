@@ -8,6 +8,7 @@ import { useQueryClient,
 import { supabase }            from '@/integrations/supabase/client';
 import { useAuth }             from '@/providers/AuthProvider';
 import { useToast }            from '@/hooks/use-toast';
+import { useInvalidateDiscover } from '@/hooks/useInvalidateDiscover';
 
 /* ---------- shape returned by view -------------------------------- */
 interface ViewRow {
@@ -101,6 +102,7 @@ export function useUnifiedFriends() {
   const uid      = user?.id;
   const qc       = useQueryClient();
   const { toast }= useToast();
+  const invalidateDiscover = useInvalidateDiscover();
 
   /* ── 1. main list (view) ────────────────────────────────────────── */
   const { data = [], isLoading } = useQuery({
@@ -180,6 +182,7 @@ export function useUnifiedFriends() {
 
     onSuccess  : (_, vars) => {
       qc.invalidateQueries({ queryKey:['friends-unified', uid] });
+      invalidateDiscover(); // Invalidate discovery cache
       toast({ title:
         vars.state==='pending'  ? 'Request sent 🎉' :
         vars.state==='accepted' ? 'Friend added ✅' :
