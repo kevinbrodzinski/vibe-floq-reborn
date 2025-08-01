@@ -2,13 +2,14 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { getUserId } from '../_shared/getUserId.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 );
 
-const PLACES_KEY = Deno.env.get('GOOGLE_PLACES_KEY')!;
+const PLACES_KEY = Deno.env.get('GOOGLE_PLACES_KEY');
 const RADIUS_M   = 1_200;
 
 const corsHeaders = {
@@ -25,13 +26,23 @@ serve(async (req) => {
   try {
     console.log(`[Sync Places] Starting sync request`);
     
-    const { lat, lng, keyword } = await req.json();
-    if (lat === undefined || lng === undefined) {
-      console.error(`[Sync Places] Missing coordinates: lat=${lat}, lng=${lng}`);
+    const payload = await req.json();
+    const lat = Number(payload.lat);
+    const lng = Number(payload.lng);
+    const keyword = payload.keyword ?? "";
+    
+    // Extract user ID from JWT for optional context (no behavioral change)
+    const profile_id = payload.profile_id ?? (await getUserId(req));
+    
+    console.log(`[Sync Places] Starting request for location: ${lat},${lng} by=${profile_id ?? "anon"}`);
+    
+    // Validate required coordinates
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.error(`[Sync Places] Missing or invalid coordinates: lat=${lat}, lng=${lng}`);
       return new Response(
         JSON.stringify({ 
-          error: 'lat and lng required',
-          details: { lat: lat !== undefined, lng: lng !== undefined }
+          error: 'lat & lng are required numbers',
+          details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
         }), 
         { status: 400, headers: corsHeaders }
       );
@@ -39,9 +50,12 @@ serve(async (req) => {
 
     // Validate coordinates range
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.error(`[Sync Places] Invalid coordinates: lat=${lat}, lng=${lng}`);
+      console.error(`[Sync Places] Invalid coordinates range: lat=${lat}, lng=${lng}`);
       return new Response(
-        JSON.stringify({ error: "Invalid coordinates range" }),
+        JSON.stringify({ 
+          error: "Invalid coordinates range",
+          details: "Latitude must be between -90 and 90, longitude between -180 and 180"
+        }),
         { status: 400, headers: corsHeaders }
       );
     }
@@ -75,7 +89,7 @@ serve(async (req) => {
       console.error('[Sync Places] GOOGLE_PLACES_KEY missing from environment');
       return new Response(
         JSON.stringify({ 
-          error: 'Google Places API key not configured',
+          error: 'Google Places API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets.',
           details: 'Please configure GOOGLE_PLACES_KEY in edge function secrets'
         }),
         { status: 500, headers: corsHeaders }
@@ -105,20 +119,50 @@ serve(async (req) => {
       console.log(`[Sync Places] Requesting page ${pageCount}: ${u.toString().replace(PLACES_KEY, '[REDACTED]')}`);
 
       const resp = await fetch(u);
-      if (!resp.ok) {
-        console.error(`[Sync Places] HTTP error: ${resp.status} ${resp.statusText}`);
-        throw new Error(`Google Places API HTTP error: ${resp.status}`);
-      }
-
-      const json = await resp.json();
+      const responseText = await resp.text();
       
-      if (json.status === 'REQUEST_DENIED') {
-        console.error(`[Sync Places] Request denied: ${json.error_message}`);
+      if (!resp.ok) {
+        console.error(`[Sync Places] HTTP error: ${resp.status} ${resp.statusText}`, {
+          status: resp.status,
+          statusText: resp.statusText,
+          body: responseText
+        });
         return new Response(
           JSON.stringify({ 
-            error: 'Google Places API access denied',
-            details: json.error_message,
+            error: `Google Places API HTTP error: ${resp.status}`,
+            details: responseText,
             help: 'Check your API key permissions and ensure Places API is enabled'
+          }),
+          { status: 502, headers: corsHeaders }
+        );
+      }
+
+      let json;
+      try {
+        json = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[Sync Places] Failed to parse API response:`, parseError, responseText);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid API response format',
+            details: 'Could not parse Google Places API response'
+          }),
+          { status: 502, headers: corsHeaders }
+        );
+      }
+      
+      if (json.status === 'REQUEST_DENIED') {
+        console.error(`[Sync Places] Request denied: ${json.error_message}`, {
+          status: json.status,
+          error_message: json.error_message,
+          full_response: json
+        });
+        return new Response(
+          JSON.stringify({ 
+            error: 'Google Places API access denied. Please check your API key permissions.',
+            details: json.error_message,
+            help: 'Ensure Places API (Legacy) is enabled in Google Cloud Console and your API key has proper restrictions configured.',
+            google_response: json
           }),
           { status: 403, headers: corsHeaders }
         );
@@ -231,12 +275,13 @@ serve(async (req) => {
       // Don't fail the request for logging issues
     }
     
-    console.log(`[Sync Places] Successfully upserted ${rows.length} venues`);
+    console.log(`[Sync Places] OK • ${rows.length} places • radius=${RADIUS_M}m • by=${profile_id ?? "anon"}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         upserted: rows.length,
+        source: "google_places",
         location: { lat, lng },
         keyword: keyword || null
       }), 
