@@ -45,7 +45,7 @@ export function useCreateFloq() {
         p_visibility: visibility,
         p_title: title,
         p_invitees: invitees,
-        p_flock_type: flock_type,
+        p_flock_type: flock_type as any, // Cast to avoid enum type issues
       };
       
       console.log('🔍 create_floq RPC params:', rpcParams);
