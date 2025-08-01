@@ -1,13 +1,22 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 
-export interface SearchedUser {
-  id: string
-  display_name: string | null
-  username: string | null
-  avatar_url: string | null
-  created_at: string
+// Type definition for search_profiles function
+export interface SearchProfilesFunction {
+  Args: {
+    p_query: string
+    p_limit?: number | null
+  }
+  Returns: {
+    id: string
+    display_name: string
+    username: string
+    avatar_url: string | null
+    created_at: string
+  }[]
 }
+
+export type SearchedUser = SearchProfilesFunction['Returns'][number]
 
 export function useUserSearch(query: string, enabled: boolean = true) {
   return useQuery({
