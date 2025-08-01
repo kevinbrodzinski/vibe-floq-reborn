@@ -25,13 +25,13 @@ serve(async (req) => {
       lng?: number;
     };
     
-    // Enhanced input validation - profile_id is now optional
+    // Validate required coordinates (profile_id is optional)
     if (lat == null || lng == null) {
-      console.error(`[Foursquare] Invalid input: profile_id=${profile_id}, lat=${lat}, lng=${lng}`);
+      console.error(`[Foursquare] Missing required coordinates: lat=${lat}, lng=${lng}`);
       return new Response(
         JSON.stringify({ 
           error: "lat & lng required",
-          details: { profile_id: !!profile_id, lat: lat != null, lng: lng != null }
+          details: { lat: lat != null, lng: lng != null }
         }),
         { status: 400, headers: CORS },
       );
