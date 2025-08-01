@@ -13,39 +13,49 @@ type RawPlace =
   | { provider: "foursquare"; r: any };
 
 export function mapToVenue(p: RawPlace) {
+  const baseVenue = {
+    source: "api" as const,
+    radius_m: 100,
+    popularity: 0,
+    vibe_score: 50.0,
+    live_count: 0,
+  };
+
   if (p.provider === "google") {
     const r = p.r;
     return {
-      provider:     "google",
-      provider_id:  r.place_id,
-      name:         r.name,
-      lat:          r.geometry.location.lat,
-      lng:          r.geometry.location.lng,
-      address:      r.vicinity ?? null,
-      categories:   (r.types ?? []).slice(0, 5),
-      rating:       r.rating ?? null,
-      photo_url:    r.photos?.[0]
+      ...baseVenue,
+      provider: "google" as const,
+      provider_id: r.place_id,
+      name: r.name,
+      lat: r.geometry.location.lat,
+      lng: r.geometry.location.lng,
+      address: r.vicinity ?? null,
+      categories: (r.types ?? []).slice(0, 5),
+      rating: r.rating ?? null,
+      photo_url: r.photos?.[0]
         ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=640&photo_reference=${r.photos[0].photo_reference}&key=${Deno.env.get("GOOGLE_PLACES_KEY")}`
         : null,
-      price_tier:   r.price_level ? "$".repeat(r.price_level) : null,
+      price_tier: r.price_level ? "$".repeat(r.price_level) : "$",
     };
   }
 
   /* foursquare ------------------------------------------------------ */
   const r = (p as any).r;
   return {
-    provider:     "foursquare",
-    provider_id:  r.fsq_id,
-    name:         r.name,
-    lat:          r.geocodes.main.latitude,
-    lng:          r.geocodes.main.longitude,
-    address:      r.location.formatted_address ?? null,
-    categories:   r.categories.map((c: any) => c.name).slice(0, 5),
-    rating:       r.rating ?? null,
-    photo_url:    r.photos?.[0]
+    ...baseVenue,
+    provider: "foursquare" as const,
+    provider_id: r.fsq_id,
+    name: r.name,
+    lat: r.geocodes.main.latitude,
+    lng: r.geocodes.main.longitude,
+    address: r.location.formatted_address ?? null,
+    categories: r.categories.map((c: any) => c.name).slice(0, 5),
+    rating: r.rating ?? null,
+    photo_url: r.photos?.[0]
       ? `${r.photos[0].prefix}original${r.photos[0].suffix}`
       : null,
-    price_tier:   r.price ?? null,
+    price_tier: r.price ?? "$",
   };
 }
 

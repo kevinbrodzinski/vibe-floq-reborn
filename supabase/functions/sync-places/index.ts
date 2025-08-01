@@ -76,18 +76,23 @@ serve(async (req) => {
     console.log(`Total places found: ${results.length}`);
 
     const rows = results.map((p) => ({
-      provider:     'google_places',
-      provider_id:  p.place_id,
-      name:         p.name,
-      address:      p.vicinity,
-      categories:   p.types,
-      rating:       p.rating ?? null,
-      lat:          p.geometry.location.lat,
-      lng:          p.geometry.location.lng,
-      photo_url:    p.photos?.[0]?.photo_reference
+      provider: 'google',
+      provider_id: p.place_id,
+      name: p.name,
+      address: p.vicinity,
+      categories: p.types,
+      rating: p.rating ?? null,
+      lat: p.geometry.location.lat,
+      lng: p.geometry.location.lng,
+      photo_url: p.photos?.[0]?.photo_reference
         ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${p.photos[0].photo_reference}&key=${PLACES_KEY}`
         : null,
-      updated_at:   new Date().toISOString(),
+      source: 'api',
+      radius_m: 100,
+      popularity: 0,
+      vibe_score: 50.0,
+      live_count: 0,
+      price_tier: '$',
     }));
 
     const { error } = await supabase
