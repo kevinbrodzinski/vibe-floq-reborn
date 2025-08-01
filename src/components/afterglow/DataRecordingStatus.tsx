@@ -81,9 +81,9 @@ export const DataRecordingStatus = () => {
   // 🔄 Real-time subscriptions with proper async cleanup pattern
   useEffect(() => {
     let mounted = true;
-    let activeChannels: any[] = [];
+    let cleanup = () => {};
 
-    const setupRealtime = async () => {
+    (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!mounted || !user?.id) return;
 
@@ -102,7 +102,7 @@ export const DataRecordingStatus = () => {
           });
       };
 
-      activeChannels = [
+      const activeChannels = [
         createChannelWithStatus('afterglow-venue-presence', 'venue_live_presence'),
         createChannelWithStatus('afterglow-vibe-states', 'user_vibe_states'),
         createChannelWithStatus('afterglow-floq-participants', 'floq_participants'),
@@ -115,17 +115,19 @@ export const DataRecordingStatus = () => {
         await Promise.all(activeChannels.map(channel => channel.subscribe()));
         setRealtimeChannels(activeChannels.length);
         console.log(`✅ Step 3: ${activeChannels.length} real-time channels active`);
+        
+        cleanup = () => {
+          activeChannels.forEach(channel => supabase.removeChannel(channel));
+          setRealtimeChannels(0);
+          setConnectionStatus('disconnected');
+          debouncedFetchStats.cancel();
+        };
       }
-    };
-
-    setupRealtime();
+    })();
 
     return () => {
       mounted = false;
-      activeChannels.forEach(channel => supabase.removeChannel(channel));
-      setRealtimeChannels(0);
-      setConnectionStatus('disconnected');
-      debouncedFetchStats.cancel(); // Cancel pending debounced calls
+      cleanup();
     };
   }, [debouncedFetchStats]);
 

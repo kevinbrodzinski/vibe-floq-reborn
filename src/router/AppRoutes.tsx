@@ -80,7 +80,10 @@ export const AppRoutes = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile-settings" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
-      <Route path="/afterglow-test" element={<AfterglowTestPage />} />
+      {/* Test/Debug Routes - only in development */}
+      {process.env.NODE_ENV !== 'production' && (
+        <Route path="/afterglow-test" element={<AfterglowTestPage />} />
+      )}
       <Route path="/location-sharing" element={<LocationSharingScreen />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -148,6 +148,7 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
     afterglow: data ?? EMPTY_STATE,
     isLoading: isFetching,
     error,
-    generate     // call this from your "Generate Ripple" button
+    generate,    // call this from your "Generate Ripple" button
+    data: data ?? EMPTY_STATE  // alias for compatibility
   };
 }
