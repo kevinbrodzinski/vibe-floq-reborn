@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef } from 'react';
 import { Platform } from 'react-native';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useCanvasAnimation } from '@/hooks/useCanvasAnimation';
@@ -9,13 +9,25 @@ import { storage } from '@/lib/storage';
 // Conditional imports for framer-motion (web only)
 import { motion, AnimatePresence as FramerAnimatePresence } from 'framer-motion';
 
-const MotionDiv = Platform.OS === 'web' 
-  ? motion.div 
-  : ({ children, ...props }: any) => <div {...props}>{children}</div>;
+const MotionDiv = Platform.OS === 'web'
+  ? motion.div
+  : forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+      ({ children, ...rest }, ref) => (
+        <div ref={ref as React.RefObject<HTMLDivElement>} {...rest}>
+          {children}
+        </div>
+      ),
+    );
 
 const MotionSpan = Platform.OS === 'web'
   ? motion.span
-  : ({ children, ...props }: any) => <span {...props}>{children}</span>;
+  : forwardRef<HTMLSpanElement, React.HTMLAttributes<HTMLSpanElement>>(
+      ({ children, ...rest }, ref) => (
+        <span ref={ref as React.RefObject<HTMLSpanElement>} {...rest}>
+          {children}
+        </span>
+      ),
+    );
 
 const AnimatePresence = Platform.OS === 'web'
   ? FramerAnimatePresence

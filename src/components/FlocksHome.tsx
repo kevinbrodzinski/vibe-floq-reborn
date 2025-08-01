@@ -163,7 +163,7 @@ export const FlocksHome: React.FC<FlocksHomeProps> = ({
     queryClient.invalidateQueries();
     onRefresh?.();
   };
-  return <div className="flex flex-col h-full bg-background" ref={refreshRef} {...bind()}>
+  return <div className="flex flex-col h-full bg-background touch-none" ref={refreshRef} {...bind()}>
       {/* Geolocation Permission Banner */}
       {hasPermission === false && <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
           <div className="flex items-center justify-between text-sm">
