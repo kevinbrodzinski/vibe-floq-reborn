@@ -3,11 +3,12 @@ import { ScrollView } from 'react-native';
 import { FriendAlignmentList } from '@/components/VibeScreen/FriendAlignmentList';
 import { MiniDensityMapCard } from '@/components/VibeScreen/MiniDensityMapCard';
 import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
+import { VenueRecommendations } from '@/components/social/VenueRecommendations';
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 
 /**
  * SocialMode - Real social features with animated components
- * Friend alignment, mini map preview, and suggested actions
+ * Friend alignment, venue recommendations, mini map preview, and suggested actions
  */
 export const SocialMode: React.FC = () => {
   const [showDensityMap, setShowDensityMap] = useState(false);
@@ -22,6 +23,9 @@ export const SocialMode: React.FC = () => {
       contentContainerStyle={{ paddingBottom: 32 }}
     >
       <FriendAlignmentList />
+      
+      <VenueRecommendations />
+      
       <MiniDensityMapCard
         className="mt-4"
         onPress={handleMapPress}
