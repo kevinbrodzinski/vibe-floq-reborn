@@ -110,11 +110,8 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
     });
   }, [isOpen, venueId, isMobile, navigate, onClose]);
 
-  // Debug logging for troubleshooting
-  console.log({ isMobile, isOpen, venueId });
-
-  // Safeguard rendering checks
-  if (!venueId || !isOpen) return null;
+  // Safeguard rendering checks - let Dialog.Root handle open state
+  if (!venueId) return null;
   if (!isMobile) return null;
 
   return (
