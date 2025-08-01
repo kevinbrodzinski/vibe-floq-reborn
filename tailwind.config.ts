@@ -168,12 +168,12 @@ export default {
 					"100%": { transform: "scale(1)", opacity: "1" },
 				},
 				"slide-in-bottom": {
-					"0%": { transform: "translateY(100%)", opacity: "0" },
-					"100%": { transform: "translateY(0%)", opacity: "1" },
+					"0%": { transform: "translateY(100%)" },
+					"100%": { transform: "translateY(0)" },
 				},
 				"slide-out-bottom": {
-					"0%": { transform: "translateY(0%)", opacity: "1" },
-					"100%": { transform: "translateY(100%)", opacity: "0" },
+					"0%": { transform: "translateY(0)" },
+					"100%": { transform: "translateY(100%)" },
 				},
 			},
 
@@ -185,8 +185,8 @@ export default {
 				float: "float 3s ease-in-out infinite",
 				ripple: "ripple 2s infinite",
 				"pulse-once": "pulse-once 0.6s ease-out",
-				"slide-in-bottom": "slide-in-bottom 250ms cubic-bezier(.25,.8,.25,1)",
-				"slide-out-bottom": "slide-out-bottom 200ms ease-out forwards",
+				"slide-in-bottom": "slide-in-bottom 0.35s cubic-bezier(0.16,1,0.3,1)",
+				"slide-out-bottom": "slide-out-bottom 0.30s cubic-bezier(0.7,0,0.84,0) forwards",
 			},
 		},
 	},
@@ -196,5 +196,8 @@ export default {
 		"text-center",
 		"py-12",
 	],
+	variants: {
+		animation: ['responsive', 'motion-safe'],
+	},
 	plugins: [require("tailwindcss-animate")],
 } satisfies Config;

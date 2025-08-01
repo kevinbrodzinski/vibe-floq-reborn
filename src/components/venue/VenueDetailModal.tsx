@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { X, Heart } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -123,17 +123,25 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
     });
   }, [isOpen, venueId, isMobile, navigate, onClose]);
 
-  if (!venueId) return null;
+  // Debug logging for troubleshooting
+  console.log({ isMobile, isOpen, venueId });
 
-  // Only render modal on mobile
+  // Safeguard rendering checks
+  if (!venueId || !isOpen) return null;
   if (!isMobile) return null;
 
   return (
     <VenueModalErrorBoundary onClose={onClose}>
-      <AnimatePresence>
-        {isOpen && (
-          <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="fixed bottom-0 left-0 right-0 z-[81] p-0 max-w-none max-h-[90vh] border-0 bg-background rounded-t-xl overflow-y-auto data-[state=open]:animate-slide-in-bottom data-[state=closed]:animate-slide-out-bottom">
+      <Dialog.Root open={isOpen} onOpenChange={handleClose}>
+        <Dialog.Portal>
+          {/* Backdrop */}
+          <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/40 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
+
+          {/* Bottom Sheet */}
+          <Dialog.Content
+            className="fixed bottom-0 left-0 right-0 z-[81] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-background shadow-lg data-[state=open]:animate-slide-in-bottom data-[state=closed]:animate-slide-out-bottom"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/30">
               <div className="flex items-center justify-between p-4">
@@ -162,9 +170,13 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
                   size="sm"
                   onClick={handleFavoriteToggle}
                   disabled={isToggling || !user}
-                  className="p-2 h-8 w-8"
+                  className={cn(
+                    "p-2 h-8 w-8",
+                    isFavorite(venueId) ? 'bg-red-500/10 text-red-500' : 'bg-muted'
+                  )}
+                  aria-pressed={isFavorite(venueId)}
                 >
-                  <Heart className={cn("h-4 w-4", isFavorite(venueId) && "fill-red-500 text-red-500")} />
+                  <Heart className={cn("h-4 w-4", isFavorite(venueId) && "fill-current")} />
                 </Button>
               </div>
             </div>
@@ -195,10 +207,9 @@ export const VenueDetailModal: React.FC<VenueDetailModalProps> = ({
                 </div>
               )}
             </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </AnimatePresence>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </VenueModalErrorBoundary>
   );
 };
