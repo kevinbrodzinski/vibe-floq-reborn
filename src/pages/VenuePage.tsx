@@ -8,6 +8,7 @@ import { Loader2, MapPin, Users, Star, Heart, TestTube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { devLog, devError } from "@/utils/devLog";
 
 export default function VenuePage() {
   const { id } = useParams() as { id?: string };
@@ -36,22 +37,19 @@ export default function VenuePage() {
   }
 
   const { data: venue, isLoading, error } = useVenueDetails(id);
-  const { trackInteraction, checkIn, favorite, view, isLoading: isTrackingInteraction } = useVenueInteractions();
+  const { 
+    trackInteraction, 
+    checkIn, 
+    favorite, 
+    view, 
+    isLoading: isTrackingInteraction 
+  } = useVenueInteractions();
   const { data: testData } = useVenueInteractionTest(id);
 
   const handleFavorite = async () => {
     if (!venue || !id) return;
     
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`❤️ Favoriting venue: ${venue.name} (${id})`);
-    }
-    
-    // Optimistic update
-    queryClient.setQueryData(['venue-details', id], (old: any) => ({
-      ...old,
-      is_favorite: true,
-      favoriteCount: (old?.favoriteCount || 0) + 1
-    }));
+    devLog(`❤️ Favoriting venue: ${venue.name} (${id})`);
     
     try {
       await trackInteraction({
@@ -60,15 +58,7 @@ export default function VenuePage() {
       });
       toast.success("Added to favorites!");
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Failed to favorite venue:', error);
-      }
-      // Rollback on error
-      queryClient.setQueryData(['venue-details', id], (old: any) => ({
-        ...old,
-        is_favorite: false,
-        favoriteCount: Math.max((old?.favoriteCount || 1) - 1, 0)
-      }));
+      devError('Failed to favorite venue:', error);
       toast.error("Failed to favorite venue");
     }
   };
@@ -76,17 +66,13 @@ export default function VenuePage() {
   const handleCheckIn = async () => {
     if (!venue || !id) return;
     
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`📍 Checking in to venue: ${venue.name} (${id})`);
-    }
+    devLog(`📍 Checking in to venue: ${venue.name} (${id})`);
     
     try {
       await checkIn(venue.id);
       toast.success("Checked in successfully!");
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Failed to check in:', error);
-      }
+      devError('Failed to check in:', error);
       toast.error("Failed to check in");
     }
   };
@@ -94,16 +80,12 @@ export default function VenuePage() {
   const handleView = async () => {
     if (!venue || !id) return;
     
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`👁️ Recording view for venue: ${venue.name} (${id})`);
-    }
+    devLog(`👁️ Recording view for venue: ${venue.name} (${id})`);
     
     try {
       await view(venue.id);
     } catch (error) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Failed to record view:', error);
-      }
+      devError('Failed to record view:', error);
     }
   };
 
@@ -248,8 +230,8 @@ export default function VenuePage() {
             </CardHeader>
             <CardContent>
               <div className="text-muted-foreground space-y-1">
-                <p>Latitude: {venue.lat}</p>
-                <p>Longitude: {venue.lng}</p>
+                <p>Latitude: {venue.lat ?? 'Unknown'}</p>
+                <p>Longitude: {venue.lng ?? 'Unknown'}</p>
               </div>
             </CardContent>
           </Card>

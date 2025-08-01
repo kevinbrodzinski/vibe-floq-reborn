@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { devLog, devError, devWarn } from "@/utils/devLog";
 
 export interface VenueDetails {
   id: string;
@@ -9,8 +10,8 @@ export interface VenueDetails {
   live_count: number;
   vibe_score: number;
   popularity: number;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
 }
 
 export const useVenueDetails = (venueId: string | null) => {
@@ -21,31 +22,23 @@ export const useVenueDetails = (venueId: string | null) => {
         throw new Error("Venue ID is required");
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`🏢 Fetching venue details for: ${venueId}`);
-      }
+      devLog(`🏢 Fetching venue details for: ${venueId}`);
 
       const { data, error } = await supabase
         .rpc("venue_details", { p_venue_id: venueId })
         .single();
 
       if (error) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error(`❌ Failed to fetch venue details for ${venueId}:`, error);
-        }
+        devError(`❌ Failed to fetch venue details for ${venueId}:`, error);
         throw error;
       }
 
       if (!data) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn(`⚠️ No venue data found for ID: ${venueId}`);
-        }
+        devWarn(`⚠️ No venue data found for ID: ${venueId}`);
         throw new Error("Venue not found");
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`✅ Successfully fetched venue details:`, data);
-      }
+      devLog(`✅ Successfully fetched venue details:`, data);
 
       // Transform and validate the data
       const venueDetails: VenueDetails = {
@@ -56,8 +49,8 @@ export const useVenueDetails = (venueId: string | null) => {
         live_count: Number(data.live_count) || 0,
         vibe_score: Number(data.vibe_score) || 50,
         popularity: Number(data.popularity) || 0,
-        lat: parseFloat(data.lat?.toString() ?? '0') || 0,
-        lng: parseFloat(data.lng?.toString() ?? '0') || 0
+        lat: data.lat ?? null,
+        lng: data.lng ?? null
       };
 
       return venueDetails;

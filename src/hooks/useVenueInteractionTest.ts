@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { devLog, devError } from '@/utils/devLog';
 
 /**
  * Test hook to verify venue interaction functionality
@@ -16,9 +17,7 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         return null;
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`🧪 Testing venue interactions for venue ${venueId}, user ${user.id}`);
-      }
+      devLog(`🧪 Testing venue interactions for venue ${venueId}, user ${user.id}`);
 
       // Check if user has any interactions with this venue
       const { data: interactions, error: interactionsError } = await supabase
@@ -28,9 +27,7 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         .eq('profile_id', user.id);
 
       if (interactionsError) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('❌ Failed to fetch venue interactions:', interactionsError);
-        }
+        devError('❌ Failed to fetch venue interactions:', interactionsError);
         throw interactionsError;
       }
 
@@ -43,9 +40,7 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         .maybeSingle();
 
       if (presenceError) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('❌ Failed to fetch venue presence:', presenceError);
-        }
+        devError('❌ Failed to fetch venue presence:', presenceError);
         // Don't throw, this is optional
       }
 
@@ -62,9 +57,7 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         shareCount: interactions?.find(i => i.interaction_type === 'share')?.interaction_count || 0
       };
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('✅ Venue interaction test results:', testResult);
-      }
+      devLog('✅ Venue interaction test results:', testResult);
       return testResult;
     },
     enabled: !!venueId && !!user?.id,

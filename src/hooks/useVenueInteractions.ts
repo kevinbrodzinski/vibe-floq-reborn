@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useCurrentVibe } from '@/lib/store/useVibe';
+import { devLog, devError } from '@/utils/devLog';
 
 export type InteractionType = 'check_in' | 'favorite' | 'share' | 'view';
 
@@ -18,13 +19,11 @@ export const useVenueInteractions = () => {
   const trackInteraction = useMutation({
     mutationFn: async ({ venue_id, interaction_type }: VenueInteraction) => {
       if (!user?.id) {
-        console.error('❌ User not authenticated for venue interaction');
+        devError('❌ User not authenticated for venue interaction');
         throw new Error('User not authenticated');
       }
       
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`🎯 Tracking ${interaction_type} interaction for venue ${venue_id} by user ${user.id}`);
-      }
+      devLog(`🎯 Tracking ${interaction_type} interaction for venue ${venue_id} by user ${user.id}`);
       
       const { error } = await supabase.rpc('bump_interaction', {
         p_profile_id: user.id,
@@ -33,21 +32,15 @@ export const useVenueInteractions = () => {
       });
       
       if (error) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error(`❌ Failed to track ${interaction_type} interaction:`, error);
-        }
+        devError(`❌ Failed to track ${interaction_type} interaction:`, error);
         throw error;
       }
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`✅ Successfully tracked ${interaction_type} interaction for venue ${venue_id}`);
-      }
+      devLog(`✅ Successfully tracked ${interaction_type} interaction for venue ${venue_id}`);
 
       // If this is a check-in, also record to venue_live_presence for afterglow
       if (interaction_type === 'check_in') {
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(`📍 Recording venue presence for check-in at ${venue_id}`);
-        }
+        devLog(`📍 Recording venue presence for check-in at ${venue_id}`);
         const { error: presenceError } = await supabase
           .from('venue_live_presence')
           .upsert({
@@ -60,21 +53,17 @@ export const useVenueInteractions = () => {
           });
 
         if (presenceError) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.error('⚠️ Failed to record venue presence:', presenceError);
-          }
+          devError('⚠️ Failed to record venue presence:', presenceError);
           // Continue even if presence recording fails
-        } else if (process.env.NODE_ENV !== 'production') {
-          console.log('✅ Successfully recorded venue presence');
+        } else {
+          devLog('✅ Successfully recorded venue presence');
         }
       }
 
       return { venue_id, interaction_type };
     },
     onSuccess: (data) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`🔄 Invalidating queries after ${data.interaction_type} interaction`);
-      }
+      devLog(`🔄 Invalidating queries after ${data.interaction_type} interaction`);
       // Invalidate venue details to update live count
       queryClient.invalidateQueries({ 
         queryKey: ['venue-details', data.venue_id]
@@ -89,9 +78,7 @@ export const useVenueInteractions = () => {
       });
     },
     onError: (error, variables) => {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error(`🚨 Venue interaction failed for ${variables.interaction_type}:`, error);
-      }
+      devError(`🚨 Venue interaction failed for ${variables.interaction_type}:`, error);
     }
   });
 
