@@ -27,7 +27,7 @@ import {
   MoreHorizontal,
   X
 } from 'lucide-react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 
 export function FloqChatPanel({ floqId }: { floqId: string }) {
   const messages = useMessages(floqId, 'floq')
@@ -46,7 +46,21 @@ export function FloqChatPanel({ floqId }: { floqId: string }) {
     getUser()
   }, [])
 
-  const msgs = (messages.data?.pages.flat() ?? [])
+  const msgs = useMemo(() => {
+    const seen = new Set<string>();
+    const flat = messages.data?.pages.flat() ?? [];
+
+    return flat.filter((m) => {
+      const key =
+        m.status === 'sending' && m.metadata?.client_id
+          ? `tmp-${m.metadata.client_id}`
+          : m.id;
+
+      if (seen.has(key)) return false; // skip duplicate
+      seen.add(key);
+      return true;
+    });
+  }, [messages.data])
   
   // Mention popover hook
   const { target, open, close } = useMentionPopover()

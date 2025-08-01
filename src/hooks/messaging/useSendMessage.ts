@@ -75,14 +75,20 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       queryClient.setQueryData(["messages", surface, threadId], (old: any) => {
         if (!old) return old;
         
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map(msg => 
-              msg.id === client_id ? { ...message, status: "sent" } : msg
-            )
+        // Remove any "sending" msg with this client_id across ALL pages
+        const pages = old.pages.map((page: any[]) =>
+          page.filter(
+            (m) => !(m.status === 'sending' && m.metadata?.client_id === client_id)
           )
-        };
+        );
+
+        // Add the confirmed server row to the last page
+        const lastPageIndex = pages.length - 1;
+        if (lastPageIndex >= 0) {
+          pages[lastPageIndex].push({ ...message, status: 'sent' });
+        }
+
+        return { ...old, pages };
       });
       
       // Invalidate thread list to update previews
