@@ -21,23 +21,31 @@ export const useVenueDetails = (venueId: string | null) => {
         throw new Error("Venue ID is required");
       }
 
-      console.log(`🏢 Fetching venue details for: ${venueId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🏢 Fetching venue details for: ${venueId}`);
+      }
 
       const { data, error } = await supabase
         .rpc("venue_details", { p_venue_id: venueId })
         .single();
 
       if (error) {
-        console.error(`❌ Failed to fetch venue details for ${venueId}:`, error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`❌ Failed to fetch venue details for ${venueId}:`, error);
+        }
         throw error;
       }
 
       if (!data) {
-        console.warn(`⚠️ No venue data found for ID: ${venueId}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(`⚠️ No venue data found for ID: ${venueId}`);
+        }
         throw new Error("Venue not found");
       }
 
-      console.log(`✅ Successfully fetched venue details:`, data);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`✅ Successfully fetched venue details:`, data);
+      }
 
       // Transform and validate the data
       const venueDetails: VenueDetails = {
@@ -48,8 +56,8 @@ export const useVenueDetails = (venueId: string | null) => {
         live_count: Number(data.live_count) || 0,
         vibe_score: Number(data.vibe_score) || 50,
         popularity: Number(data.popularity) || 0,
-        lat: Number(data.lat) || 0,
-        lng: Number(data.lng) || 0
+        lat: parseFloat(data.lat?.toString() ?? '0') || 0,
+        lng: parseFloat(data.lng?.toString() ?? '0') || 0
       };
 
       return venueDetails;
@@ -59,7 +67,7 @@ export const useVenueDetails = (venueId: string | null) => {
     refetchInterval: 60000, // Refetch every minute to keep live count updated
     retry: (failureCount, error) => {
       // Don't retry if venue not found
-      if (error.message === 'Venue not found') {
+      if (error instanceof Error && error.message === 'Venue not found') {
         return false;
       }
       // Retry up to 3 times for other errors

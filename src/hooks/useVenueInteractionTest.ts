@@ -16,7 +16,9 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         return null;
       }
 
-      console.log(`🧪 Testing venue interactions for venue ${venueId}, user ${user.id}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🧪 Testing venue interactions for venue ${venueId}, user ${user.id}`);
+      }
 
       // Check if user has any interactions with this venue
       const { data: interactions, error: interactionsError } = await supabase
@@ -26,7 +28,9 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         .eq('profile_id', user.id);
 
       if (interactionsError) {
-        console.error('❌ Failed to fetch venue interactions:', interactionsError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('❌ Failed to fetch venue interactions:', interactionsError);
+        }
         throw interactionsError;
       }
 
@@ -39,7 +43,9 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         .maybeSingle();
 
       if (presenceError) {
-        console.error('❌ Failed to fetch venue presence:', presenceError);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('❌ Failed to fetch venue presence:', presenceError);
+        }
         // Don't throw, this is optional
       }
 
@@ -56,7 +62,9 @@ export const useVenueInteractionTest = (venueId: string | null) => {
         shareCount: interactions?.find(i => i.interaction_type === 'share')?.interaction_count || 0
       };
 
-      console.log('✅ Venue interaction test results:', testResult);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Venue interaction test results:', testResult);
+      }
       return testResult;
     },
     enabled: !!venueId && !!user?.id,

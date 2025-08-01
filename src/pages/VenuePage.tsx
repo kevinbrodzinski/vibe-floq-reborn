@@ -42,12 +42,15 @@ export default function VenuePage() {
   const handleFavorite = async () => {
     if (!venue || !id) return;
     
-    console.log(`❤️ Favoriting venue: ${venue.name} (${id})`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`❤️ Favoriting venue: ${venue.name} (${id})`);
+    }
     
     // Optimistic update
     queryClient.setQueryData(['venue-details', id], (old: any) => ({
       ...old,
-      is_favorite: true
+      is_favorite: true,
+      favoriteCount: (old?.favoriteCount || 0) + 1
     }));
     
     try {
@@ -57,11 +60,14 @@ export default function VenuePage() {
       });
       toast.success("Added to favorites!");
     } catch (error) {
-      console.error('Failed to favorite venue:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to favorite venue:', error);
+      }
       // Rollback on error
       queryClient.setQueryData(['venue-details', id], (old: any) => ({
         ...old,
-        is_favorite: false
+        is_favorite: false,
+        favoriteCount: Math.max((old?.favoriteCount || 1) - 1, 0)
       }));
       toast.error("Failed to favorite venue");
     }
@@ -70,13 +76,17 @@ export default function VenuePage() {
   const handleCheckIn = async () => {
     if (!venue || !id) return;
     
-    console.log(`📍 Checking in to venue: ${venue.name} (${id})`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📍 Checking in to venue: ${venue.name} (${id})`);
+    }
     
     try {
       await checkIn(venue.id);
       toast.success("Checked in successfully!");
     } catch (error) {
-      console.error('Failed to check in:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to check in:', error);
+      }
       toast.error("Failed to check in");
     }
   };
@@ -84,12 +94,16 @@ export default function VenuePage() {
   const handleView = async () => {
     if (!venue || !id) return;
     
-    console.log(`👁️ Recording view for venue: ${venue.name} (${id})`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`👁️ Recording view for venue: ${venue.name} (${id})`);
+    }
     
     try {
       await view(venue.id);
     } catch (error) {
-      console.error('Failed to record view:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to record view:', error);
+      }
     }
   };
 
