@@ -64,22 +64,41 @@ async function sendMessage(payload: SendMessagePayload) {
       }
     }
 
-    // Insert the message
-    const messageData = {
-      thread_id: payload.thread_id,
-      sender_id: payload.sender_id,
-      profile_id: payload.sender_id, // Add profile_id for consistency
-      content: payload.content || null,
+    /* ---------------- shared props ---------------- */
+    const base = {
+      sender_id:  payload.sender_id,
+      profile_id: payload.sender_id,
       reply_to_id: payload.reply_to_id || null,
       message_type: payload.message_type || 'text',
-      metadata: payload.client_id ? { ...payload.metadata || {}, client_id: payload.client_id } : payload.metadata || {},
-      status: 'sent'
+      metadata: payload.client_id
+                  ? { ...(payload.metadata || {}), client_id: payload.client_id }
+                  : payload.metadata || {},
+      status: 'sent',
     };
 
-    if (payload.surface !== 'dm') {
-      // For floq/plan messages, add surface and floq_id/plan_id
-      messageData[payload.surface === 'floq' ? 'floq_id' : 'plan_id'] = payload.thread_id;
-      messageData.surface = payload.surface;
+    /* ---------------- table-specific props ---------------- */
+    let messageData: Record<string, unknown>;
+
+    if (payload.surface === 'dm') {
+      messageData = {
+        ...base,
+        thread_id: payload.thread_id,
+        content:   payload.content || null,   // column = content
+      };
+    } else if (payload.surface === 'floq') {
+      messageData = {
+        ...base,
+        floq_id:   payload.thread_id,
+        surface:   'floq',
+        body:      payload.content || null,   // column = body
+      };
+    } else { /* plan */
+      messageData = {
+        ...base,
+        plan_id:   payload.thread_id,
+        surface:   'plan',
+        body:      payload.content || null,
+      };
     }
 
     const { data: messageResult, error: messageError } = await supabase
