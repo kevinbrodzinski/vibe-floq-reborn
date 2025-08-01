@@ -46,13 +46,13 @@ export const EnhancedFriendCard: React.FC<EnhancedFriendCardProps> = ({
     >
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="relative flex-shrink-0">
                 <img 
                   src={friend.avatar} 
                   alt={friend.name} 
-                  className="w-10 h-10 rounded-full"
+                  className="w-12 h-12 rounded-full object-cover"
                 />
                 <div className="absolute -bottom-1 -right-1">
                   <Badge 
@@ -63,68 +63,67 @@ export const EnhancedFriendCard: React.FC<EnhancedFriendCardProps> = ({
                   </Badge>
                 </div>
               </div>
-              <div>
-                <CardTitle className="text-base">{friend.name} matches your vibe</CardTitle>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    {Math.round(friend.match * 100)}% match
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    {friend.location}
-                  </span>
-                </div>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base truncate">{friend.name}</CardTitle>
+                <p className="text-sm text-muted-foreground truncate">matches your vibe</p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {getTrendIcon(friend.contextualFactors.energyTrend)}
-              <Badge variant="outline" className="text-xs">
-                {Math.round(friend.reasoning.confidence * 100)}%
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1">
+                {getTrendIcon(friend.contextualFactors.energyTrend)}
+                <Badge variant="outline" className="text-xs">
+                  {Math.round(friend.reasoning.confidence * 100)}%
+                </Badge>
+              </div>
+              <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                {Math.round(friend.match * 100)}% match
               </Badge>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Quick context */}
-          <div className="bg-muted/50 rounded-lg p-3 text-sm">
-            <p className="text-muted-foreground">{friend.reasoning.vibeAlignment}</p>
+          <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-3 border border-primary/10">
+            <p className="text-sm text-muted-foreground leading-relaxed">{friend.reasoning.vibeAlignment}</p>
           </div>
 
-          {/* Social proof highlights */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Users className="w-3 h-3" />
-                {friend.socialProof.mutualFriends} mutual
-              </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Heart className="w-3 h-3" />
-                {friend.socialProof.successRate}% success
-              </span>
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                {friend.contextualFactors.travelTime}
-              </span>
+          {/* Compact stats row */}
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Users className="w-3 h-3" />
+              <span className="truncate">{friend.socialProof.mutualFriends} mutual</span>
             </div>
-            <span className="text-xs text-green-600 font-medium">
-              {friend.contextualFactors.optimalWindow}
-            </span>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Heart className="w-3 h-3" />
+              <span className="truncate">{friend.socialProof.successRate}% success</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              <span className="truncate">{friend.contextualFactors.travelTime}</span>
+            </div>
+          </div>
+
+          {/* Optimal timing highlight */}
+          <div className="text-center">
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              <MapPin className="w-3 h-3 mr-1" />
+              {friend.location} • {friend.contextualFactors.optimalWindow}
+            </Badge>
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2">
             <Button 
               variant="secondary" 
-              className="flex-1"
+              className="flex-1 hover:bg-secondary/80 transition-colors"
               onClick={() => onPlan(friend.id)}
             >
               Plan Together
             </Button>
             <Button 
               variant="outline" 
-              className="flex-1"
+              className="flex-1 hover:bg-primary/5 hover:border-primary/30 transition-colors"
               onClick={() => onPing(friend.id)}
             >
               Send Ping
