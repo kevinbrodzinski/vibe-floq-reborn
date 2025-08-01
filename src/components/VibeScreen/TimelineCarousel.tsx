@@ -37,19 +37,19 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
   };
 
   return (
-    <div className="px-4 mb-6">
+    <div className="px-3 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-foreground">Today's Vibe Journey</h3>
+        <h3 className="text-sm font-medium text-foreground">Today's Journey</h3>
         <span className="text-xs text-muted-foreground">Tap to jump</span>
       </div>
       
       <ScrollArea className="w-full">
-        <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
+        <div className="flex gap-2 pb-2" style={{ width: 'max-content' }}>
           {timelineEntries.map((entry, index) => (
             <motion.button
               key={`${entry.time}-${entry.vibe}`}
               className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all",
+                "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
                 "bg-card/40 backdrop-blur-sm border-border/30",
                 "hover:bg-card/60 hover:scale-105 active:scale-95"
               )}
@@ -62,7 +62,7 @@ export const TimelineCarousel: React.FC<TimelineCarouselProps> = ({ onVibeSelect
               transition={{ delay: index * 0.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-lg">{getVibeIcon(entry.vibe)}</span>
+              <span className="text-base">{getVibeIcon(entry.vibe)}</span>
               <div className="text-left">
                 <div className="text-xs font-medium text-foreground">
                   {entry.time}
