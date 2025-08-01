@@ -31,14 +31,13 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import DiscoverSheet from './friends/DiscoverSheet';
 
+// Type for tracking which sheet is currently open
+type ActiveSheet = 'friends' | 'discover' | 'messages' | 'favorites' | 'watchlist' | null
+
 export const AvatarDropdown = () => {
   const [debug, setDebug] = useDebug();
-  const [friendsSheetOpen, setFriendsSheetOpen] = useState(false);
-  const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<ActiveSheet>(null);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
-  const [messagesSheetOpen, setMessagesSheetOpen] = useState(false);
-  const [favoritesSheetOpen, setFavoritesSheetOpen] = useState(false);
-  const [watchlistSheetOpen, setWatchlistSheetOpen] = useState(false);
 
   const { user } = useAuth();
 
@@ -94,7 +93,10 @@ export const AvatarDropdown = () => {
           <DropdownMenuSeparator className="my-2" />
 
           {/* Social Actions Section */}
-          <DropdownMenuItem onSelect={() => setMessagesSheetOpen(true)} className="h-11">
+          <DropdownMenuItem onSelect={() => {
+            console.log('📨 Messages button clicked');
+            setActiveSheet('messages');
+          }} className="h-11" aria-label="Open messages">
             <MessageSquare className="w-6 h-6 mr-3" />
             Messages
             {totalUnreadMessages > 0 && (
@@ -106,9 +108,9 @@ export const AvatarDropdown = () => {
           </DropdownMenuItem>
 
           <DropdownMenuItem onSelect={() => {
-            console.log('🔍 Friends button clicked');
-            setFriendsSheetOpen(true);
-          }} className="h-11">
+            console.log('👥 Friends button clicked');
+            setActiveSheet('friends');
+          }} className="h-11" aria-label="Open friends list">
             <Users className="w-6 h-6 mr-3" />
             Friends ({friendIds.length})
             {pendingIn.length > 0 && (
@@ -119,18 +121,27 @@ export const AvatarDropdown = () => {
             )}
           </DropdownMenuItem>
 
-          <DropdownMenuItem onSelect={() => setDiscoverSheetOpen(true)} className="h-11">
+          <DropdownMenuItem onSelect={() => {
+            console.log('🔍 Discover button clicked');
+            setActiveSheet('discover');
+          }} className="h-11" aria-label="Discover people">
             <UserPlus className="w-6 h-6 mr-3" />
             Discover People
           </DropdownMenuItem>
 
           {/* Personal Curation Section */}
-          <DropdownMenuItem onSelect={() => setFavoritesSheetOpen(true)} className="h-11">
+          <DropdownMenuItem onSelect={() => {
+            console.log('❤️ Favorites button clicked');
+            setActiveSheet('favorites');
+          }} className="h-11" aria-label="Open favorites">
             <Heart className="w-6 h-6 mr-3" />
             Favorites ({favorites.length})
           </DropdownMenuItem>
 
-          <DropdownMenuItem onSelect={() => setWatchlistSheetOpen(true)} className="h-11">
+          <DropdownMenuItem onSelect={() => {
+            console.log('👁️ Watchlist button clicked');
+            setActiveSheet('watchlist');
+          }} className="h-11" aria-label="Open watchlist">
             <Eye className="w-6 h-6 mr-3" />
             Watchlist ({upcomingPlans.length})
           </DropdownMenuItem>
@@ -157,18 +168,18 @@ export const AvatarDropdown = () => {
       </DropdownMenu>
 
       <FriendsSheet
-        open={friendsSheetOpen}
-        onOpenChange={setFriendsSheetOpen}
+        open={activeSheet === 'friends'}
+        onOpenChange={(open) => setActiveSheet(open ? 'friends' : null)}
         onAddFriendClick={() => {
-          setFriendsSheetOpen(false);
+          setActiveSheet(null);
           setAddFriendOpen(true);
         }}
       />
 
       <MessagesSheet
-        open={messagesSheetOpen}
-        onOpenChange={setMessagesSheetOpen}
-        onFriendsSheetOpen={() => setFriendsSheetOpen(true)}
+        open={activeSheet === 'messages'}
+        onOpenChange={(open) => setActiveSheet(open ? 'messages' : null)}
+        onFriendsSheetOpen={() => setActiveSheet('friends')}
       />
 
       <AddFriendModal
@@ -177,16 +188,16 @@ export const AvatarDropdown = () => {
       />
 
       <FavoritesSheet
-        open={favoritesSheetOpen}
-        onOpenChange={setFavoritesSheetOpen}
+        open={activeSheet === 'favorites'}
+        onOpenChange={(open) => setActiveSheet(open ? 'favorites' : null)}
       />
 
       <WatchlistSheet
-        open={watchlistSheetOpen}
-        onOpenChange={setWatchlistSheetOpen}
+        open={activeSheet === 'watchlist'}
+        onOpenChange={(open) => setActiveSheet(open ? 'watchlist' : null)}
       />
 
-      <Sheet open={discoverSheetOpen} onOpenChange={setDiscoverSheetOpen}>
+      <Sheet open={activeSheet === 'discover'} onOpenChange={(open) => setActiveSheet(open ? 'discover' : null)}>
         <DiscoverSheet />
       </Sheet>
 

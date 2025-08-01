@@ -15,7 +15,7 @@ export function useFriendDiscovery(query: string, enabled: boolean = true) {
     const existingConnections = new Set(friendRows.map(row => row.id))
     
     return userSearch.data.filter((searchUser: SearchedUser) => {
-      // Remove self
+      // Remove self (defensive filter in case RPC doesn't exclude current user)
       if (searchUser.id === user.id) return false
       
       // Remove existing friends/requests

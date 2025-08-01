@@ -1,21 +1,37 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Search, UserPlus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { UserSearchResults } from '@/components/UserSearchResults'
 import { useFriendDiscovery } from '@/hooks/useFriendDiscovery'
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends'
+import { useAuth } from '@/providers/AuthProvider'
 import { useToast } from '@/hooks/use-toast'
 
 export default function DiscoverSheet() {
   const [searchQuery, setSearchQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { user } = useAuth()
   const { data: searchResults, isLoading } = useFriendDiscovery(searchQuery)
   const { sendRequest, updating } = useUnifiedFriends()
   const { toast } = useToast()
 
+  // Auto-focus the search input when sheet opens
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      inputRef.current?.focus()
+    }, 100) // Small delay to ensure sheet is fully mounted
+    
+    return () => clearTimeout(timeout)
+  }, [])
+
   const handleAddFriend = async (profileId: string) => {
     try {
       await sendRequest(profileId)
+      toast({
+        title: 'Friend request sent!',
+        description: 'Your request has been sent successfully.',
+      })
     } catch (error) {
       toast({
         title: 'Error',
@@ -37,11 +53,11 @@ export default function DiscoverSheet() {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           placeholder="Search by name or username..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
-          autoFocus
         />
       </div>
 
