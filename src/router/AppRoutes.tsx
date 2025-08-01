@@ -33,6 +33,7 @@ import DailyRecapGate from '@/pages/DailyRecapGate';
 import RecapActionSheet from '@/pages/RecapActionSheet';
 import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
+import VenuePage from '@/pages/VenuePage';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -80,6 +81,7 @@ export const AppRoutes = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile-settings" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/venues/:id" element={<VenuePage />} />
       {/* Test/Debug Routes - only in development */}
       {process.env.NODE_ENV !== 'production' && (
         <Route path="/afterglow-test" element={<AfterglowTestPage />} />

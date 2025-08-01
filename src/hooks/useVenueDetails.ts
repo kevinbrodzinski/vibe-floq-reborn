@@ -22,7 +22,7 @@ export const useVenueDetails = (venueId: string | null) => {
       }
 
       const { data, error } = await supabase
-        .rpc("venue_details", { v_id: venueId })
+        .rpc("venue_details", { p_venue_id: venueId })
         .single();
 
       if (error) {

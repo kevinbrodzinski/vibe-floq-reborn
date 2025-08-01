@@ -9,7 +9,7 @@ export const usePrefetchVenue = () => {
       queryKey: ['venue-details', venueId],
       queryFn: async () => {
         const { data, error } = await supabase
-          .rpc('venue_details', { v_id: venueId })
+          .rpc('venue_details', { p_venue_id: venueId })
           .single();
         
         if (error) throw error;
