@@ -5,13 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+type ImageHeight = 'h-20' | 'h-24' | 'h-28' | 'h-32' | 'h-36' | 'h-40';
+
 interface BaseVenueCardProps {
   // Core venue data
   id: string;
   name: string;
   imageUrl?: string;
   category?: string;
-  rating?: number;
+  rating?: number | null;
   
   // Layout slots
   headerBadge?: React.ReactNode;
@@ -24,13 +26,13 @@ interface BaseVenueCardProps {
   
   // Styling
   className?: string;
-  imageHeight?: string;
+  imageHeight?: ImageHeight;
   
   // Interaction
   onClick?: () => void;
 }
 
-export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
+export const BaseVenueCard = React.forwardRef<HTMLDivElement, BaseVenueCardProps>(({
   id,
   name,
   imageUrl,
@@ -44,9 +46,9 @@ export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
   actionButtons,
   expandableContent,
   className = "",
-  imageHeight = "h-24 sm:h-32",
+  imageHeight = "h-24",
   onClick
-}) => {
+}, ref) => {
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star 
@@ -65,6 +67,7 @@ export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
       initial={{ opacity: 0, translateY: 10 }}
       animate={{ opacity: 1, translateY: 0 }}
       className={className}
+      ref={ref}
     >
       <Card className="overflow-hidden" onClick={onClick}>
         {/* Header Image with Overlays */}
@@ -72,7 +75,8 @@ export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
           <div className={cn("relative overflow-hidden", imageHeight)}>
             <img 
               src={imageUrl} 
-              alt={name}
+              alt={`Venue photo of ${name}`}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
             {headerBadge && (
@@ -92,19 +96,23 @@ export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base sm:text-lg truncate">{name}</CardTitle>
-              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground mt-1">
                 {category && <span className="truncate">{category}</span>}
-                {category && rating && <span className="hidden sm:inline">•</span>}
-                {rating && (
+                {category && typeof rating === 'number' && <span className="hidden sm:inline">•</span>}
+                {typeof rating === 'number' && (
                   <div className="flex items-center gap-1">
                     {renderStars(rating)}
-                    <span className="text-xs">({rating})</span>
+                    <span className="text-xs">({rating.toFixed(1)})</span>
                   </div>
                 )}
                 {metadataExtra}
               </div>
             </div>
-            {scoreIndicator}
+            {scoreIndicator && (
+              <div className="flex items-center gap-1 text-right flex-shrink-0">
+                {scoreIndicator}
+              </div>
+            )}
           </div>
         </CardHeader>
 
@@ -129,7 +137,9 @@ export const BaseVenueCard: React.FC<BaseVenueCardProps> = ({
       </Card>
     </motion.div>
   );
-};
+});
+
+BaseVenueCard.displayName = "BaseVenueCard";
 
 // Helper components for common patterns
 export const VenueStatGrid: React.FC<{

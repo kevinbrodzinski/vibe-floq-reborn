@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -154,7 +154,18 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
     />
   ) : null;
 
-  // Action buttons
+  // Action buttons with useCallback to prevent stale closures
+  const handleToggleFavorite = useCallback(() => {
+    if (!user) return;
+    toggleFavorite({
+      itemId: venue.id,
+      itemType: 'venue',
+      title: venue.name,
+      description: venue.category,
+      imageUrl: venue.imageUrl
+    });
+  }, [user, venue.id, venue.name, venue.category, venue.imageUrl, toggleFavorite]);
+
   const actionButtons = (
     <>
       <Button 
@@ -173,16 +184,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
           "flex-1 text-xs sm:text-sm h-8 sm:h-10",
           isFavorite(venue.id) && "bg-red-500 hover:bg-red-600 text-white"
         )}
-        onClick={() => {
-          if (!user) return;
-          toggleFavorite({
-            itemId: venue.id,
-            itemType: 'venue',
-            title: venue.name,
-            description: venue.category,
-            imageUrl: venue.imageUrl
-          });
-        }}
+        onClick={handleToggleFavorite}
         disabled={!user || isToggling}
       >
         <Heart className={cn(
@@ -279,6 +281,7 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
       distanceBadge={distanceBadge}
       metadataExtra={metadataExtra}
       scoreIndicator={scoreIndicator}
+      imageHeight="h-32"
       contentSections={[
         vibeMatchSection,
         statsSection,
