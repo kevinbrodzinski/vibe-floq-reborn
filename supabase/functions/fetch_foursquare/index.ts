@@ -57,11 +57,11 @@ serve(async (req) => {
     }
 
     /* ---- 1. server-stored FSQ key --------------------------------- */
-    const API_KEY = Deno.env.get("FOURSQUARE_ADMIN_API");
+    const API_KEY = Deno.env.get("FSQ_SERVICE_KEY");
     if (!API_KEY) {
-      console.error("[Foursquare] FOURSQUARE_ADMIN_API missing from environment");
+      console.error("[Foursquare] FSQ_SERVICE_KEY missing from environment");
       return new Response(
-        JSON.stringify({ error: "API key not configured. Please configure FOURSQUARE_ADMIN_API in edge function secrets." }), 
+        JSON.stringify({ error: "API key not configured. Please configure FSQ_SERVICE_KEY in edge function secrets." }), 
         { status: 500, headers: CORS }
       );
     }

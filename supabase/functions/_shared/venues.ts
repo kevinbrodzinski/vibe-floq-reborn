@@ -12,6 +12,16 @@ type RawPlace =
   | { provider: "google"; r: any }
   | { provider: "foursquare"; r: any };
 
+// Helper function to generate URL-safe slug from venue name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+    .replace(/-+/g, '-')      // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '');   // Remove leading/trailing hyphens
+}
+
 export function mapToVenue(p: RawPlace) {
   const baseVenue = {
     source: "api" as const,
@@ -28,6 +38,7 @@ export function mapToVenue(p: RawPlace) {
       provider: "google" as const,
       provider_id: r.place_id,
       name: r.name,
+      slug: generateSlug(r.name),
       lat: r.geometry.location.lat,
       lng: r.geometry.location.lng,
       address: r.vicinity ?? null,
@@ -47,6 +58,7 @@ export function mapToVenue(p: RawPlace) {
     provider: "foursquare" as const,
     provider_id: r.fsq_id,
     name: r.name,
+    slug: generateSlug(r.name),
     lat: r.geocodes.main.latitude,
     lng: r.geocodes.main.longitude,
     address: r.location.formatted_address ?? null,
