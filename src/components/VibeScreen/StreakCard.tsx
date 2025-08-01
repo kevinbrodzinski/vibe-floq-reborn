@@ -20,23 +20,23 @@ export const StreakCard: React.FC = () => {
 
   return (
     <motion.div
-      className="px-4 mb-6"
+      className="px-4 mb-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
       <Card className="bg-card/60 backdrop-blur-xl border-border/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Trophy className="w-4 h-4 text-yellow-500" />
             Progress & Insights
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {/* Streak Display */}
           {hasVisualStreak && (
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl border border-orange-400/30">
-              <div className="text-2xl">🔥</div>
+            <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-lg border border-orange-400/30">
+              <div className="text-lg">🔥</div>
               <div>
                 <div className="text-sm font-semibold text-orange-300">
                   {bothStreak}-day streak!
@@ -61,7 +61,7 @@ export const StreakCard: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <div className="text-lg mb-1">{achievement.icon}</div>
+                <div className="text-sm mb-1">{achievement.icon}</div>
                 <div className="text-xs font-medium">{achievement.name}</div>
               </motion.div>
             ))}
@@ -80,13 +80,13 @@ export const StreakCard: React.FC = () => {
           )}
 
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 gap-3 text-center">
+          <div className="grid grid-cols-2 gap-2 text-center">
             <div className="p-2 bg-muted/20 rounded-lg">
-              <div className="text-lg font-semibold text-blue-400">{energyStreak}</div>
+              <div className="text-base font-semibold text-blue-400">{energyStreak}</div>
               <div className="text-xs text-muted-foreground">Energy streak</div>
             </div>
             <div className="p-2 bg-muted/20 rounded-lg">
-              <div className="text-lg font-semibold text-green-400">{socialStreak}</div>
+              <div className="text-base font-semibold text-green-400">{socialStreak}</div>
               <div className="text-xs text-muted-foreground">Social streak</div>
             </div>
           </div>

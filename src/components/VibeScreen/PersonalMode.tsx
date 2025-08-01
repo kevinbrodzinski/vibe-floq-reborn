@@ -40,7 +40,7 @@ export const PersonalMode: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <ScrollArea className="h-screen">
       {/* Header Bar */}
-      <div className="flex justify-between items-center p-6 pt-16">
+      <div className="flex justify-between items-center p-4 pt-12">
         <Button
           variant="ghost"
           size="sm"
@@ -52,7 +52,7 @@ export const PersonalMode: React.FC = () => {
           {autoMode ? <Zap className="mr-2" /> : <ZapOff className="mr-2" />}
           {autoMode ? 'Auto Vibe On' : 'Auto Vibe Off'}
         </Button>
-        <h1 className="text-xl font-medium text-foreground glow-primary">vibe</h1>
+        <h1 className="text-lg font-medium text-foreground glow-primary">vibe</h1>
         <div className="flex items-center gap-2">
           <VisibilityButton />
         </div>
@@ -63,7 +63,7 @@ export const PersonalMode: React.FC = () => {
 
       {/* Enhanced Vibe Wheel with Dynamic Halo */}
       <motion.div 
-        className="px-6 mb-8 relative"
+        className="px-4 mb-6 relative"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.1 }}
@@ -90,7 +90,7 @@ export const PersonalMode: React.FC = () => {
       <TimelineCarousel onVibeSelect={handleVibeSelect} />
 
       {/* Dynamic Vibe Toggle */}
-      <div className="px-6 mb-6 flex justify-center">
+      <div className="px-4 mb-4 flex justify-center">
         <DynamicVibeToggle
           showMotionData={true}
           showDbData={true}
@@ -99,7 +99,7 @@ export const PersonalMode: React.FC = () => {
 
       {/* Feedback Buttons (when auto-detection suggests changes) */}
       {vibeDetection && (
-        <div className="px-6 mb-6">
+        <div className="px-4 mb-4">
           <FeedbackButtons
             suggestedVibe={vibeDetection.suggestedVibe}
             confidence={vibeDetection.confidence}
@@ -114,7 +114,7 @@ export const PersonalMode: React.FC = () => {
 
       {/* Learning Patterns (when auto mode is enabled) */}
       {autoMode && (
-        <div className="px-6 mb-6">
+        <div className="px-4 mb-4">
           <motion.div
             initial={{ y: 32, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

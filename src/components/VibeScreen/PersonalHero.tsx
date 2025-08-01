@@ -23,7 +23,7 @@ export const PersonalHero: React.FC = () => {
   
   return (
     <motion.div 
-      className="flex items-center gap-4 px-6 py-4 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl mx-4 mb-6"
+      className="flex items-center gap-3 px-4 py-3 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl mx-4 mb-4"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -31,14 +31,14 @@ export const PersonalHero: React.FC = () => {
       {/* Accuracy Ring */}
       <div className="relative">
         <motion.div 
-          className="w-12 h-12 rounded-full border-4 flex items-center justify-center"
+          className="w-10 h-10 rounded-full border-3 flex items-center justify-center"
           style={{
             borderColor: getVibeColor(vibe || 'chill'),
             scale: pulseScale,
           }}
         >
           <div 
-            className="w-4 h-4 rounded-full"
+            className="w-3 h-3 rounded-full"
             style={{ backgroundColor: getVibeColor(vibe || 'chill') }}
           />
         </motion.div>
@@ -54,7 +54,7 @@ export const PersonalHero: React.FC = () => {
       {/* Vibe Status */}
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="text-lg font-semibold capitalize text-foreground">
+          <h3 className="text-base font-semibold capitalize text-foreground">
             {vibe || 'chill'}
           </h3>
           {streakDays > 0 && (
@@ -64,7 +64,7 @@ export const PersonalHero: React.FC = () => {
             </div>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Learning accuracy {Math.round(accuracy * 100)}%
         </p>
       </div>
