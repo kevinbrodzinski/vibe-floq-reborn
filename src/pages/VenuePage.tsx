@@ -1,13 +1,15 @@
 import { useParams } from "react-router-dom";
 import { useVenueDetails } from "@/hooks/useVenueDetails";
 import { useVenueInteractions } from "@/hooks/useVenueInteractions";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, MapPin, Users, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export default function VenuePage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams() as { id?: string };
+  const queryClient = useQueryClient();
   
   // Validate the venue ID format
   if (!id || !id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
@@ -35,7 +37,13 @@ export default function VenuePage() {
   const { trackInteraction, isLoading: isTrackingInteraction } = useVenueInteractions();
 
   const handleFavorite = async () => {
-    if (!venue) return;
+    if (!venue || !id) return;
+    
+    // Optimistic update
+    queryClient.setQueryData(['venue-details', id], (old: any) => ({
+      ...old,
+      is_favorite: true
+    }));
     
     try {
       await trackInteraction({
@@ -44,21 +52,29 @@ export default function VenuePage() {
       });
       toast.success("Added to favorites!");
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(['venue-details', id], (old: any) => ({
+        ...old,
+        is_favorite: false
+      }));
       toast.error("Failed to favorite venue");
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <div className="text-center text-muted-foreground">Loading venue details...</div>
+        </div>
+      </main>
     );
   }
 
   if (error || !venue) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -73,43 +89,50 @@ export default function VenuePage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-2">{venue.name}</h1>
-                {venue.vibe && (
-                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    {venue.vibe}
-                  </div>
-                )}
-              </div>
-              <Button 
-                onClick={handleFavorite}
-                disabled={isTrackingInteraction}
-                size="lg"
-                className="ml-4"
-              >
-                <Heart className="h-4 w-4 mr-2" />
-                {isTrackingInteraction ? "Adding..." : "Favorite"}
-              </Button>
+    <main className="min-h-screen bg-background">
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold truncate">{venue.name}</h1>
+              {venue.vibe && (
+                <div className="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mt-1">
+                  {venue.vibe}
+                </div>
+              )}
             </div>
-            
-            {venue.description && (
-              <p className="text-muted-foreground text-lg">{venue.description}</p>
-            )}
+            <Button 
+              onClick={handleFavorite}
+              disabled={isTrackingInteraction}
+              size="sm"
+              className="ml-4"
+            >
+              <Heart className="h-4 w-4 mr-2" />
+              {isTrackingInteraction ? "Adding..." : "Favorite"}
+            </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto space-y-6">{/* Header */}
+          {/* Description */}
+          {venue.description && (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-muted-foreground text-lg">{venue.description}</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Stats Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Live Count</CardTitle>
@@ -159,7 +182,7 @@ export default function VenuePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground space-y-1">
                 <p>Latitude: {venue.lat}</p>
                 <p>Longitude: {venue.lng}</p>
               </div>
@@ -167,6 +190,6 @@ export default function VenuePage() {
           </Card>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
