@@ -8720,7 +8720,7 @@ export type Database = {
           provider_id: string
           radius_m: number | null
           rating: number | null
-          slug: string
+          slug: string | null
           source: string | null
           updated_at: string | null
           vibe: string | null
@@ -8748,7 +8748,7 @@ export type Database = {
           provider_id: string
           radius_m?: number | null
           rating?: number | null
-          slug: string
+          slug?: string | null
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
@@ -8776,7 +8776,7 @@ export type Database = {
           provider_id?: string
           radius_m?: number | null
           rating?: number | null
-          slug?: string
+          slug?: string | null
           source?: string | null
           updated_at?: string | null
           vibe?: string | null
@@ -13384,6 +13384,14 @@ export type Database = {
       trim_weather_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      unaccent: {
+        Args: { "": string }
+        Returns: string
+      }
+      unaccent_init: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       unlockrows: {
         Args: { "": string }
