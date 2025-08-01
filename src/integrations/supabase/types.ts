@@ -13547,15 +13547,18 @@ export type Database = {
         Returns: undefined
       }
       venue_details: {
-        Args: { v_id: string }
+        Args: { p_venue_id: string }
         Returns: {
           id: string
           name: string
           vibe: string
           description: string
           live_count: number
+          vibe_score: number
+          popularity: number
           lat: number
           lng: number
+          geom: unknown
         }[]
       }
       venues_near_me: {
