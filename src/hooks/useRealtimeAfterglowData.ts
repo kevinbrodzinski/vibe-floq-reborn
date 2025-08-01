@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 type DailyAfterglow = {
@@ -69,6 +70,32 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
       return data ?? null;
     }
   });
+
+  // 🔄 Real-time subscription for afterglow changes
+  useEffect(() => {
+    if (!dateISO) return;
+
+    const channel = supabase
+      .channel(`afterglow-realtime-${dateISO}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_afterglow',
+          filter: `date=eq.${dateISO}`
+        },
+        (payload) => {
+          console.log('🔥 Afterglow real-time update:', payload);
+          qc.invalidateQueries({ queryKey: ['afterglow', dateISO] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [dateISO, qc]);
 
   // 2️⃣ – trigger generation ONLY once when the user clicks a button
   const generate = async () => {
