@@ -8,7 +8,8 @@ export async function sendFriendRequest(targetUserId: string) {
   if (authErr || !user) throw authErr ?? new Error("Not authenticated");
   if (targetUserId === user.id) throw new Error("Cannot add yourself");
 
-  const { data, error } = await supabase.from("friend_requests")
+  const { error } = await supabase
+    .from("friend_requests")
     .upsert(
       {
         profile_id:       user.id,        // requester
@@ -16,12 +17,9 @@ export async function sendFriendRequest(targetUserId: string) {
         status:           "pending",
       },
       { onConflict: "profile_id,other_profile_id", ignoreDuplicates: true }
-    )
-    .select()
-    .single();
+    );
 
-  if (error && error.code !== "23505") throw error; // ignore duplicate error if it bubbles
-  return data;
+  if (error && error.code !== "23505") throw error;   // ignore duplicate-row error
 }
 
 /* -------------------------------------------------- */
