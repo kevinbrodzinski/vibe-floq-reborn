@@ -35,6 +35,7 @@ import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
 import VenuePage from '@/pages/VenuePage';
 import VenueTestPage from '@/pages/VenueTestPage';
+import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 
 export const AppRoutes = () => {
   const exploreBeta = useFeatureFlag('EXPLORE');
@@ -67,6 +68,11 @@ export const AppRoutes = () => {
         </Suspense>
       } />
       <Route path="/afterglow/:afterglowId/insights" element={<AfterglowInsightsPage />} />
+      <Route path="/phase34-demo" element={
+        <Suspense fallback={<FullScreenSpinner />}>
+          <Phase34DemoRoutes />
+        </Suspense>
+      } />
       <Route path="/archive" element={<Archive />} />
       <Route path="/plans" element={<PlansHub />} />
       <Route path="/plans/:planId" element={<PlanDetailsView />} />
