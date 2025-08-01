@@ -63,30 +63,30 @@ export const VibeFloqCard: React.FC<VibeFloqCardProps> = ({ floq }) => {
       transition={{ duration: 0.2 }}
     >
       <Card className="group relative overflow-hidden hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
-        <CardContent className="p-5">
+        <CardContent className="p-3 sm:p-5">
           {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex items-start justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <div 
-                className="p-2 rounded-xl flex items-center justify-center"
+                className="p-1.5 sm:p-2 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ 
                   backgroundColor: `${vibeColor}20`,
                   border: `1px solid ${vibeColor}40`
                 }}
               >
-                <VibeIcon vibe={floq.vibe} size={20} />
+                <VibeIcon vibe={floq.vibe} size={16} />
               </div>
               
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-base truncate">{floq.title}</h3>
+                <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                  <h3 className="font-semibold text-sm sm:text-base truncate">{floq.title}</h3>
                   {floq.isNew && (
-                    <Badge variant="secondary" className="text-xs font-medium">
+                    <Badge variant="secondary" className="text-xs font-medium px-1.5 py-0.5">
                       NEW
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                   {floq.description}
                 </p>
               </div>
@@ -94,7 +94,7 @@ export const VibeFloqCard: React.FC<VibeFloqCardProps> = ({ floq }) => {
             
             {/* Vibe pill */}
             <div 
-              className="px-2 py-1 rounded-full text-xs font-medium uppercase tracking-wide flex items-center gap-1"
+              className="px-1.5 py-1 rounded-full text-xs font-medium uppercase tracking-wide flex items-center gap-1 flex-shrink-0"
               style={{
                 backgroundColor: `${vibeColor}15`,
                 color: vibeColor,
@@ -106,48 +106,48 @@ export const VibeFloqCard: React.FC<VibeFloqCardProps> = ({ floq }) => {
           </div>
 
           {/* Creator info */}
-          <div className="flex items-center gap-2 mb-4">
-            <Avatar className="w-6 h-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Avatar className="w-5 h-5 sm:w-6 sm:h-6">
               <AvatarImage src={`https://i.pravatar.cc/32?u=${floq.creator}`} />
               <AvatarFallback className="text-xs">
                 {floq.creator[0].toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs sm:text-sm text-muted-foreground truncate">
               hosted by {floq.creator}
             </span>
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-lg">
-              <Users size={14} className="text-muted-foreground" />
-              <span className="text-sm font-medium">
+          <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-muted/50 rounded-lg">
+              <Users size={12} className="text-muted-foreground" />
+              <span className="text-xs sm:text-sm font-medium">
                 {floq.participants}/{floq.maxParticipants}
               </span>
             </div>
             
-            <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-lg">
-              <MapPin size={14} className="text-muted-foreground" />
-              <span className="text-sm font-medium">{floq.distance}</span>
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-muted/50 rounded-lg">
+              <MapPin size={12} className="text-muted-foreground" />
+              <span className="text-xs sm:text-sm font-medium">{floq.distance}</span>
             </div>
             
-            <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-lg">
-              <Clock size={14} className="text-muted-foreground" />
-              <span className="text-sm font-medium">{floq.timeLeft}</span>
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-muted/50 rounded-lg">
+              <Clock size={12} className="text-muted-foreground" />
+              <span className="text-xs sm:text-sm font-medium">{floq.timeLeft}</span>
             </div>
 
             {floq.isLive && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 rounded-lg">
-                <Circle size={8} className="text-emerald-500 fill-current" />
-                <span className="text-sm font-medium text-emerald-500">Live</span>
+              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-emerald-500/10 rounded-lg">
+                <Circle size={6} className="text-emerald-500 fill-current" />
+                <span className="text-xs sm:text-sm font-medium text-emerald-500">Live</span>
               </div>
             )}
             
             {floq.boostCount > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-lg">
-                <Zap size={14} className="text-orange-500" />
-                <span className="text-sm font-medium text-orange-500">
+              <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-orange-500/10 rounded-lg">
+                <Zap size={12} className="text-orange-500" />
+                <span className="text-xs sm:text-sm font-medium text-orange-500">
                   {floq.boostCount}
                 </span>
               </div>
@@ -156,18 +156,18 @@ export const VibeFloqCard: React.FC<VibeFloqCardProps> = ({ floq }) => {
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1">
-              <Eye size={16} className="mr-2" />
+            <Button variant="outline" size="sm" className="flex-1 h-8 sm:h-9 text-xs sm:text-sm">
+              <Eye size={14} className="mr-1 sm:mr-2" />
               View
             </Button>
             
             <Button 
               size="sm" 
-              className="flex-1"
+              className="flex-1 h-8 sm:h-9 text-xs sm:text-sm"
               disabled={isFull}
               variant={isFull ? "secondary" : "default"}
             >
-              <UserPlus size={16} className="mr-2" />
+              <UserPlus size={14} className="mr-1 sm:mr-2" />
               {isFull ? 'Full' : 'Join'}
             </Button>
           </div>

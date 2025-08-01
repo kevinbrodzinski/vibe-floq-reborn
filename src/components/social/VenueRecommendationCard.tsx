@@ -77,43 +77,43 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
     >
       <Card className="overflow-hidden">
         {/* Header with image and basic info */}
-        <div className="relative h-32 overflow-hidden">
+        <div className="relative h-24 sm:h-32 overflow-hidden">
           <img 
             src={venue.imageUrl} 
             alt={venue.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute top-2 right-2">
-            <Badge className={cn("text-xs", getAtmosphereColor(venue.realTime.atmosphereLevel))}>
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+            <Badge className={cn("text-xs px-2 py-1", getAtmosphereColor(venue.realTime.atmosphereLevel))}>
               {venue.realTime.atmosphereLevel} energy
             </Badge>
           </div>
-          <div className="absolute bottom-2 left-2">
-            <Badge variant="outline" className="bg-white/90 text-black">
+          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2">
+            <Badge variant="outline" className="bg-white/90 text-black text-xs px-2 py-1">
               {venue.distance} • {venue.travelTime}
             </Badge>
           </div>
         </div>
 
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-lg">{venue.name}</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <span>{venue.category}</span>
-                <span>•</span>
+        <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base sm:text-lg truncate">{venue.name}</CardTitle>
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground mt-1 flex-wrap">
+                <span className="truncate">{venue.category}</span>
+                <span className="hidden sm:inline">•</span>
                 <div className="flex items-center gap-1">
                   {renderStars(venue.rating)}
-                  <span>({venue.rating})</span>
+                  <span className="text-xs">({venue.rating})</span>
                 </div>
-                <span>•</span>
-                <span>{venue.priceLevel}</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="text-xs">{venue.priceLevel}</span>
               </div>
             </div>
-            <div className="text-right">
-              <div className="flex items-center gap-1 text-green-600 font-medium">
-                <TrendingUp className="w-4 h-4" />
-                {Math.round(venue.vibeMatch.score * 100)}% match
+            <div className="text-right flex-shrink-0">
+              <div className="flex items-center gap-1 text-green-600 font-medium text-xs sm:text-sm">
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                {Math.round(venue.vibeMatch.score * 100)}%
               </div>
               <div className="text-xs text-muted-foreground">
                 {Math.round(venue.confidence * 100)}% confident
@@ -122,25 +122,25 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 px-3 sm:px-6 pb-3 sm:pb-6">
           {/* Vibe matching explanation */}
-          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-3">
-            <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-2 sm:p-3">
+            <h4 className="text-xs sm:text-sm font-medium mb-1 flex items-center gap-1">
               <Zap className="w-3 h-3" />
               Why This Matches Your Vibe
             </h4>
-            <p className="text-sm text-muted-foreground mb-2">{venue.vibeMatch.explanation}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-2 leading-relaxed">{venue.vibeMatch.explanation}</p>
             <div className="flex flex-wrap gap-1">
               <span className="text-xs text-muted-foreground">Your vibes:</span>
               {venue.vibeMatch.userVibes.map((vibe, idx) => (
-                <Badge key={idx} variant="outline" className={cn("text-xs", getVibeColor(vibe))}>
+                <Badge key={idx} variant="outline" className={cn("text-xs px-1 py-0", getVibeColor(vibe))}>
                   {vibe}
                 </Badge>
               ))}
-              <span className="text-xs text-muted-foreground mx-2">+</span>
+              <span className="text-xs text-muted-foreground mx-1">+</span>
               <span className="text-xs text-muted-foreground">Venue vibes:</span>
               {venue.vibeMatch.venueVibes.map((vibe, idx) => (
-                <Badge key={idx} variant="outline" className={cn("text-xs", getVibeColor(vibe))}>
+                <Badge key={idx} variant="outline" className={cn("text-xs px-1 py-0", getVibeColor(vibe))}>
                   {vibe}
                 </Badge>
               ))}
@@ -148,18 +148,18 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
           </div>
 
           {/* Quick stats row */}
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
             <div>
-              <div className="text-lg font-semibold text-primary">{venue.crowdIntelligence.currentCapacity}%</div>
-              <div className="text-xs text-muted-foreground">Current capacity</div>
+              <div className="text-sm sm:text-lg font-semibold text-primary">{venue.crowdIntelligence.currentCapacity}%</div>
+              <div className="text-xs text-muted-foreground leading-tight">Current capacity</div>
             </div>
             <div>
-              <div className="text-lg font-semibold text-green-600">{venue.socialProof.friendVisits}</div>
-              <div className="text-xs text-muted-foreground">Friends visited</div>
+              <div className="text-sm sm:text-lg font-semibold text-green-600">{venue.socialProof.friendVisits}</div>
+              <div className="text-xs text-muted-foreground leading-tight">Friends visited</div>
             </div>
             <div>
-              <div className="text-lg font-semibold text-blue-600">{venue.socialProof.networkRating}</div>
-              <div className="text-xs text-muted-foreground">Friend rating</div>
+              <div className="text-sm sm:text-lg font-semibold text-blue-600">{venue.socialProof.networkRating}</div>
+              <div className="text-xs text-muted-foreground leading-tight">Friend rating</div>
             </div>
           </div>
 
@@ -210,19 +210,21 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
           <div className="flex gap-2">
             <Button 
               variant="secondary" 
-              className="flex-1"
+              size="sm"
+              className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
               onClick={() => onVisit(venue.id)}
             >
-              <MapPin className="w-4 h-4 mr-2" />
-              Get Directions
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Directions
             </Button>
             <Button 
               variant="outline" 
-              className="flex-1"
+              size="sm"
+              className="flex-1 text-xs sm:text-sm h-8 sm:h-10"
               onClick={() => onSave(venue.id)}
             >
-              <Heart className="w-4 h-4 mr-2" />
-              Save for Later
+              <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              Save
             </Button>
           </div>
 

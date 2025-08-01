@@ -113,7 +113,7 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
 
       {/* Floqs List */}
       <ScrollArea className="flex-1">
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4 pb-6">
           {filteredFloqs.map((floq) => (
             <VibeFloqCard key={floq.id} floq={floq} />
           ))}
@@ -138,7 +138,7 @@ export const NearbyFloqsModal: React.FC<NearbyFloqsModalProps> = ({
 
       {/* Mobile Sheet */}
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="md:hidden flex flex-col h-[85vh]">
+        <SheetContent side="bottom" className="md:hidden flex flex-col h-[85vh] px-3 sm:px-6">
           <ModalContent />
         </SheetContent>
       </Sheet>

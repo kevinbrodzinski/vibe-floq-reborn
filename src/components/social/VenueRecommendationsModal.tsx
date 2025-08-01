@@ -35,8 +35,8 @@ export const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>
           </SheetDescription>
         </SheetHeader>
         
-        <ScrollArea className="flex-1 -mx-6">
-          <div className="px-6 space-y-6 pb-6">
+        <ScrollArea className="flex-1 -mx-3 sm:-mx-6">
+          <div className="px-3 sm:px-6 space-y-4 sm:space-y-6 pb-6">
             {data.map((venue) => (
               <VenueRecommendationCard
                 key={venue.id}
