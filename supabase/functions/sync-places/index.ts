@@ -3,6 +3,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 import { getUserId } from '../_shared/getUserId.ts';
+import { mapToVenue, upsertVenues } from '../_shared/venues.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -262,27 +263,10 @@ serve(async (req) => {
       );
     }
 
+    // Map venues using shared infrastructure
     const rows = results.map((p) => {
       try {
-        return {
-          provider: 'google',
-          provider_id: p.place_id,
-          name: p.name || 'Unknown Place',
-          address: p.vicinity || null,
-          categories: Array.isArray(p.types) ? p.types : [],
-          rating: p.rating ?? null,
-          lat: p.geometry?.location?.lat || 0,
-          lng: p.geometry?.location?.lng || 0,
-          photo_url: p.photos?.[0]?.photo_reference
-            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${p.photos[0].photo_reference}&key=${PLACES_KEY}`
-            : null,
-          source: 'api',
-          radius_m: 100,
-          popularity: 0,
-          vibe_score: 50.0,
-          live_count: 0,
-          price_tier: p.price_level ? '$'.repeat(p.price_level) : '$',
-        };
+        return mapToVenue({ provider: "google", r: p });
       } catch (mapError) {
         console.error(`[Sync Places] Failed to map place:`, p, mapError);
         return null;
@@ -303,20 +287,16 @@ serve(async (req) => {
       );
     }
 
-    const { error } = await supabase
-      .from('venues')
-      .upsert(rows, {
-        onConflict: 'provider,provider_id',
-        updateColumns: ['name','address','categories','rating','photo_url','updated_at'],
-      });
-
-    if (error) {
+    // Use shared upsert function
+    try {
+      await upsertVenues(rows);
+    } catch (error) {
       console.error('[Sync Places] Database upsert error:', error);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Database insertion failed',
-          details: error.message
+          details: error instanceof Error ? error.message : String(error)
         }), 
         { status: 500, headers: corsHeaders }
       );
