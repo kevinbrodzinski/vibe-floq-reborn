@@ -1,61 +1,36 @@
-import React from 'react';
-import { ScrollView } from 'react-native';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { FriendAlignmentList } from '@/components/VibeScreen/FriendAlignmentList';
+import { MiniDensityMapCard } from '@/components/VibeScreen/MiniDensityMapCard';
+import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
+import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 
 /**
- * SocialMode - Placeholder for social features
- * Will be populated in later phases with friend alignment, mini map, etc.
+ * SocialMode - Real social features with animated components
+ * Friend alignment, mini map preview, and suggested actions
  */
 export const SocialMode: React.FC = () => {
+  const [showDensityMap, setShowDensityMap] = useState(false);
+
+  const handleMapPress = () => {
+    setShowDensityMap(true);
+  };
+
   return (
-    <ScrollView style={{ paddingHorizontal: 16, paddingTop: 16 }} showsVerticalScrollIndicator={false}>
-      {/* Friend Alignment Placeholder */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Friend Vibe Matches</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            Coming soon: See friends with matching vibes
-          </p>
-          <Button variant="outline" disabled>
-            Find Matches
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Mini Density Map Placeholder */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Vibe Clusters Nearby</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="aspect-[16/9] bg-muted rounded-lg flex items-center justify-center mb-3">
-            <p className="text-sm text-muted-foreground">
-              Map preview coming soon
-            </p>
-          </div>
-          <Button variant="outline" disabled>
-            Explore Clusters
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Suggested Actions Placeholder */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Suggested Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            Coming soon: Personalized suggestions based on your vibe
-          </p>
-          <Button variant="outline" disabled>
-            Get Suggestions
-          </Button>
-        </CardContent>
-      </Card>
-    </ScrollView>
+    <div className="flex-1 overflow-y-auto">
+      <div className="pt-4 pb-8">
+        <FriendAlignmentList />
+        <MiniDensityMapCard
+          className="mt-4"
+          onPress={handleMapPress}
+        />
+        <SuggestedAlignmentActions className="mt-4" />
+      </div>
+      
+      {/* Existing VibeDensityModal */}
+      <VibeDensityModal 
+        open={showDensityMap}
+        onOpenChange={setShowDensityMap}
+      />
+    </div>
   );
 };
