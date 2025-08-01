@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
+import { useQueryClient } from '@tanstack/react-query';
+import throttle from 'lodash.throttle';
 
 interface EventNotification {
   id: string;
@@ -41,7 +43,21 @@ const SUB_KINDS = [
 
 export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [unseen, setUnseen] = useState<EventNotification[]>([]);
+
+  // Throttled function to invalidate notification counts
+  const throttledInvalidateNotifications = React.useMemo(
+    () => throttle(() => {
+      if (user?.id) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['notification-count', user.id],
+          exact: true 
+        });
+      }
+    }, 500),
+    [queryClient, user?.id]
+  );
 
   // Load initial unseen notifications
   useEffect(() => {
@@ -89,6 +105,7 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
           // Double-check user_id for security
           if (notification.profile_id === user.id && SUB_KINDS.includes(notification.kind as any)) {
             setUnseen(prev => [notification, ...prev]);
+            throttledInvalidateNotifications();
           }
         }
       )
@@ -105,12 +122,14 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
           // Double-check user_id for security
           if (notification.profile_id === user.id && notification.seen_at) {
             setUnseen(prev => prev.filter(n => n.id !== notification.id));
+            throttledInvalidateNotifications();
           }
         }
       )
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [user]);
