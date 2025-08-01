@@ -17,14 +17,31 @@ serve(async (req) => {
     return new Response("POST only", { status: 405, headers: CORS });
 
   try {
+    console.log(`[Google Places] Starting request for location: ${JSON.stringify({ lat: "lat" in (await req.clone().json()) ? (await req.clone().json()).lat : "unknown", lng: "lng" in (await req.clone().json()) ? (await req.clone().json()).lng : "unknown" })}`);
+    
     const { profile_id, lat, lng } = await req.json() as {
       profile_id?: string;
       lat?: number;
       lng?: number;
     };
+    
+    // Enhanced input validation
     if (!profile_id || lat == null || lng == null) {
+      console.error(`[Google Places] Invalid input: profile_id=${profile_id}, lat=${lat}, lng=${lng}`);
       return new Response(
-        JSON.stringify({ error: "profile_id, lat & lng required" }),
+        JSON.stringify({ 
+          error: "profile_id, lat & lng required",
+          details: { profile_id: !!profile_id, lat: lat != null, lng: lng != null }
+        }),
+        { status: 400, headers: CORS },
+      );
+    }
+
+    // Validate coordinates range
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.error(`[Google Places] Invalid coordinates: lat=${lat}, lng=${lng}`);
+      return new Response(
+        JSON.stringify({ error: "Invalid coordinates range" }),
         { status: 400, headers: CORS },
       );
     }
@@ -32,8 +49,11 @@ serve(async (req) => {
     /* ---- 1. server-stored API key --------------------------------- */
     const API_KEY = Deno.env.get("GOOGLE_PLACES_KEY");
     if (!API_KEY) {
-      console.error("GOOGLE_PLACES_KEY missing");
-      return new Response("server mis-config", { status: 500, headers: CORS });
+      console.error("[Google Places] GOOGLE_PLACES_KEY missing from environment");
+      return new Response(
+        JSON.stringify({ error: "API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets." }), 
+        { status: 500, headers: CORS }
+      );
     }
 
     /* ---- 2. call Google Places NearbySearch ----------------------- */
@@ -42,30 +62,90 @@ serve(async (req) => {
     );
     url.searchParams.set("key", API_KEY);
     url.searchParams.set("location", `${lat},${lng}`);
-    url.searchParams.set("radius", "150");            // metres
+    url.searchParams.set("radius", "1500");            // Increased radius
     url.searchParams.set("type", "point_of_interest");
 
-    const gp = await fetch(url).then((r) => r.json());
+    console.log(`[Google Places] Calling API: ${url.toString().replace(API_KEY, '[REDACTED]')}`);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`[Google Places] HTTP error: ${response.status} ${response.statusText}`);
+      return new Response(
+        JSON.stringify({ error: `Google Places API HTTP error: ${response.status}` }),
+        { status: 502, headers: CORS }
+      );
+    }
+
+    const gp = await response.json();
+    console.log(`[Google Places] API Response status: ${gp.status}, results count: ${gp.results?.length || 0}`);
+    
+    if (gp.status === "REQUEST_DENIED") {
+      console.error(`[Google Places] Request denied: ${gp.error_message}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Google Places API access denied. Please check your API key permissions.",
+          details: gp.error_message,
+          help: "Ensure your Google Cloud project has Places API enabled and the API key has proper restrictions."
+        }),
+        { status: 403, headers: CORS }
+      );
+    }
+    
     if (gp.status !== "OK" && gp.status !== "ZERO_RESULTS") {
-      console.error("Google error", gp);
-      return new Response(JSON.stringify({ error: gp.error_message }), {
-        status: 502,
-        headers: CORS,
-      });
+      console.error(`[Google Places] API error: ${gp.status} - ${gp.error_message}`);
+      return new Response(
+        JSON.stringify({ 
+          error: `Google Places API error: ${gp.status}`,
+          details: gp.error_message 
+        }),
+        { status: 502, headers: CORS }
+      );
+    }
+
+    if (gp.status === "ZERO_RESULTS") {
+      console.log(`[Google Places] No results found for location ${lat},${lng}`);
+      return new Response(
+        JSON.stringify({ ok: true, count: 0, message: "No places found in this area" }),
+        { headers: CORS }
+      );
     }
 
     /* ---- 3. transform + upsert venues ----------------------------- */
-    const mapped = gp.results.map((r: any) => mapToVenue({ provider: "google", r }));
-    await upsertVenues(mapped);
+    console.log(`[Google Places] Transforming ${gp.results.length} results`);
+    const mapped = gp.results.map((r: any) => {
+      try {
+        return mapToVenue({ provider: "google", r });
+      } catch (mapError) {
+        console.error(`[Google Places] Failed to map venue:`, r, mapError);
+        return null;
+      }
+    }).filter(Boolean);
+
+    console.log(`[Google Places] Successfully mapped ${mapped.length} venues`);
+    
+    if (mapped.length > 0) {
+      await upsertVenues(mapped);
+      console.log(`[Google Places] Successfully upserted ${mapped.length} venues`);
+    }
 
     return new Response(
-      JSON.stringify({ ok: true, count: gp.results?.length ?? 0 }),
+      JSON.stringify({ 
+        ok: true, 
+        count: mapped.length,
+        source: "google_places",
+        location: { lat, lng }
+      }),
       { headers: CORS },
     );
   } catch (e) {
-    console.error(e);
+    console.error("[Google Places] Unexpected error:", e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
     return new Response(
-      JSON.stringify({ error: (e as Error).message }),
+      JSON.stringify({ 
+        error: "Internal server error",
+        details: errorMessage,
+        source: "google_places"
+      }),
       { status: 500, headers: CORS },
     );
   }

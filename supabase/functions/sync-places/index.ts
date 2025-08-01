@@ -23,12 +23,30 @@ serve(async (req) => {
   if (req.method !== 'POST')    return new Response('POST only', { status: 405, headers: corsHeaders });
 
   try {
+    console.log(`[Sync Places] Starting sync request`);
+    
     const { lat, lng, keyword } = await req.json();
     if (lat === undefined || lng === undefined) {
-      return new Response(JSON.stringify({ error: 'lat and lng required' }), { status: 400, headers: corsHeaders });
+      console.error(`[Sync Places] Missing coordinates: lat=${lat}, lng=${lng}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'lat and lng required',
+          details: { lat: lat !== undefined, lng: lng !== undefined }
+        }), 
+        { status: 400, headers: corsHeaders }
+      );
     }
 
-    console.log(`Fetching places near ${lat},${lng} with radius ${RADIUS_M}m`);
+    // Validate coordinates range
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      console.error(`[Sync Places] Invalid coordinates: lat=${lat}, lng=${lng}`);
+      return new Response(
+        JSON.stringify({ error: "Invalid coordinates range" }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    console.log(`[Sync Places] Fetching places near ${lat},${lng} with radius ${RADIUS_M}m, keyword: ${keyword || 'none'}`);
 
     /* ---- dedupe guard -------------------------------------------------- */
     const { data: recent } = await supabase
@@ -41,15 +59,42 @@ serve(async (req) => {
       .maybeSingle();
 
     if (recent) {
-      console.log('Recently synced, skipping API call');
-      return new Response(JSON.stringify({ skipped: 'recently synced' }), { headers: corsHeaders });
+      console.log('[Sync Places] Recently synced, skipping API call');
+      return new Response(
+        JSON.stringify({ 
+          skipped: 'recently synced', 
+          lastSync: recent.ts,
+          cooldownMinutes: 15
+        }), 
+        { headers: corsHeaders }
+      );
+    }
+
+    // Check API key availability
+    if (!PLACES_KEY) {
+      console.error('[Sync Places] GOOGLE_PLACES_KEY missing from environment');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Google Places API key not configured',
+          details: 'Please configure GOOGLE_PLACES_KEY in edge function secrets'
+        }),
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     /* ---- Google pagination loop --------------------------------------- */
     const results: any[] = [];
     let pageToken: string | undefined;
+    let pageCount = 0;
+    const maxPages = 3; // Prevent infinite loops
 
     do {
+      pageCount++;
+      if (pageCount > maxPages) {
+        console.warn(`[Sync Places] Reached maximum page limit (${maxPages}), stopping pagination`);
+        break;
+      }
+
       const u = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
       u.searchParams.set('location', `${lat},${lng}`);
       u.searchParams.set('radius',   String(RADIUS_M));
@@ -57,43 +102,103 @@ serve(async (req) => {
       if (keyword)  u.searchParams.set('keyword', encodeURIComponent(keyword));
       if (pageToken) u.searchParams.set('pagetoken', pageToken);
 
+      console.log(`[Sync Places] Requesting page ${pageCount}: ${u.toString().replace(PLACES_KEY, '[REDACTED]')}`);
+
       const resp = await fetch(u);
-      const json = await resp.json();
       if (!resp.ok) {
-        console.error('Google Places API error:', json);
-        throw new Error(json.error_message || 'Places API error');
+        console.error(`[Sync Places] HTTP error: ${resp.status} ${resp.statusText}`);
+        throw new Error(`Google Places API HTTP error: ${resp.status}`);
       }
 
-      console.log(`Page ${pageToken ? 'continuation' : 'initial'}: found ${json.results?.length || 0} places`);
-      results.push(...(json.results || []));
+      const json = await resp.json();
+      
+      if (json.status === 'REQUEST_DENIED') {
+        console.error(`[Sync Places] Request denied: ${json.error_message}`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Google Places API access denied',
+            details: json.error_message,
+            help: 'Check your API key permissions and ensure Places API is enabled'
+          }),
+          { status: 403, headers: corsHeaders }
+        );
+      }
+      
+      if (json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
+        console.error(`[Sync Places] API error: ${json.status} - ${json.error_message}`);
+        throw new Error(`Google Places API error: ${json.status} - ${json.error_message}`);
+      }
+
+      console.log(`[Sync Places] Page ${pageCount}: status=${json.status}, found ${json.results?.length || 0} places`);
+      
+      if (json.results && json.results.length > 0) {
+        results.push(...json.results);
+      }
+      
       pageToken = json.next_page_token;
       if (pageToken) {
-        console.log('Waiting for next page token...');
+        console.log('[Sync Places] Next page token received, waiting for token activation...');
         await new Promise(r => setTimeout(r, 2_000)); // token warm-up
       }
     } while (pageToken);
 
-    console.log(`Total places found: ${results.length}`);
+    console.log(`[Sync Places] Total places found across all pages: ${results.length}`);
 
-    const rows = results.map((p) => ({
-      provider: 'google',
-      provider_id: p.place_id,
-      name: p.name,
-      address: p.vicinity,
-      categories: p.types,
-      rating: p.rating ?? null,
-      lat: p.geometry.location.lat,
-      lng: p.geometry.location.lng,
-      photo_url: p.photos?.[0]?.photo_reference
-        ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${p.photos[0].photo_reference}&key=${PLACES_KEY}`
-        : null,
-      source: 'api',
-      radius_m: 100,
-      popularity: 0,
-      vibe_score: 50.0,
-      live_count: 0,
-      price_tier: '$',
-    }));
+    if (results.length === 0) {
+      console.log(`[Sync Places] No places found for location ${lat},${lng}`);
+      // Still log the sync attempt to prevent repeated calls
+      await supabase.from('sync_log').insert({ kind: 'places', lat, lng });
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          upserted: 0, 
+          message: 'No places found in this area',
+          location: { lat, lng }
+        }), 
+        { headers: corsHeaders }
+      );
+    }
+
+    const rows = results.map((p) => {
+      try {
+        return {
+          provider: 'google',
+          provider_id: p.place_id,
+          name: p.name || 'Unknown Place',
+          address: p.vicinity || null,
+          categories: Array.isArray(p.types) ? p.types : [],
+          rating: p.rating ?? null,
+          lat: p.geometry?.location?.lat || 0,
+          lng: p.geometry?.location?.lng || 0,
+          photo_url: p.photos?.[0]?.photo_reference
+            ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${p.photos[0].photo_reference}&key=${PLACES_KEY}`
+            : null,
+          source: 'api',
+          radius_m: 100,
+          popularity: 0,
+          vibe_score: 50.0,
+          live_count: 0,
+          price_tier: p.price_level ? '$'.repeat(p.price_level) : '$',
+        };
+      } catch (mapError) {
+        console.error(`[Sync Places] Failed to map place:`, p, mapError);
+        return null;
+      }
+    }).filter(Boolean);
+
+    console.log(`[Sync Places] Successfully mapped ${rows.length} venues for database insertion`);
+
+    if (rows.length === 0) {
+      console.warn('[Sync Places] No venues could be mapped successfully');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to map any venues',
+          details: 'All venue mapping attempts failed'
+        }), 
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
     const { error } = await supabase
       .from('venues')
@@ -103,18 +208,51 @@ serve(async (req) => {
       });
 
     if (error) {
-      console.error('Database upsert error:', error);
-      throw error;
+      console.error('[Sync Places] Database upsert error:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Database insertion failed',
+          details: error.message
+        }), 
+        { status: 500, headers: corsHeaders }
+      );
     }
 
     // log success
-    await supabase.from('sync_log').insert({ kind: 'places', lat, lng });
+    const { error: logError } = await supabase.from('sync_log').insert({ 
+      kind: 'places', 
+      lat, 
+      lng 
+    });
     
-    console.log(`Successfully upserted ${rows.length} venues`);
+    if (logError) {
+      console.warn('[Sync Places] Failed to log sync attempt:', logError);
+      // Don't fail the request for logging issues
+    }
+    
+    console.log(`[Sync Places] Successfully upserted ${rows.length} venues`);
 
-    return new Response(JSON.stringify({ success: true, upserted: rows.length }), { headers: corsHeaders });
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        upserted: rows.length,
+        location: { lat, lng },
+        keyword: keyword || null
+      }), 
+      { headers: corsHeaders }
+    );
   } catch (err) {
-    console.error('sync-places error', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    console.error('[Sync Places] Unexpected error:', err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: 'Internal server error',
+        details: errorMessage,
+        source: 'sync-places'
+      }), 
+      { status: 500, headers: corsHeaders }
+    );
   }
 });
