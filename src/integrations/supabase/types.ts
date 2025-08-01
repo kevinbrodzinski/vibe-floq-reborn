@@ -699,10 +699,12 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          message_type: string
           metadata: Json | null
           profile_id: string
           reply_to_id: string | null
           sender_id: string
+          status: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
           thread_id: string
         }
@@ -712,10 +714,12 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          message_type?: string
           metadata?: Json | null
           profile_id: string
           reply_to_id?: string | null
           sender_id: string
+          status?: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
           thread_id: string
         }
@@ -725,10 +729,12 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          message_type?: string
           metadata?: Json | null
           profile_id?: string
           reply_to_id?: string | null
           sender_id?: string
+          status?: string
           surface?: Database["public"]["Enums"]["chat_surface_enum"]
           thread_id?: string
         }
@@ -9510,6 +9516,10 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: undefined
       }
+      can_user_access_floq: {
+        Args: { p_floq_id: string; p_user_id: string }
+        Returns: boolean
+      }
       check_floq_admin_role: {
         Args: { p_floq_id: string; p_profile_id?: string }
         Returns: boolean
@@ -9614,26 +9624,17 @@ export type Database = {
         }[]
       }
       create_floq: {
-        Args:
-          | {
-              p_lat: number
-              p_lng: number
-              p_starts_at: string
-              p_ends_at: string
-              p_vibe: Database["public"]["Enums"]["vibe_enum"]
-              p_visibility: string
-              p_title: string
-              p_invitees: string[]
-              p_flock_type: string
-            }
-          | {
-              p_lat: number
-              p_lng: number
-              p_starts_at: string
-              p_vibe: Database["public"]["Enums"]["vibe_enum"]
-              p_visibility?: string
-              p_flock_type?: string
-            }
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_starts_at: string
+          p_ends_at: string
+          p_vibe: Database["public"]["Enums"]["vibe_enum"]
+          p_visibility: string
+          p_title: string
+          p_invitees: string[]
+          p_flock_type: string
+        }
         Returns: string
       }
       create_or_replace_cron_job: {
@@ -10712,6 +10713,14 @@ export type Database = {
         Args: { p_plan_id: string; p_profile_ids: string[] }
         Returns: Json
       }
+      is_floq_participant: {
+        Args: { p_floq_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_floq_public: {
+        Args: { p_floq_id: string }
+        Returns: boolean
+      }
       is_live_now: {
         Args: { uid: string }
         Returns: boolean
@@ -11239,10 +11248,12 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          message_type: string
           metadata: Json | null
           profile_id: string
           reply_to_id: string | null
           sender_id: string
+          status: string
           surface: Database["public"]["Enums"]["chat_surface_enum"]
           thread_id: string
         }
