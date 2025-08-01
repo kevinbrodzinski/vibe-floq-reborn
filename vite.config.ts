@@ -36,6 +36,8 @@ export default defineConfig(({ mode, command }) => {
       __DEV__: process.env.NODE_ENV !== 'production',
       // Polyfill global for Expo packages
       global: 'globalThis',
+      // Polyfill process for Expo packages
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
     },
 
     plugins: [
