@@ -9,6 +9,7 @@ interface DataStats {
   vibeStates: number;
   floqParticipants: number;
   planParticipants: number;
+  isStale: boolean;
 }
 
 /**
@@ -24,7 +25,7 @@ export const DataRecordingStatus = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user?.id) return;
 
-        const [venueResult, vibeResult, floqResult, planResult] = await Promise.all([
+        const [venueResult, vibeResult, floqResult, planResult, stalenessResult] = await Promise.all([
           supabase
             .from('venue_live_presence')
             .select('id', { count: 'exact' })
@@ -41,6 +42,12 @@ export const DataRecordingStatus = () => {
             .from('plan_participants')
             .select('plan_id', { count: 'exact' })
             .eq('profile_id', user.id),
+          supabase
+            .from('daily_afterglow')
+            .select('is_stale')
+            .eq('profile_id', user.id)
+            .eq('date', new Date().toISOString().split('T')[0])
+            .single()
         ]);
 
         setStats({
@@ -48,6 +55,7 @@ export const DataRecordingStatus = () => {
           vibeStates: vibeResult.count || 0,
           floqParticipants: floqResult.count || 0,
           planParticipants: planResult.count || 0,
+          isStale: stalenessResult.data?.is_stale || false,
         });
       } catch (error) {
         console.error('Failed to fetch data stats:', error);
@@ -75,7 +83,7 @@ export const DataRecordingStatus = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 1: Data Recording Status</CardTitle>
+        <CardTitle>Step 2: Data Recording + Staleness Triggers</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex items-center justify-between">
@@ -106,11 +114,19 @@ export const DataRecordingStatus = () => {
             {stats?.planParticipants ? <CheckCircle className="ml-1 h-3 w-3" /> : <AlertCircle className="ml-1 h-3 w-3" />}
           </Badge>
         </div>
+        <div className="flex items-center justify-between">
+          <span>Today's Afterglow Status:</span>
+          <Badge variant={stats?.isStale ? "destructive" : "default"}>
+            {stats?.isStale ? "Stale (Needs Update)" : "Current"}
+            {stats?.isStale ? <AlertCircle className="ml-1 h-3 w-3" /> : <CheckCircle className="ml-1 h-3 w-3" />}
+          </Badge>
+        </div>
         <div className="mt-4 text-sm text-muted-foreground">
           <p>✅ Venue check-ins now record to venue_live_presence</p>
           <p>✅ Vibe changes record to user_vibe_states</p>
           <p>✅ Floq joins record to floq_participants</p>
           <p>✅ Plan participation records to plan_participants</p>
+          <p className="font-semibold text-primary">🔥 NEW: Triggers mark afterglow stale when data changes!</p>
         </div>
       </CardContent>
     </Card>
