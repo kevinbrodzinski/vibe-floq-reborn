@@ -40,9 +40,9 @@ export const ListModeContainer = () => {
             lat: v.lat,
             lng: v.lng,
             vibe: v.categories?.[0] || 'venue',
-            source: 'google',
+            source: 'database',
             distance_m: v.distance_m,
-            live_count: 0
+            live_count: v.live_count
           }}
           onTap={() => setSelectedVenueId(v.id)}
           onMouseEnter={() => prefetchVenue(v.id)}

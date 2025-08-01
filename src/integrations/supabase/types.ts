@@ -10432,7 +10432,7 @@ export type Database = {
         Args: {
           p_lat: number
           p_lng: number
-          p_radius?: number
+          p_radius_m?: number
           p_limit?: number
         }
         Returns: {
@@ -10440,11 +10440,9 @@ export type Database = {
           name: string
           lat: number
           lng: number
-          address: string
-          categories: string[]
-          rating: number
-          price_tier: string
           distance_m: number
+          categories: string[]
+          live_count: number
         }[]
       }
       get_nearest_venue: {
@@ -11228,24 +11226,14 @@ export type Database = {
         Returns: Json
       }
       send_message: {
-        Args:
-          | {
-              p_surface: Database["public"]["Enums"]["chat_surface_enum"]
-              p_thread_id: string
-              p_sender_id: string
-              p_body?: string
-              p_reply_to_id?: string
-              p_media_meta?: Json
-            }
-          | {
-              p_surface: string
-              p_thread_id: string
-              p_sender_id: string
-              p_body?: string
-              p_reply_to_id?: string
-              p_media_meta?: Json
-            }
-          | { thread_id: number; sender_id: string; message_content: string }
+        Args: {
+          p_surface: Database["public"]["Enums"]["chat_surface_enum"]
+          p_thread_id: string
+          p_sender_id: string
+          p_body?: string
+          p_reply_to_id?: string
+          p_media_meta?: Json
+        }
         Returns: {
           body: string | null
           created_at: string
@@ -12480,16 +12468,11 @@ export type Database = {
         Returns: string
       }
       upsert_friendship: {
-        Args:
-          | {
-              _other_user: string
-              _new_state: Database["public"]["Enums"]["friend_state"]
-              _is_close?: boolean
-            }
-          | {
-              _other_user: string
-              _new_state?: Database["public"]["Enums"]["friend_state"]
-            }
+        Args: {
+          _other_user: string
+          _new_state: Database["public"]["Enums"]["friend_state"]
+          _is_close?: boolean
+        }
         Returns: Database["public"]["Enums"]["friend_state"]
       }
       upsert_live_position: {
@@ -12566,7 +12549,7 @@ export type Database = {
         Returns: boolean
       }
       user_in_floq_or_creator: {
-        Args: { p_plan: string } | { p_plan_id: string; p_user_id?: string }
+        Args: { p_plan_id: string; p_user_id?: string }
         Returns: boolean
       }
       user_is_floq_participant: {
