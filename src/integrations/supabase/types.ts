@@ -11187,6 +11187,19 @@ export type Database = {
               p_limit?: number
               p_offset?: number
             }
+          | {
+              p_query?: string
+              p_lat?: number
+              p_lng?: number
+              p_radius_km?: number
+              p_time_from?: string
+              p_time_to?: string
+              p_visibilities?: string[]
+              p_vibe_ids?: Database["public"]["Enums"]["vibe_enum"][]
+              p_limit?: number
+              p_offset?: number
+              _viewer_id?: string
+            }
         Returns: {
           id: string
           title: string
