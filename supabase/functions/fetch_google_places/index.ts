@@ -2,6 +2,7 @@
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
 import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
+import { getUserId } from "../_shared/getUserId.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -17,21 +18,27 @@ serve(async (req) => {
     return new Response("POST only", { status: 405, headers: CORS });
 
   try {
-    console.log(`[Google Places] Starting request for location: ${JSON.stringify({ lat: "lat" in (await req.clone().json()) ? (await req.clone().json()).lat : "unknown", lng: "lng" in (await req.clone().json()) ? (await req.clone().json()).lng : "unknown" })}`);
-    
-    const { profile_id, lat, lng } = await req.json() as {
+    const payload = await req.json() as {
       profile_id?: string;
       lat?: number;
       lng?: number;
     };
     
-    // Validate required coordinates (profile_id is optional)
-    if (lat == null || lng == null) {
-      console.error(`[Google Places] Missing required coordinates: lat=${lat}, lng=${lng}`);
+    const lat = Number(payload.lat);
+    const lng = Number(payload.lng);
+    
+    // Extract user ID from JWT for optional context (no behavioral change)
+    const profile_id = payload.profile_id ?? (await getUserId(req));
+    
+    console.log(`[Google Places] Starting request for location: ${lat},${lng} by=${profile_id ?? "anon"}`);
+    
+    // Validate required coordinates
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.error(`[Google Places] Missing or invalid coordinates: lat=${lat}, lng=${lng}`);
       return new Response(
         JSON.stringify({ 
-          error: "lat & lng required",
-          details: { lat: lat != null, lng: lng != null }
+          error: "lat & lng are required numbers",
+          details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
         }),
         { status: 400, headers: CORS },
       );
@@ -39,9 +46,12 @@ serve(async (req) => {
 
     // Validate coordinates range
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.error(`[Google Places] Invalid coordinates: lat=${lat}, lng=${lng}`);
+      console.error(`[Google Places] Invalid coordinates range: lat=${lat}, lng=${lng}`);
       return new Response(
-        JSON.stringify({ error: "Invalid coordinates range" }),
+        JSON.stringify({ 
+          error: "Invalid coordinates range",
+          details: "Latitude must be between -90 and 90, longitude between -180 and 180"
+        }),
         { status: 400, headers: CORS },
       );
     }
@@ -127,6 +137,8 @@ serve(async (req) => {
       await upsertVenues(mapped);
       console.log(`[Google Places] Successfully upserted ${mapped.length} venues`);
     }
+
+    console.log(`[Google Places] OK • ${mapped.length} places • radius=1500m • by=${profile_id ?? "anon"}`);
 
     return new Response(
       JSON.stringify({ 
