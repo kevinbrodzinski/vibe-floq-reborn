@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { debounce } from 'lodash-es';
 
 type DailyAfterglow = {
   id: string;
@@ -71,31 +72,53 @@ export function useRealtimeAfterglowData(dateISO: string | null) {
     }
   });
 
-  // 🔄 Real-time subscription for afterglow changes
+  // Debounced invalidation to prevent excessive refetches
+  const invalidateAfterglow = useMemo(
+    () => debounce(
+      () => qc.invalidateQueries({ queryKey: ['afterglow', dateISO] }),
+      2500,
+      { leading: true, trailing: true }
+    ),
+    [dateISO, qc]
+  );
+
+  // 🔄 Real-time subscription for afterglow changes with proper cleanup
   useEffect(() => {
     if (!dateISO) return;
 
-    const channel = supabase
-      .channel(`afterglow-realtime-${dateISO}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'daily_afterglow',
-          filter: `date=eq.${dateISO}`
-        },
-        (payload) => {
-          console.log('🔥 Afterglow real-time update:', payload);
-          qc.invalidateQueries({ queryKey: ['afterglow', dateISO] });
-        }
-      )
-      .subscribe();
+    let mounted = true;
+    let channel: any = null;
+
+    const setupChannel = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!mounted || !user?.id) return;
+
+      channel = supabase
+        .channel(`afterglow-realtime-${dateISO}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'daily_afterglow',
+            filter: `date=eq.${dateISO}&profile_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('[afterglow] real-time update:', payload);
+            invalidateAfterglow();
+          }
+        )
+        .subscribe();
+    };
+
+    setupChannel();
 
     return () => {
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (channel) supabase.removeChannel(channel);
+      invalidateAfterglow.cancel(); // Cancel pending debounced calls
     };
-  }, [dateISO, qc]);
+  }, [dateISO, invalidateAfterglow]);
 
   // 2️⃣ – trigger generation ONLY once when the user clicks a button
   const generate = async () => {
