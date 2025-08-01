@@ -12157,7 +12157,7 @@ export type Database = {
           username: string
           avatar_url: string
           created_at: string
-          req_status: string
+          req_status: Database["public"]["Enums"]["friend_req_status"]
         }[]
       }
       search_users: {
@@ -13673,6 +13673,12 @@ export type Database = {
         | "invited"
       flock_type_enum: "momentary" | "persistent" | "recurring" | "template"
       floq_participant_role_enum: "creator" | "admin" | "member"
+      friend_req_status:
+        | "none"
+        | "pending_out"
+        | "pending_in"
+        | "friends"
+        | "blocked"
       friend_state: "pending" | "accepted" | "blocked" | "close"
       invitation_status: "pending" | "accepted" | "declined"
       invite_status: "pending" | "accepted" | "declined"
@@ -13942,6 +13948,13 @@ export const Constants = {
       ],
       flock_type_enum: ["momentary", "persistent", "recurring", "template"],
       floq_participant_role_enum: ["creator", "admin", "member"],
+      friend_req_status: [
+        "none",
+        "pending_out",
+        "pending_in",
+        "friends",
+        "blocked",
+      ],
       friend_state: ["pending", "accepted", "blocked", "close"],
       invitation_status: ["pending", "accepted", "declined"],
       invite_status: ["pending", "accepted", "declined"],
