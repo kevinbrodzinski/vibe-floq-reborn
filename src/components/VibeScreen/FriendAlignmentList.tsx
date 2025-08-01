@@ -1,38 +1,31 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useFriendVibeMatches } from '@/hooks/useFriendVibeMatches';
+import { EnhancedFriendCard } from '@/components/social/EnhancedFriendCard';
 
 export const FriendAlignmentList: React.FC = () => {
   const { data } = useFriendVibeMatches();
+  
+  const handlePlan = (friendId: string) => {
+    console.log(`Planning with friend: ${friendId}`);
+    // TODO: Navigate to plan creation with friend pre-selected
+  };
+
+  const handlePing = (friendId: string) => {
+    console.log(`Pinging friend: ${friendId}`);
+    // TODO: Open DM thread or send quick ping
+  };
+
   if (!data.length) return null;
 
   return (
     <div className="px-4 space-y-4">
-      {data.map((m) => (
-        <motion.div
-          key={m.id}
-          layout
-          initial={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-        >
-          <Card>
-            <CardHeader className="flex-row items-center gap-2">
-              <img src={m.avatar} alt={m.name} className="w-8 h-8 rounded-full" />
-              <CardTitle>{m.name} matches your vibe</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm mb-3 text-muted-foreground">
-                Match {(m.match * 100).toFixed(0)}% · {m.location}
-              </p>
-              <div className="flex gap-2">
-                <Button variant="secondary">Plan</Button>
-                <Button variant="outline">Ping</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+      {data.map((friend) => (
+        <EnhancedFriendCard
+          key={friend.id}
+          friend={friend}
+          onPlan={handlePlan}
+          onPing={handlePing}
+        />
       ))}
     </div>
   );
