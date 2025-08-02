@@ -6,12 +6,14 @@ import { MapPin, Utensils, Users, TrendingUp, Waves, Circle } from 'lucide-react
 import { useVibeClusterStats } from '@/hooks/useVibeClusterStats';
 import { useVenueRecommendations } from '@/hooks/useVenueRecommendations';
 import { useNearbyFloqsPreview } from '@/hooks/useNearbyFloqsPreview';
+import { useNearbyPeoplePreview } from '@/hooks/useNearbyPeoplePreview';
 import { cn } from '@/lib/utils';
 
 interface PreviewButtonsRowProps {
   onMapPress: () => void;
   onVenuesPress: () => void;
   onFloqsPress: () => void;
+  onPeoplePress: () => void;
   className?: string;
 }
 
@@ -19,18 +21,20 @@ export const PreviewButtonsRow: React.FC<PreviewButtonsRowProps> = ({
   onMapPress,
   onVenuesPress,
   onFloqsPress,
+  onPeoplePress,
   className
 }) => {
   const { clusterCount, personCount } = useVibeClusterStats();
   const { data: venues } = useVenueRecommendations();
   const { count: floqCount, closestDistance, activeNow, topVibe } = useNearbyFloqsPreview();
+  const { count: peopleCount, topMatch, topMatchName, averageDistance } = useNearbyPeoplePreview();
   
   const topVenue = venues[0];
   const venueCount = venues.length;
 
   return (
     <div className={cn('px-4 space-y-4', className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Vibe Clusters Preview */}
         <motion.div
           layout
@@ -157,6 +161,52 @@ export const PreviewButtonsRow: React.FC<PreviewButtonsRowProps> = ({
                     <Circle size={8} className="text-emerald-500 fill-current" />
                     <span className="text-xs text-muted-foreground">
                       Popular vibe: {topVibe}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* People Matches Preview */}
+        <motion.div
+          layout
+          initial={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card 
+            className="h-full cursor-pointer hover:scale-[1.02] transition-all duration-200 hover:shadow-lg border-2 hover:border-primary/20"
+            onClick={onPeoplePress}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-green-500/10 rounded-lg">
+                  <Users className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">People Matches</h3>
+                  <p className="text-xs text-muted-foreground">Vibe aligned friends</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{peopleCount} matches nearby</span>
+                  <Badge variant="outline" className="text-xs">
+                    {Math.round(topMatch * 100)}% top
+                  </Badge>
+                </div>
+                
+                <div className="bg-gradient-to-br from-green-500/10 to-blue-500/20 rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {topMatchName}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {averageDistance}
                     </span>
                   </div>
                 </div>

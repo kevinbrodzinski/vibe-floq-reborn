@@ -7,6 +7,7 @@ import { VibeContextHeader } from '@/components/VibeScreen/VibeContextHeader';
 import { VenueRecommendationsModal } from '@/components/social/VenueRecommendationsModal';
 import { VibeDensityModal } from '@/components/screens/VibeDensityModal';
 import { NearbyFloqsModal } from '@/components/social/NearbyFloqsModal';
+import { NearbyPeopleModal } from '@/components/social/NearbyPeopleModal';
 
 /**
  * SocialMode - Real social features with animated components
@@ -16,6 +17,7 @@ export const SocialMode: React.FC = () => {
   const [showDensityMap, setShowDensityMap] = useState(false);
   const [showVenues, setShowVenues] = useState(false);
   const [showFloqs, setShowFloqs] = useState(false);
+  const [showPeople, setShowPeople] = useState(false);
 
   const handleMapPress = () => {
     setShowDensityMap(true);
@@ -27,6 +29,10 @@ export const SocialMode: React.FC = () => {
 
   const handleFloqsPress = () => {
     setShowFloqs(true);
+  };
+
+  const handlePeoplePress = () => {
+    setShowPeople(true);
   };
 
   return (
@@ -42,6 +48,7 @@ export const SocialMode: React.FC = () => {
         onMapPress={handleMapPress}
         onVenuesPress={handleVenuesPress}
         onFloqsPress={handleFloqsPress}
+        onPeoplePress={handlePeoplePress}
       />
       
       <SuggestedAlignmentActions className="mt-6" />
@@ -58,8 +65,13 @@ export const SocialMode: React.FC = () => {
       />
       
       <NearbyFloqsModal 
-        open={showFloqs}
+        open={showFloqs} 
         onOpenChange={setShowFloqs}
+      />
+
+      <NearbyPeopleModal 
+        open={showPeople} 
+        onOpenChange={setShowPeople}
       />
     </ScrollView>
   );
