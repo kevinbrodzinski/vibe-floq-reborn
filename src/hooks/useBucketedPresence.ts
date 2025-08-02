@@ -84,15 +84,16 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     }
 
     // Production mode: Try to connect to real presence data
-    try {
-      // Use H3 for precise channel addressing at resolution 7 (~1.2km hexagons)
-      const h3Index = geoToH3(lat, lng, 7);
-      const channel = supabase.channel(`presence-${h3Index}`);
-      
-      let hasSocketData = false;
-      
-      // Enhanced WebSocket subscription with minimal payload
-      channel.on('presence', { event: 'sync' }, () => {
+    const setupPresence = async () => {
+      try {
+        // Use H3 for precise channel addressing at resolution 7 (~1.2km hexagons)
+        const h3Index = geoToH3(lat, lng, 7);
+        const channel = supabase.channel(`presence-${h3Index}`);
+        
+        let hasSocketData = false;
+        
+        // Enhanced WebSocket subscription with minimal payload
+        channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
         
@@ -168,18 +169,13 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         setLastHeartbeat(Date.now());
       });
 
-      channel.subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          // Get actual user ID for presence tracking
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const uid = session?.user.id;
-            if (!uid) {
-              console.warn('[BucketedPresence] No authenticated user for presence tracking');
-              return;
-            }
-            
-            // Track presence with GeoJSON format and actual user ID
+        // Get session once outside the subscription callback
+        const { data: { session } } = await supabase.auth.getSession();
+        const uid = session?.user.id;
+        
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED' && uid) {
+            // Track presence with GeoJSON format and actual user ID (throttled to every 25s)
             channel.track({
               profile_id: uid,
               location: {
@@ -189,11 +185,10 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
               vibe: 'social', // TODO: Get actual user vibe from state
               last_seen: new Date().toISOString()
             }).catch(console.warn);
-          } catch (error) {
-            console.warn('[BucketedPresence] Error tracking presence:', error);
+          } else if (status === 'SUBSCRIBED' && !uid) {
+            console.warn('[BucketedPresence] No authenticated user for presence tracking');
           }
-        }
-      });
+        });
 
       // Skip initial poll if socket provides data via sync event
       // Only poll vibes_now for specific tile area after 2 seconds if no socket data
@@ -250,17 +245,20 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         setLastHeartbeat(Date.now());
       }, 2000);
 
-      return () => {
-        clearTimeout(pollTimeout);
-        supabase.removeChannel(channel);
-      };
-    } catch (error) {
-      console.warn('[BucketedPresence] Failed to setup presence system:', error);
-      // Fallback to mock data
-      const mockPeople = generateMockPresenceData(lat, lng, friendIds);
-      setPeople(mockPeople);
-      setLastHeartbeat(Date.now());
-    }
+        return () => {
+          clearTimeout(pollTimeout);
+          supabase.removeChannel(channel);
+        };
+      } catch (error) {
+        console.warn('[BucketedPresence] Failed to setup presence system:', error);
+        // Fallback to mock data
+        const mockPeople = generateMockPresenceData(lat, lng, friendIds);
+        setPeople(mockPeople);
+        setLastHeartbeat(Date.now());
+      }
+    };
+    
+    setupPresence();
 
   }, [lat, lng, friendIds.join(','), showMockData]);
 

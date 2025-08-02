@@ -6,7 +6,10 @@ export const setMapInstance = (m: mapboxgl.Map | null) => { map = m; };
 
 /** lng/lat ➜ screen px */
 export const projectLatLng = (lng: number, lat: number) => {
-  if (!map) throw new Error('Map instance not set');
+  if (!map) {
+    // Return fallback coordinates instead of throwing when map not ready
+    return { x: 0, y: 0, invalid: true } as const;
+  }
   const { x, y } = map.project([lng, lat]);
   return { x, y };
 };

@@ -41,21 +41,21 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''  // Service role for database access
 )
 
-// Convert vibe string to HSL values
+// Convert vibe string to HSL values (0-100 scale for consistency)
 const vibeToHSL = (vibe: string): { h: number; s: number; l: number } => {
   const vibeMap: Record<string, { h: number; s: number; l: number }> = {
-    'hype': { h: 280, s: 0.7, l: 0.6 },
-    'social': { h: 30, s: 0.7, l: 0.6 },
-    'chill': { h: 240, s: 0.7, l: 0.6 },
-    'flowing': { h: 200, s: 0.7, l: 0.6 },
-    'open': { h: 120, s: 0.7, l: 0.6 },
-    'curious': { h: 260, s: 0.7, l: 0.6 },
-    'solo': { h: 180, s: 0.7, l: 0.6 },
-    'romantic': { h: 320, s: 0.7, l: 0.6 },
-    'weird': { h: 60, s: 0.7, l: 0.6 },
-    'down': { h: 210, s: 0.3, l: 0.4 },
+    'hype': { h: 280, s: 70, l: 60 },
+    'social': { h: 30, s: 70, l: 60 },
+    'chill': { h: 240, s: 70, l: 60 },
+    'flowing': { h: 200, s: 70, l: 60 },
+    'open': { h: 120, s: 70, l: 60 },
+    'curious': { h: 260, s: 70, l: 60 },
+    'solo': { h: 180, s: 70, l: 60 },
+    'romantic': { h: 320, s: 70, l: 60 },
+    'weird': { h: 60, s: 70, l: 60 },
+    'down': { h: 210, s: 30, l: 40 },
   }
-  return vibeMap[vibe?.toLowerCase()] || { h: 240, s: 0.7, l: 0.6 }
+  return vibeMap[vibe?.toLowerCase()] || { h: 240, s: 70, l: 60 }
 }
 
 // Calculate average HSL from multiple vibes
@@ -79,8 +79,8 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
   
   return {
     h: Math.round(avgHue),
-    s: Math.round(avgSaturation * 100), // Scale to 0-100 for consistency
-    l: Math.round(avgLightness * 100)   // Scale to 0-100 for consistency
+    s: Math.round(avgSaturation), // Already 0-100 scale
+    l: Math.round(avgLightness)   // Already 0-100 scale
   }
 }
 

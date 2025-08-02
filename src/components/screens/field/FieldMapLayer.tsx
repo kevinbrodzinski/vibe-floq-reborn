@@ -6,6 +6,7 @@ import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FriendSuggestionCarousel } from '@/components/field/FriendSuggestionCarousel';
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
+import { getMapInstance } from '@/lib/geo/project';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
@@ -33,6 +34,9 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
+  
+  // Check if map is ready to prevent projectLatLng errors
+  const isMapReady = Boolean(getMapInstance());
   
   // Phase 4 handlers
   const handleTimeWarp = useCallback((hours: number) => {
@@ -65,17 +69,19 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         realtime={realtime}
       />
       
-      {/* Layer 2: PIXI Canvas Overlay with Phase 4 enhancements */}
-      <FieldCanvasLayer
-        canvasRef={canvasRef}
-        people={actualPeople}
-        floqs={floqs}
-        data={data}
-        onRipple={onRipple}
-        isConstellationMode={isConstellationMode}
-        timeWarpHour={timeWarpHour}
-        showDebugVisuals={isDebugVisible}
-      />
+      {/* Layer 2: PIXI Canvas Overlay with Phase 4 enhancements - only render when map is ready */}
+      {isMapReady && (
+        <FieldCanvasLayer
+          canvasRef={canvasRef}
+          people={actualPeople}
+          floqs={floqs}
+          data={data}
+          onRipple={onRipple}
+          isConstellationMode={isConstellationMode}
+          timeWarpHour={timeWarpHour}
+          showDebugVisuals={isDebugVisible}
+        />
+      )}
       
       {/* Layer 3: UI Controls */}
       <FieldUILayer data={data} />

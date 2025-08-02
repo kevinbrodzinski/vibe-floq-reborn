@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       throw insertError;
     }
 
-    console.log(`Successfully inserted ${insertData.length} demo presence records`);
+    console.log(`Successfully inserted ${insertData.length} demo presence records (first 3: ${JSON.stringify(insertData.slice(0, 3).map(d => d.profile_id))})`);
 
     // Trigger field tiles refresh
     const refreshResponse = await supabase.functions.invoke('refresh_field_tiles');
