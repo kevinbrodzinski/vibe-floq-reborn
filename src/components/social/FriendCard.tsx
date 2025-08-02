@@ -25,19 +25,23 @@ export const FriendCard: React.FC<FriendCardProps> = ({ person }) => {
     return `${(meters / 1000).toFixed(1)}km`
   }
 
+  // Generate stable key for anonymous users
+  const displayKey = profile_id || `anon-${vibe}-${meters}`
+  const displayName = profile_id ? `User ${profile_id.slice(-4)}` : 'Anonymous'
+
   return (
-    <article className="w-36 shrink-0 snap-start px-2">
+    <article className="w-36 shrink-0 snap-start px-2" tabIndex={0}>
       <div className="flex flex-col items-center space-y-2">
         <Avatar className="w-12 h-12">
           <AvatarImage src={`/placeholder.svg`} />
           <AvatarFallback className="text-xs bg-primary/20">
-            {profile_id.slice(0, 2).toUpperCase()}
+            {profile_id ? profile_id.slice(0, 2).toUpperCase() : vibe.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
         
         <div className="text-center">
           <p className="text-sm font-medium truncate">
-            User {profile_id.slice(-4)}
+            {displayName}
           </p>
           <p className="text-xs text-muted-foreground">
             {formatDistance(meters)}

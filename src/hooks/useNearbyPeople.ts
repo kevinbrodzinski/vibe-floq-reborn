@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { throttle } from 'lodash.throttle'
 
 export interface NearbyRow {
   profile_id: string
@@ -10,17 +11,35 @@ export interface NearbyRow {
 export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
   const [people, setPeople] = useState<NearbyRow[]>([])
   const [loading, setLoading] = useState(false)
+  const tokenRef = useRef<string | null>(null)
 
+  // Cache auth token
   useEffect(() => {
-    if (lat == null || lng == null) return
+    const getToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      tokenRef.current = session?.access_token || null
+    }
+    getToken()
 
-    setLoading(true)
-    const fetchNearby = async () => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      tokenRef.current = session?.access_token || null
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Throttled fetch function
+  const fetchNearby = useRef(
+    throttle(async (lat: number, lng: number, limit: number) => {
       try {
-        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people?lat=${lat}&lng=${lng}&limit=${limit}`
+        setLoading(true)
+        const precisionLat = lat.toFixed(6)
+        const precisionLng = lng.toFixed(6)
+        
+        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people?lat=${precisionLat}&lng=${precisionLng}&limit=${limit}`
         const response = await fetch(url, {
           headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+            'Authorization': `Bearer ${tokenRef.current || ''}`,
             'Content-Type': 'application/json'
           }
         })
@@ -37,12 +56,16 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
       } finally {
         setLoading(false)
       }
-    }
+    }, 2000) // Throttle to max once per 2 seconds
+  ).current
 
-    fetchNearby()
-    const interval = setInterval(fetchNearby, 45_000)
+  useEffect(() => {
+    if (lat == null || lng == null) return
+
+    fetchNearby(lat, lng, limit)
+    const interval = setInterval(() => fetchNearby(lat, lng, limit), 45_000)
     return () => clearInterval(interval)
-  }, [lat, lng, limit])
+  }, [lat, lng, limit, fetchNearby])
 
   return { people, loading }
 }
