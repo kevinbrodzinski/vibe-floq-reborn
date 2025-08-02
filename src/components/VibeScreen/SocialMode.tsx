@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { FriendAlignmentList } from '@/components/VibeScreen/FriendAlignmentList';
+
 import { PreviewButtonsRow } from '@/components/VibeScreen/PreviewButtonsRow';
 import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
 import { VibeContextHeader } from '@/components/VibeScreen/VibeContextHeader';
@@ -41,7 +41,6 @@ export const SocialMode: React.FC = () => {
       contentContainerStyle={{ paddingBottom: 32 }}
     >
       <VibeContextHeader />
-      <FriendAlignmentList />
       
       <PreviewButtonsRow
         className="mt-6"
