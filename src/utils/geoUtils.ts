@@ -1,5 +1,13 @@
-export const metersToPixelsAtLat = (lat: number, zoom: number) =>
-  (Math.cos((lat * Math.PI) / 180) * 2 ** zoom) / 156_543.03392;  // Mapbox formula
+// Convert meters to pixels at a given latitude and zoom level
+export const metersToPixelsAtLat = (meters: number, lat: number, zoom = 15) => {
+  // Earth's circumference at equator in meters
+  const earthCircumference = 40075016.686;
+  // Pixels per meter at zoom level 0 at equator
+  const pixelsPerMeterAtEquator = 256 / earthCircumference;
+  // Adjust for latitude using Mercator projection
+  const metersPerPixel = Math.cos(lat * Math.PI / 180) * (2 ** zoom) * pixelsPerMeterAtEquator;
+  return meters * metersPerPixel;
+};
 
 /**
  * Reverse geocoding to get address from coordinates

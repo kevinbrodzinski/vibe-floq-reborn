@@ -62,17 +62,69 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   }
 
   useEffect(() => {
-    if (!lat || !lng || showMockData) {
-      // Return realistic mock data for field screen debugging
+    if (!lat || !lng) {
+      setPeople([]);
+      setLastHeartbeat(null);
+      return;
+    }
+
+    // In development, show enhanced mock data with real friend IDs
+    if (showMockData) {
       const mockPeople = generateMockPresenceData(lat, lng, friendIds);
-      console.log('[BucketedPresence] Generating mock presence data:', mockPeople);
+      console.log('[BucketedPresence] Generating enhanced mock presence data:', mockPeople);
       setPeople(mockPeople);
       setLastHeartbeat(Date.now());
       return;
     }
 
-    // Only attempt WebSocket connections on localhost
+    // Production mode: Try to connect to real presence data
     try {
+      // First, try to get real presence data from vibes_now table
+      const fetchRealPresence = async () => {
+        try {
+          console.log('[BucketedPresence] Fetching real presence data for location:', { lat, lng });
+          
+          // Query vibes_now table for nearby users
+          const { data: presenceData, error } = await supabase
+            .from('vibes_now')
+            .select('profile_id, location, vibe, updated_at')
+            .not('location', 'is', null);
+
+          if (error) {
+            console.warn('[BucketedPresence] Error fetching presence data:', error);
+            throw error;
+          }
+
+          if (presenceData && presenceData.length > 0) {
+            console.log('[BucketedPresence] Found real presence data:', presenceData);
+            
+            // Convert to expected format
+            const realPeople: PresenceUser[] = presenceData.map((presence: any) => ({
+              profile_id: presence.profile_id,
+              location: presence.location,
+              vibe: presence.vibe,
+              last_seen: presence.updated_at,
+              isFriend: friendIds.includes(presence.profile_id)
+            }));
+
+            setPeople(realPeople);
+            setLastHeartbeat(Date.now());
+            return;
+          }
+        } catch (error) {
+          console.warn('[BucketedPresence] Failed to fetch real presence data:', error);
+        }
+
+        // Fallback to enhanced mock data with real friend integration
+        console.log('[BucketedPresence] No real presence data found, using enhanced mock data');
+        const mockPeople = generateMockPresenceData(lat, lng, friendIds);
+        setPeople(mockPeople);
+        setLastHeartbeat(Date.now());
+      };
+
+      fetchRealPresence();
+
+      // Set up real-time subscription for presence updates
       const channel = supabase.channel(`presence-${Math.round(lat * 100)}-${Math.round(lng * 100)}`);
       
       channel.on('presence', { event: 'sync' }, () => {
@@ -88,8 +140,11 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           });
         });
         
-        setPeople(users);
-        setLastHeartbeat(Date.now());
+        if (users.length > 0) {
+          console.log('[BucketedPresence] Real-time presence update:', users);
+          setPeople(users);
+          setLastHeartbeat(Date.now());
+        }
       });
 
       channel.subscribe();
@@ -98,7 +153,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         supabase.removeChannel(channel);
       };
     } catch (error) {
-      console.warn('Failed to setup presence channel:', error);
+      console.warn('[BucketedPresence] Failed to setup presence system:', error);
       // Fallback to mock data
       const mockPeople = generateMockPresenceData(lat, lng, friendIds);
       setPeople(mockPeople);

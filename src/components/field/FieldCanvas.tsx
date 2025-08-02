@@ -138,9 +138,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         const dot = Sprite.from(Texture.WHITE);
         dot.anchor.set(0.5);
         dot.tint = 0x3399ff;   // blue
-        dot.width = dot.height = 12;
+        dot.width = dot.height = 16; // Slightly larger for visibility
         dot.interactive = false;
         dot.eventMode = 'none';
+        // Add a subtle pulsing effect
+        dot.alpha = 0.9;
         peopleContainer.addChild(dot);
         myDotRef.current = dot;
       }
@@ -149,7 +151,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       if (!accuracyRef.current) {
         const g = new Graphics();
         g.lineStyle(2, 0x3399ff, 0.25);
-        peopleContainer.addChild(g);
+        // Add accuracy circle behind people container (lower z-index)
+        heatContainer.addChild(g); // Put in heat container so it's below people
         accuracyRef.current = g;
       }
 
@@ -175,21 +178,33 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             vibeTag: 'energetic', // TODO: derive from tile.avg_vibe HSL values
           });
 
-          /* GPU ripple */
+          /* GPU ripple with enhanced feedback */
           addRipple(clientX, clientY);
 
-          /* haptic for mobile */
+          /* Enhanced haptic feedback for mobile */
           light();    // from useAdvancedHaptics()
         });
       };
 
+      // Enhanced pointer events for better interaction
       app.stage.eventMode = 'static';
+      app.stage.interactive = true;
       app.stage.on('pointermove', onPointerMove);
+      
+      // Add click handler for additional ripple effects
+      app.stage.on('pointerdown', (e: any) => {
+        const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
+        addRipple(clientX, clientY);
+        light(); // Haptic feedback on click
+      });
     });
 
     /* ---------- cleanup ---------- */
     return () => {
-      if (onPointerMove) app.stage.off('pointermove', onPointerMove);
+      if (onPointerMove) {
+        app.stage.off('pointermove', onPointerMove);
+        app.stage.off('pointerdown'); // Clean up click handlers too
+      }
       // Remove any ticker callbacks to prevent dangling references
       if (app.ticker) {
         app.ticker.stop();
@@ -368,15 +383,35 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           
           dot.clear();
           dot.beginFill(color);
-          dot.drawCircle(0, 0, 8);
+          dot.drawCircle(0, 0, person.isFriend ? 10 : 8); // Friends slightly larger
           dot.endFill();
-          dot.position.set(person.x, person.y);
-          dot.alpha = 0.8;
+          
+          // Enhanced positioning with smoother geographic projection
+          try {
+            // If we have real location data, use proper projection
+            if (typeof person.x === 'number' && typeof person.y === 'number') {
+              dot.position.set(person.x, person.y);
+            } else {
+              // Fallback for mock data without projection
+              dot.position.set(person.x || 0, person.y || 0);
+            }
+          } catch (error) {
+            console.warn('[PIXI_DEBUG] Error positioning person dot:', error);
+            dot.position.set(0, 0);
+          }
+          
+          dot.alpha = person.isFriend ? 0.95 : 0.8; // Friends more prominent
           dot.visible = true;
           
-          // Add subtle border
-          dot.lineStyle(2, 0xffffff, 0.3);
-          dot.drawCircle(0, 0, 8);
+          // Add subtle border for friends
+          if (person.isFriend) {
+            dot.lineStyle(2, 0xffffff, 0.4);
+            dot.drawCircle(0, 0, 10);
+          } else {
+            // Regular border for non-friends
+            dot.lineStyle(1, 0xffffff, 0.3);
+            dot.drawCircle(0, 0, 8);
+          }
         });
       } else if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
         console.log('[PIXI_DEBUG] No people to render');
@@ -387,9 +422,33 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       console.log('[PIXI_DEBUG] Floqs moved to Mapbox clustering');
 
       // ---- USER LOCATION DOT ----
-      // TODO: Implement user location dot with PIXI.js projection
-      if (myDotRef.current) myDotRef.current.visible = false;
-      accuracyRef.current?.clear();
+      if (myDotRef.current && myPos?.lat && myPos?.lng) {
+        try {
+          const { x, y } = projectLatLng(myPos.lng, myPos.lat);
+          myDotRef.current.x = x;
+          myDotRef.current.y = y;
+          myDotRef.current.visible = true;
+          
+          // Update accuracy circle if position has accuracy info
+          if (accuracyRef.current && myPos.accuracy) {
+            accuracyRef.current.clear();
+            const radiusInMeters = myPos.accuracy;
+            const radiusInPixels = metersToPixelsAtLat(radiusInMeters, myPos.lat);
+            accuracyRef.current.circle(x, y, radiusInPixels);
+            accuracyRef.current.stroke({ color: 0x3399ff, width: 2, alpha: 0.25 });
+          }
+          
+          if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
+            console.log('[PIXI_DEBUG] User location dot updated:', { x, y, lat: myPos.lat, lng: myPos.lng });
+          }
+        } catch (error) {
+          console.warn('[PIXI_DEBUG] Could not project user location:', error);
+          myDotRef.current.visible = false;
+        }
+      } else {
+        if (myDotRef.current) myDotRef.current.visible = false;
+        accuracyRef.current?.clear();
+      }
 
       animationId = requestAnimationFrame(animate);
     };

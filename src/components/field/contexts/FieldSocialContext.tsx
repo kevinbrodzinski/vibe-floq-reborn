@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo } from 'react';
 import { getVibeColor } from '@/utils/getVibeColor';
 import { useFieldLocation } from './FieldLocationContext';
 import { useSelectedFloq } from '@/components/maps/FieldWebMap';
+import { projectLatLng } from '@/lib/geo/project';
 
 export interface ProfileRow {
   id: string;
@@ -99,28 +100,47 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         return null;
       }
       
-      // Convert lat/lng to screen coordinates using simple geographic conversion
-      const latDiff = presenceLat - location.coords!.lat;
-      const lngDiff = presenceLng - location.coords!.lng;
-      
-      // Convert to screen coordinates (assuming 1000px screen width/height)
-      const xMeters = lngDiff * 111320 * Math.cos((location.coords!.lat * Math.PI) / 180);
-      const yMeters = latDiff * 111320;
-      
-      // Scale to screen coordinates (field is viewport sized, 2km radius)
-      const scale = 200; // pixels per km 
-      const x = 500 + (xMeters / 1000) * scale; // Center at 500px + offset
-      const y = 500 - (yMeters / 1000) * scale; // Center at 500px + offset (inverted Y)
-      
-      return {
-        id: userId,
-        name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
-        x,
-        y,
-        color: getVibeColor(presence.vibe || 'social'),
-        vibe: presence.vibe || 'social',
-        isFriend: presence.isFriend || false,
-      };
+      // Enhanced geographic coordinate conversion with proper map projection
+      try {
+        // Use proper map projection if available
+        const { x, y } = projectLatLng(presenceLng, presenceLat);
+        
+        return {
+          id: userId,
+          name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
+          x,
+          y,
+          color: getVibeColor(presence.vibe || 'social'),
+          vibe: presence.vibe || 'social',
+          isFriend: presence.isFriend || false,
+        };
+      } catch (projectionError) {
+        // Fallback to manual coordinate conversion if map projection fails
+        console.warn('[FieldSocialContext] Map projection failed, using fallback:', projectionError);
+        
+        // Convert lat/lng to screen coordinates using simple geographic conversion
+        const latDiff = presenceLat - location.coords!.lat;
+        const lngDiff = presenceLng - location.coords!.lng;
+        
+        // Convert to screen coordinates (assuming 1000px screen width/height)
+        const xMeters = lngDiff * 111320 * Math.cos((location.coords!.lat * Math.PI) / 180);
+        const yMeters = latDiff * 111320;
+        
+        // Scale to screen coordinates (field is viewport sized, 2km radius)
+        const scale = 200; // pixels per km 
+        const x = 500 + (xMeters / 1000) * scale; // Center at 500px + offset
+        const y = 500 - (yMeters / 1000) * scale; // Center at 500px + offset (inverted Y)
+        
+        return {
+          id: userId,
+          name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
+          x,
+          y,
+          color: getVibeColor(presence.vibe || 'social'),
+          vibe: presence.vibe || 'social',
+          isFriend: presence.isFriend || false,
+        };
+      }
     }).filter(Boolean); // Remove null entries
   }, [presenceData, profilesMap, location?.coords?.lat, location?.coords?.lng, selectedFloqMembers]);
 
