@@ -3,6 +3,7 @@ import { useUserLocation } from '@/hooks/useUserLocation'
 import { useNearbyPeople } from '@/hooks/useNearbyPeople'
 import { FriendCard } from '@/components/social/FriendCard'
 import { Loader2 } from 'lucide-react'
+import { generateStableKey } from '@/utils/stableKeys'
 
 export const FriendDrawer = () => {
   const { open } = useFriendDrawer()
@@ -30,7 +31,7 @@ export const FriendDrawer = () => {
           </div>
         ) : (
           people.map((p, i) => {
-            const stableKey = p.profile_id || `anon-${p.vibe}-${p.meters}-${i}`
+            const stableKey = generateStableKey(p, 'drawer', i)
             return <FriendCard key={stableKey} person={p} />
           })
         )}

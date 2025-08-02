@@ -7,6 +7,7 @@ export interface NearbyRow {
   profile_id: string | null
   vibe: string | null
   meters: number | null          // renamed from distance_m for clarity
+  synthetic_id?: string          // unique identifier for both real and demo users
 }
 
 export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {

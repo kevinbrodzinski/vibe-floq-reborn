@@ -25,8 +25,7 @@ export const FriendCard: React.FC<FriendCardProps> = ({ person }) => {
     return `${(meters / 1000).toFixed(1)}km`
   }
 
-  // Generate stable key for anonymous users
-  const displayKey = profile_id || `anon-${vibe}-${meters}`
+  // Generate display name based on available identifiers
   const displayName = profile_id ? `User ${profile_id.slice(-4)}` : 'Anonymous'
 
   return (

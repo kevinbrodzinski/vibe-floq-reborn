@@ -3,6 +3,7 @@ import { X, Users } from 'lucide-react'
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { useNearbyPeople } from '@/hooks/useNearbyPeople'
 import { FriendCard } from './FriendCard'
+import { generateStableKey } from '@/utils/stableKeys'
 
 export const FriendCarousel: React.FC = () => {
   const { pos } = useUserLocation()
@@ -31,8 +32,8 @@ export const FriendCarousel: React.FC = () => {
           tabIndex={0}
         >
           {people.map((person, index) => {
-            // Generate stable key for React diffing
-            const stableKey = person.profile_id || `anon-${person.vibe}-${person.meters}-${index}`
+            // Generate stable key for React diffing with component-specific prefix
+            const stableKey = generateStableKey(person, 'carousel', index)
             return <FriendCard key={stableKey} person={person} />
           })}
         </div>

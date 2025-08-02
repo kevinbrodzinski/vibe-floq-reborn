@@ -12057,6 +12057,7 @@ export type Database = {
           profile_id: string
           vibe: string
           meters: number
+          synthetic_id: string
         }[]
       }
       react_to_message: {
