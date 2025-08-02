@@ -2,7 +2,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { getUserId } from '../_shared/getUserId.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 import { mapToVenue, upsertVenues } from '../_shared/venues.ts';
 
 const supabase = createClient(
@@ -13,16 +13,16 @@ const supabase = createClient(
 const PLACES_KEY = Deno.env.get('GOOGLE_PLACES_KEY');
 const RADIUS_M   = 1_200;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Content-Type':                'application/json',
-};
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
-  if (req.method !== 'POST')    return new Response('POST only', { status: 405, headers: corsHeaders });
+  // Handle CORS preflight requests FIRST
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  
+  if (req.method !== 'POST') {
+    return new Response('POST only', { status: 405, headers: corsHeaders });
+  }
 
   try {
     console.log(`[Sync Places] Starting sync request`);
@@ -32,8 +32,8 @@ serve(async (req) => {
     const lng = Number(payload.lng);
     const keyword = payload.keyword ?? "";
     
-    // Extract user ID from JWT for optional context (no behavioral change)
-    const profile_id = payload.profile_id ?? (await getUserId(req));
+    // No auth required for public function
+    const profile_id = payload.profile_id;
     
     console.log(`[Sync Places] Starting request for location: ${lat},${lng} by=${profile_id ?? "anon"}`);
     
@@ -45,7 +45,7 @@ serve(async (req) => {
           error: 'lat & lng are required numbers',
           details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
         }), 
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -57,7 +57,7 @@ serve(async (req) => {
           error: "Invalid coordinates range",
           details: "Latitude must be between -90 and 90, longitude between -180 and 180"
         }),
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -81,7 +81,7 @@ serve(async (req) => {
           lastSync: recent.ts,
           cooldownMinutes: 15
         }), 
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -94,7 +94,7 @@ serve(async (req) => {
           error: 'Google Places API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets.',
           details: 'Please configure GOOGLE_PLACES_KEY in edge function secrets'
         }),
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -193,7 +193,7 @@ serve(async (req) => {
                   details: legacyText,
                   help: 'Ensure both "Places API" and "Places API (New)" are enabled in Google Cloud Console'
                 }),
-                { status: 403, headers: corsHeaders }
+                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
               );
             }
             throw new Error(`Legacy API HTTP error: ${legacyResp.status}`);
@@ -209,7 +209,7 @@ serve(async (req) => {
                 details: legacyData.error_message,
                 help: 'Enable "Places API (Legacy)" in Google Cloud Console and check API key restrictions'
               }),
-              { status: 403, headers: corsHeaders }
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
           
@@ -235,7 +235,7 @@ serve(async (req) => {
               tried_new_api: useNewAPI,
               tried_legacy_api: !useNewAPI || apiAttempts > 1
             }),
-            { status: 502, headers: corsHeaders }
+            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
         
@@ -260,7 +260,7 @@ serve(async (req) => {
           message: 'No places found in this area',
           location: { lat, lng }
         }), 
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -288,7 +288,7 @@ serve(async (req) => {
           error: 'Failed to map any venues',
           details: 'All venue mapping attempts failed'
         }), 
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -303,7 +303,7 @@ serve(async (req) => {
           error: 'Database insertion failed',
           details: error instanceof Error ? error.message : String(error)
         }), 
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -329,7 +329,7 @@ serve(async (req) => {
         location: { lat, lng },
         keyword: keyword || null
       }), 
-      { headers: corsHeaders }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
     console.error('[Sync Places] Unexpected error:', err);
@@ -341,7 +341,7 @@ serve(async (req) => {
         details: errorMessage,
         source: 'sync-places'
       }), 
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

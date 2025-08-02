@@ -5,9 +5,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /* ---------- CORS & security headers ---------- */
 export const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*", // ← tighten later if desired
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, prefer",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 export const securityHeaders: Record<string, string> = {
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
@@ -16,7 +16,7 @@ export const securityHeaders: Record<string, string> = {
 /* Pre-flight handler */
 export function handleCors(req: Request): Response | null {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
   return null;
 }

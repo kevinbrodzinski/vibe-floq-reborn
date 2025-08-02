@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       }, 500)
     }
 
-    // Get active floq data filtered by H3 tiles - skip participants_count filter due to missing column
+    // Get active floq data filtered by H3 tiles
     const { data: floqData, error: floqError } = await supabase
       .from('floqs')
       .select('id, location, h3_7')
