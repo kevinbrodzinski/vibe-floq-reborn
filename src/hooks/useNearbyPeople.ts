@@ -12,44 +12,31 @@ export interface NearbyRow {
 export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
   const [people, setPeople] = useState<NearbyRow[]>([])
   const [loading, setLoading] = useState(false)
-  const tokenRef = useRef<string | null>(null)
 
-  // keep auth-token fresh
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      tokenRef.current = data.session?.access_token || null
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      tokenRef.current = s?.access_token || null
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // throttled fetcher (1×/2 s max)
+  // throttled fetcher using database RPC function
   const throttledFetch = useRef(
     throttle(async (lat: number, lng: number, limit: number) => {
       try {
         setLoading(true)
-        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people` +
-                    `?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&limit=${limit}&v=2`
-        const res = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(tokenRef.current && { Authorization: `Bearer ${tokenRef.current}` })
-          }
+        
+        // Use the database RPC function instead of edge function
+        const { data, error } = await supabase.rpc('rank_nearby_people', {
+          p_lat: lat,
+          p_lng: lng,
+          p_limit: limit
         })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         
-        const raw = (await res.json()) as NearbyRow[]
+        if (error) throw error
         
-        // 💡 normalize + filter • only keep rows with a finite distance
+        // Transform the data to match expected interface
         setPeople(
-          raw
-            .filter(r => Number.isFinite(r.meters))         // drop null / NaN
+          (data || [])
+            .filter(r => Number.isFinite(r.meters))
             .map(r => ({
-              ...r,
-              distance_m: r.meters!,                        // align naming
-              meters: r.meters!                             // keep original for compatibility
+              profile_id: r.profile_id,
+              vibe: r.vibe,
+              meters: r.meters,
+              synthetic_id: r.synthetic_id
             }))
         )
       } catch (err) {
