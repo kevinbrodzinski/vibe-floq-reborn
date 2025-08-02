@@ -60,17 +60,6 @@ export const FloqApp = () => {
             <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
               <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold">Floq</h1>
-                <div className="flex items-center gap-2">
-                  <NotificationBell onClick={() => setNotificationsOpen(true)} />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCommandPaletteOpen(true)}
-                    className="p-2 h-8 w-8"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </div>
 
