@@ -64,9 +64,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     fieldTilesRef.current = fieldTiles;
   }, [fieldTiles]);
 
-  // dedicated refs so we create the sprites only once
-  const myDotRef = useRef<Sprite | null>(null);
-  const accuracyRef = useRef<Graphics | null>(null);
+  // Refs for PIXI containers and sprites (user location handled by built-in system)
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
   const tilePoolRef = useRef<TileSpritePool | null>(null);
@@ -133,28 +131,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
 
-      /* --- "you-are-here" dot --- */
-      if (!myDotRef.current) {
-        const dot = Sprite.from(Texture.WHITE);
-        dot.anchor.set(0.5);
-        dot.tint = 0x3399ff;   // blue
-        dot.width = dot.height = 16; // Slightly larger for visibility
-        dot.interactive = false;
-        dot.eventMode = 'none';
-        // Add a subtle pulsing effect
-        dot.alpha = 0.9;
-        peopleContainer.addChild(dot);
-        myDotRef.current = dot;
-      }
-
-      /* --- accuracy circle (optional) --- */
-      if (!accuracyRef.current) {
-        const g = new Graphics();
-        g.lineStyle(2, 0x3399ff, 0.25);
-        // Add accuracy circle behind people container (lower z-index)
-        heatContainer.addChild(g); // Put in heat container so it's below people
-        accuracyRef.current = g;
-      }
+      // User location dot and accuracy circle are handled by existing built-in system
 
       /* ------------------------------------------------- hit-testing + ripple */
       onPointerMove = (e: any) => {
@@ -348,19 +325,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         }
         
         // Get existing sprites for pooling
-        const existingSprites = peopleContainer.children.filter(child => 
-          child !== myDotRef.current && child !== accuracyRef.current
-        ) as Graphics[];
+        const existingSprites = peopleContainer.children as Graphics[];
         
         // Hide excess sprites
         for (let i = people.length; i < existingSprites.length; i++) {
           existingSprites[i].visible = false;
         }
         
-        // Re-add user dot if it was removed
-        if (myDotRef.current && !myDotRef.current.parent) {
-          peopleContainer.addChild(myDotRef.current);
-        }
+        // Re-add any existing built-in user location elements that may have been cleared
         
         // Update or create sprites for each person
         people.forEach((person, index) => {
@@ -441,34 +413,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       console.log('[PIXI_DEBUG] Floqs moved to Mapbox clustering');
 
       // ---- USER LOCATION DOT ----
-      if (myDotRef.current && myPos?.lat && myPos?.lng) {
-        try {
-          const { x, y } = projectLatLng(myPos.lng, myPos.lat);
-          myDotRef.current.x = x;
-          myDotRef.current.y = y;
-          myDotRef.current.visible = true;
-          
-          // Update accuracy circle if position has accuracy info
-          if (accuracyRef.current && myPos.accuracy) {
-            accuracyRef.current.clear();
-            const radiusInMeters = myPos.accuracy;
-            // Use consolidated meters→pixels utility from lib/geo
-            const radiusInPixels = metersToPixelsAtLat(radiusInMeters, myPos.lat);
-            accuracyRef.current.circle(x, y, radiusInPixels);
-            accuracyRef.current.stroke({ color: 0x3399ff, width: 2, alpha: 0.25 });
-          }
-          
-          if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
-            console.log('[PIXI_DEBUG] User location dot updated:', { x, y, lat: myPos.lat, lng: myPos.lng });
-          }
-        } catch (error) {
-          console.warn('[PIXI_DEBUG] Could not project user location:', error);
-          myDotRef.current.visible = false;
-        }
-      } else {
-        if (myDotRef.current) myDotRef.current.visible = false;
-        accuracyRef.current?.clear();
-      }
+      // User location is handled by existing built-in system - removed custom implementation
 
       animationId = requestAnimationFrame(animate);
     };
