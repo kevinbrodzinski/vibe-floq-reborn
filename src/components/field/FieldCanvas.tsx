@@ -57,7 +57,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
   const addRipple = useAddRipple();           // enqueue shader ripple
   const userLocation = useUserLocation();    // Get live GPS position
-  const { pos: myPos } = useUserLocation();   // live lat/lng
+  const lastUserPosRef = useRef<{lat: number, lng: number} | null>(null);
   const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
   
@@ -507,8 +507,16 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- USER LOCATION DOT ----
       const userDot = userDotRef.current;
-      if (userDot && userLocation.pos.lat && userLocation.pos.lng) {
-        const projection = projectLatLng(userLocation.pos.lng, userLocation.pos.lat);
+      if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+        // Cache the last valid position to prevent returning {x:0,y:0}
+        if (userLocation.pos.lat && userLocation.pos.lng) {
+          lastUserPosRef.current = { lat: userLocation.pos.lat, lng: userLocation.pos.lng };
+        }
+        
+        const position = lastUserPosRef.current;
+        if (!position) return; // No valid position yet
+        
+        const projection = projectLatLng(position.lng, position.lat);
         if (!projection) return; // Skip rendering if map not ready
         const { x, y } = projection;
         

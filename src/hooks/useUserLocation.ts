@@ -83,7 +83,9 @@ export function useUserLocation() {
 
       const batch = bufferRef.current.splice(0, bufferRef.current.length)
 
+      const { data: { session } } = await supabase.auth.getSession();
       const { error } = await supabase.functions.invoke('record_locations', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
         body: { batch }  // ✅ No user_id - edge function gets it from JWT
       })
 
