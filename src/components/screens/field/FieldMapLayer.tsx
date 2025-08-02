@@ -3,7 +3,6 @@ import React, { useRef } from 'react';
 import { FieldMapBase } from '@/components/maps/FieldMapBase';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
-import { VibeDensityMap } from './VibeDensityMap';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
@@ -31,9 +30,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         floqs={walkableFloqs} 
         realtime={realtime}
       />
-      
-      {/* Layer 1.5: Vibe Density Clustering */}
-      <VibeDensityMap />
       
       {/* Layer 2: PIXI Canvas Overlay */}
       <FieldCanvasLayer
