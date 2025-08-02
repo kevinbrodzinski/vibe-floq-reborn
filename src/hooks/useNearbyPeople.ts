@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import throttle from 'lodash.throttle'
+import { throttle as throttleFn } from 'lodash-es'
 
 export interface NearbyRow {
   profile_id: string
@@ -28,21 +28,23 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Throttled fetch function
+  // Throttled fetch function - create ONE instance
   const fetchNearby = useRef(
-    throttle(async (lat: number, lng: number, limit: number) => {
+    throttleFn(async (lat: number, lng: number, limit: number) => {
       try {
         setLoading(true)
         const precisionLat = lat.toFixed(6)
         const precisionLng = lng.toFixed(6)
         
         const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people?lat=${precisionLat}&lng=${precisionLng}&limit=${limit}`
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${tokenRef.current || ''}`,
-            'Content-Type': 'application/json'
-          }
-        })
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        }
+        if (tokenRef.current) {
+          headers.Authorization = `Bearer ${tokenRef.current}`
+        }
+
+        const response = await fetch(url, { headers })
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)

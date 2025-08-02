@@ -98,10 +98,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
 
       {/* Friend Suggestion Carousel */}
       <div className="absolute bottom-4 left-4 max-w-sm">
-        <FriendSuggestionCarousel
-          onStartChat={handleStartChat}
-          onShowOnMap={handleShowOnMap}
-        />
+        <FriendSuggestionCarousel />
       </div>
       
       {/* Debug Panel with Time Warp */}

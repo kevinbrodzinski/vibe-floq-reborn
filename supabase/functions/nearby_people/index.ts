@@ -20,9 +20,9 @@ Deno.serve(async req => {
   }
 
   // Validate numeric inputs
-  const numLat = parseFloat(lat)
-  const numLng = parseFloat(lng)
-  if (isNaN(numLat) || isNaN(numLng)) {
+  const numLat = Number(lat)
+  const numLng = Number(lng)
+  if (Number.isNaN(numLat) || Number.isNaN(numLng)) {
     return new Response(JSON.stringify({ error: 'lat,lng must be numbers' }), { 
       status: 400, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -38,12 +38,13 @@ Deno.serve(async req => {
     const { data, error } = await sb.rpc('rank_nearby_people', {
       p_lat: numLat,
       p_lng: numLng,
-      p_limit: parseInt(limit.toString())
+      p_limit: Number(limit)
     })
 
     if (error) throw error
 
-    return new Response(JSON.stringify(data || []), {
+    const payload = data ?? []
+    return new Response(JSON.stringify(payload), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

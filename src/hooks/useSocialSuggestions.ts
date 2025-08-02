@@ -55,7 +55,7 @@ export const useSocialSuggestions = (lat?: number, lng?: number, radiusKm: numbe
     const nearbyAsSuggestions = convertNearbyToSuggestions(nearbyPeople)
     const friends = friendSuggestions || []
     
-    // Create a map to deduplicate by friend_id, prioritizing friend suggestions
+    // Create a map to deduplicate by friend_id
     const suggestionMap = new Map<string, SocialSuggestion>()
     
     // Add nearby people first (lower priority)
