@@ -7,7 +7,7 @@ export const zIndex = {
   // Content layers
   content: 10,
   card: 20,
-  modal: 101,
+  modal: 30,
   
   // Overlay layers
   overlay: 100,
