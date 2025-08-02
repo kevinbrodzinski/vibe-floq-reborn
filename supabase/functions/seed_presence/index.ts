@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
       
       insertData.push({
         profile_id: `demo-user-${i}`,
-        location: `SRID=4326;POINT(${lng} ${lat})`,
+        location: {
+          type: 'Point',
+          coordinates: [lng, lat] // GeoJSON format
+        },
         vibe: vibe,
         h3_7: h3_7,
         updated_at: new Date().toISOString(),

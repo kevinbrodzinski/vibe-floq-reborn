@@ -38,7 +38,7 @@ interface FieldTileResponse {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''  // Back to service role for DB access
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''  // Service role for database access
 )
 
 // Convert vibe string to HSL values

@@ -169,7 +169,20 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         setLastHeartbeat(Date.now());
       });
 
-      channel.subscribe();
+      channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          // Track presence with GeoJSON format to match parser expectations
+          channel.track({
+            profile_id: 'current-user', // TODO: Get actual user ID
+            location: {
+              type: 'Point',
+              coordinates: [lng, lat] // [longitude, latitude]
+            },
+            vibe: 'social', // TODO: Get actual user vibe
+            last_seen: new Date().toISOString()
+          }).catch(console.warn);
+        }
+      });
 
       // Skip initial poll if socket provides data via sync event
       // Only poll vibes_now for specific tile area after 2 seconds if no socket data
@@ -181,11 +194,15 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
             console.log('[BucketedPresence] Socket timeout, fetching from vibes_now table for tile:', h3Index);
           }
           
-          const { data: presenceData, error } = await supabase
+          // Simplified query to avoid TypeScript deep inference issues
+          const recentTime = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+          const query = supabase
             .from('vibes_now')
             .select('profile_id, location, vibe, updated_at')
             .not('location', 'is', null)
-            .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()); // Only recent data
+            .gte('updated_at', recentTime);
+          
+          const { data: presenceData, error } = await query;
 
           if (error) {
             console.warn('[BucketedPresence] Error fetching presence data:', error);

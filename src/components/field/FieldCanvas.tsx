@@ -577,14 +577,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
               children: true,
               texture: true
             });
-          } catch (e) {
-            console.warn('[CLEANUP] Error destroying PIXI app:', e);
-          }
-          appRef.current = null;
+        } catch (e) {
+          console.warn('[CLEANUP] Error destroying PIXI app:', e);
         }
-      } catch (e) {
-        console.error('[CLEANUP] Critical cleanup error:', e);
+        appRef.current = null;
       }
+    } catch (e) {
+      console.error('[CLEANUP] Critical cleanup error:', e);
+    }
     };
   }, []);
 
