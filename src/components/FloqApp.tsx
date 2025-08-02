@@ -63,10 +63,6 @@ export const FloqApp = () => {
               </div>
             </div>
 
-            {/* Notification Permission Request */}
-            <div className="px-4 py-2">
-              <NotificationPermissionRequest />
-            </div>
 
 
             <div className="pb-20">
