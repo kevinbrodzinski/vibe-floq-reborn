@@ -7,17 +7,10 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
 
-interface Person {
-  id: string;
-  name: string;
-  vibe: string;
-  color: string;
-  isFriend?: boolean;
-  avatar_url?: string | null;
-}
+import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
 interface SocialInteractionModalProps {
-  person: Person | null;
+  person: NearbyRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDMOpen?: (personId: string) => void;
@@ -37,22 +30,42 @@ export const SocialInteractionModal = ({
 
   if (!person) return null;
 
+  const getVibeColor = (vibe: string) => {
+    switch (vibe.toLowerCase()) {
+      case 'energetic': return '#ef4444'
+      case 'excited': return '#f97316' 
+      case 'social': return '#10b981'
+      case 'chill': return '#6366f1'
+      case 'focused': return '#8b5cf6'
+      default: return '#6b7280'
+    }
+  }
+
+  // Transform NearbyRow to display data
+  const displayData = {
+    id: person.profile_id || 'unknown',
+    name: person.profile_id ? `User ${person.profile_id.slice(-4)}` : 'Anonymous',
+    vibe: person.vibe,
+    color: getVibeColor(person.vibe),
+    isFriend: false // TODO: Add friend status check
+  }
+
   const handleAction = (action: string) => {
     socialHaptics.gestureConfirm();
     
     switch (action) {
       case 'dm':
-        onDMOpen?.(person.id);
+        onDMOpen?.(displayData.id);
         onOpenChange(false);
         break;
       case 'friend-request':
-        sendFriendRequest(person.id);
+        sendFriendRequest(displayData.id);
         onOpenChange(false);
         break;
       case 'vibe-check':
         toast({
           title: "Vibe check sent! ✨",
-          description: `You sent ${person.name} a vibe check`,
+          description: `You sent ${displayData.name} a vibe check`,
         });
         onOpenChange(false);
         break;
@@ -62,7 +75,7 @@ export const SocialInteractionModal = ({
       case 'meetup':
         toast({
           title: "Meetup request sent! 📍",
-          description: `You suggested meeting up with ${person.name}`,
+          description: `You suggested meeting up with ${displayData.name}`,
         });
         onOpenChange(false);
         break;
@@ -70,7 +83,7 @@ export const SocialInteractionModal = ({
         // Feature gated: floq creation flow will be implemented in future release
         toast({
           title: "Floq creation started! 🌟",
-          description: `Creating a floq with ${person.name}`,
+          description: `Creating a floq with ${displayData.name}`,
         });
         onOpenChange(false);
         break;
@@ -79,7 +92,7 @@ export const SocialInteractionModal = ({
     }
   };
 
-  const actions = person.isFriend 
+  const actions = displayData.isFriend
     ? [
         { id: 'dm', icon: MessageCircle, label: 'Message', color: 'text-blue-500' },
         { id: 'invite-floq', icon: Users, label: 'Invite to Floq', color: 'text-purple-500' },
@@ -100,17 +113,17 @@ export const SocialInteractionModal = ({
           <DialogTitle className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: person.color }}
+              style={{ backgroundColor: displayData.color }}
             >
               <span className="text-white font-medium">
-                {person.name[0].toUpperCase()}
+                {displayData.name[0].toUpperCase()}
               </span>
             </div>
             <div>
-              <div className="font-medium">{person.name}</div>
+              <div className="font-medium">{displayData.name}</div>
               <div className="text-sm text-muted-foreground capitalize">
-                {person.vibe} vibe
-                {person.isFriend && (
+                {displayData.vibe} vibe
+                {displayData.isFriend && (
                   <span className="ml-2 text-primary">• Friend</span>
                 )}
               </div>
@@ -158,7 +171,7 @@ export const SocialInteractionModal = ({
               className="border-t pt-4 mt-4"
             >
               <div className="text-sm text-muted-foreground mb-3">
-                Quick floq options with {person.name}:
+                Quick floq options with {displayData.name}:
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button

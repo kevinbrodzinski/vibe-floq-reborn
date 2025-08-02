@@ -1,74 +1,45 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useUserLocation } from '@/hooks/useUserLocation'
-import { useNearbyPeople } from '@/hooks/useNearbyPeople'
+import { useNearbyPeople, type NearbyRow } from '@/hooks/useNearbyPeople'
 import { FriendCard } from './FriendCard'
 import { SocialInteractionModal } from './SocialInteractionModal'
 import { generateStableKey } from '@/utils/stableKeys'
-import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
-export const InlineFriendCarousel: React.FC = () => {
+export const InlineFriendCarousel = memo(() => {
   const { pos } = useUserLocation()
-  const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng)
-  const [selectedPerson, setSelectedPerson] = useState<any>(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
+  const [selected, setSelected] = useState<NearbyRow | null>(null)
 
-  if (loading || !people.length) return null
-
-  const transformToPerson = (nearbyPerson: NearbyRow) => ({
-    id: nearbyPerson.profile_id || 'unknown',
-    name: nearbyPerson.profile_id ? `User ${nearbyPerson.profile_id.slice(-4)}` : 'Anonymous',
-    vibe: nearbyPerson.vibe,
-    color: getVibeColor(nearbyPerson.vibe),
-    isFriend: false // TODO: Add friend status check
-  })
-
-  const getVibeColor = (vibe: string) => {
-    switch (vibe.toLowerCase()) {
-      case 'energetic': return '#ef4444'
-      case 'excited': return '#f97316' 
-      case 'social': return '#10b981'
-      case 'chill': return '#6366f1'
-      case 'focused': return '#8b5cf6'
-      default: return '#6b7280'
-    }
-  }
-
-  const handlePersonClick = (person: NearbyRow) => {
-    setSelectedPerson(transformToPerson(person))
-    setModalOpen(true)
-  }
+  if (loading || people.length === 0) return null
 
   return (
-    <div className="w-full">
-      <div className="mb-3">
-        <h3 className="text-sm font-medium text-foreground">Nearby People</h3>
-        <p className="text-xs text-muted-foreground">{people.length} people around you</p>
+    <section aria-label="Nearby people" className="my-4 px-3">
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="text-sm font-medium text-foreground">Nearby people</h3>
+        <span className="text-xs text-muted-foreground">{people.length}</span>
       </div>
-      
-      <div 
-        className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-2
-                   bg-card/50 border rounded-lg p-3"
-        role="region"
-        aria-label="Nearby people carousel"
-        tabIndex={0}
+
+      <div
+        className="
+          flex gap-2 overflow-x-auto snap-x snap-mandatory
+          rounded-xl border border-border/40 bg-card/60 backdrop-blur
+          px-3 py-2
+        "
       >
-        {people.map((person, index) => {
-          const stableKey = generateStableKey(person, 'inline-carousel', index)
-          return (
-            <FriendCard 
-              key={stableKey} 
-              person={person} 
-              onClick={() => handlePersonClick(person)}
-            />
-          )
-        })}
+        {people.map((p, i) => (
+          <FriendCard
+            key={generateStableKey(p, 'inline-carousel', i)}
+            person={p}
+            onClick={() => setSelected(p)}
+          />
+        ))}
       </div>
 
       <SocialInteractionModal
-        person={selectedPerson}
-        open={modalOpen}
-        onOpenChange={setModalOpen}
+        open={!!selected}
+        onOpenChange={state => !state && setSelected(null)}
+        person={selected}
       />
-    </div>
+    </section>
   )
-}
+})
