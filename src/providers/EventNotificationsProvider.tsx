@@ -27,7 +27,7 @@ const EventNotificationsContext = createContext<EventNotificationsContextType | 
 const SUB_KINDS = [
   'dm',
   'friend_request',
-  'friend_request_accepted', 
+  'friend_request_accepted',
   'friend_request_declined',
   'plan_invite',
   'plan_invite_accepted',
@@ -102,7 +102,6 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
         },
         (payload) => {
           const notification = payload.new as EventNotification;
-          // Double-check user_id for security
           if (notification.profile_id === user.id && SUB_KINDS.includes(notification.kind as any)) {
             setUnseen(prev => [notification, ...prev]);
             throttledInvalidateNotifications();
@@ -119,7 +118,6 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
         },
         (payload) => {
           const notification = payload.new as EventNotification;
-          // Double-check user_id for security
           if (notification.profile_id === user.id && notification.seen_at) {
             setUnseen(prev => prev.filter(n => n.id !== notification.id));
             throttledInvalidateNotifications();
@@ -132,7 +130,7 @@ export const EventNotificationsProvider: React.FC<{ children: React.ReactNode }>
       channel.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, throttledInvalidateNotifications]);
 
   const markAsSeen = async (ids: string[]) => {
     if (!user || ids.length === 0) return;

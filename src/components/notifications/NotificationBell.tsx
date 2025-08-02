@@ -1,8 +1,7 @@
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNotificationCounts } from '@/hooks/useUnreadCounts';
-import { useAuth } from '@/providers/AuthProvider';
+import { useEventNotifications } from '@/providers/EventNotificationsProvider';
 
 interface NotificationBellProps {
   onClick?: () => void;
@@ -10,10 +9,9 @@ interface NotificationBellProps {
 }
 
 export const NotificationBell = ({ onClick, className }: NotificationBellProps) => {
-  const { user } = useAuth();
-  const { data: notificationCounts } = useNotificationCounts(user?.id);
+  const { unseen } = useEventNotifications();
 
-  const totalUnread = notificationCounts?.total || 0;
+  const totalUnread = unseen.length;
 
   return (
     <Button

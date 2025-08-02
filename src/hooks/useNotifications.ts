@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import { usePushToken } from './usePushNotifications';
+import { usePushToken } from './usePushToken';
 import { useBadgeReset } from './useBadgeReset';
 import { pushNotificationService } from '@/lib/pushNotifications';
 

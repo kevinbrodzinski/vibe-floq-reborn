@@ -1,45 +1,36 @@
-import { formatDistanceToNow } from 'date-fns';
-import { Bell, MessageCircle, Calendar, Users, Trophy, UserPlus, Mail } from 'lucide-react';
+import React from 'react';
+import { Bell, MessageCircle, UserPlus, UserCheck, UserX, Calendar, MapPin, Heart, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { useNotificationActions } from '@/hooks/useNotificationActions';
-
-interface EventNotification {
-  id: string;
-  profile_id: string;
-  kind: string;
-  payload: any;
-  created_at: string;
-  seen_at?: string;
-}
 
 const getNotificationIcon = (kind: string) => {
   switch (kind) {
+    case 'dm':
+      return <MessageCircle className="w-4 h-4" />;
     case 'friend_request':
       return <UserPlus className="w-4 h-4" />;
     case 'friend_request_accepted':
+      return <UserCheck className="w-4 h-4" />;
     case 'friend_request_declined':
-      return <Users className="w-4 h-4" />;
-    case 'floq_invite':
-    case 'floq_invite_accepted':
-    case 'floq_invite_declined':
-      return <Users className="w-4 h-4" />;
+      return <UserX className="w-4 h-4" />;
     case 'plan_invite':
     case 'plan_invite_accepted':
     case 'plan_invite_declined':
       return <Calendar className="w-4 h-4" />;
+    case 'floq_invite':
+    case 'floq_invite_accepted':
+    case 'floq_invite_declined':
+      return <MapPin className="w-4 h-4" />;
     case 'floq_reaction':
+      return <Heart className="w-4 h-4" />;
     case 'floq_reply':
-      return <MessageCircle className="w-4 h-4" />;
-    case 'dm':
-      return <Mail className="w-4 h-4" />;
-    case 'plan_comment_new':
-    case 'plan_checkin':
-      return <Calendar className="w-4 h-4" />;
+      return <Reply className="w-4 h-4" />;
     default:
       return <Bell className="w-4 h-4" />;
   }
@@ -47,79 +38,98 @@ const getNotificationIcon = (kind: string) => {
 
 const getNotificationColor = (kind: string) => {
   switch (kind) {
+    case 'dm':
+      return 'text-blue-500 bg-blue-50 dark:bg-blue-950/20';
     case 'friend_request':
+      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
     case 'friend_request_accepted':
+      return 'text-green-500 bg-green-50 dark:bg-green-950/20';
     case 'friend_request_declined':
-      return 'text-purple-500';
-    case 'floq_invite':
-    case 'floq_invite_accepted':
-    case 'floq_invite_declined':
-      return 'text-orange-500';
+      return 'text-red-500 bg-red-50 dark:bg-red-950/20';
     case 'plan_invite':
     case 'plan_invite_accepted':
     case 'plan_invite_declined':
-    case 'plan_comment_new':
-    case 'plan_checkin':
-      return 'text-green-500';
-    case 'floq_reaction':
-    case 'floq_reply':
-      return 'text-blue-500';
-    case 'dm':
-      return 'text-indigo-500';
-    default:
-      return 'text-muted-foreground';
-  }
-};
-
-const getNotificationTitle = (notification: EventNotification) => {
-  const { kind, payload } = notification;
-  
-  switch (kind) {
-    case 'friend_request':
-      return `New friend request from ${payload?.from_username || 'someone'}`;
-    case 'friend_request_accepted':
-      return `${payload?.from_username || 'Someone'} accepted your friend request`;
-    case 'friend_request_declined':
-      return `${payload?.from_username || 'Someone'} declined your friend request`;
+      return 'text-purple-500 bg-purple-50 dark:bg-purple-950/20';
     case 'floq_invite':
-      return `${payload?.from_username || 'Someone'} invited you to join a floq`;
     case 'floq_invite_accepted':
-      return `${payload?.from_username || 'Someone'} accepted your floq invitation`;
     case 'floq_invite_declined':
-      return `${payload?.from_username || 'Someone'} declined your floq invitation`;
-    case 'plan_invite':
-      return `${payload?.from_username || 'Someone'} invited you to a plan`;
-    case 'plan_invite_accepted':
-      return `${payload?.from_username || 'Someone'} accepted your plan invitation`;
-    case 'plan_invite_declined':
-      return `${payload?.from_username || 'Someone'} declined your plan invitation`;
+      return 'text-orange-500 bg-orange-50 dark:bg-orange-950/20';
     case 'floq_reaction':
-      return `${payload?.from_username || 'Someone'} reacted to your message`;
+      return 'text-pink-500 bg-pink-50 dark:bg-pink-950/20';
     case 'floq_reply':
-      return `${payload?.from_username || 'Someone'} replied to your message`;
-    case 'dm':
-      return `New message from ${payload?.from_username || 'someone'}`;
-    case 'plan_comment_new':
-      return `New comment on ${payload?.plan_title || 'your plan'}`;
-    case 'plan_checkin':
-      return `${payload?.from_username || 'Someone'} checked in to ${payload?.plan_title || 'a plan'}`;
+      return 'text-indigo-500 bg-indigo-50 dark:bg-indigo-950/20';
     default:
-      return 'Notification';
+      return 'text-gray-500 bg-gray-50 dark:bg-gray-950/20';
   }
 };
 
-const getNotificationSubtitle = (notification: EventNotification) => {
-  const { kind, payload } = notification;
-  
-  switch (kind) {
+const getNotificationTitle = (notification: any) => {
+  switch (notification.kind) {
     case 'dm':
-      return payload?.preview ? `"${payload.preview}"` : undefined;
-    case 'floq_invite':
-      return payload?.floq_title ? `Floq: ${payload.floq_title}` : undefined;
+      return 'New Message';
+    case 'friend_request':
+      return 'New Friend Request';
+    case 'friend_request_accepted':
+      return 'Friend Request Accepted';
+    case 'friend_request_declined':
+      return 'Friend Request Declined';
     case 'plan_invite':
-      return payload?.plan_title ? `Plan: ${payload.plan_title}` : undefined;
+      return 'Plan Invitation';
+    case 'plan_invite_accepted':
+      return 'Plan Invitation Accepted';
+    case 'plan_invite_declined':
+      return 'Plan Invitation Declined';
+    case 'floq_invite':
+      return 'Floq Invitation';
+    case 'floq_invite_accepted':
+      return 'Floq Invitation Accepted';
+    case 'floq_invite_declined':
+      return 'Floq Invitation Declined';
+    case 'plan_comment_new':
+      return 'New Plan Comment';
+    case 'plan_checkin':
+      return 'Plan Check-in';
+    case 'floq_reaction':
+      return 'New Reaction';
+    case 'floq_reply':
+      return 'New Reply';
     default:
-      return undefined;
+      return 'New Notification';
+  }
+};
+
+const getNotificationSubtitle = (notification: any) => {
+  switch (notification.kind) {
+    case 'dm':
+      return notification.payload?.preview || 'You have a new message';
+    case 'friend_request':
+      return 'Someone wants to be your friend';
+    case 'friend_request_accepted':
+      return 'Your friend request was accepted';
+    case 'friend_request_declined':
+      return 'Your friend request was declined';
+    case 'plan_invite':
+      return 'You\'ve been invited to a plan';
+    case 'plan_invite_accepted':
+      return 'Your plan invitation was accepted';
+    case 'plan_invite_declined':
+      return 'Your plan invitation was declined';
+    case 'floq_invite':
+      return 'You\'ve been invited to a floq';
+    case 'floq_invite_accepted':
+      return 'Your floq invitation was accepted';
+    case 'floq_invite_declined':
+      return 'Your floq invitation was declined';
+    case 'plan_comment_new':
+      return 'Someone commented on a plan';
+    case 'plan_checkin':
+      return 'Someone checked into a plan';
+    case 'floq_reaction':
+      return 'Someone reacted to a message';
+    case 'floq_reply':
+      return 'Someone replied to a message';
+    default:
+      return '';
   }
 };
 
@@ -128,10 +138,6 @@ export const NotificationsList = () => {
   const { unseen: notifications, markAsSeen, markAllSeen } = useEventNotifications();
   const { handleNotificationTap } = useNotificationActions();
 
-  const handleMarkAsRead = (notificationIds: string[]) => {
-    markAsSeen(notificationIds);
-  };
-
   const handleMarkAllAsRead = () => {
     markAllSeen();
     toast({
@@ -139,11 +145,11 @@ export const NotificationsList = () => {
     });
   };
 
-  const handleNotificationClick = (notification: EventNotification) => {
-    // Always handle notification tap for navigation and mark as seen
-    handleNotificationTap(notification);
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.seen_at) {
+      handleNotificationTap(notification);
+    }
   };
-
 
   if (notifications.length === 0) {
     return (
@@ -185,24 +191,25 @@ export const NotificationsList = () => {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-3 rounded-lg border transition-colors cursor-pointer ${
+              className={cn(
+                "max-w-full p-3 rounded-lg border transition-colors cursor-pointer",
                 notification.seen_at 
                   ? 'bg-muted/20 border-border/50' 
                   : 'bg-card border-border hover:bg-muted/30'
-              }`}
+              )}
               onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex items-start gap-3">
-                <div className={`flex-shrink-0 ${getNotificationColor(notification.kind)}`}>
+                <div className={cn("flex-shrink-0 p-2 rounded-full", getNotificationColor(notification.kind))}>
                   {getNotificationIcon(notification.kind)}
                 </div>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <p className={`text-sm font-medium ${
+                      <p className={cn("text-sm font-medium", 
                         notification.seen_at ? 'text-muted-foreground' : 'text-foreground'
-                      }`}>
+                      )}>
                         {getNotificationTitle(notification)}
                       </p>
                       {getNotificationSubtitle(notification) && (
