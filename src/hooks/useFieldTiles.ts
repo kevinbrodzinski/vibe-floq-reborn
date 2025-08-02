@@ -30,10 +30,8 @@ export function useFieldTiles(bounds?: TileBounds) {
       if (!tileIds.length) return [];
       
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) throw new Error("No auth session");
-        
-        const res = await supaFn('get_field_tiles', session.access_token, { 
+        // Function is now public, no auth needed
+        const res = await supaFn('get_field_tiles', null, { 
           tile_ids: tileIds 
         });
 

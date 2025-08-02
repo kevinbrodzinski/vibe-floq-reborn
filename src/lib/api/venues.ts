@@ -86,8 +86,9 @@ export async function syncFoursquareVenues(
   profileId?: string
 ): Promise<VenueSyncResult> {
   try {
+    // No auth needed since function is public
     const { data, error } = await supabase.functions.invoke('fetch_foursquare', {
-      body: { lat, lng }  // Removed profile_id requirement
+      body: { lat, lng }
     });
 
     if (error) throw error;

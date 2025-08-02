@@ -23,7 +23,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.get_field_tiles]
-verify_jwt = true
+verify_jwt = false
 
 [functions.notification-worker]
 verify_jwt = false
@@ -111,3 +111,12 @@ verify_jwt = true
 
 [functions.record_locations]
 verify_jwt = true
+
+[functions.refresh_field_tiles]
+verify_jwt = false
+
+[functions.seed_presence]
+verify_jwt = false
+
+[functions.sync-places]
+verify_jwt = false
