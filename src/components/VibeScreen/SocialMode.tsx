@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ScrollView } from 'react-native';
 import { InlineFriendCarousel } from '@/components/social/InlineFriendCarousel';
 import { PreviewButtonsRow } from '@/components/VibeScreen/PreviewButtonsRow';
 import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
@@ -36,10 +35,7 @@ export const SocialMode: React.FC = () => {
   };
 
   return (
-    <ScrollView 
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 32 }}
-    >
+    <div className="overflow-y-auto pb-8">
       <VibeContextHeader />
       
       <InlineFriendCarousel />
@@ -74,6 +70,6 @@ export const SocialMode: React.FC = () => {
         open={showPeople} 
         onOpenChange={setShowPeople}
       />
-    </ScrollView>
+    </div>
   );
 };
