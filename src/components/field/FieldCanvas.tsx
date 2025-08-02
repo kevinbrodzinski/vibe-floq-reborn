@@ -22,6 +22,7 @@ import { forwardRef } from 'react';
 import { useAdvancedHaptics } from '@/hooks/useAdvancedHaptics';
 import { AnimatePresence } from 'framer-motion';
 import { ClusterTooltip } from '@/components/field/ClusterTooltip';
+import { ConstellationRenderer } from './ConstellationRenderer';
 
 interface FieldCanvasProps {
   people: Person[];
@@ -74,6 +75,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Refs for PIXI containers and sprites
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
+  const constellationContainerRef = useRef<Container | null>(null);
   const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
@@ -122,21 +124,64 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     }).then(() => {
       // Create containers in proper z-order
       const heatContainer = new Container();
+      const constellationContainer = new Container(); // For constellation effects
       const peopleContainer = new Container();
       const userContainer = new Container(); // For user location dot
       
       // Add containers in proper order (last = top layer)
       app.stage.addChild(heatContainer);
+      app.stage.addChild(constellationContainer); // Constellation effects between heat and people
       app.stage.addChild(peopleContainer);
       app.stage.addChild(userContainer); // User dot on top
       
       heatContainerRef.current = heatContainer;
       peopleContainerRef.current = peopleContainer;
+      constellationContainerRef.current = constellationContainer;
       
       // Create user location dot
       const userDot = new Graphics();
       userContainer.addChild(userDot);
       userDotRef.current = userDot;
+      
+      // Function to update user dot position
+      const updateUserDot = (lat: number, lng: number) => {
+        const projection = projectLatLng(lng, lat);
+        if (!projection || !userDot) return; // Map not ready yet
+        
+        const { x, y } = projection;
+        
+        // Clear and redraw the user dot with proper styling
+        userDot.clear();
+        
+        // Accuracy halo (if available)
+        if (userLocation.pos?.accuracy) {
+          const mapZoom = getMapInstance()?.getZoom() ?? 11;
+          const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, lat, mapZoom);
+          userDot.beginFill(0x0066cc, 0.1);
+          userDot.drawCircle(0, 0, haloRadius);
+          userDot.endFill();
+        }
+        
+        // Outer ring (14px semi-transparent blue)
+        userDot.beginFill(0x0066cc, 0.3);
+        userDot.drawCircle(0, 0, 14);
+        userDot.endFill();
+        
+        // Inner dot (8px solid blue)
+        userDot.beginFill(0x0066cc, 1.0);
+        userDot.drawCircle(0, 0, 8);
+        userDot.endFill();
+        
+        // White border for contrast
+        userDot.lineStyle(2, 0xffffff, 0.8);
+        userDot.drawCircle(0, 0, 8);
+        
+        userDot.position.set(x, y);
+        userDot.visible = true;
+      };
+      
+      // Store updateUserDot function for use in effects
+      (userDot as any)._updatePosition = updateUserDot;
       
       // Initialize pools and reusable objects
       tilePoolRef.current = new TileSpritePool();
@@ -232,6 +277,41 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
     return safelyDestroyPixi;
   }, [hitTest]);        // ← dependency is safe (stable useCallback)
+
+  // Update user dot when GPS position changes
+  useEffect(() => {
+    const userDot = userDotRef.current;
+    if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+      const updateFunction = (userDot as any)._updatePosition;
+      if (updateFunction) {
+        updateFunction(userLocation.pos.lat, userLocation.pos.lng);
+      }
+    }
+  }, [userLocation.pos?.lat, userLocation.pos?.lng]);
+
+  // Update user dot when map moves/zooms
+  useEffect(() => {
+    const map = getMapInstance();
+    if (!map) return;
+
+    const handleMapMove = () => {
+      const userDot = userDotRef.current;
+      if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+        const updateFunction = (userDot as any)._updatePosition;
+        if (updateFunction) {
+          updateFunction(userLocation.pos.lat, userLocation.pos.lng);
+        }
+      }
+    };
+
+    map.on('move', handleMapMove);
+    map.on('zoom', handleMapMove);
+
+    return () => {
+      map.off('move', handleMapMove);
+      map.off('zoom', handleMapMove);
+    };
+  }, [userLocation.pos?.lat, userLocation.pos?.lng]);
 
   // Handle canvas clicks for ripples
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
@@ -535,46 +615,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       console.log('[PIXI_DEBUG] Floqs moved to Mapbox clustering');
 
       // ---- USER LOCATION DOT ----
-      const userDot = userDotRef.current;
-      if (userDot && lastUserPosRef.current) {
-        const position = lastUserPosRef.current;
-        const projection = projectLatLng(position.lng, position.lat);
-        
-        // Only render if projection is successful (map is ready)
-        if (projection) {
-          const { x, y } = projection;
-          
-          userDot.clear();
-          
-          // Accuracy halo (if available)
-          if (userLocation.pos?.accuracy) {
-            const mapZoom = getMapInstance()?.getZoom() ?? 11;
-            const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, position.lat, mapZoom);
-            userDot.beginFill(0x0066cc, 0.1);
-            userDot.drawCircle(0, 0, haloRadius);
-            userDot.endFill();
-          }
-          
-          // Outer ring (14px semi-transparent blue)
-          userDot.beginFill(0x0066cc, 0.3);
-          userDot.drawCircle(0, 0, 14);
-          userDot.endFill();
-          
-          // Inner dot (8px solid blue)
-          userDot.beginFill(0x0066cc, 1.0);
-          userDot.drawCircle(0, 0, 8);
-          userDot.endFill();
-          
-          // White border for contrast
-          userDot.lineStyle(2, 0xffffff, 0.8);
-          userDot.drawCircle(0, 0, 8);
-          
-          userDot.position.set(x, y);
-          userDot.visible = true;
-        }
-      } else if (userDot) {
-        userDot.visible = false;
-      }
+      // Now handled separately in useEffect hooks for better reactivity
 
       animationId = requestAnimationFrame(animate);
     };
@@ -655,6 +696,18 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           display: 'block',
         }}
       />
+      
+      {/* Constellation effects (only when in constellation mode) */}
+      {isConstellationMode && (
+        <ConstellationRenderer
+          people={people}
+          fieldTiles={fieldTiles}
+          app={appRef.current}
+          container={constellationContainerRef.current}
+          timeWarpHour={timeWarpHour}
+        />
+      )}
+      
       {/* Debug info */}
       {/* tooltip portal */}
       <AnimatePresence>

@@ -26,6 +26,8 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
   showDebugVisuals = false
 }) => {
   const [showTileDebug, setShowTileDebug] = useState(false);
+  const [constellationMode, setConstellationMode] = useState(isConstellationMode);
+  const [currentTimeWarp, setCurrentTimeWarp] = useState(timeWarpHour);
 
   const lastTileUpdate = data.fieldTiles.length > 0 
     ? data.fieldTiles[0]?.updated_at 
@@ -45,8 +47,8 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
           fieldTiles={data.fieldTiles}
           viewportGeo={data.viewport}
           onRipple={onRipple}
-          isConstellationMode={isConstellationMode}
-          timeWarpHour={timeWarpHour}
+          isConstellationMode={constellationMode}
+          timeWarpHour={currentTimeWarp}
           showDebugVisuals={showDebugVisuals}
         />
       </div>
@@ -63,6 +65,10 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
         onToggleTileDebug={setShowTileDebug}
         fieldTileCount={data.fieldTiles.length}
         lastTileUpdate={lastTileUpdate}
+        isConstellationMode={constellationMode}
+        onToggleConstellationMode={setConstellationMode}
+        timeWarpHour={currentTimeWarp}
+        onTimeWarpChange={setCurrentTimeWarp}
       />
     </>
   );

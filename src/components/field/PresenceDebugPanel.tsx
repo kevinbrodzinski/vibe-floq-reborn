@@ -5,13 +5,18 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { usePresenceDemoData } from '@/hooks/usePresenceDemoData';
 import { useFieldTileSync } from '@/hooks/useFieldTileSync';
-import { Play, Square, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Play, Square, RefreshCw, Eye, EyeOff, Stars, Sun } from 'lucide-react';
 
 interface PresenceDebugPanelProps {
   showTileDebug: boolean;
   onToggleTileDebug: (show: boolean) => void;
   fieldTileCount?: number;
   lastTileUpdate?: string;
+  isConstellationMode?: boolean;
+  onToggleConstellationMode?: (enabled: boolean) => void;
+  timeWarpHour?: number;
+  onTimeWarpChange?: (hour: number) => void;
 }
 
 /**
@@ -22,7 +27,11 @@ export const PresenceDebugPanel: React.FC<PresenceDebugPanelProps> = ({
   showTileDebug,
   onToggleTileDebug,
   fieldTileCount = 0,
-  lastTileUpdate
+  lastTileUpdate,
+  isConstellationMode = false,
+  onToggleConstellationMode,
+  timeWarpHour = new Date().getHours(),
+  onTimeWarpChange
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { seedDemoData, clearDemoData, isLoading, lastSeeded } = usePresenceDemoData();
@@ -132,6 +141,34 @@ export const PresenceDebugPanel: React.FC<PresenceDebugPanelProps> = ({
               onCheckedChange={onToggleTileDebug}
             />
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs flex items-center gap-1">
+              <Stars className="w-3 h-3" />
+              Constellation mode
+            </span>
+            <Switch
+              checked={isConstellationMode}
+              onCheckedChange={onToggleConstellationMode}
+            />
+          </div>
+          {onTimeWarpChange && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs flex items-center gap-1">
+                  <Sun className="w-3 h-3" />
+                  Time: {timeWarpHour}:00
+                </span>
+              </div>
+              <Slider
+                value={[timeWarpHour]}
+                onValueChange={([hour]) => onTimeWarpChange(hour)}
+                max={23}
+                min={0}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          )}
         </div>
 
         {/* Real-time Status */}
