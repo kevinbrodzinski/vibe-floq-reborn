@@ -1,3 +1,4 @@
+
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
@@ -23,7 +24,7 @@ export default function FriendSuggestionCarousel() {
   return (
     <div className="fixed inset-x-0 bottom-[72px] z-[60] pointer-events-none">
       <ScrollArea className="pointer-events-auto">
-        <div className="flex gap-3 pl-4 pr-6 py-2">
+        <div className="flex gap-3 pl-4 pr-6 py-2 pointer-events-auto">
           {suggestions.map((s, i) => {
             const key = s.friend_id ?? `${s.vibe_tag}-${s.distance_m}-${i}`;
             return <SuggestionCard key={key} suggestion={s} />;
