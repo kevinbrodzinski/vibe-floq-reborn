@@ -870,8 +870,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   /* render */
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
-      <div className="relative w-full h-full">
-        <div ref={mapContainerRef} className="w-full h-full" />
+      <div className="absolute inset-0">
+        <div ref={mapContainerRef} className="absolute inset-0" />
         
         {/* Vibe Filter Dropdown */}
         {status === 'ready' && vibeTypes.length > 0 && (
