@@ -1844,6 +1844,7 @@ export type Database = {
           active_floq_ids: string[]
           avg_vibe: Json
           crowd_count: number
+          h3_7: string | null
           profile_id: string | null
           tile_id: string
           updated_at: string
@@ -1852,6 +1853,7 @@ export type Database = {
           active_floq_ids?: string[]
           avg_vibe?: Json
           crowd_count?: number
+          h3_7?: string | null
           profile_id?: string | null
           tile_id: string
           updated_at?: string
@@ -1860,6 +1862,7 @@ export type Database = {
           active_floq_ids?: string[]
           avg_vibe?: Json
           crowd_count?: number
+          h3_7?: string | null
           profile_id?: string | null
           tile_id?: string
           updated_at?: string
@@ -3501,6 +3504,7 @@ export type Database = {
           flock_tags: string[] | null
           flock_type: Database["public"]["Enums"]["flock_type_enum"] | null
           geo: unknown | null
+          h3_7: string | null
           id: string
           last_activity_at: string | null
           location: unknown | null
@@ -3534,6 +3538,7 @@ export type Database = {
           flock_tags?: string[] | null
           flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
           geo?: unknown | null
+          h3_7?: string | null
           id?: string
           last_activity_at?: string | null
           location?: unknown | null
@@ -3567,6 +3572,7 @@ export type Database = {
           flock_tags?: string[] | null
           flock_type?: Database["public"]["Enums"]["flock_type_enum"] | null
           geo?: unknown | null
+          h3_7?: string | null
           id?: string
           last_activity_at?: string | null
           location?: unknown | null
@@ -9134,6 +9140,7 @@ export type Database = {
           geo: unknown | null
           geohash6: string | null
           gh5: string | null
+          h3_7: string | null
           location: unknown
           profile_id: string | null
           updated_at: string | null
@@ -9150,6 +9157,7 @@ export type Database = {
           geo?: unknown | null
           geohash6?: string | null
           gh5?: string | null
+          h3_7?: string | null
           location: unknown
           profile_id?: string | null
           updated_at?: string | null
@@ -9166,6 +9174,7 @@ export type Database = {
           geo?: unknown | null
           geohash6?: string | null
           gh5?: string | null
+          h3_7?: string | null
           location?: unknown
           profile_id?: string | null
           updated_at?: string | null
