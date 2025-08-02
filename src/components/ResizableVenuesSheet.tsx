@@ -70,8 +70,6 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
     <>
       {/* Backdrop */}

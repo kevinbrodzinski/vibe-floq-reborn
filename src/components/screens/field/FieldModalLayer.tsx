@@ -6,6 +6,7 @@ import { VenueDetailsSheet } from "@/components/VenueDetailsSheet";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { Z, zIndex } from "@/constants/z";
+import { AnimatePresence } from "framer-motion";
 import type { FieldData } from "./FieldDataProvider";
 
 interface FieldModalLayerProps {
@@ -44,17 +45,21 @@ export const FieldModalLayer = ({ data }: FieldModalLayerProps) => {
       )}
 
       {/* ——— Venues list ——— */}
-      <ResizableVenuesSheet
-        isOpen={venuesSheetOpen}
-        onClose={() => setVenuesSheetOpen(false)}
-        onVenueTap={(venueId) => {
-          setSelectedVenueId(venueId);
-          setVenuesSheetOpen(false);
-          if ('vibrate' in navigator) {
-            navigator.vibrate(4);
-          }
-        }}
-      />
+      <AnimatePresence>
+        {venuesSheetOpen && (
+          <ResizableVenuesSheet
+            isOpen={venuesSheetOpen}
+            onClose={() => setVenuesSheetOpen(false)}
+            onVenueTap={(venueId) => {
+              setSelectedVenueId(venueId);
+              setVenuesSheetOpen(false);
+              if ('vibrate' in navigator) {
+                navigator.vibrate(4);
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ——— Venue details ——— */}
       <VenueDetailsSheet
