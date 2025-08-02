@@ -58,6 +58,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   const [people, setPeople] = useState<PresenceUser[]>([]);
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
   const lastTrackRef = useRef<number>(0);
+  const channelRef = useRef<any>(null); // Shared ref for presence tracking
   const env = getEnvironmentConfig();
   
   // Show mock data only in development
@@ -248,12 +249,12 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   useEffect(() => {
     if (!lat || !lng || showMockData) return;
 
-    const channelRef = { current: null as any };
+    let uid: string | undefined;
 
     const setupPresenceTracking = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const uid = session?.user.id;
+        uid = session?.user.id;
         
         if (!uid) {
           console.warn('[BucketedPresence] No authenticated user for presence tracking');
@@ -292,10 +293,10 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     // Set up interval for periodic tracking updates
     const interval = setInterval(async () => {
       const now = Date.now();
-      if (now - lastTrackRef.current > 25000 && channelRef.current) {
+      if (now - lastTrackRef.current > 25000 && channelRef.current && uid) {
         try {
           await channelRef.current.track({
-            profile_id: (await supabase.auth.getSession()).data.session?.user.id,
+            profile_id: uid,
             location: {
               type: 'Point',
               coordinates: [lng, lat]
@@ -315,6 +316,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
       clearInterval(interval);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [lat, lng, showMockData]);
