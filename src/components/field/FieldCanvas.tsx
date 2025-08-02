@@ -5,6 +5,7 @@ import { Text as PIXIText } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
+import { SpritePool } from '@/lib/pixi/SpritePool';
 import { projectLatLng, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
@@ -80,6 +81,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
+  const spritePoolRef = useRef<SpritePool<Graphics> | null>(null);
   // Track existing floq sprites to prevent recreation
   const floqSpritesRef = useRef<Map<string, Graphics>>(new Map());
   // Reusable graphics objects for performance
@@ -187,6 +189,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // Initialize pools and reusable objects
       tilePoolRef.current = new TileSpritePool();
       graphicsPoolRef.current = new GraphicsPool();
+      spritePoolRef.current = new SpritePool(() => new Graphics());
+      spritePoolRef.current.preAllocate(512); // Pre-allocate 512 Graphics objects
       
       // Pre-create reusable debug graphics
       debugGraphicsRef.current = new Graphics();
@@ -492,23 +496,29 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
         }
         
-        // Efficient sprite pooling - reuse existing Graphics objects
-        const existingSprites = peopleContainer.children as Graphics[];
+        // Track current people IDs for cleanup
+        const currentPeopleIds = new Set(people.map(p => p.id || `person-${people.indexOf(p)}`));
+        const spritePool = spritePoolRef.current;
         
-        // Hide excess sprites instead of destroying them
-        for (let i = people.length; i < existingSprites.length; i++) {
-          existingSprites[i].visible = false;
-          existingSprites[i].clear(); // Clear but don't destroy
+        if (spritePool) {
+          // Release sprites for people who are no longer present
+          const inUseKeys = Array.from((spritePool as any).inUse.keys()) as string[];
+          inUseKeys.forEach(id => {
+            if (typeof id === 'string' && (id.startsWith('person-') || !currentPeopleIds.has(id))) {
+              spritePool.release(id);
+            }
+          });
         }
         
-        // Re-add any existing built-in user location elements that may have been cleared
-        
-        // Update or create sprites for each person with constellation mode
+        // Update or create sprites for each person with sprite pooling
         people.forEach((person, index) => {
-          let dot = existingSprites[index] as Graphics;
+          const spritePool = spritePoolRef.current;
+          if (!spritePool) return;
           
-          if (!dot) {
-            dot = new Graphics();
+          // Use sprite pool instead of creating new Graphics
+          let dot = spritePool.acquire(person.id || `person-${index}`);
+          
+          if (!dot.parent) {
             peopleContainer.addChild(dot);
           }
           
@@ -685,6 +695,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         console.error('[CLEANUP] Critical cleanup error:', e);
       }
     };
+  }, []);
+
+  // Add periodic garbage collection for sprite pool
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (spritePoolRef.current) {
+        spritePoolRef.current.gc(1024); // Keep max 1024 free sprites
+      }
+    }, 30_000); // Every 30 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   //  [32mEnsure the main container uses zIndex('mapOverlay') and a border for debugging [0m
