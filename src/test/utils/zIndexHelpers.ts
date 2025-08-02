@@ -35,13 +35,13 @@ export const LAYER_TEST_SCENARIOS: LayerTest[] = [
   },
   {
     selector: '[role="dialog"]',
-    expectedLayer: 'modalSheet',
-    minZIndex:    Z.modalSheet
+    expectedLayer: 'modal',
+    minZIndex:    Z.modal
   },
   {
     selector: '[data-testid="floating-bottom-bar"]',
-    expectedLayer: 'systemFab',
-    minZIndex:    Z.systemFab
+    expectedLayer: 'system',
+    minZIndex:    Z.system
   },
   {
     selector: '[data-testid="banner"]',

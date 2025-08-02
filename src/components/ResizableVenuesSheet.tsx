@@ -128,7 +128,7 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              {...zIndex('modalForeground')}
+              {...zIndex('dmSheet')}
               className={`fixed bottom-0 left-0 right-0 pointer-events-auto bg-card rounded-t-2xl border-t border-border shadow-2xl ${className}`}
               style={heightStyle}
             >
