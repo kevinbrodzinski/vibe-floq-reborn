@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState } from 'react'
 
-// Time warp context for debugging/development
 interface TimeWarpContextType {
   t: Date | undefined
   set: (time: Date | undefined) => void
@@ -8,7 +7,7 @@ interface TimeWarpContextType {
 
 const TimeWarpContext = createContext<TimeWarpContextType | undefined>(undefined)
 
-export const TimeWarpProvider = ({ children }: { children: ReactNode }) => {
+export const TimeWarpProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [t, setT] = useState<Date | undefined>(undefined)
 
   const set = (newTime: Date | undefined) => {
@@ -30,7 +29,6 @@ export const useTimeWarp = (): TimeWarpContextType => {
   return context
 }
 
-// Helper to get current warped time
 export const getWarpedTime = (): Date => {
-  return new Date() // Will use context value when properly integrated
+  return new Date()
 }

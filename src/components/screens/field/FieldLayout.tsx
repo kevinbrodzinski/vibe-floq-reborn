@@ -18,6 +18,7 @@ import { BottomHud } from "@/components/layout/BottomHud";
 import { TimeScrubber } from "@/components/TimeScrubber";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
+import { FriendDrawer } from "@/components/field/FriendDrawer";
 
 interface FieldLayoutProps {
   data: FieldData;
