@@ -4,6 +4,7 @@ import { useCurrentEvent } from "@/hooks/useCurrentEvent";
 import { useNearbyVenues } from "@/hooks/useNearbyVenues";
 import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 import { useFieldTiles } from "@/hooks/useFieldTiles";
+import { useFieldTileSync } from "@/hooks/useFieldTileSync";
 import { useAutoVenueSync } from "@/hooks/useVenueSync";
 import { usePresencePublisher } from "@/hooks/usePresencePublisher";
 import { viewportToTileIds } from "@/lib/geo";
@@ -197,6 +198,9 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
 
     return ids;
   }, [viewport]);
+
+  // Enable field tile sync automation
+  useFieldTileSync();
 
   // Get field tiles data
   const { data: fieldTiles = [], error: tilesError, isLoading } = useFieldTiles(viewport ? {

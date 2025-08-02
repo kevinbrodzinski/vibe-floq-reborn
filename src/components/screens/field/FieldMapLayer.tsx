@@ -4,6 +4,7 @@ import { FieldMapBase } from '@/components/maps/FieldMapBase';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
+import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
 import { FriendSuggestionCarousel } from '@/components/field/FriendSuggestionCarousel';
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { getMapInstance } from '@/lib/geo/project';
@@ -88,6 +89,13 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
       
       {/* Phase 4: Enhanced UI Components */}
       
+      {/* Data Flow Test Panel (dev only) */}
+      {process.env.NODE_ENV === 'development' && isDebugVisible && (
+        <div className="absolute top-4 left-4 max-w-md">
+          <FieldDataTestPanel />
+        </div>
+      )}
+
       {/* Friend Suggestion Carousel */}
       <div className="absolute bottom-4 left-4 max-w-sm">
         <FriendSuggestionCarousel
