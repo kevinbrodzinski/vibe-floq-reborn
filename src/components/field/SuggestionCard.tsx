@@ -8,21 +8,22 @@ export default function SuggestionCard({ suggestion }: { suggestion: SocialSugge
   const { display_name, vibe_tag, distance_m, avatar_url } = suggestion
 
   return (
-    <Card className="min-w-[136px] rounded-xl bg-muted/60 hover:bg-muted/70 transition
-                     p-3 text-center">
+    <Card className="min-w-[136px] px-3 py-3 rounded-2xl bg-background/60 backdrop-blur-sm shadow-md">
       <Avatar className="h-10 w-10 mx-auto mb-2">
         <AvatarImage src={avatar_url ?? undefined} />
-        <AvatarFallback className="bg-background/60 text-sm font-semibold">
+        <AvatarFallback className="text-[10px] font-semibold">
           {display_name.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
 
       <p className="text-xs font-medium truncate">{display_name}</p>
-      <p className="text-[11px] text-muted-foreground">{formatDistance(distance_m)}</p>
+      <p className="text-xs text-muted-foreground">{formatDistance(distance_m)}</p>
 
-      <Badge variant="secondary" className="mt-1 text-[10px] lowercase">
-        {vibe_tag}
-      </Badge>
+      {vibe_tag && (
+        <Badge variant="secondary" className="mt-1 text-[10px]">
+          {vibe_tag}
+        </Badge>
+      )}
     </Card>
   )
 }

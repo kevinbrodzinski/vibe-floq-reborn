@@ -21,27 +21,16 @@ export default function FriendSuggestionCarousel() {
   if (!suggestions.length) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-24 z-[60] pointer-events-none">
-      <Card className="mx-auto max-w-[640px] bg-background/80 backdrop-blur
-                       shadow-xl pointer-events-auto">
-        <CardHeader className="pt-2 pb-1">
-          <CardTitle className="text-sm flex items-center gap-1">
-            Friends Nearby <span className="font-normal">({suggestions.length})</span>
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="pb-2 px-3">
-          <ScrollArea>
-            <div className="flex gap-3">
-              {suggestions.map((s, i) => {
-                const key = s.friend_id ?? `${s.vibe_tag}-${s.distance_m}-${i}`;
-                return <SuggestionCard key={key} suggestion={s} />;
-              })}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </CardContent>
-      </Card>
+    <div className="fixed inset-x-0 bottom-[72px] z-[60] pointer-events-none">
+      <ScrollArea className="pointer-events-auto">
+        <div className="flex gap-3 pl-4 pr-6 py-2">
+          {suggestions.map((s, i) => {
+            const key = s.friend_id ?? `${s.vibe_tag}-${s.distance_m}-${i}`;
+            return <SuggestionCard key={key} suggestion={s} />;
+          })}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   )
 }

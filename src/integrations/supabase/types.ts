@@ -10586,6 +10586,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      clear_demo_presence: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       clear_user_vibe: {
         Args: Record<PropertyKey, never>
         Returns: undefined

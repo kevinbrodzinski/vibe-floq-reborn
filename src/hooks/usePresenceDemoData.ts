@@ -46,12 +46,8 @@ export function usePresenceDemoData() {
   const clearDemoData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Remove all demo records (those with profile_id starting with 'demo-user-')
-      const { error } = await supabase
-        .from('vibes_now')
-        .delete()
-        .ilike('profile_id', 'demo-user-%')
-        .select();
+      // Use the new RPC function to safely clear demo data
+      const { error } = await supabase.rpc('clear_demo_presence');
 
       if (error) throw error;
 
