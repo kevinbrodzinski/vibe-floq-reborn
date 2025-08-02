@@ -26,15 +26,30 @@ export async function fetchTrendingVenues(
   radiusM = 2_000,
   limit = 15
 ): Promise<VenueSnapshot[]> {
-  const { data, error } = await supabase.rpc('get_trending_venues', {
-    p_lat: lat,
-    p_lng: lng,
-    p_radius_m: radiusM,
-    p_limit: limit
+  // Use bbox approach since get_trending_venues doesn't exist
+  const latDegrees = radiusM / 111000;
+  const lngDegrees = radiusM / (111000 * Math.cos(lat * Math.PI / 180));
+  
+  const { data, error } = await supabase.rpc('get_venues_in_bbox', {
+    west: lng - lngDegrees,
+    south: lat - latDegrees,
+    east: lng + lngDegrees,
+    north: lat + latDegrees
   });
 
   if (error) throw error;
-  return (data ?? []) as VenueSnapshot[];
+  
+  // Transform to VenueSnapshot format
+  return (data ?? []).slice(0, limit).map(venue => ({
+    venue_id: venue.id,
+    name: venue.name,
+    distance_m: 0, // Would need to calculate
+    vibe_tag: venue.vibe,
+    trend_score: venue.vibe_score || 50,
+    people_now: venue.live_count || 0,
+    dominant_vibe: venue.vibe,
+    updated_at: venue.updated_at
+  }));
 }
 
 /* ---------- 2. single venue live counter ---------- */

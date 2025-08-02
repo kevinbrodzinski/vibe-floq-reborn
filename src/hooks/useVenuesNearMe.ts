@@ -93,21 +93,21 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
       
       // Transform data with distance calculation
       const venues: VenueNearMe[] = (data || []).map(venue => {
-        const venueLat = +venue.lat; // Safe casting for both string and number types
+        const venueLat = +venue.lat;
         const venueLng = +venue.lng;
-        const distance = memoDistance(lat!, lng!);
+        const distance = haversine([lat!, lng!], [venueLat, venueLng]);
         
         return {
           id: venue.id,
           name: venue.name,
           lat: venueLat,
           lng: venueLng,
-          vibe: 'social', // default vibe
-          source: 'database',
+          vibe: venue.vibe || 'mixed',
+          source: venue.source || 'database',
           distance_m: Math.round(distance),
-          live_count: venue.live_count,
-          vibe_score: venue.vibe_score,
-          popularity: (venue as any).popularity || (venue as any).check_ins || 0
+          live_count: venue.live_count || 0,
+          vibe_score: venue.vibe_score || 50,
+          popularity: venue.popularity || 0
         };
       });
       

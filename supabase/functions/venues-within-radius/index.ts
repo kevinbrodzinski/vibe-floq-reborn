@@ -80,28 +80,19 @@ serve(async req => {
     );
 
     /* ---------------------------------------------------------------
-       Call the venues_within_radius function with signature:
-       
-       venues_within_radius(
-         p_lat numeric,
-         p_lng numeric, 
-         p_radius_m integer,
-         p_limit integer,
-         p_profile_id uuid,
-         p_categories text[],
-         p_price_tier_max price_enum,
-         p_vibe text
-       )
+       Use get_venues_in_bbox for now since venues_within_radius 
+       doesn't exist yet. Convert radius to bounding box.
        ------------------------------------------------------------- */
-    const { data, error } = await sb.rpc("venues_within_radius", {
-      p_lat: lat,
-      p_lng: lng,
-      p_radius_m: radiusM,
-      p_limit: limit,
-      p_profile_id: profileId,
-      p_categories: categories,
-      p_price_tier_max: priceTierMax,
-      p_vibe: vibe
+    
+    // Convert radius to approximate lat/lng degrees  
+    const latDegrees = radiusM / 111000; // ~111km per degree
+    const lngDegrees = radiusM / (111000 * Math.cos(lat * Math.PI / 180));
+    
+    const { data, error } = await sb.rpc("get_venues_in_bbox", {
+      west: lng - lngDegrees,
+      south: lat - latDegrees,
+      east: lng + lngDegrees,
+      north: lat + latDegrees
     });
 
     if (error) {
