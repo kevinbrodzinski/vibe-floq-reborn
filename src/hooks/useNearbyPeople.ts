@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import throttle from 'lodash-es/throttle'
+import { useFriendDrawer } from '@/contexts/FriendDrawerContext'
 
 export interface NearbyRow {
   profile_id: string | null
@@ -12,6 +13,7 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
   const [people, setPeople] = useState<NearbyRow[]>([])
   const [loading, setLoading] = useState(false)
   const tokenRef = useRef<string | null>(null)
+  const { open } = useFriendDrawer()
 
   // keep auth-token fresh
   useEffect(() => {
@@ -61,11 +63,12 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
   ).current
 
   useEffect(() => {
-    if (lat == null || lng == null) return
+    // Only fetch when drawer is open and we have coordinates
+    if (!open || lat == null || lng == null) return
     throttledFetch(lat, lng, limit)              // first call
     const id = setInterval(() => throttledFetch(lat, lng, limit), 45_000)
     return () => clearInterval(id)
-  }, [lat, lng, limit])
+  }, [lat, lng, limit, open])
 
   return { people, loading }
 }

@@ -15,7 +15,9 @@ import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
 import { TimeScrubber } from "@/components/TimeScrubber";
-import { FriendCarousel } from "@/components/social/FriendCarousel";
+import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
+import { FriendFab } from "@/components/field/FriendFab";
+import { FriendDrawer } from "@/components/field/FriendDrawer";
 
 interface FieldLayoutProps {
   data: FieldData;
@@ -100,48 +102,51 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
   return (
     <ErrorBoundary>
-      <div className="relative h-svh w-full bg-background">
-        {/* Motion Permission Banner - Global Level */}
-        <MotionPermissionBanner
-          requestMotionPermission={requestMotionPermission}
-          isMotionAvailable={isMotionAvailable}
-        />
-
-        {/* Base Map Layer - z-0 */}
-        <div {...gestureHandlers}>
-          <FieldMapLayer
-            data={data}
-            people={people}
-            floqs={data.floqEvents}
-            onRipple={handleRipple}
-            canvasRef={canvasRef}
+      <FriendDrawerProvider>
+        <div className="relative h-svh w-full bg-background">
+          {/* Motion Permission Banner - Global Level */}
+          <MotionPermissionBanner
+            requestMotionPermission={requestMotionPermission}
+            isMotionAvailable={isMotionAvailable}
           />
+
+          {/* Base Map Layer - z-0 */}
+          <div {...gestureHandlers}>
+            <FieldMapLayer
+              data={data}
+              people={people}
+              floqs={data.floqEvents}
+              onRipple={handleRipple}
+              canvasRef={canvasRef}
+            />
+          </div>
+
+          {/* UI Content Layer - z-10 to z-30 */}
+          <FieldUILayer data={data} />
+
+          {/* Modal/Sheet Layer - z-40 to z-60 */}
+          <FieldModalLayer data={data} />
+
+          {/* Time Scrubber - z-60 */}
+          <TimeScrubber />
+
+          {/* Friend FAB and Drawer - z-60-65 */}
+          <FriendFab />
+          <FriendDrawer />
+
+          {/* System Layer (FAB, accessibility) - z-70+ */}
+          <FieldSystemLayer data={data} />
+
+          {/* Debug Layer (development only) - z-200+ */}
+          {/* Debug visuals disabled for production */}
+          {false && (
+            <TileDebugVisual
+              fieldTiles={data.fieldTiles}
+              visible={data.showDebugVisuals}
+            />
+          )}
         </div>
-
-        {/* UI Content Layer - z-10 to z-30 */}
-        <FieldUILayer data={data} />
-
-        {/* Modal/Sheet Layer - z-40 to z-60 */}
-        <FieldModalLayer data={data} />
-
-        {/* Time Scrubber - z-60 */}
-        <TimeScrubber />
-
-        {/* Friend Carousel - z-60 */}
-        <FriendCarousel />
-
-        {/* System Layer (FAB, accessibility) - z-70+ */}
-        <FieldSystemLayer data={data} />
-
-        {/* Debug Layer (development only) - z-200+ */}
-        {/* Debug visuals disabled for production */}
-        {false && (
-          <TileDebugVisual
-            fieldTiles={data.fieldTiles}
-            visible={data.showDebugVisuals}
-          />
-        )}
-      </div>
+      </FriendDrawerProvider>
     </ErrorBoundary>
   );
 };
