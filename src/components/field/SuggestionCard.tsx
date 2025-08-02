@@ -5,14 +5,14 @@ import { formatDistance } from '@/utils/formatDistance'
 import type { SocialSuggestion } from '@/hooks/useSocialSuggestions'
 
 export default function SuggestionCard({ suggestion }: { suggestion: SocialSuggestion }) {
-  const { display_name, vibe_tag, distance_m, avatar_url } = suggestion
+  const { display_name, vibe_tag, distance_m, avatar_url, friend_id } = suggestion
 
   return (
     <Card className="min-w-[136px] px-3 py-3 rounded-2xl bg-background/60 backdrop-blur-sm shadow-md">
       <Avatar className="h-10 w-10 mx-auto mb-2">
         <AvatarImage src={avatar_url ?? undefined} />
         <AvatarFallback className="text-[10px] font-semibold">
-          {display_name.slice(0, 2).toUpperCase()}
+          {(friend_id ?? display_name ?? '??').slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
 

@@ -29,16 +29,19 @@ export const useSocialSuggestions = (lat?: number, lng?: number) => {
   /* —— 3.  Merge + prioritise —— */
   const suggestions = useMemo(() => {
     const map = new Map<string, SocialSuggestion>()
-    people.forEach(p =>
-      map.set(p.profile_id, {
-        friend_id: p.profile_id,
-        display_name: `User ${p.profile_id.slice(-4)}`,
-        avatar_url: null,
-        vibe_tag: p.vibe,
-        distance_m: p.meters,
-        vibe_match: 80,
-        last_activity: 'moments ago'
-      }))
+    people.forEach(p => {
+      if (p.profile_id && Number.isFinite(p.meters)) {  // only add valid entries
+        map.set(p.profile_id, {
+          friend_id: p.profile_id,
+          display_name: `User ${p.profile_id.slice(-4)}`,
+          avatar_url: null,
+          vibe_tag: p.vibe || 'unknown',
+          distance_m: p.meters!,
+          vibe_match: 80,
+          last_activity: 'moments ago'
+        })
+      }
+    })
     friends.forEach((f: SocialSuggestion) => map.set(f.friend_id, f)) // overrides duplicates
     return [...map.values()].sort((a, b) => a.distance_m - b.distance_m)
   }, [people, friends])

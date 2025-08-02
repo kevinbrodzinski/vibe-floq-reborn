@@ -3,9 +3,9 @@ import { supabase } from '@/integrations/supabase/client'
 import throttle from 'lodash-es/throttle'
 
 export interface NearbyRow {
-  profile_id: string
-  vibe: string
-  meters: number
+  profile_id: string | null
+  vibe: string | null
+  meters: number | null          // renamed from distance_m for clarity
 }
 
 export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
@@ -38,7 +38,19 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
           }
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        setPeople(await res.json())
+        
+        const raw = (await res.json()) as NearbyRow[]
+        
+        // 💡 normalize + filter • only keep rows with a finite distance
+        setPeople(
+          raw
+            .filter(r => Number.isFinite(r.meters))         // drop null / NaN
+            .map(r => ({
+              ...r,
+              distance_m: r.meters!,                        // align naming
+              meters: r.meters!                             // keep original for compatibility
+            }))
+        )
       } catch (err) {
         console.error('[useNearbyPeople]', err)
         setPeople([])
