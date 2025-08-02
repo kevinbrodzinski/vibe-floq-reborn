@@ -12,7 +12,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
-import { NotificationTestPanel } from "@/components/notifications/NotificationTestPanel";
+
 
 import { Button } from "./ui/button";
 import { zIndex } from "@/constants/z";
@@ -79,12 +79,6 @@ export const FloqApp = () => {
               <NotificationPermissionRequest />
             </div>
 
-            {/* Development Test Panel */}
-            {import.meta.env.DEV && (
-              <div className="px-4 py-2">
-                <NotificationTestPanel />
-              </div>
-            )}
 
             <div className="pb-20">
               <ErrorBoundary>
