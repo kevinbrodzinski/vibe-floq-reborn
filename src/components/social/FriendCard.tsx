@@ -4,9 +4,10 @@ import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
 interface FriendCardProps {
   person: NearbyRow
+  onClick?: () => void
 }
 
-export const FriendCard: React.FC<FriendCardProps> = ({ person }) => {
+export const FriendCard: React.FC<FriendCardProps> = ({ person, onClick }) => {
   const { profile_id, vibe, meters } = person
 
   const vibeColor = (vibe: string) => {
@@ -29,8 +30,14 @@ export const FriendCard: React.FC<FriendCardProps> = ({ person }) => {
   const displayName = profile_id ? `User ${profile_id.slice(-4)}` : 'Anonymous'
 
   return (
-    <article className="w-36 shrink-0 snap-start px-2" tabIndex={0}>
-      <div className="flex flex-col items-center space-y-2">
+    <article 
+      className="w-36 shrink-0 snap-start px-2 cursor-pointer" 
+      tabIndex={0}
+      onClick={onClick}
+      role="button"
+      aria-label={`View ${displayName} profile`}
+    >
+      <div className="flex flex-col items-center space-y-2 hover:opacity-80 transition-opacity">
         <Avatar className="w-12 h-12">
           <AvatarImage src={`/placeholder.svg`} />
           <AvatarFallback className="text-xs bg-primary/20">
