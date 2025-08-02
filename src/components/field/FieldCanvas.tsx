@@ -573,18 +573,24 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // 3️⃣ Destroy the PIXI Application after cleanup
         if (appRef.current) {
           try {
+            // Clear pooled sprite maps to prevent texture leaks
+            if (floqSpritesRef.current) {
+              floqSpritesRef.current.forEach(sprite => sprite.destroy());
+              floqSpritesRef.current.clear();
+            }
+            
             appRef.current.destroy(true, {
               children: true,
               texture: true
             });
-        } catch (e) {
-          console.warn('[CLEANUP] Error destroying PIXI app:', e);
+          } catch (e) {
+            console.warn('[CLEANUP] Error destroying PIXI app:', e);
+          }
+          appRef.current = null;
         }
-        appRef.current = null;
+      } catch (e) {
+        console.error('[CLEANUP] Critical cleanup error:', e);
       }
-    } catch (e) {
-      console.error('[CLEANUP] Critical cleanup error:', e);
-    }
     };
   }, []);
 

@@ -4,8 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
-import { latLngToCell } from 'h3-js'; // Use real H3 library
-const geoToH3 = (lat: number, lng: number, resolution = 7): string => latLngToCell(lat, lng, resolution);
+import { latLngToCell as geoToH3 } from 'h3-js'; // Use consistent naming
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
@@ -169,18 +168,30 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         setLastHeartbeat(Date.now());
       });
 
-      channel.subscribe((status) => {
+      channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          // Track presence with GeoJSON format to match parser expectations
-          channel.track({
-            profile_id: 'current-user', // TODO: Get actual user ID
-            location: {
-              type: 'Point',
-              coordinates: [lng, lat] // [longitude, latitude]
-            },
-            vibe: 'social', // TODO: Get actual user vibe
-            last_seen: new Date().toISOString()
-          }).catch(console.warn);
+          // Get actual user ID for presence tracking
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const uid = session?.user.id;
+            if (!uid) {
+              console.warn('[BucketedPresence] No authenticated user for presence tracking');
+              return;
+            }
+            
+            // Track presence with GeoJSON format and actual user ID
+            channel.track({
+              profile_id: uid,
+              location: {
+                type: 'Point',
+                coordinates: [lng, lat] // [longitude, latitude]
+              },
+              vibe: 'social', // TODO: Get actual user vibe from state
+              last_seen: new Date().toISOString()
+            }).catch(console.warn);
+          } catch (error) {
+            console.warn('[BucketedPresence] Error tracking presence:', error);
+          }
         }
       });
 
