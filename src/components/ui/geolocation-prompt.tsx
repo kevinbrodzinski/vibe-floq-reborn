@@ -25,6 +25,8 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
     } else {
       // Fallback: set debug location in localStorage and reload
       localStorage.setItem('floq-debug-forceLoc', '34.078,-118.261'); // Venice, CA
+      // Clear any cached coords to force refresh
+      sessionStorage.removeItem('floq-coords');
       window.location.reload();
     }
   };
@@ -32,6 +34,8 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
   const handleSkipLocation = () => {
     // Set default location and continue
     localStorage.setItem('floq-debug-forceLoc', '34.078,-118.261'); // Venice, CA  
+    // Clear any cached coords to force refresh
+    sessionStorage.removeItem('floq-coords');
     window.location.reload();
   };
 

@@ -81,6 +81,20 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       return;
     }
 
+    /* check for debug location first */
+    try {
+      const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+      if (debugLoc) {
+        const [lat, lng] = debugLoc.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const coords = { lat, lng };
+          set(s => ({ ...s, coords, status: 'success', hasPermission: true, ts: Date.now() }));
+          lastFix.current = coords;
+          return;
+        }
+      }
+    } catch {/* ignore */}
+
     /* cached coords speed-up (session-scope) */
     try {
       const cached = sessionStorage.getItem('floq-coords');
@@ -182,19 +196,48 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     asked.current = true;
     set(s => ({ ...s, status:'loading' }));
 
-    /* one-shot high-accuracy window (10 s) */
+    /* check for debug location */
+    try {
+      const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+      if (debugLoc) {
+        const [lat, lng] = debugLoc.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const mockPosition = {
+            coords: { latitude: lat, longitude: lng, accuracy: 50 },
+            timestamp: Date.now()
+          } as GeolocationPosition;
+          apply(mockPosition);
+          return;
+        }
+      }
+    } catch {/* ignore debug location errors */}
+
+    /* add timeout handler for stuck GPS */
+    const timeoutId = setTimeout(() => {
+      asked.current = false;
+      set(s => ({ ...s, status: 'error', error: 'timeout' }));
+    }, 25_000);
+
+    /* one-shot high-accuracy window (25s timeout) */
     navigator.geolocation.getCurrentPosition(
-      apply,
-      fail,
-      { enableHighAccuracy:o.enableHighAccuracy, timeout:10_000, maximumAge:0 },
+      (pos) => {
+        clearTimeout(timeoutId);
+        apply(pos);
+      },
+      (err) => {
+        clearTimeout(timeoutId);
+        asked.current = false;
+        fail(err);
+      },
+      { enableHighAccuracy:o.enableHighAccuracy, timeout:25_000, maximumAge:0 },
     );
 
-    /* continuous updates (no timeout) */
+    /* continuous updates (25s timeout) */
     if (o.watch) {
       watchId.current = navigator.geolocation.watchPosition(
         apply,
         fail,
-        { enableHighAccuracy:o.enableHighAccuracy, maximumAge:15_000 },
+        { enableHighAccuracy:o.enableHighAccuracy, timeout:25_000, maximumAge:60_000 },
       );
     }
   }, [apply, fail, o.enableHighAccuracy, o.watch]);

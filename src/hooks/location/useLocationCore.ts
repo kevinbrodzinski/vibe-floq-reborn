@@ -70,7 +70,27 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
       return;
     }
 
-    // Check cached coordinates first
+    // Check for debug location first
+    try {
+      const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+      if (debugLoc) {
+        const [lat, lng] = debugLoc.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const coords = { lat, lng };
+          setState(s => ({
+            ...s,
+            coords,
+            status: 'success',
+            hasPermission: true,
+            timestamp: Date.now(),
+          }));
+          lastFix.current = coords;
+          return;
+        }
+      }
+    } catch {/* ignore debug location errors */}
+
+    // Check cached coordinates second
     const cached = sessionStorage.getItem('floq-coords');
     if (cached) {
       try {
@@ -196,9 +216,38 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
 
     setState(s => ({ ...s, status: 'loading' }));
 
+    // Check for debug location first
+    try {
+      const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+      if (debugLoc) {
+        const [lat, lng] = debugLoc.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const mockPosition = {
+            coords: { latitude: lat, longitude: lng, accuracy: 50 },
+            timestamp: Date.now()
+          } as GeolocationPosition;
+          handlePosition(mockPosition);
+          return;
+        }
+      }
+    } catch {/* ignore debug location errors */}
+
+    // Add timeout protection
+    const timeoutId = setTimeout(() => {
+      userGestureRef.current = false;
+      handleError({ code: 3, message: 'Location request timed out' } as GeolocationPositionError);
+    }, 30_000);
+
     navigator.geolocation.getCurrentPosition(
-      handlePosition,
-      handleError,
+      (pos) => {
+        clearTimeout(timeoutId);
+        handlePosition(pos);
+      },
+      (err) => {
+        clearTimeout(timeoutId);
+        userGestureRef.current = false;
+        handleError(err);
+      },
       { 
         enableHighAccuracy: opts.enableHighAccuracy, 
         timeout: 25_000, 
