@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useEventNotifications } from '@/providers/EventNotificationsProvider';
+import { useNotificationActions } from '@/hooks/useNotificationActions';
 
 interface EventNotification {
   id: string;
@@ -125,6 +126,7 @@ const getNotificationSubtitle = (notification: EventNotification) => {
 export const NotificationsList = () => {
   const { toast } = useToast();
   const { unseen: notifications, markAsSeen, markAllSeen } = useEventNotifications();
+  const { handleNotificationTap } = useNotificationActions();
 
   const handleMarkAsRead = (notificationIds: string[]) => {
     markAsSeen(notificationIds);
@@ -135,6 +137,11 @@ export const NotificationsList = () => {
     toast({
       title: "All notifications marked as read"
     });
+  };
+
+  const handleNotificationClick = (notification: EventNotification) => {
+    // Always handle notification tap for navigation and mark as seen
+    handleNotificationTap(notification);
   };
 
 
@@ -178,12 +185,12 @@ export const NotificationsList = () => {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-3 rounded-lg border transition-colors ${
+              className={`p-3 rounded-lg border transition-colors cursor-pointer ${
                 notification.seen_at 
                   ? 'bg-muted/20 border-border/50' 
-                  : 'bg-card border-border cursor-pointer hover:bg-muted/30'
+                  : 'bg-card border-border hover:bg-muted/30'
               }`}
-              onClick={() => !notification.seen_at && handleMarkAsRead([notification.id])}
+              onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex items-start gap-3">
                 <div className={`flex-shrink-0 ${getNotificationColor(notification.kind)}`}>
