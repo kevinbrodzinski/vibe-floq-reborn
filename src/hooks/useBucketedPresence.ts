@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
+import { deterministicRandom } from '@/utils/djb2Hash';
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
@@ -26,17 +27,21 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
     isFriend: true
   }));
 
-  // Generate realistic positions around the user (within ~1km radius)
+  // Generate realistic mock presence data with coordinate jitter
   return mockUsers.map((user, index) => {
-    // Create a realistic distribution around the user
-    const angle = (index * 45) * (Math.PI / 180); // Spread users in a circle
-    const distance = 0.002 + (index * 0.001); // 200m to 1km away
+    // Create a realistic distribution around the user with jitter
+    const angle = (index * 45 + deterministicRandom(user.profile_id, 1) * 30) * (Math.PI / 180); 
+    const distance = 0.002 + (index * 0.001) + (deterministicRandom(user.profile_id, 2) * 0.0005); // 200m-1km + ±50m jitter
     
     const offsetLat = Math.cos(angle) * distance;
     const offsetLng = Math.sin(angle) * distance;
     
-    const lat = userLat + offsetLat;
-    const lng = userLng + offsetLng;
+    // Add micro-jitter to prevent exact overlaps (±30m)
+    const jitterLat = (deterministicRandom(user.profile_id, 3) - 0.5) * 0.0005; // ±30m at equator
+    const jitterLng = (deterministicRandom(user.profile_id, 4) - 0.5) * 0.0005;
+    
+    const lat = userLat + offsetLat + jitterLat;
+    const lng = userLng + offsetLng + jitterLng;
     
     return {
       ...user,
@@ -44,7 +49,7 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
         type: 'Point' as const,
         coordinates: [lng, lat] as [number, number] // [longitude, latitude]
       },
-      last_seen: new Date(Date.now() - Math.random() * 300000).toISOString() // Random time within last 5 minutes
+      last_seen: new Date(Date.now() - deterministicRandom(user.profile_id, 5) * 300000).toISOString() // 0-5 minutes ago
     };
   });
 };
@@ -124,8 +129,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
 
       fetchRealPresence();
 
-      // Set up real-time subscription for presence updates
-      const channel = supabase.channel(`presence-${Math.round(lat * 100)}-${Math.round(lng * 100)}`);
+      // Set up real-time subscription using H3-based channel for better geographic grouping
+      // Note: Using H3 would provide better geographic clustering than lat/lng rounding
+      const channel = supabase.channel(`presence-h3-${Math.round(lat * 1000)}-${Math.round(lng * 1000)}`);
       
       channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();

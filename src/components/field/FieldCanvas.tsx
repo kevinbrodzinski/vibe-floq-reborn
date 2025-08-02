@@ -5,13 +5,13 @@ import { Text as PIXIText } from 'pixi.js';
 import { useSpatialIndex } from '@/hooks/useSpatialIndex';
 import { GraphicsPool } from '@/utils/graphicsPool';
 import { TileSpritePool } from '@/utils/tileSpritePool';
-import { projectLatLng, getMapInstance } from '@/lib/geo/project';
+import { projectLatLng, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
 import { useFieldHitTest } from '@/hooks/useFieldHitTest';
 import { useAddRipple } from '@/hooks/useAddRipple';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { metersToPixelsAtLat } from '@/utils/geoUtils';
+
 import { zIndex } from '@/constants/z.ts';
 import { vibeToColor } from '@/utils/vibeToHSL';
 import type { Vibe } from '@/types/vibes';
@@ -342,7 +342,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- PEOPLE DOTS ----
       if (people.length > 0) {
-        // Log in development and preview environments
+        // Log in development and preview environments  
         if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
           console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
         }
@@ -433,6 +433,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           if (accuracyRef.current && myPos.accuracy) {
             accuracyRef.current.clear();
             const radiusInMeters = myPos.accuracy;
+            // Use consolidated meters→pixels utility from lib/geo
             const radiusInPixels = metersToPixelsAtLat(radiusInMeters, myPos.lat);
             accuracyRef.current.circle(x, y, radiusInPixels);
             accuracyRef.current.stroke({ color: 0x3399ff, width: 2, alpha: 0.25 });

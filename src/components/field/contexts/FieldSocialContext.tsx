@@ -116,7 +116,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         };
       } catch (projectionError) {
         // Fallback to manual coordinate conversion if map projection fails
-        console.warn('[FieldSocialContext] Map projection failed, using fallback:', projectionError);
+        // Note: At high latitudes (>60°) this approximation can have tens of meters error
+        console.warn('[FieldSocialContext] Map projection failed, using geographic fallback:', projectionError);
         
         // Convert lat/lng to screen coordinates using simple geographic conversion
         const latDiff = presenceLat - location.coords!.lat;

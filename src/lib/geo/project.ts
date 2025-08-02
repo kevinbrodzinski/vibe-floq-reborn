@@ -19,3 +19,18 @@ export const unprojectXY = (x: number, y: number) => {
 
 /** Optional helper for consumers that must read the raw map */
 export const getMapInstance = () => map;
+
+/**
+ * Convert meters to pixels at a given latitude and zoom level
+ * Consolidated utility for consistent meters→pixels conversion across the app
+ * Note: At high latitudes (>60°) the Mercator projection introduces significant error
+ */
+export const metersToPixelsAtLat = (meters: number, lat: number, zoom = 15) => {
+  // Earth's circumference at equator in meters  
+  const earthCircumference = 40075016.686;
+  // Pixels per meter at zoom level 0 at equator
+  const pixelsPerMeterAtEquator = 256 / earthCircumference;
+  // Adjust for latitude using Mercator projection
+  const metersPerPixel = Math.cos(lat * Math.PI / 180) * (2 ** zoom) * pixelsPerMeterAtEquator;
+  return meters * metersPerPixel;
+};
