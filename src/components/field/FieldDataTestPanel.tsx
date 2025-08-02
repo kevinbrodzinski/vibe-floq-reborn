@@ -10,6 +10,8 @@ import { RefreshCw, Database, MapPin } from 'lucide-react';
  * Test panel to verify vibes_now → field_tiles data flow
  */
 export const FieldDataTestPanel: React.FC = () => {
+  // Only show in development
+  if (process.env.NODE_ENV !== 'development') return null;
   const [vibesNowData, setVibesNowData] = useState<any[]>([]);
   const [fieldTilesData, setFieldTilesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

@@ -8,11 +8,19 @@ import { useQueryClient } from '@tanstack/react-query';
  */
 export const useFieldTileSync = () => {
   const queryClient = useQueryClient();
-  const lastRefreshRef = useRef<number>(0);
+  const lastRunRef = useRef<number>(0);
+  const debouncedRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshFieldTiles = async () => {
+  const triggerRefresh = async () => {
+    // Minimum-interval guard: 10 seconds between refreshes
     const now = Date.now();
-    if (now - lastRefreshRef.current < 10000) return; // Throttle to 10 seconds
+    if (now - lastRunRef.current < 10000) return;
+    
+    // Only refresh visible tabs to reduce server load
+    if (document.visibilityState !== 'visible') return;
+    
+    
+    lastRunRef.current = now;
     
     try {
       console.log('[FieldTileSync] Refreshing field tiles...');
@@ -25,7 +33,8 @@ export const useFieldTileSync = () => {
       }
       
       console.log('[FieldTileSync] Refresh success:', data);
-      lastRefreshRef.current = now;
+      
+      // Invalidate cache to show fresh data
       
       // Invalidate cache to show fresh data
       queryClient.invalidateQueries({ queryKey: ['field-tiles'] });
@@ -43,19 +52,20 @@ export const useFieldTileSync = () => {
         event: '*', 
         schema: 'public',
         table: 'vibes_now'
-      }, (payload) => {
-        console.log('[FieldTileSync] vibes_now change:', payload.eventType);
-        refreshFieldTiles();
+      }, () => {
+        // Debounced refresh with single timeout instance
+        if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
+        debouncedRefresh.current = setTimeout(triggerRefresh, 2000);
       })
       .subscribe();
 
-    // Initial refresh
-    setTimeout(refreshFieldTiles, 2000);
+    // Initial refresh after 2 seconds
+    setTimeout(triggerRefresh, 2000);
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  return { refreshFieldTiles };
+  return { triggerRefresh };
 };
