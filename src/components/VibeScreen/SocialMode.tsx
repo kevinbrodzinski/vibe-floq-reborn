@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView } from 'react-native';
-
+import { InlineFriendCarousel } from '@/components/social/InlineFriendCarousel';
 import { PreviewButtonsRow } from '@/components/VibeScreen/PreviewButtonsRow';
 import { SuggestedAlignmentActions } from '@/components/VibeScreen/SuggestedAlignmentActions';
 import { VibeContextHeader } from '@/components/VibeScreen/VibeContextHeader';
@@ -41,6 +41,8 @@ export const SocialMode: React.FC = () => {
       contentContainerStyle={{ paddingBottom: 32 }}
     >
       <VibeContextHeader />
+      
+      <InlineFriendCarousel />
       
       <PreviewButtonsRow
         className="mt-6"
