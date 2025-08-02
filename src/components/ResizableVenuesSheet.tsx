@@ -1,21 +1,9 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  KeyboardEvent,
-} from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { ChevronUp, ChevronDown, X, MapPin, Clock, Users } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-
-/* -------------------------------------------------------------------------- */
-/* Types                                                                      */
-/* -------------------------------------------------------------------------- */
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, PanInfo } from "framer-motion";
+import { ChevronUp, ChevronDown, X, MapPin, Clock, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface Venue {
   id: string;
@@ -35,106 +23,99 @@ interface ResizableVenuesSheetProps {
   className?: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Component                                                                  */
-/* -------------------------------------------------------------------------- */
+type SheetSize = "collapsed" | "half" | "full";
+const SHEET_HEIGHTS: Record<SheetSize, string> = {
+  collapsed: "120px",
+  half: "50vh",
+  full: "90vh",
+};
 
 export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
   isOpen,
   onClose,
   onVenueTap,
   venues = [],
-  className = '',
+  className = "",
 }) => {
-  const [sheetState, setSheetState] = useState<'collapsed' | 'half' | 'full'>(
-    'half'
-  );
-
+  const [sheetSize, setSheetSize] = useState<SheetSize>("half");
   const constraintsRef = useRef<HTMLDivElement>(null);
 
-  /* --------------------------- Drag-to-resize logic --------------------------- */
+  /* ------------------------------------------------------------------ */
+  /* 🎯 NEW – clamp & snap helpers                                      */
+  /* ------------------------------------------------------------------ */
+  const SIZES: SheetSize[] = ["collapsed", "half", "full"];
+  const sizeToIndex = (s: SheetSize) => SIZES.indexOf(s);
 
-  const handleDragEnd = useCallback((_e: unknown, info: PanInfo) => {
-    const { offset } = info;
-
-    if (offset.y > 100) {
-      setSheetState('collapsed');
-    } else if (offset.y < -100) {
-      setSheetState('full');
-    } else {
-      setSheetState('half');
-    }
-  }, []);
-
-  const sheetInlineStyle: React.CSSProperties = (() => {
-    switch (sheetState) {
-      case 'collapsed':
-        return { height: '120px' };
-      case 'half':
-        return { height: '50vh' };
-      case 'full':
-        return { height: '90vh' };
-      default:
-        return { height: '50vh' };
-    }
-  })();
-
-  /* ------------------------------ ESC key close ------------------------------ */
-
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') onClose();
+  const snapToClosest = (deltaY: number) => {
+    // positive = pulled down, negative = pushed up
+    const current = sizeToIndex(sheetSize);
+    const next =
+      deltaY > 80
+        ? Math.max(current - 1, 0) // down → smaller sheet
+        : deltaY < -80
+        ? Math.min(current + 1, 2) // up   → larger sheet
+        : current;
+    setSheetSize(SIZES[next]);
   };
+  /* ------------------------------------------------------------------ */
 
-  /* ---------------------------- Body scroll lock ----------------------------- */
+  const handleDragEnd = useCallback(
+    (_e: any, info: PanInfo) => snapToClosest(info.offset.y),
+    [sheetSize]
+  );
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
-  /* -------------------------------------------------------------------------- */
-  /* Render                                                                     */
-  /* -------------------------------------------------------------------------- */
-
-  return createPortal(
-    <AnimatePresence initial={false}>
+  return (
+    <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
             key="venue-backdrop"
-            className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            className="fixed inset-0 z-[9998] bg-black/50"
           />
 
-          {/* Sheet wrapper (creates drag constraints) */}
+          {/* Sheet container for drag constraints */}
           <div
-            key="venue-wrapper"
             ref={constraintsRef}
-            className="fixed inset-0 z-[80] outline-none"
-            onKeyDown={onKeyDown}
+            className="fixed inset-0 pointer-events-none z-[9999]"
           >
-            {/* Actual sheet */}
+            {/* Sheet */}
             <motion.div
               key="venue-sheet"
-              className={`fixed bottom-0 left-0 right-0 z-[80] pointer-events-auto
-                         bg-card rounded-t-2xl border-t border-border shadow-2xl
-                         ${className}`}
-              style={sheetInlineStyle}
-              initial={{ y: '100%' }}
+              initial={{ y: "100%" }}
               animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              exit={{ y: "100%" }}
               drag="y"
               dragConstraints={constraintsRef}
               dragElastic={0.1}
               onDragEnd={handleDragEnd}
+              /* 🎯 NEW – live clamp while dragging */
+              onDrag={(e, info) => {
+                if (!constraintsRef.current) return;
+                const minY = 0; // can’t drag above top of container
+                const maxY =
+                  constraintsRef.current.getBoundingClientRect().height -
+                  parseFloat(SHEET_HEIGHTS["collapsed"]);
+                const nextY = info.point.y;
+                if (nextY < minY) info.point.y = minY;
+                if (nextY > maxY) info.point.y = maxY;
+              }}
+              className={`fixed bottom-0 left-0 right-0 pointer-events-auto bg-card
+                         rounded-t-2xl border-t border-border shadow-2xl ${className}`}
+              style={{ height: SHEET_HEIGHTS[sheetSize] }}
             >
-              {/* Handle bar */}
+              {/* Handle */}
               <div className="flex justify-center py-3">
                 <div className="w-12 h-1 bg-muted-foreground/30 rounded-full cursor-grab active:cursor-grabbing" />
               </div>
@@ -145,24 +126,17 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
                   <h2 className="text-lg font-semibold">Venues</h2>
                   <Badge variant="secondary">{venues.length}</Badge>
                 </div>
-
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() =>
-                      setSheetState(sheetState === 'full' ? 'half' : 'full')
+                      setSheetSize(sheetSize === "full" ? "half" : "full")
                     }
-                    aria-label="Toggle size"
                   >
-                    {sheetState === 'full' ? <ChevronDown /> : <ChevronUp />}
+                    {sheetSize === "full" ? <ChevronDown /> : <ChevronUp />}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClose}
-                    aria-label="Close"
-                  >
+                  <Button variant="ghost" size="sm" onClick={onClose}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -180,8 +154,8 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
                     {venues.map((v) => (
                       <Card
                         key={v.id}
-                        className="cursor-pointer hover:bg-accent/50 transition-colors"
                         onClick={() => onVenueTap(v.id)}
+                        className="cursor-pointer hover:bg-accent/50 transition-colors"
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
@@ -196,9 +170,8 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
                                 </p>
                               )}
                             </div>
-
                             <div className="flex flex-col items-end gap-1">
-                              {!!v.currentEvents && (
+                              {v.currentEvents && v.currentEvents > 0 && (
                                 <Badge variant="default" className="text-xs">
                                   <Users className="h-3 w-3 mr-1" />
                                   {v.currentEvents}
@@ -222,7 +195,6 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
           </div>
         </>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 };
