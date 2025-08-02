@@ -141,6 +141,11 @@ export function getAvatarUrl(avatarPath?: string | null, size: number | AvatarSi
   // Convert size key to pixel value if needed
   const pixelSize = typeof size === 'string' ? AVATAR_SIZES[size] : size;
 
+  // ✅ Skip processing for external URLs (OAuth providers, etc.)
+  if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+    return avatarPath;
+  }
+
   // If it's already a public URL, return as-is with cache busting
   if (avatarPath.includes('supabase.co') || avatarPath.includes('localhost')) {
     const url = new URL(avatarPath);
@@ -168,6 +173,11 @@ export function getAvatarUrl(avatarPath?: string | null, size: number | AvatarSi
  */
 export function getAvatarBlurUrl(publicUrl?: string | null, updatedAt?: string): string | null {
   if (!publicUrl) return null;
+
+  // ✅ Skip processing for external URLs - return as-is
+  if (publicUrl.startsWith('http://') || publicUrl.startsWith('https://')) {
+    return publicUrl;
+  }
 
   // For public URLs, return a smaller version for blur effect
   if (publicUrl.includes('supabase.co') || publicUrl.includes('localhost')) {
@@ -208,6 +218,12 @@ export const preWarmImage = (url: string) => {
  * Pre-warm multiple avatar sizes
  */
 export const preWarmAvatarSizes = (path: string, sizes: number[] = [32, 64, 128]) => {
+  // ✅ For external URLs, only pre-warm once (no size variants)
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    preWarmImage(path);
+    return;
+  }
+
   sizes.forEach(size => {
     const url = getAvatarUrl(path, size);
     if (url) preWarmImage(url);
@@ -218,6 +234,11 @@ export const preWarmAvatarSizes = (path: string, sizes: number[] = [32, 64, 128]
  * Verify Transform CDN is working
  */
 export const verifyTransformCDN = async (url: string): Promise<boolean> => {
+  // ✅ Skip CDN verification for external URLs - assume they work
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return true;
+  }
+
   try {
     const response = await fetch(url, { method: 'HEAD' });
     return response.ok;
