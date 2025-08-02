@@ -16,6 +16,12 @@ export function usePresenceDemoData() {
     try {
       console.log('[Demo] Seeding presence data...');
       
+      // Check if user is authenticated first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Authentication required for demo seeding');
+      }
+      
       const { data, error } = await supabase.functions.invoke('seed_presence', {
         body: { count: 25 } // Seed 25 demo users
       });
@@ -32,9 +38,10 @@ export function usePresenceDemoData() {
       return data;
     } catch (err) {
       console.info('[DemoSeed] unavailable – skipping:', err);
+      const isAuthError = err instanceof Error && err.message.includes('Authentication required');
       toast({
-        title: "Demo seeding unavailable",
-        description: "Function authentication needed",
+        title: isAuthError ? "Authentication required" : "Demo seeding unavailable",
+        description: isAuthError ? "Please sign in to seed demo data" : "Function authentication needed",
         variant: "destructive"
       });
       throw err;
