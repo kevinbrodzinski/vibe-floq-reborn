@@ -5,7 +5,7 @@ export const TimeScrubber = () => {
   const hoursAgo = t ? Math.round((Date.now() - t.getTime()) / 3.6e6) : 0;
 
   return (
-    <div className="fixed bottom-4 w-[260px] left-1/2 -translate-x-1/2 z-[60] bg-background/80 backdrop-blur-sm border rounded-lg p-3">
+    <div className="w-[260px] pointer-events-auto bg-background/80 backdrop-blur-sm border rounded-lg p-3">
       <input 
         type="range"
         min="0" 

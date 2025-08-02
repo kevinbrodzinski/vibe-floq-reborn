@@ -10,13 +10,11 @@ export const FriendDrawer = () => {
   const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
 
   return (
-    <div
-      id="friend-drawer"
-      className={`
-        fixed inset-x-0 bottom-0 mx-auto max-w-screen-sm z-[60]
-        px-4 pb-4 transition-transform duration-300 ease-out
-        ${open ? 'translate-y-0' : 'translate-y-[110%]'}
-      `}>
+    <div className={`
+      w-full max-w-screen-sm pointer-events-auto
+      transition-transform duration-300 ease-out
+      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
+    `}>
       <div className="
           flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 py-3
           rounded-xl bg-background/90 backdrop-blur-sm shadow-lg border border-border
