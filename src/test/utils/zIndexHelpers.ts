@@ -1,98 +1,80 @@
+/* ------------------------------------------------------------------
+   Z-index test helpers
+   ------------------------------------------------------------------ */
 
-/**
- * Test utilities for validating z-index hierarchy
- * Used in Cypress/Playwright tests to ensure proper layer stacking
- */
+import { Z } from '@/constants/z';
 
+/* ---------- Types ---------- */
 export interface LayerTest {
-  selector: string;
-  expectedLayer: string;
-  minZIndex: number;
+  selector: string;           // CSS selector used in test
+  expectedLayer: keyof typeof Z;
+  minZIndex: number;          // sanity threshold
 }
 
-/**
- * Get computed z-index value for an element
- * Works in browser environment for testing
- */
+/* ---------- Basic helpers ---------- */
 export const getZIndex = (selector: string): number => {
-  const element = document.querySelector(selector);
-  if (!element) return 0;
-  
-  const computed = window.getComputedStyle(element);
-  return parseInt(computed.zIndex, 10) || 0;
+  const el = document.querySelector<HTMLElement>(selector);
+  if (!el) return 0;
+
+  const zStr = window.getComputedStyle(el).zIndex;
+  const parsed = parseInt(zStr, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
-/**
- * Validate that layer A appears above layer B
- */
 export const validateLayerHierarchy = (
   upperSelector: string,
   lowerSelector: string
-): boolean => {
-  const upperZ = getZIndex(upperSelector);
-  const lowerZ = getZIndex(lowerSelector);
-  
-  return upperZ > lowerZ;
-};
+): boolean => getZIndex(upperSelector) > getZIndex(lowerSelector);
 
-/**
- * Test scenarios for common z-index interactions
- */
+/* ---------- Scenario catalogue ---------- */
 export const LAYER_TEST_SCENARIOS: LayerTest[] = [
   {
     selector: '[data-testid="toast"]',
     expectedLayer: 'toast',
-    minZIndex: 90
+    minZIndex:    Z.toast
   },
   {
     selector: '[role="dialog"]',
-    expectedLayer: 'modal',
-    minZIndex: 70
+    expectedLayer: 'modalSheet',
+    minZIndex:    Z.modalSheet
   },
   {
     selector: '[data-testid="floating-bottom-bar"]',
-    expectedLayer: 'system',
-    minZIndex: 50
+    expectedLayer: 'systemFab',
+    minZIndex:    Z.systemFab
   },
   {
     selector: '[data-testid="banner"]',
-    expectedLayer: 'overlay',
-    minZIndex: 30
+    expectedLayer: 'banner',
+    minZIndex:    Z.banner
   },
   {
     selector: 'nav',
     expectedLayer: 'navigation',
-    minZIndex: 60
+    minZIndex:    Z.navigation
   }
 ];
 
-/**
- * Validate all layer scenarios
- */
-export const validateAllLayers = (): boolean => {
-  for (const scenario of LAYER_TEST_SCENARIOS) {
-    try {
-      const zIndex = getZIndex(scenario.selector);
-      if (zIndex < scenario.minZIndex) {
-        console.error(`Layer ${scenario.expectedLayer} has z-index ${zIndex}, expected >= ${scenario.minZIndex}`);
-        return false;
-      }
-    } catch (error) {
-      // Element not found is acceptable for some tests
-      continue;
+/* ---------- Batch validator (handy in e2e) ---------- */
+export const validateAllLayers = (): boolean =>
+  LAYER_TEST_SCENARIOS.every(({ selector, minZIndex, expectedLayer }) => {
+    const actual = getZIndex(selector);
+    if (actual < minZIndex) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `[z-index] ${expectedLayer} => ${actual} (expected ≥ ${minZIndex})`
+      );
+      return false;
     }
-  }
-  
-  return true;
-};
+    return true;
+  });
 
-/**
- * Critical interaction tests
- */
+/* ---------- Critical interaction checks ---------- */
 export const CRITICAL_INTERACTIONS = [
   {
     name: 'Toast over Modal',
-    test: () => validateLayerHierarchy('[data-testid="toast"]', '[role="dialog"]')
+    test: () =>
+      validateLayerHierarchy('[data-testid="toast"]', '[role="dialog"]')
   },
   {
     name: 'Modal over Navigation',
@@ -103,7 +85,14 @@ export const CRITICAL_INTERACTIONS = [
     test: () => validateLayerHierarchy('[role="menu"]', '[role="dialog"]')
   },
   {
-    name: 'System FAB over Overlay',
-    test: () => validateLayerHierarchy('[data-testid="floating-bottom-bar"]', '[data-testid="banner"]')
+    name: 'System FAB over Banner',
+    test: () =>
+      validateLayerHierarchy(
+        '[data-testid="floating-bottom-bar"]',
+        '[data-testid="banner"]'
+      )
   }
 ];
+
+/* Re-export for convenience so tests can do `import { Z } from './zIndexTestUtils'` */
+export { Z as zIndex };
