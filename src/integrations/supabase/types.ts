@@ -11231,6 +11231,10 @@ export type Database = {
         Args: { p_days?: number }
         Returns: Json
       }
+      get_field_state_at: {
+        Args: { p_ts: string }
+        Returns: Json
+      }
       get_floq_full_details: {
         Args: { p_floq_id: string }
         Returns: {

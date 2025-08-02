@@ -14,6 +14,7 @@ import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
+import { TimeScrubber } from "@/components/TimeScrubber";
 
 interface FieldLayoutProps {
   data: FieldData;
@@ -121,6 +122,9 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
         {/* Modal/Sheet Layer - z-40 to z-60 */}
         <FieldModalLayer data={data} />
+
+        {/* Time Scrubber - z-60 */}
+        <TimeScrubber />
 
         {/* System Layer (FAB, accessibility) - z-70+ */}
         <FieldSystemLayer data={data} />

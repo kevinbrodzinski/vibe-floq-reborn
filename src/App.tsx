@@ -14,6 +14,7 @@ import { usePresenceChannel } from "@/hooks/usePresenceChannel";
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
 import { useAuth } from "@/providers/AuthProvider";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
+import { TimeWarpProvider } from "@/lib/timeWarp";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,7 +74,8 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <TimeWarpProvider>
+        <AuthProvider>
         <AppProviders>
         <EventNotificationsProvider>
           <PlanNotificationProvider>
@@ -103,7 +105,8 @@ const App = () => {
           </PlanNotificationProvider>
         </EventNotificationsProvider>
         </AppProviders>
-      </AuthProvider>
+        </AuthProvider>
+      </TimeWarpProvider>
     </QueryClientProvider>
   );
 };
