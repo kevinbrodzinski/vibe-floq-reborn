@@ -10168,23 +10168,34 @@ export type Database = {
       vibe_cluster_momentum: {
         Row: {
           centroid: unknown | null
-          delta_15m: number | null
-          delta_5m: number | null
-          dom_count: number | null
-          dom_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           gh6: string | null
           total_now: number | null
+          vibe_counts: Json | null
+          vibe_mode: string | null
         }
         Relationships: []
       }
       vibe_clusters: {
         Row: {
           centroid: unknown | null
-          dom_count: number | null
-          dom_vibe: Database["public"]["Enums"]["vibe_enum"] | null
           gh6: string | null
-          total: number | null
+          total_now: number | null
           vibe_counts: Json | null
+          vibe_mode: string | null
+        }
+        Insert: {
+          centroid?: never
+          gh6?: string | null
+          total_now?: number | null
+          vibe_counts?: Json | null
+          vibe_mode?: never
+        }
+        Update: {
+          centroid?: never
+          gh6?: string | null
+          total_now?: number | null
+          vibe_counts?: Json | null
+          vibe_mode?: never
         }
         Relationships: []
       }
@@ -10571,7 +10582,7 @@ export type Database = {
         Returns: undefined
       }
       cluster_precision: {
-        Args: { requested_precision?: number }
+        Args: { p?: number }
         Returns: number
       }
       count_unseen_plan_events: {
