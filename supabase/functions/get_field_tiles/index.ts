@@ -38,7 +38,7 @@ interface FieldTileResponse {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''  // Use anon key with JWT auth for RLS
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''  // Back to service role for DB access
 )
 
 // Convert vibe string to HSL values
@@ -179,7 +179,10 @@ Deno.serve(async (req) => {
 
     if (presenceError) {
       console.error('[GET_FIELD_TILES] Error fetching presence data:', presenceError)
-      return respondWithCors({ error: 'Database error' }, 500)
+      return respondWithCors({ 
+        error: 'Database error', 
+        details: presenceError.message 
+      }, 500)
     }
 
     // Get active floq data filtered by H3 tiles
