@@ -4,7 +4,7 @@ import { FieldHeader } from "./FieldHeader";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
-
+import { TimeWarpSlider } from "@/components/TimeWarpSlider";
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
 import { SocialToastProvider } from "@/components/social/SocialToast";
@@ -26,8 +26,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   const { people } = useFieldSocial();
   const {
     isFull, currentVibe, debug, timeState,
-    constellationMode,
-    setConstellationMode,
+    constellationMode, showTimeWarp,
+    setConstellationMode, setShowTimeWarp,
     setVenuesSheetOpen, setCurrentVibe,
   } = useFieldUI();
 
@@ -47,7 +47,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   };
 
   const handleConstellation = (a: any) => {
-    // Handle constellation actions
+    if (a.type === "temporal-view") setShowTimeWarp(true);
   };
 
   /* ——— render ——————————————————————————————————— */
@@ -120,7 +120,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           <SocialGestureManager onSocialAction={handleSocialAction} />
 
           {/* Friend suggestions */}
-          <div className="absolute inset-x-0 bottom-20 px-4 pointer-events-auto">
+          <div className="absolute inset-x-0 bottom-24 px-4 pointer-events-auto">
             <FriendSuggestionCarousel />
           </div>
 
@@ -128,11 +128,23 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           <TimeBasedActionCard
             className="pointer-events-auto"
             timeState={timeState}
-            onTimeWarpToggle={() => {/* Handled by FAB now */}}
+            onTimeWarpToggle={() => setShowTimeWarp(true)}
           />
         </div>
       )}
 
+      {/* ——— Time-warp slider (independent layer) — */}
+      <AnimatePresence>
+        {showTimeWarp && (
+          <div key="timewarp" {...zIndex("timewarp")}>
+            <TimeWarpSlider
+              isVisible
+              onClose={() => setShowTimeWarp(false)}
+              onTimeChange={() => {/* future */}}
+            />
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

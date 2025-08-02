@@ -15,7 +15,6 @@ import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
 import { useAuth } from "@/providers/AuthProvider";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
 import { TimeWarpProvider } from "@/lib/timeWarp";
-import { TimeWarpFab } from "@/components/time-warp/TimeWarpFab";
 import { AppProviders } from "@/components/AppProviders";
 import { NetworkStatusBanner } from "@/components/ui/NetworkStatusBanner";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,9 +98,6 @@ const App = () => {
                 {/* Main app routes (field, floqs, etc.) are handled inside Index */}
                     <Route path="/*" element={<Index />} />
                   </Routes>
-                  
-                  {/* Time Warp FAB - available globally */}
-                  <TimeWarpFab />
                   {/* Remove development-only environment debug panel for TestFlight */}
                 </BrowserRouter>
               </TooltipProvider>

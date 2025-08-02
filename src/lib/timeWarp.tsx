@@ -1,34 +1,26 @@
-import React, { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface TimeWarpContextType {
-  t: Date | undefined
-  set: (time: Date | undefined) => void
+  t?: Date;
+  set: (date?: Date) => void;
 }
 
-const TimeWarpContext = createContext<TimeWarpContextType | undefined>(undefined)
+export const TimeWarpCtx = createContext<TimeWarpContextType>({
+  set: () => {}
+});
 
-export const TimeWarpProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [t, setT] = useState<Date | undefined>(undefined)
+interface TimeWarpProviderProps {
+  children: ReactNode;
+}
 
-  const set = (newTime: Date | undefined) => {
-    setT(newTime)
-  }
+export const TimeWarpProvider: React.FC<TimeWarpProviderProps> = ({ children }) => {
+  const [t, set] = useState<Date>();   // undefined → LIVE
 
   return (
-    <TimeWarpContext.Provider value={{ t, set }}>
+    <TimeWarpCtx.Provider value={{ t, set }}>
       {children}
-    </TimeWarpContext.Provider>
-  )
-}
+    </TimeWarpCtx.Provider>
+  );
+};
 
-export const useTimeWarp = (): TimeWarpContextType => {
-  const context = useContext(TimeWarpContext)
-  if (!context) {
-    throw new Error('useTimeWarp must be used within a TimeWarpProvider')
-  }
-  return context
-}
-
-export const getWarpedTime = (): Date => {
-  return new Date()
-}
+export const useTimeWarp = () => useContext(TimeWarpCtx);

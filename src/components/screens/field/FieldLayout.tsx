@@ -14,8 +14,7 @@ import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
-import { BottomHud } from "@/components/layout/BottomHud";
-
+import { TimeScrubber } from "@/components/TimeScrubber";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
@@ -128,13 +127,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
           {/* Modal/Sheet Layer - z-40 to z-60 */}
           <FieldModalLayer data={data} />
 
-          {/* Bottom HUD - Friends drawer - z-60 */}
-          <BottomHud>
-            <FriendDrawer />
-          </BottomHud>
+          {/* Time Scrubber - z-60 */}
+          <TimeScrubber />
 
-          {/* Friend FAB - z-65 */}
+          {/* Friend FAB and Drawer - z-60-65 */}
           <FriendFab />
+          <FriendDrawer />
 
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />

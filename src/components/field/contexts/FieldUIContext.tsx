@@ -19,7 +19,7 @@ interface FieldUIContextValue {
   // UI state
   currentVibe: Vibe;
   constellationMode: boolean;
-  
+  showTimeWarp: boolean;
   showBanner: boolean;
   detailsOpen: boolean;
   venuesSheetOpen: boolean;
@@ -30,7 +30,7 @@ interface FieldUIContextValue {
   // Actions
   setCurrentVibe: (vibe: Vibe) => void;
   setConstellationMode: (mode: boolean) => void;
-  
+  setShowTimeWarp: (show: boolean) => void;
   setShowBanner: (show: boolean) => void;
   setDetailsOpen: (open: boolean) => void;
   setVenuesSheetOpen: (open: boolean) => void;
@@ -46,7 +46,7 @@ interface FieldUIProviderProps {
 export const FieldUIProvider = ({ children }: FieldUIProviderProps) => {
   const [debug] = useDebug();
   const { timeState } = useTimeSyncContext();
-  
+  const [showTimeWarp, setShowTimeWarp] = useState(false);
   const [constellationMode, setConstellationMode] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -74,7 +74,7 @@ export const FieldUIProvider = ({ children }: FieldUIProviderProps) => {
     // UI state
     currentVibe,
     constellationMode,
-    
+    showTimeWarp,
     showBanner,
     detailsOpen,
     venuesSheetOpen,
@@ -85,7 +85,7 @@ export const FieldUIProvider = ({ children }: FieldUIProviderProps) => {
     // Actions
     setCurrentVibe,
     setConstellationMode,
-    
+    setShowTimeWarp,
     setShowBanner,
     setDetailsOpen,
     setVenuesSheetOpen,
