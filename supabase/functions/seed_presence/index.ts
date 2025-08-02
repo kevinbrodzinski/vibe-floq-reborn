@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       const vibe = vibes[Math.floor(Math.random() * vibes.length)];
       
       insertData.push({
-        profile_id: crypto.randomUUID(), // Use proper UUIDs instead of demo-user-${i}
+        profile_id: null, // Use null for demo users to avoid FK constraint
         location: JSON.stringify({
           type: 'Point',
           coordinates: [lng, lat]
