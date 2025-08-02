@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { geoToH3 } from "https://esm.sh/h3-js@4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,6 +33,9 @@ serve(async (req) => {
     const body = await req.json();
     const { vibe, lat, lng, venue_id = null, broadcast_radius = 500 } = body;
 
+    // Calculate H3 index for the location
+    const h3_7 = geoToH3(lat, lng, 7);
+
     // Use the new canonical upsert_presence function
     const { error } = await supabase.rpc('upsert_presence', {
       p_lat: lat,
@@ -39,6 +43,14 @@ serve(async (req) => {
       p_vibe: vibe || 'chill',
       p_visibility: 'public'
     });
+
+    if (!error) {
+      // Also update the h3_7 column directly since we can't modify the RPC
+      await supabase
+        .from('vibes_now')
+        .update({ h3_7 })
+        .eq('profile_id', user.id);
+    }
 
     if (error) {
       console.error("Presence upsert error:", error);

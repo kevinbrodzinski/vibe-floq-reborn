@@ -38,7 +38,7 @@ interface FieldTileResponse {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+  Deno.env.get('SUPABASE_ANON_KEY') ?? ''  // Use anon key with JWT auth for RLS
 )
 
 // Convert vibe string to HSL values
@@ -79,8 +79,8 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
   
   return {
     h: Math.round(avgHue),
-    s: Math.round(avgSaturation * 100) / 100,
-    l: Math.round(avgLightness * 100) / 100
+    s: Math.round(avgSaturation * 100), // Scale to 0-100 for consistency
+    l: Math.round(avgLightness * 100)   // Scale to 0-100 for consistency
   }
 }
 
@@ -136,6 +136,27 @@ Deno.serve(async (req) => {
       return respondWithCors({ error: 'Authorization required' }, 401)
     }
 
+    // Simple rate limiting - 20 requests per 10 seconds per IP
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const rateLimitKey = `field_tiles:${clientIP}`
+    
+    try {
+      const kv = await Deno.openKv()
+      const count = await kv.get([rateLimitKey])
+      const currentCount = (count.value as number) || 0
+      
+      if (currentCount >= 20) {
+        return respondWithCors({ error: 'Rate limit exceeded' }, 429)
+      }
+      
+      // Increment counter with 10 second expiry
+      await kv.set([rateLimitKey], currentCount + 1, { expireIn: 10_000 })
+      kv.close()
+    } catch (error) {
+      console.warn('[GET_FIELD_TILES] Rate limiting failed:', error)
+      // Continue without rate limiting if KV fails
+    }
+
     const { tile_ids }: FieldTileRequest = await req.json()
     if (logLevel === 'debug') {
       console.log('[GET_FIELD_TILES] Processing tile IDs:', tile_ids)
@@ -148,11 +169,12 @@ Deno.serve(async (req) => {
     // Build H3 tile filter for efficient querying
     const h3Tiles = tile_ids.filter(id => typeof id === 'string' && id.length > 0)
     
-    // Get presence data filtered by tile boundaries
+    // Get presence data filtered by tile boundaries and H3 tiles
     const { data: presenceData, error: presenceError } = await supabase
       .from('vibes_now')
-      .select('profile_id, location, vibe, updated_at')
+      .select('profile_id, location, vibe, updated_at, h3_7')
       .not('location', 'is', null)
+      .in('h3_7', h3Tiles)  // Filter by H3 tiles for efficiency
       .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()) // Only recent data
 
     if (presenceError) {
@@ -160,11 +182,12 @@ Deno.serve(async (req) => {
       return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Get active floq data
+    // Get active floq data filtered by H3 tiles
     const { data: floqData, error: floqError } = await supabase
       .from('floqs')
-      .select('id, location, participants_count')
+      .select('id, location, participants_count, h3_7')
       .not('location', 'is', null)
+      .in('h3_7', h3Tiles)  // Filter by H3 tiles for efficiency
       .gte('participants_count', 2)
 
     if (floqError) {

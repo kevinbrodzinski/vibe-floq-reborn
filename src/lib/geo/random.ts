@@ -15,5 +15,5 @@ export const djb2hash = (str: string, salt: number = 0): number => {
  * Safe for any string length including H3 IDs and UTF-8 content
  */
 export const deterministicRandom = (seedStr: string, salt = 0): number => {
-  return (djb2hash(seedStr, salt) % 10_000) / 10_000;
+  return djb2hash(seedStr, salt) / 0x1_0000_0000; // Full 32-bit entropy → 0-1
 };
