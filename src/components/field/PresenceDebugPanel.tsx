@@ -147,24 +147,6 @@ export const PresenceDebugPanel: React.FC<PresenceDebugPanelProps> = ({
               onCheckedChange={onToggleConstellationMode}
             />
           </div>
-          {onTimeWarpChange && (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs flex items-center gap-1">
-                  <Sun className="w-3 h-3" />
-                  Time: {timeWarpHour}:00
-                </span>
-              </div>
-              <Slider
-                value={[timeWarpHour]}
-                onValueChange={([hour]) => onTimeWarpChange(hour)}
-                max={23}
-                min={0}
-                step={1}
-                className="w-full"
-              />
-            </div>
-          )}
         </div>
 
         {/* Real-time Status */}

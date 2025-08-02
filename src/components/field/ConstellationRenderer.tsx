@@ -19,15 +19,13 @@ interface ConstellationRendererProps {
   fieldTiles: FieldTile[];
   app: Application | null;
   container: Container | null;
-  timeWarpHour: number;
 }
 
 export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
   people,
   fieldTiles,
   app,
-  container,
-  timeWarpHour
+  container
 }) => {
   const constellationGraphicsRef = useRef<Graphics | null>(null);
   const friendConnectionsRef = useRef<Graphics | null>(null);

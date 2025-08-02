@@ -39,9 +39,10 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   // Check if map is ready to prevent projectLatLng errors
   const isMapReady = Boolean(getMapInstance());
   
-  // Phase 4 handlers
-    // Automatically enable constellation mode for night hours
-    const isNightTime = hours < 6 || hours > 20;
+  // Auto-enable constellation mode for night hours
+  const handleConstellationAutoToggle = useCallback(() => {
+    const currentHour = new Date().getHours();
+    const isNightTime = currentHour < 6 || currentHour > 20;
     if (isNightTime && !isConstellationMode) {
       setIsConstellationMode(true);
     } else if (!isNightTime && isConstellationMode) {
@@ -102,7 +103,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         tileData={fieldTiles}
         presenceData={actualPeople}
         clusterData={[]} // TODO: Pass actual cluster data
-        onTimeWarp={handleTimeWarp}
         currentTime={new Date()}
         isConstellationMode={isConstellationMode}
         onConstellationToggle={() => setIsConstellationMode(!isConstellationMode)}
