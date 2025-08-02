@@ -16,7 +16,7 @@ export const TimeWarpFab = () => {
       <button
         onClick={toggle}
         className={cn(
-          "fixed top-36 right-4 z-[65] h-12 w-12 flex items-center",
+          "fixed top-40 right-4 z-[65] h-12 w-12 flex items-center",
           "justify-center rounded-full shadow-lg transition-colors",
           isLive
             ? "bg-primary text-primary-foreground"
