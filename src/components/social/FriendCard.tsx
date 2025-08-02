@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { useHapticFeedback } from '@/hooks/useHapticFeedback'
 import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
 interface FriendCardProps {
@@ -10,6 +11,7 @@ interface FriendCardProps {
 
 export const FriendCard = memo(({ person, onClick }: FriendCardProps) => {
   const { profile_id, vibe, meters } = person
+  const { socialHaptics } = useHapticFeedback()
 
   const vibeColor = (vibe: string) => {
     switch (vibe.toLowerCase()) {
@@ -30,9 +32,14 @@ export const FriendCard = memo(({ person, onClick }: FriendCardProps) => {
   // Generate display name based on available identifiers
   const displayName = profile_id ? `User ${profile_id.slice(-4)}` : 'Anonymous'
 
+  const handleClick = () => {
+    socialHaptics.avatarInteraction()
+    onClick?.(person)
+  }
+
   return (
     <button
-      onClick={() => onClick?.(person)}
+      onClick={handleClick}
       className="
         snap-start shrink-0 w-[116px] p-3 rounded-xl border
         bg-card/70 hover:bg-card transition-colors text-center

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { useToast } from '@/hooks/use-toast';
+import { getVibeColor } from '@/utils/getVibeColor';
 
 import type { NearbyRow } from '@/hooks/useNearbyPeople'
 
@@ -30,16 +31,6 @@ export const SocialInteractionModal = ({
 
   if (!person) return null;
 
-  const getVibeColor = (vibe: string) => {
-    switch (vibe.toLowerCase()) {
-      case 'energetic': return '#ef4444'
-      case 'excited': return '#f97316' 
-      case 'social': return '#10b981'
-      case 'chill': return '#6366f1'
-      case 'focused': return '#8b5cf6'
-      default: return '#6b7280'
-    }
-  }
 
   // Transform NearbyRow to display data
   const displayData = {
