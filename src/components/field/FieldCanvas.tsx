@@ -190,6 +190,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     /* ---------- cleanup ---------- */
     return () => {
       if (onPointerMove) app.stage.off('pointermove', onPointerMove);
+      // Remove any ticker callbacks to prevent dangling references
+      if (app.ticker) {
+        app.ticker.stop();
+        app.ticker.destroy();
+      }
       if (appRef.current) {
         appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
@@ -322,7 +327,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- PEOPLE DOTS ----
       if (people.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
+        // Log in development and preview environments
+        if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
           console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
         }
         
@@ -372,7 +378,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           dot.lineStyle(2, 0xffffff, 0.3);
           dot.drawCircle(0, 0, 8);
         });
-      } else if (process.env.NODE_ENV === 'development') {
+      } else if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
         console.log('[PIXI_DEBUG] No people to render');
       }
 

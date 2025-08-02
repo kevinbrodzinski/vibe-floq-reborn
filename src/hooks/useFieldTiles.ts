@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { supaFn } from '@/lib/supaFn';
 import { viewportToTileIds } from '@/lib/geo';
+import { deterministicRandom } from '@/utils/djb2Hash';
 import type { FieldTile } from '@/types/field';
 
 interface TileBounds {
@@ -61,23 +62,17 @@ export function useFieldTiles(bounds?: TileBounds) {
         console.warn('[FIELD_TILES] Failed to fetch real tiles, using mock data', error);
         
         // Generate deterministic mock field tiles for debugging
-        return tileIds.map((tileId, index): FieldTile => {
-          // Use tileId as seed for deterministic randomness
-          const seed = tileId.split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0);
-          const random = () => Math.abs(Math.sin(seed + index)) % 1;
-          
-          return {
-            tile_id: tileId,
-            crowd_count: Math.floor(random() * 20) + 3, // 3-22 people per tile
-            avg_vibe: {
-              h: Math.floor(random() * 360), // Deterministic hue
-              s: 0.7 + (random() * 0.3), // 70-100% saturation
-              l: 0.5 + (random() * 0.2)  // 50-70% lightness
-            },
-            active_floq_ids: [], // Include empty array for mock data
-            updated_at: new Date().toISOString()
-          };
-        });
+        return tileIds.map((tileId): FieldTile => ({
+          tile_id: tileId,
+          crowd_count: Math.floor(deterministicRandom(tileId, 1) * 20) + 3, // 3-22 people per tile
+          avg_vibe: {
+            h: Math.floor(deterministicRandom(tileId, 2) * 360), // Deterministic hue
+            s: 0.7 + (deterministicRandom(tileId, 3) * 0.3), // 70-100% saturation
+            l: 0.5 + (deterministicRandom(tileId, 4) * 0.2)  // 50-70% lightness
+          },
+          active_floq_ids: [], // Include empty array for mock data
+          updated_at: new Date().toISOString()
+        }));
       }
     },
     enabled: !!tileIds.length,

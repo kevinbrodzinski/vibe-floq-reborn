@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
+import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
   profile_id: string;
@@ -16,13 +17,8 @@ interface PresenceUser {
 const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds: string[] = []): PresenceUser[] => {
   if (!userLat || !userLng) return [];
   
-  // Use real friend IDs if available, otherwise use fallback IDs
-  const realFriendIds = friendIds.length > 0 ? friendIds.slice(0, 4) : [
-    'e2a658f7-a20b-4c5d-9a8f-53c84d202e82', // beata
-    '44c0d38e-bbce-4279-aed6-3835aa6631c4', // kaleb
-    '5d57a369-8d57-4898-8b04-e614051f69e4', // kevinb
-    'd18378b9-93db-4a14-9449-7d01386ac8ff'  // weston
-  ];
+  // Use real friend IDs if available, otherwise use fixture
+  const realFriendIds = friendIds.length > 0 ? friendIds.slice(0, 4) : mockFriends.friendIds;
   
   const mockUsers = realFriendIds.map((friendId, index) => ({
     profile_id: friendId,
