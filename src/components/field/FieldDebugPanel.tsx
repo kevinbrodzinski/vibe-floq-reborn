@@ -2,7 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Moon, Sun, Clock, Users, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Moon, Sun, Clock, Users, Zap, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import type { FieldTile } from '@/types/field';
 
 interface FieldDebugPanelProps {
   isVisible: boolean;
@@ -10,10 +12,15 @@ interface FieldDebugPanelProps {
   tileData?: any[];
   presenceData?: any[];
   clusterData?: any[];
+  fieldTiles?: FieldTile[];
   onTimeWarp?: (hours: number) => void;
   currentTime?: Date;
   isConstellationMode?: boolean;
   onConstellationToggle?: () => void;
+  showDebugVisuals?: boolean;
+  onToggleDebugVisuals?: () => void;
+  onRefreshTiles?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const FieldDebugPanel: React.FC<FieldDebugPanelProps> = ({
@@ -22,10 +29,15 @@ export const FieldDebugPanel: React.FC<FieldDebugPanelProps> = ({
   tileData = [],
   presenceData = [],
   clusterData = [],
+  fieldTiles = [],
   onTimeWarp,
   currentTime = new Date(),
   isConstellationMode = false,
-  onConstellationToggle
+  onConstellationToggle,
+  showDebugVisuals = false,
+  onToggleDebugVisuals,
+  onRefreshTiles,
+  isRefreshing = false
 }) => {
   const [timeWarpValue, setTimeWarpValue] = useState([currentTime.getHours()]);
   
@@ -141,6 +153,110 @@ export const FieldDebugPanel: React.FC<FieldDebugPanelProps> = ({
             🌙 Night mode active - constellation view available
           </div>
         )}
+
+        {/* Field Tiles Debug Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-primary">Field Tiles</h3>
+            <div className="flex gap-2">
+              {onToggleDebugVisuals && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleDebugVisuals}
+                  className="h-7 px-2 text-xs"
+                >
+                  {showDebugVisuals ? (
+                    <EyeOff className="h-3 w-3 mr-1" />
+                  ) : (
+                    <Eye className="h-3 w-3 mr-1" />
+                  )}
+                  {showDebugVisuals ? 'Hide' : 'Show'} Overlays
+                </Button>
+              )}
+              {onRefreshTiles && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onRefreshTiles}
+                  disabled={isRefreshing}
+                  className="h-7 px-2 text-xs"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Tile Stats */}
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="bg-muted/30 rounded p-2 text-center">
+              <div className="font-semibold text-base">{fieldTiles.filter(t => t.crowd_count > 0).length}</div>
+              <div className="text-muted-foreground">Active Tiles</div>
+            </div>
+            <div className="bg-muted/30 rounded p-2 text-center">
+              <div className="font-semibold text-base">{fieldTiles.reduce((sum, t) => sum + t.crowd_count, 0)}</div>
+              <div className="text-muted-foreground">Total Crowd</div>
+            </div>
+            <div className="bg-muted/30 rounded p-2 text-center">
+              <div className="font-semibold text-base">{fieldTiles.length}</div>
+              <div className="text-muted-foreground">Total Tiles</div>
+            </div>
+          </div>
+
+          {/* Top 5 Tiles */}
+          <div>
+            <h4 className="text-xs font-medium mb-2 text-muted-foreground">Top Crowded Tiles</h4>
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {fieldTiles
+                .filter(tile => tile.crowd_count > 0)
+                .sort((a, b) => b.crowd_count - a.crowd_count)
+                .slice(0, 5)
+                .map((tile, index) => (
+                  <div 
+                    key={tile.tile_id} 
+                    className="flex items-center justify-between p-1.5 rounded-md bg-muted/20 text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs px-1 py-0 h-4">
+                        #{index + 1}
+                      </Badge>
+                      <span className="font-mono truncate max-w-[80px]">
+                        {tile.tile_id.slice(-8)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full border border-white/20"
+                        style={{
+                          backgroundColor: `hsl(${tile.avg_vibe.h}, ${tile.avg_vibe.s}%, ${tile.avg_vibe.l}%)`
+                        }}
+                      />
+                      <Badge variant="outline" className="text-xs h-4 px-1">
+                        {tile.crowd_count}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              {fieldTiles.filter(t => t.crowd_count > 0).length === 0 && (
+                <div className="text-xs text-muted-foreground italic text-center py-2">
+                  No active tiles found
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Debug Instructions */}
+          {showDebugVisuals && (
+            <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded-md">
+              <strong>Debug Mode Active:</strong><br />
+              • Hex outlines show tile boundaries<br />
+              • Color indicates dominant vibe<br />
+              • Size shows crowd density
+            </div>
+          )}
+        </div>
 
         {/* Real-time Data */}
         <div className="space-y-2">

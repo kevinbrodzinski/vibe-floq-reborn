@@ -53,9 +53,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
-  const { light } = useAdvancedHaptics();
+  const { light, medium } = useAdvancedHaptics();
   const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
   const addRipple = useAddRipple();           // enqueue shader ripple
+  const userLocation = useUserLocation();    // Get live GPS position
   const { pos: myPos } = useUserLocation();   // live lat/lng
   const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
@@ -70,9 +71,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     fieldTilesRef.current = fieldTiles;
   }, [fieldTiles]);
 
-  // Refs for PIXI containers and sprites (user location handled by built-in system)
+  // Refs for PIXI containers and sprites
   const peopleContainerRef = useRef<Container | null>(null);
   const heatContainerRef = useRef<Container | null>(null);
+  const userDotRef = useRef<Graphics | null>(null);  // User location dot
   const tilePoolRef = useRef<TileSpritePool | null>(null);
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
   // Track existing floq sprites to prevent recreation
@@ -121,29 +123,27 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // Create containers in proper z-order
       const heatContainer = new Container();
       const peopleContainer = new Container();
+      const userContainer = new Container(); // For user location dot
       
       // Add containers in proper order (last = top layer)
-      // heatContainer will be below peopleContainer
       app.stage.addChild(heatContainer);
-      app.stage.addChild(peopleContainer); // This will be on top
-      
-      // Debug the layering
-      console.log('[PIXI_LAYERS] Heat container index:', app.stage.children.indexOf(heatContainer));
-      console.log('[PIXI_LAYERS] People container index:', app.stage.children.indexOf(peopleContainer));
+      app.stage.addChild(peopleContainer);
+      app.stage.addChild(userContainer); // User dot on top
       
       heatContainerRef.current = heatContainer;
       peopleContainerRef.current = peopleContainer;
       
-      // Debug indicators removed to fix green tint issue
+      // Create user location dot
+      const userDot = new Graphics();
+      userContainer.addChild(userDot);
+      userDotRef.current = userDot;
       
-        // Initialize pools and reusable objects
-        tilePoolRef.current = new TileSpritePool();
-        graphicsPoolRef.current = new GraphicsPool();
-        
-        // Pre-create reusable debug graphics
-        debugGraphicsRef.current = new Graphics();
-
-      // User location dot and accuracy circle are handled by existing built-in system
+      // Initialize pools and reusable objects
+      tilePoolRef.current = new TileSpritePool();
+      graphicsPoolRef.current = new GraphicsPool();
+      
+      // Pre-create reusable debug graphics
+      debugGraphicsRef.current = new Graphics();
 
       /* ------------------------------------------------- hit-testing + ripple */
       onPointerMove = (e: any) => {
@@ -492,7 +492,40 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       console.log('[PIXI_DEBUG] Floqs moved to Mapbox clustering');
 
       // ---- USER LOCATION DOT ----
-      // User location is handled by existing built-in system - removed custom implementation
+      const userDot = userDotRef.current;
+      if (userDot && userLocation.pos.lat && userLocation.pos.lng) {
+        const { x, y } = projectLatLng(userLocation.pos.lng, userLocation.pos.lat);
+        
+        userDot.clear();
+        
+        // Accuracy halo (if available)
+        if (userLocation.pos.accuracy) {
+          const mapZoom = getMapInstance()?.getZoom() ?? 11;
+          const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, userLocation.pos.lat, mapZoom);
+          userDot.beginFill(0x0066cc, 0.1);
+          userDot.drawCircle(0, 0, haloRadius);
+          userDot.endFill();
+        }
+        
+        // Outer ring (14px semi-transparent blue)
+        userDot.beginFill(0x0066cc, 0.3);
+        userDot.drawCircle(0, 0, 14);
+        userDot.endFill();
+        
+        // Inner dot (8px solid blue)
+        userDot.beginFill(0x0066cc, 1.0);
+        userDot.drawCircle(0, 0, 8);
+        userDot.endFill();
+        
+        // White border for contrast
+        userDot.lineStyle(2, 0xffffff, 0.8);
+        userDot.drawCircle(0, 0, 8);
+        
+        userDot.position.set(x, y);
+        userDot.visible = true;
+      } else if (userDot) {
+        userDot.visible = false;
+      }
 
       animationId = requestAnimationFrame(animate);
     };
