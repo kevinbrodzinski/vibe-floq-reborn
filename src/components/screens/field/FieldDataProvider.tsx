@@ -338,8 +338,8 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     viewport,
     // Real-time status
     realtime: true,
-    // Debug visuals (enabled in development)
-    showDebugVisuals: process.env.NODE_ENV === 'development',
+    // Debug visuals disabled
+    showDebugVisuals: false,
   };
 
   return (

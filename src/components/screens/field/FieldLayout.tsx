@@ -134,7 +134,8 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         <FieldSystemLayer data={data} />
 
         {/* Debug Layer (development only) - z-200+ */}
-        {import.meta.env.DEV && (
+        {/* Debug visuals disabled for production */}
+        {false && (
           <TileDebugVisual
             fieldTiles={data.fieldTiles}
             visible={data.showDebugVisuals}

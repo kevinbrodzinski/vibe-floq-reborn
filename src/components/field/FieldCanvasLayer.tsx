@@ -53,11 +53,13 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
         />
       </div>
 
-      {/* Debug overlays */}
-      <TileDebugVisual
-        fieldTiles={data.fieldTiles}
-        visible={showTileDebug}
-      />
+      {/* Debug overlays disabled */}
+      {false && (
+        <TileDebugVisual
+          fieldTiles={data.fieldTiles}
+          visible={showTileDebug}
+        />
+      )}
 
       {/* Debug control panel */}
       <PresenceDebugPanel
