@@ -58,7 +58,7 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds: string[] = []) => {
   const [people, setPeople] = useState<PresenceUser[]>([]);
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
-  const [lastTrackSent, setLastTrackSent] = useState<number>(0);
+  const lastTrackRef = useRef<number>(0);
   const env = getEnvironmentConfig();
   
   // Show mock data only in development
@@ -180,7 +180,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         // Track presence with throttling (every 25 seconds)
         if (uid) {
           const now = Date.now();
-          if (now - lastTrackSent > 25000) { // 25 second throttle
+          if (now - lastTrackRef.current > 25000) { // 25 second throttle
             channel.track({
               profile_id: uid,
               location: {
@@ -190,7 +190,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
               vibe: 'social', // TODO: Get actual user vibe from state
               last_seen: new Date().toISOString()
             }).catch(console.warn);
-            setLastTrackSent(now);
+            lastTrackRef.current = now;
           }
         } else {
           console.warn('[BucketedPresence] No authenticated user for presence tracking');
@@ -266,7 +266,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     
     setupPresence();
 
-  }, [lat, lng, friendIds.join(','), showMockData, lastTrackSent]);
+  }, [lat, lng, friendIds.join(','), showMockData]);
 
   return { people, lastHeartbeat };
 };

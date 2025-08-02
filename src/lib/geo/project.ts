@@ -5,7 +5,7 @@ let map: mapboxgl.Map | null = null;
 export const setMapInstance = (m: mapboxgl.Map | null) => { map = m; };
 
 /** lng/lat ➜ screen px */
-export const projectLatLng = (lng: number, lat: number) => {
+export const projectLatLng = (lng: number, lat: number): { x: number; y: number } | undefined => {
   if (!map) return undefined;
   const { x, y } = map.project([lng, lat]);
   return { x, y };
