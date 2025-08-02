@@ -35,6 +35,9 @@ interface FieldCanvasProps {
     maxLng: number;
   };
   onRipple?: (x: number, y: number) => void;
+  isConstellationMode?: boolean;
+  timeWarpHour?: number;
+  showDebugVisuals?: boolean;
 }
 
 export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
@@ -43,7 +46,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   tileIds = [],
   fieldTiles = [],
   viewportGeo,
-  onRipple
+  onRipple,
+  isConstellationMode = false,
+  timeWarpHour = new Date().getHours(),
+  showDebugVisuals = false
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const actualRef = (ref as React.RefObject<HTMLCanvasElement>) || canvasRef;
@@ -258,16 +264,33 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       if (viewportGeo && fieldTiles.length > 0) {
         const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
         
-        // Build raw tiles for worker
+        // Build raw tiles for worker with constellation mode support
         const rawTiles = visibleTiles.map(tile => {
           const [lat, lng] = geohashToCenter(tile.tile_id);
           const { x, y } = projectLatLng(lng, lat);
+          const radius = crowdCountToRadius(tile.crowd_count);
+          
+          // Adjust visualization based on constellation mode and time
+          let adjustedRadius = radius;
+          let adjustedVibe = tile.avg_vibe;
+          
+          if (isConstellationMode) {
+            // In constellation mode, make clusters more star-like
+            adjustedRadius = radius * 0.7; // Smaller, more focused points
+            adjustedVibe = {
+              ...tile.avg_vibe,
+              l: Math.min(0.8, tile.avg_vibe.l + 0.2) // Brighter for constellation effect
+            };
+          }
+          
           return {
-            id: tile.tile_id,                    // new - needed for hit-test
+            id: tile.tile_id,
             x,
             y,
-            r: crowdCountToRadius(tile.crowd_count),
-            vibe: tile.avg_vibe,
+            r: adjustedRadius,
+            vibe: adjustedVibe,
+            isConstellation: isConstellationMode,
+            crowdCount: tile.crowd_count
           };
         });
 
@@ -280,23 +303,43 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             clusterWorker.cluster(rawTiles, currentZoom).then(clusters => {
               const keysThisFrame = new Set<string>();
               
-              // Draw clusters exactly like tiles for now
+              // Draw clusters with constellation mode support
               clusters.forEach(c => {
-            const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
-            keysThisFrame.add(key);
-            const sprite = tilePool.acquire(key);
-            if (!sprite.parent) heatContainer.addChild(sprite);
-            sprite.position.set(c.x - c.r, c.y - c.r);
-            sprite.width = sprite.height = c.r * 2;
+                const key = `c:${Math.round(c.x)}:${Math.round(c.y)}`;
+                keysThisFrame.add(key);
+                const sprite = tilePool.acquire(key);
+                if (!sprite.parent) heatContainer.addChild(sprite);
+                
+                sprite.position.set(c.x - c.r, c.y - c.r);
+                sprite.width = sprite.height = c.r * 2;
 
-            // Color and fade
-            const targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+                // Enhanced color and fade with constellation mode
+                let targetAlpha = Math.min(1, Math.log2(c.count + 2) / 5);
+                
+                if (isConstellationMode) {
+                  // Constellation mode: pulsing effect and enhanced glow
+                  const pulseIntensity = 0.2 + 0.3 * Math.sin(Date.now() * 0.003 + c.x * 0.01);
+                  targetAlpha = Math.min(1, targetAlpha * (0.8 + pulseIntensity));
+                  
+                  // Add subtle glow effect (commenting out filters to fix TS error)
+                  // sprite.filters = sprite.filters || [];
+                  // Note: In a real implementation, you'd add a glow filter here
+                }
                 
                 const [red, green, blue] = hslToRgb(c.vibe.h, c.vibe.s, c.vibe.l);
                 const vibeColor = (red << 16) + (green << 8) + blue;
                 
                 sprite.tint = vibeColor;
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
+                
+                // Debug visualization
+                if (showDebugVisuals) {
+                  // Add debug border
+                  const debugGraphics = new Graphics();
+                  debugGraphics.lineStyle(1, 0x00ff00, 0.5);
+                  debugGraphics.drawRect(c.x - c.r, c.y - c.r, c.r * 2, c.r * 2);
+                  heatContainer.addChild(debugGraphics);
+                }
               });
 
               /* fast viewport cull – if sprite is way outside screen we drop immediately */
@@ -334,7 +377,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         
         // Re-add any existing built-in user location elements that may have been cleared
         
-        // Update or create sprites for each person
+        // Update or create sprites for each person with constellation mode
         people.forEach((person, index) => {
           let dot = existingSprites[index] as Graphics;
           
@@ -373,17 +416,51 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           }
           
           dot.clear();
-          dot.beginFill(color);
-          dot.drawCircle(0, 0, person.isFriend ? 10 : 8); // Friends slightly larger
-          dot.endFill();
           
-          // Enhanced positioning with smoother geographic projection
+          // Constellation mode: enhanced visual effects for friends
+          if (isConstellationMode && person.isFriend) {
+            // Create star-like effect with multiple rings
+            const baseRadius = 10;
+            const pulseIntensity = 0.8 + 0.4 * Math.sin(Date.now() * 0.004 + index);
+            
+            // Outer glow
+            dot.beginFill(color, 0.2 * pulseIntensity);
+            dot.drawCircle(0, 0, baseRadius * 2);
+            dot.endFill();
+            
+            // Inner bright core
+            dot.beginFill(color, 0.9);
+            dot.drawCircle(0, 0, baseRadius * pulseIntensity);
+            dot.endFill();
+            
+            // Add sparkle effect
+            dot.lineStyle(1, 0xffffff, 0.7 * pulseIntensity);
+            for (let i = 0; i < 4; i++) {
+              const angle = (i * Math.PI) / 2 + Date.now() * 0.001;
+              const sparkleDistance = baseRadius * 1.5;
+              const x1 = Math.cos(angle) * sparkleDistance;
+              const y1 = Math.sin(angle) * sparkleDistance;
+              dot.moveTo(x1 * 0.5, y1 * 0.5);
+              dot.lineTo(x1, y1);
+            }
+          } else {
+            // Regular mode or non-friends
+            const radius = person.isFriend ? 10 : 8;
+            dot.beginFill(color);
+            dot.drawCircle(0, 0, radius);
+            dot.endFill();
+            
+            // Add border
+            const borderAlpha = person.isFriend ? 0.4 : 0.3;
+            dot.lineStyle(person.isFriend ? 2 : 1, 0xffffff, borderAlpha);
+            dot.drawCircle(0, 0, radius);
+          }
+          
+          // Enhanced positioning with smooth geographic projection
           try {
-            // If we have real location data, use proper projection
             if (typeof person.x === 'number' && typeof person.y === 'number') {
               dot.position.set(person.x, person.y);
             } else {
-              // Fallback for mock data without projection
               dot.position.set(person.x || 0, person.y || 0);
             }
           } catch (error) {
@@ -391,18 +468,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             dot.position.set(0, 0);
           }
           
-          dot.alpha = person.isFriend ? 0.95 : 0.8; // Friends more prominent
+          dot.alpha = person.isFriend ? 0.95 : 0.8;
           dot.visible = true;
-          
-          // Add subtle border for friends
-          if (person.isFriend) {
-            dot.lineStyle(2, 0xffffff, 0.4);
-            dot.drawCircle(0, 0, 10);
-          } else {
-            // Regular border for non-friends
-            dot.lineStyle(1, 0xffffff, 0.3);
-            dot.drawCircle(0, 0, 8);
-          }
         });
       } else if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
         console.log('[PIXI_DEBUG] No people to render');
@@ -425,7 +492,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         cancelAnimationFrame(animationId);
       }
     };
-  }, [fieldTiles, people, viewportGeo, searchViewport, floqs]);
+  }, [fieldTiles, people, viewportGeo, searchViewport, floqs, isConstellationMode, timeWarpHour, showDebugVisuals]);
 
   // Cleanup on unmount
   useEffect(() => {

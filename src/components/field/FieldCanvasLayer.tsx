@@ -8,6 +8,9 @@ interface FieldCanvasLayerProps {
   floqs?: any[];
   onRipple: (x: number, y: number) => void;
   canvasRef: React.RefObject<HTMLCanvasElement>;
+  isConstellationMode?: boolean;
+  timeWarpHour?: number;
+  showDebugVisuals?: boolean;
 }
 
 export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
@@ -15,7 +18,10 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
   people,
   floqs = [],
   onRipple,
-  canvasRef
+  canvasRef,
+  isConstellationMode = false,
+  timeWarpHour = new Date().getHours(),
+  showDebugVisuals = false
 }) => {
   return (
     <div 
@@ -30,6 +36,9 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
         fieldTiles={data.fieldTiles}
         viewportGeo={data.viewport}
         onRipple={onRipple}
+        isConstellationMode={isConstellationMode}
+        timeWarpHour={timeWarpHour}
+        showDebugVisuals={showDebugVisuals}
       />
     </div>
   );

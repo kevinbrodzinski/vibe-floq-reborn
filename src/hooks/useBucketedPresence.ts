@@ -89,9 +89,12 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
       
       let hasSocketData = false;
       
+      // Enhanced WebSocket subscription with better error handling
       channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
+        
+        console.log('[BucketedPresence] WebSocket sync event, state:', state);
         
         Object.values(state).forEach((presences: any) => {
           presences.forEach((presence: any) => {
@@ -108,6 +111,41 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           setLastHeartbeat(Date.now());
           hasSocketData = true;
         }
+      });
+
+      // Listen for individual presence changes
+      channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('[BucketedPresence] User joined:', key, newPresences);
+        // Trigger a sync to get updated state
+        const state = channel.presenceState();
+        const users: PresenceUser[] = [];
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            users.push({
+              ...presence,
+              isFriend: friendIds.includes(presence.profile_id)
+            });
+          });
+        });
+        setPeople(users);
+        setLastHeartbeat(Date.now());
+      });
+
+      channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('[BucketedPresence] User left:', key, leftPresences);
+        // Trigger a sync to get updated state
+        const state = channel.presenceState();
+        const users: PresenceUser[] = [];
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            users.push({
+              ...presence,
+              isFriend: friendIds.includes(presence.profile_id)
+            });
+          });
+        });
+        setPeople(users);
+        setLastHeartbeat(Date.now());
       });
 
       channel.subscribe();

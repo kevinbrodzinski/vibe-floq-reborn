@@ -1,8 +1,10 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { FieldMapBase } from '@/components/maps/FieldMapBase';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
+import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
+import { FriendSuggestionCarousel } from '@/components/field/FriendSuggestionCarousel';
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldData } from '../field/FieldDataProvider';
 
@@ -24,8 +26,35 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const { walkableFloqs, fieldTiles, realtime } = data;
   const { people: socialPeople } = useFieldSocial();
   
+  // Phase 4 state management
+  const [isDebugVisible, setIsDebugVisible] = useState(false);
+  const [isConstellationMode, setIsConstellationMode] = useState(false);
+  const [timeWarpHour, setTimeWarpHour] = useState(new Date().getHours());
+  
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
+  
+  // Phase 4 handlers
+  const handleTimeWarp = useCallback((hours: number) => {
+    setTimeWarpHour(hours);
+    // Automatically enable constellation mode for night hours
+    const isNightTime = hours < 6 || hours > 20;
+    if (isNightTime && !isConstellationMode) {
+      setIsConstellationMode(true);
+    } else if (!isNightTime && isConstellationMode) {
+      setIsConstellationMode(false);
+    }
+  }, [isConstellationMode]);
+  
+  const handleStartChat = useCallback((friendId: string) => {
+    console.log('[FieldMapLayer] Starting chat with friend:', friendId);
+    // TODO: Implement chat navigation
+  }, []);
+  
+  const handleShowOnMap = useCallback((friendId: string) => {
+    console.log('[FieldMapLayer] Showing friend on map:', friendId);
+    // TODO: Implement map focus on friend location
+  }, []);
 
   return (
     <div className="absolute inset-0">
@@ -36,17 +65,43 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         realtime={realtime}
       />
       
-      {/* Layer 2: PIXI Canvas Overlay */}
+      {/* Layer 2: PIXI Canvas Overlay with Phase 4 enhancements */}
       <FieldCanvasLayer
         canvasRef={canvasRef}
         people={actualPeople}
         floqs={floqs}
         data={data}
         onRipple={onRipple}
+        isConstellationMode={isConstellationMode}
+        timeWarpHour={timeWarpHour}
+        showDebugVisuals={isDebugVisible}
       />
       
       {/* Layer 3: UI Controls */}
       <FieldUILayer data={data} />
+      
+      {/* Phase 4: Enhanced UI Components */}
+      
+      {/* Friend Suggestion Carousel */}
+      <div className="absolute bottom-4 left-4 max-w-sm">
+        <FriendSuggestionCarousel
+          onStartChat={handleStartChat}
+          onShowOnMap={handleShowOnMap}
+        />
+      </div>
+      
+      {/* Debug Panel with Time Warp */}
+      <FieldDebugPanel
+        isVisible={isDebugVisible}
+        onToggle={() => setIsDebugVisible(!isDebugVisible)}
+        tileData={fieldTiles}
+        presenceData={actualPeople}
+        clusterData={[]} // TODO: Pass actual cluster data
+        onTimeWarp={handleTimeWarp}
+        currentTime={new Date()}
+        isConstellationMode={isConstellationMode}
+        onConstellationToggle={() => setIsConstellationMode(!isConstellationMode)}
+      />
     </div>
   );
 };

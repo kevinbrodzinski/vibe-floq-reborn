@@ -1,86 +1,214 @@
-// deno ≥1.41  • Edge Function  • returns crowd stats for a list of tile_ids
-import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
-/* ------------------------------------------------------------------ */
-/*  CORS helper – no external import, echoes caller’s Origin           */
-/* ------------------------------------------------------------------ */
-function cors(origin = "*") {
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-    "Content-Type": "application/json",
-  } as const;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-/* ------------------------------------------------------------------ */
-/*  config                                                             */
-/* ------------------------------------------------------------------ */
-const TTL_SECONDS = 30;              // align with React-Query staleTime
-const SB_URL      = Deno.env.get("SUPABASE_URL")!;
-const SR_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; // service-role
+interface FieldTileRequest {
+  tile_ids: string[]
+}
 
-/* ------------------------------------------------------------------ */
-/*  handler                                                            */
-/* ------------------------------------------------------------------ */
-serve(async (req) => {
-  const headers = cors(req.headers.get("Origin") ?? "*");
+interface FieldTileResponse {
+  tiles: Array<{
+    tile_id: string
+    crowd_count: number
+    avg_vibe: { h: number; s: number; l: number }
+    active_floq_ids: string[]
+    updated_at: string
+  }>
+}
 
-  /* CORS pre-flight */
-  if (req.method === "OPTIONS") return new Response(null, { headers });
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+)
 
-  /* only POST */
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "POST only" }),
-      { status: 405, headers });
+// Convert vibe string to HSL values
+const vibeToHSL = (vibe: string): { h: number; s: number; l: number } => {
+  const vibeMap: Record<string, { h: number; s: number; l: number }> = {
+    'hype': { h: 280, s: 0.7, l: 0.6 },
+    'social': { h: 30, s: 0.7, l: 0.6 },
+    'chill': { h: 240, s: 0.7, l: 0.6 },
+    'flowing': { h: 200, s: 0.7, l: 0.6 },
+    'open': { h: 120, s: 0.7, l: 0.6 },
+    'curious': { h: 260, s: 0.7, l: 0.6 },
+    'solo': { h: 180, s: 0.7, l: 0.6 },
+    'romantic': { h: 320, s: 0.7, l: 0.6 },
+    'weird': { h: 60, s: 0.7, l: 0.6 },
+    'down': { h: 210, s: 0.3, l: 0.4 },
+  }
+  return vibeMap[vibe?.toLowerCase()] || { h: 240, s: 0.7, l: 0.6 }
+}
+
+// Calculate average HSL from multiple vibes
+const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: number } => {
+  if (vibes.length === 0) return { h: 0, s: 0, l: 0 }
+  
+  const hslValues = vibes.map(vibeToHSL)
+  
+  // Average hue (circular average for hue)
+  let sin = 0, cos = 0
+  hslValues.forEach(({ h }) => {
+    const rad = (h * Math.PI) / 180
+    sin += Math.sin(rad)
+    cos += Math.cos(rad)
+  })
+  const avgHue = ((Math.atan2(sin, cos) * 180) / Math.PI + 360) % 360
+  
+  // Average saturation and lightness
+  const avgSaturation = hslValues.reduce((sum, { s }) => sum + s, 0) / hslValues.length
+  const avgLightness = hslValues.reduce((sum, { l }) => sum + l, 0) / hslValues.length
+  
+  return {
+    h: Math.round(avgHue),
+    s: Math.round(avgSaturation * 100) / 100,
+    l: Math.round(avgLightness * 100) / 100
+  }
+}
+
+// Convert lat/lng to geohash-5 tile ID
+const latLngToTileId = (lat: number, lng: number): string => {
+  // Simplified geohash-5 implementation
+  const precision = 5
+  let latRange = [-90, 90]
+  let lngRange = [-180, 180]
+  let hash = ''
+  let bit = 0
+  let ch = 0
+  const base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
+  let isLng = true
+
+  while (hash.length < precision) {
+    if (isLng) {
+      const mid = (lngRange[0] + lngRange[1]) / 2
+      if (lng >= mid) {
+        ch |= 1 << (4 - bit)
+        lngRange[0] = mid
+      } else {
+        lngRange[1] = mid
+      }
+    } else {
+      const mid = (latRange[0] + latRange[1]) / 2
+      if (lat >= mid) {
+        ch |= 1 << (4 - bit)
+        latRange[0] = mid
+      } else {
+        latRange[1] = mid
+      }
+    }
+    
+    isLng = !isLng
+    if (bit < 4) {
+      bit++
+    } else {
+      hash += base32[ch]
+      bit = 0
+      ch = 0
+    }
+  }
+  
+  return hash
+}
+
+Deno.serve(async (req) => {
+  console.log('[GET_FIELD_TILES] Request received:', req.method)
+
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    /* ---------- input ------------------------------------------------ */
-    const { tile_ids = [], since } = await req.json().catch(() => ({}));
-    if (!Array.isArray(tile_ids) || tile_ids.length === 0) {
-      return new Response(JSON.stringify({ error: "tile_ids[] required" }),
-        { status: 400, headers });
+    const { tile_ids }: FieldTileRequest = await req.json()
+    console.log('[GET_FIELD_TILES] Processing tile IDs:', tile_ids)
+
+    if (!tile_ids || !Array.isArray(tile_ids)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid tile_ids parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    /* ---------- edge-KV micro-cache (CF Workers / Supabase platform) -- */
-    const cacheKey = `field_tiles:${tile_ids.sort().join(",")}:${since ?? "0"}`;
-    const hasKV    = typeof caches !== "undefined" && caches.default;
-    if (hasKV) {
-      const hit = await caches.default.match(cacheKey);
-      if (hit) return new Response(hit.body, { headers: { ...headers, "x-cache": "hit" } });
+    // Get real presence data from vibes_now table
+    const { data: presenceData, error: presenceError } = await supabase
+      .from('vibes_now')
+      .select('profile_id, location, vibe, updated_at')
+      .not('location', 'is', null)
+
+    if (presenceError) {
+      console.error('[GET_FIELD_TILES] Error fetching presence data:', presenceError)
     }
 
-    /* ---------- Supabase query --------------------------------------- */
-    const sb     = createClient(SB_URL, SR_KEY, { auth: { persistSession: false } });
-    const { data, error } = await sb
-      .from("field_tiles")
-      .select("tile_id,crowd_count,avg_vibe,updated_at")
-      .in("tile_id", tile_ids)
-      .gt("updated_at", since ?? "epoch");
+    // Get active floq data
+    const { data: floqData, error: floqError } = await supabase
+      .from('floqs')
+      .select('id, location, participants_count')
+      .not('location', 'is', null)
+      .gte('participants_count', 2)
 
-    if (error) {
-      console.error("[get_field_tiles] DB error", error);
-      return new Response(JSON.stringify({ tiles: [] }), { status: 200, headers });
+    if (floqError) {
+      console.error('[GET_FIELD_TILES] Error fetching floq data:', floqError)
     }
 
-    const body = JSON.stringify({ tiles: data ?? [] });
-    const resp = new Response(body, { status: 200, headers });
+    // Process each requested tile
+    const tiles = tile_ids.map(tileId => {
+      // Find all presence points in this tile
+      const tilePresence = (presenceData || []).filter(presence => {
+        if (!presence.location?.coordinates) return false
+        const [lng, lat] = presence.location.coordinates
+        const presenceTileId = latLngToTileId(lat, lng)
+        return presenceTileId === tileId
+      })
 
-    /* ---------- write micro-cache ------------------------------------ */
-    if (hasKV) {
-      caches.default.put(cacheKey, resp.clone(), { expirationTtl: TTL_SECONDS }).catch((e) =>
-        console.warn("[get_field_tiles] cache put failed", e.message)
-      );
-    }
+      // Find all floqs in this tile
+      const tileFloqs = (floqData || []).filter(floq => {
+        if (!floq.location?.coordinates) return false
+        const [lng, lat] = floq.location.coordinates
+        const floqTileId = latLngToTileId(lat, lng)
+        return floqTileId === tileId
+      })
 
-    return resp;
+      // Calculate crowd count and average vibe
+      const crowdCount = tilePresence.length + tileFloqs.reduce((sum, floq) => sum + (floq.participants_count || 0), 0)
+      const vibes = tilePresence.map(p => p.vibe).filter(Boolean)
+      const avgVibe = calculateAverageVibe(vibes)
+      const activeFloqIds = tileFloqs.map(f => f.id)
 
-  } catch (e) {
-    console.error("[get_field_tiles] fatal", e);
-    return new Response(JSON.stringify({ error: "internal" }),
-      { status: 500, headers });
+      console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+
+      return {
+        tile_id: tileId,
+        crowd_count: crowdCount,
+        avg_vibe: avgVibe,
+        active_floq_ids: activeFloqIds,
+        updated_at: new Date().toISOString()
+      }
+    })
+
+    const response: FieldTileResponse = { tiles }
+
+    return new Response(
+      JSON.stringify(response),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    )
+
+  } catch (error) {
+    console.error('[GET_FIELD_TILES] Error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500, 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    )
   }
-});
+})
