@@ -24,6 +24,9 @@ export const FriendSuggestionCarousel: React.FC<FriendSuggestionCarouselProps> =
       .filter(person => person.isFriend)
       .map(person => {
         const profile = profilesMap.get(person.id);
+        
+        // Calculate screen distance using already-projected coordinates
+        // person.x and person.y are already screen coordinates from projectLatLng
         const distance = Math.sqrt(
           Math.pow(person.x - 500, 2) + Math.pow(person.y - 500, 2)
         );

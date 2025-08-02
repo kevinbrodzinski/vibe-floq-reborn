@@ -115,7 +115,13 @@ Deno.serve(async (req) => {
 
   // Handle CORS preflight requests FIRST before any other logic
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { 
+      status: 204, 
+      headers: { 
+        ...corsHeaders, 
+        "Content-Length": "0" 
+      } 
+    });
   }
 
   try {
