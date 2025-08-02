@@ -2,37 +2,44 @@
  * Persistent location cache utilities with staleness protection
  */
 
-const MAX_PERSIST_AGE = 2 * 60 * 60 * 1000; // 2 hours
+export const MAX_PERSIST_AGE = 2 * 60 * 60 * 1000; // 2 hours
 
-interface CachedCoords {
+export interface CachedCoords {
   lat: number;
   lng: number;
   ts: number;
 }
 
 /**
+ * Check if coordinates are stale based on timestamp
+ */
+export function isStale(ts: number): boolean {
+  return Date.now() - ts > MAX_PERSIST_AGE;
+}
+
+/**
  * Load persisted coordinates with age checking and corruption handling
  */
-export function loadPersistedCoords(): { lat: number; lng: number } | null {
+export function loadPersistedCoords(): CachedCoords | null {
   try {
     const raw = localStorage.getItem('floq-lastFix');
     if (!raw) return null;
     
     const cached: CachedCoords = JSON.parse(raw);
     
-    // Check for required fields and age
-    if (!cached.lat || !cached.lng || !cached.ts) {
+    // Check for required fields
+    if (typeof cached.lat !== 'number' || typeof cached.lng !== 'number' || typeof cached.ts !== 'number') {
       localStorage.removeItem('floq-lastFix');
       return null;
     }
     
     // Reject stale coordinates
-    if (Date.now() - cached.ts > MAX_PERSIST_AGE) {
+    if (isStale(cached.ts)) {
       localStorage.removeItem('floq-lastFix');
       return null;
     }
     
-    return { lat: cached.lat, lng: cached.lng };
+    return cached;
   } catch {
     // Remove corrupted cache to prevent loops
     localStorage.removeItem('floq-lastFix');

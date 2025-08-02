@@ -12,7 +12,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { calculateDistance }     from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { geoTelemetry } from '@/lib/monitoring/telemetry';
-import { loadPersistedCoords, savePersistedCoords } from '@/lib/location/geoCache';
+import { loadPersistedCoords, savePersistedCoords, isStale } from '@/lib/location/geoCache';
 
 /* ────────────────────────────────────────────────────────── */
 /* Types                                                     */
@@ -100,24 +100,41 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
 
     /* persistent cache from localStorage with age checking */
     const persisted = loadPersistedCoords();
-    if (persisted) {
-      set(s => ({ ...s, coords: persisted, status: 'success', hasPermission: true, ts: Date.now() }));
-      lastFix.current = persisted;
+    if (persisted && !isStale(persisted.ts)) {
+      const coords = { lat: persisted.lat, lng: persisted.lng };
+      set(s => ({ ...s, coords, status: 'success', hasPermission: true, ts: Date.now() }));
+      lastFix.current = coords;
       geoTelemetry.cacheHit('localStorage');
       return;
     }
 
-    /* cached coords speed-up (session-scope) */
+    /* session cache with age validation */
     try {
       const cached = sessionStorage.getItem('floq-coords');
       if (cached) {
-        const coords = JSON.parse(cached);
-        set(s => ({ ...s, coords, status:'success', hasPermission:true, ts:Date.now() }));
-        lastFix.current = coords;
-        geoTelemetry.cacheHit('sessionStorage');
-        return;
+        const sessionCoords = JSON.parse(cached);
+        // Check if session cache has timestamp and validate age
+        if (sessionCoords.ts && !isStale(sessionCoords.ts)) {
+          const coords = { lat: sessionCoords.lat, lng: sessionCoords.lng };
+          set(s => ({ ...s, coords, status:'success', hasPermission:true, ts:Date.now() }));
+          lastFix.current = coords;
+          geoTelemetry.cacheHit('sessionStorage');
+          return;
+        } else if (!sessionCoords.ts) {
+          // Legacy session cache without timestamp - use as fallback
+          const coords = { lat: sessionCoords.lat, lng: sessionCoords.lng };
+          set(s => ({ ...s, coords, status:'success', hasPermission:true, ts:Date.now() }));
+          lastFix.current = coords;
+          geoTelemetry.cacheHit('sessionStorage');
+          return;
+        } else {
+          // Stale session cache - remove it
+          sessionStorage.removeItem('floq-coords');
+        }
       }
-    } catch {/* ignore */}
+    } catch {
+      sessionStorage.removeItem('floq-coords');
+    }
 
     const handleGranted = () => {
       set(s => ({ ...s, hasPermission:true }));
@@ -172,7 +189,8 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       }));
       lastFix.current = p;
       try {
-        sessionStorage.setItem('floq-coords', JSON.stringify(p));
+        const coordsWithTs = { ...p, ts: Date.now() };
+        sessionStorage.setItem('floq-coords', JSON.stringify(coordsWithTs));
         savePersistedCoords(p);
       } catch {/* ignore quota / private-mode errors */}
       geoTelemetry.success(pos.coords.accuracy);
