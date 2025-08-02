@@ -1,7 +1,7 @@
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
-import SuggestionCard from './SuggestionCard'
+import SuggestionCard from './SuggestionCard'  // default import
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { useSocialSuggestions } from '@/hooks/useSocialSuggestions'
 

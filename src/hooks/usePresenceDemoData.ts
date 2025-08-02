@@ -30,14 +30,14 @@ export function usePresenceDemoData() {
 
       console.log('[Demo] Seeded successfully:', data);
       return data;
-    } catch (error: any) {
-      console.error('[Demo] Seeding failed:', error);
+    } catch (err) {
+      console.info('[DemoSeed] unavailable – skipping:', err);
       toast({
-        title: "Demo seeding failed", 
-        description: error.message,
-        variant: "destructive",
+        title: "Demo seeding unavailable",
+        description: "Function authentication needed",
+        variant: "destructive"
       });
-      throw error;
+      throw err;
     } finally {
       setIsLoading(false);
     }

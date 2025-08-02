@@ -326,7 +326,7 @@ export const InvitationManagement: React.FC<InvitationManagementProps> = ({ floq
                           Pending
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          Sent {formatDistance(new Date(invitation.sent_at))} ago
+                          Sent {new Date(invitation.sent_at).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
