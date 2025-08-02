@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { throttle } from 'lodash.throttle'
+import throttle from 'lodash.throttle'
 
 export interface NearbyRow {
   profile_id: string

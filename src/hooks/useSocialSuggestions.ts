@@ -1,5 +1,7 @@
 import useSWR from 'swr'
 import { supabase } from '@/integrations/supabase/client'
+import { useNearbyPeople, type NearbyRow } from './useNearbyPeople'
+import { useMemo } from 'react'
 
 export interface SocialSuggestion {
   friend_id: string // Keep as friend_id since this comes from unified view
@@ -20,8 +22,25 @@ const fetchSocialSuggestions = async (lat: number, lng: number, radiusKm: number
   return data as SocialSuggestion[]
 }
 
+// Convert nearby people to social suggestion format
+const convertNearbyToSuggestions = (nearbyPeople: NearbyRow[]): SocialSuggestion[] => {
+  return nearbyPeople.map(person => ({
+    friend_id: person.profile_id,
+    display_name: `User ${person.profile_id.slice(-4)}`,
+    avatar_url: null,
+    vibe_tag: person.vibe,
+    vibe_match: 85, // Default match score for nearby people
+    distance_m: person.meters,
+    last_activity: 'just now'
+  }))
+}
+
 export const useSocialSuggestions = (lat?: number, lng?: number, radiusKm: number = 1) => {
-  const { data, error, mutate } = useSWR(
+  // Get nearby people from the optimized endpoint
+  const { people: nearbyPeople, loading: nearbyLoading } = useNearbyPeople(lat, lng, 12)
+  
+  // Get friend suggestions from the existing endpoint
+  const { data: friendSuggestions, error, mutate } = useSWR(
     lat && lng ? `social-suggestions-${lat}-${lng}-${radiusKm}` : null,
     lat && lng ? () => fetchSocialSuggestions(lat, lng, radiusKm) : null,
     {
@@ -31,9 +50,31 @@ export const useSocialSuggestions = (lat?: number, lng?: number, radiusKm: numbe
     }
   )
 
+  // Combine and deduplicate suggestions
+  const combinedSuggestions = useMemo(() => {
+    const nearbyAsSuggestions = convertNearbyToSuggestions(nearbyPeople)
+    const friends = friendSuggestions || []
+    
+    // Create a map to deduplicate by friend_id, prioritizing friend suggestions
+    const suggestionMap = new Map<string, SocialSuggestion>()
+    
+    // Add nearby people first (lower priority)
+    nearbyAsSuggestions.forEach(suggestion => {
+      suggestionMap.set(suggestion.friend_id, suggestion)
+    })
+    
+    // Add friend suggestions (higher priority, will overwrite nearby)
+    friends.forEach(suggestion => {
+      suggestionMap.set(suggestion.friend_id, suggestion)
+    })
+    
+    return Array.from(suggestionMap.values())
+      .sort((a, b) => a.distance_m - b.distance_m) // Sort by distance
+  }, [nearbyPeople, friendSuggestions])
+
   return {
-    suggestions: data || [],
-    loading: !data && !error,
+    suggestions: combinedSuggestions,
+    loading: nearbyLoading || (!friendSuggestions && !error),
     error,
     refetch: mutate
   }
