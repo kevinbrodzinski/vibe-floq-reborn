@@ -50,7 +50,8 @@ export function usePresenceDemoData() {
       const { error } = await supabase
         .from('vibes_now')
         .delete()
-        .like('profile_id', 'demo-user-%');
+        .ilike('profile_id', 'demo-user-%')
+        .select();
 
       if (error) throw error;
 

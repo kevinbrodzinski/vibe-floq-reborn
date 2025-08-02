@@ -15,7 +15,7 @@ const DebugCtx = createContext<Ctx>([false, () => {}]);
 export const DebugProvider = ({ children }: { children: ReactNode }) => {
   const prod = import.meta.env.MODE === 'production';
   
-  // Safer initialization of debug state
+  // Debug disabled by default for cleaner UI
   const [debug, setDebug] = useState<boolean>(false);
   
   // Load debug state on mount
