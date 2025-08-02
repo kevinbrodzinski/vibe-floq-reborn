@@ -1,5 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { geoToH3 } from 'https://esm.sh/h3-js@4.1.0'
+
+// Simple coordinate-based tile ID generation (upgrade to H3 later)
+const latLngToTileId = (lat: number, lng: number, resolution = 7): string => {
+  const latInt = Math.floor(lat * 10000);
+  const lngInt = Math.floor(lng * 10000);
+  return `tile_${resolution}_${latInt}_${lngInt}`;
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -77,10 +83,9 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
   }
 }
 
-// Convert lat/lng to H3 index with appropriate resolution
-const latLngToTileId = (lat: number, lng: number): string => {
-  // Use H3 resolution 7 (~5 char precision, ~1.2km hexagons)
-  return geoToH3(lat, lng, 7)
+// Convert lat/lng to coordinate-based tile ID
+const generateTileId = (lat: number, lng: number): string => {
+  return latLngToTileId(lat, lng, 7)
 }
 
 // Parse location safely handling different formats
@@ -173,7 +178,7 @@ Deno.serve(async (req) => {
         const coords = parseLocation(presence.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const presenceTileId = latLngToTileId(lat, lng)
+        const presenceTileId = generateTileId(lat, lng)
         return presenceTileId === tileId
       })
 
@@ -182,7 +187,7 @@ Deno.serve(async (req) => {
         const coords = parseLocation(floq.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const floqTileId = latLngToTileId(lat, lng)
+        const floqTileId = generateTileId(lat, lng)
         return floqTileId === tileId
       })
 
