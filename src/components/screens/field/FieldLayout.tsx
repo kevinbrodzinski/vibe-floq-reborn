@@ -6,6 +6,7 @@ import { FieldMapLayer } from "./FieldMapLayer";
 import { FieldUILayer } from "./FieldUILayer";
 import { FieldModalLayer } from "./FieldModalLayer";
 import { FieldSystemLayer } from "./FieldSystemLayer";
+import { TileDebugVisual } from "@/components/field/TileDebugVisual";
 import { useFieldLocation } from "@/components/field/contexts/FieldLocationContext";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
 import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
@@ -123,6 +124,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
         {/* System Layer (FAB, accessibility) - z-70+ */}
         <FieldSystemLayer data={data} />
+
+        {/* Debug Layer (development only) - z-200+ */}
+        <TileDebugVisual
+          fieldTiles={data.fieldTiles}
+          visible={data.showDebugVisuals}
+        />
       </div>
     </ErrorBoundary>
   );

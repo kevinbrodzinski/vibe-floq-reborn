@@ -7,6 +7,7 @@ import { useFieldTiles } from "@/hooks/useFieldTiles";
 import { useFieldTileSync } from "@/hooks/useFieldTileSync";
 import { useAutoVenueSync } from "@/hooks/useVenueSync";
 import { usePresencePublisher } from "@/hooks/usePresencePublisher";
+import { useRealtimePresence } from "@/hooks/useRealtimePresence";
 import { viewportToTileIds } from "@/lib/geo";
 import { getCachedAddress } from '@/utils/geoUtils';
 // Simple projection function that doesn't require a map instance
@@ -79,6 +80,8 @@ export interface FieldData {
   viewport: { minLat: number; maxLat: number; minLng: number; maxLng: number } | null;
   // Real-time status
   realtime: boolean;
+  // Debug visuals
+  showDebugVisuals: boolean;
 }
 
 interface FieldDataProviderProps {
@@ -165,6 +168,23 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   // Start publishing user presence to the field only when location is available
   const isLocationAvailable = !!(location?.pos?.lat && location?.pos?.lng);
   usePresencePublisher(isLocationAvailable);
+
+  // Enable real-time presence updates for friend tracking
+  const [presenceUpdates, setPresenceUpdates] = useState<any[]>([]);
+  useRealtimePresence({
+    enabled: isLocationAvailable,
+    onPresenceUpdate: (update) => {
+      console.log('[RealtimePresence] Friend presence update:', update);
+      setPresenceUpdates(prev => {
+        const filtered = prev.filter(p => p.profile_id !== update.profile_id);
+        return [...filtered, update];
+      });
+    },
+    onPresenceRemove: (profileId) => {
+      console.log('[RealtimePresence] Friend went offline:', profileId);
+      setPresenceUpdates(prev => prev.filter(p => p.profile_id !== profileId));
+    }
+  });
 
   // Define viewport bounds based on location
   const viewport = useMemo(() => {
@@ -266,6 +286,8 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
     viewport,
     // Real-time status
     realtime: true,
+    // Debug visuals (enabled in development)
+    showDebugVisuals: process.env.NODE_ENV === 'development',
   };
 
   return (

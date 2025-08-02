@@ -180,11 +180,17 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       app.stage.interactive = true;
       app.stage.on('pointermove', onPointerMove);
       
-      // Add click handler for additional ripple effects
+      // Enhanced click handler with ripple effects and haptic feedback
       app.stage.on('pointerdown', (e: any) => {
         const { clientX, clientY } = e.data?.originalEvent || { clientX: e.globalX, clientY: e.globalY };
+        
+        // Add multiple ripples for enhanced visual feedback
         addRipple(clientX, clientY);
-        light(); // Haptic feedback on click
+        setTimeout(() => addRipple(clientX, clientY), 100); // Secondary ripple
+        
+        // Enhanced haptic feedback pattern
+        light();
+        setTimeout(() => light(), 50); // Double tap haptic
       });
     });
 
@@ -467,20 +473,29 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             dot.drawCircle(0, 0, radius);
           }
           
-          // Enhanced positioning with smooth geographic projection
+          // Enhanced positioning with precise geographic distance calculation
           try {
             if (typeof person.x === 'number' && typeof person.y === 'number') {
-              dot.position.set(person.x, person.y);
+              // Ensure position is within valid bounds (prevent dots from disappearing off-screen)
+              const clampedX = Math.max(-100, Math.min(window.innerWidth + 100, person.x));
+              const clampedY = Math.max(-100, Math.min(window.innerHeight + 100, person.y));
+              dot.position.set(clampedX, clampedY);
             } else {
-              dot.position.set(person.x || 0, person.y || 0);
+              // Fallback to center if coordinates are invalid
+              dot.position.set(window.innerWidth / 2, window.innerHeight / 2);
             }
           } catch (error) {
             console.warn('[PIXI_DEBUG] Error positioning person dot:', error);
-            dot.position.set(0, 0);
+            dot.position.set(window.innerWidth / 2, window.innerHeight / 2);
           }
           
+          // Enhanced visibility with better contrast for friends
           dot.alpha = person.isFriend ? 0.95 : 0.8;
           dot.visible = true;
+          
+          // Add interactive behavior for dots
+          dot.eventMode = 'static';
+          dot.cursor = 'pointer';
         });
       } else if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_STAGE !== 'prod') {
         console.log('[PIXI_DEBUG] No people to render');
