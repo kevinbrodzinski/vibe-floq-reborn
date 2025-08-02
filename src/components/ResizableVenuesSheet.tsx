@@ -92,7 +92,7 @@ export const ResizableVenuesSheet: React.FC<ResizableVenuesSheetProps> = ({
           dragConstraints={constraintsRef}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
-          {...zIndex('toast')}
+          {...zIndex('modal')}
           className={`fixed bottom-0 left-0 right-0 pointer-events-auto
                      bg-card rounded-t-2xl border-t border-border shadow-2xl ${className}`}
           style={getSheetStyle()}
