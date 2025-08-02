@@ -11,19 +11,29 @@ export default function FriendSuggestionCarousel() {
   if (!suggestions.length) return null
 
   return (
-    <div className="pointer-events-auto">
-      <h4 className="mb-2 text-sm font-medium">
-        Friends Nearby <span className="text-muted-foreground">({suggestions.length})</span>
-      </h4>
+    <div 
+      className="
+        fixed
+        inset-x-0 bottom-20
+        z-[60]
+        px-4 pb-2
+        pointer-events-none
+      "
+    >
+      <div className="pointer-events-auto">
+        <h4 className="mb-2 text-sm font-medium">
+          Friends Nearby <span className="text-muted-foreground">({suggestions.length})</span>
+        </h4>
 
-      <ScrollArea className="w-full whitespace-nowrap pb-1">
-        <div className="flex gap-3">
-          {suggestions.map(s => (
-            <SuggestionCard key={s.friend_id} suggestion={s} />
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+        <ScrollArea className="w-full whitespace-nowrap pb-1">
+          <div className="flex gap-3">
+            {suggestions.map(s => (
+              <SuggestionCard key={s.friend_id} suggestion={s} />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
     </div>
   )
 }

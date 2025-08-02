@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Graphics, Container, Application } from 'pixi.js';
 import { projectLatLng, getMapInstance } from '@/lib/geo/project';
 import { geohashToCenter } from '@/lib/geo';
+import { throttle } from 'lodash-es';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
 
@@ -30,6 +31,26 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
 }) => {
   const constellationGraphicsRef = useRef<Graphics | null>(null);
   const friendConnectionsRef = useRef<Graphics | null>(null);
+  const [mapRev, setMapRev] = useState(0);
+  
+  // Subscribe to map movement and zoom events
+  useEffect(() => {
+    const map = getMapInstance();
+    if (!map) return;
+
+    // Throttled handler - fire at most every 33 ms (30 fps)
+    const handle = throttle(() => setMapRev(r => r + 1), 33);
+
+    map.on('move', handle);
+    map.on('zoom', handle);
+
+    return () => {
+      map.off('move', handle);
+      map.off('zoom', handle);
+      handle.cancel(); // cleanup lodash-es/throttle
+    };
+  }, []);
+  
   
   // Cache projected coordinates to avoid redundant projections
   const cachedProjections = useMemo(() => {
@@ -45,7 +66,7 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
       });
     });
     
-    // Cache field tile projections
+    // Cache field tile projections - re-project each time the map moves
     fieldTiles.filter(t => t.crowd_count >= 3).forEach(tile => {
       const [lat, lng] = geohashToCenter(tile.tile_id);
       const projection = projectLatLng(lng, lat);
@@ -60,7 +81,7 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     });
     
     return cache;
-  }, [people, fieldTiles]);
+  }, [people, fieldTiles, mapRev]); // Add mapRev to trigger updates on map movement
 
   // Initialize constellation graphics
   useEffect(() => {
