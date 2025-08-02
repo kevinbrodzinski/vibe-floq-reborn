@@ -8,20 +8,8 @@ const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
 
 const RES = 7; // ~1.2km hexagons for social venue mapping
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-}
+import { corsHeaders, respondWithCors } from '../_shared/cors.ts'
 
-const respondWithCors = (data: unknown, status: number = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/json',
-    },
-  })
 
 interface FieldTileRequest {
   tile_ids: string[]
@@ -125,9 +113,9 @@ Deno.serve(async (req) => {
     console.log('[GET_FIELD_TILES] Request received:', req.method)
   }
 
-  // Handle CORS preflight requests
+  // Handle CORS preflight requests FIRST before any other logic
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { status: 204, headers: corsHeaders })
   }
 
   try {

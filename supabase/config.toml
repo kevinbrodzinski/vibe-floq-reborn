@@ -7,6 +7,9 @@ verify_jwt = false
 [functions.fetch_foursquare]
 verify_jwt = false
 
+[functions.fetch_google_places]
+verify_jwt = false
+
 [functions.get_place_details]
 verify_jwt = false
 

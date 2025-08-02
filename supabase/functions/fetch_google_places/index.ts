@@ -1,21 +1,19 @@
 // Deno runtime • Google NearbySearch → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
+import { corsHeaders } from "../_shared/cors.ts";
 import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
-import { getUserId } from "../_shared/getUserId.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
-  if (req.method !== "POST")
-    return new Response("POST only", { status: 405, headers: CORS });
+  // Handle CORS preflight requests FIRST
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  
+  if (req.method !== "POST") {
+    return new Response("POST only", { status: 405, headers: corsHeaders });
+  }
 
   try {
     const payload = await req.json() as {
@@ -27,8 +25,8 @@ serve(async (req) => {
     const lat = Number(payload.lat);
     const lng = Number(payload.lng);
     
-    // Extract user ID from JWT for optional context (no behavioral change)
-    const profile_id = payload.profile_id ?? (await getUserId(req));
+    // No auth required for public function
+    const profile_id = payload.profile_id;
     
     console.log(`[Google Places] Starting request for location: ${lat},${lng} by=${profile_id ?? "anon"}`);
     
@@ -40,7 +38,7 @@ serve(async (req) => {
           error: "lat & lng are required numbers",
           details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
         }),
-        { status: 400, headers: CORS },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -52,7 +50,7 @@ serve(async (req) => {
           error: "Invalid coordinates range",
           details: "Latitude must be between -90 and 90, longitude between -180 and 180"
         }),
-        { status: 400, headers: CORS },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -62,7 +60,7 @@ serve(async (req) => {
       console.error("[Google Places] GOOGLE_PLACES_KEY missing from environment");
       return new Response(
         JSON.stringify({ error: "API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets." }), 
-        { status: 500, headers: CORS }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -82,7 +80,7 @@ serve(async (req) => {
       console.error(`[Google Places] HTTP error: ${response.status} ${response.statusText}`);
       return new Response(
         JSON.stringify({ error: `Google Places API HTTP error: ${response.status}` }),
-        { status: 502, headers: CORS }
+        { status: 502, headers: corsHeaders }
       );
     }
 
@@ -97,7 +95,7 @@ serve(async (req) => {
           details: gp.error_message,
           help: "Ensure your Google Cloud project has Places API enabled and the API key has proper restrictions."
         }),
-        { status: 403, headers: CORS }
+        { status: 403, headers: corsHeaders }
       );
     }
     
@@ -108,7 +106,7 @@ serve(async (req) => {
           error: `Google Places API error: ${gp.status}`,
           details: gp.error_message 
         }),
-        { status: 502, headers: CORS }
+        { status: 502, headers: corsHeaders }
       );
     }
 
@@ -116,7 +114,7 @@ serve(async (req) => {
       console.log(`[Google Places] No results found for location ${lat},${lng}`);
       return new Response(
         JSON.stringify({ ok: true, count: 0, message: "No places found in this area" }),
-        { headers: CORS }
+        { headers: corsHeaders }
       );
     }
 
@@ -147,7 +145,7 @@ serve(async (req) => {
         source: "google_places",
         location: { lat, lng }
       }),
-      { headers: CORS },
+      { headers: corsHeaders },
     );
   } catch (e) {
     console.error("[Google Places] Unexpected error:", e);
@@ -158,7 +156,7 @@ serve(async (req) => {
         details: errorMessage,
         source: "google_places"
       }),
-      { status: 500, headers: CORS },
+      { status: 500, headers: corsHeaders },
     );
   }
 });

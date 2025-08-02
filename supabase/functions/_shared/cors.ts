@@ -2,7 +2,7 @@ export const corsHeaders = {
   // Allow any origin (adjust as needed for production)
   "Access-Control-Allow-Origin": "*",
 
-  // Incoming headers Supabase JS can send—including the automatic “prefer” header
+  // Incoming headers Supabase JS can send—including the automatic "prefer" header
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, prefer",
 
