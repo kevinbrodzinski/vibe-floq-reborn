@@ -5,7 +5,7 @@ import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
-import { FriendSuggestionCarousel } from '@/components/field/FriendSuggestionCarousel';
+import FriendSuggestionCarousel from '@/components/field/FriendSuggestionCarousel';
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import { getMapInstance } from '@/lib/geo/project';
 import type { FieldData } from '../field/FieldDataProvider';

@@ -2,57 +2,34 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type',
 }
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
-  const { lat, lng, limit = 12 } = Object.fromEntries(new URL(req.url).searchParams)
-  
-  // Validate required parameters
-  if (!lat || !lng) {
-    return new Response(JSON.stringify({ error: 'lat,lng required' }), { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    })
-  }
+  // query-params
+  const url = new URL(req.url)
+  const lat = Number(url.searchParams.get('lat'))
+  const lng = Number(url.searchParams.get('lng'))
+  const limit = Number(url.searchParams.get('limit') || 12)
 
-  // Validate numeric inputs
-  const numLat = Number(lat)
-  const numLng = Number(lng)
-  if (Number.isNaN(numLat) || Number.isNaN(numLng)) {
-    return new Response(JSON.stringify({ error: 'lat,lng must be numbers' }), { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    })
-  }
+  if (!Number.isFinite(lat) || !Number.isFinite(lng))
+    return new Response(JSON.stringify({ error: 'lat,lng required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }})
 
+  // Supabase service client
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  try {
-    const { data, error } = await sb.rpc('rank_nearby_people', {
-      p_lat: numLat,
-      p_lng: numLng,
-      p_limit: Number(limit)
-    })
+  const { data, error } = await sb
+    .rpc('rank_nearby_people', { p_lat: lat, p_lng: lng, p_limit: limit })
 
-    if (error) throw error
-
-    const payload = data ?? []
-    return new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  } catch (error) {
-    console.error('Error in nearby_people:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-  }
+  return new Response(JSON.stringify(error ?? data), {
+    status: error ? 500 : 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 })

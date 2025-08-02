@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { throttle as throttleFn } from 'lodash-es'
+import throttle from 'lodash-es/throttle'
 
 export interface NearbyRow {
   profile_id: string
@@ -13,61 +13,47 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
   const [loading, setLoading] = useState(false)
   const tokenRef = useRef<string | null>(null)
 
-  // Cache auth token
+  // keep auth-token fresh
   useEffect(() => {
-    const getToken = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      tokenRef.current = session?.access_token || null
-    }
-    getToken()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      tokenRef.current = session?.access_token || null
+    supabase.auth.getSession().then(({ data }) => {
+      tokenRef.current = data.session?.access_token || null
     })
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      tokenRef.current = s?.access_token || null
+    })
     return () => subscription.unsubscribe()
   }, [])
 
-  // Throttled fetch function - create ONE instance
-  const fetchNearby = useRef(
-    throttleFn(async (lat: number, lng: number, limit: number) => {
+  // throttled fetcher (1×/2 s max)
+  const throttledFetch = useRef(
+    throttle(async (lat: number, lng: number, limit: number) => {
       try {
         setLoading(true)
-        const precisionLat = lat.toFixed(6)
-        const precisionLng = lng.toFixed(6)
-        
-        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people?lat=${precisionLat}&lng=${precisionLng}&limit=${limit}`
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        }
-        if (tokenRef.current) {
-          headers.Authorization = `Bearer ${tokenRef.current}`
-        }
-
-        const response = await fetch(url, { headers })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setPeople(data || [])
-      } catch (error) {
-        console.error('Error fetching nearby people:', error)
+        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people` +
+                    `?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&limit=${limit}`
+        const res = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(tokenRef.current && { Authorization: `Bearer ${tokenRef.current}` })
+          }
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        setPeople(await res.json())
+      } catch (err) {
+        console.error('[useNearbyPeople]', err)
         setPeople([])
       } finally {
         setLoading(false)
       }
-    }, 2000) // Throttle to max once per 2 seconds
+    }, 2_000)
   ).current
 
   useEffect(() => {
     if (lat == null || lng == null) return
-
-    fetchNearby(lat, lng, limit)
-    const interval = setInterval(() => fetchNearby(lat, lng, limit), 45_000)
-    return () => clearInterval(interval)
-  }, [lat, lng, limit, fetchNearby])
+    throttledFetch(lat, lng, limit)              // first call
+    const id = setInterval(() => throttledFetch(lat, lng, limit), 45_000)
+    return () => clearInterval(id)
+  }, [lat, lng, limit])
 
   return { people, loading }
 }
