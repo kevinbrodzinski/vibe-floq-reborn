@@ -4,6 +4,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePushToken } from './usePushNotifications';
 import { useBadgeReset } from './useBadgeReset';
+import { pushNotificationService } from '@/lib/pushNotifications';
 
 interface NotificationRow {
   id: string;
@@ -42,6 +43,15 @@ export function useNotifications() {
               toast({ 
                 title: 'New friend request',
                 description: 'Someone wants to be your friend!'
+              });
+              // Show push notification
+              pushNotificationService.showNotification({
+                title: 'New Friend Request',
+                body: 'Someone wants to be your friend!',
+                tag: 'friend_request',
+                data: {
+                  action: 'open_friend_requests'
+                }
               });
               break;
             case 'friend_request_accepted':
@@ -108,6 +118,16 @@ export function useNotifications() {
               toast({
                 title: 'New message',
                 description: n.payload?.preview || 'You have a new direct message'
+              });
+              // Show push notification
+              pushNotificationService.showNotification({
+                title: 'New Message',
+                body: n.payload?.preview || 'You have a new direct message',
+                tag: 'dm',
+                data: {
+                  action: 'open_dm',
+                  thread_id: n.payload?.thread_id
+                }
               });
               break;
             case 'floq_reaction':

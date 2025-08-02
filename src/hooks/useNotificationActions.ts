@@ -14,7 +14,7 @@ export const useNotificationActions = () => {
       case 'dm':
         // Navigate to DM thread
         if (notification.payload?.thread_id) {
-          navigate(`/dm/${notification.payload.thread_id}`);
+          navigate(`/messages/${notification.payload.thread_id}`);
         }
         break;
       
