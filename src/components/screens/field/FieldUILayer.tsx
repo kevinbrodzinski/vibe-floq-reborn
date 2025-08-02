@@ -120,7 +120,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           <SocialGestureManager onSocialAction={handleSocialAction} />
 
           {/* Friend suggestions */}
-          <div className="absolute inset-x-0 bottom-24 px-4 pointer-events-auto">
+          <div className="absolute inset-x-0 bottom-20 px-4 pointer-events-auto">
             <FriendSuggestionCarousel />
           </div>
 
