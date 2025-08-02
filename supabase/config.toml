@@ -23,7 +23,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.get_field_tiles]
-verify_jwt = false
+verify_jwt = true
 
 [functions.notification-worker]
 verify_jwt = false

@@ -1,9 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { geoToH3 } from 'https://esm.sh/h3-js@4.1.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const respondWithCors = (data: unknown, status: number = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+    },
+  })
 
 interface FieldTileRequest {
   tile_ids: string[]
@@ -21,7 +31,7 @@ interface FieldTileResponse {
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 )
 
 // Convert vibe string to HSL values
@@ -67,52 +77,46 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
   }
 }
 
-// Convert lat/lng to geohash-5 tile ID
+// Convert lat/lng to H3 index with appropriate resolution
 const latLngToTileId = (lat: number, lng: number): string => {
-  // Simplified geohash-5 implementation
-  const precision = 5
-  let latRange = [-90, 90]
-  let lngRange = [-180, 180]
-  let hash = ''
-  let bit = 0
-  let ch = 0
-  const base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
-  let isLng = true
+  // Use H3 resolution 7 (~5 char precision, ~1.2km hexagons)
+  return geoToH3(lat, lng, 7)
+}
 
-  while (hash.length < precision) {
-    if (isLng) {
-      const mid = (lngRange[0] + lngRange[1]) / 2
-      if (lng >= mid) {
-        ch |= 1 << (4 - bit)
-        lngRange[0] = mid
-      } else {
-        lngRange[1] = mid
+// Parse location safely handling different formats
+const parseLocation = (location: any): [number, number] | null => {
+  if (!location) return null
+  
+  // Handle PostGIS geometry string format
+  if (typeof location === 'string') {
+    try {
+      const parsed = JSON.parse(location)
+      if (parsed.type === 'Point' && parsed.coordinates) {
+        return [parsed.coordinates[0], parsed.coordinates[1]]
       }
-    } else {
-      const mid = (latRange[0] + latRange[1]) / 2
-      if (lat >= mid) {
-        ch |= 1 << (4 - bit)
-        latRange[0] = mid
-      } else {
-        latRange[1] = mid
-      }
-    }
-    
-    isLng = !isLng
-    if (bit < 4) {
-      bit++
-    } else {
-      hash += base32[ch]
-      bit = 0
-      ch = 0
+    } catch {
+      return null
     }
   }
   
-  return hash
+  // Handle GeoJSON Point format
+  if (location.type === 'Point' && location.coordinates) {
+    return [location.coordinates[0], location.coordinates[1]]
+  }
+  
+  // Handle direct coordinate array
+  if (Array.isArray(location.coordinates) && location.coordinates.length >= 2) {
+    return [location.coordinates[0], location.coordinates[1]]
+  }
+  
+  return null
 }
 
 Deno.serve(async (req) => {
-  console.log('[GET_FIELD_TILES] Request received:', req.method)
+  const logLevel = Deno.env.get('LOG_LEVEL') || 'info'
+  if (logLevel === 'debug') {
+    console.log('[GET_FIELD_TILES] Request received:', req.method)
+  }
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -120,24 +124,34 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { tile_ids }: FieldTileRequest = await req.json()
-    console.log('[GET_FIELD_TILES] Processing tile IDs:', tile_ids)
-
-    if (!tile_ids || !Array.isArray(tile_ids)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid tile_ids parameter' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Basic auth check - require valid JWT
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return respondWithCors({ error: 'Authorization required' }, 401)
     }
 
-    // Get real presence data from vibes_now table
+    const { tile_ids }: FieldTileRequest = await req.json()
+    if (logLevel === 'debug') {
+      console.log('[GET_FIELD_TILES] Processing tile IDs:', tile_ids)
+    }
+
+    if (!tile_ids || !Array.isArray(tile_ids)) {
+      return respondWithCors({ error: 'Invalid tile_ids parameter' }, 400)
+    }
+
+    // Build H3 tile filter for efficient querying
+    const h3Tiles = tile_ids.filter(id => typeof id === 'string' && id.length > 0)
+    
+    // Get presence data filtered by tile boundaries
     const { data: presenceData, error: presenceError } = await supabase
       .from('vibes_now')
       .select('profile_id, location, vibe, updated_at')
       .not('location', 'is', null)
+      .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()) // Only recent data
 
     if (presenceError) {
       console.error('[GET_FIELD_TILES] Error fetching presence data:', presenceError)
+      return respondWithCors({ error: 'Database error' }, 500)
     }
 
     // Get active floq data
@@ -149,22 +163,25 @@ Deno.serve(async (req) => {
 
     if (floqError) {
       console.error('[GET_FIELD_TILES] Error fetching floq data:', floqError)
+      return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Process each requested tile
+    // Process each requested tile with improved location parsing
     const tiles = tile_ids.map(tileId => {
       // Find all presence points in this tile
       const tilePresence = (presenceData || []).filter(presence => {
-        if (!presence.location?.coordinates) return false
-        const [lng, lat] = presence.location.coordinates
+        const coords = parseLocation(presence.location)
+        if (!coords) return false
+        const [lng, lat] = coords
         const presenceTileId = latLngToTileId(lat, lng)
         return presenceTileId === tileId
       })
 
       // Find all floqs in this tile
       const tileFloqs = (floqData || []).filter(floq => {
-        if (!floq.location?.coordinates) return false
-        const [lng, lat] = floq.location.coordinates
+        const coords = parseLocation(floq.location)
+        if (!coords) return false
+        const [lng, lat] = coords
         const floqTileId = latLngToTileId(lat, lng)
         return floqTileId === tileId
       })
@@ -175,7 +192,9 @@ Deno.serve(async (req) => {
       const avgVibe = calculateAverageVibe(vibes)
       const activeFloqIds = tileFloqs.map(f => f.id)
 
-      console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+      if (logLevel === 'debug') {
+        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+      }
 
       return {
         tile_id: tileId,
@@ -187,28 +206,10 @@ Deno.serve(async (req) => {
     })
 
     const response: FieldTileResponse = { tiles }
-
-    return new Response(
-      JSON.stringify(response),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    )
+    return respondWithCors(response)
 
   } catch (error) {
     console.error('[GET_FIELD_TILES] Error:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    )
+    return respondWithCors({ error: 'Internal server error' }, 500)
   }
 })

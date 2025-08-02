@@ -77,6 +77,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const graphicsPoolRef = useRef<GraphicsPool | null>(null);
   // Track existing floq sprites to prevent recreation
   const floqSpritesRef = useRef<Map<string, Graphics>>(new Map());
+  // Reusable graphics objects for performance
+  const debugGraphicsRef = useRef<Graphics | null>(null);
+  const glowFilterRef = useRef<any>(null);
   
   const spatialPeople = useMemo(() => 
     people.map(person => ({
@@ -133,9 +136,12 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       
       // Debug indicators removed to fix green tint issue
       
-      // Initialize pools
-      tilePoolRef.current = new TileSpritePool();
-      graphicsPoolRef.current = new GraphicsPool();
+        // Initialize pools and reusable objects
+        tilePoolRef.current = new TileSpritePool();
+        graphicsPoolRef.current = new GraphicsPool();
+        
+        // Pre-create reusable debug graphics
+        debugGraphicsRef.current = new Graphics();
 
       // User location dot and accuracy circle are handled by existing built-in system
 
@@ -332,13 +338,15 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
                 sprite.tint = vibeColor;
                 sprite.alpha += (targetAlpha - sprite.alpha) * 0.2;
                 
-                // Debug visualization
-                if (showDebugVisuals) {
-                  // Add debug border
-                  const debugGraphics = new Graphics();
+                // Debug visualization with reused graphics
+                if (showDebugVisuals && debugGraphicsRef.current) {
+                  const debugGraphics = debugGraphicsRef.current;
+                  debugGraphics.clear();
                   debugGraphics.lineStyle(1, 0x00ff00, 0.5);
                   debugGraphics.drawRect(c.x - c.r, c.y - c.r, c.r * 2, c.r * 2);
-                  heatContainer.addChild(debugGraphics);
+                  if (!debugGraphics.parent) {
+                    heatContainer.addChild(debugGraphics);
+                  }
                 }
               });
 
@@ -367,12 +375,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
         }
         
-        // Get existing sprites for pooling
+        // Efficient sprite pooling - reuse existing Graphics objects
         const existingSprites = peopleContainer.children as Graphics[];
         
-        // Hide excess sprites
+        // Hide excess sprites instead of destroying them
         for (let i = people.length; i < existingSprites.length; i++) {
           existingSprites[i].visible = false;
+          existingSprites[i].clear(); // Clear but don't destroy
         }
         
         // Re-add any existing built-in user location elements that may have been cleared
@@ -419,9 +428,10 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           
           // Constellation mode: enhanced visual effects for friends
           if (isConstellationMode && person.isFriend) {
-            // Create star-like effect with multiple rings
+            // Create star-like effect with cached pulse calculation
             const baseRadius = 10;
-            const pulseIntensity = 0.8 + 0.4 * Math.sin(Date.now() * 0.004 + index);
+            const timeOffset = Date.now() * 0.004 + index;
+            const pulseIntensity = 0.8 + 0.4 * Math.sin(timeOffset);
             
             // Outer glow
             dot.beginFill(color, 0.2 * pulseIntensity);
@@ -433,11 +443,13 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             dot.drawCircle(0, 0, baseRadius * pulseIntensity);
             dot.endFill();
             
-            // Add sparkle effect
+            // Optimized sparkle effect - pre-calculate angles
             dot.lineStyle(1, 0xffffff, 0.7 * pulseIntensity);
+            const sparkleTime = Date.now() * 0.001;
+            const sparkleDistance = baseRadius * 1.5;
+            
             for (let i = 0; i < 4; i++) {
-              const angle = (i * Math.PI) / 2 + Date.now() * 0.001;
-              const sparkleDistance = baseRadius * 1.5;
+              const angle = (i * Math.PI * 0.5) + sparkleTime;
               const x1 = Math.cos(angle) * sparkleDistance;
               const y1 = Math.sin(angle) * sparkleDistance;
               dot.moveTo(x1 * 0.5, y1 * 0.5);

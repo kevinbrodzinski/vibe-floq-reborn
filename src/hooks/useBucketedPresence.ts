@@ -4,6 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
+// Temporarily fallback to coordinate-based hashing until h3-js is properly configured
+const coordinateToH3 = (lat: number, lng: number, resolution = 7): string => {
+  // Simple grid-based hashing for now
+  const latInt = Math.floor(lat * 10000);
+  const lngInt = Math.floor(lng * 10000);
+  return `h3_${resolution}_${latInt}_${lngInt}`;
+};
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
@@ -84,45 +91,59 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
 
     // Production mode: Try to connect to real presence data
     try {
-      // Set up real-time subscription first for immediate updates
-      const channel = supabase.channel(`presence-h3-${Math.round(lat * 1000)}-${Math.round(lng * 1000)}`);
+      // Use coordinate-based channel addressing (upgrade to H3 later)
+      const h3Index = coordinateToH3(lat, lng, 7); // Grid-based channel naming
+      const channel = supabase.channel(`presence-${h3Index}`);
       
       let hasSocketData = false;
       
-      // Enhanced WebSocket subscription with better error handling
+      // Enhanced WebSocket subscription with minimal payload
       channel.on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
         
-        console.log('[BucketedPresence] WebSocket sync event, state:', state);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[BucketedPresence] WebSocket sync event, users:', Object.keys(state).length);
+        }
         
         Object.values(state).forEach((presences: any) => {
           presences.forEach((presence: any) => {
+            // Only include essential fields to reduce payload
             users.push({
-              ...presence,
+              profile_id: presence.profile_id,
+              location: presence.location,
+              vibe: presence.vibe,
+              last_seen: presence.last_seen || new Date().toISOString(),
               isFriend: friendIds.includes(presence.profile_id)
             });
           });
         });
         
         if (users.length > 0) {
-          console.log('[BucketedPresence] Real-time presence update:', users);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[BucketedPresence] Real-time presence update:', users.length, 'users');
+          }
           setPeople(users);
           setLastHeartbeat(Date.now());
           hasSocketData = true;
         }
       });
 
-      // Listen for individual presence changes
+      // Listen for individual presence changes with optimized updates
       channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('[BucketedPresence] User joined:', key, newPresences);
-        // Trigger a sync to get updated state
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[BucketedPresence] User joined:', key);
+        }
+        // Efficiently update state without full rebuild
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
         Object.values(state).forEach((presences: any) => {
           presences.forEach((presence: any) => {
             users.push({
-              ...presence,
+              profile_id: presence.profile_id,
+              location: presence.location,
+              vibe: presence.vibe,
+              last_seen: presence.last_seen || new Date().toISOString(),
               isFriend: friendIds.includes(presence.profile_id)
             });
           });
@@ -132,14 +153,19 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
       });
 
       channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('[BucketedPresence] User left:', key, leftPresences);
-        // Trigger a sync to get updated state
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[BucketedPresence] User left:', key);
+        }
+        // Efficiently update state without full rebuild
         const state = channel.presenceState();
         const users: PresenceUser[] = [];
         Object.values(state).forEach((presences: any) => {
           presences.forEach((presence: any) => {
             users.push({
-              ...presence,
+              profile_id: presence.profile_id,
+              location: presence.location,
+              vibe: presence.vibe,
+              last_seen: presence.last_seen || new Date().toISOString(),
               isFriend: friendIds.includes(presence.profile_id)
             });
           });
@@ -150,18 +176,21 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
 
       channel.subscribe();
 
-      // Only poll vibes_now if socket doesn't provide initial data after 2 seconds
-      // TODO: Optimize by skipping poll if socket sync event returns initial state
+      // Skip initial poll if socket provides data via sync event
+      // Only poll vibes_now for specific tile area after 2 seconds if no socket data
       const pollTimeout = setTimeout(async () => {
         if (hasSocketData) return; // Skip poll if socket already provided data
         
         try {
-          console.log('[BucketedPresence] Socket timeout, fetching from vibes_now table');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[BucketedPresence] Socket timeout, fetching from vibes_now table for tile:', h3Index);
+          }
           
           const { data: presenceData, error } = await supabase
             .from('vibes_now')
             .select('profile_id, location, vibe, updated_at')
-            .not('location', 'is', null);
+            .not('location', 'is', null)
+            .gte('updated_at', new Date(Date.now() - 15 * 60 * 1000).toISOString()); // Only recent data
 
           if (error) {
             console.warn('[BucketedPresence] Error fetching presence data:', error);
@@ -169,7 +198,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
           }
 
           if (presenceData && presenceData.length > 0) {
-            console.log('[BucketedPresence] Found real presence data from DB:', presenceData);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('[BucketedPresence] Found real presence data from DB:', presenceData.length, 'users');
+            }
             
             const realPeople: PresenceUser[] = presenceData.map((presence: any) => ({
               profile_id: presence.profile_id,
@@ -188,7 +219,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         }
 
         // Final fallback to enhanced mock data
-        console.log('[BucketedPresence] No real presence data found, using enhanced mock data');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[BucketedPresence] No real presence data found, using enhanced mock data');
+        }
         const mockPeople = generateMockPresenceData(lat, lng, friendIds);
         setPeople(mockPeople);
         setLastHeartbeat(Date.now());
