@@ -58,6 +58,7 @@ const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds:
 export const useBucketedPresence = (lat?: number, lng?: number, friendIds: string[] = []) => {
   const [people, setPeople] = useState<PresenceUser[]>([]);
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
+  const [lastTrackSent, setLastTrackSent] = useState<number>(0);
   const env = getEnvironmentConfig();
   
   // Show mock data only in development
@@ -173,9 +174,13 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         const { data: { session } } = await supabase.auth.getSession();
         const uid = session?.user.id;
         
-        channel.subscribe((status) => {
-          if (status === 'SUBSCRIBED' && uid) {
-            // Track presence with GeoJSON format and actual user ID (throttled to every 25s)
+        // Use proper subscribe pattern for reconnect safety
+        await channel.subscribe();
+        
+        // Track presence with throttling (every 25 seconds)
+        if (uid) {
+          const now = Date.now();
+          if (now - lastTrackSent > 25000) { // 25 second throttle
             channel.track({
               profile_id: uid,
               location: {
@@ -185,10 +190,11 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
               vibe: 'social', // TODO: Get actual user vibe from state
               last_seen: new Date().toISOString()
             }).catch(console.warn);
-          } else if (status === 'SUBSCRIBED' && !uid) {
-            console.warn('[BucketedPresence] No authenticated user for presence tracking');
+            setLastTrackSent(now);
           }
-        });
+        } else {
+          console.warn('[BucketedPresence] No authenticated user for presence tracking');
+        }
 
       // Skip initial poll if socket provides data via sync event
       // Only poll vibes_now for specific tile area after 2 seconds if no socket data
@@ -260,7 +266,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
     
     setupPresence();
 
-  }, [lat, lng, friendIds.join(','), showMockData]);
+  }, [lat, lng, friendIds.join(','), showMockData, lastTrackSent]);
 
   return { people, lastHeartbeat };
 };

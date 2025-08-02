@@ -103,7 +103,12 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
       // Enhanced geographic coordinate conversion with proper map projection
       try {
         // Use proper map projection if available
-        const { x, y } = projectLatLng(presenceLng, presenceLat);
+        const projection = projectLatLng(presenceLng, presenceLat);
+        if (!projection) {
+          // Skip this person if map not ready
+          return null;
+        }
+        const { x, y } = projection;
         
         return {
           id: userId,

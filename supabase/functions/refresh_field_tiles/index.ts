@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
 
         // Calculate average vibe using simple mapping - consistent 0-100 scale
         const vibeToHSL = (vibe: string): { h: number; s: number; l: number } => {
-          const vibeMap: Record<string, { h: number; s: number; l: number }> = {
+          const vibeMap: Record<'hype' | 'social' | 'chill' | 'flowing' | 'open' | 'curious' | 'solo' | 'romantic' | 'weird' | 'down', { h: number; s: number; l: number }> = {
             'hype': { h: 280, s: 70, l: 60 },
             'social': { h: 30, s: 70, l: 60 },
             'chill': { h: 240, s: 70, l: 60 },
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
             'weird': { h: 60, s: 70, l: 60 },
             'down': { h: 210, s: 30, l: 40 },
           };
-          return vibeMap[vibe?.toLowerCase()] || { h: 240, s: 70, l: 60 };
+          return vibeMap[vibe?.toLowerCase() as keyof typeof vibeMap] || { h: 240, s: 70, l: 60 };
         };
 
         const vibes = presenceData.map(p => p.vibe).filter(Boolean);

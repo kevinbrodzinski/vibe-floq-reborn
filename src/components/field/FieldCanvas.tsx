@@ -273,7 +273,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         // Build raw tiles for worker with constellation mode support
         const rawTiles = visibleTiles.map(tile => {
           const [lat, lng] = geohashToCenter(tile.tile_id);
-          const { x, y } = projectLatLng(lng, lat);
+          const projection = projectLatLng(lng, lat);
+          if (!projection) return null; // Skip if map not ready
+          const { x, y } = projection;
           const radius = crowdCountToRadius(tile.crowd_count);
           
           // Adjust visualization based on constellation mode and time
@@ -291,14 +293,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           
           return {
             id: tile.tile_id,
-            x,
-            y,
-            r: adjustedRadius,
+            x, y, r: adjustedRadius,
             vibe: adjustedVibe,
-            isConstellation: isConstellationMode,
-            crowdCount: tile.crowd_count
+            opacity: isConstellationMode ? 0.6 : 1.0
           };
-        });
+        }).filter(Boolean); // Remove null entries when map not ready
 
         // Get clusters from worker (throttled to avoid message flood)
         if (!pending) {
@@ -494,7 +493,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       // ---- USER LOCATION DOT ----
       const userDot = userDotRef.current;
       if (userDot && userLocation.pos.lat && userLocation.pos.lng) {
-        const { x, y } = projectLatLng(userLocation.pos.lng, userLocation.pos.lat);
+        const projection = projectLatLng(userLocation.pos.lng, userLocation.pos.lat);
+        if (!projection) return; // Skip rendering if map not ready
+        const { x, y } = projection;
         
         userDot.clear();
         
