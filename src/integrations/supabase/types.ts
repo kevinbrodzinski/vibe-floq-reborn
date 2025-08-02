@@ -12047,6 +12047,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      rank_nearby_people: {
+        Args: { p_lat: number; p_lng: number; p_limit?: number }
+        Returns: {
+          profile_id: string
+          vibe: string
+          meters: number
+        }[]
+      }
       react_to_message: {
         Args: { p_message_id: string; p_user_id: string; p_emoji: string }
         Returns: Json

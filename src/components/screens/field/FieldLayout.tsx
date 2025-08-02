@@ -15,6 +15,7 @@ import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
 import { TimeScrubber } from "@/components/TimeScrubber";
+import { FriendCarousel } from "@/components/social/FriendCarousel";
 
 interface FieldLayoutProps {
   data: FieldData;
@@ -125,6 +126,9 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
         {/* Time Scrubber - z-60 */}
         <TimeScrubber />
+
+        {/* Friend Carousel - z-60 */}
+        <FriendCarousel />
 
         {/* System Layer (FAB, accessibility) - z-70+ */}
         <FieldSystemLayer data={data} />
