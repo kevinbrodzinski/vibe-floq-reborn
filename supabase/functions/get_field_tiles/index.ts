@@ -1,11 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { geoToH3, h3ToParent, kRing } from 'https://cdn.skypack.dev/h3-js@4.1.1'
 
-// Simple coordinate-based tile ID generation (upgrade to H3 later)
-const latLngToTileId = (lat: number, lng: number, resolution = 7): string => {
-  const latInt = Math.floor(lat * 10000);
-  const lngInt = Math.floor(lng * 10000);
-  return `tile_${resolution}_${latInt}_${lngInt}`;
-};
+const RES = 7; // ~1.2km hexagons for social venue mapping
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -83,9 +79,9 @@ const calculateAverageVibe = (vibes: string[]): { h: number; s: number; l: numbe
   }
 }
 
-// Convert lat/lng to coordinate-based tile ID
-const generateTileId = (lat: number, lng: number): string => {
-  return latLngToTileId(lat, lng, 7)
+// Convert lat/lng to H3 index at resolution 7
+const latLngToH3 = (lat: number, lng: number): string => {
+  return geoToH3(lat, lng, RES)
 }
 
 // Parse location safely handling different formats
@@ -171,24 +167,24 @@ Deno.serve(async (req) => {
       return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Process each requested tile with improved location parsing
-    const tiles = tile_ids.map(tileId => {
-      // Find all presence points in this tile
+    // Process each requested H3 tile with improved location parsing
+    const tiles = h3Tiles.map(h3Index => {
+      // Find all presence points in this H3 hex
       const tilePresence = (presenceData || []).filter(presence => {
         const coords = parseLocation(presence.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const presenceTileId = generateTileId(lat, lng)
-        return presenceTileId === tileId
+        const presenceH3 = latLngToH3(lat, lng)
+        return presenceH3 === h3Index
       })
 
-      // Find all floqs in this tile
+      // Find all floqs in this H3 hex
       const tileFloqs = (floqData || []).filter(floq => {
         const coords = parseLocation(floq.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const floqTileId = generateTileId(lat, lng)
-        return floqTileId === tileId
+        const floqH3 = latLngToH3(lat, lng)
+        return floqH3 === h3Index
       })
 
       // Calculate crowd count and average vibe
@@ -198,11 +194,11 @@ Deno.serve(async (req) => {
       const activeFloqIds = tileFloqs.map(f => f.id)
 
       if (logLevel === 'debug') {
-        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+        console.log(`[GET_FIELD_TILES] H3 ${h3Index}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
       }
 
       return {
-        tile_id: tileId,
+        tile_id: h3Index,
         crowd_count: crowdCount,
         avg_vibe: avgVibe,
         active_floq_ids: activeFloqIds,

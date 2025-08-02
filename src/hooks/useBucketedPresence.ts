@@ -4,13 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
-// Temporarily fallback to coordinate-based hashing until h3-js is properly configured
-const coordinateToH3 = (lat: number, lng: number, resolution = 7): string => {
-  // Simple grid-based hashing for now
-  const latInt = Math.floor(lat * 10000);
-  const lngInt = Math.floor(lng * 10000);
-  return `h3_${resolution}_${latInt}_${lngInt}`;
-};
+import { geoToH3, kRing } from 'h3-js';
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
@@ -91,8 +85,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
 
     // Production mode: Try to connect to real presence data
     try {
-      // Use coordinate-based channel addressing (upgrade to H3 later)
-      const h3Index = coordinateToH3(lat, lng, 7); // Grid-based channel naming
+      // Use H3 for precise channel addressing at resolution 7 (~1.2km hexagons)
+      const h3Index = geoToH3(lat, lng, 7);
       const channel = supabase.channel(`presence-${h3Index}`);
       
       let hasSocketData = false;
