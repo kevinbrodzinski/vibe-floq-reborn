@@ -102,9 +102,19 @@ export const useHapticFeedback = () => {
     crossedPathsDetected: () => triggerHaptic('crossed-paths')
   };
 
+  // Additional feedback methods for backward compatibility
+  const tapFeedback = useCallback(() => triggerHaptic('light'), [triggerHaptic]);
+  const successFeedback = useCallback(() => triggerHaptic('gesture-success'), [triggerHaptic]);
+  const errorFeedback = useCallback(() => triggerHaptic('gesture-error'), [triggerHaptic]);
+  const navigationFeedback = useCallback(() => triggerHaptic('medium'), [triggerHaptic]);
+
   return {
     isHapticSupported,
     triggerHaptic,
+    tapFeedback,
+    successFeedback,
+    errorFeedback,
+    navigationFeedback,
     socialHaptics
   };
 };
