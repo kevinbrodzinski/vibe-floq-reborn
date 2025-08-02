@@ -11,6 +11,7 @@ export interface SocialSuggestion {
   vibe_match: number
   distance_m: number
   last_activity: string
+  synthetic_id?: string  // for stable React keys
 }
 
 export const useSocialSuggestions = (lat?: number, lng?: number) => {
@@ -26,19 +27,20 @@ export const useSocialSuggestions = (lat?: number, lng?: number) => {
         .then(r => r.data)
   )
 
-  /* —— 3.  Merge + prioritise —— */
   const suggestions = useMemo(() => {
     const map = new Map<string, SocialSuggestion>()
     people.forEach(p => {
-      if (p.profile_id && Number.isFinite(p.meters)) {  // only add valid entries
-        map.set(p.profile_id, {
-          friend_id: p.profile_id,
-          display_name: `User ${p.profile_id.slice(-4)}`,
+      if ((p.profile_id || p.synthetic_id) && Number.isFinite(p.meters)) {  // only add valid entries
+        const uniqueId = p.profile_id || p.synthetic_id!
+        map.set(uniqueId, {
+          friend_id: p.profile_id || p.synthetic_id!,
+          display_name: p.profile_id ? `User ${p.profile_id.slice(-4)}` : 'Nearby user',
           avatar_url: null,
           vibe_tag: p.vibe || 'unknown',
           distance_m: p.meters!,
           vibe_match: 80,
-          last_activity: 'moments ago'
+          last_activity: 'moments ago',
+          synthetic_id: p.synthetic_id  // pass through for stable keys
         })
       }
     })

@@ -14,6 +14,7 @@ Deno.serve(async req => {
   const lat = Number(url.searchParams.get('lat'))
   const lng = Number(url.searchParams.get('lng'))
   const limit = Number(url.searchParams.get('limit') || 12)
+  const version = url.searchParams.get('v') || '2' // Add version for cache busting
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng))
     return new Response(JSON.stringify({ error: 'lat,lng required' }),
@@ -30,6 +31,10 @@ Deno.serve(async req => {
 
   return new Response(JSON.stringify(error ?? data), {
     status: error ? 500 : 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { 
+      ...corsHeaders, 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'max-age=30' // Short cache to flush stale responses
+    },
   })
 })

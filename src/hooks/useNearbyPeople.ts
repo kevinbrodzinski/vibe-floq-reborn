@@ -33,7 +33,7 @@ export const useNearbyPeople = (lat?: number, lng?: number, limit = 12) => {
       try {
         setLoading(true)
         const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/nearby_people` +
-                    `?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&limit=${limit}`
+                    `?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&limit=${limit}&v=2`
         const res = await fetch(url, {
           headers: {
             'Content-Type': 'application/json',
