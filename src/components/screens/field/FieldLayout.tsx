@@ -15,7 +15,7 @@ import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
 import type { FieldData } from "./FieldDataProvider";
 import { BottomHud } from "@/components/layout/BottomHud";
-import { TimeScrubber } from "@/components/TimeScrubber";
+
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
@@ -128,9 +128,8 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
           {/* Modal/Sheet Layer - z-40 to z-60 */}
           <FieldModalLayer data={data} />
 
-          {/* Bottom HUD - TimeScrubber and Friends - z-60 */}
+          {/* Bottom HUD - Friends drawer - z-60 */}
           <BottomHud>
-            <TimeScrubber />
             <FriendDrawer />
           </BottomHud>
 

@@ -4,7 +4,7 @@ import { FieldHeader } from "./FieldHeader";
 import { FieldOverlay } from "./FieldOverlay";
 import { ConstellationControls } from "./ConstellationControls";
 import { SocialGestureManager } from "@/components/SocialGestureManager";
-import { TimeWarpSlider } from "@/components/TimeWarpSlider";
+
 import { TimeBasedActionCard } from "./TimeBasedActionCard";
 import { FriendSuggestionCarousel } from "@/components/social/FriendSuggestionCarousel";
 import { SocialToastProvider } from "@/components/social/SocialToast";
@@ -26,8 +26,8 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   const { people } = useFieldSocial();
   const {
     isFull, currentVibe, debug, timeState,
-    constellationMode, showTimeWarp,
-    setConstellationMode, setShowTimeWarp,
+    constellationMode,
+    setConstellationMode,
     setVenuesSheetOpen, setCurrentVibe,
   } = useFieldUI();
 
@@ -47,7 +47,7 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   };
 
   const handleConstellation = (a: any) => {
-    if (a.type === "temporal-view") setShowTimeWarp(true);
+    // Handle constellation actions
   };
 
   /* ——— render ——————————————————————————————————— */
@@ -128,23 +128,11 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           <TimeBasedActionCard
             className="pointer-events-auto"
             timeState={timeState}
-            onTimeWarpToggle={() => setShowTimeWarp(true)}
+            onTimeWarpToggle={() => {/* Handled by FAB now */}}
           />
         </div>
       )}
 
-      {/* ——— Time-warp slider (independent layer) — */}
-      <AnimatePresence>
-        {showTimeWarp && (
-          <div key="timewarp" {...zIndex("timewarp")}>
-            <TimeWarpSlider
-              isVisible
-              onClose={() => setShowTimeWarp(false)}
-              onTimeChange={() => {/* future */}}
-            />
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 };
