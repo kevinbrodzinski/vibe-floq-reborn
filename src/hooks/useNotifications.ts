@@ -7,7 +7,7 @@ import { useBadgeReset } from './useBadgeReset';
 
 interface NotificationRow {
   id: string;
-  user_id: string;
+  profile_id: string;
   kind: string;
   payload: any;
   created_at: string;
@@ -110,8 +110,21 @@ export function useNotifications() {
                 description: n.payload?.preview || 'You have a new direct message'
               });
               break;
+            case 'floq_reaction':
+              toast({
+                title: 'New reaction',
+                description: 'Someone reacted to your message'
+              });
+              break;
+            case 'floq_reply':
+              toast({
+                title: 'New reply',
+                description: 'Someone replied to your message'
+              });
+              break;
             default:
               // Handle unknown notification types gracefully
+              console.warn('Unknown notification type:', n.kind);
               toast({
                 title: 'New notification',
                 description: 'You have a new notification'
