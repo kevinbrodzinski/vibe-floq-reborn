@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { supaFn } from '@/lib/supaFn';
 import { viewportToTileIds } from '@/lib/geo';
-import { deterministicRandom } from '@/utils/djb2Hash';
+import { deterministicRandom } from '@/lib/geo/random';
 import type { FieldTile } from '@/types/field';
 
 interface TileBounds {

@@ -377,8 +377,27 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
             const parsed = parseInt(person.color.replace('#',''), 16);
             color = isNaN(parsed) ? 0x0066cc : parsed;
           } else if (typeof person.color === 'string' && person.color.startsWith('hsl')) {
-            // Simple HSL to hex conversion fallback
-            color = 0x0066cc;
+            // TODO: Improve HSL parsing with regex + tinycolor2 for accurate hue conversion
+            // For now, extract hue from hsl(h, s%, l%) format for basic color approximation
+            const hslMatch = person.color.match(/hsl\((\d+)/);
+            if (hslMatch) {
+              const hue = parseInt(hslMatch[1]);
+              // Simple hue to RGB conversion (at 70% saturation, 60% lightness)
+              const hueToRgb = (h: number) => {
+                const c = 0.7 * 0.4; // saturation * (1 - |2*lightness - 1|)
+                const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+                const m = 0.6 - c/2; // lightness - chroma/2
+                let r = 0, g = 0, b = 0;
+                if (h < 60) { r = c; g = x; b = 0; }
+                else if (h < 120) { r = x; g = c; b = 0; }
+                else if (h < 180) { r = 0; g = c; b = x; }
+                else if (h < 240) { r = 0; g = x; b = c; }
+                else if (h < 300) { r = x; g = 0; b = c; }
+                else { r = c; g = 0; b = x; }
+                return ((Math.round((r + m) * 255) << 16) + (Math.round((g + m) * 255) << 8) + Math.round((b + m) * 255));
+              };
+              color = hueToRgb(hue);
+            }
           }
           
           dot.clear();
