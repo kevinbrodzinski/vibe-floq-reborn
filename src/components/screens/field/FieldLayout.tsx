@@ -134,10 +134,12 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
         <FieldSystemLayer data={data} />
 
         {/* Debug Layer (development only) - z-200+ */}
-        <TileDebugVisual
-          fieldTiles={data.fieldTiles}
-          visible={data.showDebugVisuals}
-        />
+        {import.meta.env.DEV && (
+          <TileDebugVisual
+            fieldTiles={data.fieldTiles}
+            visible={data.showDebugVisuals}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );
