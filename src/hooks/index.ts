@@ -11,7 +11,7 @@ export { useMyLocation } from './useMyLocation';
 export { useUserLocation } from './useUserLocation';
 
 export { useShakeDetection } from './useShakeDetection';
-export { useHapticFeedback } from './useHapticFeedback.tsx';
+export { useHapticFeedback } from './useHapticFeedback';
 export { useFloqJoin } from './useFloqJoin';
 export { useVenueJoin } from './useVenueJoin';
 export { useUnifiedFriends } from './useUnifiedFriends';
