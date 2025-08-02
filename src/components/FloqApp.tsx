@@ -8,12 +8,21 @@ import { AppRoutes } from "@/router/AppRoutes";
 import { useFullscreenMap } from "@/store/useFullscreenMap";
 import { FloqUIProvider } from "@/contexts/FloqUIContext";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationPermissionRequest } from "@/components/notifications/NotificationPermissionRequest";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationsSheet } from "@/components/notifications/NotificationsSheet";
+import { NotificationTestPanel } from "@/components/notifications/NotificationTestPanel";
 
 import { Button } from "./ui/button";
 import { zIndex } from "@/constants/z";
 
 export const FloqApp = () => {
+  // Initialize notification system
+  useNotifications();
+  
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Global keyboard listener for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -47,20 +56,35 @@ export const FloqApp = () => {
       <TimeSyncProvider>
         <FloqUIProvider>
           <div className="min-h-screen bg-gradient-field text-foreground overflow-hidden">
-            {/* Header with search button for mobile */}
+            {/* Header with search and notifications */}
             <div className="sticky top-0 bg-background/80 backdrop-blur-sm border-b border-border/40 px-4 py-2" {...zIndex('uiHeader')}>
               <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold">Floq</h1>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCommandPaletteOpen(true)}
-                  className="p-2 h-8 w-8"
-                >
-                  <Search className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <NotificationBell onClick={() => setNotificationsOpen(true)} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCommandPaletteOpen(true)}
+                    className="p-2 h-8 w-8"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
+
+            {/* Notification Permission Request */}
+            <div className="px-4 py-2">
+              <NotificationPermissionRequest />
+            </div>
+
+            {/* Development Test Panel */}
+            {import.meta.env.DEV && (
+              <div className="px-4 py-2">
+                <NotificationTestPanel />
+              </div>
+            )}
 
             <div className="pb-20">
               <ErrorBoundary>
@@ -74,6 +98,12 @@ export const FloqApp = () => {
             <CommandPaletteSheet 
               open={commandPaletteOpen} 
               onOpenChange={setCommandPaletteOpen}
+            />
+            
+            {/* Notifications Sheet */}
+            <NotificationsSheet 
+              open={notificationsOpen}
+              onOpenChange={setNotificationsOpen}
             />
           </div>
         </FloqUIProvider>
