@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FieldCanvas } from './FieldCanvas';
+import { TileDebugVisual } from './TileDebugVisual';
+import { PresenceDebugPanel } from './PresenceDebugPanel';
 import type { FieldData } from '../screens/field/FieldDataProvider';
 
 interface FieldCanvasLayerProps {
@@ -23,23 +25,45 @@ export const FieldCanvasLayer: React.FC<FieldCanvasLayerProps> = ({
   timeWarpHour = new Date().getHours(),
   showDebugVisuals = false
 }) => {
+  const [showTileDebug, setShowTileDebug] = useState(false);
+
+  const lastTileUpdate = data.fieldTiles.length > 0 
+    ? data.fieldTiles[0]?.updated_at 
+    : undefined;
+
   return (
-    <div 
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 5 }} // Above map, below UI
-    >
-      <FieldCanvas
-        ref={canvasRef}
-        people={people}
-        floqs={floqs}
-        tileIds={data.tileIds}
+    <>
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 5 }} // Above map, below UI
+      >
+        <FieldCanvas
+          ref={canvasRef}
+          people={people}
+          floqs={floqs}
+          tileIds={data.tileIds}
+          fieldTiles={data.fieldTiles}
+          viewportGeo={data.viewport}
+          onRipple={onRipple}
+          isConstellationMode={isConstellationMode}
+          timeWarpHour={timeWarpHour}
+          showDebugVisuals={showDebugVisuals}
+        />
+      </div>
+
+      {/* Debug overlays */}
+      <TileDebugVisual
         fieldTiles={data.fieldTiles}
-        viewportGeo={data.viewport}
-        onRipple={onRipple}
-        isConstellationMode={isConstellationMode}
-        timeWarpHour={timeWarpHour}
-        showDebugVisuals={showDebugVisuals}
+        visible={showTileDebug}
       />
-    </div>
+
+      {/* Debug control panel */}
+      <PresenceDebugPanel
+        showTileDebug={showTileDebug}
+        onToggleTileDebug={setShowTileDebug}
+        fieldTileCount={data.fieldTiles.length}
+        lastTileUpdate={lastTileUpdate}
+      />
+    </>
   );
-}; 
+};
