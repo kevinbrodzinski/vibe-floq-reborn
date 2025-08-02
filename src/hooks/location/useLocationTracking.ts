@@ -6,6 +6,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { useLocationCore, type LocationCoreOptions } from './useLocationCore';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
+import { callFn } from '@/lib/callFn';
 
 interface LocationPing {
   ts: string;
@@ -43,6 +44,8 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
   const flushBuffer = useCallback(async () => {
     if (bufferRef.current.length === 0) return;
 
+    const batch = bufferRef.current.splice(0, bufferRef.current.length);
+
     try {
       // Cache user ID for efficiency
       if (!userIdRef.current) {
@@ -51,21 +54,12 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
         userIdRef.current = user.id;
       }
 
-      const batch = bufferRef.current.splice(0, bufferRef.current.length);
+      await callFn('record_locations', { batch });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const { error } = await supabase.functions.invoke('record_locations', {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-        body: { batch }
-      });
-
-      if (error) {
-        console.error('[LocationTracking] Failed to record locations:', error);
-        // Re-add failed items to buffer for retry
-        bufferRef.current.unshift(...batch);
-      }
-    } catch (err) {
-      console.error('[LocationTracking] Flush error:', err);
+    } catch (error: any) {
+      console.error('[LocationTracking] Failed to record locations:', error);
+      // Re-add failed items to buffer for retry
+      bufferRef.current.unshift(...batch);
     }
   }, []);
 

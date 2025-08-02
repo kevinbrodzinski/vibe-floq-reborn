@@ -108,20 +108,13 @@ const parseLocation = (location: any): [number, number] | null => {
 }
 
 Deno.serve(async (req) => {
+  // Handle CORS preflight requests FIRST
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
   const logLevel = Deno.env.get('LOG_LEVEL') || 'info'
   if (logLevel === 'debug') {
     console.log('[GET_FIELD_TILES] Request received:', req.method)
-  }
-
-  // Handle CORS preflight requests FIRST before any other logic
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204, 
-      headers: { 
-        ...corsHeaders, 
-        "Content-Length": "0" 
-      } 
-    });
   }
 
   try {

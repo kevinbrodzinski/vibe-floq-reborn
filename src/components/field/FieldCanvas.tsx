@@ -250,6 +250,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     };
     
     const animate = () => {
+      // Update cached user position if new data is available
+      if (userLocation.pos?.lat && userLocation.pos?.lng) {
+        lastUserPosRef.current = { lat: userLocation.pos.lat, lng: userLocation.pos.lng };
+      }
+      
       // Check if data has actually changed
       const currentFloqsHash = JSON.stringify(floqs.map(f => ({ id: f.id, x: f.x, y: f.y })));
       const currentPeopleHash = JSON.stringify(people.map(p => ({ id: p.id, x: p.x, y: p.y })));
@@ -507,46 +512,42 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- USER LOCATION DOT ----
       const userDot = userDotRef.current;
-      if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
-        // Cache the last valid position to prevent returning {x:0,y:0}
-        if (userLocation.pos.lat && userLocation.pos.lng) {
-          lastUserPosRef.current = { lat: userLocation.pos.lat, lng: userLocation.pos.lng };
-        }
-        
+      if (userDot && lastUserPosRef.current) {
         const position = lastUserPosRef.current;
-        if (!position) return; // No valid position yet
-        
         const projection = projectLatLng(position.lng, position.lat);
-        if (!projection) return; // Skip rendering if map not ready
-        const { x, y } = projection;
         
-        userDot.clear();
-        
-        // Accuracy halo (if available)
-        if (userLocation.pos.accuracy) {
-          const mapZoom = getMapInstance()?.getZoom() ?? 11;
-          const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, userLocation.pos.lat, mapZoom);
-          userDot.beginFill(0x0066cc, 0.1);
-          userDot.drawCircle(0, 0, haloRadius);
+        // Only render if projection is successful (map is ready)
+        if (projection) {
+          const { x, y } = projection;
+          
+          userDot.clear();
+          
+          // Accuracy halo (if available)
+          if (userLocation.pos?.accuracy) {
+            const mapZoom = getMapInstance()?.getZoom() ?? 11;
+            const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, position.lat, mapZoom);
+            userDot.beginFill(0x0066cc, 0.1);
+            userDot.drawCircle(0, 0, haloRadius);
+            userDot.endFill();
+          }
+          
+          // Outer ring (14px semi-transparent blue)
+          userDot.beginFill(0x0066cc, 0.3);
+          userDot.drawCircle(0, 0, 14);
           userDot.endFill();
+          
+          // Inner dot (8px solid blue)
+          userDot.beginFill(0x0066cc, 1.0);
+          userDot.drawCircle(0, 0, 8);
+          userDot.endFill();
+          
+          // White border for contrast
+          userDot.lineStyle(2, 0xffffff, 0.8);
+          userDot.drawCircle(0, 0, 8);
+          
+          userDot.position.set(x, y);
+          userDot.visible = true;
         }
-        
-        // Outer ring (14px semi-transparent blue)
-        userDot.beginFill(0x0066cc, 0.3);
-        userDot.drawCircle(0, 0, 14);
-        userDot.endFill();
-        
-        // Inner dot (8px solid blue)
-        userDot.beginFill(0x0066cc, 1.0);
-        userDot.drawCircle(0, 0, 8);
-        userDot.endFill();
-        
-        // White border for contrast
-        userDot.lineStyle(2, 0xffffff, 0.8);
-        userDot.drawCircle(0, 0, 8);
-        
-        userDot.position.set(x, y);
-        userDot.visible = true;
       } else if (userDot) {
         userDot.visible = false;
       }

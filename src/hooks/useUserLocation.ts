@@ -9,6 +9,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useGeo } from './useGeo'
 import { supabase } from '@/integrations/supabase/client'
+import { callFn } from '@/lib/callFn';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends'
 import { useLiveSettings } from '@/hooks/useLiveSettings'
 import { useContextDetection } from '@/hooks/useContextDetection'
@@ -83,17 +84,10 @@ export function useUserLocation() {
 
       const batch = bufferRef.current.splice(0, bufferRef.current.length)
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const { error } = await supabase.functions.invoke('record_locations', {
-        headers: { Authorization: `Bearer ${session?.access_token}` },
-        body: { batch }  // ✅ No user_id - edge function gets it from JWT
-      })
+      await callFn('record_locations', { batch });
 
-      if (error) {
-        console.error('Failed to record locations:', error)
-      }
-    } catch (err) {
-      console.error('Location flush error:', err)
+    } catch (error: any) {
+      console.error('Failed to record locations:', error)
     }
   }
 

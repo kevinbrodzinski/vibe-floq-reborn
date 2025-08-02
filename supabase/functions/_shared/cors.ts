@@ -1,13 +1,7 @@
 export const corsHeaders = {
-  // Allow any origin (adjust as needed for production)
-  "Access-Control-Allow-Origin": "*",
-
-  // Incoming headers Supabase JS can send—including the automatic "prefer" header
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, prefer",
-
-  // Methods supported by your Edge Functions
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
 /**
