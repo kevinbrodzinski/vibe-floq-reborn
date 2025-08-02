@@ -8,62 +8,48 @@ import { useQueryClient } from '@tanstack/react-query';
  */
 export const useFieldTileSync = () => {
   const queryClient = useQueryClient();
-  const lastRunRef = useRef<number>(0);
+  const lastRunRef = useRef(0);
   const debouncedRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerRefresh = async () => {
-    // Minimum-interval guard: 10 seconds between refreshes
     const now = Date.now();
-    if (now - lastRunRef.current < 10000) return;
-    
-    // Only refresh visible tabs to reduce server load
+
     if (document.visibilityState !== 'visible') return;
-    
-    
-    lastRunRef.current = now;
-    
+    if (now - lastRunRef.current < 10_000) return;
+
     try {
-      console.log('[FieldTileSync] Refreshing field tiles...');
-      
-      const { data, error } = await supabase.functions.invoke('refresh_field_tiles');
-      
-      if (error) {
-        console.error('[FieldTileSync] Refresh error:', error);
-        return;
-      }
-      
-      console.log('[FieldTileSync] Refresh success:', data);
-      
-      // Invalidate cache to show fresh data
-      
-      // Invalidate cache to show fresh data
+      const { error } = await supabase.functions.invoke('refresh_field_tiles');
+      if (error) throw error;
+      lastRunRef.current = now;
       queryClient.invalidateQueries({ queryKey: ['field-tiles'] });
-      
-    } catch (error) {
-      console.error('[FieldTileSync] Exception:', error);
+    } catch (e) {
+      console.error('[FieldTileSync] refresh failed:', e);
+      lastRunRef.current = 0;          // allow immediate retry
     }
   };
 
   useEffect(() => {
-    // Listen for vibes_now changes
     const channel = supabase
       .channel('field_tiles_sync')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public',
-        table: 'vibes_now'
-      }, () => {
-        // Debounced refresh with single timeout instance
-        if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
-        debouncedRefresh.current = setTimeout(triggerRefresh, 2000);
-      })
+      .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'vibes_now' },
+          () => {
+            if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
+            debouncedRefresh.current = setTimeout(triggerRefresh, 2_000);
+          })
       .subscribe();
 
-    // Initial refresh after 2 seconds
-    setTimeout(triggerRefresh, 2000);
+    // first refresh a few seconds after mount
+    const first = setTimeout(triggerRefresh, 2_000);
+
+    const onVis = () => document.visibilityState === 'visible' && triggerRefresh();
+    document.addEventListener('visibilitychange', onVis);
 
     return () => {
+      clearTimeout(first);
+      if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
       supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 
