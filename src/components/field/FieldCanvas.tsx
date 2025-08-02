@@ -171,7 +171,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           addRipple(clientX, clientY);
 
           /* Enhanced haptic feedback for mobile - only in user gesture context */
-          if (window.isSecureContext && document.hasFocus()) {
+          if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
             light();    // from useAdvancedHaptics()
           }
         });
@@ -191,7 +191,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         setTimeout(() => addRipple(clientX, clientY), 100); // Secondary ripple
         
         // Enhanced haptic feedback pattern - only in secure context with user gesture
-        if (window.isSecureContext && document.hasFocus()) {
+        if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
           light();
           setTimeout(() => light(), 50); // Double tap haptic
         }
@@ -201,32 +201,34 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     /* ---------- cleanup ---------- */
     const safelyDestroyPixi = () => {
       const pixiApp = appRef.current;
-      if (!pixiApp) return; // Already cleaned up
-      if ((pixiApp as any)._destroyed) return; // PIXI ≥ 8 sets this flag
+      if (!pixiApp || (pixiApp as any)._destroyed) return;
 
       console.log('[PIXI] destroy called');
-      
+
       try {
-        // Clean up event handlers first
+        // Remove stage listeners first
         if (onPointerMove) {
           pixiApp.stage.off('pointermove', onPointerMove);
           pixiApp.stage.off('pointerdown');
         }
-        
-        // Remove any ticker callbacks to prevent dangling references
-        if (pixiApp.ticker) {
-          pixiApp.ticker.stop();
-          pixiApp.ticker.destroy();
-        }
-        
+
+        // Stop ticker first
+        pixiApp.ticker.stop();
+
+        // Destroy the app (handles textures & children)
         pixiApp.destroy(true, { children: true, texture: true });
       } catch (err) {
         console.warn('[FieldCanvas] PIXI destroy failed:', err);
       } finally {
-        (pixiApp as any)._destroyed = true; // Mark manually for PIXI ≤ 7
+        (pixiApp as any)._destroyed = true;
         appRef.current = null;
       }
     };
+
+    // Hot-reload guard for development
+    if (import.meta.hot) {
+      import.meta.hot.dispose(safelyDestroyPixi);
+    }
 
     return safelyDestroyPixi;
   }, [hitTest]);        // ← dependency is safe (stable useCallback)
@@ -239,7 +241,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     const y = event.clientY - rect.top;
     onRipple(x, y);
     // Add haptic feedback for ripples - only in secure context with user gesture
-    if (window.isSecureContext && document.hasFocus()) {
+    if (window.isSecureContext && document.hasFocus() && window.top === window.self) {
       light();
     }
   }, [onRipple, actualRef, light]);
