@@ -1,7 +1,7 @@
 import { useFriendDrawer } from '@/contexts/FriendDrawerContext'
 import { useUserLocation } from '@/hooks/useUserLocation'
 import { useNearbyPeople } from '@/hooks/useNearbyPeople'
-import SuggestionCard from './SuggestionCard'
+import { FriendCard } from '@/components/social/FriendCard'
 import { Loader2 } from 'lucide-react'
 
 export const FriendDrawer = () => {
@@ -32,17 +32,8 @@ export const FriendDrawer = () => {
           </div>
         ) : (
           people.map((p, i) => {
-            // Convert NearbyRow to SocialSuggestion format
-            const suggestion = {
-              friend_id: p.profile_id || `anon-${i}`,
-              display_name: p.profile_id ? `User ${p.profile_id.slice(-4)}` : 'Anonymous',
-              avatar_url: null,
-              vibe_tag: p.vibe || 'unknown',
-              distance_m: p.meters || 0,
-              vibe_match: 80,
-              last_activity: 'moments ago'
-            }
-            return <SuggestionCard key={suggestion.friend_id} suggestion={suggestion} />
+            const stableKey = p.profile_id || `anon-${p.vibe}-${p.meters}-${i}`
+            return <FriendCard key={stableKey} person={p} />
           })
         )}
       </div>
