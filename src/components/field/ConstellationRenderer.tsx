@@ -1,8 +1,17 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Graphics, Container, Application } from 'pixi.js';
 import { projectLatLng, getMapInstance } from '@/lib/geo/project';
+import { geohashToCenter } from '@/lib/geo';
 import type { Person } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldTile } from '@/types/field';
+
+// Cached projection interface for performance
+interface CachedProjection {
+  id: string;
+  screenX: number;
+  screenY: number;
+  data: Person | FieldTile;
+}
 
 interface ConstellationRendererProps {
   people: Person[];
@@ -21,6 +30,37 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
 }) => {
   const constellationGraphicsRef = useRef<Graphics | null>(null);
   const friendConnectionsRef = useRef<Graphics | null>(null);
+  
+  // Cache projected coordinates to avoid redundant projections
+  const cachedProjections = useMemo(() => {
+    const cache: CachedProjection[] = [];
+    
+    // Cache friend projections (already have screen coordinates)
+    people.filter(p => p.isFriend && p.x && p.y).forEach(person => {
+      cache.push({
+        id: `person_${person.id}`,
+        screenX: person.x,
+        screenY: person.y,
+        data: person
+      });
+    });
+    
+    // Cache field tile projections
+    fieldTiles.filter(t => t.crowd_count >= 3).forEach(tile => {
+      const [lat, lng] = geohashToCenter(tile.tile_id);
+      const projection = projectLatLng(lng, lat);
+      if (projection) {
+        cache.push({
+          id: `tile_${tile.tile_id}`,
+          screenX: projection.x,
+          screenY: projection.y,
+          data: tile
+        });
+      }
+    });
+    
+    return cache;
+  }, [people, fieldTiles]);
 
   // Initialize constellation graphics
   useEffect(() => {
@@ -59,19 +99,21 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     // Calculate constellation intensity based on time
     const nightIntensity = calculateNightIntensity(timeWarpHour);
     
-    // Group friends by proximity to create constellation clusters
-    const friendClusters = createFriendClusters(people);
+    // Group friends by proximity using cached projections
+    const friendProjections = cachedProjections.filter(cp => cp.id.startsWith('person_'));
+    const friendClusters = createFriendClustersFromCache(friendProjections);
     
     // Draw constellation connections between friends
     drawFriendConnections(friendConnections, friendClusters, nightIntensity);
     
-    // Draw constellation stars (enhanced cluster visualization)
-    drawConstellationStars(constellationGraphics, fieldTiles, nightIntensity);
+    // Draw constellation stars using cached tile projections
+    const tileProjections = cachedProjections.filter(cp => cp.id.startsWith('tile_'));
+    drawConstellationStarsFromCache(constellationGraphics, tileProjections, nightIntensity);
     
     // Add ambient constellation effects
     drawAmbientStars(constellationGraphics, nightIntensity);
 
-  }, [people, fieldTiles, timeWarpHour]);
+  }, [cachedProjections, timeWarpHour]);
 
   return null; // This component only manages PIXI graphics
 };
@@ -84,27 +126,26 @@ function calculateNightIntensity(hour: number): number {
   return 0.0; // Day time
 }
 
-// Group friends by proximity to create meaningful constellations
-function createFriendClusters(people: Person[]): Person[][] {
-  const friends = people.filter(p => p.isFriend && p.x && p.y);
-  const clusters: Person[][] = [];
+// Group friends by proximity using cached projections for performance
+function createFriendClustersFromCache(friendProjections: CachedProjection[]): CachedProjection[][] {
+  const clusters: CachedProjection[][] = [];
   const visited = new Set<string>();
   
   const CLUSTER_DISTANCE = 150; // pixels
   
-  friends.forEach(friend => {
+  friendProjections.forEach(friend => {
     if (visited.has(friend.id)) return;
     
     const cluster = [friend];
     visited.add(friend.id);
     
     // Find nearby friends to form a constellation
-    friends.forEach(otherFriend => {
+    friendProjections.forEach(otherFriend => {
       if (visited.has(otherFriend.id)) return;
       
       const distance = Math.sqrt(
-        Math.pow(friend.x - otherFriend.x, 2) + 
-        Math.pow(friend.y - otherFriend.y, 2)
+        Math.pow(friend.screenX - otherFriend.screenX, 2) + 
+        Math.pow(friend.screenY - otherFriend.screenY, 2)
       );
       
       if (distance <= CLUSTER_DISTANCE) {
@@ -122,10 +163,10 @@ function createFriendClusters(people: Person[]): Person[][] {
   return clusters;
 }
 
-// Draw elegant connecting lines between friends in constellations
+// Draw elegant connecting lines between friends in constellations (cached version)
 function drawFriendConnections(
   graphics: Graphics, 
-  clusters: Person[][], 
+  clusters: CachedProjection[][], 
   intensity: number
 ): void {
   clusters.forEach(cluster => {
@@ -138,8 +179,8 @@ function drawFriendConnections(
         const friend2 = cluster[j];
         
         const distance = Math.sqrt(
-          Math.pow(friend1.x - friend2.x, 2) + 
-          Math.pow(friend1.y - friend2.y, 2)
+          Math.pow(friend1.screenX - friend2.screenX, 2) + 
+          Math.pow(friend1.screenY - friend2.screenY, 2)
         );
         
         // Only connect nearby friends (avoid crossing the entire screen)
@@ -153,24 +194,24 @@ function drawFriendConnections(
         graphics.lineStyle(lineWidth, 0x6366f1, alpha * 0.8);
         
         // Draw the connection with a subtle curve
-        const midX = (friend1.x + friend2.x) / 2;
-        const midY = (friend1.y + friend2.y) / 2;
+        const midX = (friend1.screenX + friend2.screenX) / 2;
+        const midY = (friend1.screenY + friend2.screenY) / 2;
         const curveOffset = 10 * Math.sin(Date.now() * 0.001 + distance * 0.01);
         
-        graphics.moveTo(friend1.x, friend1.y);
+        graphics.moveTo(friend1.screenX, friend1.screenY);
         graphics.quadraticCurveTo(
           midX + curveOffset, 
           midY + curveOffset, 
-          friend2.x, 
-          friend2.y
+          friend2.screenX, 
+          friend2.screenY
         );
         
         // Add subtle sparkle effects along the line
         const sparkleCount = Math.floor(distance / 50);
         for (let k = 0; k < sparkleCount; k++) {
           const t = (k + 1) / (sparkleCount + 1);
-          const sparkleX = friend1.x + (friend2.x - friend1.x) * t;
-          const sparkleY = friend1.y + (friend2.y - friend1.y) * t;
+          const sparkleX = friend1.screenX + (friend2.screenX - friend1.screenX) * t;
+          const sparkleY = friend1.screenY + (friend2.screenY - friend1.screenY) * t;
           
           const sparkleIntensity = Math.sin(Date.now() * 0.005 + k) * 0.5 + 0.5;
           graphics.beginFill(0xffffff, alpha * sparkleIntensity * 0.6);
@@ -182,26 +223,15 @@ function drawFriendConnections(
   });
 }
 
-// Draw enhanced constellation stars for field tiles
-function drawConstellationStars(
+// Draw enhanced constellation stars using cached projections for performance
+function drawConstellationStarsFromCache(
   graphics: Graphics, 
-  fieldTiles: FieldTile[], 
+  tileProjections: CachedProjection[], 
   intensity: number
 ): void {
-  const visibleTiles = fieldTiles.filter(t => t.crowd_count >= 3);
-  
-  visibleTiles.forEach(tile => {
-    const [lat, lng] = tile.tile_id.split('').map((_, i, arr) => {
-      // Simple geohash approximation for demo
-      return i < arr.length / 2 ? 
-        40.7128 + (parseInt(arr[i], 36) - 18) * 0.01 : 
-        -74.0060 + (parseInt(arr[i], 36) - 18) * 0.01;
-    });
-    
-    const projection = projectLatLng(lng, lat);
-    if (!projection) return;
-    
-    const { x, y } = projection;
+  tileProjections.forEach(projection => {
+    const tile = projection.data as FieldTile;
+    const { screenX: x, screenY: y } = projection;
     const starSize = Math.min(20, Math.log2(tile.crowd_count) * 4);
     
     // Create a pulsing star effect

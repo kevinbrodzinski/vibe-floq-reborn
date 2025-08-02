@@ -8,6 +8,7 @@ import { TileSpritePool } from '@/utils/tileSpritePool';
 import { projectLatLng, getMapInstance, metersToPixelsAtLat } from '@/lib/geo/project';
 import { geohashToCenter, crowdCountToRadius } from '@/lib/geo';
 import { clusterWorker } from '@/lib/clusterWorker';
+import { throttle } from '@/utils/timing';
 import { useFieldHitTest } from '@/hooks/useFieldHitTest';
 import { useAddRipple } from '@/hooks/useAddRipple';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -289,29 +290,31 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     }
   }, [userLocation.pos?.lat, userLocation.pos?.lng]);
 
-  // Update user dot when map moves/zooms
+  // Throttled map move handler for performance (30 fps)
+  const throttledMapMove = useMemo(() => throttle(() => {
+    const userDot = userDotRef.current;
+    if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+      const updateFunction = (userDot as any)._updatePosition;
+      if (updateFunction) {
+        updateFunction(userLocation.pos.lat, userLocation.pos.lng);
+      }
+    }
+  }, 33), [userLocation.pos?.lat, userLocation.pos?.lng]);
+
+  // Update user dot when map moves/zooms (throttled)
   useEffect(() => {
     const map = getMapInstance();
     if (!map) return;
 
-    const handleMapMove = () => {
-      const userDot = userDotRef.current;
-      if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
-        const updateFunction = (userDot as any)._updatePosition;
-        if (updateFunction) {
-          updateFunction(userLocation.pos.lat, userLocation.pos.lng);
-        }
-      }
-    };
-
-    map.on('move', handleMapMove);
-    map.on('zoom', handleMapMove);
+    map.on('move', throttledMapMove);
+    map.on('zoom', throttledMapMove);
 
     return () => {
-      map.off('move', handleMapMove);
-      map.off('zoom', handleMapMove);
+      map.off('move', throttledMapMove);
+      map.off('zoom', throttledMapMove);
+      throttledMapMove.clear();
     };
-  }, [userLocation.pos?.lat, userLocation.pos?.lng]);
+  }, [throttledMapMove]);
 
   // Handle canvas clicks for ripples
   const handleCanvasClick = useCallback((event: React.MouseEvent) => {
