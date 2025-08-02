@@ -11188,6 +11188,9 @@ export type Database = {
           vibe_score: number
           live_count: number
           popularity: number
+          vibe: string
+          source: string
+          external_id: string
         }[]
       }
       get_compat_clusters: {
@@ -11569,7 +11572,9 @@ export type Database = {
         }[]
       }
       get_venues_in_bbox: {
-        Args: { west: number; south: number; east: number; north: number }
+        Args:
+          | { west: number; south: number; east: number; north: number }
+          | { west: number; south: number; east: number; north: number }
         Returns: {
           id: string
           name: string
@@ -11577,6 +11582,16 @@ export type Database = {
           lng: number
           vibe: string
           source: string
+          external_id: string
+          categories: string[]
+          rating: number
+          photo_url: string
+          address: string
+          live_count: number
+          popularity: number
+          vibe_score: number
+          created_at: string
+          updated_at: string
         }[]
       }
       get_vibe_clusters: {
