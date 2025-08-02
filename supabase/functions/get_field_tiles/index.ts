@@ -1,5 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { geoToH3, h3ToParent, kRing } from 'https://cdn.skypack.dev/h3-js@4.1.1'
+// Temporarily use coordinate-based hashing until H3 extension is available
+const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
+  const latInt = Math.floor(lat * 10000);
+  const lngInt = Math.floor(lng * 10000);
+  return `h3_${resolution}_${latInt}_${lngInt}`;
+};
 
 const RES = 7; // ~1.2km hexagons for social venue mapping
 
@@ -167,24 +172,24 @@ Deno.serve(async (req) => {
       return respondWithCors({ error: 'Database error' }, 500)
     }
 
-    // Process each requested H3 tile with improved location parsing
-    const tiles = h3Tiles.map(h3Index => {
-      // Find all presence points in this H3 hex
+    // Process each requested tile with improved location parsing
+    const tiles = tile_ids.map(tileId => {
+      // Find all presence points in this tile
       const tilePresence = (presenceData || []).filter(presence => {
         const coords = parseLocation(presence.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const presenceH3 = latLngToH3(lat, lng)
-        return presenceH3 === h3Index
+        const presenceTileId = latLngToH3(lat, lng)
+        return presenceTileId === tileId
       })
 
-      // Find all floqs in this H3 hex
+      // Find all floqs in this tile
       const tileFloqs = (floqData || []).filter(floq => {
         const coords = parseLocation(floq.location)
         if (!coords) return false
         const [lng, lat] = coords
-        const floqH3 = latLngToH3(lat, lng)
-        return floqH3 === h3Index
+        const floqTileId = latLngToH3(lat, lng)
+        return floqTileId === tileId
       })
 
       // Calculate crowd count and average vibe
@@ -194,11 +199,11 @@ Deno.serve(async (req) => {
       const activeFloqIds = tileFloqs.map(f => f.id)
 
       if (logLevel === 'debug') {
-        console.log(`[GET_FIELD_TILES] H3 ${h3Index}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
+        console.log(`[GET_FIELD_TILES] Tile ${tileId}: ${crowdCount} people, ${vibes.length} vibes, ${activeFloqIds.length} floqs`)
       }
 
       return {
-        tile_id: h3Index,
+        tile_id: tileId,
         crowd_count: crowdCount,
         avg_vibe: avgVibe,
         active_floq_ids: activeFloqIds,

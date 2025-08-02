@@ -4,7 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { getEnvironmentConfig } from '@/lib/environment';
 import type { GeometryPoint } from '@/lib/types/geometry';
 import { deterministicRandom } from '@/lib/geo/random';
-import { geoToH3, kRing } from 'h3-js';
+// Temporarily use coordinate-based hashing until H3 extension is available
+const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
+  // Simple grid-based hashing for now
+  const latInt = Math.floor(lat * 10000);
+  const lngInt = Math.floor(lng * 10000);
+  return `h3_${resolution}_${latInt}_${lngInt}`;
+};
 import mockFriends from '@/data/mockFriends.json';
 
 interface PresenceUser {
