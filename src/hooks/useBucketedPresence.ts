@@ -248,7 +248,9 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   useEffect(() => {
     if (!lat || !lng || showMockData) return;
 
-    const trackPresence = async () => {
+    const channelRef = { current: null as any };
+
+    const setupPresenceTracking = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const uid = session?.user.id;
@@ -259,36 +261,61 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
         }
 
         const h3Index = geoToH3(lat, lng, 7);
-        const channel = supabase.channel(`presence-${h3Index}`);
+        const channelName = `presence-${h3Index}`;
         
-        // Track presence with throttling (every 25 seconds)
-        const now = Date.now();
-        if (now - lastTrackRef.current > 25000) { // 25 second throttle
-          await channel.subscribe(); // Ensure channel is subscribed
-          
-          await channel.track({
-            profile_id: uid,
+        // Create channel only once
+        if (!channelRef.current) {
+          channelRef.current = supabase.channel(channelName);
+          await channelRef.current.subscribe();
+        }
+
+        // Track presence immediately
+        await channelRef.current.track({
+          profile_id: uid,
+          location: {
+            type: 'Point',
+            coordinates: [lng, lat] // [longitude, latitude]
+          },
+          vibe: 'social', // TODO: Get actual user vibe from state
+          last_seen: new Date().toISOString()
+        }).catch(console.warn);
+        
+        lastTrackRef.current = Date.now();
+      } catch (error) {
+        console.warn('[BucketedPresence] Failed to setup presence tracking:', error);
+      }
+    };
+
+    // Setup initially
+    setupPresenceTracking();
+
+    // Set up interval for periodic tracking updates
+    const interval = setInterval(async () => {
+      const now = Date.now();
+      if (now - lastTrackRef.current > 25000 && channelRef.current) {
+        try {
+          await channelRef.current.track({
+            profile_id: (await supabase.auth.getSession()).data.session?.user.id,
             location: {
               type: 'Point',
-              coordinates: [lng, lat] // [longitude, latitude]
+              coordinates: [lng, lat]
             },
-            vibe: 'social', // TODO: Get actual user vibe from state
+            vibe: 'social',
             last_seen: new Date().toISOString()
           }).catch(console.warn);
           
           lastTrackRef.current = now;
+        } catch (error) {
+          console.warn('[BucketedPresence] Failed to update presence:', error);
         }
-      } catch (error) {
-        console.warn('[BucketedPresence] Failed to track presence:', error);
       }
-    };
-
-    // Track immediately, then every 25 seconds
-    trackPresence();
-    const interval = setInterval(trackPresence, 25000);
+    }, 25000);
 
     return () => {
       clearInterval(interval);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
   }, [lat, lng, showMockData]);
 

@@ -22,7 +22,6 @@ export const respondWithCors = (data: unknown, status: number = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
-      "Content-Length": JSON.stringify(data).length.toString(),
     },
   });
 
