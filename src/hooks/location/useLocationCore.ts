@@ -7,6 +7,7 @@ import { calculateDistance, type GPS } from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { toast } from 'sonner';
 import { geoTelemetry } from '@/lib/monitoring/telemetry';
+import { loadPersistedCoords, savePersistedCoords } from '@/lib/location/geoCache';
 
 export interface LocationCoreOptions {
   enableHighAccuracy?: boolean;
@@ -92,23 +93,20 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
       }
     } catch {/* ignore debug location errors */}
 
-    // Check persistent cache from localStorage (instant map loads)
-    try {
-      const persisted = localStorage.getItem('floq-lastFix');
-      if (persisted) {
-        const coords = JSON.parse(persisted);
-        setState(s => ({
-          ...s,
-          coords,
-          status: 'success',
-          hasPermission: true,
-          timestamp: Date.now(),
-        }));
-        lastFix.current = coords;
-        geoTelemetry.cacheHit('localStorage');
-        return;
-      }
-    } catch {/* ignore storage errors */}
+    // Check persistent cache from localStorage with age checking
+    const persisted = loadPersistedCoords();
+    if (persisted) {
+      setState(s => ({
+        ...s,
+        coords: persisted,
+        status: 'success',
+        hasPermission: true,
+        timestamp: Date.now(),
+      }));
+      lastFix.current = persisted;
+      geoTelemetry.cacheHit('localStorage');
+      return;
+    }
 
     // Check cached coordinates third (session fallback)
     const cached = sessionStorage.getItem('floq-coords');
@@ -202,7 +200,7 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
         // Cache coordinates in both session and persistent storage
         try {
           sessionStorage.setItem('floq-coords', JSON.stringify(newCoords));
-          localStorage.setItem('floq-lastFix', JSON.stringify(newCoords));
+          savePersistedCoords(newCoords);
         } catch {
           // Ignore storage errors
         }

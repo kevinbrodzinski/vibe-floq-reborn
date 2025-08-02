@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { calculateDistance }     from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { geoTelemetry } from '@/lib/monitoring/telemetry';
+import { loadPersistedCoords, savePersistedCoords } from '@/lib/location/geoCache';
 
 /* ────────────────────────────────────────────────────────── */
 /* Types                                                     */
@@ -97,17 +98,14 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       }
     } catch {/* ignore */}
 
-    /* persistent cache from localStorage (faster than fresh GPS) */
-    try {
-      const persisted = localStorage.getItem('floq-lastFix');
-      if (persisted) {
-        const coords = JSON.parse(persisted);
-        set(s => ({ ...s, coords, status: 'success', hasPermission: true, ts: Date.now() }));
-        lastFix.current = coords;
-        geoTelemetry.cacheHit('localStorage');
-        return;
-      }
-    } catch {/* ignore */}
+    /* persistent cache from localStorage with age checking */
+    const persisted = loadPersistedCoords();
+    if (persisted) {
+      set(s => ({ ...s, coords: persisted, status: 'success', hasPermission: true, ts: Date.now() }));
+      lastFix.current = persisted;
+      geoTelemetry.cacheHit('localStorage');
+      return;
+    }
 
     /* cached coords speed-up (session-scope) */
     try {
@@ -175,7 +173,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       lastFix.current = p;
       try {
         sessionStorage.setItem('floq-coords', JSON.stringify(p));
-        localStorage.setItem('floq-lastFix', JSON.stringify(p));
+        savePersistedCoords(p);
       } catch {/* ignore quota / private-mode errors */}
       geoTelemetry.success(pos.coords.accuracy);
     }, o.debounceMs);
