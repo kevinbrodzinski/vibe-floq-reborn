@@ -25,7 +25,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const { people: socialPeople } = useFieldSocial();
   
   // Use social context people data instead of passed-in people
-  const actualPeople = socialPeople.length > 0 ? socialPeople : people;
+  const actualPeople = socialPeople.length ? socialPeople : people;
 
   return (
     <div className="absolute inset-0">

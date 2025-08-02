@@ -322,32 +322,57 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
       // ---- PEOPLE DOTS ----
       if (people.length > 0) {
-        console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
+        }
         
-        // Clear existing people sprites
-        peopleContainer.removeChildren();
+        // Get existing sprites for pooling
+        const existingSprites = peopleContainer.children.filter(child => 
+          child !== myDotRef.current && child !== accuracyRef.current
+        ) as Graphics[];
         
-        // Add user dot back if we removed it
+        // Hide excess sprites
+        for (let i = people.length; i < existingSprites.length; i++) {
+          existingSprites[i].visible = false;
+        }
+        
+        // Re-add user dot if it was removed
         if (myDotRef.current && !myDotRef.current.parent) {
           peopleContainer.addChild(myDotRef.current);
         }
         
-        // Create people dots
-        people.forEach((person) => {
-          const dot = new Graphics();
-          dot.beginFill(parseInt(person.color.replace('#', ''), 16));
-          dot.drawCircle(0, 0, 8); // 8px radius
+        // Update or create sprites for each person
+        people.forEach((person, index) => {
+          let dot = existingSprites[index] as Graphics;
+          
+          if (!dot) {
+            dot = new Graphics();
+            peopleContainer.addChild(dot);
+          }
+          
+          // Parse color safely with fallback
+          let color = 0x0066cc; // Default blue
+          if (typeof person.color === 'string' && person.color.startsWith('#')) {
+            const parsed = parseInt(person.color.replace('#',''), 16);
+            color = isNaN(parsed) ? 0x0066cc : parsed;
+          } else if (typeof person.color === 'string' && person.color.startsWith('hsl')) {
+            // Simple HSL to hex conversion fallback
+            color = 0x0066cc;
+          }
+          
+          dot.clear();
+          dot.beginFill(color);
+          dot.drawCircle(0, 0, 8);
           dot.endFill();
           dot.position.set(person.x, person.y);
           dot.alpha = 0.8;
+          dot.visible = true;
           
-          // Add a subtle border
+          // Add subtle border
           dot.lineStyle(2, 0xffffff, 0.3);
           dot.drawCircle(0, 0, 8);
-          
-          peopleContainer.addChild(dot);
         });
-      } else {
+      } else if (process.env.NODE_ENV === 'development') {
         console.log('[PIXI_DEBUG] No people to render');
       }
 

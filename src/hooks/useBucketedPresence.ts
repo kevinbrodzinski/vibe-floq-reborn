@@ -58,8 +58,8 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
   const env = getEnvironmentConfig();
   
-  // Always show mock data for debugging field screen
-  const showMockData = true;
+  // Show mock data only in development
+  const showMockData = process.env.NODE_ENV === 'development';
   
   if (env.debugPresence) {
     console.log('🔴 useBucketedPresence - WebSocket connections disabled in production');
