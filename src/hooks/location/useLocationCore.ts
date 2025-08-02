@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { calculateDistance, type GPS } from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { toast } from 'sonner';
+import { geoTelemetry } from '@/lib/monitoring/telemetry';
 
 export interface LocationCoreOptions {
   enableHighAccuracy?: boolean;
@@ -85,12 +86,31 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
             timestamp: Date.now(),
           }));
           lastFix.current = coords;
+          geoTelemetry.cacheHit('debug');
           return;
         }
       }
     } catch {/* ignore debug location errors */}
 
-    // Check cached coordinates second
+    // Check persistent cache from localStorage (instant map loads)
+    try {
+      const persisted = localStorage.getItem('floq-lastFix');
+      if (persisted) {
+        const coords = JSON.parse(persisted);
+        setState(s => ({
+          ...s,
+          coords,
+          status: 'success',
+          hasPermission: true,
+          timestamp: Date.now(),
+        }));
+        lastFix.current = coords;
+        geoTelemetry.cacheHit('localStorage');
+        return;
+      }
+    } catch {/* ignore storage errors */}
+
+    // Check cached coordinates third (session fallback)
     const cached = sessionStorage.getItem('floq-coords');
     if (cached) {
       try {
@@ -103,6 +123,7 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
           timestamp: Date.now(),
         }));
         lastFix.current = coords;
+        geoTelemetry.cacheHit('sessionStorage');
         return;
       } catch {
         sessionStorage.removeItem('floq-coords');
@@ -178,12 +199,15 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
         }));
         lastFix.current = newCoords;
         
-        // Cache coordinates
+        // Cache coordinates in both session and persistent storage
         try {
           sessionStorage.setItem('floq-coords', JSON.stringify(newCoords));
+          localStorage.setItem('floq-lastFix', JSON.stringify(newCoords));
         } catch {
           // Ignore storage errors
         }
+        
+        geoTelemetry.success(position.coords.accuracy);
       }, opts.debounceMs);
     },
     [opts.minDistanceM, opts.debounceMs],
@@ -201,6 +225,10 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
         description: 'Turn on GPS or try again',
       });
     }
+
+    // Telemetry
+    if (error.code === error.PERMISSION_DENIED) geoTelemetry.denied();
+    else geoTelemetry.error(message);
 
     setState(s => ({
       ...s,
@@ -235,6 +263,7 @@ export function useLocationCore(options: LocationCoreOptions = {}): LocationCore
     // Add timeout protection
     const timeoutId = setTimeout(() => {
       userGestureRef.current = false;
+      geoTelemetry.timeout();
       handleError({ code: 3, message: 'Location request timed out' } as GeolocationPositionError);
     }, 30_000);
 

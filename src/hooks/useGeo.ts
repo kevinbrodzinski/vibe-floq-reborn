@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { calculateDistance }     from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
+import { geoTelemetry } from '@/lib/monitoring/telemetry';
 
 /* ────────────────────────────────────────────────────────── */
 /* Types                                                     */
@@ -90,8 +91,21 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
           const coords = { lat, lng };
           set(s => ({ ...s, coords, status: 'success', hasPermission: true, ts: Date.now() }));
           lastFix.current = coords;
+          geoTelemetry.cacheHit('debug');
           return;
         }
+      }
+    } catch {/* ignore */}
+
+    /* persistent cache from localStorage (faster than fresh GPS) */
+    try {
+      const persisted = localStorage.getItem('floq-lastFix');
+      if (persisted) {
+        const coords = JSON.parse(persisted);
+        set(s => ({ ...s, coords, status: 'success', hasPermission: true, ts: Date.now() }));
+        lastFix.current = coords;
+        geoTelemetry.cacheHit('localStorage');
+        return;
       }
     } catch {/* ignore */}
 
@@ -102,6 +116,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
         const coords = JSON.parse(cached);
         set(s => ({ ...s, coords, status:'success', hasPermission:true, ts:Date.now() }));
         lastFix.current = coords;
+        geoTelemetry.cacheHit('sessionStorage');
         return;
       }
     } catch {/* ignore */}
@@ -160,7 +175,9 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       lastFix.current = p;
       try {
         sessionStorage.setItem('floq-coords', JSON.stringify(p));
+        localStorage.setItem('floq-lastFix', JSON.stringify(p));
       } catch {/* ignore quota / private-mode errors */}
+      geoTelemetry.success(pos.coords.accuracy);
     }, o.debounceMs);
   }, [o.minDistanceM, o.debounceMs]);
 
@@ -181,6 +198,10 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
       err.code === err.PERMISSION_DENIED ? 'denied' :
       err.code === err.POSITION_UNAVAILABLE ? 'unavailable' :
       err.message;
+
+    /* telemetry */
+    if (err.code === err.PERMISSION_DENIED) geoTelemetry.denied();
+    else geoTelemetry.error(msg);
 
     set(s => ({
       ...s,
@@ -215,6 +236,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     /* add timeout handler for stuck GPS */
     const timeoutId = setTimeout(() => {
       asked.current = false;
+      geoTelemetry.timeout();
       set(s => ({ ...s, status: 'error', error: 'timeout' }));
     }, 25_000);
 

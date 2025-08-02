@@ -162,6 +162,21 @@ export function logSystemHealth() {
 }
 
 /**
+ * Geolocation telemetry - tracks GPS success/failure rates
+ */
+export const geoTelemetry = {
+  timeout: () => logEvent('geo_timeout', { event_type: 'geolocation' }),
+  denied: () => logEvent('geo_denied', { event_type: 'geolocation' }),
+  error: (error: string) => logEvent('geo_error', { event_type: 'geolocation', error }),
+  success: (accuracy?: number) => logEvent('geo_success', { 
+    event_type: 'geolocation', 
+    accuracy: accuracy ? Math.round(accuracy) : undefined 
+  }),
+  cacheHit: (source: 'localStorage' | 'sessionStorage' | 'debug') => 
+    logEvent('geo_cache_hit', { event_type: 'geolocation', cache_source: source }),
+};
+
+/**
  * Avatar upload specific tracking
  */
 export const avatarTelemetry = {
