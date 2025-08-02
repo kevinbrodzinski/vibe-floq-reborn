@@ -5,5 +5,5 @@ export const FriendFab = () => {
     open,
     toggle
   } = useFriendDrawer();
-  return;
+  return null;
 };

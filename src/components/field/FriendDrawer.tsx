@@ -14,5 +14,5 @@ export const FriendDrawer = () => {
     people,
     loading
   } = useNearbyPeople(pos?.lat, pos?.lng, 12);
-  return;
+  return null;
 };

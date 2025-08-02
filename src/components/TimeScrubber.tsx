@@ -5,5 +5,5 @@ export const TimeScrubber = () => {
     set
   } = useTimeWarp();
   const hoursAgo = t ? Math.round((Date.now() - t.getTime()) / 3.6e6) : 0;
-  return;
+  return null;
 };
