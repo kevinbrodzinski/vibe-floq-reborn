@@ -321,8 +321,35 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       }
 
       // ---- PEOPLE DOTS ----
-      // People are now rendered by Mapbox layers instead of PIXI sprites
-      console.log('[PIXI_DEBUG] People moved to Mapbox layers');
+      if (people.length > 0) {
+        console.log('[PIXI_DEBUG] Rendering people dots:', people.length);
+        
+        // Clear existing people sprites
+        peopleContainer.removeChildren();
+        
+        // Add user dot back if we removed it
+        if (myDotRef.current && !myDotRef.current.parent) {
+          peopleContainer.addChild(myDotRef.current);
+        }
+        
+        // Create people dots
+        people.forEach((person) => {
+          const dot = new Graphics();
+          dot.beginFill(parseInt(person.color.replace('#', ''), 16));
+          dot.drawCircle(0, 0, 8); // 8px radius
+          dot.endFill();
+          dot.position.set(person.x, person.y);
+          dot.alpha = 0.8;
+          
+          // Add a subtle border
+          dot.lineStyle(2, 0xffffff, 0.3);
+          dot.drawCircle(0, 0, 8);
+          
+          peopleContainer.addChild(dot);
+        });
+      } else {
+        console.log('[PIXI_DEBUG] No people to render');
+      }
 
       // ---- FLOQ EVENTS ----
       // Floqs are now rendered as Mapbox layers instead of PIXI sprites

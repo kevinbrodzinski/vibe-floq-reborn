@@ -16,8 +16,13 @@ interface PresenceUser {
 const generateMockPresenceData = (userLat?: number, userLng?: number, friendIds: string[] = []): PresenceUser[] => {
   if (!userLat || !userLng) return [];
   
-  // Use real friend IDs if available to make mock data more realistic
-  const realFriendIds = friendIds.length > 0 ? friendIds.slice(0, 3) : ['b25fd249-5bc0-4b67-a012-f64dacbaef1a'];
+  // Use real friend IDs if available, otherwise use fallback IDs
+  const realFriendIds = friendIds.length > 0 ? friendIds.slice(0, 4) : [
+    'e2a658f7-a20b-4c5d-9a8f-53c84d202e82', // beata
+    '44c0d38e-bbce-4279-aed6-3835aa6631c4', // kaleb
+    '5d57a369-8d57-4898-8b04-e614051f69e4', // kevinb
+    'd18378b9-93db-4a14-9449-7d01386ac8ff'  // weston
+  ];
   
   const mockUsers = realFriendIds.map((friendId, index) => ({
     profile_id: friendId,
@@ -53,20 +58,18 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
   const [lastHeartbeat, setLastHeartbeat] = useState<number | null>(null);
   const env = getEnvironmentConfig();
   
-  // Disable WebSocket connections in production/preview environments
-  const isLocalhost = typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  
-  const enableWebSockets = isLocalhost && env.enablePresenceUpdates;
+  // Always show mock data for debugging field screen
+  const showMockData = true;
   
   if (env.debugPresence) {
     console.log('🔴 useBucketedPresence - WebSocket connections disabled in production');
   }
 
   useEffect(() => {
-    if (!lat || !lng || !enableWebSockets) {
-      // Return realistic mock data when WebSockets are disabled
+    if (!lat || !lng || showMockData) {
+      // Return realistic mock data for field screen debugging
       const mockPeople = generateMockPresenceData(lat, lng, friendIds);
+      console.log('[BucketedPresence] Generating mock presence data:', mockPeople);
       setPeople(mockPeople);
       setLastHeartbeat(Date.now());
       return;
@@ -105,7 +108,7 @@ export const useBucketedPresence = (lat?: number, lng?: number, friendIds: strin
       setPeople(mockPeople);
       setLastHeartbeat(Date.now());
     }
-  }, [lat, lng, friendIds.join(','), enableWebSockets]);
+  }, [lat, lng, friendIds.join(','), showMockData]);
 
   return { people, lastHeartbeat };
 };

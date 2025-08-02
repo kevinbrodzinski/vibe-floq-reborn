@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { FieldMapBase } from '@/components/maps/FieldMapBase';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
+import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
 import type { FieldData } from '../field/FieldDataProvider';
 
 interface FieldMapLayerProps {
@@ -21,6 +22,10 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   canvasRef
 }) => {
   const { walkableFloqs, fieldTiles, realtime } = data;
+  const { people: socialPeople } = useFieldSocial();
+  
+  // Use social context people data instead of passed-in people
+  const actualPeople = socialPeople.length > 0 ? socialPeople : people;
 
   return (
     <div className="absolute inset-0">
@@ -34,7 +39,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
       {/* Layer 2: PIXI Canvas Overlay */}
       <FieldCanvasLayer
         canvasRef={canvasRef}
-        people={people}
+        people={actualPeople}
         floqs={floqs}
         data={data}
         onRipple={onRipple}

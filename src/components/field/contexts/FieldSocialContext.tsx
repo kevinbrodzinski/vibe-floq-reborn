@@ -99,18 +99,18 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         return null;
       }
       
-      // Convert lat/lng to field coordinates based on geographic distance from user
+      // Convert lat/lng to screen coordinates using simple geographic conversion
       const latDiff = presenceLat - location.coords!.lat;
       const lngDiff = presenceLng - location.coords!.lng;
       
-      // Convert to field coordinates: ~111km per degree lat, ~111km * cos(lat) per degree lng
+      // Convert to screen coordinates (assuming 1000px screen width/height)
       const xMeters = lngDiff * 111320 * Math.cos((location.coords!.lat * Math.PI) / 180);
       const yMeters = latDiff * 111320;
       
-      // Scale to field coordinates (field is 0-100%, assuming 2km view radius)
-      const scale = 50; // 50% field width per km
-      const x = Math.min(Math.max((xMeters / 1000) * scale + 50, 5), 95);
-      const y = Math.min(Math.max(-(yMeters / 1000) * scale + 50, 5), 95);
+      // Scale to screen coordinates (field is viewport sized, 2km radius)
+      const scale = 200; // pixels per km 
+      const x = 500 + (xMeters / 1000) * scale; // Center at 500px + offset
+      const y = 500 - (yMeters / 1000) * scale; // Center at 500px + offset (inverted Y)
       
       return {
         id: userId,

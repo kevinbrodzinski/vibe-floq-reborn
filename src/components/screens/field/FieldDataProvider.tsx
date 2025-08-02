@@ -215,7 +215,8 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
       message: tilesError.message,
     } : null,
     tilesCount: fieldTiles?.length || 0,
-    tiles: fieldTiles
+    tiles: fieldTiles?.slice(0, 3), // Show first 3 tiles only for debug
+    viewport
   });
 
   // Auto-sync venues when location changes
