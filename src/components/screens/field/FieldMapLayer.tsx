@@ -31,7 +31,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   // Phase 4 state management
   const [isDebugVisible, setIsDebugVisible] = useState(false);
   const [isConstellationMode, setIsConstellationMode] = useState(false);
-  const [timeWarpHour, setTimeWarpHour] = useState(new Date().getHours());
+  
   
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
@@ -40,8 +40,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const isMapReady = Boolean(getMapInstance());
   
   // Phase 4 handlers
-  const handleTimeWarp = useCallback((hours: number) => {
-    setTimeWarpHour(hours);
     // Automatically enable constellation mode for night hours
     const isNightTime = hours < 6 || hours > 20;
     if (isNightTime && !isConstellationMode) {
@@ -79,7 +77,7 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
           data={data}
           onRipple={onRipple}
           isConstellationMode={isConstellationMode}
-          timeWarpHour={timeWarpHour}
+          
           showDebugVisuals={isDebugVisible}
         />
       )}

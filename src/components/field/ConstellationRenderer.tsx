@@ -114,11 +114,12 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     friendConnections.clear();
 
     // Only render during evening/night hours (6 PM - 6 AM)
-    const isNightTime = timeWarpHour >= 18 || timeWarpHour <= 6;
+    const currentHour = new Date().getHours();
+    const isNightTime = currentHour >= 18 || currentHour <= 6;
     if (!isNightTime) return;
 
     // Calculate constellation intensity based on time
-    const nightIntensity = calculateNightIntensity(timeWarpHour);
+    const nightIntensity = calculateNightIntensity(currentHour);
     
     // Group friends by proximity using cached projections
     const friendProjections = cachedProjections.filter(cp => cp.id.startsWith('person_'));
@@ -134,7 +135,7 @@ export const ConstellationRenderer: React.FC<ConstellationRendererProps> = ({
     // Add ambient constellation effects
     drawAmbientStars(constellationGraphics, nightIntensity);
 
-  }, [cachedProjections, timeWarpHour]);
+  }, [cachedProjections]);
 
   return null; // This component only manages PIXI graphics
 };

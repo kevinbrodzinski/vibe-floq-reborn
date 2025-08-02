@@ -15,8 +15,6 @@ interface PresenceDebugPanelProps {
   lastTileUpdate?: string;
   isConstellationMode?: boolean;
   onToggleConstellationMode?: (enabled: boolean) => void;
-  timeWarpHour?: number;
-  onTimeWarpChange?: (hour: number) => void;
 }
 
 /**
@@ -30,8 +28,6 @@ export const PresenceDebugPanel: React.FC<PresenceDebugPanelProps> = ({
   lastTileUpdate,
   isConstellationMode = false,
   onToggleConstellationMode,
-  timeWarpHour = new Date().getHours(),
-  onTimeWarpChange
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { seedDemoData, clearDemoData, isLoading, lastSeeded } = usePresenceDemoData();

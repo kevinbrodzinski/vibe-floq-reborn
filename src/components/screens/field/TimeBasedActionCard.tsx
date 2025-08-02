@@ -1,12 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Coffee, Zap, Users, Navigation, Plus, Heart, Star, Sparkles, Sliders, GripHorizontal } from "lucide-react";
+import { Coffee, Zap, Users, Navigation, Plus, Heart, Star, Sparkles } from "lucide-react";
 import { CreateFloqSheet } from "@/components/CreateFloqSheet";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 
 interface TimeBasedActionCardProps {
   timeState: string;
-  onTimeWarpToggle: () => void;
   className?: string;
 }
 
@@ -42,7 +41,7 @@ interface ActionButton {
   iconOnly?: boolean;
 }
 
-export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: TimeBasedActionCardProps) => {
+export const TimeBasedActionCard = ({ timeState, className }: TimeBasedActionCardProps) => {
   const [createFloqOpen, setCreateFloqOpen] = useState(false);
   const [snapPosition, setSnapPosition] = useState<SnapPosition>('collapsed');
   const [isDragging, setIsDragging] = useState(false);
@@ -166,8 +165,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: 
         subtitle = "Steady focus";
         title = "Check the pulse";
         baseButtons.push(
-          { icon: Users, label: "See Who's Around", variant: "primary" },
-          { icon: Sliders, label: "", variant: "outline", onClick: onTimeWarpToggle, iconOnly: true }
+          { icon: Users, label: "See Who's Around", variant: "primary" }
         );
         break;
       
@@ -177,8 +175,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: 
         title = "Warehouse — join?";
         baseButtons.push(
           { icon: Navigation, label: "Let Pulse Guide Me", variant: "primary" },
-          { icon: Plus, label: "Create New Floq", variant: "secondary", onClick: handleCreateFloq },
-          { icon: Sliders, label: "", variant: "outline", onClick: onTimeWarpToggle, iconOnly: true }
+          { icon: Plus, label: "Create New Floq", variant: "secondary", onClick: handleCreateFloq }
         );
         break;
       
@@ -196,7 +193,7 @@ export const TimeBasedActionCard = ({ timeState, onTimeWarpToggle, className }: 
     }
 
     return { subtitle, title, buttons: baseButtons };
-  }, [timeState, handleCreateFloq, onTimeWarpToggle]);
+  }, [timeState, handleCreateFloq]);
 
   // Reduced motion support
   const prefersReducedMotion = useMemo(() => 

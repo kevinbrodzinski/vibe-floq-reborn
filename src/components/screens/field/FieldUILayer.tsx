@@ -128,7 +128,6 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
           <TimeBasedActionCard
             className="pointer-events-auto"
             timeState={timeState}
-            onTimeWarpToggle={() => {/* Handled by FAB now */}}
           />
         </div>
       )}

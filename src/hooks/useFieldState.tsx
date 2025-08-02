@@ -4,7 +4,6 @@ import type { Vibe } from '@/types';
 interface FieldState {
   // Core state
   currentVibe: Vibe;
-  timeWarpEnabled: boolean;
   constellationMode: boolean;
   
   // UI state
@@ -30,7 +29,6 @@ interface FieldState {
 interface FieldActions {
   // Core actions
   changeVibe: (vibe: Vibe) => void;
-  toggleTimeWarp: () => void;
   toggleConstellationMode: () => void;
   
   // UI actions
@@ -57,7 +55,6 @@ interface FieldActions {
 
 const initialState: FieldState = {
   currentVibe: 'chill',
-  timeWarpEnabled: false,
   constellationMode: false,
   
   dmSheetOpen: false,
@@ -86,10 +83,6 @@ export const useFieldState = (): [FieldState, FieldActions] => {
     // Core actions
     changeVibe: useCallback((vibe: Vibe) => {
       setState(prev => ({ ...prev, currentVibe: vibe }));
-    }, []),
-
-    toggleTimeWarp: useCallback(() => {
-      setState(prev => ({ ...prev, timeWarpEnabled: !prev.timeWarpEnabled }));
     }, []),
 
     toggleConstellationMode: useCallback(() => {

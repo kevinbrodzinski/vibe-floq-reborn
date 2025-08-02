@@ -39,7 +39,6 @@ interface FieldCanvasProps {
   };
   onRipple?: (x: number, y: number) => void;
   isConstellationMode?: boolean;
-  timeWarpHour?: number;
   showDebugVisuals?: boolean;
 }
 
@@ -51,7 +50,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   viewportGeo,
   onRipple,
   isConstellationMode = false,
-  timeWarpHour = new Date().getHours(),
   showDebugVisuals = false
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -640,7 +638,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         cancelAnimationFrame(animationId);
       }
     };
-  }, [fieldTiles, people, viewportGeo, searchViewport, floqs, isConstellationMode, timeWarpHour, showDebugVisuals]);
+  }, [fieldTiles, people, viewportGeo, searchViewport, floqs, isConstellationMode, showDebugVisuals]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -728,7 +726,6 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           fieldTiles={fieldTiles}
           app={appRef.current}
           container={constellationContainerRef.current}
-          timeWarpHour={timeWarpHour}
         />
       )}
       

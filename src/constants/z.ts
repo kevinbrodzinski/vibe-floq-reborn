@@ -8,7 +8,7 @@
  * 21  uiControls   Constellation controls, FABs
  * 22  uiHeader     Field header, location banner
  * 30  overlay      Banners & field overlay
- * 40  timewarp     Time-warp slider
+ 
  * 50  system       Live-regions, viewport helpers
  * 60  navigation   Top header & bottom nav
  * 70  modal        Sheets, dialogs, pop-overs
@@ -31,7 +31,7 @@ export const Z = {
 
   overlay: 30,
 
-  timewarp: 40,
+  
   system: 50,
   navigation: 60,
   modal: 70,

@@ -6,7 +6,7 @@ import { useActiveFloqs } from "@/hooks/useActiveFloqs";
 import { useFieldTiles } from "@/hooks/useFieldTiles";
 import { useFieldTileSync } from "@/hooks/useFieldTileSync";
 import { useAutoVenueSync } from "@/hooks/useVenueSync";
-import { useTimeWarp } from "@/lib/timeWarp";
+
 import { supabase } from "@/integrations/supabase/client";
 import { usePresencePublisher } from "@/hooks/usePresencePublisher";
 import { useRealtimePresence } from "@/hooks/useRealtimePresence";
@@ -123,51 +123,9 @@ interface FieldDataProviderInnerProps {
 
 const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { location } = useFieldLocation();
-  const { t: timeWarpTime } = useTimeWarp();
-  const [historicalData, setHistoricalData] = useState<any>(null);
   const { data: activeFloqs = [] } = useActiveFloqs();
   const [floqsWithAddresses, setFloqsWithAddresses] = useState<any[]>([]);
 
-  // Fetch historical data when time-warp is active
-  useEffect(() => {
-    if (!timeWarpTime) {
-      setHistoricalData(null);
-      return;
-    }
-
-    let aborted = false;
-    const fetchHistorical = async () => {
-      try {
-        console.log('[TimeWarp] Fetching historical data for:', timeWarpTime.toISOString());
-        const url = `https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/get_field_state_at?ts=${encodeURIComponent(timeWarpTime.toISOString())}`;
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlenR5cnJhZnNtbHZ2bHF2c3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNTI5MTcsImV4cCI6MjA2NzYyODkxN30.6rCBIkV5Fk4qzSfiAR0I8biCQ-YdfdT-ZnJZigWqSck`,
-            'Content-Type': 'application/json',
-          }
-        });
-
-        const data = response.ok ? await response.json() : null;
-        const error = !response.ok ? new Error(`HTTP ${response.status}`) : null;
-
-        if (error) {
-          console.error('[TimeWarp] Error fetching historical data:', error);
-          return;
-        }
-
-        if (!aborted && data) {
-          console.log('[TimeWarp] Historical data fetched:', data);
-          setHistoricalData(data);
-        }
-      } catch (error) {
-        console.error('[TimeWarp] Failed to fetch historical data:', error);
-      }
-    };
-
-    fetchHistorical();
-    return () => { aborted = true; };
-  }, [timeWarpTime]);
 
   // Enhance floqs with addresses
   useEffect(() => {
@@ -267,9 +225,9 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   // Enable field tile sync automation
   useFieldTileSync();
 
-  // Get field tiles data - use historical if time-warp is active
-  const { data: liveFieldTiles = [], error: tilesError, isLoading } = useFieldTiles(
-    !timeWarpTime && viewport ? {
+  // Get field tiles data
+  const { data: fieldTiles = [], error: tilesError, isLoading } = useFieldTiles(
+    viewport ? {
       minLat: viewport.minLat,
       maxLat: viewport.maxLat,
       minLng: viewport.minLng,
@@ -277,11 +235,6 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
       precision: 6
     } : undefined
   );
-
-  // Use historical data when time-warp is active, otherwise use live data
-  const fieldTiles = timeWarpTime && historicalData?.field_tiles 
-    ? historicalData.field_tiles 
-    : liveFieldTiles;
 
   // Debug logging for field tiles
   console.log('[FIELD_DEBUG] Field tiles query state:', {
