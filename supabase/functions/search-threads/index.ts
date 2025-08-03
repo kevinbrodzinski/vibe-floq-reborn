@@ -31,6 +31,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check for auth header early
+    const auth = req.headers.get('authorization');
+    if (!auth) {
+      return new Response('Unauthorized', { 
+        status: 401, 
+        headers: corsHeaders 
+      });
+    }
+
     const body = await req.text();
     if (!body) {
       return new Response(JSON.stringify([]), {
@@ -47,7 +56,6 @@ Deno.serve(async (req) => {
     }
 
     // Use anon key with proper auth headers to respect RLS
-    const auth = req.headers.get('authorization') ?? '';
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,

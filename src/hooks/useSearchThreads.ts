@@ -14,13 +14,14 @@ export interface ThreadSearchResult {
 
 export const useSearchThreads = (query: string) => {
   const { user } = useAuth();
+  const cleaned = query.trim();
   
   return useQuery({
-    queryKey: ['dm-thread-search', user?.id, query],
-    enabled: !!query && query.trim().length >= 2,
+    queryKey: ['dm-thread-search', user?.id, cleaned],
+    enabled: !!cleaned && cleaned.length >= 2,
     queryFn: async (): Promise<ThreadSearchResult[]> => {
       const { data, error } = await supabase.functions.invoke('search-threads', {
-        body: { q: query.trim() }
+        body: { q: cleaned }
       });
       
       if (error) throw error;
