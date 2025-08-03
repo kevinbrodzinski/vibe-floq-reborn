@@ -42,11 +42,14 @@ interface DMQuickSheetProps {
 }
 
 export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
+  // Debug parent props
+  console.log('[PARENT] DMQuickSheet props:', { open, friendId });
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false); // Local sending state as fallback
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const { user } = useAuth(); // Use auth context instead of one-off getUser()
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -147,27 +150,35 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
 
-  // Get current user ID and setup thread
+  // Get current user ID from auth context
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setCurrentUserId(data.user?.id ?? null);
-    });
-  }, []);
+    const userId = user?.id || null;
+    console.log('[DM_SHEET] Auth user changed:', userId);
+    setCurrentUserId(userId);
+  }, [user]);
 
-  // Initialize thread when both user and friend are available
+  // Initialize thread when both user and friend are available AND sheet is open
    useEffect(() => {
+     console.log('[DM_SHEET] Thread effect triggered:', { currentUserId, friendId, open });
+     
      if (currentUserId && friendId && open) {
+       console.log('[DM_SHEET] Creating/getting thread...');
        threadIdFrom(currentUserId, friendId)
-         .then(setThreadId)
+         .then((id) => {
+           console.log('[DM_SHEET] Thread ID set:', id);
+           setThreadId(id);
+         })
          .catch((error) => {
-           console.error('Failed to create/get thread:', error);
+           console.error('[threadIdFrom] failed:', error);
            toast({
              title: "Could not start chat",
              description: "Please try again later.",
              variant: "destructive",
            });
          });
-     } else {
+     } else if (!open) {
+       // Only reset threadId when sheet closes, not when IDs are missing
+       console.log('[DM_SHEET] Sheet closed, resetting threadId');
        setThreadId(null);
      }
    }, [currentUserId, friendId, open, toast]);
