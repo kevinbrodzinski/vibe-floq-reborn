@@ -90,7 +90,7 @@ serve(async (req) => {
     }
 
     // Test Foursquare API Key
-    const foursquareKey = Deno.env.get('FOURSQUARE_ADMIN_API');
+    const foursquareKey = Deno.env.get('FSQ_SERVICE_KEY');
     if (foursquareKey) {
       console.log('[API Validator] Testing Foursquare API...');
       
@@ -117,7 +117,7 @@ serve(async (req) => {
         };
       }
     } else {
-      results.tests.foursquare = { status: 'missing', success: false, error: 'FOURSQUARE_ADMIN_API not configured' };
+      results.tests.foursquare = { status: 'missing', success: false, error: 'FSQ_SERVICE_KEY not configured' };
     }
 
     console.log('[API Validator] Validation complete');

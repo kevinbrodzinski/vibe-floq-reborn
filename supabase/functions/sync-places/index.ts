@@ -261,8 +261,8 @@ serve(async (req) => {
       await supabase.from('sync_log').insert({ kind: 'places', lat, lng });
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          upserted: 0, 
+          ok: true, 
+          count: 0, 
           message: 'No places found in this area',
           location: { lat, lng }
         }), 
@@ -290,7 +290,7 @@ serve(async (req) => {
       console.warn('[Sync Places] No venues could be mapped successfully');
       return new Response(
         JSON.stringify({ 
-          success: false, 
+          ok: false, 
           error: 'Failed to map any venues',
           details: 'All venue mapping attempts failed'
         }), 
@@ -312,7 +312,7 @@ serve(async (req) => {
           // Final attempt failed
           return new Response(
             JSON.stringify({ 
-              success: false, 
+              ok: false, 
               error: 'Database insertion failed after 3 attempts',
               details: error instanceof Error ? error.message : String(error)
             }), 
@@ -341,8 +341,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        upserted: rows.length,
+        ok: true, 
+        count: rows.length,
         source: "google_places",
         location: { lat, lng },
         keyword: keyword || null
@@ -354,7 +354,7 @@ serve(async (req) => {
     const errorMessage = err instanceof Error ? err.message : String(err);
     return new Response(
       JSON.stringify({ 
-        success: false,
+        ok: false,
         error: 'Internal server error',
         details: errorMessage,
         source: 'sync-places'
