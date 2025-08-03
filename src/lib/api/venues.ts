@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import haversine from 'haversine-distance';
+import type { VenueSyncResult } from '@/types/VenueSyncResult';
 
 export type VenueSnapshot = {
   venue_id: string;
@@ -11,16 +12,6 @@ export type VenueSnapshot = {
   last_seen_at?: string;
   dominant_vibe?: string | null;
   updated_at?: string;
-};
-
-export type VenueSyncResult = {
-  ok: boolean;
-  count: number;
-  source: 'google' | 'foursquare' | 'sync-places';
-  error?: string;
-  phase?: string;
-  location?: { lat: number; lng: number };
-  errors?: string[];
 };
 
 /* ---------- 1. fast list for map / trending ---------- */
@@ -86,13 +77,14 @@ export async function syncGooglePlaces(
     });
 
     if (error) throw error;
-    return { ...data, source: 'google' as const };
+    return { ...data, source: 'google' };
   } catch (error) {
     console.error('Google Places sync failed:', error);
     return { 
       ok: false, 
       count: 0, 
-      source: 'google' as const,
+      source: 'google',
+      phase: 'error',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
@@ -113,13 +105,14 @@ export async function syncFoursquareVenues(
     });
 
     if (error) throw error;
-    return { ...data, source: 'foursquare' as const };
+    return { ...data, source: 'foursquare' };
   } catch (error) {
     console.error('Foursquare sync failed:', error);
     return { 
       ok: false, 
       count: 0, 
-      source: 'foursquare' as const,
+      source: 'foursquare',
+      phase: 'error',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
@@ -139,13 +132,14 @@ export async function syncNearbyVenues(
     });
 
     if (error) throw error;
-    return { ...data, source: 'sync-places' as const };
+    return { ...data, source: 'sync-places' };
   } catch (error) {
     console.error('Universal venue sync failed:', error);
     return { 
       ok: false, 
       count: 0, 
-      source: 'sync-places' as const,
+      source: 'sync-places',
+      phase: 'error',
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
@@ -186,7 +180,7 @@ export async function autoSyncVenues(
   const needsSync = await checkSyncNeeded(lat, lng);
   
   if (!needsSync) {
-    return [{ ok: true, count: 0, source: 'sync-places', error: 'Already synced recently' }];
+    return [{ ok: true, count: 0, source: 'sync-places', phase: 'cached', error: 'Already synced recently' }];
   }
 
   // Try cascading approach: Google -> Foursquare -> Universal sync

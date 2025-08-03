@@ -5,8 +5,10 @@ import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
 import { FieldDataTestPanel } from '@/components/field/FieldDataTestPanel';
+import { VenueLoadingOverlay } from '@/components/venues/VenueLoadingOverlay';
 
 import { useFieldSocial } from '@/components/field/contexts/FieldSocialContext';
+import { useVenueSync } from '@/hooks/useVenueSync';
 import { getMapInstance } from '@/lib/geo/project';
 import type { FieldData } from '../field/FieldDataProvider';
 
@@ -32,6 +34,8 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
   const [isDebugVisible, setIsDebugVisible] = useState(false);
   const [isConstellationMode, setIsConstellationMode] = useState(false);
   
+  // Venue sync state (for loading overlay)
+  const { isLoading: isVenueSyncing } = useVenueSync({ autoSync: false, showToasts: false });
   
   // Use social context people data instead of passed-in people
   const actualPeople = socialPeople.length ? socialPeople : people;
@@ -68,6 +72,9 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         floqs={walkableFloqs} 
         realtime={realtime}
       />
+      
+      {/* Venue Loading Overlay */}
+      <VenueLoadingOverlay show={isVenueSyncing} />
       
       {/* Layer 2: PIXI Canvas Overlay with Phase 4 enhancements - only render when map is ready */}
       {isMapReady && (

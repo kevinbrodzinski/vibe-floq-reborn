@@ -48,8 +48,15 @@ export function mapToVenue(p: RawPlace) {
 
   if (p.provider === "google") {
     const r = p.r;
-    const lat = r.geometry.location.lat;
-    const lng = r.geometry.location.lng;
+    const lat = Number(r.geometry?.location?.lat);
+    const lng = Number(r.geometry?.location?.lng);
+    
+    // Validate coordinates instead of silent fallback
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      console.warn(`[mapToVenue] Invalid Google coordinates for ${r.place_id}: lat=${lat}, lng=${lng}`);
+      return null;
+    }
+    
     const categories = (r.types ?? []).slice(0, 5);
     
     return {
@@ -79,15 +86,21 @@ export function mapToVenue(p: RawPlace) {
   /* foursquare ------------------------------------------------------ */
   const r = (p as any).r;
   
-  // Skip venues with missing coordinates
-  if (!r?.geocodes?.main?.latitude || !r?.geocodes?.main?.longitude) {
-    console.warn("[venues] ⏭ Skipping FSQ venue with missing coords:", r?.fsq_id);
+  const lat = Number(r?.geocodes?.main?.latitude);
+  const lng = Number(r?.geocodes?.main?.longitude);
+  
+  // Validate coordinates instead of silent fallback
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.warn(`[mapToVenue] Invalid Foursquare coordinates for ${r?.fsq_id}: lat=${lat}, lng=${lng}`);
     return null;
   }
   
-  const lat = r.geocodes.main.latitude;
-  const lng = r.geocodes.main.longitude;
   const categories = r.categories?.map((c: any) => c.name).slice(0, 5) ?? [];
+  
+  // Guard brittle photo reference extraction
+  const photoUrl = r.photos?.[0]?.prefix && r.photos?.[0]?.suffix 
+    ? `${r.photos[0].prefix}original${r.photos[0].suffix}`
+    : null;
   
   return {
     ...baseVenue,
@@ -99,12 +112,10 @@ export function mapToVenue(p: RawPlace) {
     slug: generateSlug(r.name),
     lat,
     lng,
-    address: r.location.formatted_address ?? null,
+    address: r.location?.formatted_address ?? null,
     categories,
     rating: r.rating ?? null,
-    photo_url: r.photos?.[0]
-      ? `${r.photos[0].prefix}original${r.photos[0].suffix}`
-      : null,
+    photo_url: photoUrl,
     price_tier: r.price ?? "$",
     vibe: vibeFrom(categories),
     geohash5: ngeohash.encode(lat, lng, 5),
@@ -118,11 +129,19 @@ export function mapToVenue(p: RawPlace) {
  */
 export async function logVenueDrop(reason: string, payload: any, source?: string, external_id?: string, lat?: number, lng?: number) {
   try {
+    // Truncate huge payload before logging
+    const trimmed = JSON.stringify(payload).slice(0, 8000);
+    const truncatedPayload = { 
+      ...payload, 
+      snippet: trimmed,
+      original_size: JSON.stringify(payload).length 
+    };
+    
     const { error } = await sb
       .from('venues_sync_errors')
       .insert({
         reason,
-        payload,
+        payload: truncatedPayload,
         source: source || 'unknown',
         external_id,
         lat,
@@ -148,7 +167,7 @@ export async function upsertVenues(rows: (VenueRow | null)[]): Promise<{ inserte
   // Filter out null rows (venues with missing coordinates)
   const validRows = rows.filter(Boolean) as VenueRow[];
   
-  // Log dropped rows for visibility
+  // Batch log venue drops if any
   if (rows.length !== validRows.length) {
     const dropCount = rows.length - validRows.length;
     console.warn(`[VenueUpsert] Dropped ${dropCount} venues with missing coordinates`);
@@ -169,10 +188,11 @@ export async function upsertVenues(rows: (VenueRow | null)[]): Promise<{ inserte
   }
   
   try {
-    const { error } = await sb.from("venues").upsert(finalRows, {
+    // Get real inserted/updated counts using returning representation
+    const { data, error } = await sb.from("venues").upsert(finalRows, {
       onConflict: "source,external_id",
       ignoreDuplicates: false,
-      returning: "minimal",
+      returning: "representation",
     });
     
     if (error) {
@@ -180,9 +200,14 @@ export async function upsertVenues(rows: (VenueRow | null)[]): Promise<{ inserte
       throw error;
     }
     
-    return { inserted: finalRows.length, updated: 0, errors };
+    // Calculate real counts based on xmax field (0 = new insert, >0 = update)
+    const inserted = data?.filter(r => (r as any).xmax === '0').length || 0;
+    const updated = (data?.length || 0) - inserted;
+    
+    return { inserted, updated, errors };
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
+    await logVenueDrop('unexpected_error', { error: error instanceof Error ? error.message : String(error), venueCount: finalRows.length });
     return { inserted: 0, updated: 0, errors };
   }
 }

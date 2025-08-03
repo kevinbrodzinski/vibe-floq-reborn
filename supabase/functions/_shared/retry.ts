@@ -9,7 +9,10 @@ export async function withRetry<T>(
       return await fn(); 
     } catch (e) {
       lastErr = e;
-      if (i === attempts) throw e;
+      if (i === attempts) {
+        console.error('[retry] giving up:', lastErr);
+        throw e;
+      }
       await new Promise(r => setTimeout(r, backoffMs * 2 ** (i - 1)));
     }
   }

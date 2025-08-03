@@ -8,7 +8,7 @@ const geoToH3 = (lat: number, lng: number, resolution = 7): string => {
 
 const RES = 7; // ~1.2km hexagons for social venue mapping
 
-import { corsHeaders, respondWithCors } from '../_shared/cors.ts'
+import { corsHeaders, respondWithCors } from '../_shared/cors.ts';
 
 
 interface FieldTileRequest {

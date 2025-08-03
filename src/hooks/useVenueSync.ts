@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import { autoSyncVenues, VenueSyncResult } from '@/lib/api/venues';
+import { autoSyncVenues } from '@/lib/api/venues';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import { toast } from 'sonner';
+import type { VenueSyncResult } from '@/types/VenueSyncResult';
 
 // Development-only throttling for PostHog events
 const throttlePosthog = (event: string, props: any) => {
