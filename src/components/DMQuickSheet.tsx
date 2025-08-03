@@ -58,7 +58,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   // Stable thread lookup using RPC with proper dependencies
   const threadIdFrom = useCallback(async (me: string, friend: string): Promise<string> => {
     return getOrCreateThread(me, friend);
-  }, []);
+  }, [getOrCreateThread]); // eslint-disable-line react-hooks/exhaustive-deps
 
    // Auth guard and unified messaging hooks - guard queries until thread is ready
    const enabled = !!threadId && !!currentUserId;
@@ -129,13 +129,13 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
    // Initialize thread when both user and friend are available AND sheet is open
    useEffect(() => {
      if (!open || !currentUserId || !friendId) {
-       setThreadId(undefined);
+       // Reset to null on sheet close to clear previous error state
+       setThreadId(open ? undefined : null);
        return;
      }
      
      // Add race condition protection with abort controller
      const abortController = new AbortController();
-     const currentTicket = Symbol();
      
      console.log('[DM_SHEET] Getting thread for:', { currentUserId, friendId });
      setThreadId(undefined); // show loading state
