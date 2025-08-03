@@ -8905,6 +8905,39 @@ export type Database = {
           },
         ]
       }
+      venues_sync_errors: {
+        Row: {
+          created_at: string | null
+          external_id: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          payload: Json
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          payload: Json
+          reason: string
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          payload?: Json
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
       vibe_clusters_checksum: {
         Row: {
           checksum: string

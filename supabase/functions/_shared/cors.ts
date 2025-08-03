@@ -2,6 +2,7 @@ export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Cache-Control': 'private, max-age=0',
 };
 
 /**
@@ -16,6 +17,15 @@ export const respondWithCors = (data: unknown, status: number = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
+    },
+  });
+
+export const respondWithCorsOptions = () =>
+  new Response(null, {
+    status: 204,
+    headers: {
+      ...corsHeaders,
+      "Content-Length": "0",
     },
   });
 

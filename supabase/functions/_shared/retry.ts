@@ -1,26 +1,20 @@
+// Retry utility for edge functions
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 3,
-  delay = 1000
+  { attempts = 3, backoffMs = 1000 } = {}
 ): Promise<T> {
-  let lastError: Error;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      
-      if (attempt === maxRetries) {
-        throw lastError;
-      }
-
-      // Exponential backoff
-      const waitTime = delay * Math.pow(2, attempt - 1);
-      console.warn(`Attempt ${attempt} failed, retrying in ${waitTime}ms:`, error);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try { 
+      return await fn(); 
+    } catch (e) {
+      lastErr = e;
+      if (i === attempts) throw e;
+      await new Promise(r => setTimeout(r, backoffMs * 2 ** (i - 1)));
     }
   }
-
-  throw lastError!;
+  throw lastErr;
 }
+
+// Sleep utility for manual delays
+export const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));

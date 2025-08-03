@@ -18,6 +18,9 @@ export type VenueSyncResult = {
   count: number;
   source: 'google' | 'foursquare' | 'sync-places';
   error?: string;
+  phase?: string;
+  location?: { lat: number; lng: number };
+  errors?: string[];
 };
 
 /* ---------- 1. fast list for map / trending ---------- */

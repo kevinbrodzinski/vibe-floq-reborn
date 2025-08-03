@@ -4,6 +4,25 @@ import { autoSyncVenues, VenueSyncResult } from '@/lib/api/venues';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import { toast } from 'sonner';
 
+// Development-only throttling for PostHog events
+const throttlePosthog = (event: string, props: any) => {
+  if (import.meta.env.MODE === 'development') {
+    // In development, throttle events to avoid spam
+    const key = `throttle_${event}`;
+    const lastSent = sessionStorage.getItem(key);
+    const now = Date.now();
+    
+    if (!lastSent || now - parseInt(lastSent) > 30000) { // 30 second throttle
+      sessionStorage.setItem(key, now.toString());
+      // Would call posthog.capture here in real implementation
+      console.info(`[PostHog] ${event}:`, props);
+    }
+  } else {
+    // In production, capture normally (would call posthog.capture)
+    console.info(`[PostHog] ${event}:`, props);
+  }
+};
+
 interface VenueSyncState {
   isLoading: boolean;
   lastSyncLocation: { lat: number; lng: number } | null;
@@ -57,18 +76,34 @@ export function useVenueSync(options: UseVenueSyncOptions = {}) {
         error: null
       }));
 
-      // Show toast notifications if enabled
+      // Show toast notifications and track telemetry
       if (showToasts) {
         const totalCount = results.reduce((sum, r) => sum + r.count, 0);
         const successfulSyncs = results.filter(r => r.ok).length;
+        const failedSyncs = results.filter(r => !r.ok);
         
         if (totalCount > 0) {
           toast.success(`Found ${totalCount} venues`, {
             description: `Synced from ${successfulSyncs} sources`
           });
-        } else if (results.some(r => !r.ok)) {
-          toast.error('Venue sync failed', {
-            description: results.find(r => !r.ok)?.error || 'Unknown error'
+          
+          throttlePosthog('venue_sync_success', {
+            total_count: totalCount,
+            successful_sources: successfulSyncs,
+            location: { lat, lng }
+          });
+        } else if (failedSyncs.length > 0) {
+          const firstError = failedSyncs[0];
+          toast.error('Venue sync temporarily unavailable', {
+            description: 'Retrying in 90 seconds...',
+            duration: 8000
+          });
+          
+          throttlePosthog('venue_sync_failed', {
+            error: firstError.error,
+            phase: firstError.phase,
+            location: { lat, lng },
+            failed_sources: failedSyncs.length
           });
         }
       }
@@ -83,8 +118,16 @@ export function useVenueSync(options: UseVenueSyncOptions = {}) {
       }));
 
       if (showToasts) {
-        toast.error('Venue sync failed', { description: errorMessage });
+        toast.error('Venue sync temporarily unavailable', { 
+          description: 'Retrying in 90 seconds...',
+          duration: 8000
+        });
       }
+
+      throttlePosthog('venue_sync_exception', {
+        error: errorMessage,
+        location: { lat, lng }
+      });
 
       throw error;
     }

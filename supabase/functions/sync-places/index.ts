@@ -2,8 +2,9 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
-import { corsHeaders } from '../_shared/cors.ts';
-import { mapToVenue, upsertVenues } from '../_shared/venues.ts';
+import { corsHeaders, respondWithCors } from '../_shared/cors.ts';
+import { mapToVenue, upsertVenues, logVenueDrop } from '../_shared/venues.ts';
+import { withRetry } from '../_shared/retry.ts';
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -81,43 +82,41 @@ serve(async (req) => {
 
     if (recent) {
       console.log('[Sync Places] Recently synced, skipping API call');
-      return new Response(
-        JSON.stringify({ 
-          skipped: 'recently synced', 
-          lastSync: recent.ts,
-          cooldownMinutes: 15
-        }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return respondWithCors({ 
+        ok: true,
+        count: 0,
+        skipped: 'recently synced', 
+        lastSync: recent.ts,
+        cooldownMinutes: 15,
+        phase: 'deduplication'
+      });
     }
 
     // Check API key availability with debug info
     console.log('[DEBUG] GP key len:', (Deno.env.get('GOOGLE_PLACES_KEY')||'').length);
     if (!PLACES_KEY) {
       console.error('[Sync Places] GOOGLE_PLACES_KEY missing from environment');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Google Places API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets.',
-          details: 'Please configure GOOGLE_PLACES_KEY in edge function secrets'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await logVenueDrop('missing_api_key', { service: 'google_places' });
+      return respondWithCors({ 
+        ok: false,
+        count: 0,
+        error: 'Google Places API key not configured. Please configure GOOGLE_PLACES_KEY in edge function secrets.',
+        phase: 'initialization'
+      }, 500);
     }
 
-    /* ---- Try New Google Places API First, fallback to legacy --------- */
+    /* ---- Try API calls with retry logic ----------------------------- */
     const results: any[] = [];
-    let useNewAPI = true;
-    let apiAttempts = 0;
-    const maxRetries = 2;
-
-    while (apiAttempts < maxRetries) {
-      apiAttempts++;
-      
-      try {
-        if (useNewAPI) {
-          console.log(`[Sync Places] Attempting new Places API (attempt ${apiAttempts})`);
+    let apiPhase = 'unknown';
+    
+    try {
+      // Wrap API calls in retry logic
+      await withRetry(async () => {
+        // Try new Google Places API first
+        apiPhase = 'new_places_api';
+        try {
+          console.log(`[Sync Places] Attempting new Places API`);
           
-          // Try new Places API with better error handling
           const newApiResp = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
             method: 'POST',
             headers: {
@@ -137,48 +136,40 @@ serve(async (req) => {
             })
           });
 
-          const newApiText = await newApiResp.text();
+          if (!newApiResp.ok) {
+            console.log(`[Sync Places] New API failed: ${newApiResp.status}, trying legacy API`);
+            throw new Error(`New API failed: ${newApiResp.status}`);
+          }
+
+          const newApiData = await newApiResp.json();
+          console.log(`[Sync Places] New API success: ${newApiData.places?.length || 0} places found`);
           
-          if (newApiResp.ok) {
-            const newApiData = JSON.parse(newApiText);
-            console.log(`[Sync Places] New API success: ${newApiData.places?.length || 0} places found`);
-            
-            // Transform new API response to legacy format
-            if (newApiData.places) {
-              for (const place of newApiData.places) {
-                results.push({
-                  place_id: place.id,
-                  name: place.displayName?.text || 'Unknown Place',
-                  types: place.types || [],
-                  rating: place.rating,
-                  geometry: {
-                    location: {
-                      lat: place.location?.latitude || lat,
-                      lng: place.location?.longitude || lng
-                    }
-                  },
-                  photos: place.photos ? [{
-                    photo_reference: place.photos[0]?.name?.split('/')[3] // Extract photo reference
-                  }] : []
-                });
-              }
-            }
-            break; // Success, exit retry loop
-          } else {
-            console.error(`[Sync Places] New API failed: ${newApiResp.status}`, newApiText);
-            if (newApiResp.status === 403 || newApiResp.status === 401) {
-              useNewAPI = false; // Switch to legacy API
-              console.log(`[Sync Places] Switching to legacy API due to auth failure`);
-            } else {
-              throw new Error(`New API HTTP error: ${newApiResp.status}`);
+          // Transform new API response to legacy format
+          if (newApiData.places) {
+            for (const place of newApiData.places) {
+              results.push({
+                place_id: place.id,
+                name: place.displayName?.text || 'Unknown Place',
+                types: place.types || [],
+                rating: place.rating,
+                geometry: {
+                  location: {
+                    lat: place.location?.latitude || lat,
+                    lng: place.location?.longitude || lng
+                  }
+                },
+                photos: place.photos ? [{
+                  photo_reference: place.photos[0]?.name?.split('/')[3] // Extract photo reference
+                }] : []
+              });
             }
           }
-        }
-
-        if (!useNewAPI) {
-          console.log(`[Sync Places] Using legacy Places API (attempt ${apiAttempts})`);
+          return; // Success, don't try legacy
+        } catch (newApiError) {
+          console.log(`[Sync Places] New API failed, falling back to legacy:`, newApiError);
           
-          // Legacy API with enhanced error handling
+          // Fallback to legacy API
+          apiPhase = 'legacy_places_api';
           const legacyUrl = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
           legacyUrl.searchParams.set('location', `${lat},${lng}`);
           legacyUrl.searchParams.set('radius', String(RADIUS_M));
@@ -188,35 +179,29 @@ serve(async (req) => {
           console.log(`[Sync Places] Legacy API call: ${legacyUrl.toString().replace(PLACES_KEY, '[REDACTED]')}`);
 
           const legacyResp = await fetch(legacyUrl);
-          const legacyText = await legacyResp.text();
           
           if (!legacyResp.ok) {
-            console.error(`[Sync Places] Legacy API HTTP error: ${legacyResp.status}`, legacyText);
+            await logVenueDrop('api_error', { 
+              api: 'google_legacy', 
+              status: legacyResp.status, 
+              lat, lng 
+            });
+            
             if (legacyResp.status === 403 || legacyResp.status === 401) {
-              return new Response(
-                JSON.stringify({ 
-                  error: 'Google Places API access denied. Please check your API key permissions.',
-                  details: legacyText,
-                  help: 'Ensure both "Places API" and "Places API (New)" are enabled in Google Cloud Console'
-                }),
-                { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-              );
+              throw new Error('Google Places API access denied. Please check your API key permissions.');
             }
             throw new Error(`Legacy API HTTP error: ${legacyResp.status}`);
           }
 
-          const legacyData = JSON.parse(legacyText);
+          const legacyData = await legacyResp.json();
           
           if (legacyData.status === 'REQUEST_DENIED') {
-            console.error(`[Sync Places] Legacy API request denied:`, legacyData);
-            return new Response(
-              JSON.stringify({ 
-                error: 'Google Places API access denied',
-                details: legacyData.error_message,
-                help: 'Enable "Places API (Legacy)" in Google Cloud Console and check API key restrictions'
-              }),
-              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
+            await logVenueDrop('api_denied', { 
+              api: 'google_legacy', 
+              error: legacyData.error_message, 
+              lat, lng 
+            });
+            throw new Error(`Google Places API access denied: ${legacyData.error_message}`);
           }
           
           if (legacyData.status === 'OK' || legacyData.status === 'ZERO_RESULTS') {
@@ -224,50 +209,43 @@ serve(async (req) => {
             if (legacyData.results) {
               results.push(...legacyData.results);
             }
-            break; // Success, exit retry loop
           } else {
-            console.error(`[Sync Places] Legacy API error: ${legacyData.status} - ${legacyData.error_message}`);
+            await logVenueDrop('api_error', { 
+              api: 'google_legacy', 
+              status: legacyData.status, 
+              error: legacyData.error_message, 
+              lat, lng 
+            });
             throw new Error(`Legacy API error: ${legacyData.status}`);
           }
         }
-      } catch (error) {
-        console.error(`[Sync Places] API attempt ${apiAttempts} failed:`, error);
-        
-        if (apiAttempts >= maxRetries) {
-          return new Response(
-            JSON.stringify({ 
-              error: 'All Google Places API attempts failed',
-              details: error instanceof Error ? error.message : String(error),
-              tried_new_api: useNewAPI,
-              tried_legacy_api: !useNewAPI || apiAttempts > 1
-            }),
-            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // Try alternative API on next attempt
-        if (useNewAPI) {
-          useNewAPI = false;
-          console.log(`[Sync Places] Retrying with legacy API after new API failure`);
-        }
-      }
+      }, { attempts: 2, backoffMs: 1000 });
+    } catch (apiError) {
+      console.error('[Sync Places] All API attempts failed:', apiError);
+      await logVenueDrop('all_apis_failed', { error: apiError, lat, lng, phase: apiPhase });
+      
+      return respondWithCors({ 
+        ok: false,
+        count: 0,
+        error: 'All Google Places API attempts failed',
+        details: apiError instanceof Error ? apiError.message : String(apiError),
+        phase: apiPhase
+      }, 502);
     }
 
-    console.log(`[Sync Places] Total places found across all pages: ${results.length}`);
+    console.log(`[Sync Places] Total places found: ${results.length}`);
 
     if (results.length === 0) {
       console.log(`[Sync Places] No places found for location ${lat},${lng}`);
       // Still log the sync attempt to prevent repeated calls
       await supabase.from('sync_log').insert({ kind: 'places', lat, lng });
-      return new Response(
-        JSON.stringify({ 
-          ok: true, 
-          count: 0, 
-          message: 'No places found in this area',
-          location: { lat, lng }
-        }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return respondWithCors({ 
+        ok: true, 
+        count: 0, 
+        message: 'No places found in this area',
+        location: { lat, lng },
+        phase: 'data_processing'
+      });
     }
 
     // Map venues using shared infrastructure with fallback coordinates
@@ -280,6 +258,7 @@ serve(async (req) => {
         return mapToVenue({ provider: "google", r: p });
       } catch (mapError) {
         console.error(`[Sync Places] Failed to map place:`, p, mapError);
+        logVenueDrop('mapping_error', { place: p, error: mapError }, 'google');
         return null;
       }
     }).filter(Boolean);
@@ -288,41 +267,36 @@ serve(async (req) => {
 
     if (rows.length === 0) {
       console.warn('[Sync Places] No venues could be mapped successfully');
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'Failed to map any venues',
-          details: 'All venue mapping attempts failed'
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await logVenueDrop('no_mappable_venues', { originalCount: results.length });
+      return respondWithCors({ 
+        ok: false, 
+        count: 0,
+        error: 'Failed to map any venues',
+        details: 'All venue mapping attempts failed',
+        phase: 'data_mapping'
+      }, 500);
     }
 
-    // Use shared upsert function with retry logic
-    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-    
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        await upsertVenues(rows);
-        break; // Success, exit retry loop
-      } catch (error) {
-        console.error(`[Sync Places] Database upsert error (attempt ${attempt}):`, error);
-        
-        if (attempt === 3) {
-          // Final attempt failed
-          return new Response(
-            JSON.stringify({ 
-              ok: false, 
-              error: 'Database insertion failed after 3 attempts',
-              details: error instanceof Error ? error.message : String(error)
-            }), 
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        
-        // Wait with exponential backoff: 1s, 2s, 4s
-        await sleep(1000 * Math.pow(2, attempt));
-      }
+    // Use shared upsert function with enhanced error handling
+    let upsertResult;
+    try {
+      upsertResult = await withRetry(async () => {
+        return await upsertVenues(rows);
+      }, { attempts: 3, backoffMs: 1000 });
+    } catch (error) {
+      console.error(`[Sync Places] Database upsert error after retries:`, error);
+      await logVenueDrop('database_upsert_failed', { 
+        error: error instanceof Error ? error.message : String(error),
+        venueCount: rows.length 
+      });
+      
+      return respondWithCors({ 
+        ok: false, 
+        count: 0,
+        error: 'Database insertion failed after retries',
+        details: error instanceof Error ? error.message : String(error),
+        phase: 'database_upsert'
+      }, 500);
     }
 
     // log success
@@ -337,29 +311,31 @@ serve(async (req) => {
       // Don't fail the request for logging issues
     }
     
-    console.log(`[Sync Places] OK • ${rows.length} places • radius=${RADIUS_M}m • by=${profile_id ?? "anon"}`);
+    console.log(`[Sync Places] OK • ${upsertResult.inserted} places • radius=${RADIUS_M}m • by=${profile_id ?? "anon"}`);
 
-    return new Response(
-      JSON.stringify({ 
-        ok: true, 
-        count: rows.length,
-        source: "google_places",
-        location: { lat, lng },
-        keyword: keyword || null
-      }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return respondWithCors({ 
+      ok: true, 
+      count: upsertResult.inserted,
+      source: "google_places",
+      location: { lat, lng },
+      keyword: keyword || null,
+      phase: 'completed',
+      errors: upsertResult.errors.length > 0 ? upsertResult.errors : undefined
+    });
   } catch (err) {
     console.error('[Sync Places] Unexpected error:', err);
     const errorMessage = err instanceof Error ? err.message : String(err);
-    return new Response(
-      JSON.stringify({ 
-        ok: false,
-        error: 'Internal server error',
-        details: errorMessage,
-        source: 'sync-places'
-      }), 
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    
+    // Log the unexpected error
+    await logVenueDrop('unexpected_error', { error: errorMessage });
+    
+    return respondWithCors({ 
+      ok: false,
+      count: 0,
+      error: 'Internal server error',
+      details: errorMessage,
+      source: 'sync-places',
+      phase: 'unknown'
+    }, 500);
   }
 });

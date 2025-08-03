@@ -113,33 +113,76 @@ export function mapToVenue(p: RawPlace) {
   };
 }
 
+/**
+ * Log venue sync errors to the database for observability
+ */
+export async function logVenueDrop(reason: string, payload: any, source?: string, external_id?: string, lat?: number, lng?: number) {
+  try {
+    const { error } = await sb
+      .from('venues_sync_errors')
+      .insert({
+        reason,
+        payload,
+        source: source || 'unknown',
+        external_id,
+        lat,
+        lng
+      });
+    
+    if (error) {
+      console.error('[logVenueDrop] Failed to log error:', error);
+    }
+  } catch (err) {
+    console.error('[logVenueDrop] Exception while logging:', err);
+  }
+}
+
 /* 3.  Bulk upsert helper ------------------------------------------- */
 type VenueRow = ReturnType<typeof mapToVenue>;
 
-export async function upsertVenues(rows: (VenueRow | null)[]) {
-  if (!rows.length) return;
+export async function upsertVenues(rows: (VenueRow | null)[]): Promise<{ inserted: number; updated: number; errors: any[] }> {
+  if (!rows.length) return { inserted: 0, updated: 0, errors: [] };
+  
+  const errors: any[] = [];
   
   // Filter out null rows (venues with missing coordinates)
   const validRows = rows.filter(Boolean) as VenueRow[];
   
   // Log dropped rows for visibility
   if (rows.length !== validRows.length) {
-    console.warn(`[VenueUpsert] Dropped ${rows.length - validRows.length} venues with missing coordinates`);
+    const dropCount = rows.length - validRows.length;
+    console.warn(`[VenueUpsert] Dropped ${dropCount} venues with missing coordinates`);
+    await logVenueDrop('missing_coordinates', { dropCount, totalRows: rows.length });
   }
   
   // Filter out rows without required source/external_id
   const finalRows = validRows.filter(row => row.source && row.external_id);
   
   if (validRows.length !== finalRows.length) {
-    console.warn(`[VenueUpsert] Dropped ${validRows.length - finalRows.length} venues with missing source/external_id`);
+    const dropCount = validRows.length - finalRows.length;
+    console.warn(`[VenueUpsert] Dropped ${dropCount} venues with missing source/external_id`);
+    await logVenueDrop('missing_identifiers', { dropCount, validRows: validRows.length });
   }
   
-  if (finalRows.length === 0) return; // early-out BEFORE the RPC
+  if (finalRows.length === 0) {
+    return { inserted: 0, updated: 0, errors: ['No valid venues to upsert'] };
+  }
   
-  const { error } = await sb.from("venues").upsert(finalRows, {
-    onConflict: "source,external_id",
-    ignoreDuplicates: false,
-    returning: "minimal",
-  });
-  if (error) throw error;
+  try {
+    const { error } = await sb.from("venues").upsert(finalRows, {
+      onConflict: "source,external_id",
+      ignoreDuplicates: false,
+      returning: "minimal",
+    });
+    
+    if (error) {
+      await logVenueDrop('upsert_error', { error: error.message, venueCount: finalRows.length });
+      throw error;
+    }
+    
+    return { inserted: finalRows.length, updated: 0, errors };
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+    return { inserted: 0, updated: 0, errors };
+  }
 }
