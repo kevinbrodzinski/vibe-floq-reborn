@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Search DM threads where user is a participant and friend's name matches query using SQL ILIKE
+    // Search DM threads where user is a participant
     const { data, error } = await supabase
       .from('direct_threads')
       .select(`
@@ -75,8 +75,7 @@ Deno.serve(async (req) => {
         pa:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
-      .or(`member_a.eq.${userId},member_b.eq.${userId}`)
-      .or(`pa.display_name.ilike.%${q.trim()}%,pa.username.ilike.%${q.trim()}%,pb.display_name.ilike.%${q.trim()}%,pb.username.ilike.%${q.trim()}%`)
+      .or(`member_a.eq.${userId}|member_b.eq.${userId}`)
       .order('last_message_at', { ascending: false });
 
     if (error) {
@@ -87,7 +86,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Map results without client-side filtering (SQL ILIKE handles the search)
+    // Filter and map results based on search query
     const results: ThreadSearchResult[] = (data || [])
       .map(thread => {
         const isUserA = thread.member_a === userId;
@@ -96,6 +95,12 @@ Deno.serve(async (req) => {
           (Array.isArray(thread.pa) ? thread.pa[0] : thread.pa);
         
         if (!friendProfile) return null;
+
+        const searchText = `${friendProfile.display_name || ''} ${friendProfile.username || ''}`.toLowerCase();
+        const query = q.toLowerCase().trim();
+        
+        // Simple fuzzy search - check if query matches display name or username
+        if (!searchText.includes(query)) return null;
 
         return {
           thread_id: thread.id,

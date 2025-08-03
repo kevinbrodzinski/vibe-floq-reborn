@@ -39,6 +39,10 @@ export const rpc_markThreadRead = (payload: {
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
 export const getOrCreateThread = async (me: string, friend: string): Promise<string> => {
+  if (me === friend) {
+    throw new Error('Cannot DM yourself');
+  }
+
   const { data, error } = await supabase.rpc('get_or_create_dm_thread', {
     p_user_a: me,
     p_user_b: friend,
@@ -51,7 +55,11 @@ export const getOrCreateThread = async (me: string, friend: string): Promise<str
     throw error ?? new Error('No thread ID returned');
   }
   
-  return data as string;
+  if (typeof data !== 'string') {
+    throw new Error('Unexpected RPC payload');
+  }
+  
+  return data;
 };
 
 export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
