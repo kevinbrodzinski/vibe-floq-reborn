@@ -91,7 +91,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     if (!user) return;
 
     const timestamp = Date.now();
-    let newState: Partial<EnhancedLocationState> = {
+    const newState: Partial<EnhancedLocationState> = {
       location,
       accuracy,
       lastUpdate: timestamp,
@@ -172,7 +172,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
 
       // 3. Proximity Analysis
       let nearbyUsers: ProximityAnalysis[] = [];
-      let proximityEvents: string[] = [];
+      const proximityEvents: string[] = [];
 
       if (enableProximityTracking) {
         try {

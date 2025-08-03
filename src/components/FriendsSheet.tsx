@@ -336,7 +336,7 @@ export const FriendsSheet = ({
               )}
             </h3>
 
-            {!!pendingIn.length ? (
+            {pendingIn.length ? (
               <div className="space-y-2">
                 {pendingIn.map((req) => (
                   <div

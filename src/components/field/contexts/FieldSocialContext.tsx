@@ -68,20 +68,20 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
     // Filter by selected floq members if a floq is selected
     if (selectedFloqMembers && selectedFloqMembers.length > 0) {
       filteredPresenceData = presenceData.filter(presence => {
-        const userId = presence.profile_id || presence.user_id;
-        return userId && selectedFloqMembers.includes(userId);
+        const profileId = presence.profile_id || presence.user_id;
+        return profileId && selectedFloqMembers.includes(profileId);
       });
     }
     
     return filteredPresenceData.map((presence) => {
       // Use profile_id for new data structure, fallback to user_id for legacy data
-      const userId = presence.profile_id || presence.user_id;
-      if (!userId) {
+      const profileId = presence.profile_id || presence.user_id;
+      if (!profileId) {
         console.warn('[FieldSocialContext] Presence data missing profile_id/user_id:', presence);
         return null;
       }
       
-      const profile = profilesMap.get(userId);
+      const profile = profilesMap.get(profileId);
       
       // Extract lat/lng from presence data (handle both geometry and lat/lng formats)
       let presenceLat: number, presenceLng: number;
@@ -111,8 +111,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         const { x, y } = projection;
         
         return {
-          id: userId,
-          name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
+          id: profileId,
+          name: profile?.display_name || `User ${profileId?.slice(-4) || 'unknown'}`,
           x,
           y,
           color: getVibeColor(presence.vibe || 'social'),
@@ -138,8 +138,8 @@ export const FieldSocialProvider = ({ children, profiles }: FieldSocialProviderP
         const y = 500 - (yMeters / 1000) * scale; // Center at 500px + offset (inverted Y)
         
         return {
-          id: userId,
-          name: profile?.display_name || `User ${userId?.slice(-4) || 'unknown'}`,
+          id: profileId,
+          name: profile?.display_name || `User ${profileId?.slice(-4) || 'unknown'}`,
           x,
           y,
           color: getVibeColor(presence.vibe || 'social'),

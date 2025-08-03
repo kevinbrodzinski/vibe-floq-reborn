@@ -25,7 +25,7 @@ export function generateICSContent(event: CalendarEvent): string {
   const now = new Date();
   const uid = `${formatDate(now)}-${Math.random().toString(36).substr(2, 9)}@floq.social`;
 
-  let icsContent = [
+  const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Floq Social//Plan Calendar//EN',

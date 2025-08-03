@@ -60,7 +60,7 @@ export const validateAllLayers = (): boolean =>
   LAYER_TEST_SCENARIOS.every(({ selector, minZIndex, expectedLayer }) => {
     const actual = getZIndex(selector);
     if (actual < minZIndex) {
-      // eslint-disable-next-line no-console
+       
       console.error(
         `[z-index] ${expectedLayer} => ${actual} (expected ≥ ${minZIndex})`
       );

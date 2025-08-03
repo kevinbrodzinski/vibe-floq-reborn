@@ -7,7 +7,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 const stub =
   <T extends keyof JSX.IntrinsicElements>(Tag: T) =>
     (p: JSX.IntrinsicElements[T] & PropsWithChildren) =>
-      /* eslint-disable react/jsx-props-no-spreading */
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       <Tag {...p}>{p.children}</Tag>;
 
 /* ─── module mocks (these lines are hoisted by Vitest) ─────────────── */
