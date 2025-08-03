@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import haversine from 'haversine-distance';
 
 export type VenueSnapshot = {
   venue_id: string;
@@ -43,7 +44,7 @@ export async function fetchTrendingVenues(
   return (data ?? []).slice(0, limit).map(venue => ({
     venue_id: venue.id,
     name: venue.name,
-    distance_m: 0, // Would need to calculate
+    distance_m: Math.round(haversine([lat, lng], [Number(venue.lat), Number(venue.lng)])),
     vibe_tag: venue.vibe,
     trend_score: venue.vibe_score || 50,
     people_now: venue.live_count || 0,
