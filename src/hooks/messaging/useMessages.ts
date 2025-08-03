@@ -3,6 +3,7 @@ import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import isUuid from "@/lib/utils/isUuid";
+import { createSafeRealtimeHandler } from "@/lib/realtime/validation";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
@@ -60,21 +61,11 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
           table: tableName,
           filter: `thread_id=eq.${threadId}`
         },
-        (payload) => {
-          try {
-            // Validate payload structure before processing
-            if (!payload || typeof payload !== 'object') {
-              console.warn('[useMessages] Invalid payload structure:', payload);
-              return;
-            }
-
-            const newMessage = payload.new;
-            if (!newMessage || typeof newMessage !== 'object') {
-              console.warn('[useMessages] Invalid new message in payload:', payload);
-              return;
-            }
-
-            console.log('📨 New message received:', payload);
+        createSafeRealtimeHandler<{ id: string; thread_id: string; sender_id: string }>(
+          ({ new: newMessage }) => {
+            if (!newMessage) return;
+            
+            console.log('📨 New message received:', newMessage);
             queryClient.setQueryData(
               ["messages", surface, threadId],
               (old: any) => {
@@ -96,14 +87,16 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
                 return old;
               }
             );
-          } catch (error) {
-            console.error('[useMessages] Error processing realtime message:', error, payload);
-          }
-        }
+          },
+          (error, payload) => console.error('[useMessages] Realtime error:', error, payload)
+        )
       )
       .subscribe();
       
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel)
+        .catch(err => console.error('[useMessages] Channel cleanup error:', err));
+    };
   }, [surface, threadId, queryClient]);
 
   return history;

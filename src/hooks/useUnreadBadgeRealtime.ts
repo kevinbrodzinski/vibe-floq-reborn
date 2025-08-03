@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createSafeRealtimeHandler } from '@/lib/realtime/validation';
 
 export const useUnreadBadgeRealtime = (userId?: string) => {
   const queryClient = useQueryClient();
@@ -15,58 +16,46 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         schema: 'public',
         table: 'direct_messages',
         filter: 'thread_id=neq.null'
-      }, (payload) => {
-        try {
-          // Validate payload structure
-          if (!payload || typeof payload !== 'object' || !payload.new) {
-            console.warn('[useUnreadBadgeRealtime] Invalid payload structure:', payload);
-            return;
-          }
-
-          const msg = payload.new as { thread_id: string; sender_id: string };
-          if (!msg || typeof msg !== 'object' || !msg.sender_id) {
-            console.warn('[useUnreadBadgeRealtime] Invalid message structure:', msg);
-            return;
-          }
-
+      }, createSafeRealtimeHandler<{ thread_id: string; sender_id: string }>(
+        ({ new: msg }) => {
+          if (!msg || !msg.sender_id) return;
+          
           if (msg.sender_id !== userId) {
             if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
             queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
           }
-        } catch (error) {
-          console.error('[useUnreadBadgeRealtime] Error processing DM insert:', error, payload);
-        }
-      })
+        },
+        (error, payload) => console.error('[useUnreadBadgeRealtime] Realtime error:', error, payload)
+      ))
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
         filter: `member_a=eq.${userId}`
-      }, (payload) => {
-        try {
+      }, createSafeRealtimeHandler<{}>(
+        () => {
           if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
-        } catch (error) {
-          console.error('[useUnreadBadgeRealtime] Error processing thread update (member_a):', error, payload);
-        }
-      })
+        },
+        (error, payload) => console.error('[useUnreadBadgeRealtime] Thread update error (member_a):', error, payload)
+      ))
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
         filter: `member_b=eq.${userId}`
-      }, (payload) => {
-        try {
+      }, createSafeRealtimeHandler<{}>(
+        () => {
           if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
-        } catch (error) {
-          console.error('[useUnreadBadgeRealtime] Error processing thread update (member_b):', error, payload);
-        }
-      })
+        },
+        (error, payload) => console.error('[useUnreadBadgeRealtime] Thread update error (member_b):', error, payload)
+      ))
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel)
+        .catch(err => console.error('[useUnreadBadgeRealtime] Channel cleanup error:', err));
     };
   }, [userId, queryClient]);
 };
