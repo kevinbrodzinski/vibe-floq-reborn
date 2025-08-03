@@ -31,12 +31,9 @@ BEGIN
   -- Update the request status
   UPDATE friend_requests SET status = 'accepted', updated_at = NOW() WHERE id = request_record.id;
 
-  -- Create friendship entries (bidirectional)
-  INSERT INTO friendships (profile_id, friend_profile_id, status, created_at)
-  VALUES 
-    (current_profile_id, requester_id, 'active', NOW()),
-    (requester_id, current_profile_id, 'active', NOW())
-  ON CONFLICT (profile_id, friend_profile_id) DO NOTHING;
+  -- Create friendship using the existing upsert_friendship function
+  -- This handles the canonical user_low/user_high ordering automatically
+  PERFORM upsert_friendship(requester_id, 'accepted');
 
   -- Build success result
   result := json_build_object(
