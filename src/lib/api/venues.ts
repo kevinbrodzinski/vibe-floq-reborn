@@ -40,17 +40,19 @@ export async function fetchTrendingVenues(
 
   if (error) throw error;
   
-  // Transform to VenueSnapshot format
-  return (data ?? []).slice(0, limit).map(venue => ({
-    venue_id: venue.id,
-    name: venue.name,
-    distance_m: Math.round(haversine([lat, lng], [Number(venue.lat), Number(venue.lng)])),
-    vibe_tag: venue.vibe,
-    trend_score: venue.vibe_score || 50,
-    people_now: venue.live_count || 0,
-    dominant_vibe: venue.vibe,
-    updated_at: venue.updated_at
-  }));
+  // Transform to VenueSnapshot format - guard against null coordinates
+  return (data ?? []).slice(0, limit)
+    .filter(venue => venue.lat != null && venue.lng != null)
+    .map(venue => ({
+      venue_id: venue.id,
+      name: venue.name,
+      distance_m: Math.round(haversine([lat, lng], [Number(venue.lat), Number(venue.lng)])),
+      vibe_tag: venue.vibe,
+      trend_score: venue.vibe_score || 50,
+      people_now: venue.live_count || 0,
+      dominant_vibe: venue.vibe,
+      updated_at: venue.updated_at
+    }));
 }
 
 /* ---------- 2. single venue live counter ---------- */

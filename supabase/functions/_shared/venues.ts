@@ -107,7 +107,12 @@ export function mapToVenue(p: RawPlace) {
 /* 3.  Bulk upsert helper ------------------------------------------- */
 export async function upsertVenues(rows: ReturnType<typeof mapToVenue>[]) {
   if (!rows.length) return;
-  const { error } = await sb.from("venues").upsert(rows, {
+  
+  // Filter out rows without required source/external_id
+  const validRows = rows.filter(row => row.source && row.external_id);
+  if (!validRows.length) return;
+  
+  const { error } = await sb.from("venues").upsert(validRows, {
     onConflict: "source,external_id",
     ignoreDuplicates: false,
     returning: "minimal",

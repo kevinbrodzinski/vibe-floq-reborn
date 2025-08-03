@@ -91,25 +91,27 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         throw error;
       }
       
-      // Transform data with distance calculation
-      const venues: VenueNearMe[] = (data || []).map(venue => {
-        const venueLat = +venue.lat;
-        const venueLng = +venue.lng;
-        const distance = haversine([lat!, lng!], [venueLat, venueLng]);
-        
-        return {
-          id: venue.id,
-          name: venue.name,
-          lat: venueLat,
-          lng: venueLng,
-          vibe: venue.vibe || 'mixed',
-          source: venue.source || 'database',
-          distance_m: Math.round(distance),
-          live_count: venue.live_count || 0,
-          vibe_score: venue.vibe_score || 50,
-          popularity: venue.popularity || 0
-        };
-      });
+      // Transform data with distance calculation - guard against null coordinates
+      const venues: VenueNearMe[] = (data || [])
+        .filter(venue => venue.lat != null && venue.lng != null)
+        .map(venue => {
+          const venueLat = +venue.lat;
+          const venueLng = +venue.lng;
+          const distance = haversine([lat!, lng!], [venueLat, venueLng]);
+          
+          return {
+            id: venue.id,
+            name: venue.name,
+            lat: venueLat,
+            lng: venueLng,
+            vibe: venue.vibe || 'mixed',
+            source: venue.source || 'database',
+            distance_m: Math.round(distance),
+            live_count: venue.live_count || 0,
+            vibe_score: venue.vibe_score || 50,
+            popularity: venue.popularity || 0
+          };
+        });
       
       // Compound cursor for reliable pagination
       const nextCursor = venues.length === 10 && venues.length > 0
