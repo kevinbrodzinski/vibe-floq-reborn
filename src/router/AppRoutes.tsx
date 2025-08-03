@@ -35,6 +35,8 @@ import { RecommendationsDemo } from '@/components/ui/RecommendationsDemo';
 import { AfterglowTestPage } from '@/pages/AfterglowTestPage';
 import VenuePage from '@/pages/VenuePage';
 import VenueTestPage from '@/pages/VenueTestPage';
+import { VenueAutomationDemo } from '@/pages/VenueAutomationDemo';
+import { VenueAutomationAccess } from '@/pages/VenueAutomationAccess';
 import Phase34DemoRoutes from '@/routes/Phase34DemoRoutes';
 
 export const AppRoutes = () => {
@@ -94,6 +96,8 @@ export const AppRoutes = () => {
         <>
           <Route path="/afterglow-test" element={<AfterglowTestPage />} />
           <Route path="/venue-test" element={<VenueTestPage />} />
+          <Route path="/venue-automation-demo" element={<VenueAutomationDemo />} />
+          <Route path="/venue-automation" element={<VenueAutomationAccess />} />
         </>
       )}
       <Route path="/location-sharing" element={<LocationSharingScreen />} />
