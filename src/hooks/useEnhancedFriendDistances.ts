@@ -302,6 +302,11 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
       error: null
     }));
 
+    // Console log for debugging (development only)
+    if (process.env.NODE_ENV !== 'production' && friendDistances.length > 0) {
+      console.log(`🚀 Enhanced Friend Distances: ${friendDistances.length} friends, ${friendDistances.filter(f => f.isNearby).length} nearby, ${friendDistances.filter(f => f.confidence > 0.8).length} high confidence`);
+    }
+
   }, [pos, user, friendLocations, maxDistance, includeOffline, enablePrivacyFiltering, enableProximityTracking, sortBy]);
 
   /**

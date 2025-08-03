@@ -19,6 +19,7 @@ import { BottomHud } from "@/components/layout/BottomHud";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
+import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 
 interface FieldLayoutProps {
   data: FieldData;
@@ -28,6 +29,14 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   const { location, isLocationReady } = useFieldLocation();
   const { setVenuesSheetOpen } = useFieldUI();
   const { people } = useFieldSocial();
+  
+  // Enhanced friend distance system status
+  const enhancedFriends = useEnhancedFriendDistances({
+    maxDistance: 5000,
+    enableProximityTracking: true,
+    enablePrivacyFiltering: true,
+    sortBy: 'distance'
+  });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gestureHandlers = useFieldGestures(canvasRef);
 
@@ -138,6 +147,21 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
+
+          {/* Enhanced Friend Distance Indicator - z-80 (development only) */}
+          {process.env.NODE_ENV !== 'production' && enhancedFriends.totalFriends > 0 && (
+            <div className="fixed top-4 right-4 z-80 bg-primary text-primary-foreground px-3 py-2 rounded-lg shadow-lg text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <div>
+                  <div className="font-medium">Enhanced Friends: {enhancedFriends.totalFriends}</div>
+                  <div className="text-xs opacity-90">
+                    {enhancedFriends.nearbyCount} nearby • {enhancedFriends.highConfidenceFriends.length} high accuracy
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Debug Layer (development only) - z-200+ */}
           {/* Debug visuals disabled for production */}
