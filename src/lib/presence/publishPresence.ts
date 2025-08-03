@@ -45,12 +45,11 @@ export async function publishPresence(
   });
 
   const { error } = await supabase.rpc('upsert_presence', {
-    p_venue_id: null,
     p_lat: lat,
     p_lng: lng,
     p_vibe: vibe,
     p_visibility: visibility,
-  } as any);
+  });
 
   if (error) {
     console.error('[publishPresence] RPC error:', error);
