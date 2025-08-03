@@ -38,7 +38,10 @@ export const rpc_markThreadRead = (payload: {
   p_profile_id: string;
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
-export const getOrCreateThread = async (me: string, friend: string): Promise<string> => {
+export const getOrCreateThread = async (
+  me: string, 
+  friend: string
+): Promise<string> => {
   if (me === friend) {
     throw new Error('Cannot DM yourself');
   }

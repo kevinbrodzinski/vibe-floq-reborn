@@ -90,9 +90,7 @@ Deno.serve(async (req) => {
     const results: ThreadSearchResult[] = (data || [])
       .map(thread => {
         const isUserA = thread.member_a === userId;
-        const friendProfile = isUserA ? 
-          (Array.isArray(thread.pb) ? thread.pb[0] : thread.pb) : 
-          (Array.isArray(thread.pa) ? thread.pa[0] : thread.pa);
+        const friendProfile = isUserA ? thread.pb : thread.pa;
         
         if (!friendProfile) return null;
 
