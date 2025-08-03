@@ -10,6 +10,9 @@ export interface ThreadSearchResult {
   friend_avatar_url: string;
   last_message_at: string;
   my_unread_count: number;
+  last_message_content?: string;
+  match_type: 'name' | 'username' | 'message';
+  match_score: number;
 }
 
 export const useSearchThreads = (query: string) => {

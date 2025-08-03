@@ -152,9 +152,24 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
        .catch(e => {
          if (!abortController.signal.aborted) {
            console.error('[DM_SHEET] Thread error:', e);
+           
+           // Provide specific error messages based on the error
+           let errorTitle = 'Chat error';
+           let errorDescription = 'Could not start chat';
+           
+           if (e.message && e.message.includes('not friends')) {
+             errorTitle = 'Cannot start conversation';
+             errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
+           } else if (e.message && e.message.includes('yourself')) {
+             errorTitle = 'Cannot message yourself';
+             errorDescription = 'You cannot send direct messages to yourself.';
+           } else if (e.message) {
+             errorDescription = e.message;
+           }
+           
            toast({ 
-             title: 'Chat error', 
-             description: e.message || 'Could not start chat', 
+             title: errorTitle, 
+             description: errorDescription, 
              variant: 'destructive' 
            });
            setThreadId(null);
@@ -367,6 +382,25 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
             onReply={setReplyTo}
             className="flex-1"
           />
+        ) : threadId === null ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-sm">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Cannot start conversation</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                You can only send direct messages to your friends. 
+                {friend && (
+                  <>
+                    <br />
+                    <br />
+                    Send <strong>{friend.display_name}</strong> a friend request to start chatting!
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
@@ -412,7 +446,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               size="icon"
               onClick={() => fileRef.current?.click()}
               className="shrink-0"
-              disabled
+              disabled={true}
             >
               <Paperclip className="h-4 w-4" />
             </Button>
@@ -420,14 +454,18 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               value={input}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
+              placeholder={
+                threadId === null 
+                  ? "Cannot send messages - not friends"
+                  : "Type a message..."
+              }
               className="flex-1 bg-background/50 border-border/50"
-              disabled={sending}
+              disabled={sending || threadId === null}
               aria-label="Direct message input"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || sending}
+              disabled={!input.trim() || sending || threadId === null}
               size="icon"
               className="shrink-0"
             >
