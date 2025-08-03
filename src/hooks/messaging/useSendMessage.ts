@@ -58,23 +58,28 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       if (!session?.access_token) throw new Error("No auth session");
 
       console.log('[useSendMessage] Calling supaFn...');
-      const res = await supaFn(
-        "send-message",
-        session.access_token,
-        { surface, thread_id: threadId, sender_id: user.id, content, client_id }
-      );
-      
-      console.log('[useSendMessage] supaFn response:', res.status, res.ok);
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.log('[useSendMessage] Error response:', errorText);
-        throw new Error(`Failed to send message: ${res.status} ${errorText}`);
+      try {
+        const res = await supaFn(
+          "send-message",
+          session.access_token,
+          { surface, thread_id: threadId, sender_id: user.id, content, client_id }
+        );
+        
+        console.log('[useSendMessage] supaFn resolved:', res.ok, res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.log('[useSendMessage] Error response:', errorText);
+          throw new Error(`Failed to send message: ${res.status} ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('[useSendMessage] Success data:', data);
+        return { ...data, client_id, threadId };
+      } catch (error) {
+        console.error('[useSendMessage] supaFn error:', error);
+        throw error; // Make sure we re-throw so the mutation fails properly
       }
-      
-      const data = await res.json();
-      console.log('[useSendMessage] Success data:', data);
-      return { ...data, client_id, threadId };
     },
 
     onSuccess: ({ message, client_id, threadId }) => {

@@ -44,6 +44,7 @@ interface DMQuickSheetProps {
 export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [sending, setSending] = useState(false); // Local sending state as fallback
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -200,7 +201,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   }, [input, isTyping, typingTimeout]);
 
   const handleSend = async () => {
-    if (!input.trim() || sendMut.isPending) return;
+    if (!input.trim() || sending) return;
     
     // Ensure we have a valid thread ID before sending
     if (!threadId) {
@@ -212,6 +213,11 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       return;
     }
 
+    console.log('[DMQuickSheet] Starting send with sending:', sending, 'isPending:', sendMut.isPending);
+    
+    // Use local sending state as fallback
+    setSending(true);
+
     // Clear typing state immediately
     setIsTyping(false);
     if (typingTimeout) {
@@ -220,22 +226,27 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
 
     try {
+      console.log('[DMQuickSheet] Calling mutateAsync...');
       await sendMut.mutateAsync({ 
         threadId,
         content: input.trim()
       });
+      console.log('[DMQuickSheet] mutateAsync completed successfully');
       setInput('');
       setReplyTo(null);
       
       // Note: sendMut already invalidates queries optimistically, but keeping for safety
       queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('[DMQuickSheet] Send failed:', error);
       toast({
         title: "Message failed to send",
         description: "Please try again.",
         variant: "destructive",
       });
+    } finally {
+      console.log('[DMQuickSheet] Clearing sending state');
+      setSending(false); // Always re-enable input
     }
   };
 
@@ -376,12 +387,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               className="flex-1 bg-background/50 border-border/50"
-              disabled={sendMut.isPending}
+              disabled={sending}
               aria-label="Direct message input"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || sendMut.isPending}
+              disabled={!input.trim() || sending}
               size="icon"
               className="shrink-0"
             >
