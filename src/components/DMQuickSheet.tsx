@@ -95,10 +95,18 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
 
-  // Debug logging for overlay management
+  // Debug logging for mutation state
   useEffect(() => {
-    console.log('[DM_SHEET] Sheet state changed:', { open, friendId });
-  }, [open, friendId]);
+    console.log('[DM_SHEET] Send mutation state:', { isPending: sendMut.isPending, isError: sendMut.isError });
+  }, [sendMut.isPending, sendMut.isError]);
+
+  // Reset mutation state when sheet closes to prevent stuck disabled state
+  useEffect(() => {
+    if (!open && sendMut.isPending) {
+      console.log('[DM_SHEET] Resetting stuck mutation on sheet close');
+      sendMut.reset();
+    }
+  }, [open, sendMut]);
 
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
@@ -248,8 +256,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80`}
         style={{
           maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
-          zIndex: 9999
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)'
         }}
         {...swipeGestures.handlers}
       >
