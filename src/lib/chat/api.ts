@@ -45,12 +45,13 @@ export const getOrCreateThread = async (me: string, friend: string): Promise<str
   });
 
   if (error || !data) {
-    console.error('[getOrCreateThread] RPC error:', error);
+    if (import.meta.env.MODE === 'development') {
+      console.error('[getOrCreateThread] RPC error:', error);
+    }
     throw error ?? new Error('No thread ID returned');
   }
   
-  console.log('[getOrCreateThread] Success:', { me, friend, threadId: data });
-  return data;
+  return data as string;
 };
 
 export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
