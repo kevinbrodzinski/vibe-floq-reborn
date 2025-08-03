@@ -61,28 +61,44 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
           filter: `thread_id=eq.${threadId}`
         },
         (payload) => {
-          console.log('📨 New message received:', payload);
-          queryClient.setQueryData(
-            ["messages", surface, threadId],
-            (old: any) => {
-              if (!old) return old;
-              const pages = old.pages || [];
-              const lastPage = pages[pages.length - 1] || [];
-              
-              // Check if message already exists (prevent duplicates)
-              const messageExists = pages.some((page: any[]) =>
-                page.some(msg => msg.id === payload.new.id)
-              );
-              
-              if (!messageExists) {
-                return {
-                  ...old,
-                  pages: [...pages.slice(0, -1), [...lastPage, payload.new]]
-                };
-              }
-              return old;
+          try {
+            // Validate payload structure before processing
+            if (!payload || typeof payload !== 'object') {
+              console.warn('[useMessages] Invalid payload structure:', payload);
+              return;
             }
-          );
+
+            const newMessage = payload.new;
+            if (!newMessage || typeof newMessage !== 'object') {
+              console.warn('[useMessages] Invalid new message in payload:', payload);
+              return;
+            }
+
+            console.log('📨 New message received:', payload);
+            queryClient.setQueryData(
+              ["messages", surface, threadId],
+              (old: any) => {
+                if (!old) return old;
+                const pages = old.pages || [];
+                const lastPage = pages[pages.length - 1] || [];
+                
+                // Check if message already exists (prevent duplicates)
+                const messageExists = pages.some((page: any[]) =>
+                  page.some(msg => msg.id === newMessage.id)
+                );
+                
+                if (!messageExists) {
+                  return {
+                    ...old,
+                    pages: [...pages.slice(0, -1), [...lastPage, newMessage]]
+                  };
+                }
+                return old;
+              }
+            );
+          } catch (error) {
+            console.error('[useMessages] Error processing realtime message:', error, payload);
+          }
         }
       )
       .subscribe();

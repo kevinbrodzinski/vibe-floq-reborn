@@ -46,10 +46,25 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         table: 'direct_messages',
         filter: 'thread_id=neq.null'
       }, (payload) => {
-        const msg = payload.new as { thread_id: string; sender_id: string };
-        if (msg.sender_id !== selfId) {
-          if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
-          queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+        try {
+          // Validate payload structure
+          if (!payload || typeof payload !== 'object' || !payload.new) {
+            console.warn('[useUnreadDMCounts] Invalid payload structure:', payload);
+            return;
+          }
+
+          const msg = payload.new as { thread_id: string; sender_id: string };
+          if (!msg || typeof msg !== 'object' || !msg.sender_id || !msg.thread_id) {
+            console.warn('[useUnreadDMCounts] Invalid message structure:', msg);
+            return;
+          }
+
+          if (msg.sender_id !== selfId) {
+            if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts:', payload);
+            queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+          }
+        } catch (error) {
+          console.error('[useUnreadDMCounts] Error processing DM insert:', error, payload);
         }
       })
       // Read status changes - separate listeners for each member column
@@ -58,18 +73,26 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         schema: 'public',
         table: 'direct_threads',
         filter: `member_a=eq.${selfId}`
-      }, () => {
-        if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_a)');
-        queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+      }, (payload) => {
+        try {
+          if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_a)');
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+        } catch (error) {
+          console.error('[useUnreadDMCounts] Error processing thread update (member_a):', error, payload);
+        }
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
         filter: `member_b=eq.${selfId}`
-      }, () => {
-        if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_b)');
-        queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+      }, (payload) => {
+        try {
+          if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_b)');
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
+        } catch (error) {
+          console.error('[useUnreadDMCounts] Error processing thread update (member_b):', error, payload);
+        }
       })
       .subscribe();
 

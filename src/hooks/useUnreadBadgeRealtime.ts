@@ -16,10 +16,25 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         table: 'direct_messages',
         filter: 'thread_id=neq.null'
       }, (payload) => {
-        const msg = payload.new as { thread_id: string; sender_id: string };
-        if (msg.sender_id !== userId) {
-          if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
-          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+        try {
+          // Validate payload structure
+          if (!payload || typeof payload !== 'object' || !payload.new) {
+            console.warn('[useUnreadBadgeRealtime] Invalid payload structure:', payload);
+            return;
+          }
+
+          const msg = payload.new as { thread_id: string; sender_id: string };
+          if (!msg || typeof msg !== 'object' || !msg.sender_id) {
+            console.warn('[useUnreadBadgeRealtime] Invalid message structure:', msg);
+            return;
+          }
+
+          if (msg.sender_id !== userId) {
+            if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
+            queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+          }
+        } catch (error) {
+          console.error('[useUnreadBadgeRealtime] Error processing DM insert:', error, payload);
         }
       })
       .on('postgres_changes', {
@@ -27,18 +42,26 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         schema: 'public',
         table: 'direct_threads',
         filter: `member_a=eq.${userId}`
-      }, () => {
-        if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');
-        queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+      }, (payload) => {
+        try {
+          if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+        } catch (error) {
+          console.error('[useUnreadBadgeRealtime] Error processing thread update (member_a):', error, payload);
+        }
       })
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_threads',
         filter: `member_b=eq.${userId}`
-      }, () => {
-        if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');
-        queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+      }, (payload) => {
+        try {
+          if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');
+          queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
+        } catch (error) {
+          console.error('[useUnreadBadgeRealtime] Error processing thread update (member_b):', error, payload);
+        }
       })
       .subscribe();
 
