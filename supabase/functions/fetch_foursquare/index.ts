@@ -1,7 +1,7 @@
 // Deno runtime • Foursquare Nearby → integrations.place_feed_raw
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders, respondWithCors } from "../_shared/cors.ts";
 import { mapToVenue, upsertVenues } from "../_shared/venues.ts";
 
 
@@ -18,7 +18,7 @@ serve(async (req) => {
   }
   
   if (req.method !== "POST") {
-    return new Response("POST only", { status: 405, headers: corsHeaders });
+    return respondWithCors({ error: "Method not allowed" }, 405);
   }
 
   try {
@@ -39,25 +39,19 @@ serve(async (req) => {
     // Validate required coordinates
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       console.error(`[Foursquare] Missing or invalid coordinates: lat=${lat}, lng=${lng}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "lat & lng are required numbers",
-          details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
-        }),
-        { status: 400, headers: corsHeaders },
-      );
+      return respondWithCors({ 
+        error: "lat & lng are required numbers",
+        details: { lat: Number.isFinite(lat), lng: Number.isFinite(lng) }
+      }, 400);
     }
 
     // Validate coordinates range
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
       console.error(`[Foursquare] Invalid coordinates range: lat=${lat}, lng=${lng}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Invalid coordinates range",
-          details: "Latitude must be between -90 and 90, longitude between -180 and 180"
-        }),
-        { status: 400, headers: corsHeaders },
-      );
+      return respondWithCors({ 
+        error: "Invalid coordinates range",
+        details: "Latitude must be between -90 and 90, longitude between -180 and 180"
+      }, 400);
     }
 
     /* ---- 1. server-stored FSQ key with debug info --------------------------------- */
@@ -65,10 +59,7 @@ serve(async (req) => {
     const API_KEY = Deno.env.get("FSQ_SERVICE_KEY");
     if (!API_KEY) {
       console.error("[Foursquare] FSQ_SERVICE_KEY missing from environment");
-      return new Response(
-        JSON.stringify({ error: "API key not configured. Please configure FSQ_SERVICE_KEY in edge function secrets." }), 
-        { status: 500, headers: corsHeaders }
-      );
+      return respondWithCors({ error: "API key not configured. Please configure FSQ_SERVICE_KEY in edge function secrets." }, 500);
     }
 
     /* ---- 2. call Foursquare "Nearby" ------------------------------ */
@@ -84,26 +75,28 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error(`[Foursquare] HTTP error: ${response.status} ${response.statusText}`);
-      const errorText = await response.text();
-      console.error(`[Foursquare] Error response body: ${errorText}`);
       
-      if (response.status === 401) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Foursquare API authentication failed. Please check your API key.",
-            details: "API key may be invalid or expired"
-          }),
-          { status: 401, headers: corsHeaders }
-        );
+      // Safely get error text without assuming JSON format
+      let errorText = "";
+      try {
+        errorText = await response.text();
+        console.error(`[Foursquare] Error response body: ${errorText}`);
+      } catch (readError) {
+        console.error(`[Foursquare] Could not read error response:`, readError);
+        errorText = "Could not read error response";
       }
       
-      return new Response(
-        JSON.stringify({ 
-          error: `Foursquare API HTTP error: ${response.status}`,
-          details: errorText
-        }),
-        { status: 502, headers: corsHeaders }
-      );
+      if (response.status === 401) {
+        return respondWithCors({ 
+          error: "Foursquare API authentication failed. Please check your API key.",
+          details: "API key may be invalid or expired"
+        }, 401);
+      }
+      
+      return respondWithCors({ 
+        error: `Foursquare API HTTP error: ${response.status}`,
+        details: errorText
+      }, 502);
     }
 
     const fsq = await response.json();
@@ -111,21 +104,15 @@ serve(async (req) => {
 
     if (fsq.message) {
       console.error(`[Foursquare] API error message: ${fsq.message}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Foursquare API error",
-          details: fsq.message 
-        }),
-        { status: 502, headers: corsHeaders }
-      );
+      return respondWithCors({ 
+        error: "Foursquare API error",
+        details: fsq.message 
+      }, 502);
     }
 
     if (!fsq.results || fsq.results.length === 0) {
       console.log(`[Foursquare] No results found for location ${lat},${lng}`);
-      return new Response(
-        JSON.stringify({ ok: true, count: 0, message: "No places found in this area" }),
-        { headers: corsHeaders }
-      );
+      return respondWithCors({ ok: true, count: 0, message: "No places found in this area" });
     }
 
     /* ---- 3. transform + upsert venues ----------------------------- */
@@ -153,25 +140,19 @@ serve(async (req) => {
 
     console.log(`[Foursquare] OK • ${mapped.length} venues • radius=1500m • by=${profile_id ?? "anon"}`);
 
-    return new Response(
-      JSON.stringify({ 
-        ok: true, 
-        count: mapped.length,
-        source: "foursquare",
-        location: { lat, lng }
-      }),
-      { headers: corsHeaders },
-    );
+    return respondWithCors({ 
+      ok: true, 
+      count: mapped.length,
+      source: "foursquare",
+      location: { lat, lng }
+    });
   } catch (e) {
     console.error("[Foursquare] Unexpected error:", e);
     const errorMessage = e instanceof Error ? e.message : String(e);
-    return new Response(
-      JSON.stringify({ 
-        error: "Internal server error",
-        details: errorMessage,
-        source: "foursquare"
-      }),
-      { status: 500, headers: corsHeaders },
-    );
+    return respondWithCors({ 
+      error: "Internal server error",
+      details: errorMessage,
+      source: "foursquare"
+    }, 500);
   }
 });
