@@ -47,14 +47,14 @@ Deno.serve(async (req) => {
     }
 
     // Use anon key with proper auth headers to respect RLS
-    const authHeader = req.headers.get('Authorization') || '';
+    const auth = req.headers.get('authorization') ?? '';
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       {
         global: {
           headers: {
-            Authorization: authHeader
+            authorization: auth
           }
         }
       }
