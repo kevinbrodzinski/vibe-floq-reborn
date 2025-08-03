@@ -28,12 +28,3 @@ export const respondWithCorsOptions = () =>
       "Content-Length": "0",
     },
   });
-
-export const respondWithCorsOptions = () =>
-  new Response(null, {
-    status: 204,
-    headers: {
-      ...corsHeaders,
-      "Content-Length": "0",
-    },
-  });
