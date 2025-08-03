@@ -24,12 +24,12 @@ export const MessagesSheet = ({
 }: MessagesSheetProps) => {
   const { user } = useAuth();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
-  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | undefined>(undefined);
 
   const handleThreadSelect = (threadId: string, friendId: string) => {
     setSelectedFriendId(friendId);
     setDmSheetOpen(true);
-    onOpenChange(false); // close list sheet
+    // Don't close the list immediately - let user navigate back
   };
 
   return (

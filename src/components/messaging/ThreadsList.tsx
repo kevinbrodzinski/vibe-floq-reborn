@@ -5,11 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSearchThreads, type ThreadSearchResult } from '@/hooks/useSearchThreads';
-import { useThreads } from '@/hooks/messaging/useThreads';
+import { useThreads, type DirectThreadWithProfiles } from '@/hooks/messaging/useThreads';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
 import { Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 
 interface ThreadsListProps {
   onThreadSelect: (threadId: string, friendId: string) => void;
@@ -24,17 +24,26 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
   const { data: searchResults = [], isFetching: searchLoading } = useSearchThreads(debouncedSearch);
   const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
 
+  // Create unread counts lookup for better performance
+  const unreadMap = useMemo(() => {
+    const map = new Map<string, number>();
+    unreadCounts.forEach(item => map.set(item.thread_id, item.cnt));
+    return map;
+  }, [unreadCounts]);
+
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {
       const isUserA = thread.member_a === currentUserId;
+      const friendProfile = isUserA ? thread.member_b_profile : thread.member_a_profile;
+      
       return {
         thread_id: thread.id,
         friend_profile_id: isUserA ? thread.member_b_profile_id : thread.member_a_profile_id,
-        friend_display_name: '', // Will be loaded when needed
-        friend_username: '',
-        friend_avatar_url: '',
+        friend_display_name: friendProfile?.display_name || '',
+        friend_username: friendProfile?.username || '',
+        friend_avatar_url: friendProfile?.avatar_url || '',
         last_message_at: thread.last_message_at,
-        my_unread_count: unreadCounts.find(u => u.thread_id === thread.id)?.cnt || 0
+        my_unread_count: unreadMap.get(thread.id) || 0
       } as ThreadSearchResult;
     });
 
@@ -87,7 +96,7 @@ interface ThreadRowProps {
 }
 
 const ThreadRow = ({ thread, onClick }: ThreadRowProps) => {
-  const displayName = thread.friend_display_name || thread.friend_username || 'Unknown';
+  const displayName = thread.friend_display_name || thread.friend_username || 'Unknown User';
   const hasUnread = thread.my_unread_count > 0;
 
   return (

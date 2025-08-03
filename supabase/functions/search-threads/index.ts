@@ -31,7 +31,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { q } = await req.json();
+    const body = await req.text();
+    if (!body) {
+      return new Response(JSON.stringify([]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { q } = JSON.parse(body);
     
     if (!q || q.trim().length < 2) {
       return new Response(JSON.stringify([]), {
@@ -39,9 +46,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Use anon key with proper auth headers to respect RLS
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: {
+            Authorization: req.headers.get('Authorization')!
+          }
+        }
+      }
     );
 
     // Search DM threads where user is a participant and friend's name matches query
@@ -74,7 +89,9 @@ Deno.serve(async (req) => {
     const results: ThreadSearchResult[] = (data || [])
       .map(thread => {
         const isUserA = thread.member_a === userId;
-        const friendProfile = isUserA ? thread.pb : thread.pa;
+        const friendProfile = isUserA ? 
+          (Array.isArray(thread.pb) ? thread.pb[0] : thread.pb) : 
+          (Array.isArray(thread.pa) ? thread.pa[0] : thread.pa);
         
         if (!friendProfile) return null;
 

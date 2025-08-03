@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/providers/AuthProvider';
 
 export interface ThreadSearchResult {
   thread_id: string;
@@ -12,8 +13,10 @@ export interface ThreadSearchResult {
 }
 
 export const useSearchThreads = (query: string) => {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['dm-thread-search', query],
+    queryKey: ['dm-thread-search', user?.id, query],
     enabled: !!query && query.trim().length >= 2,
     queryFn: async (): Promise<ThreadSearchResult[]> => {
       const { data, error } = await supabase.functions.invoke('search-threads', {
