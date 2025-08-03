@@ -9,6 +9,7 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
   useEffect(() => {
     if (!userId) return;
 
+    let mounted = true;
     const channel = supabase
       .channel(`unread_realtime:${userId}`)
       .on('postgres_changes', {
@@ -18,14 +19,18 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         filter: 'thread_id=neq.null'
       }, createSafeRealtimeHandler<{ thread_id: string; sender_id: string }>(
         ({ new: msg }) => {
-          if (!msg || !msg.sender_id) return;
+          if (!mounted || !msg || !msg.sender_id) return;
           
           if (msg.sender_id !== userId) {
             if (import.meta.env.DEV) console.log('🔔 New DM received, invalidating unread counts');
             queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
           }
         },
-        (error, payload) => console.error('[useUnreadBadgeRealtime] Realtime error:', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadBadgeRealtime] Realtime error:', error, payload);
+          }
+        }
       ))
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -34,10 +39,15 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         filter: `member_a=eq.${userId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
+          if (!mounted) return;
           if (import.meta.env.DEV) console.log('🔔 Thread updated (member_a)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
         },
-        (error, payload) => console.error('[useUnreadBadgeRealtime] Thread update error (member_a):', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadBadgeRealtime] Thread update error (member_a):', error, payload);
+          }
+        }
       ))
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -46,14 +56,20 @@ export const useUnreadBadgeRealtime = (userId?: string) => {
         filter: `member_b=eq.${userId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
+          if (!mounted) return;
           if (import.meta.env.DEV) console.log('🔔 Thread updated (member_b)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', userId] });
         },
-        (error, payload) => console.error('[useUnreadBadgeRealtime] Thread update error (member_b):', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadBadgeRealtime] Thread update error (member_b):', error, payload);
+          }
+        }
       ))
       .subscribe();
 
     return () => {
+      mounted = false;
       supabase.removeChannel(channel)
         .catch(err => console.error('[useUnreadBadgeRealtime] Channel cleanup error:', err));
     };

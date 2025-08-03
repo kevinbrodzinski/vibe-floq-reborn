@@ -36,6 +36,7 @@ export const useUnreadDMCounts = (selfId: string | null) => {
   useEffect(() => {
     if (!selfId) return;
 
+    let mounted = true;
     if (import.meta.env.DEV) console.log('📱 Setting up DM unread counts realtime for user:', selfId);
 
     const channel = supabase
@@ -48,14 +49,18 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         filter: 'thread_id=neq.null'
       }, createSafeRealtimeHandler<{ thread_id: string; sender_id: string }>(
         ({ new: msg }) => {
-          if (!msg || !msg.sender_id || !msg.thread_id) return;
+          if (!mounted || !msg || !msg.sender_id || !msg.thread_id) return;
           
           if (msg.sender_id !== selfId) {
             if (import.meta.env.DEV) console.log('💬 New DM received, invalidating unread counts');
             queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
           }
         },
-        (error, payload) => console.error('[useUnreadDMCounts] Realtime error:', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadDMCounts] Realtime error:', error, payload);
+          }
+        }
       ))
       // Read status changes - separate listeners for each member column
       .on('postgres_changes', {
@@ -65,10 +70,15 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         filter: `member_a=eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
+          if (!mounted) return;
           if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_a)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
         },
-        (error, payload) => console.error('[useUnreadDMCounts] Thread update error (member_a):', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadDMCounts] Thread update error (member_a):', error, payload);
+          }
+        }
       ))
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -77,14 +87,20 @@ export const useUnreadDMCounts = (selfId: string | null) => {
         filter: `member_b=eq.${selfId}`
       }, createSafeRealtimeHandler<{}>(
         () => {
+          if (!mounted) return;
           if (import.meta.env.DEV) console.log('📖 Thread read status updated (member_b)');
           queryClient.invalidateQueries({ queryKey: ['dm-unread', selfId] });
         },
-        (error, payload) => console.error('[useUnreadDMCounts] Thread update error (member_b):', error, payload)
+        (error, payload) => {
+          if (mounted) {
+            console.error('[useUnreadDMCounts] Thread update error (member_b):', error, payload);
+          }
+        }
       ))
       .subscribe();
 
     return () => {
+      mounted = false;
       supabase.removeChannel(channel)
         .catch(err => console.error('[useUnreadDMCounts] Channel cleanup error:', err));
     };

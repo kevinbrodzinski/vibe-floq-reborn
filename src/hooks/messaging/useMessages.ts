@@ -49,6 +49,7 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
   useEffect(() => {
     if (!isUuid(threadId)) return;
 
+    let mounted = true;
     const tableName = surface === "dm" ? "direct_messages" : "chat_messages";
     
     const channel = supabase
@@ -63,7 +64,7 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
         },
         createSafeRealtimeHandler<{ id: string; thread_id: string; sender_id: string }>(
           ({ new: newMessage }) => {
-            if (!newMessage) return;
+            if (!mounted || !newMessage) return;
             
             console.log('📨 New message received:', newMessage);
             queryClient.setQueryData(
@@ -88,12 +89,17 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
               }
             );
           },
-          (error, payload) => console.error('[useMessages] Realtime error:', error, payload)
+          (error, payload) => {
+            if (mounted) {
+              console.error('[useMessages] Realtime error:', error, payload);
+            }
+          }
         )
       )
       .subscribe();
       
     return () => {
+      mounted = false;
       supabase.removeChannel(channel)
         .catch(err => console.error('[useMessages] Channel cleanup error:', err));
     };
