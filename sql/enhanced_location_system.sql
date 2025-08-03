@@ -8,7 +8,7 @@
 -- Geofences table for user-defined privacy zones
 CREATE TABLE IF NOT EXISTS public.geofences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('circular', 'polygon')),
     privacy_level TEXT NOT NULL CHECK (privacy_level IN ('hide', 'street', 'area')),
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS public.geofences (
 );
 
 -- Indexes for geofence queries
-CREATE INDEX IF NOT EXISTS idx_geofences_user_id ON public.geofences(user_id);
-CREATE INDEX IF NOT EXISTS idx_geofences_active ON public.geofences(user_id, is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_geofences_profile_id ON public.geofences(profile_id);
+CREATE INDEX IF NOT EXISTS idx_geofences_active ON public.geofences(profile_id, is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_geofences_location ON public.geofences(center_lat, center_lng) WHERE type = 'circular';
 
 -- RLS policies for geofences
@@ -55,8 +55,8 @@ ALTER TABLE public.geofences ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own geofences"
 ON public.geofences
 FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = profile_id)
+WITH CHECK (auth.uid() = profile_id);
 
 -- ============================================================================
 -- 2. VENUE SIGNATURES FOR MULTI-SIGNAL DETECTION
@@ -182,8 +182,8 @@ USING (true);
 -- Proximity events table for tracking user interactions
 CREATE TABLE IF NOT EXISTS public.proximity_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    target_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    target_profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     event_type TEXT NOT NULL CHECK (event_type IN ('enter', 'exit', 'sustain')),
     distance_meters DECIMAL(8,2) NOT NULL,
     confidence DECIMAL(3,2) NOT NULL,
@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS public.proximity_events (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
     -- Constraints
-    CONSTRAINT different_users CHECK (user_id != target_user_id),
+    CONSTRAINT different_users CHECK (profile_id != target_profile_id),
     CONSTRAINT valid_distance CHECK (distance_meters >= 0),
     CONSTRAINT valid_confidence CHECK (confidence >= 0 AND confidence <= 1),
     CONSTRAINT valid_duration CHECK (duration_ms IS NULL OR duration_ms >= 0),
@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS public.proximity_events (
 -- Proximity statistics for analytics
 CREATE TABLE IF NOT EXISTS public.proximity_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     
     -- Daily aggregates
     date DATE NOT NULL,
@@ -228,16 +228,16 @@ CREATE TABLE IF NOT EXISTS public.proximity_stats (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
-    UNIQUE(user_id, date)
+    UNIQUE(profile_id, date)
 );
 
 -- Indexes for proximity queries
-CREATE INDEX IF NOT EXISTS idx_proximity_events_user_id ON public.proximity_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_proximity_events_target_user_id ON public.proximity_events(target_user_id);
-CREATE INDEX IF NOT EXISTS idx_proximity_events_user_pair ON public.proximity_events(user_id, target_user_id);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_id ON public.proximity_events(profile_id);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_target_profile_id ON public.proximity_events(target_profile_id);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_pair ON public.proximity_events(profile_id, target_profile_id);
 CREATE INDEX IF NOT EXISTS idx_proximity_events_created_at ON public.proximity_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_proximity_events_venue ON public.proximity_events(venue_id) WHERE venue_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_proximity_stats_user_date ON public.proximity_stats(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_proximity_stats_profile_date ON public.proximity_stats(profile_id, date);
 
 -- RLS policies for proximity data
 ALTER TABLE public.proximity_events ENABLE ROW LEVEL SECURITY;
@@ -245,7 +245,7 @@ ALTER TABLE public.proximity_stats ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view their own proximity events"
 ON public.proximity_events FOR SELECT
-USING (auth.uid() = user_id OR auth.uid() = target_user_id);
+USING (auth.uid() = profile_id OR auth.uid() = target_profile_id);
 
 CREATE POLICY "System can insert proximity events"
 ON public.proximity_events FOR INSERT
@@ -253,8 +253,8 @@ WITH CHECK (true); -- Allow system to insert events
 
 CREATE POLICY "Users can view their own proximity stats"
 ON public.proximity_stats FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = profile_id)
+WITH CHECK (auth.uid() = profile_id);
 
 -- ============================================================================
 -- 4. FUNCTIONS FOR ENHANCED LOCATION FEATURES
@@ -262,7 +262,7 @@ WITH CHECK (auth.uid() = user_id);
 
 -- Function to check geofences for a location
 CREATE OR REPLACE FUNCTION public.check_user_geofences(
-    p_user_id UUID,
+    p_profile_id UUID,
     p_lat DOUBLE PRECISION,
     p_lng DOUBLE PRECISION,
     p_accuracy DOUBLE PRECISION DEFAULT 10
@@ -288,7 +288,7 @@ BEGIN
     FOR geofence IN 
         SELECT g.id, g.name, g.privacy_level, g.type, g.center_lat, g.center_lng, g.radius_meters, g.vertices
         FROM public.geofences g
-        WHERE g.user_id = p_user_id AND g.is_active = true
+        WHERE g.profile_id = p_profile_id AND g.is_active = true
     LOOP
         IF geofence.type = 'circular' THEN
             -- Calculate distance to circular boundary
@@ -364,8 +364,8 @@ $$;
 
 -- Function to record proximity events
 CREATE OR REPLACE FUNCTION public.record_proximity_event(
-    p_user_id UUID,
-    p_target_user_id UUID,
+    p_profile_id UUID,
+    p_target_profile_id UUID,
     p_event_type TEXT,
     p_distance_meters DECIMAL,
     p_confidence DECIMAL,
@@ -384,21 +384,21 @@ DECLARE
     event_id UUID;
 BEGIN
     INSERT INTO public.proximity_events (
-        user_id, target_user_id, event_type, distance_meters, confidence,
+        profile_id, target_profile_id, event_type, distance_meters, confidence,
         user_accuracy, target_accuracy, reliability, duration_ms,
         venue_id, shared_vibe
     )
     VALUES (
-        p_user_id, p_target_user_id, p_event_type, p_distance_meters, p_confidence,
+        p_profile_id, p_target_profile_id, p_event_type, p_distance_meters, p_confidence,
         p_user_accuracy, p_target_accuracy, p_reliability, p_duration_ms,
         p_venue_id, p_shared_vibe
     )
     RETURNING id INTO event_id;
     
     -- Update daily stats
-    INSERT INTO public.proximity_stats (user_id, date, total_proximity_events)
-    VALUES (p_user_id, CURRENT_DATE, 1)
-    ON CONFLICT (user_id, date)
+    INSERT INTO public.proximity_stats (profile_id, date, total_proximity_events)
+    VALUES (p_profile_id, CURRENT_DATE, 1)
+    ON CONFLICT (profile_id, date)
     DO UPDATE SET 
         total_proximity_events = proximity_stats.total_proximity_events + 1,
         updated_at = NOW();

@@ -14,135 +14,160 @@ WHERE floq_id IS NOT NULL;
 -- Note: We don't make it NOT NULL yet to maintain compatibility
 -- But we add a check constraint for new plans
 ALTER TABLE floq_plans 
-ADD CONSTRAINT check_floq_plan_consistency 
-CHECK (
-  -- If plan_mode is 'group', floq_id should be present
-  (plan_mode = 'group' AND floq_id IS NOT NULL) OR 
-  -- Solo plans can have null floq_id
-  (plan_mode = 'solo') OR
-  -- Default mode plans are flexible
-  (plan_mode = 'default')
-);
+ADD CONSTRAINT IF NOT EXISTS check_floq_plan_consistency 
+CHECK (plan_mode != 'group' OR floq_id IS NOT NULL);
 
--- 3. Create a function to automatically create floq when creating group plans without floq_id
-CREATE OR REPLACE FUNCTION ensure_floq_for_group_plan()
-RETURNS TRIGGER AS $$
+-- 3. Create function to automatically create floq when group plan is created without one
+CREATE OR REPLACE FUNCTION public.ensure_floq_for_group_plan()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
   new_floq_id UUID;
-  plan_location GEOMETRY;
-  plan_vibe TEXT;
 BEGIN
-  -- If it's a group plan without floq_id, create a floq
+  -- Only create floq for group plans that don't have one
   IF NEW.plan_mode = 'group' AND NEW.floq_id IS NULL THEN
-    -- Extract location from plan
-    plan_location := NEW.location;
-    
-    -- Determine primary vibe from plan vibe_tags
-    plan_vibe := COALESCE(NEW.vibe_tags[1], 'social');
-    
-    -- Create a new floq for this plan
+    -- Create a new floq for this group plan
     INSERT INTO floqs (
-      title,
-      description,
-      primary_vibe,
-      creator_id,
-      profile_id,
-      location,
+      title, 
+      description, 
+      creator_id, 
+      profile_id, 
+      primary_vibe, 
+      vibe_tag,
+      location, 
       geo,
-      starts_at,
-      ends_at,
+      starts_at, 
+      ends_at, 
       max_participants,
       auto_created
     ) VALUES (
       NEW.title || ' Group',
-      'Auto-created floq for group plan: ' || COALESCE(NEW.description, NEW.title),
-      plan_vibe::vibe_enum,
+      COALESCE(NEW.description, 'Auto-created group for plan: ' || NEW.title),
       NEW.creator_id,
       NEW.profile_id,
-      plan_location,
+      COALESCE(NEW.vibe_tags[1], 'social')::vibe_enum,
+      COALESCE(NEW.vibe_tags[1], 'social')::vibe_enum,
+      NEW.location,
       CASE 
-        WHEN plan_location IS NOT NULL 
-        THEN ST_GeomFromGeoJSON(plan_location::text)::geography
+        WHEN NEW.location IS NOT NULL 
+        THEN ST_GeomFromGeoJSON(NEW.location::text)::geography 
         ELSE NULL 
       END,
-      NEW.start_time::timestamptz,
-      NEW.end_time::timestamptz,
+      NEW.start_time,
+      NEW.end_time,
       NEW.max_participants,
-      true
+      true  -- Mark as auto-created
     ) RETURNING id INTO new_floq_id;
     
     -- Update the plan with the new floq_id
     NEW.floq_id := new_floq_id;
     
-    -- Add the creator as a participant in the floq
+    -- Add the creator as a floq participant
     INSERT INTO floq_participants (floq_id, profile_id, role, joined_at)
-    VALUES (new_floq_id, NEW.creator_id, 'creator', NOW())
+    VALUES (new_floq_id, NEW.profile_id, 'creator', NOW())
     ON CONFLICT (floq_id, profile_id) DO NOTHING;
   END IF;
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- 4. Create trigger to auto-create floqs for group plans
-DROP TRIGGER IF EXISTS trigger_ensure_floq_for_group_plan ON floq_plans;
-CREATE TRIGGER trigger_ensure_floq_for_group_plan
+-- 4. Create trigger to automatically create floqs for group plans
+CREATE TRIGGER ensure_floq_for_group_plan_trigger
   BEFORE INSERT ON floq_plans
   FOR EACH ROW
   EXECUTE FUNCTION ensure_floq_for_group_plan();
 
--- 5. Create a function to sync plan participants with floq participants
-CREATE OR REPLACE FUNCTION sync_plan_floq_participants()
-RETURNS TRIGGER AS $$
+-- 5. Create function to sync plan participants with floq participants
+CREATE OR REPLACE FUNCTION public.sync_plan_floq_participants()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 BEGIN
-  -- If plan has a floq_id, sync participants
-  IF NEW.floq_id IS NOT NULL THEN
-    -- Add plan participant to floq participants
-    INSERT INTO floq_participants (floq_id, profile_id, role, joined_at)
-    VALUES (NEW.floq_id, NEW.profile_id, 'member', NOW())
-    ON CONFLICT (floq_id, profile_id) DO UPDATE SET
-      joined_at = GREATEST(floq_participants.joined_at, NOW());
+  -- Only sync for group plans that have a floq_id
+  IF NEW.plan_id IN (
+    SELECT id FROM floq_plans 
+    WHERE plan_mode = 'group' AND floq_id IS NOT NULL
+  ) THEN
+    -- Get the floq_id for this plan
+    DECLARE
+      target_floq_id UUID;
+    BEGIN
+      SELECT floq_id INTO target_floq_id
+      FROM floq_plans 
+      WHERE id = NEW.plan_id AND floq_id IS NOT NULL;
+      
+      IF target_floq_id IS NOT NULL THEN
+        -- Add participant to floq if not already there
+        INSERT INTO floq_participants (floq_id, profile_id, role, joined_at)
+        VALUES (
+          target_floq_id, 
+          NEW.profile_id, 
+          CASE WHEN NEW.rsvp_status = 'yes' THEN 'member' ELSE 'invited' END,
+          NOW()
+        )
+        ON CONFLICT (floq_id, profile_id) 
+        DO UPDATE SET 
+          role = CASE WHEN NEW.rsvp_status = 'yes' THEN 'member' ELSE 'invited' END,
+          updated_at = NOW();
+      END IF;
+    END;
   END IF;
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- 6. Create trigger to sync plan participants with floq participants
-DROP TRIGGER IF EXISTS trigger_sync_plan_floq_participants ON plan_participants;
-CREATE TRIGGER trigger_sync_plan_floq_participants
+CREATE TRIGGER sync_plan_floq_participants_trigger
   AFTER INSERT ON plan_participants
   FOR EACH ROW
   EXECUTE FUNCTION sync_plan_floq_participants();
 
--- 7. Create a view for easy floq-plan relationships
+-- 7. Create enhanced view for floq-plan relationships
 CREATE OR REPLACE VIEW floq_plans_with_details AS
 SELECT 
-  fp.*,
+  fp.id as plan_id,
+  fp.title,
+  fp.description,
+  fp.status,
+  fp.planned_at,
+  fp.start_time,
+  fp.end_time,
+  fp.creator_id,
+  fp.profile_id,
+  fp.floq_id,
   f.title as floq_title,
   f.primary_vibe as floq_vibe,
-  f.participant_count as floq_participant_count,
-  f.activity_score as floq_activity_score,
-  COUNT(pp.profile_id) as plan_participant_count,
-  ARRAY_AGG(
-    DISTINCT jsonb_build_object(
-      'profile_id', pp.profile_id,
-      'rsvp_status', pp.rsvp_status,
-      'joined_at', pp.joined_at
-    )
-  ) FILTER (WHERE pp.profile_id IS NOT NULL) as plan_participants
+  COUNT(pp.profile_id) as participant_count,
+  BOOL_OR(pp.profile_id = auth.uid() AND pp.rsvp_status = 'yes') as user_is_participant,
+  COALESCE(
+    (SELECT pp2.rsvp_status FROM plan_participants pp2 
+     WHERE pp2.plan_id = fp.id AND pp2.profile_id = auth.uid()), 
+    'not_invited'
+  ) as user_rsvp_status,
+  fp.created_at
 FROM floq_plans fp
 LEFT JOIN floqs f ON fp.floq_id = f.id
 LEFT JOIN plan_participants pp ON fp.id = pp.plan_id
-GROUP BY fp.id, f.id;
+GROUP BY 
+  fp.id, fp.title, fp.description, fp.status, fp.planned_at, 
+  fp.start_time, fp.end_time, fp.creator_id, fp.profile_id, fp.floq_id,
+  f.title, f.primary_vibe, fp.created_at;
 
--- 8. Create RPC function to get floq plans with enhanced data
-CREATE OR REPLACE FUNCTION get_floq_plans_enhanced(
+-- 8. Grant permissions on the view
+GRANT SELECT ON floq_plans_with_details TO authenticated;
+
+-- 9. Create RPC function to get enhanced floq plans
+CREATE OR REPLACE FUNCTION public.get_floq_plans_enhanced(
   p_floq_id UUID DEFAULT NULL,
-  p_user_id UUID DEFAULT NULL,
-  p_limit INTEGER DEFAULT 20
+  p_profile_id UUID DEFAULT NULL,
+  p_limit INTEGER DEFAULT 50
 )
-RETURNS TABLE(
+RETURNS TABLE (
   plan_id UUID,
   title TEXT,
   description TEXT,
@@ -153,57 +178,54 @@ RETURNS TABLE(
   floq_id UUID,
   floq_title TEXT,
   floq_vibe TEXT,
-  participant_count INTEGER,
+  participant_count BIGINT,
   user_is_participant BOOLEAN,
   user_rsvp_status TEXT,
   created_at TIMESTAMPTZ
-) 
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  current_profile_id UUID;
 BEGIN
+  current_profile_id := COALESCE(p_profile_id, auth.uid());
+  
   RETURN QUERY
   SELECT 
-    fp.id as plan_id,
-    fp.title,
-    fp.description,
-    fp.status::text,
-    fp.planned_at,
-    fp.start_time,
-    fp.end_time,
-    fp.floq_id,
-    f.title as floq_title,
-    f.primary_vibe::text as floq_vibe,
-    COALESCE(COUNT(pp.profile_id), 0)::integer as participant_count,
-    EXISTS(
-      SELECT 1 FROM plan_participants pp2 
-      WHERE pp2.plan_id = fp.id AND pp2.profile_id = p_user_id
-    ) as user_is_participant,
-    COALESCE(
-      (SELECT pp3.rsvp_status FROM plan_participants pp3 
-       WHERE pp3.plan_id = fp.id AND pp3.profile_id = p_user_id),
-      'not_responded'
-    ) as user_rsvp_status,
-    fp.created_at
-  FROM floq_plans fp
-  LEFT JOIN floqs f ON fp.floq_id = f.id
-  LEFT JOIN plan_participants pp ON fp.id = pp.plan_id
+    fpd.plan_id,
+    fpd.title,
+    fpd.description,
+    fpd.status,
+    fpd.planned_at,
+    fpd.start_time,
+    fpd.end_time,
+    fpd.floq_id,
+    fpd.floq_title,
+    fpd.floq_vibe::TEXT,
+    fpd.participant_count,
+    fpd.user_is_participant,
+    fpd.user_rsvp_status,
+    fpd.created_at
+  FROM floq_plans_with_details fpd
   WHERE 
-    (p_floq_id IS NULL OR fp.floq_id = p_floq_id)
-    AND fp.status NOT IN ('archived', 'cancelled')
-  GROUP BY fp.id, f.id
-  ORDER BY fp.planned_at DESC
+    (p_floq_id IS NULL OR fpd.floq_id = p_floq_id)
+    AND (
+      fpd.profile_id = current_profile_id  -- User's own plans
+      OR fpd.user_is_participant = true    -- Plans user is participating in
+      OR fpd.floq_id IN (                  -- Plans in floqs user is part of
+        SELECT floq_id FROM floq_participants 
+        WHERE profile_id = current_profile_id
+      )
+    )
+  ORDER BY fpd.planned_at DESC
   LIMIT p_limit;
 END;
 $$;
 
--- 9. Grant permissions
-GRANT EXECUTE ON FUNCTION get_floq_plans_enhanced(UUID, UUID, INTEGER) TO authenticated;
-GRANT SELECT ON floq_plans_with_details TO authenticated;
-
 -- 10. Create RPC function to create group plan with floq
-CREATE OR REPLACE FUNCTION create_group_plan_with_floq(
+CREATE OR REPLACE FUNCTION public.create_group_plan_with_floq(
   p_title TEXT,
   p_description TEXT DEFAULT NULL,
   p_planned_at TIMESTAMPTZ DEFAULT NULL,
@@ -219,28 +241,25 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user_id UUID;
+  current_profile_id UUID;
   new_floq_id UUID;
   new_plan_id UUID;
   result JSON;
 BEGIN
-  -- Get current user
-  current_user_id := auth.uid();
-  IF current_user_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
+  current_profile_id := auth.uid();
+  IF current_profile_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
 
   -- Create the floq first
   INSERT INTO floqs (
-    title,
-    description,
-    primary_vibe,
-    creator_id,
-    profile_id,
-    location,
+    title, 
+    description, 
+    primary_vibe, 
+    creator_id, 
+    profile_id, 
+    location, 
     geo,
-    starts_at,
-    ends_at,
+    starts_at, 
+    ends_at, 
     max_participants,
     auto_created,
     vibe_tag
@@ -248,12 +267,12 @@ BEGIN
     p_title || ' Group',
     COALESCE(p_description, 'Group for plan: ' || p_title),
     COALESCE(p_vibe_tags[1], 'social')::vibe_enum,
-    current_user_id,
-    current_user_id,
+    current_profile_id,
+    current_profile_id,
     p_location,
     CASE 
       WHEN p_location IS NOT NULL 
-      THEN ST_GeomFromGeoJSON(p_location::text)::geography
+      THEN ST_GeomFromGeoJSON(p_location::text)::geography 
       ELSE NULL 
     END,
     p_start_time,
@@ -263,30 +282,30 @@ BEGIN
     COALESCE(p_vibe_tags[1], 'social')::vibe_enum
   ) RETURNING id INTO new_floq_id;
 
-  -- Add creator to floq participants
+  -- Add creator as floq participant
   INSERT INTO floq_participants (floq_id, profile_id, role, joined_at)
-  VALUES (new_floq_id, current_user_id, 'creator', NOW());
+  VALUES (new_floq_id, current_profile_id, 'creator', NOW());
 
   -- Create the plan
   INSERT INTO floq_plans (
-    title,
-    description,
-    creator_id,
-    profile_id,
+    title, 
+    description, 
+    creator_id, 
+    profile_id, 
     floq_id,
-    planned_at,
-    start_time,
-    end_time,
-    vibe_tags,
-    max_participants,
+    planned_at, 
+    start_time, 
+    end_time, 
+    vibe_tags, 
+    max_participants, 
     location,
     plan_mode,
     status
   ) VALUES (
     p_title,
     p_description,
-    current_user_id,
-    current_user_id,
+    current_profile_id,
+    current_profile_id,
     new_floq_id,
     COALESCE(p_planned_at, p_start_time, NOW() + INTERVAL '1 day'),
     p_start_time,
@@ -298,9 +317,9 @@ BEGIN
     'draft'
   ) RETURNING id INTO new_plan_id;
 
-  -- Add creator to plan participants
+  -- Add creator as plan participant
   INSERT INTO plan_participants (plan_id, profile_id, rsvp_status, joined_at)
-  VALUES (new_plan_id, current_user_id, 'yes', NOW());
+  VALUES (new_plan_id, current_profile_id, 'yes', NOW());
 
   result := json_build_object(
     'success', true,
@@ -313,11 +332,13 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION create_group_plan_with_floq(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[], INTEGER, JSONB) TO authenticated;
+-- 11. Grant permissions on functions
+GRANT EXECUTE ON FUNCTION public.get_floq_plans_enhanced TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_group_plan_with_floq TO authenticated;
 
--- 11. Add helpful comments
-COMMENT ON FUNCTION ensure_floq_for_group_plan() IS 'Automatically creates a floq when a group plan is created without one';
-COMMENT ON FUNCTION sync_plan_floq_participants() IS 'Keeps floq participants in sync with plan participants';
-COMMENT ON VIEW floq_plans_with_details IS 'Enhanced view of floq plans with floq details and participant counts';
-COMMENT ON FUNCTION get_floq_plans_enhanced(UUID, UUID, INTEGER) IS 'Get floq plans with enhanced floq and participant data';
-COMMENT ON FUNCTION create_group_plan_with_floq(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[], INTEGER, JSONB) IS 'Create a group plan with an associated floq in a single transaction';
+-- 12. Add helpful comments
+COMMENT ON FUNCTION public.ensure_floq_for_group_plan() IS 'Automatically creates a floq when a group plan is created without one';
+COMMENT ON FUNCTION public.sync_plan_floq_participants() IS 'Keeps floq participants in sync with plan participants for group plans';
+COMMENT ON FUNCTION public.get_floq_plans_enhanced(UUID, UUID, INTEGER) IS 'Returns enhanced floq plan data with participant info and user status';
+COMMENT ON FUNCTION public.create_group_plan_with_floq(TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT[], INTEGER, JSONB) IS 'Creates a group plan and its associated floq in a single atomic operation';
+COMMENT ON VIEW floq_plans_with_details IS 'Enhanced view of floq plans with participant counts and user participation status';

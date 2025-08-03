@@ -20,57 +20,49 @@ DECLARE
 BEGIN
   -- Get current authenticated user
   current_profile_id := auth.uid();
-  
-  IF current_profile_id IS NULL THEN
-    RAISE EXCEPTION 'Not authenticated';
-  END IF;
+  IF current_profile_id IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
 
-  -- Start transaction (implicit in function)
-  
-  -- 1. Find and lock the pending friend request
-  SELECT id, profile_id, other_profile_id, status, created_at
-  INTO request_record
-  FROM friend_requests
-  WHERE profile_id = requester_id 
-    AND other_profile_id = current_profile_id 
-    AND status = 'pending'
-  FOR UPDATE; -- Lock the row to prevent concurrent modifications
-  
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Friend request not found or already processed';
-  END IF;
-  
-  -- 2. Update the friend request status atomically
-  UPDATE friend_requests 
-  SET 
-    status = 'accepted',
-    responded_at = NOW()
-  WHERE id = request_record.id;
-  
-  -- 3. Create bidirectional friendship using existing RPC
-  -- This handles the symmetric relationship creation
-  PERFORM upsert_friendship(requester_id, 'accepted');
-  
-  -- 4. Return success result
+  -- Lock the friend request row to prevent race conditions
+  SELECT id, profile_id, other_profile_id, status, created_at INTO request_record
+  FROM friend_requests WHERE profile_id = requester_id AND other_profile_id = current_profile_id AND status = 'pending' FOR UPDATE;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'Friend request not found or already processed'; END IF;
+
+  -- Update the request status
+  UPDATE friend_requests SET status = 'accepted', updated_at = NOW() WHERE id = request_record.id;
+
+  -- Create friendship entries (bidirectional)
+  INSERT INTO friendships (profile_id, friend_profile_id, status, created_at)
+  VALUES 
+    (current_profile_id, requester_id, 'active', NOW()),
+    (requester_id, current_profile_id, 'active', NOW())
+  ON CONFLICT (profile_id, friend_profile_id) DO NOTHING;
+
+  -- Build success result
   result := json_build_object(
     'success', true,
-    'request_id', request_record.id,
+    'message', 'Friend request accepted successfully',
     'friendship_created', true,
-    'accepted_at', NOW()
+    'request_id', request_record.id,
+    'friend_profile_id', requester_id
   );
-  
+
   RETURN result;
-  
+
 EXCEPTION
   WHEN OTHERS THEN
-    -- If anything fails, the transaction will be rolled back automatically
-    RAISE EXCEPTION 'Failed to accept friend request: %', SQLERRM;
+    -- Return error result
+    result := json_build_object(
+      'success', false,
+      'error', SQLSTATE,
+      'message', SQLERRM
+    );
+    RETURN result;
 END;
 $$;
 
--- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION public.accept_friend_request_atomic(UUID) TO authenticated;
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.accept_friend_request_atomic TO authenticated;
 
--- Add comment for documentation
-COMMENT ON FUNCTION public.accept_friend_request_atomic(UUID) IS 
-'Atomically accepts a friend request and creates bidirectional friendship. Prevents race conditions by using row-level locking.';
+-- Add helpful comment
+COMMENT ON FUNCTION public.accept_friend_request_atomic(UUID) IS 'Atomically accepts a friend request, preventing race conditions by using row-level locking';
