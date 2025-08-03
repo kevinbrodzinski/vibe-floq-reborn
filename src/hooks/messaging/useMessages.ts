@@ -8,11 +8,46 @@ import { realtimeManager } from "@/lib/realtime/manager";
 
 type DirectMessage = Database["public"]["Tables"]["direct_messages"]["Row"];
 type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
+type MessageRow = DirectMessage | ChatMessage;
+type MessagesInfinite = { pages: MessageRow[][]; pageParams: unknown[] };
 
 const PAGE_SIZE = 40;
 
+// Helper function to add message to pages
+function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
+  const pages = [...old.pages];
+  const lastPage = pages[pages.length - 1] || [];
+  
+  // Type-safe metadata access
+  const msgMetadata = msg.metadata as any;
+  const msgClientId = msgMetadata?.client_id;
+  
+  // Remove any optimistic message with the same client_id
+  if (msgClientId) {
+    for (let i = 0; i < pages.length; i++) {
+      pages[i] = pages[i].filter(m => {
+        const metadata = m.metadata as any;
+        return metadata?.client_id !== msgClientId;
+      });
+    }
+  }
+  
+  // Check if message already exists (prevent duplicates)
+  const messageExists = pages.some(page =>
+    page.some(m => m.id === msg.id)
+  );
+  
+  if (!messageExists) {
+    const newLastPage = [...lastPage, msg];
+    pages[pages.length - 1] = newLastPage;
+  }
+  
+  return { ...old, pages };
+}
+
 export function useMessages(threadId: string | undefined, surface: "dm" | "floq" | "plan" = "dm", opts?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
+  // Stable hookId across renders
   const hookId = useId();
   
   console.log('[useMessages hook]', { threadId, surface, isValidUuid: threadId ? isUuid(threadId) : false, enabled: opts?.enabled });
@@ -74,41 +109,17 @@ export function useMessages(threadId: string | undefined, surface: "dm" | "floq"
             table: tableName,
             filter: `thread_id=eq.${threadId}`
           },
-          createSafeRealtimeHandler<{ id: string; thread_id: string; sender_id: string; metadata?: any }>(
+          createSafeRealtimeHandler<MessageRow>(
             ({ new: newMessage }) => {
               if (!newMessage) return;
               
-              console.log('📨 New message received:', newMessage);
+               console.log('📨 New message received:', newMessage);
+              // Use functional update to prevent stale closures
               queryClient.setQueryData(
                 ["messages", surface, threadId],
-                (old: any) => {
+                (old: MessagesInfinite | undefined) => {
                   if (!old) return old;
-                  let pages = old.pages || [];
-                  let lastPage = pages[pages.length - 1] || [];
-                  
-                  // If this message has a client_id, remove any optimistic message with the same client_id
-                  if (newMessage.metadata?.client_id) {
-                    console.log('🔄 Replacing optimistic message with server message');
-                    pages = pages.map(page => 
-                      page.filter((msg: any) => 
-                        msg.metadata?.client_id !== newMessage.metadata.client_id
-                      )
-                    );
-                    lastPage = pages[pages.length - 1] || [];
-                  }
-                  
-                  // Check if message already exists (prevent duplicates)
-                  const messageExists = pages.some((page: any[]) =>
-                    page.some((msg: any) => msg.id === newMessage.id)
-                  );
-                  
-                  if (!messageExists) {
-                    return {
-                      ...old,
-                      pages: [...pages.slice(0, -1), [...lastPage, newMessage]]
-                    };
-                  }
-                  return old;
+                  return addMessage(old, newMessage as MessageRow);
                 }
               );
             },
