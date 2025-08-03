@@ -92,8 +92,8 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   };
 
    // Unified messaging hooks - guard queries until thread is ready
-   const enabled = threadId ? isUuid(threadId) : false;
-   const messages = useMessages(threadId || '', 'dm');
+   const enabled = !!(currentUserId && friendId && threadId && open);
+   const messages = useMessages(threadId, 'dm', { enabled });
    const sendMut = useSendMessage('dm');
 
   // Debug messages hook state
