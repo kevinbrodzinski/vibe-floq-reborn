@@ -16,7 +16,6 @@ import { calculateDistance, formatDistance, type GPSCoords } from '@/lib/locatio
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface FriendLocation {
-  userId: string;
   profileId: string;
   displayName: string | null;
   avatarUrl: string | null;
@@ -131,7 +130,6 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
 
           if (location) {
             friendData.push({
-              userId: presence.user_id || presence.profile_id,
               profileId: presence.profile_id,
               displayName: presence.display_name || null,
               avatarUrl: presence.avatar_url || null,
@@ -221,14 +219,14 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
 
         if (enableProximityTracking) {
           const currentUser: ProximityUser = {
-            userId: user.id,
+            userId: user.id, // Keep userId for proximity system as it uses auth.uid()
             location: pos,
             accuracy: pos.accuracy,
             timestamp: now
           };
 
           const friendUser: ProximityUser = {
-            userId: friend.profileId,
+            userId: friend.profileId, // Use profileId as userId for consistency
             location: friend.location,
             accuracy: friend.accuracy,
             timestamp: friend.timestamp
@@ -313,7 +311,6 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
     if (!payload.profile_id || payload.profile_id === user?.id) return;
 
     const friendLocation: FriendLocation = {
-      userId: payload.user_id || payload.profile_id,
       profileId: payload.profile_id,
       displayName: payload.display_name || null,
       avatarUrl: payload.avatar_url || null,

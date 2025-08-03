@@ -66,7 +66,7 @@ export function useNearbyFriends(
   const nearbyFriends: NearbyFriend[] = friends
     .filter(friendDistance => enabled && friendDistance.distance <= km * 1000)
     .map(friendDistance => ({
-      id: friendDistance.friend.profileId,
+      id: friendDistance.friend.profileId, // Using profileId as the primary identifier
       display_name: friendDistance.friend.displayName,
       avatar_url: friendDistance.friend.avatarUrl,
       lat: friendDistance.friend.location.lat,
