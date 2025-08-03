@@ -204,3 +204,54 @@ export async function autoSyncVenues(
 
   return results;
 }
+
+/**
+ * New automated venue sync with intelligent deduplication
+ */
+export async function automatedVenueSync(
+  lat: number,
+  lng: number,
+  options: {
+    forceRefresh?: boolean;
+    sources?: string[];
+    radius?: number;
+  } = {}
+): Promise<VenueSyncResult> {
+  try {
+    const { data, error } = await supabase.functions.invoke('automated-venue-sync', {
+      body: {
+        lat,
+        lng,
+        force_refresh: options.forceRefresh || false,
+        sources: options.sources || ['google', 'foursquare'],
+        radius: options.radius || 1500
+      }
+    });
+
+    if (error) throw error;
+    
+    return {
+      ok: data.ok,
+      count: data.total_venues,
+      source: 'automated-sync',
+      phase: 'completed',
+      details: {
+        new_venues: data.new_venues,
+        updated_venues: data.updated_venues,
+        deduplicated: data.deduplicated,
+        sources_used: data.sources_used,
+        sync_time_ms: data.sync_time_ms
+      },
+      error: data.errors.length > 0 ? data.errors.join('; ') : undefined
+    };
+  } catch (error) {
+    console.error('Automated venue sync failed:', error);
+    return {
+      ok: false,
+      count: 0,
+      source: 'automated-sync',
+      phase: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
