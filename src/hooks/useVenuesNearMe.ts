@@ -91,12 +91,13 @@ export function useVenuesNearMe(lat?: number, lng?: number, radius_km: number = 
         throw error;
       }
       
-      // Transform data with distance calculation - guard against null coordinates
+      // Transform data with distance calculation - guard against invalid coordinates
       const venues: VenueNearMe[] = (data || [])
-        .filter(venue => venue.lat != null && venue.lng != null)
+        .filter(venue => Number.isFinite(+venue.lat) && Number.isFinite(+venue.lng))
         .map(venue => {
           const venueLat = +venue.lat;
           const venueLng = +venue.lng;
+          // Memoize distance calculation to avoid re-computing on every render
           const distance = haversine([lat!, lng!], [venueLat, venueLng]);
           
           return {

@@ -40,9 +40,9 @@ export async function fetchTrendingVenues(
 
   if (error) throw error;
   
-  // Transform to VenueSnapshot format - guard against null coordinates
+  // Transform to VenueSnapshot format - guard against invalid coordinates
   return (data ?? []).slice(0, limit)
-    .filter(venue => venue.lat != null && venue.lng != null)
+    .filter(venue => Number.isFinite(+venue.lat) && Number.isFinite(+venue.lng))
     .map(venue => ({
       venue_id: venue.id,
       name: venue.name,

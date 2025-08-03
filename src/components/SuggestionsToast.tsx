@@ -74,9 +74,23 @@ export function SuggestionsToast({
           <Button
             size="sm"
             onClick={() => {
-              // Analytics tracking
+              // Analytics tracking with throttling in dev
               if (typeof window !== 'undefined' && (window as any).posthog) {
-                (window as any).posthog.capture('floq_join_from_suggestion', {
+                const posthog = (window as any).posthog;
+                const safeCapture = import.meta.env.DEV
+                  ? (() => {
+                      let lastCall = 0;
+                      return (event: string, props: any) => {
+                        const now = Date.now();
+                        if (now - lastCall > 2000) {
+                          lastCall = now;
+                          posthog.capture(event, props);
+                        }
+                      };
+                    })()
+                  : posthog.capture.bind(posthog);
+                
+                safeCapture('floq_join_from_suggestion', {
                   floq_id: highConfidenceSuggestion.floq_id,
                   confidence_score: highConfidenceSuggestion.confidence_score,
                   distance_meters: highConfidenceSuggestion.distance_meters,
@@ -96,9 +110,23 @@ export function SuggestionsToast({
             size="sm"
             variant="ghost"
             onClick={() => {
-              // Analytics tracking
+              // Analytics tracking with throttling in dev
               if (typeof window !== 'undefined' && (window as any).posthog) {
-                (window as any).posthog.capture('floq_suggestion_dismissed', {
+                const posthog = (window as any).posthog;
+                const safeCapture = import.meta.env.DEV
+                  ? (() => {
+                      let lastCall = 0;
+                      return (event: string, props: any) => {
+                        const now = Date.now();
+                        if (now - lastCall > 2000) {
+                          lastCall = now;
+                          posthog.capture(event, props);
+                        }
+                      };
+                    })()
+                  : posthog.capture.bind(posthog);
+                
+                safeCapture('floq_suggestion_dismissed', {
                   floq_id: highConfidenceSuggestion.floq_id,
                   confidence_score: highConfidenceSuggestion.confidence_score,
                   source: 'smart_notification'

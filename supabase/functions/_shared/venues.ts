@@ -105,12 +105,20 @@ export function mapToVenue(p: RawPlace) {
 }
 
 /* 3.  Bulk upsert helper ------------------------------------------- */
-export async function upsertVenues(rows: ReturnType<typeof mapToVenue>[]) {
+type VenueRow = ReturnType<typeof mapToVenue>;
+
+export async function upsertVenues(rows: VenueRow[]) {
   if (!rows.length) return;
   
   // Filter out rows without required source/external_id
   const validRows = rows.filter(row => row.source && row.external_id);
-  if (!validRows.length) return;
+  
+  // Log dropped rows for visibility
+  if (rows.length !== validRows.length) {
+    console.warn(`[VenueUpsert] Dropped ${rows.length - validRows.length} invalid rows`);
+  }
+  
+  if (validRows.length === 0) return; // early-out BEFORE the RPC
   
   const { error } = await sb.from("venues").upsert(validRows, {
     onConflict: "source,external_id",
