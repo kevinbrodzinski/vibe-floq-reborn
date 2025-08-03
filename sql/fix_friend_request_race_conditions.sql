@@ -14,14 +14,14 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user_id UUID;
+  current_profile_id UUID;
   request_record RECORD;
   result JSON;
 BEGIN
   -- Get current authenticated user
-  current_user_id := auth.uid();
+  current_profile_id := auth.uid();
   
-  IF current_user_id IS NULL THEN
+  IF current_profile_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
@@ -32,7 +32,7 @@ BEGIN
   INTO request_record
   FROM friend_requests
   WHERE profile_id = requester_id 
-    AND other_profile_id = current_user_id 
+    AND other_profile_id = current_profile_id 
     AND status = 'pending'
   FOR UPDATE; -- Lock the row to prevent concurrent modifications
   

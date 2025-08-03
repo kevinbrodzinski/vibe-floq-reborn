@@ -57,9 +57,9 @@ ON CONFLICT (action_type) DO UPDATE SET
 
 -- 7. Create rate limiting check function
 CREATE OR REPLACE FUNCTION public.check_rate_limit(
-  p_user_id UUID,
+  p_profile_id UUID,
   p_action_type TEXT,
-  p_target_user_id UUID DEFAULT NULL
+  p_target_profile_id UUID DEFAULT NULL
 )
 RETURNS JSON
 LANGUAGE plpgsql
@@ -78,7 +78,7 @@ DECLARE
 BEGIN
   -- Create composite action type for user-specific limits
   composite_action_type := CASE 
-    WHEN p_target_user_id IS NOT NULL THEN p_action_type || '_to_user_' || p_target_user_id::text
+    WHEN p_target_profile_id IS NOT NULL THEN p_action_type || '_to_user_' || p_target_profile_id::text
     ELSE p_action_type
   END;
 
@@ -103,7 +103,7 @@ BEGIN
   SELECT count, window_start
   INTO limit_record
   FROM user_action_limits
-  WHERE user_id = p_user_id AND action_type = composite_action_type;
+  WHERE user_id = p_profile_id AND action_type = composite_action_type;
 
   IF FOUND THEN
     -- Check if we need to reset the window
@@ -114,7 +114,7 @@ BEGIN
         count = 0,
         window_start = NOW(),
         updated_at = NOW()
-      WHERE user_id = p_user_id AND action_type = composite_action_type;
+      WHERE user_id = p_profile_id AND action_type = composite_action_type;
       current_count := 0;
     ELSE
       current_count := limit_record.count;
@@ -122,7 +122,7 @@ BEGIN
   ELSE
     -- Create new record
     INSERT INTO user_action_limits (user_id, action_type, count, window_start)
-    VALUES (p_user_id, composite_action_type, 0, NOW());
+    VALUES (p_profile_id, composite_action_type, 0, NOW());
     current_count := 0;
   END IF;
 
@@ -131,7 +131,7 @@ BEGIN
     is_allowed := false;
     reset_time := (SELECT window_start + (config_record.window_minutes || ' minutes')::INTERVAL 
                    FROM user_action_limits 
-                   WHERE user_id = p_user_id AND action_type = composite_action_type);
+                   WHERE user_id = p_profile_id AND action_type = composite_action_type);
   ELSE
     reset_time := NULL;
   END IF;
@@ -155,9 +155,9 @@ $$;
 
 -- 8. Create function to increment rate limit counter
 CREATE OR REPLACE FUNCTION public.increment_rate_limit(
-  p_user_id UUID,
+  p_profile_id UUID,
   p_action_type TEXT,
-  p_target_user_id UUID DEFAULT NULL
+  p_target_profile_id UUID DEFAULT NULL
 )
 RETURNS JSON
 LANGUAGE plpgsql
@@ -170,13 +170,13 @@ DECLARE
 BEGIN
   -- Create composite action type for user-specific limits
   composite_action_type := CASE 
-    WHEN p_target_user_id IS NOT NULL THEN p_action_type || '_to_user_' || p_target_user_id::text
+    WHEN p_target_profile_id IS NOT NULL THEN p_action_type || '_to_user_' || p_target_profile_id::text
     ELSE p_action_type
   END;
 
   -- Increment the counter
   INSERT INTO user_action_limits (user_id, action_type, count, window_start)
-  VALUES (p_user_id, composite_action_type, 1, NOW())
+  VALUES (p_profile_id, composite_action_type, 1, NOW())
   ON CONFLICT (user_id, action_type) 
   DO UPDATE SET 
     count = user_action_limits.count + 1,
@@ -194,7 +194,7 @@ $$;
 
 -- 9. Create enhanced friend request function with rate limiting
 CREATE OR REPLACE FUNCTION public.send_friend_request_with_rate_limit(
-  p_target_user_id UUID
+  p_target_profile_id UUID
 )
 RETURNS JSON
 LANGUAGE plpgsql
@@ -202,23 +202,23 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  current_user_id UUID;
+  current_profile_id UUID;
   rate_check JSON;
   result JSON;
 BEGIN
   -- Get current authenticated user
-  current_user_id := auth.uid();
+  current_profile_id := auth.uid();
   
-  IF current_user_id IS NULL THEN
+  IF current_profile_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  IF p_target_user_id = current_user_id THEN
+  IF p_target_profile_id = current_profile_id THEN
     RAISE EXCEPTION 'Cannot send friend request to yourself';
   END IF;
 
   -- Check general friend request rate limit
-  SELECT check_rate_limit(current_user_id, 'friend_request') INTO rate_check;
+  SELECT check_rate_limit(current_profile_id, 'friend_request') INTO rate_check;
   
   IF NOT (rate_check->>'allowed')::boolean THEN
     RETURN json_build_object(
@@ -230,7 +230,7 @@ BEGIN
   END IF;
 
   -- Check user-specific rate limit
-  SELECT check_rate_limit(current_user_id, 'friend_request_to_same_user', p_target_user_id) INTO rate_check;
+  SELECT check_rate_limit(current_profile_id, 'friend_request_to_same_user', p_target_profile_id) INTO rate_check;
   
   IF NOT (rate_check->>'allowed')::boolean THEN
     RETURN json_build_object(
@@ -244,8 +244,8 @@ BEGIN
   -- Check if friend request already exists
   IF EXISTS (
     SELECT 1 FROM friend_requests 
-    WHERE profile_id = current_user_id 
-      AND other_profile_id = p_target_user_id 
+    WHERE profile_id = current_profile_id 
+      AND other_profile_id = p_target_profile_id 
       AND status = 'pending'
   ) THEN
     RETURN json_build_object(
@@ -257,11 +257,11 @@ BEGIN
 
   -- Send the friend request
   INSERT INTO friend_requests (profile_id, other_profile_id, status)
-  VALUES (current_user_id, p_target_user_id, 'pending');
+  VALUES (current_profile_id, p_target_profile_id, 'pending');
 
   -- Increment rate limit counters
-  PERFORM increment_rate_limit(current_user_id, 'friend_request');
-  PERFORM increment_rate_limit(current_user_id, 'friend_request_to_same_user', p_target_user_id);
+  PERFORM increment_rate_limit(current_profile_id, 'friend_request');
+  PERFORM increment_rate_limit(current_profile_id, 'friend_request_to_same_user', p_target_profile_id);
 
   result := json_build_object(
     'success', true,

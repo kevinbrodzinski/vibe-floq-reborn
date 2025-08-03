@@ -6,7 +6,7 @@
 import { GPSCoords, calculateDistance } from './standardGeo';
 
 export interface ProximityUser {
-  userId: string;
+  profileId: string;
   location: GPSCoords;
   accuracy: number;
   timestamp: number;
@@ -14,8 +14,8 @@ export interface ProximityUser {
 }
 
 export interface ProximityEvent {
-  userId: string;
-  targetUserId: string;
+  profileId: string;
+  targetProfileId: string;
   eventType: 'enter' | 'exit' | 'sustain';
   distance: number;
   confidence: number;
@@ -24,8 +24,8 @@ export interface ProximityEvent {
 }
 
 export interface ProximityHistory {
-  userId: string;
-  targetUserId: string;
+  profileId: string;
+  targetProfileId: string;
   events: ProximityEvent[];
   currentState: 'near' | 'far' | 'unknown';
   lastUpdate: number;
@@ -66,8 +66,8 @@ export class ProximityScorer {
     user1: ProximityUser,
     user2: ProximityUser
   ): ProximityAnalysis {
-    const historyKey = this.getHistoryKey(user1.userId, user2.userId);
-    const history = this.proximityHistory.get(historyKey) || this.createNewHistory(user1.userId, user2.userId);
+    const historyKey = this.getHistoryKey(user1.profileId, user2.profileId);
+    const history = this.proximityHistory.get(historyKey) || this.createNewHistory(user1.profileId, user2.profileId);
     
     // Calculate basic distance and confidence
     const distance = calculateDistance(user1.location, user2.location);
@@ -102,8 +102,8 @@ export class ProximityScorer {
     // Update history
     if (eventType !== 'none') {
       const event: ProximityEvent = {
-        userId: user1.userId,
-        targetUserId: user2.userId,
+        profileId: user1.profileId,
+        targetProfileId: user2.profileId,
         eventType,
         distance,
         confidence,
@@ -210,21 +210,21 @@ export class ProximityScorer {
   /**
    * Get proximity history for a user pair
    */
-  getProximityHistory(userId1: string, userId2: string): ProximityHistory | null {
-    const historyKey = this.getHistoryKey(userId1, userId2);
+  getProximityHistory(profileId1: string, profileId2: string): ProximityHistory | null {
+    const historyKey = this.getHistoryKey(profileId1, profileId2);
     return this.proximityHistory.get(historyKey) || null;
   }
 
   /**
    * Get all current proximity states for a user
    */
-  getCurrentProximities(userId: string): { targetUserId: string; state: ProximityHistory }[] {
-    const proximities: { targetUserId: string; state: ProximityHistory }[] = [];
+  getCurrentProximities(profileId: string): { targetProfileId: string; state: ProximityHistory }[] {
+    const proximities: { targetProfileId: string; state: ProximityHistory }[] = [];
     
     for (const [key, history] of this.proximityHistory) {
-      if (history.userId === userId || history.targetUserId === userId) {
-        const targetUserId = history.userId === userId ? history.targetUserId : history.userId;
-        proximities.push({ targetUserId, state: history });
+      if (history.profileId === profileId || history.targetProfileId === profileId) {
+        const targetProfileId = history.profileId === profileId ? history.targetProfileId : history.profileId;
+        proximities.push({ targetProfileId, state: history });
       }
     }
     
@@ -250,7 +250,7 @@ export class ProximityScorer {
   /**
    * Get proximity statistics for analysis
    */
-  getProximityStats(userId: string): {
+  getProximityStats(profileId: string): {
     totalProximityEvents: number;
     averageSustainedDuration: number;
     mostFrequentProximityPartner: string | null;
@@ -263,8 +263,8 @@ export class ProximityScorer {
     const reliabilityCount = { high: 0, medium: 0, low: 0 };
     
     for (const history of this.proximityHistory.values()) {
-      if (history.userId === userId || history.targetUserId === userId) {
-        const partnerId = history.userId === userId ? history.targetUserId : history.userId;
+      if (history.profileId === profileId || history.targetProfileId === profileId) {
+        const partnerId = history.profileId === profileId ? history.targetProfileId : history.profileId;
         
         totalEvents += history.events.length;
         partnerCounts.set(partnerId, (partnerCounts.get(partnerId) || 0) + 1);
@@ -295,17 +295,17 @@ export class ProximityScorer {
   /**
    * Create a consistent history key for user pairs
    */
-  private getHistoryKey(userId1: string, userId2: string): string {
-    return userId1 < userId2 ? `${userId1}_${userId2}` : `${userId2}_${userId1}`;
+  private getHistoryKey(profileId1: string, profileId2: string): string {
+    return profileId1 < profileId2 ? `${profileId1}_${profileId2}` : `${profileId2}_${profileId1}`;
   }
 
   /**
    * Create new proximity history record
    */
-  private createNewHistory(userId1: string, userId2: string): ProximityHistory {
+  private createNewHistory(profileId1: string, profileId2: string): ProximityHistory {
     return {
-      userId: userId1,
-      targetUserId: userId2,
+      profileId: profileId1,
+      targetProfileId: profileId2,
       events: [],
       currentState: 'unknown',
       lastUpdate: Date.now(),
@@ -351,13 +351,13 @@ export class BatchProximityAnalyzer {
             proximities.push({
               ...analysis,
               // Add target user ID for reference
-              targetUserId: otherUser.userId
-            } as ProximityAnalysis & { targetUserId: string });
+              targetProfileId: otherUser.profileId
+            } as ProximityAnalysis & { targetProfileId: string });
           }
         }
       }
       
-      results.set(user.userId, proximities);
+      results.set(user.profileId, proximities);
     }
     
     return results;
@@ -370,13 +370,13 @@ export class BatchProximityAnalyzer {
     const notifiableEvents: ProximityEvent[] = [];
     const groupAnalysis = this.analyzeGroupProximity(users);
     
-    for (const [userId, proximities] of groupAnalysis) {
+    for (const [profileId, proximities] of groupAnalysis) {
       for (const proximity of proximities) {
         if (proximity.eventType === 'enter' && proximity.confidence > 0.6) {
           // High-confidence proximity enter events are notifiable
           const history = this.proximityScorer.getProximityHistory(
-            userId, 
-            (proximity as any).targetUserId
+            profileId, 
+            (proximity as any).targetProfileId
           );
           
           if (history) {

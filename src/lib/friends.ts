@@ -10,7 +10,7 @@ export async function sendFriendRequest(targetUserId: string) {
 
   // Use rate-limited friend request function
   const { data, error } = await supabase.rpc("send_friend_request_with_rate_limit", {
-    p_target_user_id: targetUserId
+    p_target_profile_id: targetUserId
   });
 
   if (error) throw error;
