@@ -47,7 +47,7 @@ export const MessagesSheet = ({
             {user?.id ? (
               <ThreadsList
                 onThreadSelect={handleThreadSelect}
-                currentUserId={user.id}
+                currentProfileId={user.id}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">

@@ -47,7 +47,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false); // Local sending state as fallback
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [threadId, setThreadId] = useState<string | null | undefined>(undefined); // undefined = loading, null = error, string = success
   const { user } = useAuth(); // Use auth context instead of one-off getUser()
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   }, []);
 
    // Auth guard and unified messaging hooks - guard queries until thread is ready
-   const enabled = !!threadId && !!currentUserId;
+   const enabled = !!threadId && !!currentProfileId;
    const messages = useMessages(threadId || '', 'dm', { enabled });
    const sendMut = useSendMessage('dm');
 
@@ -102,12 +102,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   // Debug IDs to see if threadId is being set properly
   useEffect(() => {
     console.log('[DM_SHEET] IDs:', {
-      currentUserId,
+      currentProfileId,
       friendId,
       threadId,
       enabled
     });
-  }, [currentUserId, friendId, threadId, enabled]);
+  }, [currentProfileId, friendId, threadId, enabled]);
 
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
@@ -124,12 +124,12 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   useEffect(() => {
     const userId = user?.id || null;
     console.log('[DM_SHEET] Auth user changed:', userId);
-    setCurrentUserId(userId);
+    setCurrentProfileId(userId);
   }, [user]);
 
    // Initialize thread when both user and friend are available AND sheet is open
    useEffect(() => {
-     if (!open || !currentUserId || !friendId) {
+     if (!open || !currentProfileId || !friendId) {
        // Reset to null on sheet close to clear previous error state
        setThreadId(open ? undefined : null);
        return;
@@ -138,10 +138,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
      // Add race condition protection with abort controller
      const abortController = new AbortController();
      
-     console.log('[DM_SHEET] Getting thread for:', { currentUserId, friendId });
+     console.log('[DM_SHEET] Getting thread for:', { currentProfileId, friendId });
      setThreadId(undefined); // show loading state
      
-     threadIdFrom(currentUserId, friendId)
+     threadIdFrom(currentProfileId, friendId)
        .then(id => {
          // Only apply result if this effect hasn't been superseded
          if (!abortController.signal.aborted) {
@@ -180,19 +180,19 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
      return () => {
        abortController.abort();
      };
-   }, [open, currentUserId, friendId, threadIdFrom, toast]);
+   }, [open, currentProfileId, friendId, threadIdFrom, toast]);
 
   // Mark thread as read with proper auth guard
   useEffect(() => {
-    if (open && currentUserId && friendId && threadId && typeof threadId === 'string') {
+    if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
       markReadMut.mutate({ surface: 'dm', threadId });
       
       // Optimistically clear unread badge with proper typing
-      queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentUserId], 
+      queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentProfileId], 
         (old) => old?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
-  }, [open, currentUserId, friendId, threadId, markReadMut, queryClient]);
+  }, [open, currentProfileId, friendId, threadId, markReadMut, queryClient]);
 
   // Show error toast if friend profile fails to load
   useEffect(() => {
@@ -244,7 +244,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     if (!input.trim() || sending) return;
     
     // Auth guard: ensure we have a valid user
-    if (!currentUserId) {
+    if (!currentProfileId) {
       toast({
         title: "Authentication required",
         description: "Please log in to send messages.",
@@ -378,7 +378,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         {enabled ? (
           <MessageList
             messages={messages}
-            currentUserId={currentUserId}
+            currentUserId={currentProfileId}
             onReply={setReplyTo}
             className="flex-1"
           />

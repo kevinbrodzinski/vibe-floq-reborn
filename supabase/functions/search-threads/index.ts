@@ -55,8 +55,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const userId = await getUserId(req);
-    if (!userId) {
+    const profileId = await getUserId(req);
+    if (!profileId) {
       return new Response('Unauthorized', { 
         status: 401, 
         headers: corsHeaders 
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     const query = q.toLowerCase().trim();
 
-    // Search DM threads where user is a participant with enhanced data
+    // Search DM threads where profile is a participant with enhanced data
     const { data: threadsData, error: threadsError } = await supabase
       .from('direct_threads')
       .select(`
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         pa:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
-      .or(`member_a.eq.${userId},member_b.eq.${userId}`)
+      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`)
       .order('last_message_at', { ascending: false });
 
     if (threadsError) {
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     // Process and score results
     const results: ThreadSearchResult[] = (threadsData || [])
       .map(thread => {
-        const isUserA = thread.member_a === userId;
+        const isUserA = thread.member_a === profileId;
         const friendProfile = isUserA ? thread.pb : thread.pa;
         
         if (!friendProfile) return null;

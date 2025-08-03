@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 
 interface ThreadsListProps {
   onThreadSelect: (threadId: string, friendId: string) => void;
-  currentUserId: string;
+  currentProfileId: string;
 }
 
 // Helper function to highlight search matches
@@ -32,13 +32,13 @@ const highlightMatch = (text: string, query: string) => {
   );
 };
 
-export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps) => {
+export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   
   const { data: allThreads = [], isLoading: threadsLoading } = useThreads();
   const { data: searchResults = [], isFetching: searchLoading } = useSearchThreads(debouncedSearch);
-  const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
+  const { data: unreadCounts = [] } = useUnreadDMCounts(currentProfileId);
 
   // Create unread counts lookup for better performance
   const unreadMap = useMemo(() => {
@@ -49,12 +49,12 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
 
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {
-      const isUserA = thread.member_a === currentUserId;
-      const friendProfile = isUserA ? thread.member_b_profile : thread.member_a_profile;
+      const isProfileA = thread.member_a === currentProfileId;
+      const friendProfile = isProfileA ? thread.member_b_profile : thread.member_a_profile;
       
       return {
         thread_id: thread.id,
-        friend_profile_id: isUserA ? thread.member_b_profile_id : thread.member_a_profile_id,
+        friend_profile_id: isProfileA ? thread.member_b_profile_id : thread.member_a_profile_id,
         friend_display_name: friendProfile?.display_name || '',
         friend_username: friendProfile?.username || '',
         friend_avatar_url: friendProfile?.avatar_url || '',
