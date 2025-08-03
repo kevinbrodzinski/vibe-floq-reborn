@@ -55,10 +55,11 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Stable thread lookup using RPC with proper dependencies
+  // Stable thread lookup using RPC - getOrCreateThread is imported (stable)
+  // eslint-disable-next-line react-hooks/exhaustive-deps  
   const threadIdFrom = useCallback(async (me: string, friend: string): Promise<string> => {
     return getOrCreateThread(me, friend);
-  }, [getOrCreateThread]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
    // Auth guard and unified messaging hooks - guard queries until thread is ready
    const enabled = !!threadId && !!currentUserId;
