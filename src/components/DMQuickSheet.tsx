@@ -57,17 +57,48 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   // Helper to create stable thread ID - now generates proper UUID
   const threadIdFrom = async (userId: string, friendId: string) => {
+    console.log('[threadIdFrom] Starting with:', { userId, friendId });
+    
     try {
-      // Check if thread already exists
-      const { data: existingThread } = await supabase
+      // First try to find thread where current user is member_a
+      const { data: threadA, error: errorA } = await supabase
         .from('direct_threads')
         .select('id')
-        .or(`and(member_a.eq.${userId},member_b.eq.${friendId}),and(member_a.eq.${friendId},member_b.eq.${userId})`)
+        .eq('member_a', userId)
+        .eq('member_b', friendId)
         .maybeSingle();
       
-      if (existingThread) {
-        return existingThread.id;
+      console.log('[threadIdFrom] Query A result:', { threadA, errorA });
+      
+      if (errorA) {
+        console.error('[threadIdFrom] Error in query A:', errorA);
       }
+      
+      if (threadA) {
+        console.log('[threadIdFrom] Found existing thread (A->B):', threadA.id);
+        return threadA.id;
+      }
+      
+      // Then try to find thread where current user is member_b
+      const { data: threadB, error: errorB } = await supabase
+        .from('direct_threads')
+        .select('id')
+        .eq('member_a', friendId)
+        .eq('member_b', userId)
+        .maybeSingle();
+      
+      console.log('[threadIdFrom] Query B result:', { threadB, errorB });
+      
+      if (errorB) {
+        console.error('[threadIdFrom] Error in query B:', errorB);
+      }
+      
+      if (threadB) {
+        console.log('[threadIdFrom] Found existing thread (B->A):', threadB.id);
+        return threadB.id;
+      }
+      
+      console.log('[threadIdFrom] No existing thread found, creating new one');
       
       // Create new thread
       const { data: newThread, error } = await supabase
@@ -84,9 +115,15 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
         .select('id')
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('[threadIdFrom] Error creating thread:', error);
+        throw error;
+      }
+      
+      console.log('[threadIdFrom] Created new thread:', newThread.id);
       return newThread.id;
     } catch (error) {
+      console.error('[threadIdFrom] Complete failure:', error);
       throw error;  // let the sheet show a toast instead
     }
   };
