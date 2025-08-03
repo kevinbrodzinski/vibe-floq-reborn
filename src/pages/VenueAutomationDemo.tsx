@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VenueMapExample } from '@/components/VenueMapWithAutomation';
+import { VenueMapExampleDemo } from '@/components/VenueMapWithAutomation.demo';
 import { VenueMonitoringDashboard } from '@/components/VenueMonitoringDashboard';
 import { Button } from '@/components/ui/button';
 
@@ -89,7 +89,7 @@ export const VenueAutomationDemo: React.FC = () => {
                 </p>
               </div>
               <div className="h-[600px]">
-                <VenueMapExample />
+                <VenueMapExampleDemo />
               </div>
             </div>
 
