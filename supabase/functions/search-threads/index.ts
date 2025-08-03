@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
       .or(`member_a.eq.${userId}|member_b.eq.${userId}`)
-      .limit(50)
+      .limit(10)
       .order('last_message_at', { ascending: false });
 
     if (error) {
