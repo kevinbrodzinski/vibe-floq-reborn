@@ -171,8 +171,14 @@ export const FriendsSheet = ({
             ) : filteredFriends.length ? (
               <div className="space-y-4">
                 {(() => {
-                  const online  = filteredFriends.filter((f) => f.online);
-                  const offline = filteredFriends.filter((f) => !f.online);
+                  // Get list of friend IDs already shown in enhanced section
+                  const enhancedFriendIds = new Set(
+                    enhancedFriends.friends.slice(0, 5).map(fd => fd.friend.profileId)
+                  );
+                  
+                  // Filter out friends already shown in enhanced section
+                  const online  = filteredFriends.filter((f) => f.online && !enhancedFriendIds.has(f.id));
+                  const offline = filteredFriends.filter((f) => !f.online && !enhancedFriendIds.has(f.id));
 
                   return (
                     <>
@@ -236,9 +242,12 @@ export const FriendsSheet = ({
 
           {/* Enhanced Friend Distances - NEW FEATURE */}
           {enhancedFriends.friends.length > 0 && (
-            <section>
+            <>
+              <Separator />
+              <section>
               <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
                 Enhanced Distances
+                <span className="text-xs opacity-75">(Top 5)</span>
                 <Badge variant="outline" className="text-xs">
                   {enhancedFriends.nearbyCount} nearby
                 </Badge>
@@ -249,8 +258,8 @@ export const FriendsSheet = ({
                 )}
               </h3>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {enhancedFriends.friends.slice(0, 5).map((friendDistance) => (
-                  <div key={friendDistance.friend.profileId} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                {enhancedFriends.friends.slice(0, 5).map((friendDistance, index) => (
+                  <div key={`enhanced-${friendDistance.friend.profileId}-${index}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2">
                       <AvatarWithFallback
                         src={friendDistance.friend.avatarUrl}
@@ -292,7 +301,8 @@ export const FriendsSheet = ({
                   </div>
                 )}
               </div>
-            </section>
+              </section>
+            </>
           )}
 
           {/* System Comparison - Debug Info */}
