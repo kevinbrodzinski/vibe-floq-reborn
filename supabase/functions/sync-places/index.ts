@@ -298,19 +298,31 @@ serve(async (req) => {
       );
     }
 
-    // Use shared upsert function
-    try {
-      await upsertVenues(rows);
-    } catch (error) {
-      console.error('[Sync Places] Database upsert error:', error);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Database insertion failed',
-          details: error instanceof Error ? error.message : String(error)
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Use shared upsert function with retry logic
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await upsertVenues(rows);
+        break; // Success, exit retry loop
+      } catch (error) {
+        console.error(`[Sync Places] Database upsert error (attempt ${attempt}):`, error);
+        
+        if (attempt === 3) {
+          // Final attempt failed
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Database insertion failed after 3 attempts',
+              details: error instanceof Error ? error.message : String(error)
+            }), 
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // Wait with exponential backoff: 1s, 2s, 4s
+        await sleep(1000 * Math.pow(2, attempt));
+      }
     }
 
     // log success

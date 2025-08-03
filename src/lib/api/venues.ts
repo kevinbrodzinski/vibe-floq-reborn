@@ -36,7 +36,7 @@ export async function fetchTrendingVenues(
     south: lat - latDegrees,
     east: lng + lngDegrees,
     north: lat + latDegrees
-  });
+  }).select('id,name,lat,lng,vibe,source,external_id,vibe_score,live_count,updated_at');
 
   if (error) throw error;
   

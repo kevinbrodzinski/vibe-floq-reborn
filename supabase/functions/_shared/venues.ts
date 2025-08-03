@@ -72,11 +72,20 @@ export function mapToVenue(p: RawPlace) {
       vibe: vibeFrom(categories),
       geom: `SRID=4326;POINT(${lng} ${lat})`,
       geohash5: ngeohash.encode(lat, lng, 5),
+      description: null,
+      profile_id: null,
     };
   }
 
   /* foursquare ------------------------------------------------------ */
   const r = (p as any).r;
+  
+  // Skip venues with missing coordinates
+  if (!r?.geocodes?.main?.latitude || !r?.geocodes?.main?.longitude) {
+    console.warn("[venues] ⏭ Skipping FSQ venue with missing coords:", r?.fsq_id);
+    return null;
+  }
+  
   const lat = r.geocodes.main.latitude;
   const lng = r.geocodes.main.longitude;
   const categories = r.categories?.map((c: any) => c.name).slice(0, 5) ?? [];
@@ -101,26 +110,35 @@ export function mapToVenue(p: RawPlace) {
     vibe: vibeFrom(categories),
     geom: `SRID=4326;POINT(${lng} ${lat})`,
     geohash5: ngeohash.encode(lat, lng, 5),
+    description: null,
+    profile_id: null,
   };
 }
 
 /* 3.  Bulk upsert helper ------------------------------------------- */
 type VenueRow = ReturnType<typeof mapToVenue>;
 
-export async function upsertVenues(rows: VenueRow[]) {
+export async function upsertVenues(rows: (VenueRow | null)[]) {
   if (!rows.length) return;
   
-  // Filter out rows without required source/external_id
-  const validRows = rows.filter(row => row.source && row.external_id);
+  // Filter out null rows (venues with missing coordinates)
+  const validRows = rows.filter(Boolean) as VenueRow[];
   
   // Log dropped rows for visibility
   if (rows.length !== validRows.length) {
-    console.warn(`[VenueUpsert] Dropped ${rows.length - validRows.length} invalid rows`);
+    console.warn(`[VenueUpsert] Dropped ${rows.length - validRows.length} venues with missing coordinates`);
   }
   
-  if (validRows.length === 0) return; // early-out BEFORE the RPC
+  // Filter out rows without required source/external_id
+  const finalRows = validRows.filter(row => row.source && row.external_id);
   
-  const { error } = await sb.from("venues").upsert(validRows, {
+  if (validRows.length !== finalRows.length) {
+    console.warn(`[VenueUpsert] Dropped ${validRows.length - finalRows.length} venues with missing source/external_id`);
+  }
+  
+  if (finalRows.length === 0) return; // early-out BEFORE the RPC
+  
+  const { error } = await sb.from("venues").upsert(finalRows, {
     onConflict: "source,external_id",
     ignoreDuplicates: false,
     returning: "minimal",

@@ -95,19 +95,21 @@ export function useVenueClusters(viewport: Viewport) {
     const index = indexRef.current;
 
     // Convert venues to GeoJSON features
-    const points = venues.map(venue => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [venue.lng, venue.lat],
-      },
-      properties: {
-        id: venue.id,
-        name: venue.name,
-        vibe: venue.vibe,
-        source: venue.source,
-      },
-    }));
+    const points = venues
+      .filter(venue => Number.isFinite(+venue.lat) && Number.isFinite(+venue.lng))
+      .map(venue => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [venue.lng, venue.lat],
+        },
+        properties: {
+          id: venue.id,
+          name: venue.name,
+          vibe: venue.vibe,
+          source: venue.source || 'database',
+        },
+      }));
 
     // Load points into index
     index.load(points);
