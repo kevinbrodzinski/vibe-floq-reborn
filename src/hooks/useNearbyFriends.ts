@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useRef } from "react";
 import { getEnvironmentConfig } from '@/lib/environment';
+import { useEnhancedFriendDistances } from './useEnhancedFriendDistances';
 
 interface NearbyFriend {
   id: string;
@@ -19,6 +18,7 @@ interface UseNearbyFriendsOptions {
 
 /**
  * Returns online friends within `km` radius of (lat,lng).
+ * Now powered by the enhanced friend distance system!
  */
 export function useNearbyFriends(
   lat?: number,
@@ -37,15 +37,19 @@ export function useNearbyFriends(
     }, 300);
   }, []);
 
-  // TODO: Add real useQuery hook here when implementing live mode
-  // const { data: nearbyFriends = [] } = useQuery({
-  //   queryKey: ['nearby-friends', lat, lng, km],
-  //   enabled: enabled && !!lat && !!lng && env.presenceMode === 'live',
-  //   queryFn: async () => {
-  //     // Implementation will go here
-  //   }
-  // });
-  
+  // Use enhanced friend distances system
+  const {
+    friends,
+    isLoading,
+    error,
+    getFriendsWithinDistance
+  } = useEnhancedFriendDistances({
+    maxDistance: km * 1000, // convert km to meters
+    enableProximityTracking: true,
+    enablePrivacyFiltering: true,
+    sortBy: 'distance'
+  });
+
   if (env.presenceMode === 'offline' || env.presenceMode === 'mock') {
     // Return empty array for non-live modes
     const result = {
@@ -58,20 +62,28 @@ export function useNearbyFriends(
     return { ...result, debouncedPrimeProfiles };
   }
 
-  // Live mode - actual nearby friends data
+  // Convert enhanced friend distances to legacy format
+  const nearbyFriends: NearbyFriend[] = friends
+    .filter(friendDistance => enabled && friendDistance.distance <= km * 1000)
+    .map(friendDistance => ({
+      id: friendDistance.friend.profileId,
+      display_name: friendDistance.friend.displayName,
+      avatar_url: friendDistance.friend.avatarUrl,
+      lat: friendDistance.friend.location.lat,
+      lng: friendDistance.friend.location.lng,
+      distance_m: Math.round(friendDistance.distance)
+    }));
 
-  // TODO: Implement live nearby friends queries
-  // For now, return empty data even in live mode until implementation is ready
   const result = {
-    data: [] as NearbyFriend[],
-    isLoading: false,
-    error: null,
-    isError: false,
-    isSuccess: true,
+    data: nearbyFriends,
+    isLoading,
+    error,
+    isError: !!error,
+    isSuccess: !error && !isLoading,
   };
   
   if (env.debugPresence) {
-    console.log('🔴 useNearbyFriends - Live mode not yet implemented, returning empty data');
+    console.log(`✅ useNearbyFriends - Enhanced system found ${nearbyFriends.length} friends within ${km}km`);
   }
   
   return { ...result, debouncedPrimeProfiles };
