@@ -11474,6 +11474,10 @@ export type Database = {
           distance_m: number
         }[]
       }
+      get_or_create_dm_thread: {
+        Args: { p_user_a: string; p_user_b: string }
+        Returns: string
+      }
       get_pending_friend_requests: {
         Args: { _uid?: string }
         Returns: {

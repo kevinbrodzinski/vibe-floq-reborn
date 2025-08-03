@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Waypoint } from 'react-waypoint';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -27,7 +27,7 @@ import { useThreads } from '@/hooks/messaging/useThreads';
 import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
 import { useFriendsPresence } from '@/hooks/useFriendsPresence';
 import { supabase } from '@/integrations/supabase/client';
-import { rpc_markThreadRead, type Surface } from '@/lib/chat/api';
+import { rpc_markThreadRead, getOrCreateThread, type Surface } from '@/lib/chat/api';
 import isUuid from '@/lib/utils/isUuid';
 import { cn } from '@/lib/utils';
 import dayjs from '@/lib/dayjs';
@@ -55,82 +55,14 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Helper to create stable thread ID - now generates proper UUID
-  const threadIdFrom = async (userId: string, friendId: string) => {
-    console.log('[threadIdFrom] Starting with:', { userId, friendId });
-    
-    try {
-      // First try to find thread where current user is member_a
-      const { data: threadA, error: errorA } = await supabase
-        .from('direct_threads')
-        .select('id')
-        .eq('member_a', userId)
-        .eq('member_b', friendId)
-        .maybeSingle();
-      
-      console.log('[threadIdFrom] Query A result:', { threadA, errorA });
-      
-      if (errorA) {
-        console.error('[threadIdFrom] Error in query A:', errorA);
-      }
-      
-      if (threadA) {
-        console.log('[threadIdFrom] Found existing thread (A->B):', threadA.id);
-        return threadA.id;
-      }
-      
-      // Then try to find thread where current user is member_b
-      const { data: threadB, error: errorB } = await supabase
-        .from('direct_threads')
-        .select('id')
-        .eq('member_a', friendId)
-        .eq('member_b', userId)
-        .maybeSingle();
-      
-      console.log('[threadIdFrom] Query B result:', { threadB, errorB });
-      
-      if (errorB) {
-        console.error('[threadIdFrom] Error in query B:', errorB);
-      }
-      
-      if (threadB) {
-        console.log('[threadIdFrom] Found existing thread (B->A):', threadB.id);
-        return threadB.id;
-      }
-      
-      console.log('[threadIdFrom] No existing thread found, creating new one');
-      
-      // Create new thread
-      const { data: newThread, error } = await supabase
-        .from('direct_threads')
-        .insert({
-          member_a: userId,
-          member_b: friendId,
-          member_a_profile_id: userId,  // Required field
-          member_b_profile_id: friendId,  // Required field
-          last_message_at: new Date().toISOString(),
-          unread_a: 0,
-          unread_b: 0
-        })
-        .select('id')
-        .single();
-      
-      if (error) {
-        console.error('[threadIdFrom] Error creating thread:', error);
-        throw error;
-      }
-      
-      console.log('[threadIdFrom] Created new thread:', newThread.id);
-      return newThread.id;
-    } catch (error) {
-      console.error('[threadIdFrom] Complete failure:', error);
-      throw error;  // let the sheet show a toast instead
-    }
-  };
+  // Stable thread lookup using RPC
+  const threadIdFrom = useCallback(async (me: string, friend: string): Promise<string> => {
+    return getOrCreateThread(me, friend);
+  }, []);
 
    // Unified messaging hooks - guard queries until thread is ready
-   const enabled = !!(currentUserId && friendId && threadId && open);
-   const messages = useMessages(threadId, 'dm', { enabled });
+   const enabled = !!threadId;
+   const messages = useMessages(threadId!, 'dm', { enabled });
    const sendMut = useSendMessage('dm');
 
   // Debug messages hook state
@@ -194,31 +126,28 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     setCurrentUserId(userId);
   }, [user]);
 
-  // Initialize thread when both user and friend are available AND sheet is open
+   // Initialize thread when both user and friend are available AND sheet is open
    useEffect(() => {
-     console.log('[DM_SHEET] Thread effect triggered:', { currentUserId, friendId, open });
+     if (!open || !currentUserId || !friendId) return;
      
-     if (currentUserId && friendId && open) {
-       console.log('[DM_SHEET] Creating/getting thread...');
-       threadIdFrom(currentUserId, friendId)
-         .then((id) => {
-           console.log('[DM_SHEET] Thread ID set:', id);
-           setThreadId(id);
-         })
-         .catch((error) => {
-           console.error('[threadIdFrom] failed:', error);
-           toast({
-             title: "Could not start chat",
-             description: "Please try again later.",
-             variant: "destructive",
-           });
+     console.log('[DM_SHEET] Getting thread for:', { currentUserId, friendId });
+     setThreadId(undefined); // show loading state
+     
+     threadIdFrom(currentUserId, friendId)
+       .then(id => {
+         console.log('[DM_SHEET] Thread resolved:', id);
+         setThreadId(id);
+       })
+       .catch(e => {
+         console.error('[DM_SHEET] Thread error:', e);
+         toast({ 
+           title: 'Chat error', 
+           description: e.message || 'Could not start chat', 
+           variant: 'destructive' 
          });
-     } else if (!open) {
-       // Only reset threadId when sheet closes, not when IDs are missing
-       console.log('[DM_SHEET] Sheet closed, resetting threadId');
-       setThreadId(null);
-     }
-   }, [currentUserId, friendId, open, toast]);
+         setThreadId(null);
+       });
+   }, [open, currentUserId, friendId, threadIdFrom, toast]);
 
   useEffect(() => {
     if (open && currentUserId && friendId && threadId) {
@@ -227,7 +156,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
       // Optimistically clear unread badge
       queryClient.setQueryData(
         ['dm-unread', currentUserId],
-        (rows: any[]) => rows?.filter(r => r.thread_id !== threadId) ?? []
+        (old: any[]) => old?.filter(r => r.thread_id !== threadId) ?? []
       );
     }
   }, [open, currentUserId, friendId, threadId, markReadMut, queryClient]);

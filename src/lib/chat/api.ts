@@ -38,6 +38,21 @@ export const rpc_markThreadRead = (payload: {
   p_profile_id: string;
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
+export const getOrCreateThread = async (me: string, friend: string): Promise<string> => {
+  const { data, error } = await supabase.rpc('get_or_create_dm_thread', {
+    p_user_a: me,
+    p_user_b: friend,
+  });
+
+  if (error || !data) {
+    console.error('[getOrCreateThread] RPC error:', error);
+    throw error ?? new Error('No thread ID returned');
+  }
+  
+  console.log('[getOrCreateThread] Success:', { me, friend, threadId: data });
+  return data;
+};
+
 export const fn_uploadChatMedia = async (body: Record<string, unknown>) => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error("No auth session");
