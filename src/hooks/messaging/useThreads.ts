@@ -29,15 +29,19 @@ export const useThreads = () => {
         .order("last_message_at", { ascending: false });
       if (error) throw error;
       
-      // Transform the response to handle potential arrays
+      // Transform the response and add safety guards for deleted profiles
       const threads = (data || []).map(thread => ({
         ...thread,
-        member_a_profile: Array.isArray(thread.member_a_profile) 
-          ? thread.member_a_profile[0] || null 
-          : thread.member_a_profile,
-        member_b_profile: Array.isArray(thread.member_b_profile) 
-          ? thread.member_b_profile[0] || null 
-          : thread.member_b_profile,
+        member_a_profile: thread.member_a_profile || { 
+          display_name: '(Deleted User)', 
+          username: null, 
+          avatar_url: null 
+        },
+        member_b_profile: thread.member_b_profile || { 
+          display_name: '(Deleted User)', 
+          username: null, 
+          avatar_url: null 
+        },
       }));
       
       return threads as DirectThreadWithProfiles[];
