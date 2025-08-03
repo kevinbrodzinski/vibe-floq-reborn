@@ -11,6 +11,8 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
 
   return useMutation({
     mutationFn: async ({ threadId, content }: { threadId: string; content: string }) => {
+      console.log('[useSendMessage] Starting mutation:', { threadId, content });
+      
       // Validate required parameters
       if (!threadId || threadId === 'null') {
         throw new Error("Thread ID is required and cannot be null");
@@ -55,18 +57,23 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("No auth session");
 
+      console.log('[useSendMessage] Calling supaFn...');
       const res = await supaFn(
         "send-message",
         session.access_token,
         { surface, thread_id: threadId, sender_id: user.id, content, client_id }
       );
       
+      console.log('[useSendMessage] supaFn response:', res.status, res.ok);
+      
       if (!res.ok) {
         const errorText = await res.text();
+        console.log('[useSendMessage] Error response:', errorText);
         throw new Error(`Failed to send message: ${res.status} ${errorText}`);
       }
       
       const data = await res.json();
+      console.log('[useSendMessage] Success data:', data);
       return { ...data, client_id, threadId };
     },
 
@@ -96,7 +103,8 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
     },
 
-    onError: (_err, { threadId }, _ctx) => {
+    onError: (err, { threadId }, _ctx) => {
+      console.log('[useSendMessage] Error:', err);
       // Remove failed optimistic message
       queryClient.setQueryData(["messages", surface, threadId], (old: any) => {
         if (!old) return old;
@@ -108,6 +116,11 @@ export function useSendMessage(surface: "dm" | "floq" | "plan" = "dm") {
           )
         };
       });
+    },
+
+    onSettled: (_data, _error) => {
+      console.log('[useSendMessage] Mutation settled');
+      // This ensures the pending flag is cleared even if something goes wrong
     },
   });
 }

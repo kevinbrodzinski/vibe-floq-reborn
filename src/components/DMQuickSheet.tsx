@@ -100,6 +100,11 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     console.log('[DM_SHEET] Sheet state changed:', { open, friendId });
   }, [open, friendId]);
 
+  // Debug mutation state
+  useEffect(() => {
+    console.log('[sendMut]', sendMut.status, sendMut.isPending, sendMut.data, sendMut.error);
+  }, [sendMut.status]);
+
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({
     onSwipeDown: () => onOpenChange(false)
