@@ -39,7 +39,7 @@ export const rpc_markThreadRead = (payload: {
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
 export const getOrCreateThread = async (
-  me: string, 
+  me: string,
   friend: string
 ): Promise<string> => {
   if (me === friend) {
