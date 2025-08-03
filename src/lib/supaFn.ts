@@ -8,16 +8,9 @@ export function supaFn(path: string, accessToken: string | null, body: unknown) 
     headers.Authorization = `Bearer ${accessToken}`;
   }
   
-  // Create timeout controller
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-  
   return fetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify(body),
-    signal: controller.signal,
-  }).finally(() => {
-    clearTimeout(timeoutId);
   });
 }
