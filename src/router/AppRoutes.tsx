@@ -92,7 +92,7 @@ export const AppRoutes = () => {
       <Route path="/settings" element={<Settings />} />
       <Route path="/venues/:id" element={<VenuePage />} />
       {/* Test/Debug Routes - only in development */}
-      {process.env.NODE_ENV !== 'production' && (
+      {(process.env.NODE_ENV !== 'production' || !process.env.NODE_ENV) && (
         <>
           <Route path="/afterglow-test" element={<AfterglowTestPage />} />
           <Route path="/venue-test" element={<VenueTestPage />} />
