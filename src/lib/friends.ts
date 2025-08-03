@@ -8,18 +8,28 @@ export async function sendFriendRequest(targetUserId: string) {
   if (authErr || !user) throw authErr ?? new Error("Not authenticated");
   if (targetUserId === user.id) throw new Error("Cannot add yourself");
 
-  const { error } = await supabase
-    .from("friend_requests")
-    .upsert(
-      {
-        profile_id:       user.id,        // requester
-        other_profile_id: targetUserId,   // addressee
-        status:           "pending",
-      },
-      { onConflict: "profile_id,other_profile_id", ignoreDuplicates: true }
-    );
+  // Use rate-limited friend request function
+  const { data, error } = await supabase.rpc("send_friend_request_with_rate_limit", {
+    p_target_user_id: targetUserId
+  });
 
-  if (error && error.code !== "23505") throw error;   // ignore duplicate-row error
+  if (error) throw error;
+  
+  // Handle rate limiting responses
+  if (data && !data.success) {
+    const errorMessage = data.message || "Failed to send friend request";
+    if (data.error === 'rate_limit_exceeded') {
+      throw new Error(`Rate limit exceeded: ${errorMessage}`);
+    } else if (data.error === 'user_rate_limit_exceeded') {
+      throw new Error(`Already sent request: ${errorMessage}`);
+    } else if (data.error === 'duplicate_request') {
+      throw new Error("Friend request already exists");
+    } else {
+      throw new Error(errorMessage);
+    }
+  }
+  
+  return data;
 }
 
 /* -------------------------------------------------- */
@@ -29,28 +39,12 @@ export async function acceptFriendRequest(fromUserId: string) {
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) throw authErr ?? new Error("Not authenticated");
 
-  /* 2-a  mark request accepted */
-  const { data, error: updErr } = await supabase
-    .from("friend_requests")
-    .update({
-      status:       "accepted",
-      responded_at: new Date().toISOString(),
-    })
-    .eq("profile_id", fromUserId)   // requester = them
-    .eq("other_profile_id", user.id) // addressee = you
-    .eq("status", "pending")
-    .select()
-    .single();
-
-  if (updErr) throw updErr;
-
-  /* 2-b  write bidirectional friendship */
-  const { error: rpcErr } = await supabase.rpc("upsert_friendship", {
-    _other_user: fromUserId,
-    _new_state:  "accepted",
+  // Use atomic function to prevent race conditions
+  const { data, error } = await supabase.rpc("accept_friend_request_atomic", {
+    requester_id: fromUserId
   });
-  if (rpcErr) throw rpcErr;
   
+  if (error) throw error;
   return data;
 }
 

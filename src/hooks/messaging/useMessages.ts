@@ -1,4 +1,4 @@
-import { useEffect, useId } from "react";
+import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -47,8 +47,11 @@ function addMessage(old: MessagesInfinite, msg: MessageRow): MessagesInfinite {
 
 export function useMessages(threadId: string | undefined, surface: "dm" | "floq" | "plan" = "dm", opts?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
-  // Stable hookId across renders
-  const hookId = useId();
+  // Stable hookId across renders - only changes when threadId or surface changes
+  const hookId = useMemo(() => {
+    if (!threadId) return `messages-${surface}-null`;
+    return `messages-${surface}-${threadId}`;
+  }, [surface, threadId]);
   
   console.log('[useMessages hook]', { threadId, surface, isValidUuid: threadId ? isUuid(threadId) : false, enabled: opts?.enabled });
 
