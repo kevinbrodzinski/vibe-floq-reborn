@@ -92,6 +92,26 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
    const enabled = threadId ? isUuid(threadId) : false;
    const messages = useMessages(threadId || '', 'dm');
    const sendMut = useSendMessage('dm');
+
+  // Debug messages hook state
+  useEffect(() => {
+    console.log('[useMessages]', {
+      threadId,
+      enabled,
+      isLoading: messages.isLoading,
+      isFetching: messages.isFetching,
+      error: messages.error,
+      count: messages.data?.pages?.reduce((sum, p) => sum + (p?.length || 0), 0) || 0,
+      pages: messages.data?.pages?.length || 0
+    });
+  }, [
+    threadId,
+    enabled,
+    messages.isLoading,
+    messages.isFetching,
+    messages.error,
+    messages.data
+  ]);
   const markReadMut = useMarkThreadRead();
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
@@ -105,6 +125,16 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   useEffect(() => {
     console.log('[sendMut]', sendMut.status, sendMut.isPending, sendMut.data, sendMut.error);
   }, [sendMut.status]);
+
+  // Debug IDs to see if threadId is being set properly
+  useEffect(() => {
+    console.log('[DM_SHEET] IDs:', {
+      currentUserId,
+      friendId,
+      threadId,
+      enabled
+    });
+  }, [currentUserId, friendId, threadId, enabled]);
 
   // Swipe gesture for closing sheet
   const swipeGestures = useAdvancedGestures({

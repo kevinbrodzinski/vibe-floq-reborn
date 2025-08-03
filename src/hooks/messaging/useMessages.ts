@@ -13,12 +13,16 @@ const PAGE_SIZE = 40;
 export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = "dm") {
   const queryClient = useQueryClient();
 
+  console.log('[useMessages hook]', { threadId, surface, isValidUuid: isUuid(threadId) });
+
   // Paginated history fetch
   const history = useInfiniteQuery({
     queryKey: ["messages", surface, threadId],
     enabled: isUuid(threadId), // Only run when threadId is a valid UUID
     queryFn: async ({ pageParam = 0 }): Promise<any[]> => {
+      console.log('[useMessages queryFn]', { surface, threadId, pageParam });
       if (surface === "dm") {
+        console.log('[useMessages] Fetching DM messages for thread:', threadId);
         const { data, error } = await supabase
           .from("direct_messages")
           .select("*")
@@ -26,7 +30,11 @@ export function useMessages(threadId: string, surface: "dm" | "floq" | "plan" = 
           .order("created_at", { ascending: false })
           .range(pageParam, pageParam + PAGE_SIZE - 1);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[useMessages] DM fetch error:', error);
+          throw error;
+        }
+        console.log('[useMessages] DM fetch success:', data?.length, 'messages');
         return data.reverse(); // oldest → newest
       } else {
         const { data, error } = await supabase
