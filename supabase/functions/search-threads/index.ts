@@ -47,19 +47,20 @@ Deno.serve(async (req) => {
     }
 
     // Use anon key with proper auth headers to respect RLS
+    const authHeader = req.headers.get('Authorization') || '';
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       {
         global: {
           headers: {
-            Authorization: req.headers.get('Authorization')!
+            Authorization: authHeader
           }
         }
       }
     );
 
-    // Search DM threads where user is a participant and friend's name matches query
+    // Search DM threads where user is a participant and friend's name matches query using SQL ILIKE
     const { data, error } = await supabase
       .from('direct_threads')
       .select(`
@@ -75,6 +76,7 @@ Deno.serve(async (req) => {
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
       .or(`member_a.eq.${userId},member_b.eq.${userId}`)
+      .or(`pa.display_name.ilike.%${q.trim()}%,pa.username.ilike.%${q.trim()}%,pb.display_name.ilike.%${q.trim()}%,pb.username.ilike.%${q.trim()}%`)
       .order('last_message_at', { ascending: false });
 
     if (error) {
@@ -85,7 +87,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Filter and map results based on search query
+    // Map results without client-side filtering (SQL ILIKE handles the search)
     const results: ThreadSearchResult[] = (data || [])
       .map(thread => {
         const isUserA = thread.member_a === userId;
@@ -94,12 +96,6 @@ Deno.serve(async (req) => {
           (Array.isArray(thread.pa) ? thread.pa[0] : thread.pa);
         
         if (!friendProfile) return null;
-
-        const searchText = `${friendProfile.display_name || ''} ${friendProfile.username || ''}`.toLowerCase();
-        const query = q.toLowerCase().trim();
-        
-        // Simple fuzzy search - check if query matches display name or username
-        if (!searchText.includes(query)) return null;
 
         return {
           thread_id: thread.id,
