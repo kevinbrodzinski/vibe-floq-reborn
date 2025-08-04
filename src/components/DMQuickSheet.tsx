@@ -221,7 +221,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
     }
     
     // Set new timeout to stop typing indicator
-    const timeout = window.setTimeout(() => {
+    const timeout = setTimeout(() => {
       setIsTyping(false);
       // TODO: Implement sendTyping('stop') when ready
     }, 3000);
