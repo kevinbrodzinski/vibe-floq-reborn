@@ -29,7 +29,7 @@ export interface SmartFloqDiscoveryOptions {
 
 export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
   const { user } = useAuth();
-  const { position } = useUserLocation();
+  const { pos } = useUserLocation();
   const {
     maxDistance = 2,
     minVibeMatch = 0.3,
@@ -44,14 +44,14 @@ export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
     loading: floqsLoading, 
     error: floqsError 
   } = useNearbyFloqs(
-    position?.coords.latitude,
-    position?.coords.longitude,
+    pos?.lat,
+    pos?.lng,
     { km: maxDistance }
   );
 
   // Smart analysis and matching
   const { data: smartMatches = [], isLoading: analysisLoading, error: analysisError } = useQuery({
-    queryKey: ['smart-floq-discovery', user?.id, position?.coords, nearbyFloqs.length, currentVibe, sensorData],
+    queryKey: ['smart-floq-discovery', user?.id, pos, nearbyFloqs.length, currentVibe, sensorData],
     queryFn: async (): Promise<SmartFloqMatch[]> => {
       if (!nearbyFloqs.length || !user) return [];
 
@@ -64,9 +64,9 @@ export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
         isWeekend: now.getDay() === 0 || now.getDay() === 6,
         timeOfDay: getTimeOfDay(now.getHours()),
         weather: 'clear', // TODO: Integrate weather API
-        location: position ? {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
+        location: pos ? {
+          lat: pos.lat,
+          lng: pos.lng
         } : undefined
       };
 
@@ -77,8 +77,7 @@ export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
           // Calculate vibe compatibility
           const vibeCompatibility = calculateVibeCompatibility(
             currentVibe || 'social',
-            floq.primary_vibe,
-            floq.vibe_tag
+            floq.primary_vibe
           );
 
           // If vibe match is too low, skip
@@ -93,7 +92,7 @@ export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
           // Calculate context factors
           const contextFactors = {
             temporal: calculateTemporalFactor(floq, now),
-            proximity: calculateProximityFactor(floq, position),
+            proximity: calculateProximityFactor(floq, pos),
             social: includeSocialSignals ? calculateSocialFactor(floq, user.id) : 0.5,
             vibe: vibeCompatibility
           };
@@ -138,7 +137,7 @@ export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
     loading: floqsLoading || analysisLoading,
     error: floqsError || analysisError?.message || null,
     rawFloqs: nearbyFloqs,
-    hasLocation: !!position,
+    hasLocation: !!pos,
     analysisEnabled: !!sensorData || !!currentVibe
   };
 }

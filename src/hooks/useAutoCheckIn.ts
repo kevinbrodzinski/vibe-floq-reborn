@@ -90,7 +90,9 @@ export const useAutoCheckIn = () => {
           const venuesWithConfidence = venues.map((venue: any) => {
             const distance = metersBetween(
               { lat, lng },
-              { lat: venue.lat, lng: venue.lng }
+              { lat: venue.lat, lng: venue.lng },
+              user.id || '',
+              false
             );
             
             // Simple confidence calculation: closer = higher confidence, popularity boost
@@ -103,7 +105,8 @@ export const useAutoCheckIn = () => {
               distance,
               confidence,
               overallConfidence: confidence,
-              venueId: venue.venue_id,
+              venueId: venue.venue_id || venue.id,
+              name: venue.name || venue.display_name || `Venue ${venue.venue_id || venue.id}`,
               recommendedAction: confidence >= MIN_FALLBACK_CONFIDENCE ? 'check_in' : 'observe'
             };
           });
@@ -114,7 +117,7 @@ export const useAutoCheckIn = () => {
             .sort((a, b) => b.confidence - a.confidence)[0] || null;
 
           if (eligibleVenue) {
-            console.log(`[AutoCheckIn] GPS fallback venue detected: ${eligibleVenue.name} (confidence: ${eligibleVenue.confidence})`);
+            console.log(`[AutoCheckIn] GPS fallback venue detected: ${eligibleVenue.name || eligibleVenue.venueId} (confidence: ${eligibleVenue.confidence})`);
           }
         }
       }
@@ -128,7 +131,7 @@ export const useAutoCheckIn = () => {
           // Started being near a new venue
           currentCheckInRef.current = {
             venueId: eligibleVenue.venueId,
-            name: eligibleVenue.name || `Venue ${eligibleVenue.venueId}`,
+            name: eligibleVenue.name || eligibleVenue.venueId || `Venue ${eligibleVenue.venueId}`,
             checkedInAt: now,
             lastSeen: now,
             confidence: eligibleVenue.overallConfidence,
