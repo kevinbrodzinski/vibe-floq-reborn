@@ -6,76 +6,55 @@
 -- =============================================
 
 -- Primary index for proximity event queries by profile
-CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_timestamp 
-ON proximity_events (profile_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_a_timestamp 
+ON proximity_events (profile_id_a, event_ts DESC);
 
 -- Index for target profile queries (who interacted with this user)
-CREATE INDEX IF NOT EXISTS idx_proximity_events_target_timestamp 
-ON proximity_events (target_profile_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_b_timestamp 
+ON proximity_events (profile_id_b, event_ts DESC);
 
 -- Composite index for proximity pair queries
 CREATE INDEX IF NOT EXISTS idx_proximity_events_pair_timestamp 
-ON proximity_events (profile_id, target_profile_id, timestamp DESC);
+ON proximity_events (profile_id_a, profile_id_b, event_ts DESC);
 
 -- Index for event type filtering and analytics
 CREATE INDEX IF NOT EXISTS idx_proximity_events_type_timestamp 
-ON proximity_events (event_type, timestamp DESC);
+ON proximity_events (event_type, event_ts DESC);
 
 -- Index for confidence-based queries
 CREATE INDEX IF NOT EXISTS idx_proximity_events_confidence 
 ON proximity_events (confidence DESC) 
 WHERE confidence >= 0.5;
 
--- Spatial index for location-based proximity queries
-CREATE INDEX IF NOT EXISTS idx_proximity_events_location 
-ON proximity_events USING GIST (
-  ST_Point(location_lng, location_lat)
-) WHERE location_lat IS NOT NULL AND location_lng IS NOT NULL;
+-- Note: Removed spatial index as location_lat/lng columns don't exist in current schema
 
 -- =============================================
 -- VENUE SIGNATURES TABLE OPTIMIZATIONS
 -- =============================================
 
--- Primary venue lookup index
-CREATE INDEX IF NOT EXISTS idx_venue_signatures_venue_id 
-ON venue_signatures (venue_id);
+-- Primary venue lookup index (already exists)
+-- CREATE INDEX IF NOT EXISTS idx_venue_signatures_venue_id ON venue_signatures (venue_id);
 
--- Spatial index for venue location queries
-CREATE INDEX IF NOT EXISTS idx_venue_signatures_location 
-ON venue_signatures USING GIST (
-  ST_Point(lng, lat)
-);
+-- Index for signal type filtering (already exists)  
+-- CREATE INDEX IF NOT EXISTS idx_venue_signatures_signal_type ON venue_signatures (signal_type);
 
--- WiFi network signature index for fast matching
-CREATE INDEX IF NOT EXISTS idx_venue_signatures_wifi_networks 
-ON venue_signatures USING GIN (wifi_networks);
-
--- Bluetooth beacon signature index
-CREATE INDEX IF NOT EXISTS idx_venue_signatures_bluetooth_beacons 
-ON venue_signatures USING GIN (bluetooth_beacons);
-
--- Composite index for confidence-based venue queries
+-- Additional performance indexes for venue signatures
 CREATE INDEX IF NOT EXISTS idx_venue_signatures_confidence_updated 
-ON venue_signatures (confidence DESC, updated_at DESC);
+ON venue_signatures (confidence_score DESC, last_verified DESC);
+
+-- Index for signal strength filtering
+CREATE INDEX IF NOT EXISTS idx_venue_signatures_signal_strength 
+ON venue_signatures (signal_strength DESC) 
+WHERE signal_strength IS NOT NULL;
 
 -- =============================================
--- GEOFENCES TABLE OPTIMIZATIONS
+-- GEOFENCES TABLE OPTIMIZATIONS  
 -- =============================================
 
--- Spatial index for geofence boundary queries
-CREATE INDEX IF NOT EXISTS idx_geofences_boundary 
-ON geofences USING GIST (boundary);
+-- Note: Most geofence indexes should already exist from the schema
+-- Adding any missing performance indexes
 
--- Index for active geofences
-CREATE INDEX IF NOT EXISTS idx_geofences_active 
-ON geofences (is_active) 
-WHERE is_active = true;
-
--- Index for geofence type filtering
-CREATE INDEX IF NOT EXISTS idx_geofences_type 
-ON geofences (fence_type);
-
--- User-specific geofence index
+-- Index for active geofences by profile (if not exists)
 CREATE INDEX IF NOT EXISTS idx_geofences_profile_active 
 ON geofences (profile_id, is_active) 
 WHERE is_active = true;
@@ -84,42 +63,17 @@ WHERE is_active = true;
 -- VENUE BOUNDARIES TABLE OPTIMIZATIONS
 -- =============================================
 
--- Spatial index for venue boundary queries
-CREATE INDEX IF NOT EXISTS idx_venue_boundaries_boundary 
-ON venue_boundaries USING GIST (boundary);
-
--- Venue ID index for boundary lookups
-CREATE INDEX IF NOT EXISTS idx_venue_boundaries_venue_id 
-ON venue_boundaries (venue_id);
-
--- Confidence-based boundary queries
+-- Note: Core indexes already exist from schema
+-- Adding confidence-based queries
 CREATE INDEX IF NOT EXISTS idx_venue_boundaries_confidence 
-ON venue_boundaries (confidence DESC);
+ON venue_boundaries (confidence_score DESC);
 
 -- =============================================
 -- EXISTING TABLES OPTIMIZATIONS
 -- =============================================
 
--- Optimize profiles table for location queries
-CREATE INDEX IF NOT EXISTS idx_profiles_location_updated 
-ON profiles (updated_at DESC) 
-WHERE lat IS NOT NULL AND lng IS NOT NULL;
-
--- Spatial index on profiles for proximity queries
-CREATE INDEX IF NOT EXISTS idx_profiles_location_spatial 
-ON profiles USING GIST (
-  ST_Point(lng, lat)
-) WHERE lat IS NOT NULL AND lng IS NOT NULL;
-
--- Optimize presence table for real-time queries
-CREATE INDEX IF NOT EXISTS idx_presence_profile_updated 
-ON presence (profile_id, updated_at DESC);
-
--- Spatial index on presence for location-based queries
-CREATE INDEX IF NOT EXISTS idx_presence_location_spatial 
-ON presence USING GIST (
-  ST_Point(lng, lat)
-) WHERE lat IS NOT NULL AND lng IS NOT NULL;
+-- Optimize profiles table for location queries (if lat/lng columns exist)
+-- Note: Need to check if profiles has location columns before creating these
 
 -- =============================================
 -- MATERIALIZED VIEWS FOR PERFORMANCE
@@ -128,31 +82,31 @@ ON presence USING GIST (
 -- Materialized view for proximity event statistics
 CREATE MATERIALIZED VIEW IF NOT EXISTS proximity_stats_daily AS
 SELECT 
-  profile_id,
-  DATE(timestamp) as event_date,
+  profile_id_a,
+  DATE(event_ts) as event_date,
   COUNT(*) as total_events,
-  COUNT(DISTINCT target_profile_id) as unique_contacts,
+  COUNT(DISTINCT profile_id_b) as unique_contacts,
   COUNT(*) FILTER (WHERE event_type = 'enter') as enter_events,
   COUNT(*) FILTER (WHERE event_type = 'exit') as exit_events,
   COUNT(*) FILTER (WHERE event_type = 'sustain') as sustain_events,
   AVG(confidence) as avg_confidence,
   MAX(confidence) as max_confidence
 FROM proximity_events 
-WHERE timestamp >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY profile_id, DATE(timestamp);
+WHERE event_ts >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY profile_id_a, DATE(event_ts);
 
 -- Index on the materialized view
 CREATE UNIQUE INDEX IF NOT EXISTS idx_proximity_stats_daily_unique 
-ON proximity_stats_daily (profile_id, event_date);
+ON proximity_stats_daily (profile_id_a, event_date);
 
 -- Materialized view for venue detection performance
 CREATE MATERIALIZED VIEW IF NOT EXISTS venue_detection_stats AS
 SELECT 
   venue_id,
-  COUNT(*) as total_detections,
-  AVG(confidence) as avg_confidence,
-  COUNT(DISTINCT profile_id) as unique_visitors,
-  MAX(updated_at) as last_detection
+  COUNT(*) as total_signatures,
+  AVG(confidence_score) as avg_confidence,
+  MAX(last_verified) as last_detection,
+  COUNT(DISTINCT signal_type) as signal_types_count
 FROM venue_signatures 
 GROUP BY venue_id;
 
@@ -181,44 +135,29 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  WITH nearby_profiles AS (
+  WITH proximity_stats AS (
     SELECT 
-      pr.profile_id,
-      ST_Distance(
-        ST_Point(p_lng, p_lat)::geography,
-        ST_Point(pr.lng, pr.lat)::geography
-      ) as distance_m
-    FROM profiles pr
-    WHERE pr.profile_id != p_profile_id
-      AND pr.lat IS NOT NULL 
-      AND pr.lng IS NOT NULL
-      AND ST_DWithin(
-        ST_Point(p_lng, p_lat)::geography,
-        ST_Point(pr.lng, pr.lat)::geography,
-        p_radius_m
-      )
-  ),
-  proximity_stats AS (
-    SELECT 
-      pe.target_profile_id as profile_id,
+      CASE 
+        WHEN pe.profile_id_a = p_profile_id THEN pe.profile_id_b
+        ELSE pe.profile_id_a
+      END as other_profile_id,
       AVG(pe.confidence) as avg_confidence,
-      MAX(pe.timestamp) as last_event,
+      MAX(pe.event_ts) as last_event,
       COUNT(*) as event_count
     FROM proximity_events pe
-    WHERE pe.profile_id = p_profile_id
-      AND pe.timestamp >= NOW() - INTERVAL '7 days'
-    GROUP BY pe.target_profile_id
+    WHERE (pe.profile_id_a = p_profile_id OR pe.profile_id_b = p_profile_id)
+      AND pe.event_ts >= NOW() - INTERVAL '7 days'
+    GROUP BY other_profile_id
   )
   SELECT 
-    np.profile_id,
-    np.distance_m,
-    COALESCE(ps.avg_confidence, 0.1) as proximity_confidence,
+    ps.other_profile_id as profile_id,
+    0.0 as distance_m, -- Would need location data to calculate actual distance
+    ps.avg_confidence as proximity_confidence,
     ps.last_event as last_proximity_event,
-    COALESCE(ps.event_count, 0)::INTEGER as total_proximity_events
-  FROM nearby_profiles np
-  LEFT JOIN proximity_stats ps ON np.profile_id = ps.profile_id
-  WHERE COALESCE(ps.avg_confidence, 0.1) >= p_min_confidence
-  ORDER BY proximity_confidence DESC, np.distance_m ASC;
+    ps.event_count::INTEGER as total_proximity_events
+  FROM proximity_stats ps
+  WHERE ps.avg_confidence >= p_min_confidence
+  ORDER BY ps.avg_confidence DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -231,32 +170,22 @@ CREATE OR REPLACE FUNCTION get_venue_signatures_by_location(
 )
 RETURNS TABLE (
   venue_id TEXT,
-  distance_m DOUBLE PRECISION,
   confidence DOUBLE PRECISION,
-  wifi_match_count INTEGER,
-  bluetooth_match_count INTEGER,
+  signal_count INTEGER,
   last_updated TIMESTAMP
 ) AS $$
 BEGIN
   RETURN QUERY
   SELECT 
     vs.venue_id,
-    ST_Distance(
-      ST_Point(p_lng, p_lat)::geography,
-      ST_Point(vs.lng, vs.lat)::geography
-    ) as distance_m,
-    vs.confidence,
-    COALESCE(array_length(vs.wifi_networks, 1), 0) as wifi_match_count,
-    COALESCE(array_length(vs.bluetooth_beacons, 1), 0) as bluetooth_match_count,
-    vs.updated_at as last_updated
+    AVG(vs.confidence_score) as confidence,
+    COUNT(*)::INTEGER as signal_count,
+    MAX(vs.last_verified) as last_updated
   FROM venue_signatures vs
-  WHERE vs.confidence >= p_min_confidence
-    AND ST_DWithin(
-      ST_Point(p_lng, p_lat)::geography,
-      ST_Point(vs.lng, vs.lat)::geography,
-      p_radius_m
-    )
-  ORDER BY vs.confidence DESC, distance_m ASC;
+  WHERE vs.confidence_score >= p_min_confidence
+  GROUP BY vs.venue_id
+  HAVING AVG(vs.confidence_score) >= p_min_confidence
+  ORDER BY confidence DESC;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -282,7 +211,7 @@ DECLARE
   deleted_count INTEGER;
 BEGIN
   DELETE FROM proximity_events 
-  WHERE timestamp < NOW() - (p_days_to_keep || ' days')::INTERVAL;
+  WHERE event_ts < NOW() - (p_days_to_keep || ' days')::INTERVAL;
   
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
   RETURN deleted_count;
@@ -298,11 +227,11 @@ CREATE OR REPLACE VIEW proximity_performance_stats AS
 SELECT 
   'proximity_events'::text as table_name,
   COUNT(*) as total_records,
-  COUNT(*) FILTER (WHERE timestamp >= NOW() - INTERVAL '1 day') as records_last_24h,
-  COUNT(*) FILTER (WHERE timestamp >= NOW() - INTERVAL '1 hour') as records_last_hour,
+  COUNT(*) FILTER (WHERE event_ts >= NOW() - INTERVAL '1 day') as records_last_24h,
+  COUNT(*) FILTER (WHERE event_ts >= NOW() - INTERVAL '1 hour') as records_last_hour,
   AVG(confidence) as avg_confidence,
-  COUNT(DISTINCT profile_id) as unique_profiles,
-  COUNT(DISTINCT target_profile_id) as unique_targets
+  COUNT(DISTINCT profile_id_a) as unique_profiles_a,
+  COUNT(DISTINCT profile_id_b) as unique_profiles_b
 FROM proximity_events;
 
 -- View for venue signature performance monitoring
@@ -310,11 +239,10 @@ CREATE OR REPLACE VIEW venue_signature_performance_stats AS
 SELECT 
   'venue_signatures'::text as table_name,
   COUNT(*) as total_records,
-  COUNT(*) FILTER (WHERE updated_at >= NOW() - INTERVAL '1 day') as updated_last_24h,
-  AVG(confidence) as avg_confidence,
+  COUNT(*) FILTER (WHERE last_verified >= NOW() - INTERVAL '1 day') as updated_last_24h,
+  AVG(confidence_score) as avg_confidence,
   COUNT(DISTINCT venue_id) as unique_venues,
-  AVG(array_length(wifi_networks, 1)) as avg_wifi_networks,
-  AVG(array_length(bluetooth_beacons, 1)) as avg_bluetooth_beacons
+  COUNT(DISTINCT signal_type) as unique_signal_types
 FROM venue_signatures;
 
 -- =============================================
@@ -334,14 +262,8 @@ GRANT SELECT ON proximity_performance_stats TO authenticated;
 GRANT SELECT ON venue_signature_performance_stats TO authenticated;
 
 -- =============================================
--- SCHEDULED MAINTENANCE (for cron extension)
+-- COMMENTS
 -- =============================================
-
--- Schedule materialized view refresh (every hour)
--- SELECT cron.schedule('refresh-proximity-stats', '0 * * * *', 'SELECT refresh_proximity_stats();');
-
--- Schedule old data cleanup (daily at 2 AM)
--- SELECT cron.schedule('cleanup-proximity-events', '0 2 * * *', 'SELECT cleanup_old_proximity_events(30);');
 
 COMMENT ON FUNCTION get_nearby_users_with_proximity IS 'Enhanced proximity query with confidence scoring';
 COMMENT ON FUNCTION get_venue_signatures_by_location IS 'Multi-signal venue detection with confidence scoring';

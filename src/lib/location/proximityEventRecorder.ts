@@ -8,17 +8,17 @@ import type { ProximityEvent, ProximityAnalysis } from './proximityScoring';
 
 export interface ProximityEventRecord {
   id?: string;
-  profile_id: string;
-  target_profile_id: string;
+  profile_id_a: string;  // Changed from profile_id
+  profile_id_b: string;  // Changed from target_profile_id
   event_type: 'enter' | 'exit' | 'sustain';
-  distance: number;
+  distance_meters: number;  // Changed from distance to match DB column
   confidence: number;
-  timestamp: string;
+  event_ts: string;  // Changed from timestamp to match DB column
   duration?: number;
-  location_lat?: number;
-  location_lng?: number;
-  accuracy?: number;
-  metadata?: Record<string, any>;
+  location_accuracy_meters?: number;  // Matches DB column
+  venue_id?: string;
+  // Note: removed location_lat/lng as they're not in the current schema
+  // Note: removed accuracy and metadata as they're not in current schema
 }
 
 export interface ProximityEventRecorderOptions {
@@ -63,16 +63,15 @@ export class ProximityEventRecorder {
     if (!this.options.enableDatabaseRecording) return;
 
     const eventRecord: ProximityEventRecord = {
-      profile_id: profileId,
-      target_profile_id: targetProfileId,
+      profile_id_a: profileId,
+      profile_id_b: targetProfileId,
       event_type: analysis.eventType as 'enter' | 'exit' | 'sustain',
-      distance: Math.round(analysis.distance),
+      distance_meters: Math.round(analysis.distance),
       confidence: Math.round(analysis.confidence * 100) / 100,
-      timestamp: new Date().toISOString(),
+      event_ts: new Date().toISOString(),
       duration: analysis.eventType === 'sustain' ? analysis.sustainedDuration : undefined,
-      location_lat: location?.lat,
-      location_lng: location?.lng,
-      accuracy: location?.accuracy,
+      location_accuracy_meters: location?.accuracy,
+      venue_id: undefined, // No venue_id in current schema
       metadata: {
         reliability: analysis.reliability,
         was_near: analysis.wasNear,
@@ -123,16 +122,15 @@ export class ProximityEventRecorder {
         const distance = nearbyUser?.distance || 0;
 
         const eventRecord: ProximityEventRecord = {
-          profile_id: profileId,
-          target_profile_id: targetUserId,
+          profile_id_a: profileId,
+          profile_id_b: targetUserId,
           event_type: eventType,
-          distance: Math.round(distance),
+          distance_meters: Math.round(distance),
           confidence: Math.round(confidence * 100) / 100,
-          timestamp: new Date().toISOString(),
+          event_ts: new Date().toISOString(),
           duration,
-          location_lat: location?.lat,
-          location_lng: location?.lng,
-          accuracy: location?.accuracy,
+          location_accuracy_meters: location?.accuracy,
+          venue_id: undefined, // No venue_id in current schema
           metadata: {
             source: 'enhanced_location_sharing',
             event_string: eventString
@@ -202,14 +200,14 @@ export class ProximityEventRecorder {
     try {
       const { data, error } = await supabase
         .from('proximity_events')
-        .select('event_type, confidence, target_profile_id')
-        .eq('profile_id', profileId)
-        .gte('timestamp', startDate.toISOString());
+        .select('event_type, confidence, profile_id_b') // Changed from target_profile_id to profile_id_b
+        .eq('profile_id_a', profileId) // Changed from profile_id to profile_id_a
+        .gte('event_ts', startDate.toISOString()); // Changed from timestamp to event_ts
 
       if (error) throw error;
 
       const events = data || [];
-      const uniqueContacts = new Set(events.map(e => e.target_profile_id)).size;
+      const uniqueContacts = new Set(events.map(e => e.profile_id_b)).size; // Changed from target_profile_id to profile_id_b
       const averageConfidence = events.length > 0 
         ? events.reduce((sum, e) => sum + e.confidence, 0) / events.length 
         : 0;
