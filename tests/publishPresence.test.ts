@@ -1,9 +1,15 @@
 import { publishPresence } from '@/lib/presence/publishPresence';
 import { supabase } from '@/integrations/supabase/client';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ 
+        data: { user: { id: 'test-user-id' } }, 
+        error: null 
+      }),
+    },
     rpc: vi.fn().mockResolvedValue({ error: null }),
   },
 }));
@@ -11,6 +17,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 describe('publishPresence', () => {
   afterEach(() => {
     vi.mocked(supabase.rpc).mockClear();
+    vi.mocked(supabase.auth.getUser).mockClear();
   });
 
   it('calls upsert_presence with correct args', async () => {
