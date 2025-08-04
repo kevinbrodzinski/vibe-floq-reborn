@@ -3,11 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FriendShareToggle } from '@/components/friends/FriendShareToggle';
 import { LiveMap } from '@/components/map/LiveMap';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { supabase } from '@/integrations/supabase/client';
 
 export function LiveLocationDemo() {
-  const { pos, isTracking, startTracking, stopTracking } = useUserLocation();
+  const { coords, isTracking, startTracking, stopTracking } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: true,
+    hookId: 'live-location-demo'
+  });
+  const pos = coords; // Compatibility alias
   const [mockFriendIds, setMockFriendIds] = useState<string[]>([]);
   const [profileId, setUserId] = useState<string | null>(null);
 

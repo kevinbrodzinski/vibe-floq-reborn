@@ -1,12 +1,17 @@
 import { useState } from 'react'
 import { X, Users } from 'lucide-react'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 import { useNearbyPeople } from '@/hooks/useNearbyPeople'
 import { FriendCard } from './FriendCard'
 import { generateStableKey } from '@/utils/stableKeys'
 
 export const FriendCarousel: React.FC = () => {
-  const { pos } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'friend-carousel'
+  })
+  const pos = coords; // Compatibility alias
   const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng)
   const [open, setOpen] = useState(true)
 

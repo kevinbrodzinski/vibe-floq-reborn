@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useAuth } from '@/providers/AuthProvider';
 
 interface ETAShare {
@@ -23,7 +23,12 @@ export const useETASharing = () => {
   const { user } = useAuth();
   const { data: liveSettings } = useLiveSettings();
   const shareTo = useLiveShareFriends();
-  const { pos } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'eta-sharing'
+  });
+  const pos = coords; // Compatibility alias
   
   const etaMapRef = useRef<Map<string, ETAShare>>(new Map());
   const lastUpdateRef = useRef<number>(0);

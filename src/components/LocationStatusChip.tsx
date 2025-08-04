@@ -1,8 +1,13 @@
 import { Badge } from '@/components/ui/badge'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 
 export function LocationStatusChip() {
-  const { isTracking, loading, error } = useUserLocation()
+  const { isTracking, status, error } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: false,
+    hookId: 'location-status-chip'
+  })
+  const loading = status === 'loading'
 
   if (loading) {
     return (

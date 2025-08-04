@@ -3,11 +3,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LocationStatusChip } from '@/components/LocationStatusChip'
 import { LocationDebugInfo } from '@/components/LocationDebugInfo'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 import { useAfterglowNotifications } from '@/hooks/usePlanRecap'
 
 export function LocationDemo() {
-  const { isTracking, loading, error, startTracking, stopTracking } = useUserLocation()
+  const { isTracking, status, error, startTracking, stopTracking } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: true,
+    hookId: 'location-demo'
+  })
+  const loading = status === 'loading'
   
   // Enable afterglow notifications
   useAfterglowNotifications()

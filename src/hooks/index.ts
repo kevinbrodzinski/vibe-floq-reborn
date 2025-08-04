@@ -8,7 +8,7 @@ export type { LocationCoreOptions, LocationCoreState, LocationTrackingOptions, L
 // Legacy location hooks (deprecated - use location/ exports above)
 export { useGeo, useLatLng, useLocation, useGeoPos } from './useGeo';
 export { useMyLocation } from './useMyLocation';
-export { useUserLocation } from './useUserLocation';
+// useUserLocation has been deprecated and removed - use useUnifiedLocation from @/hooks/location/ instead
 
 export { useShakeDetection } from './useShakeDetection';
 export { useHapticFeedback } from './useHapticFeedback';

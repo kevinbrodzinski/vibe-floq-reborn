@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { useHotspots } from './useHotspots'
-import { useUserLocation } from './useUserLocation'
+import { useUnifiedLocation } from './location/useUnifiedLocation'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { getEnvironmentConfig } from '@/lib/environment'
 import { storage } from '@/lib/storage'
@@ -25,7 +25,13 @@ function markAsDismissed(): void {
 
 export const useHotspotToast = () => {
   const { hotspots } = useHotspots()
-  const { location } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'hotspot-toast'
+  })
+  // Compatibility - convert coords to location format
+  const location = coords ? { coords: { latitude: coords.lat, longitude: coords.lng } } : null
   const currentVibe = useCurrentVibe()
   const env = getEnvironmentConfig()
   const lastToastRef = useRef<string | null>(null)
