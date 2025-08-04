@@ -6,6 +6,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { useLocationCore, type LocationCoreOptions } from './useLocationCore';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
+import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { callFn } from '@/lib/callFn';
 
 interface LocationPing {
@@ -54,7 +55,11 @@ export function useLocationTracking(options: LocationTrackingOptions = {}) {
         userIdRef.current = user.id;
       }
 
-      await callFn('record_locations', { batch });
+      await executeWithCircuitBreaker(
+        () => callFn('record_locations', { batch }),
+        'location-tracking-batch',
+        'medium'
+      );
 
     } catch (error: any) {
       console.error('[LocationTracking] Failed to record locations:', error);

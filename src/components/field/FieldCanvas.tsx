@@ -12,7 +12,7 @@ import { clusterWorker } from '@/lib/clusterWorker';
 import { throttle } from '@/utils/timing';
 import { useFieldHitTest } from '@/hooks/useFieldHitTest';
 import { useAddRipple } from '@/hooks/useAddRipple';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 
 import { zIndex } from '@/constants/z.ts';
 import { vibeToColor } from '@/utils/vibeToHSL';
@@ -57,7 +57,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   const { light, medium } = useAdvancedHaptics();
   const hitTest = useFieldHitTest();          // ⬅️ HOOK MUST BE TOP-LEVEL
   const addRipple = useAddRipple();           // enqueue shader ripple
-  const userLocation = useUserLocation();    // Get live GPS position
+  const userLocation = useUnifiedLocation({
+    enableTracking: true, // FieldCanvas needs server-side location recording
+    enablePresence: false, // Presence handled elsewhere
+    hookId: 'field-canvas'
+  });    // Get live GPS position
   const lastUserPosRef = useRef<{lat: number, lng: number} | null>(null);
   const appRef = useRef<Application | null>(null);
   const fieldTilesRef = useRef<FieldTile[]>(fieldTiles);
@@ -155,9 +159,9 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         userDot.clear();
         
         // Accuracy halo (if available)
-        if (userLocation.pos?.accuracy) {
+        if (userLocation.coords?.accuracy) {
           const mapZoom = getMapInstance()?.getZoom() ?? 11;
-          const haloRadius = metersToPixelsAtLat(userLocation.pos.accuracy, lat, mapZoom);
+          const haloRadius = metersToPixelsAtLat(userLocation.coords.accuracy, lat, mapZoom);
           userDot.beginFill(0x0066cc, 0.1);
           userDot.drawCircle(0, 0, haloRadius);
           userDot.endFill();
@@ -284,24 +288,24 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
   // Update user dot when GPS position changes
   useEffect(() => {
     const userDot = userDotRef.current;
-    if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+    if (userDot && userLocation.coords?.lat && userLocation.coords?.lng) {
       const updateFunction = (userDot as any)._updatePosition;
       if (updateFunction) {
-        updateFunction(userLocation.pos.lat, userLocation.pos.lng);
+        updateFunction(userLocation.coords.lat, userLocation.coords.lng);
       }
     }
-  }, [userLocation.pos?.lat, userLocation.pos?.lng]);
+  }, [userLocation.coords?.lat, userLocation.coords?.lng]);
 
   // Throttled map move handler for performance (30 fps)
   const throttledMapMove = useMemo(() => throttle(() => {
     const userDot = userDotRef.current;
-    if (userDot && userLocation.pos?.lat && userLocation.pos?.lng) {
+    if (userDot && userLocation.coords?.lat && userLocation.coords?.lng) {
       const updateFunction = (userDot as any)._updatePosition;
       if (updateFunction) {
-        updateFunction(userLocation.pos.lat, userLocation.pos.lng);
+        updateFunction(userLocation.coords.lat, userLocation.coords.lng);
       }
     }
-  }, 33), [userLocation.pos?.lat, userLocation.pos?.lng]);
+  }, 33), [userLocation.coords?.lat, userLocation.coords?.lng]);
 
   // Update user dot when map moves/zooms (throttled)
   useEffect(() => {
@@ -360,8 +364,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     
     const animate = () => {
       // Update cached user position if new data is available
-      if (userLocation.pos?.lat && userLocation.pos?.lng) {
-        lastUserPosRef.current = { lat: userLocation.pos.lat, lng: userLocation.pos.lng };
+          if (userLocation.coords?.lat && userLocation.coords?.lng) {
+      lastUserPosRef.current = { lat: userLocation.coords.lat, lng: userLocation.coords.lng };
       }
       
       // Check if data has actually changed
