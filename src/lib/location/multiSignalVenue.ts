@@ -52,7 +52,6 @@ export interface VenueSignature {
 
 export interface VenueDetectionResult {
   venueId: string;
-  name?: string;
   confidence: number; // 0-1
   signals: {
     gps: { detected: boolean; distance: number; confidence: number };

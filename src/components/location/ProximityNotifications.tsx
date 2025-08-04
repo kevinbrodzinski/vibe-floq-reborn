@@ -52,26 +52,35 @@ export function ProximityNotifications({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Get friend profile data for notifications using working RPC
+  // Get friend profile data for notifications
   const { data: friendProfiles = {} } = useQuery({
-    queryKey: ['friends-with-presence', user?.id],
+    queryKey: ['friend-profiles', user?.id],
     queryFn: async () => {
       if (!user?.id) return {};
       
-      const { data, error } = await supabase.rpc('get_friends_with_presence');
-      
-      if (error) {
-        console.error('Error fetching friends with presence:', error);
-        return {};
-      }
+      const { data } = await supabase
+        .from('friendships')
+        .select(`
+          friend_profile_id,
+          profiles!friendships_friend_profile_id_fkey (
+            id,
+            display_name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('profile_id', user.id)
+        .eq('status', 'accepted');
+
+      if (!data) return {};
 
       return Object.fromEntries(
-        (data || []).map(f => [
+        data.map(f => [
           f.friend_profile_id, 
           {
-            id: f.friend_profile_id,
-            name: f.display_name || f.username || 'Friend',
-            avatar: f.avatar_url
+            id: f.profiles?.id,
+            name: f.profiles?.display_name || f.profiles?.username || 'Friend',
+            avatar: f.profiles?.avatar_url
           }
         ])
       );

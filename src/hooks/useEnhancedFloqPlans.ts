@@ -41,18 +41,18 @@ export function useEnhancedFloqPlans(floqId?: string) {
   const { data: plans = [], isLoading, error } = useQuery({
     queryKey: ['enhanced-floq-plans', floqId, user?.id],
     queryFn: async (): Promise<EnhancedFloqPlan[]> => {
-      // Fallback to basic query since enhanced RPC doesn't exist
-      const { data, error } = await supabase
-        .from('floq_plans')
-        .select('*')
-        .limit(50);
+      const { data, error } = await supabase.rpc('get_floq_plans_enhanced', {
+        p_floq_id: floqId || null,
+        p_user_id: user?.id || null,
+        p_limit: 50
+      });
 
       if (error) {
-        console.error('Error fetching floq plans:', error);
+        console.error('Error fetching enhanced floq plans:', error);
         throw error;
       }
 
-      return (data as any as EnhancedFloqPlan[]) || [];
+      return data || [];
     },
     enabled: !!user,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -62,16 +62,16 @@ export function useEnhancedFloqPlans(floqId?: string) {
   // Mutation to create group plan with floq
   const createGroupPlanMutation = useMutation({
     mutationFn: async (planData: CreateGroupPlanData) => {
-      // Fallback to basic plan creation since RPC doesn't exist
-      const { data, error } = await supabase
-        .from('floq_plans')
-        .insert({
-          title: planData.title,
-          description: planData.description,
-          creator_id: user!.id,
-          planned_at: planData.planned_at || new Date().toISOString()
-        } as any)
-        .select();
+      const { data, error } = await supabase.rpc('create_group_plan_with_floq', {
+        p_title: planData.title,
+        p_description: planData.description || null,
+        p_planned_at: planData.planned_at || null,
+        p_start_time: planData.start_time || null,
+        p_end_time: planData.end_time || null,
+        p_vibe_tags: planData.vibe_tags || ['social'],
+        p_max_participants: planData.max_participants || null,
+        p_location: planData.location || null
+      });
 
       if (error) {
         console.error('Error creating group plan with floq:', error);
@@ -121,7 +121,7 @@ export function useEnhancedFloqPlans(floqId?: string) {
         .upsert({
           plan_id: planId,
           profile_id: user!.id,
-          rsvp_status: 'attending',
+          rsvp_status: 'yes',
           joined_at: new Date().toISOString()
         });
 

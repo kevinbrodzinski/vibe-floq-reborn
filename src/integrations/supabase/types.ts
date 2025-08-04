@@ -740,91 +740,6 @@ export type Database = {
           },
         ]
       }
-      auto_checkin_attempts: {
-        Row: {
-          attempted_at: string
-          confidence_score: number | null
-          detection_method: string | null
-          error_reason: string | null
-          id: string
-          location_accuracy: number | null
-          location_lat: number | null
-          location_lng: number | null
-          profile_id: string
-          success: boolean
-          venue_id: string | null
-        }
-        Insert: {
-          attempted_at?: string
-          confidence_score?: number | null
-          detection_method?: string | null
-          error_reason?: string | null
-          id?: string
-          location_accuracy?: number | null
-          location_lat?: number | null
-          location_lng?: number | null
-          profile_id: string
-          success: boolean
-          venue_id?: string | null
-        }
-        Update: {
-          attempted_at?: string
-          confidence_score?: number | null
-          detection_method?: string | null
-          error_reason?: string | null
-          id?: string
-          location_accuracy?: number | null
-          location_lat?: number | null
-          location_lng?: number | null
-          profile_id?: string
-          success?: boolean
-          venue_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auto_checkin_attempts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_checkin_attempts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "auto_checkin_attempts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_checkin_attempts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_checkin_attempts_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_checkin_attempts_venue_id_fkey"
-            columns: ["venue_id"]
-            isOneToOne: false
-            referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       chat_message_reactions: {
         Row: {
           emoji: string
@@ -4155,113 +4070,6 @@ export type Database = {
         }
         Relationships: []
       }
-      geofence_data: {
-        Row: {
-          center_lat: number | null
-          center_lng: number | null
-          created_at: string
-          geofence_id: string
-          id: string
-          polygon_coordinates: Json | null
-          radius_meters: number | null
-        }
-        Insert: {
-          center_lat?: number | null
-          center_lng?: number | null
-          created_at?: string
-          geofence_id: string
-          id?: string
-          polygon_coordinates?: Json | null
-          radius_meters?: number | null
-        }
-        Update: {
-          center_lat?: number | null
-          center_lng?: number | null
-          created_at?: string
-          geofence_id?: string
-          id?: string
-          polygon_coordinates?: Json | null
-          radius_meters?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "geofence_data_geofence_id_fkey"
-            columns: ["geofence_id"]
-            isOneToOne: false
-            referencedRelation: "geofences"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      geofences: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          privacy_level: string
-          profile_id: string
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          privacy_level: string
-          profile_id: string
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          privacy_level?: string
-          profile_id?: string
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "geofences_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "geofences_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "geofences_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "geofences_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "geofences_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       live_positions: {
         Row: {
           accuracy: number | null
@@ -6504,177 +6312,22 @@ export type Database = {
       }
       proximity_events: {
         Row: {
-          confidence: number | null
-          distance_meters: number | null
           event_ts: string
-          event_type: string | null
           id: string
-          location_accuracy_meters: number | null
           profile_id_a: string
           profile_id_b: string
-          venue_id: string | null
         }
         Insert: {
-          confidence?: number | null
-          distance_meters?: number | null
           event_ts?: string
-          event_type?: string | null
           id?: string
-          location_accuracy_meters?: number | null
           profile_id_a: string
           profile_id_b: string
-          venue_id?: string | null
         }
         Update: {
-          confidence?: number | null
-          distance_meters?: number | null
           event_ts?: string
-          event_type?: string | null
           id?: string
-          location_accuracy_meters?: number | null
           profile_id_a?: string
           profile_id_b?: string
-          venue_id?: string | null
-        }
-        Relationships: []
-      }
-      proximity_stats: {
-        Row: {
-          average_distance_meters: number | null
-          confidence_score: number
-          id: string
-          last_encounter: string | null
-          profile_id_a: string
-          profile_id_b: string
-          total_duration_minutes: number
-          total_encounters: number
-          updated_at: string
-        }
-        Insert: {
-          average_distance_meters?: number | null
-          confidence_score?: number
-          id?: string
-          last_encounter?: string | null
-          profile_id_a: string
-          profile_id_b: string
-          total_duration_minutes?: number
-          total_encounters?: number
-          updated_at?: string
-        }
-        Update: {
-          average_distance_meters?: number | null
-          confidence_score?: number
-          id?: string
-          last_encounter?: string | null
-          profile_id_a?: string
-          profile_id_b?: string
-          total_duration_minutes?: number
-          total_encounters?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "proximity_stats_profile_id_a_fkey"
-            columns: ["profile_id_a"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_a_fkey"
-            columns: ["profile_id_a"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_a_fkey"
-            columns: ["profile_id_a"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_a_fkey"
-            columns: ["profile_id_a"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_a_fkey"
-            columns: ["profile_id_a"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_b_fkey"
-            columns: ["profile_id_b"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_b_fkey"
-            columns: ["profile_id_b"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_b_fkey"
-            columns: ["profile_id_b"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_b_fkey"
-            columns: ["profile_id_b"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "proximity_stats_profile_id_b_fkey"
-            columns: ["profile_id_b"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      proximity_system_logs: {
-        Row: {
-          active_geofences_count: number | null
-          avg_confidence: number | null
-          created_at: string | null
-          id: number
-          log_date: string
-          total_events_24h: number | null
-          unique_users_24h: number | null
-          venue_signatures_count: number | null
-        }
-        Insert: {
-          active_geofences_count?: number | null
-          avg_confidence?: number | null
-          created_at?: string | null
-          id?: number
-          log_date: string
-          total_events_24h?: number | null
-          unique_users_24h?: number | null
-          venue_signatures_count?: number | null
-        }
-        Update: {
-          active_geofences_count?: number | null
-          avg_confidence?: number | null
-          created_at?: string | null
-          id?: number
-          log_date?: string
-          total_events_24h?: number | null
-          unique_users_24h?: number | null
-          venue_signatures_count?: number | null
         }
         Relationships: []
       }
@@ -6770,36 +6423,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      rate_limit_config: {
-        Row: {
-          action_type: string
-          created_at: string
-          id: string
-          max_count: number
-          per_target: boolean
-          updated_at: string
-          window_duration_minutes: number
-        }
-        Insert: {
-          action_type: string
-          created_at?: string
-          id?: string
-          max_count: number
-          per_target?: boolean
-          updated_at?: string
-          window_duration_minutes: number
-        }
-        Update: {
-          action_type?: string
-          created_at?: string
-          id?: string
-          max_count?: number
-          per_target?: boolean
-          updated_at?: string
-          window_duration_minutes?: number
-        }
-        Relationships: []
       }
       raw_locations: {
         Row: {
@@ -7683,110 +7306,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "achievement_catalogue"
             referencedColumns: ["code"]
-          },
-        ]
-      }
-      user_action_limits: {
-        Row: {
-          action_type: string
-          count: number
-          created_at: string
-          id: string
-          profile_id: string
-          target_profile_id: string | null
-          updated_at: string
-          window_start: string
-        }
-        Insert: {
-          action_type: string
-          count?: number
-          created_at?: string
-          id?: string
-          profile_id: string
-          target_profile_id?: string | null
-          updated_at?: string
-          window_start?: string
-        }
-        Update: {
-          action_type?: string
-          count?: number
-          created_at?: string
-          id?: string
-          profile_id?: string
-          target_profile_id?: string | null
-          updated_at?: string
-          window_start?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_action_limits_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_cache"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "presence_view"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_discover_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_action_limits_target_profile_id_fkey"
-            columns: ["target_profile_id"]
-            isOneToOne: false
-            referencedRelation: "v_profiles"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -8708,33 +8227,6 @@ export type Database = {
           },
         ]
       }
-      venue_boundaries: {
-        Row: {
-          boundary_geom: unknown
-          boundary_type: string
-          confidence_score: number
-          created_at: string
-          id: string
-          venue_id: string
-        }
-        Insert: {
-          boundary_geom: unknown
-          boundary_type: string
-          confidence_score?: number
-          created_at?: string
-          id?: string
-          venue_id: string
-        }
-        Update: {
-          boundary_geom?: unknown
-          boundary_type?: string
-          confidence_score?: number
-          created_at?: string
-          id?: string
-          venue_id?: string
-        }
-        Relationships: []
-      }
       venue_clusters: {
         Row: {
           active_hours: unknown | null
@@ -9055,39 +8547,6 @@ export type Database = {
           dominant_vibe?: Database["public"]["Enums"]["vibe_enum"] | null
           people_now?: number
           updated_at?: string
-          venue_id?: string
-        }
-        Relationships: []
-      }
-      venue_signatures: {
-        Row: {
-          confidence_score: number
-          created_at: string
-          id: string
-          last_verified: string
-          signal_identifier: string
-          signal_strength: number | null
-          signal_type: string
-          venue_id: string
-        }
-        Insert: {
-          confidence_score?: number
-          created_at?: string
-          id?: string
-          last_verified?: string
-          signal_identifier: string
-          signal_strength?: number | null
-          signal_type: string
-          venue_id: string
-        }
-        Update: {
-          confidence_score?: number
-          created_at?: string
-          id?: string
-          last_verified?: string
-          signal_identifier?: string
-          signal_strength?: number | null
-          signal_type?: string
           venue_id?: string
         }
         Relationships: []
@@ -9998,32 +9457,6 @@ export type Database = {
         }
         Relationships: []
       }
-      proximity_performance_stats: {
-        Row: {
-          avg_confidence: number | null
-          records_last_24h: number | null
-          records_last_hour: number | null
-          table_name: string | null
-          total_records: number | null
-          unique_profiles_a: number | null
-          unique_profiles_b: number | null
-        }
-        Relationships: []
-      }
-      proximity_stats_daily: {
-        Row: {
-          avg_confidence: number | null
-          enter_events: number | null
-          event_date: string | null
-          exit_events: number | null
-          max_confidence: number | null
-          profile_id_a: string | null
-          sustain_events: number | null
-          total_events: number | null
-          unique_contacts: number | null
-        }
-        Relationships: []
-      }
       user_floq_unread_counts: {
         Row: {
           floq_id: string | null
@@ -10774,27 +10207,6 @@ export type Database = {
           },
         ]
       }
-      venue_detection_stats: {
-        Row: {
-          avg_confidence: number | null
-          last_detection: string | null
-          signal_types_count: number | null
-          total_signatures: number | null
-          venue_id: string | null
-        }
-        Relationships: []
-      }
-      venue_signature_performance_stats: {
-        Row: {
-          avg_confidence: number | null
-          table_name: string | null
-          total_records: number | null
-          unique_signal_types: number | null
-          unique_venues: number | null
-          updated_last_24h: number | null
-        }
-        Relationships: []
-      }
       vibe_cluster_momentum: {
         Row: {
           centroid: unknown | null
@@ -10964,10 +10376,6 @@ export type Database = {
       }
       accept_friend_request: {
         Args: { _friend: string }
-        Returns: Json
-      }
-      accept_friend_request_atomic: {
-        Args: { requester_id: string }
         Returns: Json
       }
       add_plan_stop_with_order: {
@@ -11143,14 +10551,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_rate_limit_v2: {
-        Args: {
-          p_profile_id: string
-          p_action_type: string
-          p_target_profile_id?: string
-        }
-        Returns: Json
-      }
       citext: {
         Args: { "": boolean } | { "": string } | { "": unknown }
         Returns: string
@@ -11206,14 +10606,6 @@ export type Database = {
       cleanup_inactive_floqs: {
         Args: Record<PropertyKey, never>
         Returns: Json
-      }
-      cleanup_old_proximity_events: {
-        Args: { p_days_to_keep?: number }
-        Returns: number
-      }
-      cleanup_old_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: number
       }
       cleanup_old_transit_cache: {
         Args: Record<PropertyKey, never>
@@ -11810,10 +11202,6 @@ export type Database = {
         Args: { p_profile_id?: string }
         Returns: Json
       }
-      get_auto_checkin_metrics: {
-        Args: { uid: string; d: string }
-        Returns: Json
-      }
       get_cluster_venues: {
         Args: {
           min_lng: number
@@ -12209,19 +11597,6 @@ export type Database = {
           bio: string
         }[]
       }
-      get_user_geofences: {
-        Args: { user_profile_id: string }
-        Returns: {
-          id: string
-          name: string
-          type: string
-          privacy_level: string
-          center_lat: number
-          center_lng: number
-          radius_meters: number
-          polygon_coordinates: Json
-        }[]
-      }
       get_user_location: {
         Args: Record<PropertyKey, never>
         Returns: unknown
@@ -12370,14 +11745,6 @@ export type Database = {
         }
         Returns: number
       }
-      increment_rate_limit_v2: {
-        Args: {
-          p_profile_id: string
-          p_action_type: string
-          p_target_profile_id?: string
-        }
-        Returns: boolean
-      }
       ingest_place_feed: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -12396,10 +11763,6 @@ export type Database = {
       }
       is_live_now: {
         Args: { uid: string }
-        Returns: boolean
-      }
-      is_point_in_geofence: {
-        Args: { geofence_id: string; lat: number; lng: number }
         Returns: boolean
       }
       is_thread_member: {
@@ -12765,10 +12128,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      refresh_proximity_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       refresh_venue_metrics: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -12926,10 +12285,6 @@ export type Database = {
       }
       send_friend_request: {
         Args: { _target: string }
-        Returns: Json
-      }
-      send_friend_request_with_rate_limit: {
-        Args: { p_target_profile_id: string }
         Returns: Json
       }
       send_message: {
@@ -14139,16 +13494,6 @@ export type Database = {
         Args: { p_floq_id: string }
         Returns: undefined
       }
-      update_proximity_stats: {
-        Args: {
-          p_profile_id_a: string
-          p_profile_id_b: string
-          p_distance_meters: number
-          p_duration_minutes?: number
-          p_confidence?: number
-        }
-        Returns: undefined
-      }
       update_suggestion_metrics: {
         Args: {
           p_profile_id: string
@@ -14532,310 +13877,6 @@ export type Database = {
       }
     }
   }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          owner_id: string | null
-          public: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          owner_id?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-        Relationships: []
-      }
-      objects: {
-        Row: {
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          owner_id: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          user_metadata: Json | null
-          version: string | null
-        }
-        Insert: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Update: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          owner_id?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          user_metadata?: Json | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "objects_bucketId_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          id: string
-          in_progress_size: number
-          key: string
-          owner_id: string | null
-          upload_signature: string
-          user_metadata: Json | null
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          id: string
-          in_progress_size?: number
-          key: string
-          owner_id?: string | null
-          upload_signature: string
-          user_metadata?: Json | null
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          id?: string
-          in_progress_size?: number
-          key?: string
-          owner_id?: string | null
-          upload_signature?: string
-          user_metadata?: Json | null
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      s3_multipart_uploads_parts: {
-        Row: {
-          bucket_id: string
-          created_at: string
-          etag: string
-          id: string
-          key: string
-          owner_id: string | null
-          part_number: number
-          size: number
-          upload_id: string
-          version: string
-        }
-        Insert: {
-          bucket_id: string
-          created_at?: string
-          etag: string
-          id?: string
-          key: string
-          owner_id?: string | null
-          part_number: number
-          size?: number
-          upload_id: string
-          version: string
-        }
-        Update: {
-          bucket_id?: string
-          created_at?: string
-          etag?: string
-          id?: string
-          key?: string
-          owner_id?: string | null
-          part_number?: number
-          size?: number
-          upload_id?: string
-          version?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
-            columns: ["bucket_id"]
-            isOneToOne: false
-            referencedRelation: "buckets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
-            columns: ["upload_id"]
-            isOneToOne: false
-            referencedRelation: "s3_multipart_uploads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      can_insert_object: {
-        Args: { bucketid: string; name: string; owner: string; metadata: Json }
-        Returns: undefined
-      }
-      extension: {
-        Args: { name: string }
-        Returns: string
-      }
-      filename: {
-        Args: { name: string }
-        Returns: string
-      }
-      foldername: {
-        Args: { name: string }
-        Returns: string[]
-      }
-      get_size_by_bucket: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          size: number
-          bucket_id: string
-        }[]
-      }
-      list_multipart_uploads_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          next_key_token?: string
-          next_upload_token?: string
-        }
-        Returns: {
-          key: string
-          id: string
-          created_at: string
-        }[]
-      }
-      list_objects_with_delimiter: {
-        Args: {
-          bucket_id: string
-          prefix_param: string
-          delimiter_param: string
-          max_keys?: number
-          start_after?: string
-          next_token?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          metadata: Json
-          updated_at: string
-        }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      search: {
-        Args: {
-          prefix: string
-          bucketname: string
-          limits?: number
-          levels?: number
-          offsets?: number
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          updated_at: string
-          created_at: string
-          last_accessed_at: string
-          metadata: Json
-        }[]
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -15106,8 +14147,5 @@ export const Constants = {
         "support-group",
       ],
     },
-  },
-  storage: {
-    Enums: {},
   },
 } as const

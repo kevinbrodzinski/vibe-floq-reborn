@@ -29,7 +29,7 @@ export const LazyShareModal: React.FC<LazyShareModalProps> = ({
       <ShareModal 
         open={open}
         onOpenChange={onOpenChange}
-        afterglow={afterglow || {} as any}
+        afterglow={afterglow}
       />
     </Suspense>
   )

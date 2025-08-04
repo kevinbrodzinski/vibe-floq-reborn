@@ -63,52 +63,17 @@ const FieldLocationProviderInner = ({
   enableProximityTracking = true,
   debugMode = false,
 }: FieldLocationProviderProps) => {
-  console.log('[FieldLocationProvider] Rendering with props:', { friendIds, enableGeofencing, enableVenueDetection, enableProximityTracking, debugMode });
-  
   const location = useUserLocation();
   const { pos, error, isTracking, startTracking } = location;
   
-  console.log('[FieldLocationProvider] Location state:', { pos, error, isTracking });
-  
   // Enhanced location sharing with all features enabled
-  console.log('[FieldLocationProvider] Starting enhanced location sharing...');
-  
-  let enhancedLocationSharing;
-  try {
-    enhancedLocationSharing = useEnhancedLocationSharing({
-      enableGeofencing,
-      enableVenueDetection,
-      enableProximityTracking,
-      updateInterval: 30000, // 30 seconds
-      debugMode: debugMode || process.env.NODE_ENV === 'development'
-    });
-    console.log('[FieldLocationProvider] Enhanced location sharing initialized successfully');
-  } catch (enhancedError) {
-    console.error('[FieldLocationProvider] Enhanced location sharing failed:', enhancedError);
-    // Fallback to basic state
-    enhancedLocationSharing = {
-      location: null,
-      accuracy: 0,
-      isTracking: false,
-      geofenceMatches: [],
-      privacyFiltered: false,
-      privacyLevel: 'exact' as const,
-      venueDetections: [],
-      currentVenue: null,
-      nearbyUsers: [],
-      proximityEvents: [],
-      lastUpdate: 0,
-      error: enhancedError?.message || 'Unknown error',
-      loading: false,
-      locationError: null,
-      startSharing: async () => {},
-      stopSharing: async () => {},
-      isLocationHidden: false,
-      hasActiveGeofences: false,
-      hasNearbyUsers: false,
-      currentVenueConfidence: 0
-    };
-  }
+  const enhancedLocationSharing = useEnhancedLocationSharing({
+    enableGeofencing,
+    enableVenueDetection,
+    enableProximityTracking,
+    updateInterval: 30000, // 30 seconds
+    debugMode: debugMode || process.env.NODE_ENV === 'development'
+  });
 
   const [enhancedSharingActive, setEnhancedSharingActive] = useState(false);
 
@@ -139,7 +104,7 @@ const FieldLocationProviderInner = ({
         console.error('[FieldLocationContext] Failed to start enhanced sharing:', error);
       });
     }
-  }, [isLocationReady, enhancedSharingActive, enhancedLocationSharing.isTracking, debugMode]);
+  }, [isLocationReady, enhancedSharingActive, enhancedLocationSharing.isTracking, enhancedLocationSharing.startSharing, debugMode]);
 
   /* auto-start basic location tracking only if permission already granted and we're idle */
   useEffect(() => {
@@ -217,15 +182,6 @@ const FieldLocationProviderInner = ({
     isLocationHidden: enhancedLocationSharing.isLocationHidden,
   };
 
-  console.log('[FieldLocationProvider] Context value created:', {
-    hasLocation: !!location,
-    isLocationReady,
-    presenceDataCount: presenceData?.length || 0,
-    enhancedLocationState: enhancedLocationSharing ? 'loaded' : 'failed'
-  });
-
-  console.log('[FieldLocationProvider] About to render children with context');
-  
   return (
     <FieldLocationContext.Provider value={value}>
       {children}
@@ -261,15 +217,8 @@ export const FieldLocationProvider = ({
 /* ---------- convenience hook ---------- */
 
 export const useFieldLocation = () => {
-  console.log('[useFieldLocation] Hook called, checking context...');
   const ctx = useContext(FieldLocationContext);
-  console.log('[useFieldLocation] Context received:', { 
-    hasContext: !!ctx,
-    contextKeys: ctx ? Object.keys(ctx) : 'null'
-  });
-  
   if (!ctx) {
-    console.error('[useFieldLocation] Context is null! Components using this hook must be wrapped with FieldLocationProvider');
     throw new Error('useFieldLocation must be used within a FieldLocationProvider');
   }
   return ctx;

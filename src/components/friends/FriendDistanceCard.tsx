@@ -178,9 +178,7 @@ export function FriendDistanceCard({
                 <Navigation className="h-4 w-4 text-muted-foreground" />
                 <span className="font-medium">{formattedDistance}</span>
                 {privacyFiltered && (
-                  <span title="Privacy filtered distance">
-                    <Shield className="h-3 w-3 text-blue-500" />
-                  </span>
+                  <Shield className="h-3 w-3 text-blue-500" title="Privacy filtered distance" />
                 )}
               </div>
 

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { geofencingService, GeofencingService, type Geofence, type CircularGeofence, type PolygonGeofence } from '@/lib/location/geofencing';
+import { geofencingService, type Geofence, type CircularGeofence, type PolygonGeofence } from '@/lib/location/geofencing';
 import { GPSCoords } from '@/lib/location/standardGeo';
 
 interface GeofenceManagerProps {
@@ -104,7 +104,7 @@ export function GeofenceManager({ onGeofencesChange }: GeofenceManagerProps) {
         return;
       }
 
-      const geofence = GeofencingService.createCircularGeofence(
+      const geofence = geofencingService.constructor.createCircularGeofence(
         `geofence_${Date.now()}`,
         newGeofence.name,
         newGeofence.center,
@@ -123,7 +123,7 @@ export function GeofenceManager({ onGeofencesChange }: GeofenceManagerProps) {
         return;
       }
 
-      const geofence = GeofencingService.createPolygonGeofence(
+      const geofence = geofencingService.constructor.createPolygonGeofence(
         `geofence_${Date.now()}`,
         newGeofence.name,
         newGeofence.vertices,

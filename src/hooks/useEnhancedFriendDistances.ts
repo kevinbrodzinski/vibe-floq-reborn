@@ -166,7 +166,7 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
         const { data, error } = await supabase.rpc('presence_nearby', {
           lat: pos?.lat || 0,
           lng: pos?.lng || 0,
-          radius_m: maxDistance, // in meters
+          km: maxDistance / 1000, // convert to km
           include_self: false
         });
 
@@ -184,9 +184,15 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
             let location: GPSCoords | null = null;
             
             try {
-              // Handle the actual vibes_now structure
-              if (presence.lat && presence.lng) {
-                location = { lat: presence.lat, lng: presence.lng };
+              if (presence.location) {
+                // Handle different location formats
+                if (presence.location.coordinates) {
+                  const [lng, lat] = presence.location.coordinates;
+                  location = { lat, lng };
+                } else if (presence.geo && presence.geo.coordinates) {
+                  const [lng, lat] = presence.geo.coordinates;
+                  location = { lat, lng };
+                }
               }
 
               if (location) {
@@ -195,11 +201,11 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
                   displayName: presence.display_name || null,
                   avatarUrl: presence.avatar_url || null,
                   location,
-                  accuracy: 50, // Default accuracy since it's not in vibes_now
-                  timestamp: new Date(presence.updated_at).getTime(),
+                  accuracy: presence.accuracy || 50,
+                  timestamp: new Date(presence.updated_at || presence.created_at).getTime(),
                   vibe: presence.vibe || null,
-                  venueId: null, // Not available in vibes_now
-                  visibility: 'friends' // presence.visibility not available in current schema
+                  venueId: presence.venue_id || null,
+                  visibility: presence.visibility || 'friends'
                 });
               }
             } catch (locationError) {
