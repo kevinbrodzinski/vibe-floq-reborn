@@ -9,6 +9,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { GhostModeToggle } from '@/components/live/GhostModeToggle';
 import { SmartFeatureList } from '@/components/live/SmartFeatureList';
 import { FriendOverrideList } from '@/components/live/FriendOverrideList';
+import { CloseFriendsLocationToggle } from '@/components/CloseFriends/CloseFriendsLocationToggle';
 import { scopeOpts, whenOpts, accOpts } from '@/types/liveSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,9 @@ export const LocationSharingScreen: React.FC = () => {
           <GhostModeToggle />
         </CardContent>
       </Card>
+
+      {/* Close Friends Location Sharing */}
+      <CloseFriendsLocationToggle variant="card" />
 
       {/* Who Can See */}
       <Card>
