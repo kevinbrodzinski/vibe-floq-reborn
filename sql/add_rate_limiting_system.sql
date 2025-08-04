@@ -65,8 +65,12 @@ USING (true);
 
 -- 7. Create rate limiting functions
 
+-- Drop existing function if it exists (to handle signature conflicts)
+DROP FUNCTION IF EXISTS public.check_rate_limit(UUID, TEXT, UUID);
+DROP FUNCTION IF EXISTS public.check_rate_limit(UUID, TEXT);
+
 -- Function to check if user is within rate limits
-CREATE OR REPLACE FUNCTION public.check_rate_limit(
+CREATE OR REPLACE FUNCTION public.check_rate_limit_v2(
   p_profile_id UUID,
   p_action_type TEXT,
   p_target_profile_id UUID DEFAULT NULL
@@ -138,8 +142,12 @@ BEGIN
 END;
 $$;
 
+-- Drop existing function if it exists (to handle signature conflicts)
+DROP FUNCTION IF EXISTS public.increment_rate_limit(UUID, TEXT, UUID);
+DROP FUNCTION IF EXISTS public.increment_rate_limit(UUID, TEXT);
+
 -- Function to increment rate limit counter
-CREATE OR REPLACE FUNCTION public.increment_rate_limit(
+CREATE OR REPLACE FUNCTION public.increment_rate_limit_v2(
   p_profile_id UUID,
   p_action_type TEXT,
   p_target_profile_id UUID DEFAULT NULL
@@ -177,6 +185,9 @@ BEGIN
   RETURN true;
 END;
 $$;
+
+-- Drop existing function if it exists (to handle signature conflicts)
+DROP FUNCTION IF EXISTS public.send_friend_request_with_rate_limit(UUID);
 
 -- Function to send friend request with rate limiting
 CREATE OR REPLACE FUNCTION public.send_friend_request_with_rate_limit(
@@ -224,13 +235,13 @@ BEGIN
   END IF;
   
   -- Check global rate limit
-  global_check := check_rate_limit(current_profile_id, 'friend_request', NULL);
+  global_check := check_rate_limit_v2(current_profile_id, 'friend_request', NULL);
   IF NOT (global_check->>'allowed')::boolean THEN
     RETURN json_build_object('success', false, 'error', 'rate_limit_exceeded', 'message', global_check->>'message');
   END IF;
   
   -- Check per-user rate limit
-  per_user_check := check_rate_limit(current_profile_id, 'friend_request_per_user', p_target_profile_id);
+  per_user_check := check_rate_limit_v2(current_profile_id, 'friend_request_per_user', p_target_profile_id);
   IF NOT (per_user_check->>'allowed')::boolean THEN
     RETURN json_build_object('success', false, 'error', 'user_rate_limit_exceeded', 'message', per_user_check->>'message');
   END IF;
@@ -240,12 +251,15 @@ BEGIN
   VALUES (current_profile_id, p_target_profile_id, 'pending', NOW());
   
   -- Increment rate limit counters
-  PERFORM increment_rate_limit(current_profile_id, 'friend_request', NULL);
-  PERFORM increment_rate_limit(current_profile_id, 'friend_request_per_user', p_target_profile_id);
+  PERFORM increment_rate_limit_v2(current_profile_id, 'friend_request', NULL);
+  PERFORM increment_rate_limit_v2(current_profile_id, 'friend_request_per_user', p_target_profile_id);
   
   RETURN json_build_object('success', true, 'message', 'Friend request sent successfully');
 END;
 $$;
+
+-- Drop existing function if it exists (to handle signature conflicts)
+DROP FUNCTION IF EXISTS public.cleanup_old_rate_limits();
 
 -- 8. Create cleanup function for old rate limit records
 CREATE OR REPLACE FUNCTION public.cleanup_old_rate_limits()
@@ -266,8 +280,8 @@ END;
 $$;
 
 -- 9. Grant permissions
-GRANT EXECUTE ON FUNCTION public.check_rate_limit TO authenticated;
-GRANT EXECUTE ON FUNCTION public.increment_rate_limit TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit_v2 TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_rate_limit_v2 TO authenticated;
 GRANT EXECUTE ON FUNCTION public.send_friend_request_with_rate_limit TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cleanup_old_rate_limits TO authenticated;
 
