@@ -134,7 +134,7 @@ export function useUserLocation() {
     }
   }
 
-  const stopTracking = () => {
+  const stopTracking = async () => {
     // Stop base geo tracking
     geo.clearWatch()
 
@@ -243,7 +243,7 @@ export function useUserLocation() {
 
   useEffect(() => {
     return () => {
-      stopTracking()
+      stopTracking().catch(err => console.error('Error stopping tracking:', err))
     }
   }, [])
 
@@ -252,9 +252,9 @@ export function useUserLocation() {
     return geo.hasPermission || false
   }
 
-  const resetLocation = () => {
+  const resetLocation = async () => {
     console.log('[useUserLocation] Resetting location state...')
-    stopTracking()
+    await stopTracking()
   }
 
   // Return interface compatible with existing code
