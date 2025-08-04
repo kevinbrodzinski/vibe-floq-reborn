@@ -17,9 +17,9 @@ PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U po
 PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/fix_friend_request_race_conditions.sql
 ```
 
-## 4. Floq Plan Integration Improvements
+## 4. Floq Plan Integration Improvements (SAFE VERSION)
 ```bash
-PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/improve_floq_plan_integration.sql
+PGPASSWORD="floqfloqfloq" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/improve_floq_plan_integration_safe.sql
 ```
 
 ## Notes:

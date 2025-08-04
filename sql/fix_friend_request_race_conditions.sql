@@ -33,7 +33,7 @@ BEGIN
 
   -- Create friendship using the existing upsert_friendship function
   -- This handles the canonical user_low/user_high ordering automatically
-  PERFORM upsert_friendship(requester_id, 'accepted');
+  PERFORM upsert_friendship(current_profile_id, requester_id);
 
   -- Build success result
   result := json_build_object(

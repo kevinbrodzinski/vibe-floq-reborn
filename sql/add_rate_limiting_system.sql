@@ -214,11 +214,11 @@ BEGIN
     RETURN json_build_object('success', false, 'error', 'duplicate_request', 'message', 'Friend request already exists');
   END IF;
   
-  -- Check if already friends
+  -- Check if already friends (using canonical user_low/user_high schema)
   IF EXISTS (
     SELECT 1 FROM friendships 
-    WHERE (profile_id = current_profile_id AND friend_profile_id = p_target_profile_id)
-    OR (profile_id = p_target_profile_id AND friend_profile_id = current_profile_id)
+    WHERE (user_low = LEAST(current_profile_id, p_target_profile_id) 
+           AND user_high = GREATEST(current_profile_id, p_target_profile_id))
   ) THEN
     RETURN json_build_object('success', false, 'error', 'already_friends', 'message', 'Already friends with this user');
   END IF;
@@ -271,13 +271,18 @@ GRANT EXECUTE ON FUNCTION public.increment_rate_limit TO authenticated;
 GRANT EXECUTE ON FUNCTION public.send_friend_request_with_rate_limit TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cleanup_old_rate_limits TO authenticated;
 
--- 10. Create triggers for updated_at timestamps
-CREATE TRIGGER update_user_action_limits_updated_at
-    BEFORE UPDATE ON public.user_action_limits
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+-- 10. Create triggers for updated_at timestamps (only if update_updated_at_column function exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_updated_at_column') THEN
+        CREATE TRIGGER update_user_action_limits_updated_at
+            BEFORE UPDATE ON public.user_action_limits
+            FOR EACH ROW
+            EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_rate_limit_config_updated_at
-    BEFORE UPDATE ON public.rate_limit_config
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+        CREATE TRIGGER update_rate_limit_config_updated_at
+            BEFORE UPDATE ON public.rate_limit_config
+            FOR EACH ROW
+            EXECUTE FUNCTION public.update_updated_at_column();
+    END IF;
+END $$;
