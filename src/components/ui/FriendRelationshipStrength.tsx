@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import { Heart, Users, MessageCircle, MapPin, Calendar, Star, Eye, EyeOff, Shield } from 'lucide-react'
+import { Heart, Users, MessageCircle, MapPin, Calendar, Star, Eye, EyeOff, Shield, HeartOff } from 'lucide-react'
+import { CloseFriendToggle } from '@/components/CloseFriends/CloseFriendToggle'
+import { useIsCloseFriend } from '@/hooks/useCloseFriends'
 
 interface RelationshipAttributes {
   interactionFrequency: number // 0-100
@@ -30,6 +32,7 @@ export const FriendRelationshipStrength: React.FC<FriendRelationshipStrengthProp
   onTogglePrivacy
 }) => {
   const [showPrivacyMenu, setShowPrivacyMenu] = useState(false)
+  const { data: isCloseFriend = false } = useIsCloseFriend(friendId)
 
   const getStrengthColor = (strength: number) => {
     if (strength >= 80) return 'text-red-500'
@@ -40,6 +43,8 @@ export const FriendRelationshipStrength: React.FC<FriendRelationshipStrengthProp
   }
 
   const getStrengthLabel = (strength: number) => {
+    // If they're marked as close friend, show that regardless of calculated strength
+    if (isCloseFriend) return 'Close Friend'
     if (strength >= 80) return 'Best Friends'
     if (strength >= 60) return 'Close Friends'
     if (strength >= 40) return 'Good Friends'
@@ -105,7 +110,10 @@ export const FriendRelationshipStrength: React.FC<FriendRelationshipStrengthProp
             </div>
           )}
           <div>
-            <h3 className="font-bold text-white text-lg">Relationship with {friendName}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-white text-lg">Relationship with {friendName}</h3>
+              {isCloseFriend && <Heart className="w-4 h-4 text-red-400 fill-current" />}
+            </div>
             <p className="text-white/70 text-sm">{getStrengthLabel(overallStrength)}</p>
           </div>
         </div>
@@ -215,10 +223,36 @@ export const FriendRelationshipStrength: React.FC<FriendRelationshipStrengthProp
         </div>
       </div>
 
+      {/* Close Friend Actions */}
+      <div className="mt-6 pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-white/90 font-medium">Close Friend Status</h4>
+          <CloseFriendToggle 
+            friendId={friendId}
+            friendName={friendName}
+            variant="minimal"
+          />
+        </div>
+        {isCloseFriend && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 text-red-400 text-sm">
+              <Heart className="w-4 h-4 fill-current" />
+              <span className="font-medium">{friendName} is one of your close friends</span>
+            </div>
+            <p className="text-red-300/80 text-xs mt-1">
+              They'll see your close friends content and appear first in your feed
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Insights */}
       <div className="mt-6 pt-4 border-t border-white/10">
         <h4 className="text-white/90 font-medium mb-3">Relationship Insights</h4>
         <div className="space-y-2 text-sm">
+          {isCloseFriend && (
+            <p className="text-red-400">❤️ {friendName} is one of your close friends!</p>
+          )}
           {overallStrength >= 80 && (
             <p className="text-green-400">🌟 You have a very strong friendship with {friendName}!</p>
           )}
