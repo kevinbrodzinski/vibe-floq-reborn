@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
     const query = q.toLowerCase().trim();
 
     // Search DM threads where current profile_id is a participant with enhanced data
+    // Note: RLS policies filter by member_a/member_b, and profile_id equals auth.users.id
     const { data: threadsData, error: threadsError } = await supabase
       .from('direct_threads')
       .select(`
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
         pa:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
-      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`) // profileId is used for member matching
+      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`) // Query by member columns (RLS compatible)
       .order('last_message_at', { ascending: false });
 
     if (threadsError) {
@@ -157,7 +158,7 @@ Deno.serve(async (req) => {
     // Process and score results
     const results: ThreadSearchResult[] = (threadsData || [])
       .map(thread => {
-        // Check if current profile_id is member_a or member_b
+        // Check if current profile_id is member_a or member_b (since profile_id equals auth.users.id)
         const isCurrentProfileMemberA = thread.member_a === profileId;
         const friendProfile = isCurrentProfileMemberA ? thread.pb : thread.pa;
         

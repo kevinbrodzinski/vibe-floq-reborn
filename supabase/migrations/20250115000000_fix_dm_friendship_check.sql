@@ -1,6 +1,23 @@
 -- Fix DM thread creation to require friendship
 -- Update get_or_create_dm_thread function to include friendship check using profile_id (main user identifier)
 
+-- First, ensure are_friends function checks for accepted friendships only
+CREATE OR REPLACE FUNCTION public.are_friends(user_a uuid, user_b uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+STRICT
+SET search_path = 'public'
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM friendships f
+    WHERE ((f.user_low = user_a AND f.user_high = user_b)
+       OR (f.user_high = user_a AND f.user_low = user_b))
+    AND f.friend_state = 'accepted'::friend_state
+  );
+$$;
+
 CREATE OR REPLACE FUNCTION public.get_or_create_dm_thread(
   p_profile_a uuid, -- profile_id of first user
   p_profile_b uuid  -- profile_id of second user
@@ -19,7 +36,7 @@ BEGIN
     RAISE EXCEPTION 'Cannot create DM thread with yourself';
   END IF;
 
-  -- Check if profile_ids are friends (are_friends function expects profile_ids)
+  -- Check if profile_ids are friends (are_friends function expects profile_ids and checks for accepted state)
   IF NOT public.are_friends(p_profile_a, p_profile_b) THEN
     RAISE EXCEPTION 'Cannot create DM thread - users are not friends';
   END IF;
@@ -65,4 +82,5 @@ END;
 $$;
 
 -- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.are_friends(uuid, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_or_create_dm_thread(uuid, uuid) TO authenticated;

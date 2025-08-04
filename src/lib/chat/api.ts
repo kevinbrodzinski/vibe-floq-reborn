@@ -39,16 +39,16 @@ export const rpc_markThreadRead = (payload: {
 }) => (supabase as any).rpc('mark_thread_read', payload);
 
 export const getOrCreateThread = async (
-  me: string,
-  friend: string
+  me: string,        // profile_id of current user
+  friend: string     // profile_id of friend
 ): Promise<string> => {
   if (me === friend) {
     throw new Error('Cannot DM yourself');
   }
 
   const { data, error } = await supabase.rpc('get_or_create_dm_thread', {
-    p_user_a: me,
-    p_user_b: friend,
+    p_profile_a: me,     // Updated to match migration parameter names
+    p_profile_b: friend, // Updated to match migration parameter names
   });
 
   if (error || !data) {

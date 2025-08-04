@@ -49,7 +49,7 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
 
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {
-      // Check if current profile is member_a or member_b (profile_id matching)
+      // Check if current profile is member_a or member_b (profile_id equals auth.users.id)
       const isCurrentProfileMemberA = thread.member_a === currentProfileId;
       const friendProfile = isCurrentProfileMemberA ? thread.member_b_profile : thread.member_a_profile;
       
