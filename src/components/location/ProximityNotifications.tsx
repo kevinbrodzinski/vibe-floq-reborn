@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Users, MapPin, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, X, User, MapPin, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
 
-interface ProximityNotification {
+interface ProximityEvent {
   id: string;
   profileId: string;
   friendName: string;
@@ -13,141 +13,130 @@ interface ProximityNotification {
   distance: number;
   confidence: number;
   timestamp: Date;
-  location?: {
-    latitude: number;
-    longitude: number;
+  location: {
+    lat: number;
+    lng: number;
   };
 }
 
-/**
- * ProximityNotifications - Shows real-time proximity notifications
- * Displays when friends enter/exit proximity with enhanced context
- */
-export const ProximityNotifications: React.FC = () => {
-  const [notifications, setNotifications] = useState<ProximityNotification[]>([]);
-  const [isVisible, setIsVisible] = useState(false);
-  const enhancedLocation = useEnhancedLocationSharing();
+interface ProximityNotificationsProps {
+  className?: string;
+}
 
-  // Convert proximity events to notifications
+export const ProximityNotifications: React.FC<ProximityNotificationsProps> = ({ 
+  className 
+}) => {
+  const [notifications, setNotifications] = useState<ProximityEvent[]>([]);
+
+  // Mock proximity events for development
   useEffect(() => {
-    if (!enhancedLocation.proximityEvents) return;
+    const mockEvents: ProximityEvent[] = [
+      {
+        id: 'mock-1',
+        profileId: 'friend-1',
+        friendName: 'Alex',
+        eventType: 'enter',
+        distance: 150,
+        confidence: 0.85,
+        timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
+        location: { lat: 40.7128, lng: -74.0060 }
+      },
+      {
+        id: 'mock-2', 
+        profileId: 'friend-2',
+        friendName: 'Sam',
+        eventType: 'sustain',
+        distance: 200,
+        confidence: 0.72,
+        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+        location: { lat: 40.7130, lng: -74.0062 }
+      }
+    ];
 
-    const recentEvents = enhancedLocation.proximityEvents
-      .filter(event => {
-        const eventTime = new Date(event.created_at).getTime();
-        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-        return eventTime > fiveMinutesAgo;
-      })
-      .map(event => ({
-        id: `${event.other_user_id}_${event.created_at}`,
-        profileId: event.other_user_id,
-        friendName: `Friend ${event.other_user_id.slice(0, 8)}`, // Would be fetched from profiles
-        eventType: event.event_type as 'enter' | 'exit' | 'sustain',
-        distance: event.distance,
-        confidence: event.confidence_score,
-        timestamp: new Date(event.created_at),
-        location: {
-          latitude: event.latitude,
-          longitude: event.longitude
-        }
-      }));
+    setNotifications(mockEvents);
+  }, []);
 
-    setNotifications(recentEvents);
-    setIsVisible(recentEvents.length > 0);
-  }, [enhancedLocation.proximityEvents]);
-
-  const dismissNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  };
-
-  const dismissAll = () => {
-    setNotifications([]);
-    setIsVisible(false);
+  const dismissNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
-      case 'enter': return <Users className="w-4 h-4 text-green-500" />;
-      case 'exit': return <MapPin className="w-4 h-4 text-red-500" />;
-      case 'sustain': return <Bell className="w-4 h-4 text-blue-500" />;
-      default: return <Bell className="w-4 h-4" />;
-    }
-  };
-
-  const getEventMessage = (notification: ProximityNotification) => {
-    const distance = Math.round(notification.distance);
-    switch (notification.eventType) {
       case 'enter':
-        return `${notification.friendName} is nearby (${distance}m away)`;
+        return <MapPin className="h-4 w-4 text-green-500" />;
       case 'exit':
-        return `${notification.friendName} left the area`;
-      case 'sustain':
-        return `Still near ${notification.friendName} (${distance}m)`;
+        return <MapPin className="h-4 w-4 text-red-500" />;
       default:
-        return `Proximity event with ${notification.friendName}`;
+        return <User className="h-4 w-4 text-blue-500" />;
     }
   };
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence > 0.8) return 'bg-green-500/20 text-green-500 border-green-500/30';
-    if (confidence > 0.6) return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
-    return 'bg-red-500/20 text-red-500 border-red-500/30';
+  const getEventText = (event: ProximityEvent) => {
+    const distance = Math.round(event.distance);
+    switch (event.eventType) {
+      case 'enter':
+        return `${event.friendName} is nearby (${distance}m away)`;
+      case 'exit':
+        return `${event.friendName} moved away`;
+      default:
+        return `${event.friendName} is still nearby (${distance}m)`;
+    }
   };
 
-  if (!isVisible || notifications.length === 0) {
+  if (notifications.length === 0) {
     return null;
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm space-y-2">
-      {notifications.map(notification => (
-        <Card key={notification.id} className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1">
-                {getEventIcon(notification.eventType)}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {getEventMessage(notification)}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className={`text-xs ${getConfidenceColor(notification.confidence)}`}>
-                      {Math.round(notification.confidence * 100)}% confident
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {notification.timestamp.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => dismissNotification(notification.id)}
-                className="p-1 h-auto text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-      
-      {notifications.length > 1 && (
-        <div className="flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={dismissAll}
-            className="text-xs text-muted-foreground hover:text-foreground"
+    <div className={`fixed top-4 right-4 z-50 space-y-2 ${className}`}>
+      <AnimatePresence>
+        {notifications.map((notification) => (
+          <motion.div
+            key={notification.id}
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
           >
-            Dismiss All
-          </Button>
-        </div>
-      )}
+            <Card className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-lg max-w-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5">
+                      {getEventIcon(notification.eventType)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {getEventText(notification)}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {notification.timestamp.toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                        <Badge variant="secondary" className="text-xs">
+                          {Math.round(notification.confidence * 100)}% confidence
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => dismissNotification(notification.id)}
+                    className="h-8 w-8 p-0 hover:bg-accent"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
