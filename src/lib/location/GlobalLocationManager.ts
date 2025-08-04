@@ -1,34 +1,46 @@
 /**
  * Global Location Manager - Coordinates all GPS requests across the app
- * Prevents multiple watchPosition calls and provides centralized location data
+ * Uses useGeo as foundation to preserve sophisticated caching and error handling
+ * Implements single GPS watch pattern with LocationBus distribution
  */
+
+import { useGeo, type GeoState, type GeoOpts } from '@/hooks/useGeo';
+import { useEffect, useRef } from 'react';
 
 interface LocationSubscriber {
   id: string;
-  callback: (position: GeolocationPosition) => void;
-  errorCallback?: (error: GeolocationPositionError) => void;
-  options?: PositionOptions;
+  callback: (coords: { lat: number; lng: number; accuracy: number; timestamp: number }) => void;
+  errorCallback?: (error: string) => void;
+  options?: {
+    minDistance?: number;
+    minTime?: number;
+    priority?: 'high' | 'medium' | 'low';
+  };
 }
 
-interface LocationData {
-  position: GeolocationPosition;
-  timestamp: number;
+interface LocationManagerMetrics {
+  subscriberCount: number;
+  activeSubscribers: number;
+  lastUpdateTime: number;
+  gpsAccuracy: number;
+  hasPermission: boolean;
+  isWatching: boolean;
+  failureCount: number;
+  totalUpdates: number;
 }
 
 class GlobalLocationManager {
-  private watchId: number | null = null;
   private subscribers: Map<string, LocationSubscriber> = new Map();
-  private lastPosition: LocationData | null = null;
-  private isWatching = false;
-  private hasPermission = false;
-  
-  // Circuit breaker for GPS failures
+  private lastPosition: { lat: number; lng: number; accuracy: number; timestamp: number } | null = null;
   private failureCount = 0;
   private lastFailureTime = 0;
+  private totalUpdates = 0;
   private readonly MAX_FAILURES = 5;
   private readonly FAILURE_RESET_TIME = 5 * 60 * 1000; // 5 minutes
   
   private static instance: GlobalLocationManager | null = null;
+  private geoHookRef: React.MutableRefObject<GeoState | null> = { current: null };
+  private isInitialized = false;
   
   static getInstance(): GlobalLocationManager {
     if (!GlobalLocationManager.instance) {
@@ -38,227 +50,228 @@ class GlobalLocationManager {
   }
   
   private constructor() {
-    // Check permission on initialization
-    this.checkPermission();
+    // Private constructor for singleton
   }
   
-  private async checkPermission(): Promise<boolean> {
-    if (!navigator.geolocation) {
-      console.warn('[GlobalLocationManager] Geolocation not supported');
-      return false;
+  /**
+   * Initialize the manager with useGeo hook (called from React component)
+   */
+  initializeWithGeoHook(geoState: GeoState): void {
+    if (this.isInitialized) return;
+    
+    this.geoHookRef.current = geoState;
+    this.isInitialized = true;
+    
+    // Process location updates from useGeo
+    if (geoState.coords && geoState.status === 'success') {
+      this.handleLocationUpdate({
+        lat: geoState.coords.lat,
+        lng: geoState.coords.lng,
+        accuracy: geoState.accuracy || 0,
+        timestamp: geoState.ts || Date.now()
+      });
     }
     
-    try {
-      const result = await navigator.permissions.query({ name: 'geolocation' });
-      this.hasPermission = result.state === 'granted';
-      return this.hasPermission;
-    } catch (error) {
-      console.warn('[GlobalLocationManager] Permission check failed:', error);
-      return false;
+    // Handle errors from useGeo
+    if (geoState.status === 'error' && geoState.error) {
+      this.handleLocationError(geoState.error);
     }
   }
   
-  private shouldSkipDueToFailures(): boolean {
-    const now = Date.now();
-    if (this.failureCount >= this.MAX_FAILURES) {
-      if (now - this.lastFailureTime < this.FAILURE_RESET_TIME) {
-        return true; // Still in failure timeout period
-      } else {
-        // Reset failure count after timeout
-        this.failureCount = 0;
-      }
-    }
-    return false;
-  }
-  
-  private handleSuccess = (position: GeolocationPosition) => {
-    // Reset failure count on success
+  private handleLocationUpdate(position: { lat: number; lng: number; accuracy: number; timestamp: number }) {
+    // Reset failure count on successful update
     this.failureCount = 0;
+    this.totalUpdates++;
     
-    this.lastPosition = {
-      position,
-      timestamp: Date.now()
-    };
+    this.lastPosition = position;
     
-    // Notify all subscribers
-    this.subscribers.forEach(subscriber => {
+    // Notify all subscribers with distance and time filtering
+    this.subscribers.forEach((subscriber, id) => {
       try {
-        subscriber.callback(position);
+        const shouldNotify = this.shouldNotifySubscriber(subscriber, position);
+        if (shouldNotify) {
+          subscriber.callback(position);
+        }
       } catch (error) {
-        console.error(`[GlobalLocationManager] Subscriber ${subscriber.id} callback failed:`, error);
+        console.error(`[GlobalLocationManager] Subscriber ${id} callback failed:`, error);
+        // Remove failing subscriber
+        this.subscribers.delete(id);
       }
     });
-  };
+  }
   
-  private handleError = (error: GeolocationPositionError) => {
+  private handleLocationError(error: string) {
     this.failureCount++;
     this.lastFailureTime = Date.now();
     
     console.error('[GlobalLocationManager] GPS error:', {
-      code: error.code,
-      message: error.message,
+      error,
       failureCount: this.failureCount
     });
     
     // Notify subscribers of error
-    this.subscribers.forEach(subscriber => {
+    this.subscribers.forEach((subscriber, id) => {
       if (subscriber.errorCallback) {
         try {
           subscriber.errorCallback(error);
         } catch (callbackError) {
-          console.error(`[GlobalLocationManager] Subscriber ${subscriber.id} error callback failed:`, callbackError);
+          console.error(`[GlobalLocationManager] Error callback failed for ${id}:`, callbackError);
         }
       }
     });
-    
-    // Stop watching if too many failures
-    if (this.failureCount >= this.MAX_FAILURES) {
-      console.warn('[GlobalLocationManager] Too many failures, stopping GPS watch');
-      this.stopWatching();
-    }
-  };
-  
-  private startWatching() {
-    if (this.isWatching || this.shouldSkipDueToFailures()) {
-      return;
-    }
-    
-    if (!navigator.geolocation) {
-      console.error('[GlobalLocationManager] Geolocation not supported');
-      return;
-    }
-    
-    // Use the most permissive options from all subscribers
-    const combinedOptions: PositionOptions = {
-      enableHighAccuracy: Array.from(this.subscribers.values()).some(s => s.options?.enableHighAccuracy),
-      timeout: Math.max(...Array.from(this.subscribers.values()).map(s => s.options?.timeout || 10000)),
-      maximumAge: Math.min(...Array.from(this.subscribers.values()).map(s => s.options?.maximumAge || 60000))
-    };
-    
-    console.log('[GlobalLocationManager] Starting GPS watch with options:', combinedOptions);
-    
-    this.watchId = navigator.geolocation.watchPosition(
-      this.handleSuccess,
-      this.handleError,
-      combinedOptions
-    );
-    
-    this.isWatching = true;
   }
   
-  private stopWatching() {
-    if (this.watchId !== null) {
-      navigator.geolocation.clearWatch(this.watchId);
-      this.watchId = null;
+  private shouldNotifySubscriber(
+    subscriber: LocationSubscriber, 
+    position: { lat: number; lng: number; accuracy: number; timestamp: number }
+  ): boolean {
+    const options = subscriber.options || {};
+    
+    // Check minimum time interval
+    if (options.minTime && this.lastPosition) {
+      const timeDiff = position.timestamp - this.lastPosition.timestamp;
+      if (timeDiff < options.minTime) {
+        return false;
+      }
     }
-    this.isWatching = false;
-    console.log('[GlobalLocationManager] Stopped GPS watch');
+    
+    // Check minimum distance
+    if (options.minDistance && this.lastPosition) {
+      const distance = this.calculateDistance(
+        this.lastPosition.lat, this.lastPosition.lng,
+        position.lat, position.lng
+      );
+      if (distance < options.minDistance) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
   }
   
   /**
    * Subscribe to location updates
    */
-  subscribe(
-    id: string,
-    callback: (position: GeolocationPosition) => void,
-    errorCallback?: (error: GeolocationPositionError) => void,
-    options?: PositionOptions
-  ): () => void {
-    console.log(`[GlobalLocationManager] Adding subscriber: ${id}`);
+  subscribe(subscriber: LocationSubscriber): () => void {
+    this.subscribers.set(subscriber.id, subscriber);
     
-    this.subscribers.set(id, {
-      id,
-      callback,
-      errorCallback,
-      options
-    });
-    
-    // Provide last known position immediately if available and recent (< 30 seconds)
-    if (this.lastPosition && Date.now() - this.lastPosition.timestamp < 30000) {
+    // Immediately provide last known position if available
+    if (this.lastPosition) {
       try {
-        callback(this.lastPosition.position);
+        subscriber.callback(this.lastPosition);
       } catch (error) {
-        console.error(`[GlobalLocationManager] Initial callback failed for ${id}:`, error);
+        console.error(`[GlobalLocationManager] Initial callback failed for ${subscriber.id}:`, error);
       }
-    }
-    
-    // Start watching if this is the first subscriber
-    if (this.subscribers.size === 1) {
-      this.startWatching();
     }
     
     // Return unsubscribe function
     return () => {
-      console.log(`[GlobalLocationManager] Removing subscriber: ${id}`);
-      this.subscribers.delete(id);
-      
-      // Stop watching if no more subscribers
-      if (this.subscribers.size === 0) {
-        this.stopWatching();
-      }
+      this.subscribers.delete(subscriber.id);
     };
   }
   
   /**
-   * Get current location once (not watching)
+   * Get current location (if available)
    */
-  async getCurrentPosition(options?: PositionOptions): Promise<GeolocationPosition> {
-    if (this.shouldSkipDueToFailures()) {
-      throw new Error('GPS temporarily disabled due to repeated failures');
+  getCurrentLocation(): { lat: number; lng: number; accuracy: number; timestamp: number } | null {
+    return this.lastPosition;
+  }
+  
+  /**
+   * Check if GPS permission is granted
+   */
+  hasGPSPermission(): boolean {
+    return this.geoHookRef.current?.hasPermission || false;
+  }
+  
+  /**
+   * Request location permission (delegates to useGeo)
+   */
+  requestLocationPermission(): void {
+    if (this.geoHookRef.current?.requestLocation) {
+      this.geoHookRef.current.requestLocation();
     }
-    
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-      
-      // Return cached position if recent enough
-      if (this.lastPosition && Date.now() - this.lastPosition.timestamp < 10000) {
-        resolve(this.lastPosition.position);
-        return;
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        resolve,
-        reject,
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 30000,
-          ...options
-        }
-      );
-    });
   }
   
   /**
-   * Get debugging information
+   * Get debug information for health dashboard
    */
-  getDebugInfo() {
+  getDebugInfo(): LocationManagerMetrics {
+    const geoState = this.geoHookRef.current;
+    
     return {
-      isWatching: this.isWatching,
       subscriberCount: this.subscribers.size,
-      subscribers: Array.from(this.subscribers.keys()),
-      hasPermission: this.hasPermission,
+      activeSubscribers: this.subscribers.size, // All subscribers are active in this model
+      lastUpdateTime: this.lastPosition?.timestamp || 0,
+      gpsAccuracy: this.lastPosition?.accuracy || 0,
+      hasPermission: geoState?.hasPermission || false,
+      isWatching: geoState?.status === 'loading' || geoState?.status === 'success',
       failureCount: this.failureCount,
-      lastPosition: this.lastPosition ? {
-        lat: this.lastPosition.position.coords.latitude,
-        lng: this.lastPosition.position.coords.longitude,
-        accuracy: this.lastPosition.position.coords.accuracy,
-        timestamp: this.lastPosition.timestamp
-      } : null
+      totalUpdates: this.totalUpdates
     };
   }
   
   /**
-   * Force reset failure state (for testing/debugging)
+   * Reset failure count (for manual recovery)
    */
-  resetFailures() {
+  resetFailures(): void {
     this.failureCount = 0;
     this.lastFailureTime = 0;
-    console.log('[GlobalLocationManager] Failure state reset');
+  }
+  
+  /**
+   * Get subscriber count by priority
+   */
+  getSubscribersByPriority(): { high: number; medium: number; low: number } {
+    const counts = { high: 0, medium: 0, low: 0 };
+    
+    this.subscribers.forEach(subscriber => {
+      const priority = subscriber.options?.priority || 'medium';
+      counts[priority]++;
+    });
+    
+    return counts;
   }
 }
 
+// Export singleton instance
 export const globalLocationManager = GlobalLocationManager.getInstance();
+
+/**
+ * React hook to initialize GlobalLocationManager with useGeo
+ * This should be called once at the app level
+ */
+export function useGlobalLocationManager(options: GeoOpts = {}) {
+  const geoState = useGeo({
+    watch: true,
+    enableHighAccuracy: true,
+    minDistanceM: 10,
+    debounceMs: 2000,
+    ...options
+  });
+  
+  // Initialize manager with geo state
+  useEffect(() => {
+    globalLocationManager.initializeWithGeoHook(geoState);
+  }, [geoState.coords, geoState.status, geoState.error]);
+  
+  return {
+    geoState,
+    manager: globalLocationManager
+  };
+}
