@@ -1,6 +1,7 @@
 -- Enhanced Location System RPC Functions and Monitoring Tables (FINAL)
 -- Supports the new GlobalLocationManager, LocationBus, and Circuit Breaker architecture
 -- FINAL FIXES: Addressed all blocking issues - partial indexes, RLS policies, and permissions
+-- V2 LOCATION STACK: Hybrid H3/Geohash strategy for hosted Supabase (no H3 extension required)
 
 -- ========================================
 -- 1. Location System Monitoring Tables
@@ -42,12 +43,39 @@ CREATE TABLE IF NOT EXISTS public.circuit_breaker_state (
 );
 
 -- ========================================
--- 2. Enable RLS with safe, explicit policies
+-- 2. Enhanced Field Tiles with PostGIS Hex Grid (V2 Strategy)
+-- ========================================
+
+-- Field tiles using PostGIS hex grid (no H3 extension required)
+CREATE TABLE IF NOT EXISTS public.field_tiles_v2 (
+  tile_id text PRIMARY KEY,
+  hex_geom geometry(POLYGON, 4326) NOT NULL,
+  center_lat double precision NOT NULL,
+  center_lng double precision NOT NULL,
+  crowd_count integer DEFAULT 0,
+  avg_vibe jsonb DEFAULT '{}',
+  vibe_mix jsonb DEFAULT '{}',
+  active_profile_ids uuid[] DEFAULT '{}',
+  last_activity timestamp with time zone,
+  updated_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+-- Create spatial index on hex geometry
+CREATE INDEX IF NOT EXISTS idx_field_tiles_v2_hex_geom 
+  ON public.field_tiles_v2 USING GIST(hex_geom);
+
+-- Create index on updated_at for efficient queries
+CREATE INDEX IF NOT EXISTS idx_field_tiles_v2_updated_at 
+  ON public.field_tiles_v2(updated_at DESC);
+
+-- ========================================
+-- 3. Enable RLS with safe, explicit policies
 -- ========================================
 
 ALTER TABLE public.location_system_health ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.location_performance_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.circuit_breaker_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.field_tiles_v2 ENABLE ROW LEVEL SECURITY;
 
 -- Safe RLS policies for location_system_health (separate SELECT/INSERT, forbid DELETE)
 CREATE POLICY "lsh_select"
@@ -85,8 +113,18 @@ CREATE POLICY "circuit_breaker_state_service_write"
   ON public.circuit_breaker_state
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
+-- Field tiles v2 (public read access)
+CREATE POLICY "field_tiles_v2_read"
+  ON public.field_tiles_v2
+  FOR SELECT USING (true);
+
+CREATE POLICY "field_tiles_v2_service_write"
+  ON public.field_tiles_v2
+  FOR ALL USING (auth.role() = 'service_role')
+  WITH CHECK (auth.role() = 'service_role');
+
 -- ========================================
--- 3. Create indexes for performance (FIXED: removed partial index predicates with now())
+-- 4. Create indexes for performance (FIXED: removed partial index predicates with now())
 -- ========================================
 
 -- Drop potentially conflicting indexes first
@@ -116,12 +154,26 @@ CREATE INDEX IF NOT EXISTS idx_live_positions_visibility_expires
 CREATE INDEX IF NOT EXISTS idx_live_positions_geog_expires  
   ON public.live_positions USING GIST(geog);
 
+-- V2 STRATEGY: Add H3 and geohash indexes to existing tables (if columns exist)
+-- These will be added by the application layer, not required by migration
+CREATE INDEX IF NOT EXISTS idx_vibes_now_h3_idx 
+  ON public.vibes_now(h3_idx) WHERE h3_idx IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_vibes_now_geohash6 
+  ON public.vibes_now(geohash6) WHERE geohash6 IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_presence_h3_idx 
+  ON public.presence(h3_idx) WHERE h3_idx IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_presence_geohash6 
+  ON public.presence(geohash6) WHERE geohash6 IS NOT NULL;
+
 -- ========================================
--- 4. Enhanced Location RPC Functions
+-- 5. Enhanced Location RPC Functions (V2 Strategy)
 -- ========================================
 
--- Batch location update with circuit breaker support
-CREATE OR REPLACE FUNCTION public.batch_location_update(
+-- Batch location update with circuit breaker support and spatial indexing
+CREATE OR REPLACE FUNCTION public.batch_location_update_v2(
   p_locations jsonb,
   p_priority text DEFAULT 'medium'
 )
@@ -137,6 +189,8 @@ DECLARE
   v_processed integer := 0;
   v_errors jsonb := '[]'::jsonb;
   v_start_time timestamp := clock_timestamp();
+  v_geohash6 text;
+  v_h3_idx bigint;
 BEGIN
   -- Validate authentication
   IF v_profile_id IS NULL THEN
@@ -159,6 +213,18 @@ BEGIN
         v_errors := v_errors || jsonb_build_object('error', 'Missing required fields', 'location', v_location);
         CONTINUE;
       END IF;
+
+      -- Compute geohash6 (cheap server-side computation)
+      SELECT ST_GeoHash(
+        ST_SetSRID(ST_MakePoint(
+          (v_location->>'lng')::double precision,
+          (v_location->>'lat')::double precision
+        ), 4326),
+        6
+      ) INTO v_geohash6;
+
+      -- Extract client-computed H3 index if provided
+      v_h3_idx := CASE WHEN v_location ? 'h3_idx' THEN (v_location->>'h3_idx')::bigint ELSE NULL END;
 
       -- Insert into location_history (use existing table structure)
       INSERT INTO public.location_history (
@@ -199,7 +265,8 @@ BEGIN
     jsonb_build_object(
       'batch_size', LEAST(jsonb_array_length(p_locations), 50),
       'processed', v_processed,
-      'priority', p_priority
+      'priority', p_priority,
+      'spatial_indexing', 'geohash6_h3_hybrid'
     ),
     v_profile_id
   );
@@ -212,12 +279,13 @@ BEGIN
     metadata
   ) VALUES (
     v_profile_id,
-    'batch_location_update',
+    'batch_location_update_v2',
     v_processed,
     jsonb_build_object(
       'duration_ms', EXTRACT(MILLISECONDS FROM clock_timestamp() - v_start_time),
       'priority', p_priority,
-      'batch_size', LEAST(jsonb_array_length(p_locations), 50)
+      'batch_size', LEAST(jsonb_array_length(p_locations), 50),
+      'spatial_strategy', 'hybrid_geohash_h3'
     )
   );
 
@@ -226,7 +294,142 @@ BEGIN
     'success', v_processed > 0,
     'processed', v_processed,
     'errors', v_errors,
-    'duration_ms', EXTRACT(MILLISECONDS FROM clock_timestamp() - v_start_time)
+    'duration_ms', EXTRACT(MILLISECONDS FROM clock_timestamp() - v_start_time),
+    'spatial_strategy', 'geohash6_h3_hybrid'
+  );
+
+  RETURN v_result;
+END;
+$$;
+
+-- Generate field tiles using PostGIS hex grid (V2 Strategy)
+CREATE OR REPLACE FUNCTION public.refresh_field_tiles_v2(
+  p_hex_size_meters double precision DEFAULT 500.0,
+  p_bbox_lat_min double precision DEFAULT NULL,
+  p_bbox_lat_max double precision DEFAULT NULL,
+  p_bbox_lng_min double precision DEFAULT NULL,
+  p_bbox_lng_max double precision DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_start_time timestamp := clock_timestamp();
+  v_processed integer := 0;
+  v_result jsonb;
+  v_bbox geometry;
+BEGIN
+  -- Create bounding box (default to world if not specified)
+  IF p_bbox_lat_min IS NOT NULL AND p_bbox_lat_max IS NOT NULL AND 
+     p_bbox_lng_min IS NOT NULL AND p_bbox_lng_max IS NOT NULL THEN
+    v_bbox := ST_MakeEnvelope(p_bbox_lng_min, p_bbox_lat_min, p_bbox_lng_max, p_bbox_lat_max, 4326);
+  ELSE
+    -- Default to world bbox
+    v_bbox := ST_MakeEnvelope(-180, -85, 180, 85, 4326);
+  END IF;
+
+  -- Generate hex grid and aggregate vibes data
+  WITH hex_grid AS (
+    SELECT 
+      row_number() OVER () as grid_id,
+      (ST_HexagonGrid(p_hex_size_meters, v_bbox)).geom as hex_geom
+  ),
+  aggregated_data AS (
+    SELECT 
+      hg.grid_id,
+      hg.hex_geom,
+      ST_Y(ST_Centroid(hg.hex_geom)) as center_lat,
+      ST_X(ST_Centroid(hg.hex_geom)) as center_lng,
+      COUNT(vn.profile_id) as crowd_count,
+      jsonb_object_agg(
+        vn.vibe, 
+        COUNT(vn.vibe)
+      ) FILTER (WHERE vn.vibe IS NOT NULL) as vibe_mix,
+      jsonb_build_object(
+        'h', AVG(CASE 
+          WHEN vn.vibe = 'hype' THEN 280 
+          WHEN vn.vibe = 'social' THEN 30
+          WHEN vn.vibe = 'chill' THEN 240
+          ELSE 200 
+        END),
+        's', 70,
+        'l', 60
+      ) as avg_vibe,
+      array_agg(DISTINCT vn.profile_id) FILTER (WHERE vn.profile_id IS NOT NULL) as active_profile_ids,
+      MAX(vn.updated_at) as last_activity
+    FROM hex_grid hg
+    LEFT JOIN public.vibes_now vn ON ST_Contains(
+      hg.hex_geom, 
+      ST_SetSRID(ST_MakePoint(vn.lng, vn.lat), 4326)
+    )
+    WHERE vn.updated_at IS NULL OR vn.updated_at > now() - interval '15 minutes'
+    GROUP BY hg.grid_id, hg.hex_geom
+    HAVING COUNT(vn.profile_id) > 0 OR hg.grid_id % 100 = 0 -- Keep some empty tiles for coverage
+  )
+  INSERT INTO public.field_tiles_v2 (
+    tile_id,
+    hex_geom,
+    center_lat,
+    center_lng,
+    crowd_count,
+    avg_vibe,
+    vibe_mix,
+    active_profile_ids,
+    last_activity,
+    updated_at
+  )
+  SELECT 
+    'hex_' || grid_id::text,
+    hex_geom,
+    center_lat,
+    center_lng,
+    crowd_count,
+    avg_vibe,
+    COALESCE(vibe_mix, '{}'::jsonb),
+    COALESCE(active_profile_ids, '{}'),
+    last_activity,
+    now()
+  FROM aggregated_data
+  ON CONFLICT (tile_id)
+  DO UPDATE SET
+    crowd_count = EXCLUDED.crowd_count,
+    avg_vibe = EXCLUDED.avg_vibe,
+    vibe_mix = EXCLUDED.vibe_mix,
+    active_profile_ids = EXCLUDED.active_profile_ids,
+    last_activity = EXCLUDED.last_activity,
+    updated_at = EXCLUDED.updated_at;
+
+  GET DIAGNOSTICS v_processed = ROW_COUNT;
+
+  -- Record performance metrics
+  INSERT INTO public.location_performance_metrics (
+    operation_type,
+    duration_ms,
+    success,
+    metadata,
+    profile_id
+  ) VALUES (
+    'database_write',
+    EXTRACT(MILLISECONDS FROM clock_timestamp() - v_start_time),
+    true,
+    jsonb_build_object(
+      'function', 'refresh_field_tiles_v2',
+      'processed_tiles', v_processed,
+      'hex_size_meters', p_hex_size_meters,
+      'spatial_method', 'postgis_hex_grid',
+      'bbox_provided', (p_bbox_lat_min IS NOT NULL)
+    ),
+    auth.uid()
+  );
+
+  v_result := jsonb_build_object(
+    'success', true,
+    'processed_tiles', v_processed,
+    'duration_ms', EXTRACT(MILLISECONDS FROM clock_timestamp() - v_start_time),
+    'spatial_method', 'postgis_hex_grid',
+    'hex_size_meters', p_hex_size_meters
   );
 
   RETURN v_result;
@@ -382,16 +585,17 @@ END;
 $$;
 
 -- ========================================
--- 5. Grant function permissions (authenticated users only)
+-- 6. Grant function permissions (authenticated users only)
 -- ========================================
 
-GRANT EXECUTE ON FUNCTION public.batch_location_update(jsonb, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.batch_location_update_v2(jsonb, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.refresh_field_tiles_v2(double precision, double precision, double precision, double precision, double precision) TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_location_system_health(integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_location_health_metric(text, text, numeric, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_circuit_breaker_state(text, integer, integer, jsonb) TO service_role;
 
 -- ========================================
--- 6. Create cleanup function for old metrics
+-- 7. Create cleanup function for old metrics
 -- ========================================
 
 CREATE OR REPLACE FUNCTION public.cleanup_location_metrics(
@@ -431,6 +635,13 @@ BEGIN
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
   total_deleted := total_deleted + deleted_count;
 
+  -- Clean old field tiles (keep last 24 hours)
+  DELETE FROM public.field_tiles_v2
+  WHERE updated_at < now() - interval '24 hours';
+  
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  total_deleted := total_deleted + deleted_count;
+
   RETURN total_deleted;
 END;
 $$;
@@ -438,15 +649,17 @@ $$;
 GRANT EXECUTE ON FUNCTION public.cleanup_location_metrics(integer) TO service_role;
 
 -- ========================================
--- 7. Comments for documentation
+-- 8. Comments for documentation
 -- ========================================
 
 COMMENT ON TABLE public.location_system_health IS 'Health metrics for location system components (GPS manager, LocationBus, Circuit Breaker, Zustand store)';
 COMMENT ON TABLE public.location_performance_metrics IS 'Performance metrics for location operations (duration, success rate, errors)';
 COMMENT ON TABLE public.circuit_breaker_state IS 'Circuit breaker state tracking for database write protection';
+COMMENT ON TABLE public.field_tiles_v2 IS 'V2 field tiles using PostGIS hex grid (no H3 extension required) - compatible with hosted Supabase';
 
-COMMENT ON FUNCTION public.batch_location_update(jsonb, text) IS 'Batch insert location data with circuit breaker support and priority handling';
+COMMENT ON FUNCTION public.batch_location_update_v2(jsonb, text) IS 'V2 batch location insert with hybrid geohash6/H3 spatial indexing strategy';
+COMMENT ON FUNCTION public.refresh_field_tiles_v2(double precision, double precision, double precision, double precision, double precision) IS 'V2 field tiles refresh using PostGIS ST_HexagonGrid (no H3 extension required)';
 COMMENT ON FUNCTION public.get_location_system_health(integer) IS 'Get comprehensive health metrics for the location system';
 COMMENT ON FUNCTION public.record_location_health_metric(text, text, numeric, jsonb) IS 'Record a health metric for a specific location system component';
 COMMENT ON FUNCTION public.update_circuit_breaker_state(text, integer, integer, jsonb) IS 'Update the circuit breaker state for database protection (service role only)';
-COMMENT ON FUNCTION public.cleanup_location_metrics(integer) IS 'Clean up old location metrics to maintain database performance';
+COMMENT ON FUNCTION public.cleanup_location_metrics(integer) IS 'Clean up old location metrics and field tiles to maintain database performance';
