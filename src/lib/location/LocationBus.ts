@@ -2,8 +2,10 @@
  * Location Bus Singleton - Central coordinator for all location operations
  * Integrates with GlobalLocationManager (useGeo foundation) for smart distribution
  * Implements smart batching, context-aware throttling, and performance monitoring
+ * V2 ENHANCEMENT: Hybrid H3/Geohash spatial indexing for hosted Supabase
  */
 
+import { geoToH3, kRing } from 'h3-js';
 import { globalLocationManager } from './GlobalLocationManager';
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,13 +14,13 @@ import type { GeoCoords, LocationConsumer, MovementContext } from './types';
 import { callFn } from '@/lib/callFn';
 import { isLovablePreview, platformLog, getCurrentPlatformConfig } from '@/lib/platform';
 
-// LocationConsumer interface now imported from types.ts
-
+// Enhanced LocationBatch with spatial indexing
 interface LocationBatch {
   ts: string;
   lat: number;
   lng: number;
   acc: number;
+  h3_idx?: bigint; // V2: Client-computed H3 index
   context?: MovementContext;
 }
 
@@ -41,6 +43,8 @@ interface PerformanceMetrics {
   contextDetectionAccuracy: number;
   averageLatency: number;
   errorRate: number;
+  spatialIndexingEnabled: boolean; // V2: Track spatial indexing usage
+  h3ComputationTime: number; // V2: H3 computation performance
 }
 
 interface BusDebugInfo {
@@ -86,7 +90,9 @@ class LocationBus {
       lastFlushTime: 0,
       contextDetectionAccuracy: 0.8,
       averageLatency: 0,
-      errorRate: 0
+      errorRate: 0,
+      spatialIndexingEnabled: false, // V2: Initialize spatial indexing flag
+      h3ComputationTime: 0 // V2: Initialize H3 computation time
     };
     
     this.initializeGlobalManagerSubscription();
@@ -117,19 +123,78 @@ class LocationBus {
   private handleLocationUpdate(coords: { lat: number; lng: number; accuracy: number; timestamp: number }) {
     this.lastPosition = coords;
     this.updateMovementContext(coords);
-    this.distributeToConsumers(coords);
+    
+    // V2 ENHANCEMENT: Compute H3 index client-side for spatial indexing
+    const enhancedCoords = this.enhanceWithSpatialIndexes(coords);
+    
+    this.distributeToConsumers(enhancedCoords);
     this.updatePerformanceMetrics();
     
-    // Add to batch queue for database operations
+    // Add to batch queue for database operations with spatial indexes
     this.addToBatch({
       ts: new Date(coords.timestamp).toISOString(),
       lat: coords.lat,
       lng: coords.lng,
       acc: coords.accuracy,
+      h3_idx: enhancedCoords.h3_idx, // V2: Include H3 index for database
       context: this.movementContext
     });
   }
   
+  /**
+   * V2 ENHANCEMENT: Enhance coordinates with spatial indexes (H3)
+   * Computes H3 index client-side for fast neighbor queries
+   */
+  private enhanceWithSpatialIndexes(coords: { lat: number; lng: number; accuracy: number; timestamp: number }): 
+    { lat: number; lng: number; accuracy: number; timestamp: number; h3_idx?: bigint } {
+    try {
+      const h3Start = performance.now();
+      
+      // Compute H3 index at resolution 8 (≈460m hex size, good for neighbor queries)
+      const h3Index = geoToH3(coords.lat, coords.lng, 8);
+      const h3Idx = BigInt(h3Index);
+      
+      // Track H3 computation performance
+      const h3Time = performance.now() - h3Start;
+      this.performanceMetrics.h3ComputationTime = 
+        (this.performanceMetrics.h3ComputationTime * 0.9) + (h3Time * 0.1); // Moving average
+      this.performanceMetrics.spatialIndexingEnabled = true;
+      
+      return {
+        ...coords,
+        h3_idx: h3Idx
+      };
+    } catch (error) {
+      console.warn('[LocationBus] H3 computation failed, using coordinates without spatial index:', error);
+      this.performanceMetrics.spatialIndexingEnabled = false;
+      return coords;
+    }
+  }
+
+  /**
+   * V2 ENHANCEMENT: Get H3 neighbors for proximity queries
+   * Returns H3 cell IDs in a ring around the given coordinates
+   */
+  public getH3Neighbors(lat: number, lng: number, ringSize: number = 1): bigint[] {
+    try {
+      const centerH3 = geoToH3(lat, lng, 8);
+      const ring = kRing(centerH3, ringSize);
+      return ring.map(h3 => BigInt(h3));
+    } catch (error) {
+      console.warn('[LocationBus] H3 neighbor computation failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * V2 ENHANCEMENT: Get optimal ring size for a given radius in meters
+   * H3 resolution 8 has ~460m edge length
+   */
+  public getOptimalH3RingSize(radiusMeters: number): number {
+    const h3EdgeLength = 460; // meters for resolution 8
+    return Math.max(1, Math.ceil(radiusMeters / h3EdgeLength));
+  }
+
   private handleLocationError(error: string) {
     console.error('[LocationBus] GPS error:', error);
     this.performanceMetrics.errorRate++;
@@ -138,7 +203,7 @@ class LocationBus {
     this.consumers.forEach((consumer, id) => {
       if (consumer.errorCallback) {
         try {
-          consumer.errorCallback(error);
+          consumer.errorCallback(new Error(error));
         } catch (callbackError) {
           console.error(`[LocationBus] Consumer ${id} error callback failed:`, callbackError);
         }
@@ -312,19 +377,35 @@ class LocationBus {
     this.performanceMetrics.lastFlushTime = Date.now();
     
     try {
-      // Use circuit breaker for database operations
+      // V2 ENHANCEMENT: Use circuit breaker with enhanced batch function
       await executeWithCircuitBreaker(async () => {
-        const { error } = await callFn('record-locations', {
-          batch: batch.map(b => ({
-            ts: b.ts,
-            lat: b.lat,
-            lng: b.lng,
-            acc: b.acc
-          }))
+        // Prepare batch with spatial indexing data
+        const enhancedBatch = batch.map(b => ({
+          ts: b.ts,
+          lat: b.lat,
+          lng: b.lng,
+          acc: b.acc,
+          timestamp: new Date(b.ts).getTime(), // Convert to timestamp for RPC
+          h3_idx: b.h3_idx // V2: Include H3 index
+        }));
+
+        // Use V2 batch function with spatial indexing
+        const { data, error } = await supabase.rpc('batch_location_update_v2', {
+          p_locations: enhancedBatch,
+          p_priority: 'medium'
         });
         
         if (error) {
-          throw new Error(`Database write failed: ${error.message}`);
+          throw new Error(`V2 batch write failed: ${error.message}`);
+        }
+
+        // Log V2 spatial indexing success
+        if (import.meta.env.MODE === 'development') {
+          platformLog.debug('[LocationBus] V2 batch processed:', {
+            processed: data?.processed || batch.length,
+            spatial_strategy: data?.spatial_strategy || 'geohash6_h3_hybrid',
+            duration_ms: data?.duration_ms
+          });
         }
       }, 'medium');
       
@@ -337,7 +418,7 @@ class LocationBus {
       this.lastFlushTime = now;
       
     } catch (error) {
-      console.error('[LocationBus] Batch flush failed:', error);
+      console.error('[LocationBus] V2 batch flush failed:', error);
       
       // Re-queue batch for retry (with limit to prevent infinite growth)
       if (this.batchQueue.length < 100) {
@@ -449,7 +530,9 @@ class LocationBus {
       lastFlushTime: 0,
       contextDetectionAccuracy: 0.8,
       averageLatency: 0,
-      errorRate: 0
+      errorRate: 0,
+      spatialIndexingEnabled: false, // V2: Reset spatial indexing flag
+      h3ComputationTime: 0 // V2: Reset H3 computation time
     };
     
     this.consumerStats.clear();

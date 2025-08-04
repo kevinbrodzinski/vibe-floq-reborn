@@ -2,9 +2,11 @@
  * Unified Location Hook - Single interface for all location needs
  * Integrates with useGeo foundation, LocationBus, CircuitBreaker, and Zustand store
  * Provides backwards compatibility while leveraging new architecture
+ * V2 ENHANCEMENT: Includes H3 spatial indexing for fast neighbor queries
  */
 
 import { useEffect, useRef, useCallback } from 'react';
+import { geoToH3 } from 'h3-js';
 import { useGlobalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { locationBus } from '@/lib/location/LocationBus';
 import { useLocationStore, useLocationActions, useLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
@@ -38,11 +40,18 @@ interface UnifiedLocationState {
   isTracking: boolean;
   bufferSize: number;
   
+  // V2 ENHANCEMENT: H3 spatial indexing
+  h3Index: string | null;
+  
   // Actions
   startTracking: () => void;
   stopTracking: () => void;
   getCurrentLocation: () => Promise<{ lat: number; lng: number; accuracy: number }>;
   resetErrors: () => void;
+  
+  // V2 ENHANCEMENT: Spatial query methods
+  getNearbyUsers: (radiusMeters?: number) => Promise<any[]>;
+  getH3Neighbors: (ringSize?: number) => bigint[];
 }
 
 /**
@@ -178,31 +187,46 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     }
   }, [enableTracking]);
 
-  // Handle presence updates (real-time sharing)
+  // V2 ENHANCEMENT: Handle presence updates with H3 spatial indexing
   const handlePresenceUpdate = useCallback(async (locationCoords: { lat: number; lng: number; accuracy: number; timestamp: number }) => {
     if (!enablePresence) return;
 
     try {
       await executeWithCircuitBreaker(
         async () => {
-          const { error } = await callFn('upsert-presence', {
-            lat: locationCoords.lat,
-            lng: locationCoords.lng,
-            accuracy: locationCoords.accuracy
+          // V2: Compute H3 index client-side for presence
+          const h3Idx = BigInt(geoToH3(locationCoords.lat, locationCoords.lng, 8));
+
+          // Use V2 presence function with spatial indexing
+          const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
+            p_lat: locationCoords.lat,
+            p_lng: locationCoords.lng,
+            p_vibe: 'active', // Default vibe for presence
+            p_accuracy: locationCoords.accuracy,
+            p_h3_idx: h3Idx // V2: Client-computed H3 index
           });
 
           if (error) {
-            throw new Error(`Presence update failed: ${error.message}`);
+            throw new Error(`V2 presence update failed: ${error.message}`);
+          }
+
+          // Log V2 spatial indexing success
+          if (import.meta.env.MODE === 'development' && data?.spatial_strategy) {
+            console.debug('[useUnifiedLocation] V2 presence updated:', {
+              spatial_strategy: data.spatial_strategy,
+              h3_idx: h3Idx.toString(),
+              duration_ms: data.duration_ms
+            });
           }
         },
         priority,
         {
           component: hookId,
-          operationType: 'presence-update'
+          operationType: 'presence-update-v2'
         }
       );
     } catch (error) {
-      console.error('[useUnifiedLocation] Presence update failed:', error);
+      console.error('[useUnifiedLocation] V2 presence update failed:', error);
     }
   }, [enablePresence, priority, hookId]);
 
@@ -402,6 +426,44 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     setStatus('idle');
   }, [setStatus]);
 
+  // V2 ENHANCEMENT: Get nearby users using H3 kRing
+  const getNearbyUsers = useCallback(async (radiusMeters: number = 1000) => {
+    if (!coords) return [];
+
+    try {
+      // Get H3 neighbors using LocationBus
+      const h3Ring = locationBus.getH3Neighbors(coords.lat, coords.lng, 
+        locationBus.getOptimalH3RingSize(radiusMeters));
+
+      // Call V2 nearby users function with H3 optimization
+      const { data, error } = await supabase.rpc('get_nearby_users_v2', {
+        p_lat: coords.lat,
+        p_lng: coords.lng,
+        p_radius_meters: radiusMeters,
+        p_h3_ring_ids: h3Ring
+      });
+
+      if (error) {
+        console.warn('[useUnifiedLocation] Nearby users query failed:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.warn('[useUnifiedLocation] getNearbyUsers failed:', error);
+      return [];
+    }
+  }, [coords]);
+
+  // V2 ENHANCEMENT: Get H3 neighbors for current location
+  const getH3Neighbors = useCallback((ringSize: number = 1): bigint[] => {
+    if (!coords) return [];
+    return locationBus.getH3Neighbors(coords.lat, coords.lng, ringSize);
+  }, [coords]);
+
+  // V2 ENHANCEMENT: Compute H3 index for current location
+  const h3Index = coords ? geoToH3(coords.lat, coords.lng, 8) : null;
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -425,10 +487,13 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     hasPermission,
     isTracking: useLocationStore((state) => state.isTracking),
     bufferSize: locationBufferRef.current.length,
+    h3Index, // V2: Current location H3 index
     startTracking,
     stopTracking,
     getCurrentLocation,
-    resetErrors
+    resetErrors,
+    getNearbyUsers, // V2: H3-optimized nearby users query
+    getH3Neighbors  // V2: Get H3 neighbors for current location
   };
 }
 
