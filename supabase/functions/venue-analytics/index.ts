@@ -121,7 +121,7 @@ async function handleTrackEvent(event: AnalyticsEvent, authenticatedUserId: stri
 
     // Also update user venue interactions for ML training
     if (['click', 'favorite', 'visit'].includes(event.event_type)) {
-      await supabase.rpc('upsert_venue_interaction', {
+      await supabase.rpc('upsert_venue_interaction_safe', {
         p_profile_id: event.user_id,
         p_venue_id: event.venue_id,
         p_interaction_type: event.event_type,
@@ -192,7 +192,7 @@ async function handleTrackBatch(events: AnalyticsEvent[], authenticatedUserId: s
     );
 
     for (const event of highValueEvents) {
-      await supabase.rpc('upsert_venue_interaction', {
+      await supabase.rpc('upsert_venue_interaction_safe', {
         p_profile_id: event.user_id,
         p_venue_id: event.venue_id,
         p_interaction_type: event.event_type,

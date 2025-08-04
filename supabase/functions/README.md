@@ -427,8 +427,14 @@ OPENWEATHER_API_KEY=your-weather-api-key
 
 ### Database Migration
 ```bash
-# Apply the venue intelligence migration
+# Apply the safe venue intelligence migration (works with existing schema)
 supabase db push
+
+# The migration is designed to:
+# - Work with existing venues, venue_stays, user_venue_interactions tables
+# - Only add new tables that don't conflict
+# - Extend existing tables with missing columns safely
+# - Use existing user_id patterns instead of profile_id where needed
 ```
 
 ### Edge Functions Deployment

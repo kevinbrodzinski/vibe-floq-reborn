@@ -128,7 +128,7 @@ async function handleGetCrowdData(venueId: string): Promise<Response> {
     // Get current presence data
     const { data: currentPresence, error: presenceError } = await supabase
       .from('vibes_now')
-      .select('profile_id, vibe, updated_at')
+      .select('user_id, vibe, updated_at')
       .eq('venue_id', venueId)
       .gte('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()); // Last 30 minutes
 
@@ -254,13 +254,13 @@ async function handleUpdatePresence(
     const { error: upsertError } = await supabase
       .from('vibes_now')
       .upsert({
-        profile_id: userId,
+        user_id: userId,
         venue_id: venueId,
         vibe: presenceData.vibe,
         updated_at: new Date().toISOString(),
         expires_at: expiresAt.toISOString()
       }, {
-        onConflict: 'profile_id,venue_id'
+        onConflict: 'user_id'
       });
 
     if (upsertError) {
@@ -274,7 +274,7 @@ async function handleUpdatePresence(
     // Get updated crowd data
     const { data: currentPresence } = await supabase
       .from('vibes_now')
-      .select('profile_id, vibe, updated_at')
+      .select('user_id, vibe, updated_at')
       .eq('venue_id', venueId)
       .gte('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString());
 

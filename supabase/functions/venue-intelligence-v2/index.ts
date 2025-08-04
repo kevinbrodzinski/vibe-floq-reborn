@@ -194,7 +194,7 @@ async function handleRecommendations(
         departed_at,
         venues!inner(categories, rating)
       `)
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .gte('arrived_at', new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString())
       .limit(100);
 
@@ -397,12 +397,12 @@ async function calculateSocialProof(venueId: string, userId: string, friends: an
   const { data: friendVisits } = await supabase
     .from('venue_stays')
     .select(`
-      profile_id,
+      user_id,
       arrived_at,
       profiles!inner(display_name, avatar_url)
     `)
     .eq('venue_id', venueId)
-    .in('profile_id', friendIds)
+    .in('user_id', friendIds)
     .gte('arrived_at', new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString())
     .order('arrived_at', { ascending: false })
     .limit(5);
