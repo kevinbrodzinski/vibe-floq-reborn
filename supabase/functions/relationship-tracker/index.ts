@@ -119,7 +119,7 @@ serve(async (req) => {
       nearby_users_count: nearby_users.length,
       relationship_pairs_generated: relationshipPairs.length,
       relationships_updated: data || 0,
-      user_id,
+      profile_id,
       current_vibe,
       venue_id,
       // Sample of pairs for debugging (first 5 only)

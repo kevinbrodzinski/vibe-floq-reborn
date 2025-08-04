@@ -99,7 +99,7 @@ serve(async (req) => {
       backgroundTasks.push(
         supabase.functions.invoke('relationship-tracker', {
           body: {
-            user_id: user.id,
+            profile_id: user.id,
             nearby_users: nearby.filter(u => u.profile_id !== user.id),
             current_vibe: vibe || 'chill',
             venue_id: venue_id
@@ -113,7 +113,7 @@ serve(async (req) => {
       const activityEvents = floqs.map(floq => ({
         floq_id: floq.id,
         event_type: 'proximity_update' as const,
-        user_id: user.id,
+        profile_id: user.id,
         proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
         vibe: vibe || 'chill'
       }));
