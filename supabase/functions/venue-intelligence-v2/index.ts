@@ -102,35 +102,52 @@ serve(async (req) => {
       });
     }
 
-    // Get user auth from request
+    // Authenticate user for RLS compliance
     const authHeader = req.headers.get('Authorization');
-    const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader! } },
-    });
-
-    const { data: { user }, error: authError } = await userSupabase.auth.getUser();
-    if (!user || authError) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Security: Users can only request data for themselves
+    if (user_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'Cannot access data for other users' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create user-context supabase client for RLS
+    const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
     switch (mode) {
       case 'recommendations':
-        return await handleRecommendations(user_id, lat, lng, user_vibes, limit, config);
+        return await handleRecommendations(user_id, lat, lng, user_vibes, limit, config, userSupabase);
       
       case 'friend_network':
-        return await handleFriendNetwork(user_id, venue_ids);
+        return await handleFriendNetwork(user_id, venue_ids, userSupabase);
       
       case 'crowd_intelligence':
-        return await handleCrowdIntelligence(venue_ids);
+        return await handleCrowdIntelligence(venue_ids, userSupabase);
       
       case 'vibe_match':
-        return await handleVibeMatch(user_id, venue_ids, user_vibes);
+        return await handleVibeMatch(user_id, venue_ids, user_vibes, userSupabase);
       
       case 'analytics':
-        return await handleAnalytics(user_id, venue_ids);
+        return await handleAnalytics(user_id, venue_ids, userSupabase);
       
       default:
         return new Response(JSON.stringify({ error: 'Invalid mode' }), {
@@ -167,11 +184,12 @@ async function handleRecommendations(
   lng?: number, 
   userVibes: string[] = [], 
   limit: number = 10,
-  config: any = {}
+  config: any = {},
+  userSupabase: any
 ): Promise<Response> {
   try {
     // 1. Get nearby venues using enhanced recommendation summary view
-    let venuesQuery = supabase
+    let venuesQuery = userSupabase
       .from('v_venue_recommendation_summary')
       .select('*')
       .not('lat', 'is', null)
@@ -199,7 +217,7 @@ async function handleRecommendations(
     }
 
     // 2. Get user behavior data for ML
-    const { data: userHistory } = await supabase
+    const { data: userHistory } = await userSupabase
       .from('venue_stays')
       .select(`
         venue_id,
@@ -212,7 +230,7 @@ async function handleRecommendations(
       .limit(100);
 
     // 3. Get friend network data using optimized view
-    const { data: friends } = await supabase
+    const { data: friends } = await userSupabase
       .from('v_friend_ids')
       .select(`
         other_profile_id,
@@ -223,7 +241,7 @@ async function handleRecommendations(
     // 4. Get current weather if location provided
     let weatherData = null;
     if (lat && lng) {
-      const { data: weather } = await supabase.functions.invoke('get_weather', {
+      const { data: weather } = await userSupabase.functions.invoke('get_weather', {
         body: { lat, lng }
       });
       weatherData = weather;
@@ -318,16 +336,16 @@ async function processVenueIntelligence(
   const vibeMatch = await calculateVibeMatch(venue, userVibes, userHistory);
   
   // 2. Social Proof Analysis
-  const socialProof = await calculateSocialProof(venue.id, userId, friends);
+  const socialProof = await calculateSocialProof(venue.id, userId, friends, userSupabase);
   
   // 3. Crowd Intelligence Analysis
-  const crowdIntelligence = await calculateCrowdIntelligence(venue.id, venue.categories);
+  const crowdIntelligence = await calculateCrowdIntelligence(venue.id, venue.categories, userSupabase);
   
   // 4. Context Analysis
   const context = calculateContextualFactors(venue, weatherData);
   
   // 5. Real-time Analysis
-  const realTime = await calculateRealTimeFactors(venue.id);
+  const realTime = await calculateRealTimeFactors(venue.id, userSupabase);
   
   // 6. Novelty Score
   const noveltyScore = calculateNoveltyScore(venue, userHistory);
@@ -400,11 +418,11 @@ async function calculateVibeMatch(venue: any, userVibes: string[], userHistory: 
   };
 }
 
-async function calculateSocialProof(venueId: string, userId: string, friends: any[]) {
+async function calculateSocialProof(venueId: string, userId: string, friends: any[], userSupabase: any) {
   // Get friend visits to this venue using optimized view
   const friendIds = friends.map(f => f.other_profile_id);
   
-  const { data: friendVisits } = await supabase
+  const { data: friendVisits } = await userSupabase
     .from('v_friends_with_presence')
     .select(`
       friend_id,
@@ -415,7 +433,7 @@ async function calculateSocialProof(venueId: string, userId: string, friends: an
     .eq('friend_state', 'accepted');
 
   // Get venue visits for these friends
-  const { data: venueVisits } = await supabase
+  const { data: venueVisits } = await userSupabase
     .from('venue_stays')
     .select(`
       profile_id,
@@ -450,9 +468,9 @@ async function calculateSocialProof(venueId: string, userId: string, friends: an
   };
 }
 
-async function calculateCrowdIntelligence(venueId: string, categories: string[]) {
+async function calculateCrowdIntelligence(venueId: string, categories: string[], userSupabase: any) {
   // Get current presence data using optimized view
-  const { data: currentPresence } = await supabase
+  const { data: currentPresence } = await userSupabase
     .from('v_active_users')
     .select('profile_id, vibe, updated_at')
     .gte('updated_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()); // Last 30 minutes
