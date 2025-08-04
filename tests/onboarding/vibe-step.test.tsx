@@ -10,7 +10,6 @@ const toastSpy = vi.fn();
 const stub =
   <T extends keyof JSX.IntrinsicElements>(Tag: T) =>
     (p: JSX.IntrinsicElements[T] & PropsWithChildren) =>
-      /* eslint-disable react/jsx-props-no-spreading */
       <Tag {...p}>{p.children}</Tag>;
 
 vi.mock('@/hooks/use-toast', () => ({

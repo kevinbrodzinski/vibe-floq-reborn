@@ -86,26 +86,40 @@ export class FriendNetworkAnalyzer {
 
     try {
       // Get user's friends and their venue preferences
-      const { data: friendships, error: friendshipError } = await supabase
-        .from('friendships')
+      const { data: friends, error: friendsError } = await supabase
+        .from('friends')
         .select(`
-          friend_id,
-          profiles!friendships_friend_id_fkey(
+          user_a,
+          user_b,
+          profiles_user_a:profiles!friends_user_a_fkey(
+            id,
+            display_name,
+            avatar_url
+          ),
+          profiles_user_b:profiles!friends_user_b_fkey(
             id,
             display_name,
             avatar_url
           )
         `)
-        .eq('user_id', this.userId)
+        .or(`user_a.eq.${this.userId},user_b.eq.${this.userId}`)
         .eq('status', 'accepted');
 
-      if (friendshipError) throw friendshipError;
+      if (friendsError) throw friendsError;
 
-      if (friendships?.length) {
-        const friendIds = friendships.map(f => f.friend_id);
+      if (friends?.length) {
+        // Extract friend IDs and profiles (since friendship is bidirectional)
+        const friendData = friends.map(f => {
+          if (f.user_a === this.userId) {
+            return { friend_id: f.user_b, profiles: f.profiles_user_b };
+          } else {
+            return { friend_id: f.user_a, profiles: f.profiles_user_a };
+          }
+        });
+        const friendIds = friendData.map(f => f.friend_id);
         
         // Get friend venue interaction data
-        const { data: friendData, error: friendDataError } = await supabase
+        const { data: friendVenueData, error: friendDataError } = await supabase
           .from('venue_stays')
           .select(`
             profile_id,
@@ -119,11 +133,11 @@ export class FriendNetworkAnalyzer {
         if (friendDataError) throw friendDataError;
 
         // Process friend data
-        const friendMap = new Map(friendships.map(f => [f.friend_id, f.profiles]));
+        const friendMap = new Map(friendData.map(f => [f.friend_id, f.profiles]));
         
         for (const friendId of friendIds) {
           const friendProfile = friendMap.get(friendId);
-          const friendVenues = friendData?.filter(d => d.profile_id === friendId) || [];
+          const friendVenues = friendVenueData?.filter(d => d.profile_id === friendId) || [];
           
           const venueVisits = friendVenues.length;
           const lastVisit = friendVenues.length > 0 
