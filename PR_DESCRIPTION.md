@@ -55,16 +55,27 @@ Single GPS watch → H3 client computation → Optimized spatial indexes → Fas
 
 ---
 
+## 🚨 **CRITICAL FIXES APPLIED**
+
+**All blocking issues resolved for hosted Supabase deployment:**
+
+✅ **ST_HexagonGrid replaced** with working PostGIS functions  
+✅ **auth.role() fixed** with current_setting()  
+✅ **RLS bypass added** to all SECURITY DEFINER functions  
+✅ **Function ownership** set to postgres  
+✅ **Spatial index population** fixed in presence functions  
+✅ **Composite indexes** added for hot query paths  
+
 ## 🔧 **Migration Order (CRITICAL)**
 
-**Apply migrations in exactly this order:**
+**Apply FIXED migrations in exactly this order:**
 
 ```bash
 # 1. FIRST - Core monitoring and field tiles infrastructure
-supabase/migrations/20250105000000_enhanced_location_rpc_functions_FINAL.sql
+supabase/migrations/20250105000000_enhanced_location_rpc_functions_FINAL_FIXED.sql
 
 # 2. SECOND - Real-time optimization and hybrid spatial queries  
-supabase/migrations/20250105000001_realtime_location_optimization_FINAL.sql
+supabase/migrations/20250105000001_realtime_location_optimization_FINAL_FIXED.sql
 
 # 3. THIRD - Add spatial index columns to existing tables
 supabase/migrations/20250105000002_add_spatial_index_columns.sql
@@ -156,13 +167,22 @@ const location = useUnifiedLocation({
 -- 1. Verify tables were created
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema = 'public' 
-AND table_name IN ('field_tiles_v2', 'location_system_health');
+AND table_name IN ('field_tiles_v2', 'location_system_health', 'location_performance_metrics', 'circuit_breaker_state');
 
--- 2. Test V2 functions
+-- 2. Test V2 functions work
 SELECT public.get_location_system_health(60);
 
--- 3. Test spatial queries
+-- 3. Test hex grid generation (should not error)
+SELECT public.refresh_field_tiles_v2(500.0, 33.9, 34.1, -118.3, -118.1);
+
+-- 4. Test spatial queries
 SELECT public.get_nearby_users_v2(34.0522, -118.2437, 1000.0, NULL, NULL, 50);
+
+-- 5. Verify function ownership
+SELECT nspname, proname, proowner::regrole 
+FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid 
+WHERE proname LIKE '%_v2' AND nspname = 'public';
+-- Should show 'postgres' as owner for all V2 functions
 ```
 
 ### **Performance Benchmarking:**
