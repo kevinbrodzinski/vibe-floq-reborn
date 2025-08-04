@@ -98,7 +98,7 @@ async function handleTrackEvent(event: AnalyticsEvent, authenticatedUserId: stri
     const { error: insertError } = await supabase
       .from('venue_recommendation_analytics')
       .insert({
-        user_id: event.user_id,
+        profile_id: event.user_id,
         venue_id: event.venue_id,
         recommendation_id: event.recommendation_id,
         event_type: event.event_type,
@@ -160,7 +160,7 @@ async function handleTrackBatch(events: AnalyticsEvent[], authenticatedUserId: s
 
     // Prepare batch insert data
     const analyticsData = events.map(event => ({
-      user_id: event.user_id,
+      profile_id: event.user_id,
       venue_id: event.venue_id,
       recommendation_id: event.recommendation_id,
       event_type: event.event_type,
@@ -226,7 +226,7 @@ async function handleGetAnalytics(userId: string, timeWindowHours: number = 24):
     const { data: events, error: eventsError } = await supabase
       .from('venue_recommendation_analytics')
       .select('*')
-      .eq('user_id', userId)
+      .eq('profile_id', userId)
       .gte('created_at', timeWindowStart)
       .order('created_at', { ascending: false });
 
@@ -383,7 +383,7 @@ async function handleGetVenuePerformance(venueId: string, timeWindowHours: numbe
       .filter(e => e.confidence_score !== null)
       .reduce((sum, e) => sum + (e.confidence_score || 0), 0) / events.length;
 
-    const uniqueUsers = new Set(events.map(e => e.user_id)).size;
+    const uniqueUsers = new Set(events.map(e => e.profile_id)).size;
 
     const views = eventBreakdown.view || 0;
     const clicks = eventBreakdown.click || 0;
@@ -450,7 +450,7 @@ async function handleGetUserEngagement(userId: string, timeWindowHours: number =
         *,
         venues!inner(name, categories)
       `)
-      .eq('user_id', userId)
+      .eq('profile_id', userId)
       .gte('created_at', timeWindowStart)
       .order('created_at', { ascending: false });
 
@@ -465,9 +465,9 @@ async function handleGetUserEngagement(userId: string, timeWindowHours: number =
     if (!events || events.length === 0) {
       return new Response(JSON.stringify({
         success: true,
-        user_engagement: {
-          user_id: userId,
-          total_events: 0,
+              user_engagement: {
+        profile_id: userId,
+        total_events: 0,
           engagement_score: 0,
           preferred_categories: [],
           vibe_preferences: { min: 0, max: 1 },
@@ -540,7 +540,7 @@ async function handleGetUserEngagement(userId: string, timeWindowHours: number =
     return new Response(JSON.stringify({
       success: true,
       user_engagement: {
-        user_id: userId,
+        profile_id: userId,
         total_events: events.length,
         engagement_score: engagementScore,
         preferred_categories: preferredCategories,
