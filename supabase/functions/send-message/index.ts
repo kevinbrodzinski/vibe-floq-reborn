@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,6 +55,19 @@ serve(async (req) => {
     }
     if (!payload.content || typeof payload.content !== "string") {
       throw new Error("content must be non-empty string");
+    }
+
+    /* ---------- Enhanced Rate limiting for messaging ---------- */
+    // Create a temporary supabase client with user JWT for rate limiting
+    const userSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
+    );
+    
+    const rateLimitResult = await checkRateLimitV2(userSupabase, payload.sender_id, 'send_message');
+    if (!rateLimitResult.allowed) {
+      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
     /* ---------- Authorisation checks ---------- */

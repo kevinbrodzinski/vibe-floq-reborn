@@ -1,6 +1,7 @@
 // Deno runtime • "people crossed paths today" RPC wrapper
 import { serve }        from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42";
+import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
 
 /* ------------------------------------------------------------------ */
 /*  Simple, per-request CORS helper                                   */
@@ -44,17 +45,34 @@ serve(async req => {
     };
 
     /* ----------------------------------------------------------------
-       Use the caller's JWT so auth.uid() is available inside the RPC.
+       Create Supabase client with user JWT for authentication & rate limiting
        -------------------------------------------------------------- */
     const jwt = req.headers.get("Authorization") ?? "";
-
-    const sb = createClient(
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,      // keeps RLS open
-      { global: { headers: { Authorization: jwt } } } // passes user ctx
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: jwt } } }
     );
 
-    /* ---------------------------------------------------------------
+    // Verify authentication and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: cors
+      });
+    }
+
+    /* Enhanced Rate limiting for proximity queries */
+    const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'proximity_query');
+    if (!rateLimitResult.allowed) {
+      return new Response(JSON.stringify({ error: rateLimitResult.error || "Rate limit exceeded" }), {
+        status: 429,
+        headers: cors
+      });
+    }
+
+    /* ----------------------------------------------------------------
        Call the people_crossed_paths_today function:
        
        people_crossed_paths_today(
@@ -62,7 +80,7 @@ serve(async req => {
          proximity_meters integer
        )
        ------------------------------------------------------------- */
-    const { data, error } = await sb.rpc("people_crossed_paths_today", {
+    const { data, error } = await supabase.rpc("people_crossed_paths_today", {
       in_me: profileId,
       proximity_meters: proximityMeters
     });
