@@ -19,6 +19,7 @@ import { BottomHud } from "@/components/layout/BottomHud";
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
 import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
+import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 
 interface FieldLayoutProps {
@@ -160,6 +161,9 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
 
           {/* Friend FAB - z-65 */}
           <FriendFab />
+
+          {/* Proximity Notifications - z-50 */}
+          <ProximityNotifications />
 
           {/* System Layer (FAB, accessibility) - z-70+ */}
           <FieldSystemLayer data={data} />
