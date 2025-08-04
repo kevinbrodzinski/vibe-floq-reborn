@@ -227,7 +227,7 @@ AS $$
   LEFT JOIN venue_interactions vi ON vv.venue_id = vi.venue_id;
 $$;
 
--- 8. Create function to get friend network venue data using existing schema
+-- 8. Create function to get friend network venue data using optimized views
 CREATE OR REPLACE FUNCTION get_friend_network_venue_data_safe(
   p_profile_id uuid,
   p_venue_id uuid DEFAULT NULL
@@ -245,32 +245,22 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-  WITH user_friends AS (
-    SELECT 
-      CASE 
-        WHEN f.user_low = p_profile_id THEN f.user_high
-        ELSE f.user_low
-      END as friend_id
-    FROM friendships f
-    WHERE (f.user_low = p_profile_id OR f.user_high = p_profile_id)
-      AND f.friend_state = 'accepted'
-  )
   SELECT 
-    uf.friend_id,
-    p.display_name as friend_name,
-    p.avatar_url as friend_avatar,
+    f.friend_id,
+    f.display_name as friend_name,
+    f.avatar_url as friend_avatar,
     vs.venue_id,
     v.name as venue_name,
     COUNT(*) as visit_count,
     MAX(vs.arrived_at) as last_visit,
     AVG(COALESCE(v.rating, 4.0)) as avg_rating
-  FROM user_friends uf
-  JOIN profiles p ON uf.friend_id = p.id
-  JOIN venue_stays vs ON uf.friend_id = vs.profile_id
+  FROM v_friends_with_presence f
+  JOIN venue_stays vs ON f.friend_id = vs.profile_id
   JOIN venues v ON vs.venue_id = v.id
-  WHERE (p_venue_id IS NULL OR vs.venue_id = p_venue_id)
+  WHERE f.friend_state = 'accepted'
+    AND (p_venue_id IS NULL OR vs.venue_id = p_venue_id)
     AND vs.arrived_at >= now() - interval '90 days'
-  GROUP BY uf.friend_id, p.display_name, p.avatar_url, vs.venue_id, v.name;
+  GROUP BY f.friend_id, f.display_name, f.avatar_url, vs.venue_id, v.name;
 $$;
 
 -- 9. Enable RLS on new tables

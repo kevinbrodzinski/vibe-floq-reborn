@@ -85,24 +85,20 @@ export class FriendNetworkAnalyzer {
     }
 
     try {
-      // Get user's friends and their venue preferences
+      // Get user's friends using optimized view
       const { data: friends, error: friendsError } = await supabase
-        .from('friendships')
+        .from('v_friend_ids')
         .select(`
-          user_low,
-          user_high,
-          friend_state
-        `)
-        .or(`user_low.eq.${this.userId},user_high.eq.${this.userId}`)
-        .eq('friend_state', 'accepted');
+          other_profile_id,
+          is_close,
+          responded_at
+        `);
 
       if (friendsError) throw friendsError;
 
       if (friends?.length) {
-        // Extract friend IDs (since friendship is bidirectional with user_low/user_high)
-        const friendIds = friends.map(f => {
-          return f.user_low === this.userId ? f.user_high : f.user_low;
-        });
+        // Extract friend IDs from view (already processed)
+        const friendIds = friends.map(f => f.other_profile_id);
         
         // Get friend venue interaction data
         const { data: friendVenueData, error: friendDataError } = await supabase
