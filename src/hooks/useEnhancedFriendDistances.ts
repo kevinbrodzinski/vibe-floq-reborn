@@ -316,18 +316,16 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
               confidence = proximityAnalysis.confidence;
               reliability = proximityAnalysis.reliability;
               
-              // Record proximity events if significant
+              // Record proximity events if significant (fire-and-forget)
               if (proximityAnalysis.eventType !== 'none') {
-                try {
-                  await proximityEventRecorder.recordEvent(
-                    user.id,
-                    friend.profileId,
-                    proximityAnalysis,
-                    { lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy }
-                  );
-                } catch (recordError) {
+                proximityEventRecorder.recordEvent(
+                  user.id,
+                  friend.profileId,
+                  proximityAnalysis,
+                  { lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy }
+                ).catch((recordError) => {
                   console.warn('[FriendDistances] Proximity event recording error:', recordError);
-                }
+                });
               }
             } catch (proximityError) {
               console.warn('[FriendDistances] Proximity analysis error:', proximityError);
