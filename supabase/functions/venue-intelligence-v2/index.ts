@@ -200,15 +200,14 @@ async function handleRecommendations(
 
     // 3. Get friend network data
     const { data: friends } = await supabase
-      .from('friends')
+      .from('friendships')
       .select(`
-        user_a,
-        user_b,
-        profiles_user_a:profiles!friends_user_a_fkey(id, display_name, avatar_url),
-        profiles_user_b:profiles!friends_user_b_fkey(id, display_name, avatar_url)
+        user_low,
+        user_high,
+        friend_state
       `)
-      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
-      .eq('status', 'accepted');
+      .or(`user_low.eq.${userId},user_high.eq.${userId}`)
+      .eq('friend_state', 'accepted');
 
     // 4. Get current weather if location provided
     let weatherData = null;
@@ -392,7 +391,7 @@ async function calculateVibeMatch(venue: any, userVibes: string[], userHistory: 
 
 async function calculateSocialProof(venueId: string, userId: string, friends: any[]) {
   // Get friend visits to this venue
-  const friendIds = friends.map(f => f.user_a === userId ? f.user_b : f.user_a);
+  const friendIds = friends.map(f => f.user_low === userId ? f.user_high : f.user_low);
   
   const { data: friendVisits } = await supabase
     .from('venue_stays')

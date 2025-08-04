@@ -248,12 +248,12 @@ AS $$
   WITH user_friends AS (
     SELECT 
       CASE 
-        WHEN f.user_a = p_profile_id THEN f.user_b
-        ELSE f.user_a
+        WHEN f.user_low = p_profile_id THEN f.user_high
+        ELSE f.user_low
       END as friend_id
-    FROM friends f
-    WHERE (f.user_a = p_profile_id OR f.user_b = p_profile_id)
-      AND f.status = 'accepted'
+    FROM friendships f
+    WHERE (f.user_low = p_profile_id OR f.user_high = p_profile_id)
+      AND f.friend_state = 'accepted'
   )
   SELECT 
     uf.friend_id,

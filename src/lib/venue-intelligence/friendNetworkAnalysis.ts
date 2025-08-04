@@ -87,36 +87,22 @@ export class FriendNetworkAnalyzer {
     try {
       // Get user's friends and their venue preferences
       const { data: friends, error: friendsError } = await supabase
-        .from('friends')
+        .from('friendships')
         .select(`
-          user_a,
-          user_b,
-          profiles_user_a:profiles!friends_user_a_fkey(
-            id,
-            display_name,
-            avatar_url
-          ),
-          profiles_user_b:profiles!friends_user_b_fkey(
-            id,
-            display_name,
-            avatar_url
-          )
+          user_low,
+          user_high,
+          friend_state
         `)
-        .or(`user_a.eq.${this.userId},user_b.eq.${this.userId}`)
-        .eq('status', 'accepted');
+        .or(`user_low.eq.${this.userId},user_high.eq.${this.userId}`)
+        .eq('friend_state', 'accepted');
 
       if (friendsError) throw friendsError;
 
       if (friends?.length) {
-        // Extract friend IDs and profiles (since friendship is bidirectional)
-        const friendData = friends.map(f => {
-          if (f.user_a === this.userId) {
-            return { friend_id: f.user_b, profiles: f.profiles_user_b };
-          } else {
-            return { friend_id: f.user_a, profiles: f.profiles_user_a };
-          }
+        // Extract friend IDs (since friendship is bidirectional with user_low/user_high)
+        const friendIds = friends.map(f => {
+          return f.user_low === this.userId ? f.user_high : f.user_low;
         });
-        const friendIds = friendData.map(f => f.friend_id);
         
         // Get friend venue interaction data
         const { data: friendVenueData, error: friendDataError } = await supabase
