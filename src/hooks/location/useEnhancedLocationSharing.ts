@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { geofencingService, type GeofenceMatch } from '@/lib/location/geofencing';
 import { multiSignalVenueDetector, type VenueDetectionResult } from '@/lib/location/multiSignalVenue';
 import { proximityScorer, type ProximityUser, type ProximityAnalysis } from '@/lib/location/proximityScoring';
+import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
+import { backgroundLocationProcessor } from '@/lib/location/backgroundLocationProcessor';
 import { GPSCoords } from '@/lib/location/standardGeo';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -43,6 +45,7 @@ export interface EnhancedLocationSharingOptions {
   enableGeofencing?: boolean;
   enableVenueDetection?: boolean;
   enableProximityTracking?: boolean;
+  enableBackgroundProcessing?: boolean;
   updateInterval?: number;
   debugMode?: boolean;
 }
@@ -55,6 +58,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     enableGeofencing = true,
     enableVenueDetection = true,
     enableProximityTracking = true,
+    enableBackgroundProcessing = true,
     updateInterval = 30000, // 30 seconds
     debugMode = false
   } = options;
@@ -99,6 +103,29 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     };
 
     try {
+      // Option 1: Use background processor for better performance
+      if (enableBackgroundProcessing) {
+        backgroundLocationProcessor.queueLocationUpdate({
+          location,
+          accuracy,
+          timestamp,
+          userId: user.id
+        });
+        
+        // Still do minimal processing for immediate UI updates
+        const quickGeofenceCheck = enableGeofencing ? 
+          geofencingService.checkGeofences(location, accuracy) : [];
+        
+        newState.geofenceMatches = quickGeofenceCheck;
+        newState.privacyFiltered = quickGeofenceCheck.length > 0;
+        newState.privacyLevel = quickGeofenceCheck.length > 0 ? 'street' : 'exact';
+        
+        // Update state and return early
+        setState(prevState => ({ ...prevState, ...newState }));
+        return;
+      }
+      
+      // Option 2: Full processing in main thread (legacy mode)
       // 1. Geofencing Privacy Check
       let geofenceMatches: GeofenceMatch[] = [];
       let privacyFiltered = false;
@@ -216,6 +243,20 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
 
         newState.nearbyUsers = nearbyUsers;
         newState.proximityEvents = proximityEvents;
+        
+        // Record proximity events to database
+        if (proximityEvents.length > 0) {
+          try {
+            await proximityEventRecorder.recordProximityEvents(
+              user.id,
+              proximityEvents,
+              nearbyUsers,
+              { lat: location.lat, lng: location.lng, accuracy }
+            );
+          } catch (recordError) {
+            console.error('[EnhancedLocation] Proximity event recording error:', recordError);
+          }
+        }
       }
 
       // 4. Broadcast Enhanced Location Data
@@ -264,7 +305,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
         lastUpdate: timestamp
       }));
     }
-  }, [user, enableGeofencing, enableVenueDetection, enableProximityTracking, liveSettings, debugMode]);
+  }, [user, enableGeofencing, enableVenueDetection, enableProximityTracking, enableBackgroundProcessing, liveSettings, debugMode]);
 
   /**
    * Handle incoming proximity data from other users
