@@ -13,7 +13,7 @@ export const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>
   open,
   onOpenChange
 }) => {
-  const { data } = useVenueRecommendations();
+  const { data, trackRecommendationClick } = useVenueRecommendations();
   
   const handleVisit = (venueId: string) => {
     console.log(`Getting directions to venue: ${venueId}`);
@@ -38,6 +38,7 @@ export const VenueRecommendationsModal: React.FC<VenueRecommendationsModalProps>
                 key={venue.id}
                 venue={venue}
                 onVisit={handleVisit}
+                onTrackClick={trackRecommendationClick}
               />
             ))}
           </div>

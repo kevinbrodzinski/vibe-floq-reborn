@@ -175,6 +175,50 @@ export const useVenueRecommendations = () => {
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [dataQuality, setDataQuality] = useState<'high' | 'medium' | 'low'>('high');
 
+  // Track recommendation views
+  const trackRecommendationView = async (venueId: string, recommendationId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      await supabase.functions.invoke('venue-analytics', {
+        body: {
+          mode: 'track_event',
+          event: {
+            user_id: user.id,
+            venue_id: venueId,
+            recommendation_id: recommendationId,
+            event_type: 'view',
+            confidence_score: data.find(r => r.id === venueId)?.confidence || 0.5
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to track recommendation view:', error);
+    }
+  };
+
+  // Track recommendation clicks
+  const trackRecommendationClick = async (venueId: string, recommendationId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      await supabase.functions.invoke('venue-analytics', {
+        body: {
+          mode: 'track_event',
+          event: {
+            user_id: user.id,
+            venue_id: venueId,
+            recommendation_id: recommendationId,
+            event_type: 'click',
+            confidence_score: data.find(r => r.id === venueId)?.confidence || 0.5
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to track recommendation click:', error);
+    }
+  };
+
   useEffect(() => {
     if (!user || !coords) {
       setLoading(false);
@@ -188,7 +232,79 @@ export const useVenueRecommendations = () => {
         setFallbackUsed(false);
         VenueRecommendationErrorHandler.clearErrors();
 
-        // 1. Fetch nearby venues from database with error handling
+        // 1. Try to use our intelligent backend first
+        try {
+          const { data: intelligentRecommendations, error: backendError } = await supabase.functions.invoke('venue-intelligence-v2', {
+            body: {
+              mode: 'recommendations',
+              user_id: user.id,
+              lat: coords.lat,
+              lng: coords.lng,
+              user_vibes: ['social', 'energetic'], // TODO: Get from user preferences
+              limit: 20
+            }
+          });
+
+          if (!backendError && intelligentRecommendations?.success && intelligentRecommendations?.recommendations?.length > 0) {
+            // Transform backend response to match our interface
+            const transformedRecommendations: VenueRecommendation[] = intelligentRecommendations.recommendations.map((rec: any) => ({
+              id: rec.venue.id,
+              name: rec.venue.name,
+              category: rec.venue.categories?.[0] || 'venue',
+              address: rec.venue.address || '',
+              rating: rec.venue.rating || 4.0,
+              priceLevel: rec.venue.price_tier || '$$',
+              distance: rec.venue.distance || '0.5km',
+              travelTime: rec.venue.travel_time || '2 min',
+              imageUrl: rec.venue.photo_url || '/placeholder-venue.jpg',
+              
+              vibeMatch: {
+                score: rec.intelligence?.vibe_match?.score || 0.5,
+                explanation: rec.intelligence?.vibe_match?.explanation || 'Good match for your vibes',
+                userVibes: rec.intelligence?.vibe_match?.user_vibes || [],
+                venueVibes: rec.intelligence?.vibe_match?.venue_vibes || [],
+                synergy: rec.intelligence?.vibe_match?.explanation || 'Compatible vibes'
+              },
+              
+              crowdIntelligence: {
+                currentCapacity: rec.intelligence?.crowd_intelligence?.current_capacity || 30,
+                predictedPeak: rec.intelligence?.crowd_intelligence?.predicted_peak || '9pm',
+                typicalCrowd: rec.intelligence?.crowd_intelligence?.typical_crowd || 'Mixed crowd',
+                friendCompatibility: rec.intelligence?.social_proof?.popular_with || 'Good for groups',
+                busyTimes: { '18': 40, '19': 60, '20': 80, '21': 90, '22': 70 }
+              },
+              
+              socialProof: {
+                friendVisits: rec.intelligence?.social_proof?.friend_visits || 0,
+                recentVisitors: rec.intelligence?.social_proof?.recent_visitors?.map((v: any) => v.name) || [],
+                networkRating: rec.intelligence?.social_proof?.network_rating || 4.0,
+                popularWith: rec.intelligence?.social_proof?.popular_with || 'Your network',
+                testimonials: []
+              },
+              
+              contextualFactors: {
+                weatherSuitability: rec.intelligence?.weather_suitability || 0.8,
+                timeRelevance: rec.intelligence?.time_relevance || 0.9,
+                seasonalFit: rec.intelligence?.seasonal_fit || 0.7,
+                moodAlignment: rec.intelligence?.mood_alignment || 0.8
+              },
+              
+              confidence: rec.scoring?.confidence || 0.7,
+              topReasons: rec.scoring?.top_reasons || ['Great match'],
+              warnings: rec.scoring?.warnings || []
+            }));
+
+            setData(transformedRecommendations);
+            setDataQuality('high');
+            setLoading(false);
+            return;
+          }
+        } catch (backendError) {
+          console.warn('Backend venue intelligence unavailable, falling back to client-side processing:', backendError);
+          setFallbackUsed(true);
+        }
+
+        // 2. Fallback to client-side processing if backend fails
         const venues = await withErrorHandling(
           async () => {
             const { data, error } = await supabase
@@ -550,6 +666,8 @@ export const useVenueRecommendations = () => {
     error, 
     fallbackUsed, 
     dataQuality,
-    errorStats: VenueRecommendationErrorHandler.getErrorStats()
+    errorStats: VenueRecommendationErrorHandler.getErrorStats(),
+    trackRecommendationView,
+    trackRecommendationClick
   };
 };

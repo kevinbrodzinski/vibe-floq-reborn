@@ -23,11 +23,13 @@ import type { VenueRecommendation } from '@/hooks/useVenueRecommendations';
 interface VenueRecommendationCardProps {
   venue: VenueRecommendation;
   onVisit: (venueId: string) => void;
+  onTrackClick?: (venueId: string, recommendationId: string) => void;
 }
 
 export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = ({
   venue,
-  onVisit
+  onVisit,
+  onTrackClick
 }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const { user } = useAuth();
@@ -168,8 +170,9 @@ export const VenueRecommendationCard: React.FC<VenueRecommendationCardProps> = (
 
   const handleDirections = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    onTrackClick?.(venue.id, `rec-${venue.id}-${Date.now()}`);
     onVisit(venue.id);
-  }, [onVisit, venue.id]);
+  }, [onVisit, onTrackClick, venue.id]);
 
   const handleFavoriteClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

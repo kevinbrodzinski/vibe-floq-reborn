@@ -3,7 +3,7 @@ import { useVenueRecommendations } from '@/hooks/useVenueRecommendations';
 import { VenueRecommendationCard } from './VenueRecommendationCard';
 
 export const VenueRecommendations: React.FC = () => {
-  const { data } = useVenueRecommendations();
+const { data, trackRecommendationClick } = useVenueRecommendations();
   
   const handleVisit = (venueId: string) => {
     console.log(`Getting directions to venue: ${venueId}`);
@@ -27,6 +27,7 @@ export const VenueRecommendations: React.FC = () => {
           key={venue.id}
           venue={venue}
           onVisit={handleVisit}
+          onTrackClick={trackRecommendationClick}
         />
       ))}
     </div>
