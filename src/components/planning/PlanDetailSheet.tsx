@@ -20,7 +20,7 @@ interface PlanDetailSheetProps {
     description?: string;
     planned_at: string;
     status: string;
-    location?: any;
+    location?: { lat: number; lng: number; name?: string };
     vibe_tag?: string;
     creator_id: string;
     participants?: Array<{
@@ -34,7 +34,7 @@ interface PlanDetailSheetProps {
       id: string;
       title: string;
       description?: string;
-      location: any;
+      location: { lat: number; lng: number; name?: string };
       stop_order: number;
     }>;
   };

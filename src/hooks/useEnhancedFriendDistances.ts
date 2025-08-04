@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
+import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Fallback implementations for geo functions
@@ -314,6 +315,18 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
                              proximityAnalysis = services.proximityScorer.analyzeProximity(currentUser, friendUser);
               confidence = proximityAnalysis.confidence;
               reliability = proximityAnalysis.reliability;
+              
+              // Record proximity events if significant (fire-and-forget)
+              if (proximityAnalysis.eventType !== 'none') {
+                proximityEventRecorder.recordEvent(
+                  user.id,
+                  friend.profileId,
+                  proximityAnalysis,
+                  { lat: pos.lat, lng: pos.lng, accuracy: pos.accuracy }
+                ).catch((recordError) => {
+                  console.warn('[FriendDistances] Proximity event recording error:', recordError);
+                });
+              }
             } catch (proximityError) {
               console.warn('[FriendDistances] Proximity analysis error:', proximityError);
             }

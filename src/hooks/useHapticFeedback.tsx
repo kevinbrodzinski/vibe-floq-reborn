@@ -80,8 +80,8 @@ export const useHapticFeedback = () => {
 
     // Future: Web Haptics API when available
     if ('hapticActuators' in navigator) {
-      // @ts-ignore - Future API
-      navigator.hapticActuators?.forEach((actuator: any) => {
+      // @ts-expect-error - Future API
+      navigator.hapticActuators?.forEach((actuator: unknown) => {
         actuator.pulse?.(hapticOptions.intensity, hapticOptions.duration);
       });
     }

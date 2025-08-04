@@ -105,7 +105,13 @@ export const FieldDataProvider = ({ children }: FieldDataProviderProps) => {
   console.log('[FieldDataProvider] Rendering with friendIds:', friendIds, 'profiles:', profiles);
 
   return (
-    <FieldLocationProvider friendIds={friendIds}>
+          <FieldLocationProvider 
+        friendIds={friendIds}
+        enableGeofencing={true}
+        enableVenueDetection={true}
+        enableProximityTracking={true}
+        debugMode={process.env.NODE_ENV === 'development'}
+      >
       <FieldSocialProvider profiles={profiles}>
         <FieldUIProvider>
           <FieldDataProviderInner>

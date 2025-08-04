@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, User, Shield, Bell, Palette, Zap } from 'lucide-react';
+import { ArrowLeft, LogOut, User, Shield, Bell, Palette, Zap, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -205,12 +205,66 @@ const Settings = () => {
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Location Sharing</Label>
+                  <Label>Enhanced Location Sharing</Label>
                   <p className="text-xs text-muted-foreground">
-                    Share your location with friends
+                    Smart location sharing with privacy zones
                   </p>
                 </div>
                 <Switch defaultChecked />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Proximity Notifications</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Get notified when friends are nearby
+                  </p>
+                </div>
+                <Switch defaultChecked />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Auto Check-ins</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Automatically check in at venues
+                  </p>
+                </div>
+                <Switch defaultChecked />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhanced Location Settings */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MapPin className="w-4 h-4" />
+                Enhanced Location
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Advanced location features and privacy controls
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate('/location-sharing')}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Manage Privacy Zones
+              </Button>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-lg font-semibold text-green-600">Active</div>
+                  <div className="text-xs text-muted-foreground">Geofencing</div>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-lg font-semibold text-blue-600">Smart</div>
+                  <div className="text-xs text-muted-foreground">Venue Detection</div>
+                </div>
               </div>
             </CardContent>
           </Card>
