@@ -5,6 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import { FriendNetworkAnalyzer, EnhancedVibeMatching } from '@/lib/venue-intelligence/friendNetworkAnalysis';
 import { CrowdIntelligenceAnalyzer } from '@/lib/venue-intelligence/crowdIntelligence';
+import { 
+  withErrorHandling, 
+  createFallbackRecommendations, 
+  optimizeRecommendations,
+  VenueRecommendationErrorHandler 
+} from '@/lib/venue-intelligence/errorHandling';
 
 export interface VenueRecommendation {
   id: string;
@@ -166,6 +172,8 @@ export const useVenueRecommendations = () => {
   const [data, setData] = useState<VenueRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackUsed, setFallbackUsed] = useState(false);
+  const [dataQuality, setDataQuality] = useState<'high' | 'medium' | 'low'>('high');
 
   useEffect(() => {
     if (!user || !coords) {
@@ -177,18 +185,29 @@ export const useVenueRecommendations = () => {
       try {
         setLoading(true);
         setError(null);
+        setFallbackUsed(false);
+        VenueRecommendationErrorHandler.clearErrors();
 
-        // 1. Fetch nearby venues from database
-        const { data: venues, error: venuesError } = await supabase
-          .from('venues')
-          .select('*')
-          .not('lat', 'is', null)
-          .not('lng', 'is', null)
-          .limit(50);
+        // 1. Fetch nearby venues from database with error handling
+        const venues = await withErrorHandling(
+          async () => {
+            const { data, error } = await supabase
+              .from('venues')
+              .select('*')
+              .not('lat', 'is', null)
+              .not('lng', 'is', null)
+              .limit(50);
+            
+            if (error) throw error;
+            return data;
+          },
+          'VENUE_FETCH_ERROR',
+          []
+        );
 
-        if (venuesError) throw venuesError;
         if (!venues?.length) {
           setData([]);
+          setDataQuality('low');
           return;
         }
 
@@ -473,11 +492,50 @@ export const useVenueRecommendations = () => {
           return scoreB - scoreA;
         });
 
-        setData(recommendations.slice(0, 10)); // Top 10 recommendations
+        // Optimize and validate recommendations
+        const optimizedRecommendations = optimizeRecommendations(recommendations);
+        const topRecommendations = optimizedRecommendations.slice(0, 10);
+        
+        // Assess overall data quality
+        const qualityScores = topRecommendations.map(r => {
+          const hasRealTime = r.realTime.waitTime !== 'Wait time unknown';
+          const hasSocialProof = r.socialProof.friendVisits > 0;
+          const hasDetailedVibe = r.vibeMatch.explanation.length > 50;
+          return [hasRealTime, hasSocialProof, hasDetailedVibe].filter(Boolean).length;
+        });
+        
+        const avgQuality = qualityScores.reduce((sum, score) => sum + score, 0) / qualityScores.length;
+        setDataQuality(avgQuality >= 2 ? 'high' : avgQuality >= 1 ? 'medium' : 'low');
+        
+        setData(topRecommendations);
       } catch (err) {
         console.error('Error fetching venue recommendations:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
-        setData([]);
+        
+        // Try to provide fallback recommendations
+        try {
+          const venues = await supabase
+            .from('venues')
+            .select('*')
+            .not('lat', 'is', null)
+            .not('lng', 'is', null)
+            .limit(10);
+            
+          if (venues.data?.length) {
+            const fallbackRecommendations = createFallbackRecommendations(
+              venues.data,
+              coords ? { lat: coords.lat, lng: coords.lng } : undefined
+            );
+            setData(fallbackRecommendations);
+            setFallbackUsed(true);
+            setDataQuality('low');
+          } else {
+            setData([]);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback recommendations also failed:', fallbackError);
+          setData([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -486,5 +544,12 @@ export const useVenueRecommendations = () => {
     fetchVenueRecommendations();
   }, [user, coords]);
 
-  return { data, loading, error };
+  return { 
+    data, 
+    loading, 
+    error, 
+    fallbackUsed, 
+    dataQuality,
+    errorStats: VenueRecommendationErrorHandler.getErrorStats()
+  };
 };
