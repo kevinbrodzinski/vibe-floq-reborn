@@ -41,7 +41,7 @@ export async function validateAuth(
   return data;
 }
 
-/* ---------- Simple in-memory rate limiter ---------- */
+/* ---------- Simple in-memory rate limiter (deprecated) ---------- */
 const rateMap = new Map<string, { count: number; expires: number }>();
 export function checkRateLimit(
   userId: string,
@@ -61,6 +61,37 @@ export function checkRateLimit(
   rateMap.set(userId, entry);
 
   return entry.count <= maxPerMinute;
+}
+
+/* ---------- Enhanced database-backed rate limiter ---------- */
+export async function checkRateLimitV2(
+  supabase: ReturnType<typeof createClient>,
+  profileId: string,
+  actionType: string,
+  targetProfileId?: string
+): Promise<{ allowed: boolean; error?: string }> {
+  try {
+    const { data, error } = await supabase.rpc('check_rate_limit_v2', {
+      p_profile_id: profileId,
+      p_action_type: actionType,
+      p_target_profile_id: targetProfileId || null
+    });
+
+    if (error) {
+      console.error('Rate limit check error:', error);
+      // Fallback to allowing the request if rate limit check fails
+      return { allowed: true };
+    }
+
+    return { 
+      allowed: data?.success === true,
+      error: data?.error || undefined
+    };
+  } catch (err) {
+    console.error('Rate limit check exception:', err);
+    // Fallback to allowing the request if rate limit check fails
+    return { allowed: true };
+  }
 }
 
 /* ---------- JSON payload helper ---------- */
