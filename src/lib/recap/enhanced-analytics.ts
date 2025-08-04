@@ -67,7 +67,7 @@ export const QK_Enhanced = {
 /**
  * Fetch enhanced auto check-in metrics for a specific day
  */
-async function getAutoCheckinMetrics(userId: string, date: string) {
+async function getAutoCheckinMetrics(profileId: string, date: string) {
   // Get auto check-in attempts from venue_stays (successful ones)
   const { data: venueStays } = await supabase
     .from('venue_stays')
@@ -81,7 +81,7 @@ async function getAutoCheckinMetrics(userId: string, date: string) {
         categories
       )
     `)
-    .eq('profile_id', userId)
+    .eq('profile_id', profileId)
     .gte('arrived_at', `${date}T00:00:00Z`)
     .lte('arrived_at', `${date}T23:59:59Z`)
 
@@ -105,7 +105,7 @@ async function getAutoCheckinMetrics(userId: string, date: string) {
 /**
  * Fetch proximity event metrics for a specific day
  */
-async function getProximityMetrics(userId: string, date: string) {
+async function getProximityMetrics(profileId: string, date: string) {
   const { data: proximityEvents } = await supabase
     .from('proximity_events')
     .select(`
@@ -117,7 +117,7 @@ async function getProximityMetrics(userId: string, date: string) {
       event_ts,
       venue_id
     `)
-    .eq('profile_id_a', userId)
+    .eq('profile_id_a', profileId)
     .gte('event_ts', `${date}T00:00:00Z`)
     .lte('event_ts', `${date}T23:59:59Z`)
 
@@ -133,7 +133,7 @@ async function getProximityMetrics(userId: string, date: string) {
   // Find closest encounter
   const closestEvent = proximityEvents?.reduce((closest, event) => {
     return !closest || event.distance_meters < closest.distance_meters ? event : closest
-  }, null as any)
+  }, null as typeof proximityEvents[0] | null)
 
   return {
     totalEvents,
@@ -150,7 +150,7 @@ async function getProximityMetrics(userId: string, date: string) {
 /**
  * Fetch enhanced venue insights
  */
-async function getVenueInsights(userId: string, date: string) {
+async function getVenueInsights(profileId: string, date: string) {
   const { data: venueStays } = await supabase
     .from('venue_stays')
     .select(`
@@ -162,7 +162,7 @@ async function getVenueInsights(userId: string, date: string) {
         categories
       )
     `)
-    .eq('profile_id', userId)
+    .eq('profile_id', profileId)
     .gte('arrived_at', `${date}T00:00:00Z`)
     .lte('arrived_at', `${date}T23:59:59Z`)
 
@@ -170,7 +170,7 @@ async function getVenueInsights(userId: string, date: string) {
   const { data: userVenueHistory } = await supabase
     .from('venue_stays')
     .select('venue_id')
-    .eq('profile_id', userId)
+    .eq('profile_id', profileId)
     .lt('arrived_at', `${date}T00:00:00Z`)
 
   const previousVenueIds = new Set(userVenueHistory?.map(v => v.venue_id))
@@ -209,7 +209,7 @@ async function getVenueInsights(userId: string, date: string) {
 /**
  * Fetch privacy and geofencing metrics
  */
-async function getPrivacyMetrics(userId: string, date: string) {
+async function getPrivacyMetrics(_profileId: string, _date: string) {
   // TODO: Add geofence activation logging
   // For now, return placeholder data
   return {
@@ -222,7 +222,7 @@ async function getPrivacyMetrics(userId: string, date: string) {
 /**
  * Check for personal records
  */
-async function getPersonalRecords(userId: string, date: string, recapData: RecapData) {
+async function getPersonalRecords(profileId: string, date: string, recapData: RecapData) {
   const currentMonth = dayjs(date).startOf('month').format('YYYY-MM-DD')
   const endOfMonth = dayjs(date).endOf('month').format('YYYY-MM-DD')
 
@@ -230,7 +230,7 @@ async function getPersonalRecords(userId: string, date: string, recapData: Recap
   const { data: monthRecaps } = await supabase
     .from('daily_recap_cache')
     .select('payload')
-    .eq('user_id', userId)
+    .eq('user_id', profileId)
     .gte('day', currentMonth)
     .lte('day', endOfMonth)
 
