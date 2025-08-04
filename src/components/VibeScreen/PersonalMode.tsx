@@ -172,11 +172,7 @@ export const PersonalMode: React.FC = () => {
 
         {/* Enhanced Personal Hero Status Strip */}
         {heroData && isEnhancedMode ? (
-          <EnhancedPersonalHero 
-            heroData={heroData}
-            sensorData={sensorData}
-            locationData={enhancedLocation}
-          />
+          <EnhancedPersonalHero />
         ) : (
           <PersonalHero />
         )}

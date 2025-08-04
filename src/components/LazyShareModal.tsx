@@ -29,7 +29,22 @@ export const LazyShareModal: React.FC<LazyShareModalProps> = ({
       <ShareModal 
         open={open}
         onOpenChange={onOpenChange}
-        afterglow={afterglow}
+        afterglow={afterglow || {
+          id: 'temp',
+          date: new Date().toISOString(),
+          energy_score: 0,
+          social_intensity: 0,
+          dominant_vibe: 'chill',
+          summary_text: '',
+          total_venues: 0,
+          total_floqs: 0,
+          crossed_paths_count: 0,
+          ai_summary: null,
+          is_pinned: false,
+          is_public: false,
+          profile_id: '',
+          created_at: new Date().toISOString()
+        }}
       />
     </Suspense>
   )
