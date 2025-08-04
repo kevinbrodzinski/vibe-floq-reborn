@@ -166,7 +166,7 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
         const { data, error } = await supabase.rpc('presence_nearby', {
           lat: pos?.lat || 0,
           lng: pos?.lng || 0,
-          radius_m: maxDistance,
+          km: maxDistance / 1000, // convert to km
           include_self: false
         });
 
@@ -183,26 +183,34 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
             // Extract location from PostGIS geometry
             let location: GPSCoords | null = null;
             
-             try {
-               // Use direct lat/lng from presence data (updated schema)
-               location = { lat: presence.lat, lng: presence.lng };
-               
-               if (location) {
-                 friendData.push({
-                   profileId: presence.profile_id,
-                   displayName: presence.display_name || null,
-                   avatarUrl: presence.avatar_url || null,
-                   location,
-                   accuracy: 50, // Default accuracy since column doesn't exist
-                   timestamp: new Date(presence.updated_at).getTime(),
-                   vibe: presence.vibe || null,
-                   venueId: null, // Column doesn't exist in current schema
-                   visibility: 'friends' // Default visibility
-                 });
-               }
-             } catch (locationError) {
-               console.warn(`[FriendDistances] Error processing location for ${presence.profile_id}:`, locationError);
-             }
+            try {
+              if (presence.location) {
+                // Handle different location formats
+                if (presence.location.coordinates) {
+                  const [lng, lat] = presence.location.coordinates;
+                  location = { lat, lng };
+                } else if (presence.geo && presence.geo.coordinates) {
+                  const [lng, lat] = presence.geo.coordinates;
+                  location = { lat, lng };
+                }
+              }
+
+              if (location) {
+                friendData.push({
+                  profileId: presence.profile_id,
+                  displayName: presence.display_name || null,
+                  avatarUrl: presence.avatar_url || null,
+                  location,
+                  accuracy: presence.accuracy || 50,
+                  timestamp: new Date(presence.updated_at || presence.created_at).getTime(),
+                  vibe: presence.vibe || null,
+                  venueId: presence.venue_id || null,
+                  visibility: presence.visibility || 'friends'
+                });
+              }
+            } catch (locationError) {
+              console.warn(`[FriendDistances] Error processing location for ${presence.profile_id}:`, locationError);
+            }
           }
         }
 

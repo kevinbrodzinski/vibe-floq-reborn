@@ -14,7 +14,7 @@ export const ReplySnippet = ({ messageId, className }: ReplySnippetProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('direct_messages')
-        .select('id, content, profile_id, metadata')
+        .select('id, content, sender_id, metadata')
         .eq('id', messageId)
         .single();
       

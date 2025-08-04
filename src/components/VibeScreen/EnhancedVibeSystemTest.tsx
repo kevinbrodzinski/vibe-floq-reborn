@@ -43,12 +43,13 @@ export const EnhancedVibeSystemTest: React.FC = () => {
         component: 'Enhanced Location System',
         status: enhancedLocation.location ? 'success' : 'error',
         message: enhancedLocation.location 
-          ? `Location available: ${enhancedLocation.location.lat?.toFixed(4)}, ${enhancedLocation.location.lng?.toFixed(4)}`
+          ? `Location available: ${enhancedLocation.location.latitude?.toFixed(4)}, ${enhancedLocation.location.longitude?.toFixed(4)}`
           : 'No location data available',
         data: {
           hasLocation: !!enhancedLocation.location,
+          hasGeofences: !!enhancedLocation.geofences?.length,
           hasProximityEvents: !!enhancedLocation.proximityEvents?.length,
-          venueDetections: enhancedLocation.venueDetections
+          venueDetection: enhancedLocation.venueDetection
         }
       });
     } catch (error) {
@@ -68,6 +69,8 @@ export const EnhancedVibeSystemTest: React.FC = () => {
           ? `Sensor data available with ${Object.keys(sensorData).length} sensors`
           : 'No sensor data available',
         data: sensorData ? {
+          hasAudio: !!sensorData.audio,
+          hasLight: !!sensorData.light,
           hasMovement: !!sensorData.movement,
           hasLocation: !!sensorData.location
         } : null
@@ -117,10 +120,12 @@ export const EnhancedVibeSystemTest: React.FC = () => {
     // Test 4: Location-Enhanced Social Context
     if (enhancedLocation.location && currentVibe) {
       try {
-        const mockFriends = [
-          { id: 'friend1', distance: 150, confidence: 0.8, vibe: 'chill' },
-          { id: 'friend2', distance: 300, confidence: 0.6, vibe: 'social' }
-        ];
+        const mockFriends = enhancedLocation.proximityEvents?.slice(0, 3).map(event => ({
+          id: event.other_user_id,
+          distance: event.distance,
+          confidence: event.confidence_score,
+          vibe: 'chill'
+        })) || [];
 
         const socialData = await vibeSystem.getLocationEnhancedSocialContextData(
           enhancedLocation.location,
@@ -133,9 +138,11 @@ export const EnhancedVibeSystemTest: React.FC = () => {
           status: 'success',
           message: `Generated social context with ${mockFriends.length} nearby friends`,
           data: {
-            alignment: socialData.alignment,
+            nearbyHotspots: socialData.nearbyHotspots.length,
+            socialMomentum: socialData.socialMomentum,
+            vibeAlignment: socialData.vibeAlignment,
             friendsCount: mockFriends.length,
-            hasOptimalLocations: !!socialData.proximityIntelligence?.optimalMeetupLocations?.length
+            hasRecommendations: !!socialData.recommendations
           }
         });
       } catch (error) {
@@ -160,7 +167,7 @@ export const EnhancedVibeSystemTest: React.FC = () => {
           accuracy: healthMetrics.accuracy,
           responseTime: healthMetrics.responseTime,
           learningProgress: healthMetrics.learningProgress,
-          recommendations: healthMetrics.recommendations?.length || 0
+          hasDetailedMetrics: !!healthMetrics.detailedMetrics
         }
       });
     } catch (error) {

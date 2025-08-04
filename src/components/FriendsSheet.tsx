@@ -263,7 +263,7 @@ export const FriendsSheet = ({
                     <div className="flex items-center gap-2">
                       <AvatarWithFallback
                         src={friendDistance.friend.avatarUrl}
-                        fallbackText={friendDistance.friend.displayName || 'Friend'}
+                        alt={friendDistance.friend.displayName || 'Friend'}
                         className="w-6 h-6"
                       />
                       <div>

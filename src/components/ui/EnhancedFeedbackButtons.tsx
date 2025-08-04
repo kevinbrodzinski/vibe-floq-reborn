@@ -46,20 +46,10 @@ export const EnhancedFeedbackButtons: React.FC<EnhancedFeedbackButtonsProps> = (
           environmentalFactors: { timeOfDay: 'day', weather: 'clear' }
         };
 
-        // Create mock vibe analysis result 
-        const mockAnalysis = {
-          suggestedVibe: 'social' as const,
-          confidence: 0.8,
-          reasoning: ['Mock analysis'],
-          alternatives: [],
-          contextFactors: { temporal: 0.5, environmental: 0.5, personal: 0.5 },
-          sensorQuality: { overall: 0.7 },
-          mlAnalysis: { confidence: 0.8, features: {}, model: 'mock' }
-        };
-
         const data = await vibeSystem.getEnhancedFeedbackData(
-          mockAnalysis,
-          mockContext
+          mockSensorData,
+          mockContext,
+          analysis
         );
         setFeedbackData(data);
       } catch (error) {
@@ -278,7 +268,7 @@ export const EnhancedFeedbackButtons: React.FC<EnhancedFeedbackButtonsProps> = (
 
       {feedbackData && (
         <div className="text-xs text-muted-foreground">
-          Learning: {adaptiveInterface.emphasizePersonalization ? 'High' : 'Moderate'} consistency
+          Learning: {feedbackData.adaptiveInterface.userConsistency > 0.8 ? 'High' : 'Moderate'} consistency
         </div>
       )}
     </div>
@@ -320,10 +310,10 @@ export const EnhancedFeedbackButtons: React.FC<EnhancedFeedbackButtonsProps> = (
           {adaptiveInterface.feedbackType === 'contextual' && renderContextualFeedback()}
 
           {/* Learning Progress Indicator */}
-          {adaptiveInterface.emphasizePersonalization && (
+          {feedbackData.learningInsights && (
             <div className="pt-2 border-t border-border/30">
               <div className="text-xs text-muted-foreground">
-                Accuracy improving based on your feedback
+                Accuracy improving: {Math.round(feedbackData.learningInsights.accuracyTrend * 100)}%
               </div>
             </div>
           )}

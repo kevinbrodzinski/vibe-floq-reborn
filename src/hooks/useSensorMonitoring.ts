@@ -250,7 +250,7 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     if (!enabled) return;
     if ('AmbientLightSensor' in window) {
       try {
-        // Experimental API
+        // @ts-expect-error - Experimental API
         const sensor = new (window as unknown as { AmbientLightSensor: new (options: { frequency: number }) => any }).AmbientLightSensor({ frequency: 1 });
         lightSensorRef.current = sensor;
         
@@ -351,13 +351,6 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
               light: 0.6,
               location: sensorData.location ? 0.7 : 0,
               overall: 0.7
-            },
-            mlAnalysis: {
-              featureVector: {},
-              ensembleScores: {} as any,
-              modelContributions: {} as any,
-              uncertaintyEstimate: vibeDetection.confidence,
-              predictionInterval: { lower: 0, upper: 1 }
             }
           },
           vibeDetection.suggestedVibe,
@@ -382,13 +375,6 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
               light: 0.6,
               location: sensorData.location ? 0.7 : 0,
               overall: 0.7
-            },
-            mlAnalysis: {
-              featureVector: {},
-              ensembleScores: {} as any,
-              modelContributions: {} as any,
-              uncertaintyEstimate: vibeDetection.confidence,
-              predictionInterval: { lower: 0, upper: 1 }
             }
           },
           correctedVibe,

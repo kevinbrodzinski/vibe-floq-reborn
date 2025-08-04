@@ -7,7 +7,7 @@ const ShareModal = lazy(() => import('./share/ShareModal'))
 interface LazyShareModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  afterglow?: any // Allow any type to prevent strict type checking
+  afterglow: unknown
 }
 
 const ShareModalLoader = () => (
@@ -29,23 +29,7 @@ export const LazyShareModal: React.FC<LazyShareModalProps> = ({
       <ShareModal 
         open={open}
         onOpenChange={onOpenChange}
-        afterglow={afterglow || {
-          id: 'temp',
-          date: new Date().toISOString(),
-          energy_score: 0,
-          social_intensity: 0,
-          dominant_vibe: 'chill',
-          summary_text: '',
-          total_venues: 0,
-          total_floqs: 0,
-          crossed_paths_count: 0,
-          ai_summary: null,
-          is_pinned: false,
-          is_public: false,
-          profile_id: '',
-          created_at: new Date().toISOString(),
-          ai_summary_generated_at: new Date().toISOString()
-        }}
+        afterglow={afterglow}
       />
     </Suspense>
   )
