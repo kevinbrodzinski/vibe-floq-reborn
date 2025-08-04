@@ -16,7 +16,7 @@ export function useFloqPlanDetection(floqId: string) {
         .eq('floq_id', floqId)
         .gte('planned_at', startOfToday.toISOString())
         .lte('planned_at', endOfToday.toISOString())
-        .in('status', ['draft', 'planning', 'finalized', 'executing'])
+        .in('status', ['draft', 'active'])
         .limit(1);
 
       if (error) {

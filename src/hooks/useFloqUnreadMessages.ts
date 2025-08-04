@@ -15,7 +15,7 @@ export function useFloqUnreadMessages(floqId: string) {
         .from('floq_participants')
         .select('last_read_message_at')
         .eq('floq_id', floqId)
-        .eq('profile_id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (participantError) {
@@ -31,7 +31,7 @@ export function useFloqUnreadMessages(floqId: string) {
         .select('*', { count: 'exact', head: true })
         .eq('floq_id', floqId)
         .gt('created_at', lastReadAt)
-        .neq('sender_id', user.id); // Don't count user's own messages
+        .neq('user_id', user.id); // Don't count user's own messages
 
       if (messagesError) {
         console.error('Error counting unread messages:', messagesError);
