@@ -6599,7 +6599,78 @@ export type Database = {
           venue_id?: string | null
           vibe_context?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_b_fkey"
+            columns: ["profile_id_b"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_b_fkey"
+            columns: ["profile_id_b"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_b_fkey"
+            columns: ["profile_id_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_b_fkey"
+            columns: ["profile_id_b"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_b_fkey"
+            columns: ["profile_id_b"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       proximity_stats: {
         Row: {
@@ -10169,7 +10240,43 @@ export type Database = {
           total_events: number | null
           unique_contacts: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_cache"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "presence_view"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "v_discover_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proximity_events_profile_id_a_fkey"
+            columns: ["profile_id_a"]
+            isOneToOne: false
+            referencedRelation: "v_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_floq_unread_counts: {
         Row: {
@@ -12244,6 +12351,24 @@ export type Database = {
           vibe: Database["public"]["Enums"]["vibe_enum"]
           distance_meters: number
           updated_at: string
+        }[]
+      }
+      get_nearby_users_with_proximity: {
+        Args: {
+          user_lat: number
+          user_lng: number
+          radius_meters?: number
+          user_profile_id?: string
+        }
+        Returns: {
+          profile_id: string
+          display_name: string
+          username: string
+          avatar_url: string
+          distance_meters: number
+          last_seen: string
+          proximity_score: number
+          recent_proximity_events: number
         }[]
       }
       get_nearby_venues: {
