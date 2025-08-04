@@ -10,6 +10,16 @@ as $$
 declare
   v_thread_id uuid;
 begin
+  -- Prevent self-messaging
+  if p_user_a = p_user_b then
+    raise exception 'Cannot create DM thread with yourself';
+  end if;
+
+  -- Check if users are friends
+  if not public.are_friends(p_user_a, p_user_b) then
+    raise exception 'Cannot create DM thread - users are not friends';
+  end if;
+
   -- 1. ensure canonical order (matches uniq_thread_pair)
   if p_user_a > p_user_b then
     v_thread_id := p_user_a;

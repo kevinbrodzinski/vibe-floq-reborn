@@ -8,21 +8,37 @@ import { useSearchThreads, type ThreadSearchResult } from '@/hooks/useSearchThre
 import { useThreads, type DirectThreadWithProfiles } from '@/hooks/messaging/useThreads';
 import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
 import { formatDistanceToNow } from 'date-fns';
-import { Search } from 'lucide-react';
+import { Search, MessageCircle, User, Hash } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface ThreadsListProps {
-  onThreadSelect: (threadId: string, friendId: string) => void;
-  currentUserId: string;
+  onThreadSelect: (threadId: string, friendProfileId: string) => void;
+  currentProfileId: string; // profile_id is the main user identifier
 }
 
-export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps) => {
+// Helper function to highlight search matches
+const highlightMatch = (text: string, query: string) => {
+  if (!query || !text) return text;
+  
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  
+  return parts.map((part, index) => 
+    regex.test(part) ? (
+      <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 rounded-sm px-0.5">
+        {part}
+      </mark>
+    ) : part
+  );
+};
+
+export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListProps) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   
   const { data: allThreads = [], isLoading: threadsLoading } = useThreads();
   const { data: searchResults = [], isFetching: searchLoading } = useSearchThreads(debouncedSearch);
-  const { data: unreadCounts = [] } = useUnreadDMCounts(currentUserId);
+  const { data: unreadCounts = [] } = useUnreadDMCounts(currentProfileId);
 
   // Create unread counts lookup for better performance
   const unreadMap = useMemo(() => {
@@ -33,17 +49,20 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
 
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {
-      const isUserA = thread.member_a === currentUserId;
-      const friendProfile = isUserA ? thread.member_b_profile : thread.member_a_profile;
+      // Check if current profile is member_a or member_b (profile_id equals auth.users.id)
+      const isCurrentProfileMemberA = thread.member_a === currentProfileId;
+      const friendProfile = isCurrentProfileMemberA ? thread.member_b_profile : thread.member_a_profile;
       
       return {
         thread_id: thread.id,
-        friend_profile_id: isUserA ? thread.member_b_profile_id : thread.member_a_profile_id,
+        friend_profile_id: isCurrentProfileMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
         friend_display_name: friendProfile?.display_name || '',
         friend_username: friendProfile?.username || '',
         friend_avatar_url: friendProfile?.avatar_url || '',
         last_message_at: thread.last_message_at,
-        my_unread_count: unreadMap.get(thread.id) || 0
+        my_unread_count: unreadMap.get(thread.id) || 0,
+        match_type: 'name' as const,
+        match_score: 0
       } as ThreadSearchResult;
     });
 
@@ -63,6 +82,11 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
             className="pl-10 bg-background/60"
           />
         </div>
+        {debouncedSearch && searchResults.length > 0 && (
+          <div className="mt-2 text-xs text-muted-foreground">
+            Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -82,6 +106,7 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
           <ThreadRow
             key={thread.thread_id}
             thread={thread}
+            searchQuery={debouncedSearch}
             onClick={() => handleThreadClick(thread)}
           />
         ))}
@@ -92,12 +117,25 @@ export const ThreadsList = ({ onThreadSelect, currentUserId }: ThreadsListProps)
 
 interface ThreadRowProps {
   thread: ThreadSearchResult;
+  searchQuery: string;
   onClick: () => void;
 }
 
-const ThreadRow = ({ thread, onClick }: ThreadRowProps) => {
+const ThreadRow = ({ thread, searchQuery, onClick }: ThreadRowProps) => {
   const displayName = thread.friend_display_name || thread.friend_username || 'Unknown User';
   const hasUnread = thread.my_unread_count > 0;
+
+  // Get match type icon
+  const getMatchIcon = () => {
+    switch (thread.match_type) {
+      case 'username':
+        return <Hash className="w-3 h-3 text-blue-500" />;
+      case 'message':
+        return <MessageCircle className="w-3 h-3 text-green-500" />;
+      default:
+        return <User className="w-3 h-3 text-gray-500" />;
+    }
+  };
 
   return (
     <div
@@ -113,15 +151,38 @@ const ThreadRow = ({ thread, onClick }: ThreadRowProps) => {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <h3 className={`font-medium truncate ${hasUnread ? 'text-foreground' : 'text-muted-foreground'}`}>
-            {displayName}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className={`font-medium truncate ${hasUnread ? 'text-foreground' : 'text-muted-foreground'}`}>
+              {searchQuery ? highlightMatch(displayName, searchQuery) : displayName}
+            </h3>
+            {searchQuery && thread.match_score > 0 && (
+              <div className="flex items-center gap-1">
+                {getMatchIcon()}
+              </div>
+            )}
+          </div>
           {thread.last_message_at && (
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(thread.last_message_at), { addSuffix: true })}
             </span>
           )}
         </div>
+        
+        {/* Show username if searching and it's different from display name */}
+        {searchQuery && thread.friend_username && thread.friend_username !== thread.friend_display_name && (
+          <div className="text-xs text-muted-foreground mt-0.5">
+            @{highlightMatch(thread.friend_username, searchQuery)}
+          </div>
+        )}
+        
+        {/* Show matching message content if found */}
+        {searchQuery && thread.match_type === 'message' && thread.last_message_content && (
+          <div className="text-xs text-muted-foreground mt-1 italic">
+            "{highlightMatch(thread.last_message_content.substring(0, 50), searchQuery)}
+            {thread.last_message_content.length > 50 ? '...' : '"'}
+          </div>
+        )}
+        
         {hasUnread && (
           <div className="flex items-center justify-between mt-1">
             <span className="text-sm text-muted-foreground">New messages</span>
