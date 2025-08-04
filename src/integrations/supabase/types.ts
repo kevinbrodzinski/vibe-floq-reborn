@@ -1188,7 +1188,6 @@ export type Database = {
           metadata: Json | null
           profile_id: string
           reply_to_id: string | null
-          sender_id: string
           status: string
           thread_id: string
         }
@@ -1200,7 +1199,6 @@ export type Database = {
           metadata?: Json | null
           profile_id: string
           reply_to_id?: string | null
-          sender_id: string
           status?: string
           thread_id: string
         }
@@ -1212,7 +1210,6 @@ export type Database = {
           metadata?: Json | null
           profile_id?: string
           reply_to_id?: string | null
-          sender_id?: string
           status?: string
           thread_id?: string
         }
@@ -13244,7 +13241,6 @@ export type Database = {
           metadata: Json | null
           profile_id: string
           reply_to_id: string | null
-          sender_id: string
           status: string
           thread_id: string
         }[]
