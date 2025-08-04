@@ -2,13 +2,14 @@ import React, { useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Users, Settings, Info, Eye, EyeOff, MapPin, Clock } from 'lucide-react';
+import { Shield, Users, Settings, Info, Eye, EyeOff, MapPin, Clock, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { GhostModeToggle } from '@/components/live/GhostModeToggle';
 import { SmartFeatureList } from '@/components/live/SmartFeatureList';
 import { FriendOverrideList } from '@/components/live/FriendOverrideList';
+import { GeofenceManager } from '@/components/privacy/GeofenceManager';
 import { scopeOpts, whenOpts, accOpts } from '@/types/liveSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -66,12 +67,12 @@ export const LocationSharingScreen: React.FC = () => {
           </p>
         </div>
 
-        {/* Summary Card */}
+        {/* Enhanced Summary Card */}
         <Card className="border-pink-200 bg-pink-50/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3 mb-2">
               <Shield className="h-5 w-5 text-red-500" />
-              <span className="text-sm font-medium text-muted-foreground">Privacy Status</span>
+              <span className="text-sm font-medium text-muted-foreground">Enhanced Privacy Status</span>
             </div>
             <div className="space-y-1">
               <h2 className={`text-2xl font-bold ${isSharingAny ? 'text-green-600' : 'text-red-600'}`}>
@@ -83,6 +84,12 @@ export const LocationSharingScreen: React.FC = () => {
                   : 'No one can see your location'
                 }
               </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="outline" className="text-xs">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Enhanced Features Active
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -95,6 +102,22 @@ export const LocationSharingScreen: React.FC = () => {
         </CardHeader>
         <CardContent>
           <GhostModeToggle />
+        </CardContent>
+      </Card>
+
+      {/* Privacy Zones Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Privacy Zones
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Automatically protect your location in sensitive areas
+          </p>
+        </CardHeader>
+        <CardContent>
+          <GeofenceManager />
         </CardContent>
       </Card>
 
@@ -192,19 +215,20 @@ export const LocationSharingScreen: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Info Section */}
+      {/* Enhanced Info Section */}
       <Card className="border-blue-200 bg-blue-50/10">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                How location sharing works
+                Enhanced location sharing features
               </p>
               <p className="text-sm text-muted-foreground">
-                Your location is only shared with friends you specifically enable, and you can
-                turn it off at any time. Ghost mode temporarily hides your location,
-                while smart features enhance your sharing experience.
+                Your location system now includes intelligent privacy zones, multi-signal venue detection,
+                proximity awareness, and background processing for optimal performance. Privacy zones
+                automatically protect your location in sensitive areas, while smart features enhance
+                your sharing experience with friends.
               </p>
             </div>
           </div>

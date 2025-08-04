@@ -13,6 +13,7 @@ import {
   corsHeaders,
   securityHeaders
 } from "../_shared/auth.ts";
+import { checkRateLimitV2 } from "../_shared/helpers.ts";
 
 interface LocationPing {
   ts: string;
@@ -46,9 +47,10 @@ serve(async (req) => {
     // Validate authentication
     const auth = await validateAuth(req, supabase);
     
-    // Rate limiting per user
-    if (!checkRateLimit(auth.user.id, 100, 1)) { // 100 requests per minute
-      return createErrorResponse('Rate limit exceeded', 429);
+    // Enhanced Rate limiting per user
+    const rateLimitResult = await checkRateLimitV2(supabase, auth.user.id, 'location_update');
+    if (!rateLimitResult.allowed) {
+      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
     // Validate request payload

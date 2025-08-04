@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       : { is_live: false, ends_at: new Date(Date.now() + duration_min * 60 * 1000).toISOString() };
 
     await admin.from('friend_share_pref')
-      .upsert({ user_id: user.id, ...payload }, { onConflict: 'user_id' });
+      .upsert({ profile_id: user.id, ...payload }, { onConflict: 'profile_id' });
 
     return new Response(
       JSON.stringify({ ok: true }),

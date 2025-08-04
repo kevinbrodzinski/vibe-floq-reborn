@@ -514,7 +514,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           if (!spritePool) return;
           
           // Use sprite pool instead of creating new Graphics
-          let dot = spritePool.acquire(person.id || `person-${index}`);
+          const dot = spritePool.acquire(person.id || `person-${index}`);
           
           if (!dot.parent) {
             peopleContainer.addChild(dot);

@@ -8,8 +8,8 @@ const corsHeaders = {
 };
 
 interface RelationshipPair {
-  user_a_id: string;
-  user_b_id: string;
+  profile_id_a: string;
+  profile_id_b: string;
   proximity_meters: number;
   shared_vibe?: string;
   venue_id?: string;
@@ -63,30 +63,30 @@ serve(async (req) => {
 
   async function doWork() {
     const body = await req.json();
-    const { user_id, nearby_users, current_vibe, venue_id } = body;
+    const { profile_id, nearby_users, current_vibe, venue_id } = body;
 
-    if (!user_id || !Array.isArray(nearby_users)) {
+    if (!profile_id || !Array.isArray(nearby_users)) {
       return new Response(JSON.stringify({ error: "Invalid parameters" }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log(`Processing relationships for user ${user_id} with ${nearby_users.length} nearby users`);
+    console.log(`Processing relationships for user ${profile_id} with ${nearby_users.length} nearby users`);
 
     // Generate relationship pairs with deterministic ordering
     const relationshipPairs: RelationshipPair[] = [];
     
     for (const nearbyUser of nearby_users) {
-      if (nearbyUser.user_id === user_id) continue; // Skip self
+      if (nearbyUser.profile_id === profile_id) continue; // Skip self
       
       // Deterministic ordering: smaller UUID first
-      const userA = user_id < nearbyUser.user_id ? user_id : nearbyUser.user_id;
-      const userB = user_id < nearbyUser.user_id ? nearbyUser.user_id : user_id;
+      const userA = profile_id < nearbyUser.profile_id ? profile_id : nearbyUser.profile_id;
+      const userB = profile_id < nearbyUser.profile_id ? nearbyUser.profile_id : profile_id;
       
       relationshipPairs.push({
-        user_a_id: userA,
-        user_b_id: userB,
+        profile_id_a: userA,
+        profile_id_b: userB,
         proximity_meters: nearbyUser.distance_meters || 100,
         shared_vibe: nearbyUser.vibe === current_vibe ? current_vibe : undefined,
         venue_id: venue_id
@@ -119,7 +119,7 @@ serve(async (req) => {
       nearby_users_count: nearby_users.length,
       relationship_pairs_generated: relationshipPairs.length,
       relationships_updated: data || 0,
-      user_id,
+      profile_id,
       current_vibe,
       venue_id,
       // Sample of pairs for debugging (first 5 only)

@@ -41,7 +41,7 @@ export function PeopleEncountersModal({
   const [error, setError] = useState<string | null>(null)
 
   // Memoize user IDs to prevent unnecessary re-fetches
-  const userIds = useMemo(() => 
+  const profileIds = useMemo(() => 
     encounteredUsers.map(user => user.profile_id), 
     [encounteredUsers]
   )
@@ -86,7 +86,7 @@ export function PeopleEncountersModal({
       setUserProfiles([])
       setError(null)
     }
-  }, [isOpen, userIds])
+  }, [isOpen, profileIds])
 
   const fetchUserProfiles = async () => {
     if (encounteredUsers.length === 0) return
@@ -98,7 +98,7 @@ export function PeopleEncountersModal({
       const { data, error } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
-        .in('id', userIds)
+        .in('id', profileIds)
 
       if (error) throw error
       setUserProfiles(data || [])

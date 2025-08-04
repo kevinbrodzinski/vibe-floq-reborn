@@ -1,18 +1,20 @@
 
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles } from 'lucide-react';
+import { Users, Users2, MapPin, Heart, Calendar, Clock, Flame, Compass, Sparkles, Navigation, Shield } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { getAvatarUrl, getInitials } from '@/lib/avatar';
 import { useCurrentUserId } from '@/hooks/useCurrentUser';
 import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
 import { DMQuickSheet } from '@/components/DMQuickSheet';
 import { useLocationDuration } from '@/hooks/useLocationDuration';
 import { useFriendshipInfo } from '@/hooks/useFriendshipInfo';
-import { useUserDistance } from '@/hooks/useUserDistance';
+import { useEnhancedFriendDistances } from '@/hooks/useEnhancedFriendDistances';
 import { useUserStreak } from '@/hooks/useUserStreak';
 import { useUserAchievements } from '@/hooks/useUserAchievements';
+import { useRealProfileStats } from '@/hooks/useRealProfileStats';
 import { RelationshipStrengthIndicator } from '@/components/ui/RelationshipStrengthIndicator';
 
 // Zone components
@@ -27,6 +29,7 @@ import { Highlights } from '@/components/profile/Highlights';
 import { FooterMemberSince } from '@/components/profile/FooterMemberSince';
 import { AppBarBack } from '@/components/profile/AppBarBack';
 import { FrequencyDisplay } from '@/components/profile/FrequencyDisplay';
+import { VenueInsights } from '@/components/profile/VenueInsights';
 import { ProfileChip } from '@/components/profile/ProfileChip';
 import { VibeHalo } from '@/components/profile/VibeHalo';
 import { QuickPingButton } from '@/components/profile/QuickPingButton';
@@ -48,10 +51,22 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const { data: profile, isLoading, error } = useProfile(profileId);
   const { data: locationDuration } = useLocationDuration(profileId);
   const { data: friendshipInfo } = useFriendshipInfo(profileId);
-  const { data: distance } = useUserDistance(profileId);
+  
+  // Replace mock distance with enhanced friend distance system
+  const { getFriendDistance } = useEnhancedFriendDistances({
+    maxDistance: 50000, // 50km max distance
+    enableProximityTracking: true,
+    enablePrivacyFiltering: true,
+    sortBy: 'distance'
+  });
+  
   const { data: streak } = useUserStreak(profileId);
   const { data: achievements } = useUserAchievements(profileId);
+  const { data: realStats, isLoading: statsLoading } = useRealProfileStats(profileId);
   const { isFriend, rows: friendsData } = useUnifiedFriends();
+
+  // Get real distance data for this friend
+  const friendDistance = profileId ? getFriendDistance(profileId) : null;
 
   if (!profileId) {
     return (
@@ -93,12 +108,17 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const pendingFromMe = false; // friendship?.state === 'pending' && friendship.requester === currentUserId
   const pendingToMe = false; // friendship?.state === 'pending' && friendship.requester !== currentUserId
 
-  // Mock data for demonstration
-  const mockStats = {
-    friendCount: 42,
-    mutualCount: 8,
-    sharedFloqs: 3,
-    resonanceScore: 85,
+  // Use real stats or fallback to defaults
+  const stats = realStats || {
+    friendCount: 0,
+    mutualCount: 0,
+    sharedFloqs: 0,
+    resonanceScore: 50,
+    totalFloqs: 0,
+    totalPlans: 0,
+    achievementCount: 0,
+    venuesVisited: 0,
+    averageVibeScore: 50
   };
 
   const mockLiveVibe = {
@@ -165,12 +185,16 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <div className="flex items-center justify-center gap-6 mb-3">
             <div className="flex flex-col items-center gap-1">
               <Users className="h-4 w-4 text-purple-300/70" />
-              <span className="text-sm font-medium text-gray-100">{mockStats.friendCount}</span>
+              <span className="text-sm font-medium text-gray-100">
+                {statsLoading ? '...' : stats.friendCount}
+              </span>
               <span className="text-[10px] uppercase tracking-wide text-gray-500">friends</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Users2 className="h-4 w-4 text-purple-300/70" />
-              <span className="text-sm font-medium text-gray-100">{mockStats.mutualCount}</span>
+              <span className="text-sm font-medium text-gray-100">
+                {statsLoading ? '...' : stats.mutualCount}
+              </span>
               <span className="text-[10px] uppercase tracking-wide text-gray-500">mutual</span>
             </div>
           </div>
@@ -181,16 +205,38 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           
           {/* Status info with text and icons */}
           <div className="flex flex-col items-center gap-2 mb-3">
-            {distance && (
-              <div className="flex items-center gap-1 text-sm text-gray-300">
-                <Compass className="h-4 w-4" />
-                <span>{distance.distance} {distance.unit} away</span>
+            {friendDistance && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-1 text-gray-300">
+                  <Navigation className="h-4 w-4" />
+                  <span>{friendDistance.formattedDistance}</span>
+                  {friendDistance.privacyFiltered && (
+                    <Shield className="h-3 w-3 text-blue-400" title="Privacy filtered distance" />
+                  )}
+                </div>
+                {friendDistance.isNearby && (
+                  <Badge variant="secondary" className="text-xs px-2 py-0">
+                    <MapPin className="h-3 w-3 mr-1" />
+                    Nearby
+                  </Badge>
+                )}
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs px-2 py-0 ${
+                    friendDistance.reliability === 'high' ? 'border-green-500 text-green-400' :
+                    friendDistance.reliability === 'medium' ? 'border-yellow-500 text-yellow-400' :
+                    'border-red-500 text-red-400'
+                  }`}
+                >
+                  {Math.round(friendDistance.confidence * 100)}% confident
+                </Badge>
               </div>
             )}
             {streak && streak.currentStreak > 0 && (
               <div className="flex items-center gap-1 text-sm text-gray-300">
                 <Flame className="h-4 w-4" />
-                <span>{streak.currentStreak} d</span>
+                <span>{streak.currentStreak}d {streak.streakType}</span>
+                {streak.currentStreak >= 7 && <span className="text-orange-400">🔥</span>}
               </div>
             )}
             {isCurrentlyFriend && (
@@ -261,9 +307,33 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
 
         {/* Zone 2: Social Stats Strip - Floqs and Resonance only */}
         <div className="grid grid-cols-2 gap-3">
-          <StatPill value={mockStats.sharedFloqs} label="Floqs" icon={MapPin} />
-          <StatPill value={`${mockStats.resonanceScore}%`} label="Resonance" icon={Heart} />
+          <StatPill 
+            value={statsLoading ? '...' : (isMe ? stats.totalFloqs : stats.sharedFloqs)} 
+            label={isMe ? "Total Floqs" : "Shared Floqs"} 
+            icon={MapPin} 
+          />
+          <StatPill 
+            value={statsLoading ? '...' : `${stats.resonanceScore}%`} 
+            label="Resonance" 
+            icon={Heart} 
+          />
         </div>
+
+        {/* Zone 2.5: Extended Stats (own profile only) */}
+        {isMe && !statsLoading && (
+          <div className="grid grid-cols-2 gap-3">
+            <StatPill 
+              value={stats.totalPlans} 
+              label="Plans" 
+              icon={Calendar} 
+            />
+            <StatPill 
+              value={stats.venuesVisited} 
+              label="Venues" 
+              icon={MapPin} 
+            />
+          </div>
+        )}
 
         {/* Zone 3: CTA Bar (non-friend only) */}
         {!isMe && !isCurrentlyFriend && !pendingFromMe && !pendingToMe && (
@@ -294,6 +364,66 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
           <ActionBarFriend profile={profile} onOpenDM={() => setDmOpen(true)} />
         )}
 
+        {/* Zone 4.5: Proximity Analysis (friend only) */}
+        {!isMe && isCurrentlyFriend && friendDistance && (
+          <GlassCard>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Navigation className="h-4 w-4 text-blue-300" />
+                <h3 className="text-sm font-medium text-white">Location & Proximity</h3>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="text-center p-2 bg-black/20 rounded-lg">
+                  <div className="text-white font-medium">{friendDistance.formattedDistance}</div>
+                  <div className="text-gray-400">Distance</div>
+                </div>
+                <div className="text-center p-2 bg-black/20 rounded-lg">
+                  <div className={`font-medium ${
+                    friendDistance.reliability === 'high' ? 'text-green-400' :
+                    friendDistance.reliability === 'medium' ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {friendDistance.reliability}
+                  </div>
+                  <div className="text-gray-400">Accuracy</div>
+                </div>
+              </div>
+
+              {friendDistance.proximityAnalysis?.eventType && friendDistance.proximityAnalysis.eventType !== 'none' && (
+                <div className="p-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm">
+                    {friendDistance.proximityAnalysis.eventType === 'enter' && (
+                      <>
+                        <Users className="h-4 w-4 text-green-400" />
+                        <span className="text-green-300">Just arrived nearby</span>
+                      </>
+                    )}
+                    {friendDistance.proximityAnalysis.eventType === 'sustain' && (
+                      <>
+                        <Clock className="h-4 w-4 text-blue-400" />
+                        <span className="text-blue-300">
+                          Nearby for {Math.round(friendDistance.proximityAnalysis.sustainedDuration / 1000 / 60)}m
+                        </span>
+                      </>
+                    )}
+                    {friendDistance.proximityAnalysis.eventType === 'exit' && (
+                      <>
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-300">Just left area</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-xs text-gray-400 text-center">
+                Last seen {new Date(friendDistance.lastSeen).toLocaleTimeString()}
+              </div>
+            </div>
+          </GlassCard>
+        )}
+
         {/* Zone 5: Live Vibe Card (friend only) */}
         {!isMe && isCurrentlyFriend && (
           <LiveVibeCard vibe={mockLiveVibe} />
@@ -310,19 +440,22 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         {/* Frequency Display: Most visited venues, locations, activities */}
         <FrequencyDisplay userId={profile.id} />
 
+        {/* Venue Insights: Show most visited places */}
+        <VenueInsights profileId={profile.id} isOwnProfile={isMe} />
+
         {/* Zone 8: Relationship Panel (friend only) */}
-        {!isMe && isCurrentlyFriend && (
+        {!isMe && isCurrentlyFriend && !statsLoading && (
           <GlassCard>
             <RelationshipStrengthIndicator 
               relationship={{
                 profileId: profile.id,
                 displayName: profile.display_name || profile.username,
                 avatarUrl: profile.avatar_url,
-                strength: mockStats.resonanceScore,
-                interactionCount: 12,
-                lastInteraction: new Date().toISOString(),
-                mutualFriends: mockStats.mutualCount,
-                sharedInterests: ['coffee', 'coding', 'music'],
+                strength: stats.resonanceScore,
+                interactionCount: stats.sharedFloqs + stats.totalPlans,
+                lastInteraction: friendshipInfo?.lastInteraction || new Date().toISOString(),
+                mutualFriends: stats.mutualCount,
+                sharedInterests: ['coffee', 'coding', 'music'], // TODO: Calculate from actual data
                 isPublic: true,
               }}
             />

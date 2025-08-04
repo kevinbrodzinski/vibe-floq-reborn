@@ -88,9 +88,16 @@ export const useUserSettings = () => {
       
       // Return merged settings with defaults
       if (data) {
-        const notificationPrefs = (data.notification_preferences as Record<string, any>) || {};
-        const privacySettings = (data.privacy_settings as Record<string, any>) || {};
-        const themePrefs = (data.theme_preferences as Record<string, any>) || {};
+        // Safely parse and validate JSON data with fallbacks
+        const notificationPrefs = (typeof data.notification_preferences === 'object' && data.notification_preferences !== null) 
+          ? data.notification_preferences as Record<string, any>
+          : {};
+        const privacySettings = (typeof data.privacy_settings === 'object' && data.privacy_settings !== null)
+          ? data.privacy_settings as Record<string, any>
+          : {};
+        const themePrefs = (typeof data.theme_preferences === 'object' && data.theme_preferences !== null)
+          ? data.theme_preferences as Record<string, any>
+          : {};
         
         return {
           ...data,
@@ -165,10 +172,42 @@ export const useUserSettings = () => {
   const updatePrivacySetting = (key: keyof UserSettings['privacy_settings'], value: any) => {
     if (!settings || !settings.privacy_settings) return;
     
+    // Validate input based on setting type
+    let validatedValue: any;
+    switch (key) {
+      case 'location_sharing':
+      case 'battery_save_mode':
+      case 'always_immersive_venues':
+        if (typeof value !== 'boolean') {
+          console.error(`Invalid boolean value for ${key}:`, value);
+          return;
+        }
+        validatedValue = value;
+        break;
+      case 'profile_visibility':
+        if (!['public', 'friends', 'private'].includes(value)) {
+          console.error(`Invalid profile visibility value:`, value);
+          return;
+        }
+        validatedValue = value;
+        break;
+      case 'broadcast_radius':
+        const radius = Number(value);
+        if (isNaN(radius) || radius < 0 || radius > 10000) {
+          console.error(`Invalid broadcast radius value:`, value);
+          return;
+        }
+        validatedValue = Math.round(radius);
+        break;
+      default:
+        console.error(`Unknown privacy setting key:`, key);
+        return;
+    }
+    
     updateSettingsMutation.mutate({
       privacy_settings: {
         ...settings.privacy_settings,
-        [key]: value,
+        [key]: validatedValue,
       },
     });
   };

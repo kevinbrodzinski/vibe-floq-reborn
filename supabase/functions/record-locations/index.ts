@@ -10,6 +10,7 @@ import {
   validateAuth,
   createErrorResponse,
   checkRateLimit,
+  checkRateLimitV2,
   validatePayload,
   corsHeaders,
   securityHeaders,
@@ -31,9 +32,10 @@ serve(async (req) => {
     /* 3️⃣  Auth */
     const { user } = await validateAuth(req, supabase);
 
-    /* 4️⃣  Rate-limit */
-    if (!checkRateLimit(user.id, 100, 1)) {
-      return createErrorResponse("Rate limit exceeded", 429);
+    /* 4️⃣  Enhanced Rate-limit */
+    const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'location_update');
+    if (!rateLimitResult.allowed) {
+      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
     /* 5️⃣  Parse + validate JSON */

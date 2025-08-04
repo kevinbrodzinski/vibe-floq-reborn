@@ -56,7 +56,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const queryClient = useQueryClient();
 
   // Stable thread lookup using RPC - getOrCreateThread is imported (stable)
-  // eslint-disable-next-line react-hooks/exhaustive-deps  
+   
   const threadIdFrom = useCallback(async (me: string, friend: string): Promise<string> => {
     return getOrCreateThread(me, friend);
   }, []);
@@ -122,9 +122,9 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
 
   // Get current user ID from auth context
   useEffect(() => {
-    const userId = user?.id || null;
-    console.log('[DM_SHEET] Auth user changed:', userId);
-    setCurrentProfileId(userId);
+    const profileId = user?.id || null;
+    console.log('[DM_SHEET] Auth user changed:', profileId);
+    setCurrentProfileId(profileId);
   }, [user]);
 
    // Initialize thread when both user and friend are available AND sheet is open

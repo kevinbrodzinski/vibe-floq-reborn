@@ -118,13 +118,41 @@ export function conflictSeverityScale(stop: PlanStop, conflicts: ConflictInfo[])
 
 // Utility functions
 function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number)
+  if (!time || typeof time !== 'string') {
+    console.warn('Invalid time format provided to timeToMinutes:', time)
+    return 0
+  }
+  
+  const parts = time.split(':')
+  if (parts.length !== 2) {
+    console.warn('Invalid time format provided to timeToMinutes:', time)
+    return 0
+  }
+  
+  const hours = parseInt(parts[0], 10)
+  const minutes = parseInt(parts[1], 10)
+  
+  // Validate parsed values
+  if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    console.warn('Invalid time values in timeToMinutes:', time, { hours, minutes })
+    return 0
+  }
+  
   return hours * 60 + minutes
 }
 
 function addMinutesToTime(time: string, minutes: number): string {
-  const totalMinutes = timeToMinutes(time) + minutes
-  const hours = Math.floor(totalMinutes / 60)
-  const mins = totalMinutes % 60
+  if (!time || typeof time !== 'string' || isNaN(minutes)) {
+    console.warn('Invalid input to addMinutesToTime:', { time, minutes })
+    return '00:00'
+  }
+  
+  const totalMinutes = timeToMinutes(time) + Math.max(0, minutes)
+  
+  // Handle day overflow - clamp to 23:59
+  const clampedMinutes = Math.min(totalMinutes, 23 * 60 + 59)
+  
+  const hours = Math.floor(clampedMinutes / 60)
+  const mins = clampedMinutes % 60
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
 }

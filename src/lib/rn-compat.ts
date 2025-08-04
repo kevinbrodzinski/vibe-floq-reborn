@@ -42,10 +42,10 @@ function createEnvProxy(): ImportMeta['env'] {
   
   // For web builds, use import.meta.env if available, fallback to process.env
   try {
-    // @ts-ignore - import.meta may not be available in all environments
-    if (typeof window !== 'undefined' && (globalThis as any).import?.meta?.env) {
-      // @ts-ignore
-      return (globalThis as any).import.meta.env;
+    // @ts-expect-error - import.meta may not be available in all environments
+    if (typeof window !== 'undefined' && (globalThis as unknown as { import?: { meta?: { env: Record<string, string> } } }).import?.meta?.env) {
+              // @ts-expect-error
+      return (globalThis as unknown as { import: { meta: { env: Record<string, string> } } }).import.meta.env;
     }
   } catch (e) {
     // Fallback to process.env

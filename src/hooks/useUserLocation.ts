@@ -82,12 +82,16 @@ export function useUserLocation() {
         userRef.current = user.id
       }
 
-      const batch = bufferRef.current.splice(0, bufferRef.current.length)
+      // Extract batch before async operation to prevent race conditions
+      const batch = [...bufferRef.current]
+      bufferRef.current = [] // Clear buffer immediately
 
       await callFn('record_locations', { batch });
 
     } catch (error: any) {
       console.error('Failed to record locations:', error)
+      // Re-add failed items back to buffer for retry
+      bufferRef.current.unshift(...(batch || []))
     }
   }
 
@@ -130,7 +134,7 @@ export function useUserLocation() {
     }
   }
 
-  const stopTracking = () => {
+  const stopTracking = async () => {
     // Stop base geo tracking
     geo.clearWatch()
 
@@ -145,9 +149,8 @@ export function useUserLocation() {
       channelRef.current = null
     }
 
-    // Final flush
-    flushBuffer()
-    bufferRef.current = []   // clear AFTER flushing
+    // Final flush - wait for completion to ensure data isn't lost
+    await flushBuffer()
   }
 
   // Handle live sharing when location updates
@@ -240,7 +243,7 @@ export function useUserLocation() {
 
   useEffect(() => {
     return () => {
-      stopTracking()
+      stopTracking().catch(err => console.error('Error stopping tracking:', err))
     }
   }, [])
 
@@ -249,9 +252,9 @@ export function useUserLocation() {
     return geo.hasPermission || false
   }
 
-  const resetLocation = () => {
+  const resetLocation = async () => {
     console.log('[useUserLocation] Resetting location state...')
-    stopTracking()
+    await stopTracking()
   }
 
   // Return interface compatible with existing code
