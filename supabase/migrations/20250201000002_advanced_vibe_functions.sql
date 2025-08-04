@@ -174,7 +174,7 @@ $$;
 
 -- Function to get user vibe learning insights
 CREATE OR REPLACE FUNCTION public.get_user_vibe_insights(
-    p_user_id UUID DEFAULT auth.uid(),
+    p_profile_id UUID DEFAULT auth.uid(),
     p_days_back INTEGER DEFAULT 30
 )
 RETURNS TABLE (
@@ -201,7 +201,7 @@ BEGIN
             COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::double precision / 
             GREATEST(1, COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days')) as learning_velocity
         FROM vibe_user_learning
-        WHERE user_id = p_user_id
+        WHERE profile_id = p_profile_id
         AND created_at >= NOW() - (p_days_back || ' days')::interval
     ),
     location_patterns AS (
@@ -222,7 +222,7 @@ BEGIN
                 accuracy,
                 ROW_NUMBER() OVER (ORDER BY frequency DESC) as rn
             FROM location_vibe_patterns
-            WHERE user_id = p_user_id
+            WHERE profile_id = p_profile_id
         ) ranked_locations
     )
     SELECT 

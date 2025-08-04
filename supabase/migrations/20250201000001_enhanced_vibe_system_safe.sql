@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.vibe_system_metrics (
     metrics JSONB NOT NULL,
     
     -- Contextual information
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- NULL for system-wide metrics
+    profile_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- NULL for system-wide metrics
     session_id TEXT,
     
     -- Timestamps
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.vibe_system_metrics (
 -- Table for storing user learning patterns and corrections
 CREATE TABLE IF NOT EXISTS public.vibe_user_learning (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
     -- Learning data
     correction_data JSONB NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS public.vibe_user_learning (
 -- Table for storing location-vibe correlations and patterns
 CREATE TABLE IF NOT EXISTS public.location_vibe_patterns (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
     -- Location identification
     venue_id TEXT, -- From venue detection system
@@ -85,8 +85,8 @@ CREATE TABLE IF NOT EXISTS public.location_vibe_patterns (
     last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     
-    -- Unique constraint for user-location-vibe combinations
-    UNIQUE(user_id, location_hash, vibe)
+    -- Unique constraint for profile-location-vibe combinations
+    UNIQUE(profile_id, location_hash, vibe)
 );
 
 -- ============================================================================
@@ -133,13 +133,13 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_vibe_system_metrics_type_time 
 ON public.vibe_system_metrics(measurement_type, measured_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_vibe_system_metrics_user_time 
-ON public.vibe_system_metrics(user_id, measured_at DESC) 
-WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_vibe_system_metrics_profile_time 
+ON public.vibe_system_metrics(profile_id, measured_at DESC) 
+WHERE profile_id IS NOT NULL;
 
 -- Indexes for user learning
-CREATE INDEX IF NOT EXISTS idx_vibe_user_learning_user_time 
-ON public.vibe_user_learning(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vibe_user_learning_profile_time 
+ON public.vibe_user_learning(profile_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_vibe_user_learning_vibes 
 ON public.vibe_user_learning(original_vibe, corrected_vibe);
@@ -148,8 +148,8 @@ CREATE INDEX IF NOT EXISTS idx_vibe_user_learning_context
 ON public.vibe_user_learning USING GIN(context_data);
 
 -- Indexes for location-vibe patterns
-CREATE INDEX IF NOT EXISTS idx_location_vibe_patterns_user_venue 
-ON public.location_vibe_patterns(user_id, venue_id) 
+CREATE INDEX IF NOT EXISTS idx_location_vibe_patterns_profile_venue 
+ON public.location_vibe_patterns(profile_id, venue_id) 
 WHERE venue_id IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_location_vibe_patterns_location_hash 
@@ -173,7 +173,7 @@ ALTER TABLE public.location_vibe_patterns ENABLE ROW LEVEL SECURITY;
 -- Policies for vibe system metrics
 CREATE POLICY "Users can view their own metrics" 
 ON public.vibe_system_metrics FOR SELECT 
-USING (user_id IS NULL OR auth.uid() = user_id);
+USING (profile_id IS NULL OR auth.uid() = profile_id);
 
 CREATE POLICY "System can insert metrics" 
 ON public.vibe_system_metrics FOR INSERT 
@@ -182,14 +182,14 @@ WITH CHECK (true); -- Allow system inserts
 -- Policies for user learning
 CREATE POLICY "Users can manage their own learning data" 
 ON public.vibe_user_learning FOR ALL 
-USING (auth.uid() = user_id) 
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = profile_id) 
+WITH CHECK (auth.uid() = profile_id);
 
 -- Policies for location-vibe patterns
 CREATE POLICY "Users can manage their own location patterns" 
 ON public.location_vibe_patterns FOR ALL 
-USING (auth.uid() = user_id) 
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = profile_id) 
+WITH CHECK (auth.uid() = profile_id);
 
 -- ============================================================================
 -- 5. GRANTS AND PERMISSIONS
@@ -213,12 +213,12 @@ AS $$
 BEGIN
     -- Keep only last 30 days of user-specific metrics
     DELETE FROM public.vibe_system_metrics 
-    WHERE user_id IS NOT NULL 
+    WHERE profile_id IS NOT NULL 
     AND measured_at < NOW() - INTERVAL '30 days';
     
     -- Keep only last 7 days of system-wide metrics
     DELETE FROM public.vibe_system_metrics 
-    WHERE user_id IS NULL 
+    WHERE profile_id IS NULL 
     AND measured_at < NOW() - INTERVAL '7 days';
     
     -- Keep only last 90 days of learning data

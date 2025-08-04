@@ -1,4 +1,4 @@
-import { createClient } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProximityEventData {
   profileId: string;
@@ -26,7 +26,6 @@ export class ProximityEventRecorder {
   private flushInterval: NodeJS.Timeout | null = null;
   private readonly BATCH_SIZE = 10;
   private readonly FLUSH_INTERVAL_MS = 30000; // 30 seconds
-  private supabase = createClient();
 
   constructor() {
     this.startBatchProcessor();
@@ -69,8 +68,8 @@ export class ProximityEventRecorder {
     try {
       // Transform events for database insertion
       const dbEvents = eventsToFlush.map(event => ({
-        user_id: event.profileId,
-        other_user_id: event.friendId,
+        profile_id: event.profileId,
+        other_profile_id: event.friendId,
         event_type: event.eventType,
         latitude: event.location.latitude,
         longitude: event.location.longitude,
@@ -83,7 +82,7 @@ export class ProximityEventRecorder {
         created_at: new Date().toISOString()
       }));
 
-      const { error } = await this.supabase
+      const { error } = await supabase
         .from('proximity_events')
         .insert(dbEvents);
 
