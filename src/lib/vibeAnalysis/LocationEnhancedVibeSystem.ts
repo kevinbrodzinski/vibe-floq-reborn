@@ -291,7 +291,7 @@ export class LocationEnhancedVibeSystem extends VibeSystemIntegration {
     // Record proximity events if relevant
     if (interactionType === 'social_action' || interactionType === 'proximity_event') {
       await this.proximityRecorder.recordProximityEvent({
-        userId: data.userId,
+        profileId: data.profileId,
         friendId: data.friendId,
         eventType: data.eventType || 'interaction',
         location: enhancedLocationData.location,

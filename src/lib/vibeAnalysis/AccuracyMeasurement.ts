@@ -72,7 +72,7 @@ export interface PredictionRecord {
     calibrationBin: number;
   };
   metadata: {
-    userId?: string;
+    profileId?: string;
     sessionId?: string;
     contextType: string;
     modelVersion: string;
@@ -96,7 +96,7 @@ export class AccuracyMeasurementSystem {
   private readonly PERF_BUFFER_SIZE = 1000;
   
   // A/B testing support
-  private experimentGroups: Map<string, string> = new Map(); // userId -> experimentGroup
+  private experimentGroups: Map<string, string> = new Map(); // profileId -> experimentGroup
   
   /**
    * Record a new prediction for accuracy tracking
@@ -338,8 +338,8 @@ export class AccuracyMeasurementSystem {
   /**
    * Assign user to experiment group for A/B testing
    */
-  assignToExperimentGroup(userId: string, group: string): void {
-    this.experimentGroups.set(userId, group);
+  assignToExperimentGroup(profileId: string, group: string): void {
+    this.experimentGroups.set(profileId, group);
   }
   
   // Private helper methods
@@ -659,7 +659,7 @@ export class AccuracyMeasurementSystem {
   ): PredictionRecord[] {
     const records = this.getFilteredRecords(timeWindow);
     return records.filter(r => 
-      r.metadata.userId && this.experimentGroups.get(r.metadata.userId) === group
+      r.metadata.profileId && this.experimentGroups.get(r.metadata.profileId) === group
     );
   }
   

@@ -367,7 +367,7 @@ export class VibeSystemIntegration {
         data.context,
         this.currentAnalysis,
         {
-          userId: data.userId,
+          profileId: data.profileId,
           sessionId: data.sessionId,
           interactionType
         }
