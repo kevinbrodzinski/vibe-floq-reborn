@@ -45,6 +45,14 @@ export function ProximityNotifications({
   autoHideDelay = 10000,
   showInDevelopment = true 
 }: ProximityNotificationsProps) {
+  // Temporarily disabled to avoid context errors
+  console.log('[ProximityNotifications] Component rendered (temporarily disabled)');
+  
+  // Early return to avoid useFieldLocation context error
+  if (true) {
+    return null;
+  }
+  
   const [notifications, setNotifications] = useState<ProximityNotification[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   

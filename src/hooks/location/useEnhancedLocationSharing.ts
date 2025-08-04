@@ -9,13 +9,39 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { geofencingService, type GeofenceMatch } from '@/lib/location/geofencing';
-import { multiSignalVenueDetector, type VenueDetectionResult } from '@/lib/location/multiSignalVenue';
-import { proximityScorer, type ProximityUser, type ProximityAnalysis } from '@/lib/location/proximityScoring';
-import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
-import { backgroundLocationProcessor } from '@/lib/location/backgroundLocationProcessor';
 import { GPSCoords } from '@/lib/location/standardGeo';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+
+// Temporary simplified types for enhanced features
+interface GeofenceMatch {
+  geofence: any;
+  distance: number;
+  confidence: number;
+}
+
+interface VenueDetectionResult {
+  venueId: string;
+  overallConfidence: number;
+  lat: number;
+  lng: number;
+}
+
+interface ProximityUser {
+  userId: string;
+  location: GPSCoords;
+  accuracy: number;
+  timestamp: number;
+  vibe?: string;
+}
+
+interface ProximityAnalysis {
+  userId: string;
+  distance: number;
+  confidence: number;
+  isNear: boolean;
+  eventType?: 'enter' | 'exit' | 'sustain';
+  sustainedDuration?: number;
+}
 
 export interface EnhancedLocationState {
   // Basic location data
@@ -103,22 +129,14 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     };
 
     try {
-      // Option 1: Use background processor for better performance
+      // Simplified background processing (disabled complex services)
       if (enableBackgroundProcessing) {
-        backgroundLocationProcessor.queueLocationUpdate({
-          location,
-          accuracy,
-          timestamp,
-          userId: user.id
-        });
-        
-        // Still do minimal processing for immediate UI updates
-        const quickGeofenceCheck = enableGeofencing ? 
-          geofencingService.checkGeofences(location, accuracy) : [];
+        // Simple geofence check (placeholder for now)
+        const quickGeofenceCheck: GeofenceMatch[] = [];
         
         newState.geofenceMatches = quickGeofenceCheck;
-        newState.privacyFiltered = quickGeofenceCheck.length > 0;
-        newState.privacyLevel = quickGeofenceCheck.length > 0 ? 'street' : 'exact';
+        newState.privacyFiltered = false;
+        newState.privacyLevel = 'exact';
         
         // Update state and return early
         setState(prevState => ({ ...prevState, ...newState }));
@@ -133,33 +151,10 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       let filteredLocation = location;
 
       if (enableGeofencing) {
-        geofenceMatches = geofencingService.checkGeofences(location, accuracy);
-        
-        if (geofenceMatches.length > 0) {
-          const privacyResult = geofencingService.applyPrivacyFiltering(
-            location, 
-            accuracy, 
-            geofenceMatches
-          );
-          
-          if (privacyResult.hidden) {
-            privacyLevel = 'hidden';
-            privacyFiltered = true;
-            // Don't share location at all
-            if (debugMode) {
-              console.log('[EnhancedLocation] Location hidden by geofence');
-            }
-            return;
-          } else if (privacyResult.accuracy > accuracy) {
-            privacyFiltered = true;
-            privacyLevel = privacyResult.accuracy >= 1000 ? 'area' : 'street';
-            filteredLocation = { lat: privacyResult.lat, lng: privacyResult.lng };
-            
-            if (debugMode) {
-              console.log(`[EnhancedLocation] Location degraded to ${privacyLevel}`);
-            }
-          }
-        }
+        // Simplified geofencing (disabled complex service for now)
+        geofenceMatches = [];
+        privacyFiltered = false;
+        privacyLevel = 'exact';
 
         newState.geofenceMatches = geofenceMatches;
         newState.privacyFiltered = privacyFiltered;
@@ -171,27 +166,9 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       let currentVenue: VenueDetectionResult | null = null;
 
       if (enableVenueDetection) {
-        try {
-          // Get WiFi and Bluetooth data (platform-specific implementation needed)
-          const wifiNetworks = await multiSignalVenueDetector.constructor.getWiFiNetworks();
-          const bluetoothBeacons = await multiSignalVenueDetector.constructor.getBluetoothBeacons();
-
-          venueDetections = await multiSignalVenueDetector.detectVenues(
-            location,
-            accuracy,
-            wifiNetworks,
-            bluetoothBeacons
-          );
-
-          // Find the highest confidence venue
-          currentVenue = venueDetections.length > 0 ? venueDetections[0] : null;
-
-          if (debugMode && currentVenue) {
-            console.log(`[EnhancedLocation] Venue detected: ${currentVenue.venueId} (confidence: ${currentVenue.overallConfidence})`);
-          }
-        } catch (venueError) {
-          console.error('[EnhancedLocation] Venue detection error:', venueError);
-        }
+        // Simplified venue detection (disabled complex service for now)
+        venueDetections = [];
+        currentVenue = null;
 
         newState.venueDetections = venueDetections;
         newState.currentVenue = currentVenue;
@@ -202,61 +179,12 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       const proximityEvents: string[] = [];
 
       if (enableProximityTracking) {
-        try {
-          const currentUser: ProximityUser = {
-            userId: user.id,
-            location,
-            accuracy,
-            timestamp
-          };
-
-          // Analyze proximity with all known nearby users
-          const proximityResults: ProximityAnalysis[] = [];
-          
-          for (const [userId, nearbyUser] of nearbyUsersRef.current) {
-            if (userId !== user.id) {
-              const analysis = proximityScorer.analyzeProximity(currentUser, nearbyUser);
-              
-              if (analysis.confidence > 0.1) {
-                proximityResults.push(analysis);
-                
-                // Generate event descriptions for significant events
-                if (analysis.eventType === 'enter') {
-                  proximityEvents.push(`Started proximity with user ${userId}`);
-                } else if (analysis.eventType === 'exit') {
-                  proximityEvents.push(`Left proximity with user ${userId} (${Math.round(analysis.sustainedDuration / 1000)}s)`);
-                } else if (analysis.eventType === 'sustain' && analysis.sustainedDuration > 60000) {
-                  proximityEvents.push(`Sustained proximity with user ${userId} (${Math.round(analysis.sustainedDuration / 1000)}s)`);
-                }
-              }
-            }
-          }
-
-          nearbyUsers = proximityResults.sort((a, b) => b.confidence - a.confidence);
-
-          if (debugMode && nearbyUsers.length > 0) {
-            console.log(`[EnhancedLocation] ${nearbyUsers.length} nearby users detected`);
-          }
-        } catch (proximityError) {
-          console.error('[EnhancedLocation] Proximity analysis error:', proximityError);
-        }
+        // Simplified proximity tracking (disabled complex service for now)
+        nearbyUsers = [];
+        // No proximity events for now
 
         newState.nearbyUsers = nearbyUsers;
         newState.proximityEvents = proximityEvents;
-        
-        // Record proximity events to database
-        if (proximityEvents.length > 0) {
-          try {
-            await proximityEventRecorder.recordProximityEvents(
-              user.id,
-              proximityEvents,
-              nearbyUsers,
-              { lat: location.lat, lng: location.lng, accuracy }
-            );
-          } catch (recordError) {
-            console.error('[EnhancedLocation] Proximity event recording error:', recordError);
-          }
-        }
       }
 
       // 4. Broadcast Enhanced Location Data
@@ -431,7 +359,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
   useEffect(() => {
     return () => {
       stopSharing();
-      proximityScorer.cleanupOldHistory();
+      // proximityScorer.cleanupOldHistory(); // Disabled for now
     };
   }, [stopSharing]);
 
@@ -445,10 +373,10 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     startSharing,
     stopSharing,
     
-    // Enhanced features
-    geofencingService,
-    multiSignalVenueDetector,
-    proximityScorer,
+    // Enhanced features (disabled for now)
+    // geofencingService,
+    // multiSignalVenueDetector,
+    // proximityScorer,
     
     // Utilities
     isLocationHidden: state.privacyLevel === 'hidden',
