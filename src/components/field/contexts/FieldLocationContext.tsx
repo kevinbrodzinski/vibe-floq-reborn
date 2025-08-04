@@ -139,7 +139,7 @@ const FieldLocationProviderInner = ({
         console.error('[FieldLocationContext] Failed to start enhanced sharing:', error);
       });
     }
-  }, [isLocationReady, enhancedSharingActive, enhancedLocationSharing.isTracking, enhancedLocationSharing.startSharing, debugMode]);
+  }, [isLocationReady, enhancedSharingActive, enhancedLocationSharing.isTracking, debugMode]);
 
   /* auto-start basic location tracking only if permission already granted and we're idle */
   useEffect(() => {

@@ -60,41 +60,8 @@ export function ProximityNotifications({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Get friend profile data for notifications
-  const { data: friendProfiles = {} } = useQuery({
-    queryKey: ['friend-profiles', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return {};
-      
-      const { data } = await supabase
-        .from('friendships')
-        .select(`
-          friend_profile_id,
-          profiles!friendships_friend_profile_id_fkey (
-            id,
-            display_name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('profile_id', user.id)
-        .eq('status', 'accepted');
-
-      if (!data) return {};
-
-      return Object.fromEntries(
-        data.map(f => [
-          f.friend_profile_id, 
-          {
-            id: f.profiles?.id,
-            name: f.profiles?.display_name || f.profiles?.username || 'Friend',
-            avatar: f.profiles?.avatar_url
-          }
-        ])
-      );
-    },
-    enabled: !!user?.id
-  });
+  // Disabled to avoid type recursion - component is temporarily disabled anyway
+  const friendProfiles = {};
 
   // Process proximity events into notifications
   useEffect(() => {

@@ -37,7 +37,13 @@ export function PlanTemplatesPanel({
   }
 
   const handleLoadTemplate = (template: PlanTemplate) => {
-    const templateStops = loadTemplate(template)
+    const templateStops = loadTemplate(template).map(stop => ({ 
+      id: crypto.randomUUID(),
+      title: stop.title,
+      description: stop.description,
+      location: typeof stop.location === 'string' ? { lat: 0, lng: 0, name: stop.location } : stop.location,
+      stop_order: stop.stop_order || 0
+    }))
     onLoadTemplate(templateStops)
     setSelectedTemplate(null)
   }
