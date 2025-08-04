@@ -25,10 +25,10 @@ interface StopCardProps {
       address?: string
     }
   }
-  onEdit?: (stop: any) => void
+  onEdit?: (stop: StopCardProps['stop']) => void
   onDelete?: (stopId: string) => void
   isDragging?: boolean
-  dragHandleProps?: any
+  dragHandleProps?: Record<string, unknown>
 }
 
 export function StopCard({ 

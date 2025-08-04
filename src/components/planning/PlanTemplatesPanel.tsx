@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 
 interface PlanTemplatesPanelProps {
   currentPlan: Plan
-  onLoadTemplate: (templateStops: any[]) => void
+  onLoadTemplate: (templateStops: Array<{ id: string; title: string; description?: string; location: { lat: number; lng: number; name?: string }; stop_order: number }>) => void
   className?: string
 }
 
