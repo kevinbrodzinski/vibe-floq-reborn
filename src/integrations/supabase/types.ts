@@ -4471,6 +4471,57 @@ export type Database = {
           },
         ]
       }
+      location_vibe_patterns: {
+        Row: {
+          accuracy: number
+          confidence: number
+          created_at: string
+          first_detected_at: string
+          frequency: number
+          id: string
+          last_updated_at: string
+          location: unknown | null
+          location_context: Json
+          location_hash: string
+          profile_id: string
+          temporal_patterns: Json
+          venue_id: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Insert: {
+          accuracy: number
+          confidence: number
+          created_at?: string
+          first_detected_at?: string
+          frequency?: number
+          id?: string
+          last_updated_at?: string
+          location?: unknown | null
+          location_context?: Json
+          location_hash: string
+          profile_id: string
+          temporal_patterns?: Json
+          venue_id?: string | null
+          vibe: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Update: {
+          accuracy?: number
+          confidence?: number
+          created_at?: string
+          first_detected_at?: string
+          frequency?: number
+          id?: string
+          last_updated_at?: string
+          location?: unknown | null
+          location_context?: Json
+          location_hash?: string
+          profile_id?: string
+          temporal_patterns?: Json
+          venue_id?: string | null
+          vibe?: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Relationships: []
+      }
       notification_queue: {
         Row: {
           created_at: string
@@ -6504,37 +6555,49 @@ export type Database = {
       }
       proximity_events: {
         Row: {
+          accuracy_score: number | null
           confidence: number | null
           distance_meters: number | null
           event_ts: string
           event_type: string | null
           id: string
           location_accuracy_meters: number | null
+          ml_features: Json | null
           profile_id_a: string
           profile_id_b: string
+          venue_context: string | null
           venue_id: string | null
+          vibe_context: Json | null
         }
         Insert: {
+          accuracy_score?: number | null
           confidence?: number | null
           distance_meters?: number | null
           event_ts?: string
           event_type?: string | null
           id?: string
           location_accuracy_meters?: number | null
+          ml_features?: Json | null
           profile_id_a: string
           profile_id_b: string
+          venue_context?: string | null
           venue_id?: string | null
+          vibe_context?: Json | null
         }
         Update: {
+          accuracy_score?: number | null
           confidence?: number | null
           distance_meters?: number | null
           event_ts?: string
           event_type?: string | null
           id?: string
           location_accuracy_meters?: number | null
+          ml_features?: Json | null
           profile_id_a?: string
           profile_id_b?: string
+          venue_context?: string | null
           venue_id?: string | null
+          vibe_context?: Json | null
         }
         Relationships: []
       }
@@ -9647,6 +9710,90 @@ export type Database = {
           },
         ]
       }
+      vibe_system_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          measured_at: string
+          measurement_type: string
+          metrics: Json
+          profile_id: string | null
+          session_id: string | null
+          system_version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          measurement_type: string
+          metrics: Json
+          profile_id?: string | null
+          session_id?: string | null
+          system_version?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          measurement_type?: string
+          metrics?: Json
+          profile_id?: string | null
+          session_id?: string | null
+          system_version?: string
+        }
+        Relationships: []
+      }
+      vibe_user_learning: {
+        Row: {
+          confidence: number
+          context_data: Json
+          context_similarity: number | null
+          corrected_vibe: Database["public"]["Enums"]["vibe_enum"]
+          correction_data: Json
+          correction_strength: number | null
+          created_at: string
+          id: string
+          location_context: Json | null
+          original_vibe: Database["public"]["Enums"]["vibe_enum"]
+          profile_id: string
+          sensor_context: Json | null
+          temporal_context: Json | null
+          user_confidence: number | null
+        }
+        Insert: {
+          confidence: number
+          context_data: Json
+          context_similarity?: number | null
+          corrected_vibe: Database["public"]["Enums"]["vibe_enum"]
+          correction_data: Json
+          correction_strength?: number | null
+          created_at?: string
+          id?: string
+          location_context?: Json | null
+          original_vibe: Database["public"]["Enums"]["vibe_enum"]
+          profile_id: string
+          sensor_context?: Json | null
+          temporal_context?: Json | null
+          user_confidence?: number | null
+        }
+        Update: {
+          confidence?: number
+          context_data?: Json
+          context_similarity?: number | null
+          corrected_vibe?: Database["public"]["Enums"]["vibe_enum"]
+          correction_data?: Json
+          correction_strength?: number | null
+          created_at?: string
+          id?: string
+          location_context?: Json | null
+          original_vibe?: Database["public"]["Enums"]["vibe_enum"]
+          profile_id?: string
+          sensor_context?: Json | null
+          temporal_context?: Json | null
+          user_confidence?: number | null
+        }
+        Relationships: []
+      }
       vibes_log: {
         Row: {
           location: unknown
@@ -11219,6 +11366,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_old_vibe_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_vibes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -11883,6 +12034,30 @@ export type Database = {
         Args: { p_days?: number }
         Returns: Json
       }
+      get_enhanced_vibe_clusters: {
+        Args: {
+          p_bounds?: unknown
+          p_min_users?: number
+          p_vibe_filter?: Database["public"]["Enums"]["vibe_enum"]
+        }
+        Returns: {
+          cluster_id: string
+          center_lat: number
+          center_lng: number
+          user_count: number
+          dominant_vibe: Database["public"]["Enums"]["vibe_enum"]
+          vibe_distribution: Json
+          intensity: number
+          momentum_score: number
+          stability_index: number
+          diversity_score: number
+          prediction_confidence: number
+          temporal_trend: string
+          social_density: number
+          vibe_coherence: number
+          created_at: string
+        }[]
+      }
       get_field_state_at: {
         Args: { p_ts: string }
         Returns: Json
@@ -11989,6 +12164,15 @@ export type Database = {
           bio: string
           friend_since: string
           friendship_created_at: string
+        }[]
+      }
+      get_hotspot_time_series: {
+        Args: { p_cluster_id: string; p_hours_back?: number }
+        Returns: {
+          hour_bucket: string
+          user_count: number
+          dominant_vibe: Database["public"]["Enums"]["vibe_enum"]
+          avg_intensity: number
         }[]
       }
       get_leaderboard_rank: {
@@ -12231,6 +12415,18 @@ export type Database = {
         Returns: {
           status_name: string
           plan_count: number
+        }[]
+      }
+      get_user_vibe_insights: {
+        Args: { p_profile_id?: string; p_days_back?: number }
+        Returns: {
+          total_corrections: number
+          accuracy_trend: number
+          most_corrected_from: Database["public"]["Enums"]["vibe_enum"]
+          most_corrected_to: Database["public"]["Enums"]["vibe_enum"]
+          learning_velocity: number
+          consistency_score: number
+          top_locations: Json
         }[]
       }
       get_venues_in_bbox: {
