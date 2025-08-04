@@ -10,7 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const VenueQuerySchema = {
   safeParse: (data: any) => {
-    const validModes = ['social-suggestions', 'people', 'posts', 'energy'];
+    const validModes = [
+      'social-suggestions', 'people', 'posts', 'energy',
+      'recommendations', 'social-proof', 'crowd-intel', 'vibe-match'
+    ];
     if (!data.mode || !validModes.includes(data.mode)) {
       return { success: false, error: { format: () => 'Invalid mode' } };
     }
@@ -38,7 +41,7 @@ serve(async (req) => {
       });
     }
 
-    const { mode, venue_id, user_id, limit = 10 } = input.data;
+    const { mode, venue_id, user_id, lat, lng, user_vibes = [], limit = 10 } = input.data;
 
     switch (mode) {
       case 'social-suggestions': {
