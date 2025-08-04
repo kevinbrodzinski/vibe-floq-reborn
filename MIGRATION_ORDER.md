@@ -2,13 +2,14 @@
 
 Run these migrations in the following order to avoid dependency issues:
 
-## 1. Enhanced Location System
-**File:** `sql/01_enhanced_location_system.sql`
+## 1. Enhanced Location System (FIXED VERSION)
+**File:** `sql/01_enhanced_location_system_fixed.sql`
 **Purpose:** Creates geofencing, venue detection, and proximity tracking tables
 **Dependencies:** Requires `public.profiles` table (✅ exists)
+**Fix:** Proper ordering and careful profile_id column references
 
 ```bash
-psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/01_enhanced_location_system.sql
+PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/01_enhanced_location_system_fixed.sql
 ```
 
 ## 2. Rate Limiting System
@@ -17,7 +18,7 @@ psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f s
 **Dependencies:** Requires `public.profiles` table (✅ exists)
 
 ```bash
-psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/02_add_rate_limiting_system.sql
+PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/02_add_rate_limiting_system.sql
 ```
 
 ## 3. Friend Request Race Condition Fixes
@@ -26,7 +27,7 @@ psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f s
 **Dependencies:** Requires `public.profiles`, `public.friend_requests`, `public.friendships` tables and `upsert_friendship` function
 
 ```bash
-psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/03_fix_friend_request_race_conditions.sql
+PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/03_fix_friend_request_race_conditions.sql
 ```
 
 ## 4. Floq-Plan Integration
@@ -35,7 +36,7 @@ psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f s
 **Dependencies:** Requires `public.profiles`, `public.floqs`, `public.floq_participants`, `public.floq_plans`, `public.plan_participants` tables
 
 ```bash
-psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/04_improve_floq_plan_integration.sql
+PGPASSWORD="KPb422$$$" psql -h db.reztyrrafsmlvvlqvsqt.supabase.co -p 5432 -U postgres -d postgres -f sql/04_improve_floq_plan_integration.sql
 ```
 
 ## Key Changes Made
