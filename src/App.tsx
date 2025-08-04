@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { LocationDebugPanel } from "@/components/dev/LocationDebugPanel";
 import { BannerProvider } from "@/providers/BannerProvider";
 import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
@@ -98,6 +99,7 @@ const App = () => {
                   </Routes>
                   
                   {/* Remove development-only environment debug panel for TestFlight */}
+                  <LocationDebugPanel />
                 </BrowserRouter>
               </TooltipProvider>
             </BannerProvider>

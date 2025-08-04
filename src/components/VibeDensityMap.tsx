@@ -89,27 +89,24 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
     if (!open) return;
     if (!navigator.geolocation) return;
 
-    const watch = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        setUserLocation({
-          lat: coords.latitude,
-          lng: coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn('Geolocation error:', error.message);
-      },
-      { 
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
-      }
-    );
-
-    return () => {
-      navigator.geolocation.clearWatch(watch);
-      setUserLocation(null);
-    };
+    // Use LocationBus to prevent multiple GPS watches
+    import('@/lib/location/LocationBus').then(({ locationBus }) => {
+      const unsubscribe = locationBus.subscribe(
+        (position) => {
+          if (position) {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          }
+        },
+        (error) => {
+          console.warn('Geolocation error:', error.message);
+        }
+      );
+      
+      return () => unsubscribe();
+    });
   }, [open]);
 
   /* convert clusters to VibeData for overlay ------------------------- */

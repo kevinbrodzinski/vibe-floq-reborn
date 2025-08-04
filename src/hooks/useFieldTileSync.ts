@@ -15,7 +15,7 @@ export const useFieldTileSync = () => {
     const now = Date.now();
 
     if (document.visibilityState !== 'visible') return;
-    if (now - lastRunRef.current < 10_000) return;
+    if (now - lastRunRef.current < 30_000) return; // Increased from 10s to 30s
 
     try {
       const { error } = await supabase.functions.invoke('refresh_field_tiles');
@@ -35,7 +35,7 @@ export const useFieldTileSync = () => {
           { event: '*', schema: 'public', table: 'vibes_now' },
           () => {
             if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
-            debouncedRefresh.current = setTimeout(triggerRefresh, 2_000);
+            debouncedRefresh.current = setTimeout(triggerRefresh, 30_000); // Increased from 2s to 30s
           })
       .subscribe();
 
