@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_location_history_h3_idx
 -- 4. Update existing records with spatial indexes (optional backfill)
 -- ========================================
 
--- Function to backfill geohash6 for existing records
+-- FIXED: Function to backfill geohash6 for existing records with RLS bypass
 CREATE OR REPLACE FUNCTION public.backfill_spatial_indexes_batch(
   p_table_name TEXT,
   p_batch_size INTEGER DEFAULT 1000
@@ -64,6 +64,9 @@ DECLARE
   v_updated INTEGER := 0;
   v_sql TEXT;
 BEGIN
+  -- FIXED: Set role for RLS bypass
+  PERFORM set_config('role', 'postgres', true);
+  
   -- Validate table name to prevent SQL injection
   IF p_table_name NOT IN ('vibes_now', 'presence', 'location_history') THEN
     RETURN '{"error": "Invalid table name"}'::jsonb;
@@ -99,7 +102,8 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission
+-- FIXED: Ensure function ownership and permissions
+ALTER FUNCTION public.backfill_spatial_indexes_batch(TEXT, INTEGER) OWNER TO postgres;
 GRANT EXECUTE ON FUNCTION public.backfill_spatial_indexes_batch(TEXT, INTEGER) TO service_role;
 
 -- ========================================
