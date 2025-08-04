@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Activity, Database, MapPin, Zap, Clock, TrendingUp } from 'lucide-react';
 import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
 import { VibeSystemIntegration } from '@/lib/vibeAnalysis/VibeSystemIntegration';
-import type { SystemHealthMetrics } from '@/lib/vibeAnalysis/VibeSystemIntegration';
+import type { SystemHealthMetrics } from '@/lib/systemHealth';
 
 interface SystemHealthMonitorProps {
   showLocationMetrics?: boolean;

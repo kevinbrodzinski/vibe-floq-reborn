@@ -21,17 +21,17 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
   const { data: venueInsights, isLoading } = useQuery({
     queryKey: ['venue-insights', profileId],
     queryFn: async (): Promise<VenueInsight[]> => {
-      // Get venue check-ins with venue details
+      // Get venue check-ins with venue details from venue_stays table
       const { data: venueData } = await supabase
-        .from('venue_live_presence')
+        .from('venue_stays')
         .select(`
           venue_id,
-          checked_in_at,
-          checked_out_at,
+          arrived_at,
+          departed_at,
           venues!inner(name)
         `)
         .eq('profile_id', profileId)
-        .order('checked_in_at', { ascending: false });
+        .order('arrived_at', { ascending: false });
 
       if (!venueData || venueData.length === 0) return [];
 
@@ -50,8 +50,8 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
         }
         
         venueMap.get(venueId)!.visits.push({
-          checkedIn: visit.checked_in_at,
-          checkedOut: visit.checked_out_at
+          checkedIn: visit.arrived_at,
+          checkedOut: visit.departed_at
         });
       });
 

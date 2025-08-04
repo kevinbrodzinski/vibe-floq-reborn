@@ -38,7 +38,12 @@ export function PlanTemplatesPanel({
 
   const handleLoadTemplate = (template: PlanTemplate) => {
     const templateStops = loadTemplate(template)
-    onLoadTemplate(templateStops)
+    const stopsWithIds = templateStops.map((stop, index) => ({
+      ...stop,
+      id: crypto.randomUUID(),
+      stop_order: index
+    }))
+    onLoadTemplate(stopsWithIds)
     setSelectedTemplate(null)
   }
 

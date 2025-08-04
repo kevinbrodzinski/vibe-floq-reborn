@@ -76,8 +76,8 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         // 3. Get floq/plan participation
         const { data: floqParticipation } = await supabase
-          .from('flock_participants')
-          .select('flock_id, role')
+          .from('floq_participants')
+          .select('floq_id, role')
           .eq('profile_id', profileId);
 
         totalFloqs = floqParticipation?.length || 0;
@@ -85,13 +85,13 @@ export const useRealProfileStats = (profileId: string | undefined) => {
         // Count shared floqs with current user
         if (currentUserId && currentUserId !== profileId && floqParticipation) {
           const { data: myFloqs } = await supabase
-            .from('flock_participants')
-            .select('flock_id')
+            .from('floq_participants')
+            .select('floq_id')
             .eq('profile_id', currentUserId);
 
           if (myFloqs) {
-            const myFlockIds = new Set(myFloqs.map(f => f.flock_id));
-            sharedFloqs = floqParticipation.filter(f => myFlockIds.has(f.flock_id)).length;
+            const myFloqIds = new Set(myFloqs.map(f => f.floq_id));
+            sharedFloqs = floqParticipation.filter(f => myFloqIds.has(f.floq_id)).length;
           }
         }
 
@@ -123,18 +123,21 @@ export const useRealProfileStats = (profileId: string | undefined) => {
 
         // 7. Calculate average vibe score from recent presence
         const { data: recentVibes } = await supabase
-          .from('presence')
-          .select('vibe_score')
+          .from('vibes_now')
+          .select('vibe')
           .eq('profile_id', profileId)
-          .not('vibe_score', 'is', null)
           .order('updated_at', { ascending: false })
           .limit(10);
 
         if (recentVibes && recentVibes.length > 0) {
-          const validScores = recentVibes.filter(v => v.vibe_score !== null);
-          if (validScores.length > 0) {
-            averageVibeScore = validScores.reduce((sum, v) => sum + (v.vibe_score || 0), 0) / validScores.length;
-          }
+          // Convert vibe names to scores (simple mapping)
+          const vibeScores = recentVibes.map(v => {
+            const vibeMap: Record<string, number> = {
+              'energetic': 90, 'excited': 80, 'social': 70, 'chill': 50, 'focused': 40
+            };
+            return vibeMap[v.vibe] || 50;
+          });
+          averageVibeScore = vibeScores.reduce((sum, score) => sum + score, 0) / vibeScores.length;
         }
 
         // 8. Calculate resonance score based on interactions

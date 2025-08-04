@@ -109,7 +109,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
           location,
           accuracy,
           timestamp,
-          userId: user.id
+          profileId: user.id
         });
         
         // Still do minimal processing for immediate UI updates
@@ -173,8 +173,8 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       if (enableVenueDetection) {
         try {
           // Get WiFi and Bluetooth data (platform-specific implementation needed)
-          const wifiNetworks = await multiSignalVenueDetector.constructor.getWiFiNetworks();
-          const bluetoothBeacons = await multiSignalVenueDetector.constructor.getBluetoothBeacons();
+          const wifiNetworks: any[] = []; // TODO: Implement platform-specific WiFi detection
+          const bluetoothBeacons: any[] = []; // TODO: Implement platform-specific Bluetooth detection
 
           venueDetections = await multiSignalVenueDetector.detectVenues(
             location,
@@ -204,7 +204,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       if (enableProximityTracking) {
         try {
           const currentUser: ProximityUser = {
-            userId: user.id,
+            profileId: user.id,
             location,
             accuracy,
             timestamp
@@ -314,7 +314,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     if (!payload.userId || payload.userId === user?.id) return;
 
     const proximityUser: ProximityUser = {
-      userId: payload.userId,
+      profileId: payload.userId,
       location: { lat: payload.lat, lng: payload.lng },
       accuracy: payload.accuracy || 50,
       timestamp: payload.timestamp || Date.now(),

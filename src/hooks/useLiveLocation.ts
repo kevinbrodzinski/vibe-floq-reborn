@@ -131,7 +131,7 @@ export function useLiveLocation() {
     if (flushTimeout.current) {
       clearTimeout(flushTimeout.current);
     }
-    flushTimeout.current = setTimeout(flushPresenceBuffer, BATCH_FLUSH_DELAY);
+    flushTimeout.current = setTimeout(flushPresenceBuffer, BATCH_FLUSH_DELAY) as any;
 
   }, [user, vibe, flushPresenceBuffer]);
 
