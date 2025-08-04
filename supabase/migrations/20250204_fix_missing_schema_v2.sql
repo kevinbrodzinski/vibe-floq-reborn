@@ -1,12 +1,24 @@
--- Fix missing database schema elements
+-- Fix missing database schema elements (v2)
 -- Date: 2025-02-04
 
--- 1. Update presence_nearby function to use correct parameter name
--- Drop all possible variations of the function
-DROP FUNCTION IF EXISTS public.presence_nearby(DOUBLE PRECISION, DOUBLE PRECISION, NUMERIC, BOOLEAN);
-DROP FUNCTION IF EXISTS public.presence_nearby(DOUBLE PRECISION, DOUBLE PRECISION, INTEGER, BOOLEAN);
-DROP FUNCTION IF EXISTS public.presence_nearby;
+-- 1. Drop and recreate presence_nearby function with correct signature
+-- First, find and drop any existing versions
+DO $$ 
+DECLARE
+    func_record RECORD;
+BEGIN
+    -- Drop all versions of presence_nearby function
+    FOR func_record IN 
+        SELECT proname, oidvectortypes(proargtypes) as args
+        FROM pg_proc p
+        JOIN pg_namespace n ON p.pronamespace = n.oid
+        WHERE n.nspname = 'public' AND p.proname = 'presence_nearby'
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS public.%I(%s)', func_record.proname, func_record.args);
+    END LOOP;
+END $$;
 
+-- Create the corrected function
 CREATE OR REPLACE FUNCTION public.presence_nearby(
   lat          DOUBLE PRECISION,
   lng          DOUBLE PRECISION,
@@ -48,6 +60,11 @@ CREATE TABLE IF NOT EXISTS public.flock_participants (
 
 -- 3. Add RLS policies for flock_participants
 ALTER TABLE public.flock_participants ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view flock participants they're part of" ON public.flock_participants;
+DROP POLICY IF EXISTS "Users can insert themselves into flocks" ON public.flock_participants;
+DROP POLICY IF EXISTS "Flock owners can manage participants" ON public.flock_participants;
 
 CREATE POLICY "Users can view flock participants they're part of" ON public.flock_participants
   FOR SELECT USING (
