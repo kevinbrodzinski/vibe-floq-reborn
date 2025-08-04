@@ -4,6 +4,12 @@ import { vi, describe, it, expect } from 'vitest';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ 
+        data: { user: { id: 'test-user-id' } }, 
+        error: null 
+      }),
+    },
     rpc: vi.fn().mockResolvedValue({ error: null }),
   },
 }));
