@@ -21,12 +21,19 @@ interface UserProfile {
   avatar_url?: string
 }
 
+interface SocialIntelligenceData {
+  friend_network_strength: number;
+  mutual_connections: number;
+  social_energy_level: 'low' | 'medium' | 'high';
+}
+
 interface PeopleEncountersModalProps {
   isOpen: boolean
   onClose: () => void
   encounteredUsers: EncounteredUser[]
   totalPeopleCount: number
   momentTitle: string
+  socialIntelligence?: SocialIntelligenceData
 }
 
 export function PeopleEncountersModal({
@@ -34,7 +41,8 @@ export function PeopleEncountersModal({
   onClose,
   encounteredUsers,
   totalPeopleCount,
-  momentTitle
+  momentTitle,
+  socialIntelligence
 }: PeopleEncountersModalProps) {
   const [userProfiles, setUserProfiles] = useState<UserProfile[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -148,6 +156,44 @@ export function PeopleEncountersModal({
               <Badge variant="outline">{encounteredUsers.length}</Badge>
             </div>
           </div>
+
+          {/* Social Intelligence */}
+          {socialIntelligence && (
+            <div className="p-4 bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-lg border border-blue-200/30">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-blue-900">Social Intelligence</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Friend Network</span>
+                  <Badge variant={socialIntelligence.friend_network_strength > 0.5 ? "default" : "secondary"}>
+                    {Math.round(socialIntelligence.friend_network_strength * 100)}%
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Mutual Friends</span>
+                  <Badge variant="outline">
+                    {socialIntelligence.mutual_connections}
+                  </Badge>
+                </div>
+                
+                <div className="col-span-2 flex items-center justify-between">
+                  <span className="text-muted-foreground">Social Energy</span>
+                  <Badge 
+                    variant={
+                      socialIntelligence.social_energy_level === 'high' ? 'default' :
+                      socialIntelligence.social_energy_level === 'medium' ? 'secondary' : 'outline'
+                    }
+                  >
+                    {socialIntelligence.social_energy_level.charAt(0).toUpperCase() + socialIntelligence.social_energy_level.slice(1)}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error State */}
           {error && (
