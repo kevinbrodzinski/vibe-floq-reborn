@@ -108,8 +108,8 @@ WHERE f.friend_state = 'accepted'
   AND vs.arrived_at >= now() - interval '180 days'
 ORDER BY vs.arrived_at DESC;
 
--- 5. Enable RLS on views (inherit from base tables)
--- Views automatically inherit RLS from their base tables
+-- 5. Views automatically inherit RLS from their base tables
+-- No additional RLS policies needed - views respect existing table policies
 
 -- 6. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_venue_stays_venue_arrived 

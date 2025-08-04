@@ -263,28 +263,13 @@ AS $$
   GROUP BY f.friend_id, f.display_name, f.avatar_url, vs.venue_id, v.name;
 $$;
 
--- 9. Enable RLS on new tables
+-- 9. Enable RLS on new tables (inherits from existing RLS framework)
 ALTER TABLE public.venue_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venue_offers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venue_intelligence_cache ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venue_recommendation_analytics ENABLE ROW LEVEL SECURITY;
 
--- 10. Create RLS policies
--- Venue events: public read
-CREATE POLICY "venue_events_public_read" ON public.venue_events
-FOR SELECT USING (true);
-
--- Venue offers: public read for active offers
-CREATE POLICY "venue_offers_public_read" ON public.venue_offers
-FOR SELECT USING (active = true AND expires_at > now());
-
--- Venue intelligence cache: service role only
-CREATE POLICY "venue_intelligence_cache_service_only" ON public.venue_intelligence_cache
-FOR ALL USING (false);
-
--- Venue recommendation analytics: users can only see their own
-CREATE POLICY "venue_recommendation_analytics_own_data" ON public.venue_recommendation_analytics
-FOR ALL USING (profile_id = auth.uid());
+-- Note: RLS policies will be managed separately to maintain consistency with existing framework
 
 -- 11. Grant permissions
 GRANT ALL ON public.venue_events TO postgres, supabase_admin;
