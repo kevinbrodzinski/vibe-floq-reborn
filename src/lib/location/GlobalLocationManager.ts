@@ -41,6 +41,8 @@ class GlobalLocationManager {
   private static instance: GlobalLocationManager | null = null;
   private geoHookRef: React.MutableRefObject<GeoState | null> = { current: null };
   private isInitialized = false;
+  private gpsTimeoutId: NodeJS.Timeout | null = null;
+  private readonly GPS_TIMEOUT_MS = 30000; // 30 seconds
   
   static getInstance(): GlobalLocationManager {
     if (!GlobalLocationManager.instance) {
@@ -53,17 +55,21 @@ class GlobalLocationManager {
     // Private constructor for singleton
   }
   
-  /**
+    /**
    * Initialize the manager with useGeo hook (called from React component)
    */
   initializeWithGeoHook(geoState: GeoState): void {
     if (this.isInitialized) return;
-    
+
     this.geoHookRef.current = geoState;
     this.isInitialized = true;
-    
+
+    // Start GPS timeout watchdog
+    this.startGpsTimeoutWatchdog();
+
     // Process location updates from useGeo
     if (geoState.coords && geoState.status === 'success') {
+      this.clearGpsTimeout(); // Clear timeout on successful fix
       this.handleLocationUpdate({
         lat: geoState.coords.lat,
         lng: geoState.coords.lng,
@@ -71,10 +77,38 @@ class GlobalLocationManager {
         timestamp: geoState.ts || Date.now()
       });
     }
-    
+
     // Handle errors from useGeo
     if (geoState.status === 'error' && geoState.error) {
+      this.clearGpsTimeout();
       this.handleLocationError(geoState.error);
+    }
+  }
+
+  /**
+   * Start GPS timeout watchdog - if no fix arrives in 30 seconds, surface an error
+   */
+  private startGpsTimeoutWatchdog(): void {
+    this.clearGpsTimeout(); // Clear any existing timeout
+    
+    this.gpsTimeoutId = setTimeout(() => {
+      const timeoutError = new Error('GPS timeout: No location fix received within 30 seconds');
+      this.handleLocationError(timeoutError);
+      
+      // Notify LocationBus about GPS timeout
+      if (import.meta.env.MODE === 'development') {
+        console.warn('[GlobalLocationManager] GPS timeout - no signal received');
+      }
+    }, this.GPS_TIMEOUT_MS);
+  }
+
+  /**
+   * Clear GPS timeout watchdog
+   */
+  private clearGpsTimeout(): void {
+    if (this.gpsTimeoutId) {
+      clearTimeout(this.gpsTimeoutId);
+      this.gpsTimeoutId = null;
     }
   }
   

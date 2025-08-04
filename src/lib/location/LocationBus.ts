@@ -8,22 +8,10 @@ import { globalLocationManager } from './GlobalLocationManager';
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
+import type { GeoCoords, LocationConsumer, MovementContext } from './types';
 import { callFn } from '@/lib/callFn';
 
-interface LocationConsumer {
-  id: string;
-  type: 'tracking' | 'presence' | 'display' | 'analytics';
-  priority: 'high' | 'medium' | 'low';
-  callback: (coords: { lat: number; lng: number; accuracy: number; timestamp: number }) => void;
-  errorCallback?: (error: string) => void;
-  options?: {
-    minDistance?: number;
-    minTime?: number;
-    enableBatching?: boolean;
-    enablePresence?: boolean;
-    enableTracking?: boolean;
-  };
-}
+// LocationConsumer interface now imported from types.ts
 
 interface LocationBatch {
   ts: string;

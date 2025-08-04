@@ -35,6 +35,16 @@ export { useLocationMigration } from '../useLocationMigration';
 // Friend location subscriptions
 export { useFriendLocations } from '../useFriendLocations';
 
+// Modern unified location system
+export { useUnifiedLocation, useLocationCore, useLocationTracking, useLocationSharing } from './useUnifiedLocation';
+export { useEnhancedLocationSharing } from './useEnhancedLocationSharing';
+
+// Read-only hooks optimized for render-heavy components
+export { useReadOnlyLocation, useLocationCoords, useMovementContext } from './useReadOnlyLocation';
+
+// Export shared types for downstream packages
+export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, UnifiedLocationOptions, UnifiedLocationState } from '@/lib/location/types';
+
 // Legacy compatibility - gradually migrate these
 export { useGeo, useLatLng, useLocation, useGeoPos } from '../useGeo';
 export { useMyLocation } from '../useMyLocation';
