@@ -51,43 +51,64 @@ CREATE TABLE IF NOT EXISTS public.venue_signatures (
 -- Venue boundaries table for intelligent boundary detection (NO profile_id column)
 CREATE TABLE IF NOT EXISTS public.venue_boundaries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    venue_id TEXT NOT NULL,
-    boundary_type TEXT NOT NULL CHECK (boundary_type IN ('building', 'parcel', 'custom')),
-    geometry GEOMETRY(POLYGON, 4326) NOT NULL,
-    accuracy_meters INTEGER NOT NULL DEFAULT 10,
-    source TEXT NOT NULL DEFAULT 'manual',
+    venue_id TEXT NOT NULL, -- Reference to venues table
+    boundary_type TEXT NOT NULL CHECK (boundary_type IN ('building', 'property', 'custom')),
+    boundary_geom GEOMETRY(POLYGON, 4326) NOT NULL,
+    confidence_score DECIMAL(3,2) NOT NULL DEFAULT 0.50,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(venue_id, boundary_type)
 );
 
--- Proximity events table for tracking user interactions
-CREATE TABLE IF NOT EXISTS public.proximity_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    target_profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    event_type TEXT NOT NULL CHECK (event_type IN ('enter', 'exit', 'sustain')),
-    distance_meters DECIMAL(8,2) NOT NULL,
-    confidence DECIMAL(3,2) NOT NULL,
-    location_accuracy_meters INTEGER,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    -- Prevent self-proximity events
-    CHECK (profile_id != target_profile_id)
-);
+-- Proximity events table for tracking user interactions (using existing schema)
+-- Note: This table already exists with profile_id_a and profile_id_b columns
+-- We'll add missing columns if they don't exist
+DO $$
+BEGIN
+    -- Add event_type column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'proximity_events' AND column_name = 'event_type') THEN
+        ALTER TABLE public.proximity_events ADD COLUMN event_type TEXT CHECK (event_type IN ('enter', 'exit', 'sustain'));
+    END IF;
+    
+    -- Add distance_meters column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'proximity_events' AND column_name = 'distance_meters') THEN
+        ALTER TABLE public.proximity_events ADD COLUMN distance_meters DECIMAL(8,2);
+    END IF;
+    
+    -- Add confidence column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'proximity_events' AND column_name = 'confidence') THEN
+        ALTER TABLE public.proximity_events ADD COLUMN confidence DECIMAL(3,2);
+    END IF;
+    
+    -- Add location_accuracy_meters column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'proximity_events' AND column_name = 'location_accuracy_meters') THEN
+        ALTER TABLE public.proximity_events ADD COLUMN location_accuracy_meters INTEGER;
+    END IF;
+    
+    -- Add venue_id column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'proximity_events' AND column_name = 'venue_id') THEN
+        ALTER TABLE public.proximity_events ADD COLUMN venue_id TEXT;
+    END IF;
+END $$;
 
--- Proximity statistics for enhanced scoring
+-- Proximity statistics for enhanced scoring (using existing schema column names)
 CREATE TABLE IF NOT EXISTS public.proximity_stats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    target_profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    profile_id_a UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    profile_id_b UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     total_encounters INTEGER NOT NULL DEFAULT 0,
     total_duration_minutes INTEGER NOT NULL DEFAULT 0,
     average_distance_meters DECIMAL(8,2),
     last_encounter TIMESTAMPTZ,
     confidence_score DECIMAL(3,2) NOT NULL DEFAULT 0.50,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(profile_id, target_profile_id),
+    UNIQUE(profile_id_a, profile_id_b),
     -- Prevent self-proximity stats
-    CHECK (profile_id != target_profile_id)
+    CHECK (profile_id_a != profile_id_b)
 );
 
 -- =====================================================================================
@@ -97,32 +118,35 @@ CREATE TABLE IF NOT EXISTS public.proximity_stats (
 -- Geofences indexes
 CREATE INDEX IF NOT EXISTS idx_geofences_profile_id ON public.geofences(profile_id);
 CREATE INDEX IF NOT EXISTS idx_geofences_active ON public.geofences(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_geofence_data_geofence_id ON public.geofence_data(geofence_id);
 
--- Venue signatures indexes (no profile_id references)
+-- Geofence data indexes
+CREATE INDEX IF NOT EXISTS idx_geofence_data_geofence_id ON public.geofence_data(geofence_id);
+CREATE INDEX IF NOT EXISTS idx_geofence_data_location ON public.geofence_data(center_lat, center_lng) WHERE center_lat IS NOT NULL;
+
+-- Venue signatures indexes
 CREATE INDEX IF NOT EXISTS idx_venue_signatures_venue_id ON public.venue_signatures(venue_id);
 CREATE INDEX IF NOT EXISTS idx_venue_signatures_signal_type ON public.venue_signatures(signal_type);
-CREATE INDEX IF NOT EXISTS idx_venue_signatures_identifier ON public.venue_signatures(signal_identifier);
 
--- Venue boundaries indexes (no profile_id references)
+-- Venue boundaries indexes
 CREATE INDEX IF NOT EXISTS idx_venue_boundaries_venue_id ON public.venue_boundaries(venue_id);
-CREATE INDEX IF NOT EXISTS idx_venue_boundaries_geometry ON public.venue_boundaries USING GIST(geometry);
+CREATE INDEX IF NOT EXISTS idx_venue_boundaries_geom ON public.venue_boundaries USING GIST(boundary_geom);
 
--- Proximity events indexes
-CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_id ON public.proximity_events(profile_id);
-CREATE INDEX IF NOT EXISTS idx_proximity_events_target_profile_id ON public.proximity_events(target_profile_id);
-CREATE INDEX IF NOT EXISTS idx_proximity_events_created_at ON public.proximity_events(created_at);
-CREATE INDEX IF NOT EXISTS idx_proximity_events_type ON public.proximity_events(event_type);
+-- Proximity events indexes (using existing column names)
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_id_a ON public.proximity_events(profile_id_a);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_id_b ON public.proximity_events(profile_id_b);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_event_ts ON public.proximity_events(event_ts);
+CREATE INDEX IF NOT EXISTS idx_proximity_events_event_type ON public.proximity_events(event_type) WHERE event_type IS NOT NULL;
 
--- Proximity stats indexes
-CREATE INDEX IF NOT EXISTS idx_proximity_stats_profile_id ON public.proximity_stats(profile_id);
-CREATE INDEX IF NOT EXISTS idx_proximity_stats_target_profile_id ON public.proximity_stats(target_profile_id);
+-- Proximity stats indexes (using existing schema column names)
+CREATE INDEX IF NOT EXISTS idx_proximity_stats_profile_id_a ON public.proximity_stats(profile_id_a);
+CREATE INDEX IF NOT EXISTS idx_proximity_stats_profile_id_b ON public.proximity_stats(profile_id_b);
 CREATE INDEX IF NOT EXISTS idx_proximity_stats_last_encounter ON public.proximity_stats(last_encounter);
 
 -- =====================================================================================
 -- STEP 3: ENABLE ROW LEVEL SECURITY
 -- =====================================================================================
 
+-- Enable RLS on all tables
 ALTER TABLE public.geofences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.geofence_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.venue_signatures ENABLE ROW LEVEL SECURITY;
@@ -131,18 +155,18 @@ ALTER TABLE public.proximity_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.proximity_stats ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================================================
--- STEP 4: CREATE RLS POLICIES (CAREFUL WITH profile_id REFERENCES)
+-- STEP 4: CREATE RLS POLICIES
 -- =====================================================================================
 
--- Geofences: Users can manage their own geofences (HAS profile_id column)
-CREATE POLICY "Users can manage their own geofences"
+-- Geofences policies (HAS profile_id column)
+CREATE POLICY "geofences_own_data"
 ON public.geofences
 FOR ALL
 USING (auth.uid() = profile_id)
 WITH CHECK (auth.uid() = profile_id);
 
--- Geofence data: Users can manage data for their own geofences (NO profile_id column - use JOIN)
-CREATE POLICY "Users can manage their own geofence data"
+-- Geofence data policies (NO profile_id - use JOIN to geofences)
+CREATE POLICY "geofence_data_own_data"
 ON public.geofence_data
 FOR ALL
 USING (
@@ -160,56 +184,98 @@ WITH CHECK (
     )
 );
 
--- Venue signatures: Read-only for all authenticated users (NO profile_id column)
-CREATE POLICY "Authenticated users can read venue signatures"
+-- Venue signatures policies (NO profile_id - authenticated users can read)
+CREATE POLICY "venue_signatures_read_all"
 ON public.venue_signatures
 FOR SELECT
 USING (auth.role() = 'authenticated');
 
--- Venue boundaries: Read-only for all authenticated users (NO profile_id column)
-CREATE POLICY "Authenticated users can read venue boundaries"
+-- Venue boundaries policies (NO profile_id - authenticated users can read)
+CREATE POLICY "venue_boundaries_read_all"
 ON public.venue_boundaries
 FOR SELECT
 USING (auth.role() = 'authenticated');
 
--- Proximity events: Users can read their own events (HAS profile_id columns)
-CREATE POLICY "Users can read their own proximity events"
+-- Proximity events policies (HAS profile_id_a and profile_id_b columns)
+CREATE POLICY "proximity_events_own_data"
 ON public.proximity_events
 FOR SELECT
-USING (auth.uid() = profile_id OR auth.uid() = target_profile_id);
+USING (auth.uid() = profile_id_a OR auth.uid() = profile_id_b);
 
--- Proximity events: System can insert events
-CREATE POLICY "System can insert proximity events"
+CREATE POLICY "proximity_events_insert_own"
 ON public.proximity_events
 FOR INSERT
-WITH CHECK (true); -- This will be restricted by application logic
+WITH CHECK (auth.uid() = profile_id_a OR auth.uid() = profile_id_b);
 
--- Proximity stats: Users can read their own stats (HAS profile_id columns)
-CREATE POLICY "Users can read their own proximity stats"
-ON public.proximity_stats
-FOR SELECT
-USING (auth.uid() = profile_id OR auth.uid() = target_profile_id);
-
--- Proximity stats: System can manage stats
-CREATE POLICY "System can manage proximity stats"
+-- Proximity stats policies (HAS profile_id_a and profile_id_b columns)
+CREATE POLICY "proximity_stats_own_data"
 ON public.proximity_stats
 FOR ALL
-WITH CHECK (true); -- This will be restricted by application logic
+USING (auth.uid() = profile_id_a OR auth.uid() = profile_id_b)
+WITH CHECK (auth.uid() = profile_id_a OR auth.uid() = profile_id_b);
 
 -- =====================================================================================
--- STEP 5: CREATE UTILITY FUNCTIONS
+-- STEP 5: UTILITY FUNCTIONS
 -- =====================================================================================
 
--- Function to check if a point is within any active geofence for a user
-CREATE OR REPLACE FUNCTION public.check_geofence_privacy(
-    user_profile_id UUID,
-    check_lat DECIMAL(10,8),
-    check_lng DECIMAL(11,8)
-)
-RETURNS TABLE(
+-- Function to check if a point is within a geofence
+CREATE OR REPLACE FUNCTION public.is_point_in_geofence(
     geofence_id UUID,
+    lat DECIMAL(10,8),
+    lng DECIMAL(11,8)
+) RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    geofence_record RECORD;
+    point_geom GEOMETRY;
+    polygon_geom GEOMETRY;
+    distance_meters DECIMAL;
+BEGIN
+    -- Get geofence details
+    SELECT g.type, gd.center_lat, gd.center_lng, gd.radius_meters, gd.polygon_coordinates
+    INTO geofence_record
+    FROM public.geofences g
+    JOIN public.geofence_data gd ON g.id = gd.geofence_id
+    WHERE g.id = is_point_in_geofence.geofence_id
+    AND g.is_active = true;
+    
+    IF NOT FOUND THEN
+        RETURN false;
+    END IF;
+    
+    point_geom := ST_SetSRID(ST_MakePoint(lng, lat), 4326);
+    
+    IF geofence_record.type = 'circular' THEN
+        -- Calculate distance using PostGIS
+        distance_meters := ST_Distance(
+            ST_Transform(point_geom, 3857),
+            ST_Transform(ST_SetSRID(ST_MakePoint(geofence_record.center_lng, geofence_record.center_lat), 4326), 3857)
+        );
+        RETURN distance_meters <= geofence_record.radius_meters;
+    ELSIF geofence_record.type = 'polygon' THEN
+        -- Create polygon from coordinates
+        polygon_geom := ST_GeomFromGeoJSON(geofence_record.polygon_coordinates::text);
+        RETURN ST_Within(point_geom, polygon_geom);
+    END IF;
+    
+    RETURN false;
+END;
+$$;
+
+-- Function to get active geofences for a user
+CREATE OR REPLACE FUNCTION public.get_user_geofences(user_profile_id UUID)
+RETURNS TABLE(
+    id UUID,
+    name TEXT,
+    type TEXT,
     privacy_level TEXT,
-    geofence_name TEXT
+    center_lat DECIMAL(10,8),
+    center_lng DECIMAL(11,8),
+    radius_meters INTEGER,
+    polygon_coordinates JSONB
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -219,105 +285,43 @@ BEGIN
     RETURN QUERY
     SELECT 
         g.id,
+        g.name,
+        g.type,
         g.privacy_level,
-        g.name
+        gd.center_lat,
+        gd.center_lng,
+        gd.radius_meters,
+        gd.polygon_coordinates
     FROM public.geofences g
     JOIN public.geofence_data gd ON g.id = gd.geofence_id
     WHERE g.profile_id = user_profile_id
-      AND g.is_active = true
-      AND (
-          -- Check circular geofences
-          (g.type = 'circular' AND 
-           ST_DWithin(
-               ST_Point(check_lng, check_lat)::geography,
-               ST_Point(gd.center_lng, gd.center_lat)::geography,
-               gd.radius_meters
-           ))
-          OR
-          -- Check polygon geofences
-          (g.type = 'polygon' AND
-           ST_Contains(
-               ST_GeomFromGeoJSON(gd.polygon_coordinates::text),
-               ST_Point(check_lng, check_lat)
-           ))
-      );
+    AND g.is_active = true
+    ORDER BY g.created_at DESC;
 END;
 $$;
 
--- Function to get venue confidence score based on multiple signals
-CREATE OR REPLACE FUNCTION public.calculate_venue_confidence(
-    venue_id_param TEXT,
-    wifi_signals TEXT[] DEFAULT NULL,
-    bluetooth_signals TEXT[] DEFAULT NULL
-)
-RETURNS DECIMAL(3,2)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    total_confidence DECIMAL(5,2) := 0;
-    signal_count INTEGER := 0;
-    wifi_confidence DECIMAL(3,2) := 0;
-    bt_confidence DECIMAL(3,2) := 0;
-BEGIN
-    -- Calculate WiFi confidence
-    IF wifi_signals IS NOT NULL THEN
-        SELECT COALESCE(AVG(vs.confidence_score), 0)
-        INTO wifi_confidence
-        FROM public.venue_signatures vs
-        WHERE vs.venue_id = venue_id_param
-          AND vs.signal_type = 'wifi'
-          AND vs.signal_identifier = ANY(wifi_signals);
-        
-        IF wifi_confidence > 0 THEN
-            total_confidence := total_confidence + wifi_confidence;
-            signal_count := signal_count + 1;
-        END IF;
-    END IF;
-
-    -- Calculate Bluetooth confidence
-    IF bluetooth_signals IS NOT NULL THEN
-        SELECT COALESCE(AVG(vs.confidence_score), 0)
-        INTO bt_confidence
-        FROM public.venue_signatures vs
-        WHERE vs.venue_id = venue_id_param
-          AND vs.signal_type = 'bluetooth'
-          AND vs.signal_identifier = ANY(bluetooth_signals);
-        
-        IF bt_confidence > 0 THEN
-            total_confidence := total_confidence + bt_confidence;
-            signal_count := signal_count + 1;
-        END IF;
-    END IF;
-
-    -- Return average confidence or 0 if no signals matched
-    IF signal_count > 0 THEN
-        RETURN LEAST(total_confidence / signal_count, 1.0);
-    ELSE
-        RETURN 0.0;
-    END IF;
-END;
-$$;
-
--- Function to update proximity statistics
+-- Function to update proximity statistics (using existing schema column names)
 CREATE OR REPLACE FUNCTION public.update_proximity_stats(
-    user_profile_id UUID,
-    target_user_profile_id UUID,
-    event_type_param TEXT,
-    distance_param DECIMAL(8,2),
-    duration_minutes INTEGER DEFAULT NULL
-)
-RETURNS VOID
+    p_profile_id_a UUID,
+    p_profile_id_b UUID,
+    p_distance_meters DECIMAL(8,2),
+    p_duration_minutes INTEGER DEFAULT 1,
+    p_confidence DECIMAL(3,2) DEFAULT 0.75
+) RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    -- Insert or update proximity stats
+    -- Ensure canonical ordering (smaller UUID first)
+    IF p_profile_id_a > p_profile_id_b THEN
+        -- Swap the parameters
+        SELECT p_profile_id_b, p_profile_id_a INTO p_profile_id_a, p_profile_id_b;
+    END IF;
+    
     INSERT INTO public.proximity_stats (
-        profile_id,
-        target_profile_id,
+        profile_id_a,
+        profile_id_b,
         total_encounters,
         total_duration_minutes,
         average_distance_meters,
@@ -326,39 +330,34 @@ BEGIN
         updated_at
     )
     VALUES (
-        user_profile_id,
-        target_user_profile_id,
-        CASE WHEN event_type_param = 'enter' THEN 1 ELSE 0 END,
-        COALESCE(duration_minutes, 0),
-        distance_param,
+        p_profile_id_a,
+        p_profile_id_b,
+        1,
+        p_duration_minutes,
+        p_distance_meters,
         NOW(),
-        0.50,
+        p_confidence,
         NOW()
     )
-    ON CONFLICT (profile_id, target_profile_id)
+    ON CONFLICT (profile_id_a, profile_id_b)
     DO UPDATE SET
-        total_encounters = proximity_stats.total_encounters + 
-            CASE WHEN event_type_param = 'enter' THEN 1 ELSE 0 END,
-        total_duration_minutes = proximity_stats.total_duration_minutes + 
-            COALESCE(duration_minutes, 0),
+        total_encounters = proximity_stats.total_encounters + 1,
+        total_duration_minutes = proximity_stats.total_duration_minutes + p_duration_minutes,
         average_distance_meters = (
-            (proximity_stats.average_distance_meters * proximity_stats.total_encounters + distance_param) /
-            (proximity_stats.total_encounters + 1)
+            (proximity_stats.average_distance_meters * proximity_stats.total_encounters + p_distance_meters) 
+            / (proximity_stats.total_encounters + 1)
         ),
         last_encounter = NOW(),
-        confidence_score = LEAST(
-            proximity_stats.confidence_score + 0.1,
-            1.0
-        ),
+        confidence_score = GREATEST(proximity_stats.confidence_score, p_confidence),
         updated_at = NOW();
 END;
 $$;
 
 -- =====================================================================================
--- STEP 6: CREATE TRIGGER FUNCTIONS AND TRIGGERS (LAST)
+-- STEP 6: TRIGGER FUNCTIONS AND TRIGGERS
 -- =====================================================================================
 
--- Trigger function to automatically update proximity stats when events are inserted
+-- Function to handle proximity event processing (using existing schema column names)
 CREATE OR REPLACE FUNCTION public.handle_proximity_event()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -366,41 +365,40 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    -- Validate that the table has the required columns
-    -- This function will only be called on proximity_events which HAS profile_id columns
-    
-    -- Update stats for both directions of the relationship
+    -- Update proximity statistics when a new proximity event is inserted
+    -- This function will only be called on proximity_events which HAS profile_id_a/profile_id_b columns
     PERFORM public.update_proximity_stats(
-        NEW.profile_id,
-        NEW.target_profile_id,
-        NEW.event_type,
-        NEW.distance_meters,
-        CASE WHEN NEW.event_type = 'sustain' THEN 1 ELSE NULL END
-    );
-    
-    PERFORM public.update_proximity_stats(
-        NEW.target_profile_id,
-        NEW.profile_id,
-        NEW.event_type,
-        NEW.distance_meters,
-        CASE WHEN NEW.event_type = 'sustain' THEN 1 ELSE NULL END
+        NEW.profile_id_a,
+        NEW.profile_id_b,
+        COALESCE(NEW.distance_meters, 10.0),
+        1, -- Duration in minutes
+        COALESCE(NEW.confidence, 0.75)
     );
     
     RETURN NEW;
 END;
 $$;
 
--- Create trigger ONLY on proximity_events table (which HAS profile_id columns)
-CREATE TRIGGER trigger_update_proximity_stats
-    AFTER INSERT ON public.proximity_events
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_proximity_event();
+-- Create trigger ONLY on proximity_events table (which HAS profile_id_a/profile_id_b columns)
+DROP TRIGGER IF EXISTS trigger_handle_proximity_event ON public.proximity_events;
+CREATE TRIGGER trigger_handle_proximity_event
+AFTER INSERT ON public.proximity_events
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_proximity_event();
 
 -- =====================================================================================
 -- STEP 7: GRANT PERMISSIONS
 -- =====================================================================================
 
-GRANT USAGE ON SCHEMA public TO authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+-- Grant permissions to authenticated users
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.geofences TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.geofence_data TO authenticated;
+GRANT SELECT ON public.venue_signatures TO authenticated;
+GRANT SELECT ON public.venue_boundaries TO authenticated;
+GRANT SELECT, INSERT ON public.proximity_events TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.proximity_stats TO authenticated;
+
+-- Grant execute permissions on functions
+GRANT EXECUTE ON FUNCTION public.is_point_in_geofence(UUID, DECIMAL, DECIMAL) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_geofences(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_proximity_stats(UUID, UUID, DECIMAL, INTEGER, DECIMAL) TO authenticated;
