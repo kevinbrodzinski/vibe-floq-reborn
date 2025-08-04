@@ -11643,7 +11643,7 @@ export type Database = {
         Returns: string
       }
       fn_emit_notification: {
-        Args: { p_profile_id: string; p_kind: string; p_payload: Json }
+        Args: { p_profile_id: string; p_kind: string; p_payload?: Json }
         Returns: undefined
       }
       friend_count: {
