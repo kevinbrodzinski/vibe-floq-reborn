@@ -33,14 +33,14 @@ BEGIN
   SELECT COALESCE(SUM(minutes_spent),0)
     INTO mins_out
   FROM v_time_in_venue_daily
-  WHERE user_id = uid
+  WHERE profile_id = uid
     AND day = d;
 
   -- Count distinct venues visited
   SELECT COUNT(DISTINCT venue_id)
     INTO venues_cnt
   FROM venue_stays
-  WHERE user_id = uid
+  WHERE profile_id = uid
     AND arrived_at::date = d;
 
   -- Count encounters/crossed paths
@@ -56,7 +56,7 @@ BEGIN
     INTO longest_mins, longest_venue
   FROM venue_stays vs
   JOIN venues v ON v.id = vs.venue_id
-  WHERE vs.user_id = uid AND arrived_at::date = d
+  WHERE vs.profile_id = uid AND arrived_at::date = d
   ORDER BY CEIL(EXTRACT(EPOCH FROM (COALESCE(departed_at, arrived_at + INTERVAL '30 minutes') - arrived_at))/60) DESC
   LIMIT 1;
 
@@ -73,7 +73,7 @@ BEGIN
             arrived_at + INTERVAL '60 minutes') - arrived_at
     ))/60) AS m
     FROM venue_stays
-    WHERE user_id = uid
+    WHERE profile_id = uid
       AND arrived_at::date = d
       AND EXTRACT(hour FROM arrived_at) = h
   ) t ON true;
@@ -94,7 +94,7 @@ BEGIN
     INTO top_venues
   FROM venue_stays vs
   JOIN venues v ON v.id = vs.venue_id
-  WHERE vs.user_id = uid AND arrived_at::date = d
+  WHERE vs.profile_id = uid AND arrived_at::date = d
   GROUP BY v.id, v.name, v.popularity
   LIMIT 3;
 

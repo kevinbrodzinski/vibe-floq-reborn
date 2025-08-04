@@ -48,7 +48,7 @@ export const useTodayRecap = () => {
       const { data, error } = await supabase
         .from('daily_recap_cache')
         .select('payload')
-        .eq('profile_id', user.id)
+        .eq('user_id', user.id)
         .eq('day', yesterday)
         .maybeSingle();
 
