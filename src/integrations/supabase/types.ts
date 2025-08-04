@@ -945,6 +945,39 @@ export type Database = {
           },
         ]
       }
+      circuit_breaker_state: {
+        Row: {
+          failure_count: number
+          id: string
+          last_failure_time: string | null
+          metadata: Json | null
+          next_attempt_time: string | null
+          recorded_at: string
+          state: string
+          success_count: number
+        }
+        Insert: {
+          failure_count?: number
+          id?: string
+          last_failure_time?: string | null
+          metadata?: Json | null
+          next_attempt_time?: string | null
+          recorded_at?: string
+          state: string
+          success_count?: number
+        }
+        Update: {
+          failure_count?: number
+          id?: string
+          last_failure_time?: string | null
+          metadata?: Json | null
+          next_attempt_time?: string | null
+          recorded_at?: string
+          state?: string
+          success_count?: number
+        }
+        Relationships: []
+      }
       crossed_paths: {
         Row: {
           created_at: string | null
@@ -1986,6 +2019,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      field_tiles_v2: {
+        Row: {
+          active_profile_ids: string[] | null
+          avg_vibe: Json | null
+          center_lat: number
+          center_lng: number
+          crowd_count: number | null
+          hex_geom: unknown
+          last_activity: string | null
+          tile_id: string
+          updated_at: string
+          vibe_mix: Json | null
+        }
+        Insert: {
+          active_profile_ids?: string[] | null
+          avg_vibe?: Json | null
+          center_lat: number
+          center_lng: number
+          crowd_count?: number | null
+          hex_geom: unknown
+          last_activity?: string | null
+          tile_id: string
+          updated_at?: string
+          vibe_mix?: Json | null
+        }
+        Update: {
+          active_profile_ids?: string[] | null
+          avg_vibe?: Json | null
+          center_lat?: number
+          center_lng?: number
+          crowd_count?: number | null
+          hex_geom?: unknown
+          last_activity?: string | null
+          tile_id?: string
+          updated_at?: string
+          vibe_mix?: Json | null
+        }
+        Relationships: []
       }
       flock_auto_suggestions: {
         Row: {
@@ -4306,6 +4378,8 @@ export type Database = {
           accuracy: number | null
           created_at: string
           geog: unknown | null
+          geohash6: string | null
+          h3_idx: number | null
           id: string
           latitude: number
           longitude: number
@@ -4316,6 +4390,8 @@ export type Database = {
           accuracy?: number | null
           created_at?: string
           geog?: unknown | null
+          geohash6?: string | null
+          h3_idx?: number | null
           id?: string
           latitude: number
           longitude: number
@@ -4326,6 +4402,8 @@ export type Database = {
           accuracy?: number | null
           created_at?: string
           geog?: unknown | null
+          geohash6?: string | null
+          h3_idx?: number | null
           id?: string
           latitude?: number
           longitude?: number
@@ -4358,6 +4436,39 @@ export type Database = {
           metric_value?: number
           profile_id?: string | null
           recorded_at?: string
+        }
+        Relationships: []
+      }
+      location_performance_metrics: {
+        Row: {
+          duration_ms: number
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          operation_type: string
+          profile_id: string | null
+          recorded_at: string
+          success: boolean
+        }
+        Insert: {
+          duration_ms: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_type: string
+          profile_id?: string | null
+          recorded_at?: string
+          success?: boolean
+        }
+        Update: {
+          duration_ms?: number
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_type?: string
+          profile_id?: string | null
+          recorded_at?: string
+          success?: boolean
         }
         Relationships: []
       }
@@ -4467,6 +4578,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      location_system_health: {
+        Row: {
+          component_name: string
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_value: number
+          profile_id: string | null
+          recorded_at: string
+        }
+        Insert: {
+          component_name: string
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_value: number
+          profile_id?: string | null
+          recorded_at?: string
+        }
+        Update: {
+          component_name?: string
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_value?: number
+          profile_id?: string | null
+          recorded_at?: string
+        }
+        Relationships: []
       }
       location_vibe_patterns: {
         Row: {
@@ -6333,6 +6474,8 @@ export type Database = {
       presence: {
         Row: {
           accuracy_m: number | null
+          geohash6: string | null
+          h3_idx: number | null
           lat: number | null
           lng: number | null
           location: unknown | null
@@ -6345,6 +6488,8 @@ export type Database = {
         }
         Insert: {
           accuracy_m?: number | null
+          geohash6?: string | null
+          h3_idx?: number | null
           lat?: number | null
           lng?: number | null
           location?: unknown | null
@@ -6357,6 +6502,8 @@ export type Database = {
         }
         Update: {
           accuracy_m?: number | null
+          geohash6?: string | null
+          h3_idx?: number | null
           lat?: number | null
           lng?: number | null
           location?: unknown | null
@@ -9930,6 +10077,7 @@ export type Database = {
           geohash6: string | null
           gh5: string | null
           h3_7: string | null
+          h3_idx: number | null
           location: unknown
           profile_id: string | null
           updated_at: string | null
@@ -9947,6 +10095,7 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           h3_7?: string | null
+          h3_idx?: number | null
           location: unknown
           profile_id?: string | null
           updated_at?: string | null
@@ -9964,6 +10113,7 @@ export type Database = {
           geohash6?: string | null
           gh5?: string | null
           h3_7?: string | null
+          h3_idx?: number | null
           location?: unknown
           profile_id?: string | null
           updated_at?: string | null
@@ -11289,6 +11439,14 @@ export type Database = {
         Args: { _user: string; _code: string; _increment: number }
         Returns: boolean
       }
+      backfill_spatial_indexes_batch: {
+        Args: { p_table_name: string; p_batch_size?: number }
+        Returns: Json
+      }
+      batch_location_update_v2: {
+        Args: { p_locations: Json; p_priority?: string }
+        Returns: Json
+      }
       blhandler: {
         Args: { "": unknown }
         Returns: unknown
@@ -11460,6 +11618,10 @@ export type Database = {
       }
       cleanup_inactive_floqs: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      cleanup_location_metrics: {
+        Args: { p_days_to_keep?: number }
         Returns: Json
       }
       cleanup_old_proximity_events: {
@@ -12170,6 +12332,16 @@ export type Database = {
         Args: { p_ts: string }
         Returns: Json
       }
+      get_field_tiles_optimized_v2: {
+        Args: {
+          p_bbox_lat_min: number
+          p_bbox_lat_max: number
+          p_bbox_lng_min: number
+          p_bbox_lng_max: number
+          p_zoom_level?: number
+        }
+        Returns: Json
+      }
       get_floq_full_details: {
         Args: { p_floq_id: string }
         Returns: {
@@ -12295,6 +12467,10 @@ export type Database = {
           vibe_tag: Database["public"]["Enums"]["vibe_enum"]
         }[]
       }
+      get_location_system_health: {
+        Args: { p_minutes_back?: number }
+        Returns: Json
+      }
       get_message_reactions: {
         Args: { ids: string[] }
         Returns: {
@@ -12353,6 +12529,17 @@ export type Database = {
           distance_meters: number
           updated_at: string
         }[]
+      }
+      get_nearby_users_v2: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_meters?: number
+          p_h3_ring_ids?: number[]
+          p_geohash6_prefix?: string
+          p_limit?: number
+        }
+        Returns: Json
       }
       get_nearby_users_with_proximity: {
         Args: {
@@ -13078,6 +13265,25 @@ export type Database = {
       refresh_field_tiles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      refresh_field_tiles_smart_v2: {
+        Args: {
+          p_bbox_lat_min?: number
+          p_bbox_lat_max?: number
+          p_bbox_lng_min?: number
+          p_bbox_lng_max?: number
+        }
+        Returns: Json
+      }
+      refresh_field_tiles_v2: {
+        Args: {
+          p_hex_size_meters?: number
+          p_bbox_lat_min?: number
+          p_bbox_lat_max?: number
+          p_bbox_lng_min?: number
+          p_bbox_lng_max?: number
+        }
+        Returns: Json
       }
       refresh_friend_last_points: {
         Args: Record<PropertyKey, never>
@@ -14452,6 +14658,15 @@ export type Database = {
         Args: { "": string }
         Returns: number
       }
+      update_circuit_breaker_state: {
+        Args: {
+          p_state: string
+          p_failure_count?: number
+          p_success_count?: number
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
       update_last_read_at: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: undefined
@@ -14550,6 +14765,16 @@ export type Database = {
           p_venue_id?: string
         }
         Returns: undefined
+      }
+      upsert_presence_realtime_v2: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_vibe?: string
+          p_accuracy?: number
+          p_h3_idx?: number
+        }
+        Returns: Json
       }
       upsert_venue_presence_smart: {
         Args: {
@@ -14853,6 +15078,310 @@ export type Database = {
       }
     }
   }
+  storage: {
+    Tables: {
+      buckets: {
+        Row: {
+          allowed_mime_types: string[] | null
+          avif_autodetection: boolean | null
+          created_at: string | null
+          file_size_limit: number | null
+          id: string
+          name: string
+          owner: string | null
+          owner_id: string | null
+          public: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
+          created_at?: string | null
+          file_size_limit?: number | null
+          id: string
+          name: string
+          owner?: string | null
+          owner_id?: string | null
+          public?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          allowed_mime_types?: string[] | null
+          avif_autodetection?: boolean | null
+          created_at?: string | null
+          file_size_limit?: number | null
+          id?: string
+          name?: string
+          owner?: string | null
+          owner_id?: string | null
+          public?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      migrations: {
+        Row: {
+          executed_at: string | null
+          hash: string
+          id: number
+          name: string
+        }
+        Insert: {
+          executed_at?: string | null
+          hash: string
+          id: number
+          name: string
+        }
+        Update: {
+          executed_at?: string | null
+          hash?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      objects: {
+        Row: {
+          bucket_id: string | null
+          created_at: string | null
+          id: string
+          last_accessed_at: string | null
+          metadata: Json | null
+          name: string | null
+          owner: string | null
+          owner_id: string | null
+          path_tokens: string[] | null
+          updated_at: string | null
+          user_metadata: Json | null
+          version: string | null
+        }
+        Insert: {
+          bucket_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner?: string | null
+          owner_id?: string | null
+          path_tokens?: string[] | null
+          updated_at?: string | null
+          user_metadata?: Json | null
+          version?: string | null
+        }
+        Update: {
+          bucket_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          name?: string | null
+          owner?: string | null
+          owner_id?: string | null
+          path_tokens?: string[] | null
+          updated_at?: string | null
+          user_metadata?: Json | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objects_bucketId_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      s3_multipart_uploads: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          in_progress_size: number
+          key: string
+          owner_id: string | null
+          upload_signature: string
+          user_metadata: Json | null
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id: string
+          in_progress_size?: number
+          key: string
+          owner_id?: string | null
+          upload_signature: string
+          user_metadata?: Json | null
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          in_progress_size?: number
+          key?: string
+          owner_id?: string | null
+          upload_signature?: string
+          user_metadata?: Json | null
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      s3_multipart_uploads_parts: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          etag: string
+          id: string
+          key: string
+          owner_id: string | null
+          part_number: number
+          size: number
+          upload_id: string
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          etag: string
+          id?: string
+          key: string
+          owner_id?: string | null
+          part_number: number
+          size?: number
+          upload_id: string
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          etag?: string
+          id?: string
+          key?: string
+          owner_id?: string | null
+          part_number?: number
+          size?: number
+          upload_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "s3_multipart_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      can_insert_object: {
+        Args: { bucketid: string; name: string; owner: string; metadata: Json }
+        Returns: undefined
+      }
+      extension: {
+        Args: { name: string }
+        Returns: string
+      }
+      filename: {
+        Args: { name: string }
+        Returns: string
+      }
+      foldername: {
+        Args: { name: string }
+        Returns: string[]
+      }
+      get_size_by_bucket: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          size: number
+          bucket_id: string
+        }[]
+      }
+      list_multipart_uploads_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          next_key_token?: string
+          next_upload_token?: string
+        }
+        Returns: {
+          key: string
+          id: string
+          created_at: string
+        }[]
+      }
+      list_objects_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          start_after?: string
+          next_token?: string
+        }
+        Returns: {
+          name: string
+          id: string
+          metadata: Json
+          updated_at: string
+        }[]
+      }
+      operation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      search: {
+        Args: {
+          prefix: string
+          bucketname: string
+          limits?: number
+          levels?: number
+          offsets?: number
+          search?: string
+          sortcolumn?: string
+          sortorder?: string
+        }
+        Returns: {
+          name: string
+          id: string
+          updated_at: string
+          created_at: string
+          last_accessed_at: string
+          metadata: Json
+        }[]
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
@@ -15123,5 +15652,8 @@ export const Constants = {
         "support-group",
       ],
     },
+  },
+  storage: {
+    Enums: {},
   },
 } as const
