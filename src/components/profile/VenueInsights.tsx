@@ -26,8 +26,8 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
         .from('venue_live_presence')
         .select(`
           venue_id,
-          checked_in_at,
-          checked_out_at,
+          checked_in_at: checked_in,
+          expires_at,
           venues!inner(name)
         `)
         .eq('profile_id', profileId)
@@ -51,7 +51,7 @@ export const VenueInsights = ({ profileId, isOwnProfile = false }: VenueInsights
         
         venueMap.get(venueId)!.visits.push({
           checkedIn: visit.checked_in_at,
-          checkedOut: visit.checked_out_at
+          checkedOut: visit.expires_at
         });
       });
 

@@ -250,7 +250,6 @@ export const useSensorMonitoring = (enabled: boolean = false) => {
     if (!enabled) return;
     if ('AmbientLightSensor' in window) {
       try {
-        // @ts-expect-error - Experimental API
         const sensor = new (window as unknown as { AmbientLightSensor: new (options: { frequency: number }) => any }).AmbientLightSensor({ frequency: 1 });
         lightSensorRef.current = sensor;
         

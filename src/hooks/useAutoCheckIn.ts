@@ -89,8 +89,7 @@ export const useAutoCheckIn = () => {
           // Calculate confidence based on distance and popularity
           const venuesWithConfidence = venues.map((venue: any) => {
             const distance = metersBetween(
-              { lat, lng },
-              { lat: venue.lat, lng: venue.lng }
+              lat, lng, venue.lat, venue.lng
             );
             
             // Simple confidence calculation: closer = higher confidence, popularity boost
