@@ -183,6 +183,9 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
                         {enhancedLocation.currentVenue && ` • Venue: ${Math.round(currentVenueConfidence * 100)}%`}
                         {hasNearbyUsers && ` • ${enhancedLocation.nearbyUsers.filter(u => u.isNear).length} nearby`}
                       </div>
+                      <div className="text-xs opacity-75">
+                        Background Processing: Active • Last: {new Date(enhancedLocation.lastUpdate).toLocaleTimeString()}
+                      </div>
                     </div>
                   </div>
                 </div>
