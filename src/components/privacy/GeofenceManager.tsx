@@ -18,7 +18,7 @@ import {
   Home, 
   Building, 
   Circle,
-  Polygon,
+  Pentagon,
   Save,
   X
 } from 'lucide-react';
@@ -348,7 +348,7 @@ export function GeofenceManager({ onGeofencesChange }: GeofenceManagerProps) {
                         onClick={() => setNewGeofence(prev => ({ ...prev, type: 'polygon' }))}
                         className="justify-start"
                       >
-                        <Polygon className="h-4 w-4 mr-2" />
+                        <Pentagon className="h-4 w-4 mr-2" />
                         Polygon
                       </Button>
                     </div>
