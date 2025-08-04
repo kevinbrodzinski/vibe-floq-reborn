@@ -63,3 +63,41 @@ export const applyPrivacyFilter = (
   const accuracyLevel = liveSettings?.live_accuracy ?? 'exact';
   return snapToGrid(lat, lng, accuracyLevel, accuracy);
 };
+
+/**
+ * Enhanced privacy filtering with geofencing support
+ * This extends your existing privacy system with zone-based controls
+ */
+export const applyEnhancedPrivacyFilter = async (
+  lat: number,
+  lng: number, 
+  accuracy: number,
+  liveSettings: any
+): Promise<SnappedCoords | null> => {
+  try {
+    // Import geofencing service dynamically to avoid circular dependencies
+    const { geofencingService } = await import('./geofencing');
+    
+    // Check if location is in any privacy zones
+    const geofenceMatches = await geofencingService.checkLocation({ lat, lng });
+    
+    // Apply the most restrictive privacy level found
+    let privacyLevel = liveSettings?.live_accuracy ?? 'exact';
+    
+    for (const match of geofenceMatches) {
+      if (match.geofence.privacy_level === 'hide') {
+        return null; // Hide location completely
+      } else if (match.geofence.privacy_level === 'area' && privacyLevel !== 'area') {
+        privacyLevel = 'area';
+      } else if (match.geofence.privacy_level === 'street' && privacyLevel === 'exact') {
+        privacyLevel = 'street';
+      }
+    }
+    
+    return snapToGrid(lat, lng, privacyLevel, accuracy);
+  } catch (error) {
+    console.warn('Enhanced privacy filtering failed, falling back to basic privacy:', error);
+    // Fallback to existing privacy system
+    return applyPrivacyFilter(lat, lng, accuracy, liveSettings);
+  }
+};
