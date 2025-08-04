@@ -45,45 +45,33 @@ serve(async (req) => {
 
     switch (action) {
       case 'boost': {
-        // Handle boost logic
-        const { data: existingBoost, error: checkError } = await supabase
-          .from('floq_boosts')
-          .select('id')
-          .eq('floq_id', floq_id)
-          .eq('user_id', user_id)
-          .eq('boost_type', 'vibe')
-          .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
-
-        if (checkError) {
-          return new Response(JSON.stringify({ error: 'Failed to check existing boost' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        if (existingBoost) {
-          return new Response(JSON.stringify({ 
-            success: false, 
-            message: 'User has already boosted this floq recently' 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
-        // Create new boost
+        // Handle boost logic with atomic upsert to prevent race conditions
         const { data: boost, error: boostError } = await supabase
           .from('floq_boosts')
-          .insert({
+          .upsert({
             floq_id,
             user_id,
             boost_type: 'vibe',
             expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+          }, {
+            onConflict: 'floq_id,user_id,boost_type',
+            ignoreDuplicates: false
           })
           .select()
           .single();
 
         if (boostError) {
+          // Check if it's a duplicate boost error
+          if (boostError.code === '23505' || boostError.message.includes('duplicate')) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              message: 'User has already boosted this floq recently' 
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+          
+          console.error('Boost creation error:', boostError);
           return new Response(JSON.stringify({ error: 'Failed to create boost' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -109,7 +97,7 @@ serve(async (req) => {
         }
 
         // Check if message contains @floq mention (case-insensitive, word boundaries)
-        if (!/\m@floq\M/i.test(message_content)) {
+        if (!/\b@floq\b/i.test(message_content)) {
           return new Response(JSON.stringify({ 
             success: false, 
             message: 'No @floq mention found in message' 

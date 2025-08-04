@@ -69,20 +69,67 @@ export function useNearbyFlocks({
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel('flocks')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'floqs' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'floqs' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
-      })
-      .subscribe();
+    if (!enabled) return;
+
+    let channel: any = null;
+    let isSubscribed = false;
+
+    const setupSubscription = () => {
+      try {
+        channel = supabase
+          .channel('flocks')
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'floqs' 
+          }, (payload) => {
+            console.log('Floq updated:', payload);
+            queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
+          })
+          .on('postgres_changes', { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'floqs' 
+          }, (payload) => {
+            console.log('New floq created:', payload);
+            queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
+          })
+          .on('postgres_changes', {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'floqs'
+          }, (payload) => {
+            console.log('Floq deleted:', payload);
+            queryClient.invalidateQueries({ queryKey: ['nearby-flocks'] });
+          });
+
+        // Subscribe with error handling
+        channel.subscribe((status: string, err?: Error) => {
+          console.log('Nearby flocks subscription status:', status);
+          if (err) {
+            console.error('Nearby flocks subscription error:', err);
+          }
+          isSubscribed = status === 'SUBSCRIBED';
+        });
+
+      } catch (error) {
+        console.error('Failed to setup nearby flocks subscription:', error);
+      }
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          console.log('Cleaning up nearby flocks subscription');
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.error('Error cleaning up nearby flocks subscription:', error);
+        }
+      }
     };
-  }, [queryClient]);
+  }, [queryClient, enabled]);
 
   return useQuery({
     queryKey: ['nearby-flocks', user?.id, geo?.lat, geo?.lng, filters, limit],
