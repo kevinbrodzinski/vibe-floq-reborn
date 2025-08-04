@@ -10,7 +10,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useGeo } from './useGeo'
 import { supabase } from '@/integrations/supabase/client'
 import { callFn } from '@/lib/callFn';
-import { useLiveShareFriends } from '@/hooks/useLiveShareFriends'
+import { useCompatibleLiveShareFriends } from '@/hooks/useEnhancedLiveShareFriends'
 import { useLiveSettings } from '@/hooks/useLiveSettings'
 import { useContextDetection } from '@/hooks/useContextDetection'
 import dayjs from '@/lib/dayjs'
@@ -45,8 +45,8 @@ export function useUserLocation() {
   const userRef = useRef<string | null>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
 
-  // Get list of friends who can see our location
-  const shareTo = useLiveShareFriends()
+  // Get list of friends who can see our location (includes close friends auto-sharing)
+  const shareTo = useCompatibleLiveShareFriends()
 
   // Get live settings for enhanced controls
   const { data: liveSettings } = useLiveSettings()
