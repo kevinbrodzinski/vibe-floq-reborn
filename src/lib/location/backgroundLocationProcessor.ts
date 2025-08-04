@@ -14,7 +14,7 @@ export interface LocationUpdate {
   location: GPSCoords;
   accuracy: number;
   timestamp: number;
-  userId: string;
+  profileId: string;
 }
 
 export interface BackgroundProcessingResult {
@@ -71,7 +71,7 @@ export class BackgroundLocationProcessor {
     this.processingQueue.push(update);
 
     if (this.options.debugMode) {
-      console.log(`[BackgroundProcessor] Queued location update for ${update.userId}`);
+      console.log(`[BackgroundProcessor] Queued location update for ${update.profileId}`);
     }
 
     // Process immediately if not using batch processing
@@ -153,15 +153,15 @@ export class BackgroundLocationProcessor {
       // 3. Proximity Analysis
       if (this.options.enableProximityTracking) {
         const currentUser: ProximityUser = {
-          userId: update.userId,
+          profileId: update.profileId,
           location: update.location,
           accuracy: update.accuracy,
           timestamp: update.timestamp
         };
 
         // Analyze proximity with all nearby users
-        for (const [userId, nearbyUser] of this.nearbyUsers) {
-          if (userId !== update.userId) {
+        for (const [profileId, nearbyUser] of this.nearbyUsers) {
+          if (profileId !== update.profileId) {
             try {
               const analysis = proximityScorer.analyzeProximity(currentUser, nearbyUser);
               
@@ -171,8 +171,8 @@ export class BackgroundLocationProcessor {
                 // Record significant proximity events
                 if (analysis.eventType !== 'none') {
                   await proximityEventRecorder.recordEvent(
-                    update.userId,
-                    userId,
+                    update.profileId,
+                    profileId,
                     analysis,
                     { 
                       lat: update.location.lat, 
@@ -189,13 +189,13 @@ export class BackgroundLocationProcessor {
         }
 
         // Update nearby users map
-        this.nearbyUsers.set(update.userId, currentUser);
+        this.nearbyUsers.set(update.profileId, currentUser);
         
         // Clean up old proximity data (older than 10 minutes)
         const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-        for (const [userId, user] of this.nearbyUsers) {
+        for (const [profileId, user] of this.nearbyUsers) {
           if (user.timestamp < tenMinutesAgo) {
-            this.nearbyUsers.delete(userId);
+            this.nearbyUsers.delete(profileId);
           }
         }
       }
@@ -203,7 +203,7 @@ export class BackgroundLocationProcessor {
       result.processingTime = performance.now() - startTime;
 
       if (this.options.debugMode) {
-        console.log(`[BackgroundProcessor] Processed location for ${update.userId} in ${result.processingTime.toFixed(2)}ms`);
+        console.log(`[BackgroundProcessor] Processed location for ${update.profileId} in ${result.processingTime.toFixed(2)}ms`);
       }
 
       return result;
@@ -258,8 +258,8 @@ export class BackgroundLocationProcessor {
   /**
    * Update nearby user data from external source
    */
-  updateNearbyUser(userId: string, user: ProximityUser): void {
-    this.nearbyUsers.set(userId, user);
+  updateNearbyUser(profileId: string, user: ProximityUser): void {
+    this.nearbyUsers.set(profileId, user);
   }
 
   /**
