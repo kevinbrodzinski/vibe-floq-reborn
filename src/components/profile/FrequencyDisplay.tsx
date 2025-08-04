@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FrequencyDisplayProps {
-  userId: string;
+  profileId: string;
   className?: string;
 }
 
-export const FrequencyDisplay = ({ userId, className }: FrequencyDisplayProps) => {
-  const { data: frequencyData, isLoading } = useFrequencyData(userId);
+export const FrequencyDisplay = ({ profileId, className }: FrequencyDisplayProps) => {
+  const { data: frequencyData, isLoading } = useFrequencyData(profileId);
 
   if (isLoading) {
     return (

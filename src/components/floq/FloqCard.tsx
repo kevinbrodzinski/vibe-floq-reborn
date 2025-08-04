@@ -1,5 +1,5 @@
 import React, { useCallback, CSSProperties } from 'react';
-import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft, Waves, Circle } from 'lucide-react';
+import { Users, MapPin, Clock, Eye, XCircle, UserPlus, Crown, Zap, ChevronLeft, Waves, Circle, MessageCircle, Calendar } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDrag } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { AvatarStack } from '@/components/ui/AvatarStack';
 import { useIgnoreFloq } from '@/hooks/useIgnoreFloq';
 import { useAuth } from '@/providers/AuthProvider';
+import { useFloqPlanDetection } from '@/hooks/useFloqPlanDetection';
+import { useFloqUnreadMessages } from '@/hooks/useFloqUnreadMessages';
 import type { NearbyFloq } from '@/hooks/useNearbyFlocks';
 
 interface FloqCardProps {
@@ -35,6 +37,10 @@ export const FloqCard = React.memo<FloqCardProps>(({
   const accent = vibeColor(floq.primary_vibe);
   const isFull = floq.max_participants ? floq.participant_count >= floq.max_participants : false;
   const { mutate: ignoreFloq } = useIgnoreFloq();
+  
+  // Real-time plan and message detection
+  const { data: hasPlanToday = false } = useFloqPlanDetection(floq.id);
+  const { data: unreadCount = 0 } = useFloqUnreadMessages(floq.id);
 
   // Memoized handlers to prevent re-renders
   const handleBoost = useCallback(() => {
@@ -129,9 +135,8 @@ export const FloqCard = React.memo<FloqCardProps>(({
 
   // Determine card state for glow effects
   const isIdle = !floq.is_joined;
-  const hasPlanToday = false; // TODO: Add plan detection when schema is ready
   const isActiveFloq = floq.participant_count > 0;
-  const hasUnreadMessages = false; // TODO: Add unread message count when schema is ready
+  const hasUnreadMessages = unreadCount > 0;
 
   // Get glow class based on state
   const getGlowClass = () => {
@@ -249,9 +254,27 @@ export const FloqCard = React.memo<FloqCardProps>(({
         </div>
         
         <div>
-          <h3 className="text-lg font-semibold leading-tight text-white">
-            {floq.title}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold leading-tight text-white">
+              {floq.title}
+            </h3>
+            {/* Unread Messages Badge */}
+            {hasUnreadMessages && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/20 border border-blue-400/30">
+                <MessageCircle size={12} className="text-blue-400" />
+                <span className="text-xs text-blue-400 font-medium">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              </div>
+            )}
+            {/* Plan Today Badge */}
+            {hasPlanToday && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-purple-500/20 border border-purple-400/30">
+                <Calendar size={12} className="text-purple-400" />
+                <span className="text-xs text-purple-400 font-medium">Plan</span>
+              </div>
+            )}
+          </div>
 
           {/* Friends Going Badge */}
           {floq.friends_going_count > 0 && (

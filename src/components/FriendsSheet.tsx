@@ -14,6 +14,7 @@ import { AvatarWithFallback } from '@/components/ui/avatar-with-fallback';
 import { OnlineFriendRow }    from '@/components/OnlineFriendRow';
 import { useUnifiedFriends }  from '@/hooks/useUnifiedFriends';
 import { useNearbyFriends }   from '@/hooks/useNearbyFriends';
+import { useEnhancedFriendDistances } from '@/hooks/useEnhancedFriendDistances';
 import { useProfileCache }    from '@/hooks/useProfileCache';
 import { useRealtimeFriends } from '@/hooks/useRealtimeFriends';
 import { useGeo }             from '@/hooks/useGeo';
@@ -47,6 +48,14 @@ export const FriendsSheet = ({
   const { coords } = useGeo();
   const { data: friendsNearby = [], isLoading: isLoadingNearby, debouncedPrimeProfiles } =
     useNearbyFriends(coords?.lat, coords?.lng, { km: 0.5 });
+
+  // Enhanced friend distance system
+  const enhancedFriends = useEnhancedFriendDistances({
+    maxDistance: 5000, // 5km
+    enableProximityTracking: true,
+    enablePrivacyFiltering: true,
+    sortBy: 'distance'
+  });
 
   const { primeProfiles } = useProfileCache();
   useRealtimeFriends();
@@ -162,8 +171,14 @@ export const FriendsSheet = ({
             ) : filteredFriends.length ? (
               <div className="space-y-4">
                 {(() => {
-                  const online  = filteredFriends.filter((f) => f.online);
-                  const offline = filteredFriends.filter((f) => !f.online);
+                  // Get list of friend IDs already shown in enhanced section
+                  const enhancedFriendIds = new Set(
+                    enhancedFriends.friends.slice(0, 5).map(fd => fd.friend.profileId)
+                  );
+                  
+                  // Filter out friends already shown in enhanced section
+                  const online  = filteredFriends.filter((f) => f.online && !enhancedFriendIds.has(f.id));
+                  const offline = filteredFriends.filter((f) => !f.online && !enhancedFriendIds.has(f.id));
 
                   return (
                     <>
@@ -225,6 +240,91 @@ export const FriendsSheet = ({
 
           <Separator />
 
+          {/* Enhanced Friend Distances - NEW FEATURE */}
+          {enhancedFriends.friends.length > 0 && (
+            <>
+              <Separator />
+              <section>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                Enhanced Distances
+                <span className="text-xs opacity-75">(Top 5)</span>
+                <Badge variant="outline" className="text-xs">
+                  {enhancedFriends.nearbyCount} nearby
+                </Badge>
+                {enhancedFriends.highConfidenceFriends.length > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {enhancedFriends.highConfidenceFriends.length} high accuracy
+                  </Badge>
+                )}
+              </h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {enhancedFriends.friends.slice(0, 5).map((friendDistance, index) => (
+                  <div key={`enhanced-${friendDistance.friend.profileId}-${index}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <AvatarWithFallback
+                        src={friendDistance.friend.avatarUrl}
+                        alt={friendDistance.friend.displayName || 'Friend'}
+                        className="w-6 h-6"
+                      />
+                      <div>
+                        <div className="text-sm font-medium">
+                          {friendDistance.friend.displayName || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {friendDistance.formattedDistance} away
+                          {friendDistance.privacyFiltered && ' (privacy filtered)'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {friendDistance.isNearby && (
+                        <Badge variant="default" className="text-xs px-1">
+                          Near
+                        </Badge>
+                      )}
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs px-1 ${
+                          friendDistance.reliability === 'high' ? 'border-green-500 text-green-600' :
+                          friendDistance.reliability === 'medium' ? 'border-yellow-500 text-yellow-600' :
+                          'border-red-500 text-red-600'
+                        }`}
+                      >
+                        {Math.round(friendDistance.confidence * 100)}%
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {enhancedFriends.friends.length > 5 && (
+                  <div className="text-xs text-muted-foreground text-center py-1">
+                    +{enhancedFriends.friends.length - 5} more friends
+                  </div>
+                )}
+              </div>
+              </section>
+            </>
+          )}
+
+          {/* System Comparison - Debug Info */}
+          {process.env.NODE_ENV !== 'production' && (
+            <section>
+              <details className="text-xs">
+                <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
+                  System Comparison (Debug)
+                </summary>
+                <div className="mt-2 p-2 bg-muted rounded text-xs space-y-1">
+                  <div>Legacy: {friendsNearby.length} friends found</div>
+                  <div>Enhanced: {enhancedFriends.totalFriends} friends ({enhancedFriends.nearbyCount} nearby)</div>
+                  <div>High Confidence: {enhancedFriends.highConfidenceFriends.length}</div>
+                  <div>Avg Distance: {enhancedFriends.averageDistance > 0 ? enhancedFriends.formatDistance(enhancedFriends.averageDistance) : 'N/A'}</div>
+                  <div>Privacy Filtering: {enhancedFriends.friends.filter(f => f.privacyFiltered).length} filtered</div>
+                </div>
+              </details>
+            </section>
+          )}
+
+          <Separator />
+
           {/* pending requests */}
           <section>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
@@ -236,7 +336,7 @@ export const FriendsSheet = ({
               )}
             </h3>
 
-            {!!pendingIn.length ? (
+            {pendingIn.length ? (
               <div className="space-y-2">
                 {pendingIn.map((req) => (
                   <div

@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { geoToH3 } from "https://esm.sh/h3-js@4";
+import { checkRateLimitV2, createErrorResponse } from "../_shared/helpers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +29,12 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // Enhanced Rate limiting for presence updates
+    const rateLimitResult = await checkRateLimitV2(supabase, user.id, 'presence_update');
+    if (!rateLimitResult.allowed) {
+      return createErrorResponse(rateLimitResult.error || "Rate limit exceeded", 429);
     }
 
     const body = await req.json();
@@ -92,7 +99,7 @@ serve(async (req) => {
       backgroundTasks.push(
         supabase.functions.invoke('relationship-tracker', {
           body: {
-            user_id: user.id,
+            profile_id: user.id,
             nearby_users: nearby.filter(u => u.profile_id !== user.id),
             current_vibe: vibe || 'chill',
             venue_id: venue_id
@@ -106,7 +113,7 @@ serve(async (req) => {
       const activityEvents = floqs.map(floq => ({
         floq_id: floq.id,
         event_type: 'proximity_update' as const,
-        user_id: user.id,
+        profile_id: user.id,
         proximity_users: nearby ? nearby.length - 1 : 0, // Exclude self
         vibe: vibe || 'chill'
       }));

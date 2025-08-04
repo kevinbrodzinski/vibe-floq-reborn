@@ -10,7 +10,7 @@ interface PresenceBroadcast {
   lng: number;
   accuracy: number;
   timestamp: number;
-  userId: string;
+  profileId: string;
 }
 
 interface PresenceBatch {
@@ -67,14 +67,14 @@ export class OptimizedPresenceManager {
     lat: number,
     lng: number,
     accuracy: number,
-    userId: string
+    profileId: string
   ): Promise<boolean> {
     // Ensure cleanup timer is running
     this.startCleanupTimer();
     
     // Rate limiting check
-    if (!this.checkRateLimit(userId)) {
-      console.warn(`[PresenceManager] Rate limit exceeded for user ${userId}`);
+    if (!this.checkRateLimit(profileId)) {
+      console.warn(`[PresenceManager] Rate limit exceeded for user ${profileId}`);
       return false;
     }
 
@@ -83,7 +83,7 @@ export class OptimizedPresenceManager {
       lng,
       accuracy,
       timestamp: Date.now(),
-      userId
+      profileId
     };
 
     // Add to batch buffer
@@ -169,19 +169,19 @@ export class OptimizedPresenceManager {
   /**
    * Check rate limit for user
    */
-  private checkRateLimit(userId: string): boolean {
+  private checkRateLimit(profileId: string): boolean {
     const now = Date.now();
     const oneMinuteAgo = now - 60000;
     
-    if (!this.rateLimiter.has(userId)) {
-      this.rateLimiter.set(userId, []);
+    if (!this.rateLimiter.has(profileId)) {
+      this.rateLimiter.set(profileId, []);
     }
     
-    const userBroadcasts = this.rateLimiter.get(userId)!;
+    const userBroadcasts = this.rateLimiter.get(profileId)!;
     
     // Remove old broadcasts
     const recentBroadcasts = userBroadcasts.filter(timestamp => timestamp > oneMinuteAgo);
-    this.rateLimiter.set(userId, recentBroadcasts);
+    this.rateLimiter.set(profileId, recentBroadcasts);
     
     // Check if under limit
     if (recentBroadcasts.length >= this.MAX_BROADCASTS_PER_MINUTE) {
@@ -268,12 +268,12 @@ export class OptimizedPresenceManager {
     const now = Date.now();
     const oneHourAgo = now - (60 * 60 * 1000);
     
-    for (const [userId, timestamps] of this.rateLimiter.entries()) {
+    for (const [profileId, timestamps] of this.rateLimiter.entries()) {
       const recentTimestamps = timestamps.filter(ts => ts > oneHourAgo);
       if (recentTimestamps.length === 0) {
-        this.rateLimiter.delete(userId);
+        this.rateLimiter.delete(profileId);
       } else {
-        this.rateLimiter.set(userId, recentTimestamps);
+        this.rateLimiter.set(profileId, recentTimestamps);
       }
     }
     

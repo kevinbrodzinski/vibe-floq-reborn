@@ -32,8 +32,8 @@ export function usePeopleSource(
       userPosValue: userPos,
       hasFieldLocation: !!fieldLocation,
       fieldLocationValue: fieldLocation,
-      hasUserId: !!user?.id,
-      userId: user?.id
+      hasProfileId: !!user?.id,
+      profileId: user?.id
     });
 
     const features: GeoJSON.Feature[] = people.map(p => ({

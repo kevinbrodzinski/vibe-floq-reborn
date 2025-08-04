@@ -5,7 +5,7 @@ import { MapPin, Clock, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 interface HighlightsProps {
-  userId: string;
+  profileId: string;
   isFriend: boolean;
 }
 
@@ -27,7 +27,7 @@ const mockHighlights = {
   ],
 };
 
-export const Highlights = ({ userId, isFriend }: HighlightsProps) => {
+export const Highlights = ({ profileId, isFriend }: HighlightsProps) => {
   const [openSections, setOpenSections] = useState<string[]>(['vibes']);
 
   const toggleSection = (section: string) => {
