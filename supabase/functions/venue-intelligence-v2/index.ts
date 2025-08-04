@@ -197,15 +197,17 @@ async function handleRecommendations(
 
     if (lat && lng) {
       const maxDistance = config.max_distance_km || 5;
-      // Use PostGIS to find venues within radius
-      venuesQuery = venuesQuery.rpc('venues_within_radius', {
-        center_lat: lat,
-        center_lng: lng,
-        radius_km: maxDistance
-      });
-    }
-
+          // Use optimized PostGIS function for spatial queries
+    const { data: venues, error: venuesError } = await userSupabase.rpc('venues_within_radius', {
+      user_lat: lat,
+      user_lng: lng,
+      radius_km: maxDistance,
+      limit_count: 50
+    });
+  } else {
+    // Fallback for non-spatial queries
     const { data: venues, error: venuesError } = await venuesQuery.limit(50);
+  }
     
     if (venuesError) {
       console.error('Error fetching venues:', venuesError);
@@ -216,27 +218,17 @@ async function handleRecommendations(
       return createSuccessResponse({ recommendations: [], total: 0, mode: 'recommendations' });
     }
 
-    // 2. Get user behavior data for ML
-    const { data: userHistory } = await userSupabase
-      .from('venue_stays')
-      .select(`
-        venue_id,
-        arrived_at,
-        departed_at,
-        venues!inner(categories, rating)
-      `)
-      .eq('profile_id', userId)
-      .gte('arrived_at', new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString())
-      .limit(100);
+    // 2. Get user behavior patterns using optimized function
+    const { data: userBehavior } = await userSupabase.rpc('get_user_behavior_patterns_safe', {
+      p_user_id: userId
+    });
 
-    // 3. Get friend network data using optimized view
-    const { data: friends } = await userSupabase
-      .from('v_friend_ids')
-      .select(`
-        other_profile_id,
-        is_close,
-        responded_at
-      `);
+    // 3. Get friend network data using optimized function
+    const { data: friends } = await userSupabase.rpc('friends_nearby', {
+      user_lat: lat || 0,
+      user_lng: lng || 0,
+      radius_km: 10.0 // Get friends within 10km for social context
+    });
 
     // 4. Get current weather if location provided
     let weatherData = null;

@@ -85,20 +85,18 @@ export class FriendNetworkAnalyzer {
     }
 
     try {
-      // Get user's friends using optimized view
-      const { data: friends, error: friendsError } = await supabase
-        .from('v_friend_ids')
-        .select(`
-          other_profile_id,
-          is_close,
-          responded_at
-        `);
+      // Get user's friends using existing optimized function
+      const { data: friends, error: friendsError } = await supabase.rpc('friends_nearby', {
+        user_lat: 0, // Get all friends regardless of location for caching
+        user_lng: 0,
+        radius_km: 999999
+      });
 
       if (friendsError) throw friendsError;
 
       if (friends?.length) {
-        // Extract friend IDs from view (already processed)
-        const friendIds = friends.map(f => f.other_profile_id);
+        // Extract friend IDs from function result
+        const friendIds = friends.map(f => f.profile_id);
         
         // Get friend venue interaction data
         const { data: friendVenueData, error: friendDataError } = await supabase

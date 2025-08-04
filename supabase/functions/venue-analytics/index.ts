@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { RecommendationEvent } from '../_shared/types';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -563,6 +565,91 @@ async function handleGetUserEngagement(userId: string, timeWindowHours: number =
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  }
+}
+
+// Add trigger integration for real-time venue intelligence updates
+async function integrateWithExistingTriggers(
+  supabase: SupabaseClient,
+  event: RecommendationEvent
+): Promise<void> {
+  try {
+    // Listen for venue_stays notifications (existing trigger: venue_stays_notify)
+    if (event.event_type === 'venue_check_in') {
+      // Trigger exists: trg_venue_stays_notify on venue_stays table
+      // This will automatically notify about venue check-ins
+      // We can listen to these notifications for real-time updates
+      
+      // Invalidate venue intelligence cache for this venue
+      await supabase
+        .from('venue_intelligence_cache')
+        .delete()
+        .eq('venue_id', event.venue_id);
+    }
+
+    // Listen for presence notifications (existing trigger: presence_notify)
+    if (event.event_type === 'presence_update') {
+      // Trigger exists: trg_presence_notify_* on vibes_now table
+      // This will automatically notify about presence changes
+      
+      // Update crowd intelligence in real-time
+      await supabase
+        .from('venue_intelligence_cache')
+        .update({ 
+          crowd_data: null, // Force refresh
+          updated_at: new Date().toISOString()
+        })
+        .eq('venue_id', event.venue_id);
+    }
+
+    // Integrate with venue updates (existing trigger: t_sync_location)
+    if (event.event_type === 'venue_update') {
+      // Trigger exists: t_sync_location on venues table
+      // This keeps location data synchronized
+      
+      // Clear all cached data for this venue
+      await supabase
+        .from('venue_intelligence_cache')
+        .delete()
+        .eq('venue_id', event.venue_id);
+    }
+
+  } catch (error) {
+    console.error('Error integrating with existing triggers:', error);
+    // Don't throw - this is supplementary functionality
+  }
+}
+
+// Update the track event function to integrate with triggers
+async function trackEvent(
+  supabase: SupabaseClient,
+  event: RecommendationEvent
+): Promise<{ success: boolean; event_id?: string }> {
+  try {
+    // Store the analytics event
+    const { data, error } = await supabase
+      .from('venue_recommendation_analytics')
+      .insert({
+        user_id: event.user_id,
+        venue_id: event.venue_id,
+        recommendation_id: event.recommendation_id,
+        event_type: event.event_type,
+        confidence_score: event.confidence_score,
+        context_data: event.context_data,
+        created_at: new Date().toISOString()
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    // Integrate with existing triggers for real-time updates
+    await integrateWithExistingTriggers(supabase, event);
+
+    return { success: true, event_id: data.id };
+  } catch (error) {
+    console.error('Error tracking event:', error);
+    return { success: false };
   }
 }
 
