@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView } from 'react-native';
 import { motion } from 'framer-motion';
 import { PersonalHero } from './PersonalHero';
+import { EnhancedPersonalHero } from './EnhancedPersonalHero';
 import { TimelineCarousel } from './TimelineCarousel';
 import { StreakCard } from './StreakCard';
 import { VibeWheel } from '@/components/vibe/VibeWheel';
 import { DynamicVibeToggle } from '@/components/ui/DynamicVibeToggle';
 import { FeedbackButtons } from '@/components/ui/FeedbackButtons';
+import { EnhancedFeedbackButtons } from '@/components/ui/EnhancedFeedbackButtons';
 import { LearningPatterns } from '@/components/ui/LearningPatterns';
 import { VisibilityButton } from '@/components/vibe/VisibilityButton';
+import { SystemHealthMonitor } from '@/components/ui/SystemHealthMonitor';
 import { Button } from '@/components/ui/button';
-import { Zap, ZapOff } from 'lucide-react';
+import { Zap, ZapOff, Activity } from 'lucide-react';
 import { useVibe } from '@/lib/store/useVibe';
 import { useVibeDetection } from '@/store/useVibeDetection';
 import { useSensorMonitoring } from '@/hooks/useSensorMonitoring';
@@ -18,10 +21,13 @@ import { useVibeMatch } from '@/hooks/useVibeMatch';
 import { useSyncedVibeDetection } from '@/hooks/useSyncedVibeDetection';
 import { useSyncedVisibility } from '@/hooks/useSyncedVisibility';
 import { useBottomGap } from '@/hooks/useBottomGap';
+import { useEnhancedLocationSharing } from '@/hooks/location/useEnhancedLocationSharing';
+import { LocationEnhancedVibeSystem } from '@/lib/vibeAnalysis/LocationEnhancedVibeSystem';
+import type { EnhancedPersonalHeroData } from '@/lib/vibeAnalysis/VibeSystemIntegration';
 
 /**
- * PersonalMode - Enhanced immersive self-dashboard
- * Transforms the basic picker into a data-rich, contextual experience
+ * PersonalMode - Enhanced immersive self-dashboard with ML-powered vibe detection
+ * Now integrates with LocationEnhancedVibeSystem for context-aware vibe analysis
  */
 export const PersonalMode: React.FC = () => {
   useSyncedVisibility();
@@ -30,12 +36,74 @@ export const PersonalMode: React.FC = () => {
   const bottomGap = useBottomGap();
   const { vibe: selectedVibe } = useVibe();
   const { autoMode, toggleAutoMode } = useVibeDetection();
-  const { learningData, vibeDetection } = useSensorMonitoring(autoMode);
+  const { learningData, vibeDetection, sensorData } = useSensorMonitoring(autoMode);
   const { crowdData, eventTags, dominantVibe } = useVibeMatch();
+  const enhancedLocation = useEnhancedLocationSharing();
+
+  // Enhanced vibe system integration
+  const [vibeSystem] = useState(() => new LocationEnhancedVibeSystem());
+  const [heroData, setHeroData] = useState<EnhancedPersonalHeroData | null>(null);
+  const [showSystemHealth, setShowSystemHealth] = useState(false);
+  const [isEnhancedMode, setIsEnhancedMode] = useState(true);
+
+  // Update hero data when sensor data or location changes
+  useEffect(() => {
+    const updateHeroData = async () => {
+      if (!autoMode || !sensorData) return;
+
+      try {
+        if (enhancedLocation.location && isEnhancedMode) {
+          // Use location-enhanced vibe system
+          const data = await vibeSystem.getLocationEnhancedPersonalHeroData(
+            sensorData,
+            enhancedLocation
+          );
+          setHeroData(data);
+        } else {
+          // Fallback to basic enhanced system
+          const mockContext = {
+            timestamp: new Date(),
+            location: enhancedLocation.location || null,
+            socialContext: { nearbyFriends: [], crowdDensity: 0 },
+            environmentalFactors: { timeOfDay: 'day', weather: 'clear' }
+          };
+          const data = await vibeSystem.getEnhancedPersonalHeroData(sensorData, mockContext);
+          setHeroData(data);
+        }
+      } catch (error) {
+        console.error('Failed to update hero data:', error);
+        // Graceful degradation - keep existing data
+      }
+    };
+
+    updateHeroData();
+  }, [vibeSystem, sensorData, enhancedLocation, autoMode, isEnhancedMode]);
 
   const handleVibeSelect = (vibe: string) => {
     console.log('Jump to vibe:', vibe);
     // TODO: Implement wheel rotation to selected vibe
+  };
+
+  const handleEnhancedFeedback = async (feedback: any) => {
+    try {
+      if (enhancedLocation.location && heroData) {
+        await vibeSystem.recordLocationEnhancedUserInteraction(
+          feedback,
+          enhancedLocation,
+          heroData.currentVibe
+        );
+      }
+    } catch (error) {
+      console.error('Failed to record enhanced feedback:', error);
+    }
+  };
+
+  const toggleSystemHealth = () => {
+    setShowSystemHealth(!showSystemHealth);
+  };
+
+  const toggleEnhancedMode = () => {
+    setIsEnhancedMode(!isEnhancedMode);
   };
 
   return (
@@ -44,27 +112,74 @@ export const PersonalMode: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: bottomGap + 16 }}
       >
-        {/* Header Bar */}
+        {/* Enhanced Header Bar */}
         <div className="flex justify-between items-center p-2 pt-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleAutoMode}
-            className={`p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs ${
-              autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
-            }`}
-          >
-            {autoMode ? <Zap className="mr-1 w-3 h-3" /> : <ZapOff className="mr-1 w-3 h-3" />}
-            {autoMode ? 'Auto On' : 'Auto Off'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleAutoMode}
+              className={`p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs ${
+                autoMode ? "text-primary border-primary/30 bg-primary/10" : "text-muted-foreground"
+              }`}
+            >
+              {autoMode ? <Zap className="mr-1 w-3 h-3" /> : <ZapOff className="mr-1 w-3 h-3" />}
+              {autoMode ? 'Auto On' : 'Auto Off'}
+            </Button>
+            
+            {/* Enhanced Mode Toggle */}
+            {autoMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleEnhancedMode}
+                className={`p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs ${
+                  isEnhancedMode ? "text-green-500 border-green-500/30 bg-green-500/10" : "text-muted-foreground"
+                }`}
+              >
+                <Activity className="mr-1 w-3 h-3" />
+                {isEnhancedMode ? 'Enhanced' : 'Basic'}
+              </Button>
+            )}
+          </div>
+          
           <h1 className="text-sm font-medium text-foreground glow-primary">vibe</h1>
+          
           <div className="flex items-center gap-2">
             <VisibilityButton />
+            {autoMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSystemHealth}
+                className="p-1 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 transition-all duration-300 hover:bg-card/60 text-xs"
+              >
+                <Activity className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Personal Hero Status Strip */}
-        <PersonalHero />
+        {/* System Health Monitor (Development/Debug) */}
+        {showSystemHealth && autoMode && (
+          <div className="px-2 mb-4">
+            <SystemHealthMonitor 
+              showLocationMetrics={!!enhancedLocation.location}
+              compactMode={true}
+            />
+          </div>
+        )}
+
+        {/* Enhanced Personal Hero Status Strip */}
+        {heroData && isEnhancedMode ? (
+          <EnhancedPersonalHero 
+            heroData={heroData}
+            sensorData={sensorData}
+            locationData={enhancedLocation}
+          />
+        ) : (
+          <PersonalHero />
+        )}
 
         {/* Enhanced Vibe Wheel with Dynamic Halo */}
         <motion.div 
@@ -73,11 +188,12 @@ export const PersonalMode: React.FC = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
         >
-          {/* Dynamic halo effect */}
+          {/* Dynamic halo effect - enhanced with confidence */}
           <div 
             className="absolute inset-0 rounded-full opacity-30 blur-xl animate-pulse"
             style={{
-              background: `radial-gradient(circle, transparent 60%, var(--${selectedVibe || 'chill'}) 100%)`
+              background: `radial-gradient(circle, transparent 60%, var(--${selectedVibe || 'chill'}) 100%)`,
+              opacity: heroData?.confidence ? heroData.confidence * 0.5 : 0.3
             }}
           />
           
@@ -102,18 +218,26 @@ export const PersonalMode: React.FC = () => {
           />
         </div>
 
-        {/* Feedback Buttons (when auto-detection suggests changes) */}
+        {/* Enhanced Feedback Buttons (when auto-detection suggests changes) */}
         {vibeDetection && (
           <div className="px-2 mb-2">
-            <FeedbackButtons
-              suggestedVibe={vibeDetection.suggestedVibe}
-              confidence={vibeDetection.confidence}
-              onAccept={() => console.log('Accept suggestion')}
-              onCorrect={() => console.log('Correct suggestion')}
-              onClose={() => console.log('Close feedback')}
-              isProcessing={false}
-              learningBoost={vibeDetection.learningBoost}
-            />
+            {isEnhancedMode && heroData ? (
+              <EnhancedFeedbackButtons
+                analysis={vibeDetection}
+                onFeedback={handleEnhancedFeedback}
+                enhancedLocationData={enhancedLocation.location ? enhancedLocation : undefined}
+              />
+            ) : (
+              <FeedbackButtons
+                suggestedVibe={vibeDetection.suggestedVibe}
+                confidence={vibeDetection.confidence}
+                onAccept={() => console.log('Accept suggestion')}
+                onCorrect={() => console.log('Correct suggestion')}
+                onClose={() => console.log('Close feedback')}
+                isProcessing={false}
+                learningBoost={vibeDetection.learningBoost}
+              />
+            )}
           </div>
         )}
 
@@ -128,7 +252,7 @@ export const PersonalMode: React.FC = () => {
               <LearningPatterns
                 patterns={learningData.patterns}
                 topPreferences={learningData.preferences}
-                accuracy={learningData.accuracy}
+                accuracy={heroData?.accuracy || learningData.accuracy}
                 correctionCount={learningData.correctionCount}
               />
             </motion.div>
