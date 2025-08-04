@@ -38,7 +38,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 interface DMQuickSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  friendId: string | null;
+  friendId: string | null; // friend's profile_id
 }
 
 export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
@@ -47,7 +47,7 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sending, setSending] = useState(false); // Local sending state as fallback
-  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
+  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null); // profile_id is the main user identifier
   const [threadId, setThreadId] = useState<string | null | undefined>(undefined); // undefined = loading, null = error, string = success
   const { user } = useAuth(); // Use auth context instead of one-off getUser()
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -120,10 +120,10 @@ export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheet
   const online = presence?.status === 'online' && presence?.visible;
   const lastSeenTs = useLastSeen(friendId || '');
 
-  // Get current user ID from auth context
+  // Get current profile_id from auth context (user.id is the profile_id)
   useEffect(() => {
-    const profileId = user?.id || null;
-    console.log('[DM_SHEET] Auth user changed:', profileId);
+    const profileId = user?.id || null; // user.id is the profile_id (main user identifier)
+    console.log('[DM_SHEET] Auth profile_id changed:', profileId);
     setCurrentProfileId(profileId);
   }, [user]);
 

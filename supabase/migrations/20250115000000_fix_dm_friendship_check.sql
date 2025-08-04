@@ -1,9 +1,9 @@
 -- Fix DM thread creation to require friendship
--- Update get_or_create_dm_thread function to include friendship check using profile IDs
+-- Update get_or_create_dm_thread function to include friendship check using profile_id (main user identifier)
 
 CREATE OR REPLACE FUNCTION public.get_or_create_dm_thread(
-  p_profile_a uuid,
-  p_profile_b uuid
+  p_profile_a uuid, -- profile_id of first user
+  p_profile_b uuid  -- profile_id of second user
 ) RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -14,18 +14,18 @@ DECLARE
   v_user_a uuid;
   v_user_b uuid;
 BEGIN
-  -- Prevent self-messaging
+  -- Prevent self-messaging using profile_id
   IF p_profile_a = p_profile_b THEN
     RAISE EXCEPTION 'Cannot create DM thread with yourself';
   END IF;
 
-  -- Check if profiles are friends (are_friends function expects profile IDs)
+  -- Check if profile_ids are friends (are_friends function expects profile_ids)
   IF NOT public.are_friends(p_profile_a, p_profile_b) THEN
     RAISE EXCEPTION 'Cannot create DM thread - users are not friends';
   END IF;
 
   -- Get user IDs from profile IDs (profiles.id references auth.users.id)
-  -- In this system, profile IDs are the same as user IDs from auth.users
+  -- In this system, profile_id is the same as user_id from auth.users
   v_user_a := p_profile_a;
   v_user_b := p_profile_b;
 

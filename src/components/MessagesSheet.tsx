@@ -24,13 +24,16 @@ export const MessagesSheet = ({
 }: MessagesSheetProps) => {
   const { user } = useAuth();
   const [dmSheetOpen, setDmSheetOpen] = useState(false);
-  const [selectedFriendId, setSelectedFriendId] = useState<string | undefined>(undefined);
+  const [selectedFriendProfileId, setSelectedFriendProfileId] = useState<string | undefined>(undefined);
 
-  const handleThreadSelect = (threadId: string, friendId: string) => {
-    setSelectedFriendId(friendId);
+  const handleThreadSelect = (threadId: string, friendProfileId: string) => {
+    setSelectedFriendProfileId(friendProfileId);
     setDmSheetOpen(true);
     // Don't close the list immediately - let user navigate back
   };
+
+  // user.id is the profile_id (main user identifier)
+  const currentProfileId = user?.id;
 
   return (
     <>
@@ -44,10 +47,10 @@ export const MessagesSheet = ({
           </SheetHeader>
 
           <div className="flex-1 overflow-hidden">
-            {user?.id ? (
+            {currentProfileId ? (
               <ThreadsList
                 onThreadSelect={handleThreadSelect}
-                currentProfileId={user.id}
+                currentProfileId={currentProfileId}
               />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -61,7 +64,7 @@ export const MessagesSheet = ({
       <DMQuickSheet
         open={dmSheetOpen}
         onOpenChange={setDmSheetOpen}
-        friendId={selectedFriendId}
+        friendId={selectedFriendProfileId}
       />
     </>
   );

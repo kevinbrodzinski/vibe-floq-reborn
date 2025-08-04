@@ -12,8 +12,8 @@ import { Search, MessageCircle, User, Hash } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface ThreadsListProps {
-  onThreadSelect: (threadId: string, friendId: string) => void;
-  currentProfileId: string;
+  onThreadSelect: (threadId: string, friendProfileId: string) => void;
+  currentProfileId: string; // profile_id is the main user identifier
 }
 
 // Helper function to highlight search matches
@@ -49,12 +49,13 @@ export const ThreadsList = ({ onThreadSelect, currentProfileId }: ThreadsListPro
 
   const threadsToShow = debouncedSearch ? searchResults : 
     allThreads.map(thread => {
-      const isProfileA = thread.member_a === currentProfileId;
-      const friendProfile = isProfileA ? thread.member_b_profile : thread.member_a_profile;
+      // Check if current profile is member_a or member_b (profile_id matching)
+      const isCurrentProfileMemberA = thread.member_a === currentProfileId;
+      const friendProfile = isCurrentProfileMemberA ? thread.member_b_profile : thread.member_a_profile;
       
       return {
         thread_id: thread.id,
-        friend_profile_id: isProfileA ? thread.member_b_profile_id : thread.member_a_profile_id,
+        friend_profile_id: isCurrentProfileMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
         friend_display_name: friendProfile?.display_name || '',
         friend_username: friendProfile?.username || '',
         friend_avatar_url: friendProfile?.avatar_url || '',

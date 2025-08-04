@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const profileId = await getUserId(req);
+    const profileId = await getUserId(req); // getUserId returns the profile_id (main user identifier)
     if (!profileId) {
       return new Response('Unauthorized', { 
         status: 401, 
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     const query = q.toLowerCase().trim();
 
-    // Search DM threads where profile is a participant with enhanced data
+    // Search DM threads where current profile_id is a participant with enhanced data
     const { data: threadsData, error: threadsError } = await supabase
       .from('direct_threads')
       .select(`
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         pa:profiles!direct_threads_member_a_profile_id_fkey(display_name, username, avatar_url),
         pb:profiles!direct_threads_member_b_profile_id_fkey(display_name, username, avatar_url)
       `)
-      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`)
+      .or(`member_a.eq.${profileId},member_b.eq.${profileId}`) // profileId is used for member matching
       .order('last_message_at', { ascending: false });
 
     if (threadsError) {
@@ -157,8 +157,9 @@ Deno.serve(async (req) => {
     // Process and score results
     const results: ThreadSearchResult[] = (threadsData || [])
       .map(thread => {
-        const isUserA = thread.member_a === profileId;
-        const friendProfile = isUserA ? thread.pb : thread.pa;
+        // Check if current profile_id is member_a or member_b
+        const isCurrentProfileMemberA = thread.member_a === profileId;
+        const friendProfile = isCurrentProfileMemberA ? thread.pb : thread.pa;
         
         if (!friendProfile) return null;
 
@@ -199,12 +200,12 @@ Deno.serve(async (req) => {
 
         return {
           thread_id: thread.id,
-          friend_profile_id: isUserA ? thread.member_b_profile_id : thread.member_a_profile_id,
+          friend_profile_id: isCurrentProfileMemberA ? thread.member_b_profile_id : thread.member_a_profile_id,
           friend_display_name: displayName,
           friend_username: username,
           friend_avatar_url: friendProfile.avatar_url || '',
           last_message_at: thread.last_message_at,
-          my_unread_count: isUserA ? thread.unread_a : thread.unread_b,
+          my_unread_count: isCurrentProfileMemberA ? thread.unread_a : thread.unread_b,
           last_message_content: matchType === 'message' ? matchingMessage : undefined,
           match_type: matchType,
           match_score: bestScore
