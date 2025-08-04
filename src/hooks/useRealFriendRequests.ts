@@ -30,41 +30,41 @@ export function useRealFriendRequests() {
     queryFn: async () => {
       if (!user?.id) return [];
 
+      // Single query with join to eliminate N+1 problem
       const { data, error } = await supabase
         .from('friend_requests')
-        .select('id, profile_id, other_profile_id, status, created_at')
+        .select(`
+          id, 
+          profile_id, 
+          other_profile_id, 
+          status, 
+          created_at,
+          requester_profile:profiles!friend_requests_profile_id_fkey(
+            id,
+            username,
+            display_name,
+            avatar_url
+          )
+        `)
         .eq('other_profile_id', user.id)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching friend requests:', error);
         throw error;
       }
 
-      // Get requester profiles separately
-      const requesterIds = data?.map(r => r.profile_id) || [];
-      if (requesterIds.length === 0) return [];
-
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url')
-        .in('id', requesterIds);
-
-      if (profilesError) {
-        console.error('Error fetching requester profiles:', profilesError);
-        return [];
-      }
-
-      // Combine requests with profiles
-      return data?.map(request => ({
+      // Transform to match expected interface, handling missing profiles
+      return (data || []).map(request => ({
         ...request,
-        requester_profile: profiles?.find(p => p.id === request.profile_id) || {
+        requester_profile: request.requester_profile || {
           id: request.profile_id,
           username: 'unknown',
           display_name: 'Unknown User',
           avatar_url: null
         }
-      })) || [];
+      }));
     },
   });
 

@@ -4,6 +4,7 @@ import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { metersBetween } from '@/lib/location/geo';
 import { useToast } from '@/hooks/use-toast';
+import { multiSignalVenueDetector, type VenueDetectionResult } from '@/lib/location/multiSignalVenue';
 
 interface VenueCheckIn {
   venueId: string;
@@ -32,32 +33,31 @@ export const useAutoCheckIn = () => {
 
   const checkForNearbyVenues = useCallback(async (lat: number, lng: number) => {
     try {
-      const { data: venues, error } = await supabase.rpc('get_trending_venues', {
-        p_lat: lat,
-        p_lng: lng,
-        p_radius_m: CHECK_IN_RADIUS,
-        p_limit: 1
-      });
+      // Use enhanced multi-signal venue detection
+      const venueDetections = await multiSignalVenueDetector.detectVenues(
+        { lat, lng },
+        pos?.accuracy || 50
+      );
 
-      if (error) {
-        console.error('Error checking nearby venues:', error);
-        return;
-      }
+      // Find the highest confidence venue that meets check-in criteria
+      const eligibleVenue = venueDetections.find(detection => 
+        detection.overallConfidence > 0.6 && 
+        detection.recommendedAction === 'check_in'
+      );
 
-      if (venues && venues.length > 0) {
-        const venue = venues[0];
+      if (eligibleVenue) {
         const now = Date.now();
 
         // Check if we're at a new venue
-        if (!currentCheckInRef.current || currentCheckInRef.current.venueId !== venue.venue_id) {
+        if (!currentCheckInRef.current || currentCheckInRef.current.venueId !== eligibleVenue.venueId) {
           // Started being near a new venue
           currentCheckInRef.current = {
-            venueId: venue.venue_id,
-            name: venue.name,
+            venueId: eligibleVenue.venueId,
+            name: `Venue ${eligibleVenue.venueId}`, // TODO: Get actual venue name
             checkedInAt: now,
             lastSeen: now
           };
-          console.log(`[AutoCheckIn] Started tracking venue: ${venue.name}`);
+          console.log(`[AutoCheckIn] Started tracking venue: ${eligibleVenue.venueId} (confidence: ${eligibleVenue.overallConfidence})`);
         } else {
           // Update last seen time for current venue
           currentCheckInRef.current.lastSeen = now;
@@ -72,16 +72,58 @@ export const useAutoCheckIn = () => {
           }
         }
       } else {
-        // No nearby venues, reset current check-in
-        if (currentCheckInRef.current) {
-          console.log(`[AutoCheckIn] Left venue area: ${currentCheckInRef.current.name}`);
-          currentCheckInRef.current = null;
+        // Fallback to traditional GPS-based venue detection
+        const { data: venues, error } = await supabase.rpc('get_trending_venues', {
+          p_lat: lat,
+          p_lng: lng,
+          p_radius_m: CHECK_IN_RADIUS,
+          p_limit: 1
+        });
+
+        if (error) {
+          console.error('Error checking nearby venues:', error);
+          return;
+        }
+
+        if (venues && venues.length > 0) {
+          const venue = venues[0];
+          const now = Date.now();
+
+          // Check if we're at a new venue
+          if (!currentCheckInRef.current || currentCheckInRef.current.venueId !== venue.venue_id) {
+            // Started being near a new venue
+            currentCheckInRef.current = {
+              venueId: venue.venue_id,
+              name: venue.name,
+              checkedInAt: now,
+              lastSeen: now
+            };
+            console.log(`[AutoCheckIn] Started tracking venue (fallback): ${venue.name}`);
+          } else {
+            // Update last seen time for current venue
+            currentCheckInRef.current.lastSeen = now;
+            
+            // Check if we've been here long enough to auto check-in
+            const stayTime = now - currentCheckInRef.current.checkedInAt;
+            if (stayTime >= MIN_STAY_TIME) {
+              const success = await performAutoCheckIn(currentCheckInRef.current);
+              if (success) {
+                currentCheckInRef.current = null; // Reset after successful check-in
+              }
+            }
+          }
+        } else {
+          // No nearby venues, reset current check-in
+          if (currentCheckInRef.current) {
+            console.log(`[AutoCheckIn] Left venue area: ${currentCheckInRef.current.name}`);
+            currentCheckInRef.current = null;
+          }
         }
       }
     } catch (error) {
       console.error('Error in auto check-in detection:', error);
     }
-  }, []);
+  }, [pos?.accuracy]);
 
   const performAutoCheckIn = async (checkIn: VenueCheckIn): Promise<boolean> => {
     try {

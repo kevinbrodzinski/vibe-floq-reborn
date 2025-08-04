@@ -3,12 +3,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, Share2, MessageCircle, Calendar, Copy, ExternalLink } from 'lucide-react';
+import { Edit, Share2, MessageCircle, Calendar, Copy, ExternalLink, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { addToCalendar, type CalendarEvent } from '@/lib/calendar';
 
 interface PlanQuickActionsProps {
   planId: string;
   planTitle: string;
+  planDescription?: string;
+  startTime?: string;
+  endTime?: string;
   isCreator: boolean;
   onEditPlan: () => void;
   onEditTimeline: () => void;
@@ -17,8 +22,11 @@ interface PlanQuickActionsProps {
 export function PlanQuickActions({ 
   planId, 
   planTitle, 
+  planDescription,
+  startTime,
+  endTime,
   isCreator, 
-  onEditPlan,
+  onEditPlan, 
   onEditTimeline 
 }: PlanQuickActionsProps) {
   const { toast } = useToast();
@@ -45,20 +53,44 @@ export function PlanQuickActions({
     }
   };
 
-  const handleAddToCalendar = () => {
-    // TODO: Implement calendar integration
-    toast({
-      title: "Coming soon",
-      description: "Calendar integration will be available soon",
-    });
+  const handleAddToCalendar = (provider: 'google' | 'outlook' | 'ics') => {
+    if (!startTime) {
+      toast({
+        title: "No start time",
+        description: "This plan doesn't have a start time set",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const startDate = new Date(startTime);
+    const endDate = endTime ? new Date(endTime) : new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default 2 hours
+
+    const calendarEvent: CalendarEvent = {
+      title: planTitle,
+      description: planDescription || `Join us for ${planTitle}`,
+      startDate,
+      endDate,
+      url: `${window.location.origin}/plans/${planId}`,
+    };
+
+    try {
+      addToCalendar(calendarEvent, provider);
+      toast({
+        title: "Added to calendar",
+        description: `Plan added to ${provider === 'ics' ? 'calendar' : provider}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add to calendar",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleOpenChat = () => {
-    // TODO: Navigate to plan chat
-    toast({
-      title: "Coming soon",
-      description: "Plan chat will be available soon",
-    });
+    navigate(`/plan/${planId}`);
   };
 
   return (
@@ -110,15 +142,30 @@ export function PlanQuickActions({
           Group Chat
         </Button>
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleAddToCalendar}
-          className="justify-start"
-        >
-          <Calendar className="w-4 h-4 mr-2" />
-          Add to Calendar
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-start"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Add to Calendar
+              <ChevronDown className="w-3 h-3 ml-auto" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => handleAddToCalendar('google')}>
+              Google Calendar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddToCalendar('outlook')}>
+              Outlook Calendar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddToCalendar('ics')}>
+              Download .ics file
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         <Button
           variant="outline"

@@ -16,7 +16,7 @@ export function createDiscoveryQueryKey(
     groupSize: number;
     budget: string;
   },
-  userId?: string
+  profileId?: string
 ) {
   if (!userLocation) return ['smart-discovery', null];
   
@@ -31,7 +31,7 @@ export function createDiscoveryQueryKey(
       groupSize: filters.groupSize,
       budget: filters.budget,
     },
-    userId,
+    profileId,
   ];
 }
 
