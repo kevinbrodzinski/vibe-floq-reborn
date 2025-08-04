@@ -105,11 +105,11 @@ $$;
 GRANT EXECUTE ON FUNCTION build_daily_recap TO authenticated;
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_venue_stays_profile_date 
-ON venue_stays (profile_id, DATE(arrived_at));
+CREATE INDEX IF NOT EXISTS idx_venue_stays_profile_arrived 
+ON venue_stays (profile_id, arrived_at);
 
-CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_date 
-ON proximity_events (profile_id_a, DATE(event_ts));
+CREATE INDEX IF NOT EXISTS idx_proximity_events_profile_ts 
+ON proximity_events (profile_id_a, event_ts);
 
 CREATE INDEX IF NOT EXISTS idx_crossed_paths_date 
 ON crossed_paths (encounter_date);
@@ -136,8 +136,8 @@ ON auto_checkin_attempts FOR SELECT
 USING (auth.uid() = profile_id);
 
 -- Add indexes for performance
-CREATE INDEX IF NOT EXISTS idx_auto_checkin_attempts_profile_date 
-ON auto_checkin_attempts (profile_id, DATE(attempted_at));
+CREATE INDEX IF NOT EXISTS idx_auto_checkin_attempts_profile_attempted 
+ON auto_checkin_attempts (profile_id, attempted_at);
 
 CREATE INDEX IF NOT EXISTS idx_auto_checkin_attempts_success 
 ON auto_checkin_attempts (profile_id, success, attempted_at);
