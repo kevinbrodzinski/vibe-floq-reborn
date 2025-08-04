@@ -45,14 +45,6 @@ export function ProximityNotifications({
   autoHideDelay = 10000,
   showInDevelopment = true 
 }: ProximityNotificationsProps) {
-  // Temporarily disabled to avoid context errors
-  console.log('[ProximityNotifications] Component rendered (temporarily disabled)');
-  
-  // Early return to avoid useFieldLocation context error
-  if (true) {
-    return null;
-  }
-  
   const [notifications, setNotifications] = useState<ProximityNotification[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   
@@ -60,8 +52,32 @@ export function ProximityNotifications({
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Disabled to avoid type recursion - component is temporarily disabled anyway
-  const friendProfiles = {};
+  // Get friend profile data for notifications using working RPC
+  const { data: friendProfiles = {} } = useQuery({
+    queryKey: ['friends-with-presence', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      
+      const { data, error } = await supabase.rpc('get_friends_with_presence');
+      
+      if (error) {
+        console.error('Error fetching friends with presence:', error);
+        return {};
+      }
+
+      return Object.fromEntries(
+        (data || []).map(f => [
+          f.friend_profile_id, 
+          {
+            id: f.friend_profile_id,
+            name: f.display_name || f.username || 'Friend',
+            avatar: f.avatar_url
+          }
+        ])
+      );
+    },
+    enabled: !!user?.id
+  });
 
   // Process proximity events into notifications
   useEffect(() => {

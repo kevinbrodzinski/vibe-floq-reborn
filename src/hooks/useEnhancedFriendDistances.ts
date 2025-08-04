@@ -199,7 +199,7 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
                   timestamp: new Date(presence.updated_at).getTime(),
                   vibe: presence.vibe || null,
                   venueId: null, // Not available in vibes_now
-                  visibility: presence.visibility || 'friends'
+                  visibility: 'friends' // presence.visibility not available in current schema
                 });
               }
             } catch (locationError) {

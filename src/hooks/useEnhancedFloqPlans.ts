@@ -41,14 +41,14 @@ export function useEnhancedFloqPlans(floqId?: string) {
   const { data: plans = [], isLoading, error } = useQuery({
     queryKey: ['enhanced-floq-plans', floqId, user?.id],
     queryFn: async (): Promise<EnhancedFloqPlan[]> => {
-      // Fallback to basic query since RPC doesn't exist
+      // Fallback to basic query since enhanced RPC doesn't exist
       const { data, error } = await supabase
         .from('floq_plans')
         .select('*')
         .limit(50);
 
       if (error) {
-        console.error('Error fetching enhanced floq plans:', error);
+        console.error('Error fetching floq plans:', error);
         throw error;
       }
 
