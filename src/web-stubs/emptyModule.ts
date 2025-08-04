@@ -137,6 +137,41 @@ export const reactNativeMmkv = {
   createMMKV: () => new reactNativeMmkv.MMKV(),
 };
 
+// Stub for @react-native-async-storage/async-storage
+export const asyncStorage = {
+  getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+  setItem: (key: string, value: string) => Promise.resolve(localStorage.setItem(key, value)),
+  removeItem: (key: string) => Promise.resolve(localStorage.removeItem(key)),
+  clear: () => Promise.resolve(localStorage.clear()),
+  getAllKeys: () => Promise.resolve(Object.keys(localStorage)),
+  multiGet: (keys: string[]) => Promise.resolve(keys.map(key => [key, localStorage.getItem(key)])),
+  multiSet: (keyValuePairs: [string, string][]) => {
+    keyValuePairs.forEach(([key, value]) => localStorage.setItem(key, value));
+    return Promise.resolve();
+  },
+  multiRemove: (keys: string[]) => {
+    keys.forEach(key => localStorage.removeItem(key));
+    return Promise.resolve();
+  }
+};
+
+// Stub for expo-haptics
+export const expoHaptics = {
+  impactAsync: (style?: string) => Promise.resolve(),
+  notificationAsync: (type?: string) => Promise.resolve(),
+  selectionAsync: () => Promise.resolve(),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy'
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error'
+  }
+};
+
 // Default export for modules that use default exports
 export default {
   posthog,
@@ -147,6 +182,8 @@ export default {
   sentryExpo,
   reactNativeLibraries,
   reactNativeMmkv,
+  asyncStorage,
+  expoHaptics,
   // Add any other exports that might be needed
   Application: expoApplication,
   Constants: expoConstants,
@@ -155,4 +192,12 @@ export default {
   Sentry: sentryExpo,
   MMKV: reactNativeMmkv.MMKV,
   createMMKV: reactNativeMmkv.createMMKV,
+  AsyncStorage: asyncStorage,
+  Haptics: expoHaptics,
+  // Common export patterns
+  getItem: asyncStorage.getItem,
+  setItem: asyncStorage.setItem,
+  removeItem: asyncStorage.removeItem,
+  impactAsync: expoHaptics.impactAsync,
+  notificationAsync: expoHaptics.notificationAsync,
 };

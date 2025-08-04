@@ -13,6 +13,8 @@ import { calculateDistance }     from '@/lib/location/standardGeo';
 import { trackLocationPermission } from '@/lib/analytics';
 import { geoTelemetry } from '@/lib/monitoring/telemetry';
 import { loadPersistedCoords, savePersistedCoords, isStale } from '@/lib/location/geoCache';
+import { getEnhancedGeolocation, webLocationHelpers } from '@/lib/location/webCompatibility';
+import { isLovablePreview, platformLog } from '@/lib/platform';
 
 /* ────────────────────────────────────────────────────────── */
 /* Types                                                     */
@@ -257,7 +259,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
     }, 25_000);
 
     /* one-shot high-accuracy window (25s timeout) */
-    navigator.geolocation.getCurrentPosition(
+            getEnhancedGeolocation().getCurrentPosition(
       (pos) => {
         clearTimeout(timeoutId);
         apply(pos);
@@ -272,7 +274,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
 
     /* continuous updates (25s timeout) */
     if (o.watch) {
-      watchId.current = navigator.geolocation.watchPosition(
+      watchId.current = getEnhancedGeolocation().watchPosition(
         apply,
         fail,
         { enableHighAccuracy:o.enableHighAccuracy, timeout:25_000, maximumAge:60_000 },
@@ -281,7 +283,7 @@ export function useGeo(opts: GeoOpts = {}): GeoState {
   }, [apply, fail, o.enableHighAccuracy, o.watch]);
 
   const clearWatch = useCallback(() => {
-    if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
+          if (watchId.current !== null) getEnhancedGeolocation().clearWatch(watchId.current);
     if (debTimer.current) clearTimeout(debTimer.current);
     watchId.current = null;
     debTimer.current = null;

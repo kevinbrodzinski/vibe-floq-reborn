@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import type { GeoCoords, LocationConsumer, MovementContext } from './types';
 import { callFn } from '@/lib/callFn';
+import { isLovablePreview, platformLog, getCurrentPlatformConfig } from '@/lib/platform';
 
 // LocationConsumer interface now imported from types.ts
 

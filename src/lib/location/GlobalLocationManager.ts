@@ -6,6 +6,7 @@
 
 import { useGeo, type GeoState, type GeoOpts } from '@/hooks/useGeo';
 import { useEffect, useRef } from 'react';
+import { isLovablePreview, platformLog } from '@/lib/platform';
 
 interface LocationSubscriber {
   id: string;
@@ -96,9 +97,7 @@ class GlobalLocationManager {
       this.handleLocationError(timeoutError);
       
       // Notify LocationBus about GPS timeout
-      if (import.meta.env.MODE === 'development') {
-        console.warn('[GlobalLocationManager] GPS timeout - no signal received');
-      }
+      platformLog.warn('GPS timeout - no signal received');
     }, this.GPS_TIMEOUT_MS);
   }
 
