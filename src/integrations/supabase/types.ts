@@ -11272,6 +11272,10 @@ export type Database = {
             }
         Returns: string
       }
+      are_friends: {
+        Args: { user_a: string; user_b: string }
+        Returns: boolean
+      }
       assert_plan_is_draft: {
         Args: { _plan_id: string }
         Returns: undefined
@@ -12396,7 +12400,7 @@ export type Database = {
         }[]
       }
       get_or_create_dm_thread: {
-        Args: { p_user_a: string; p_user_b: string }
+        Args: { p_profile_a: string; p_profile_b: string }
         Returns: string
       }
       get_pending_friend_requests: {
