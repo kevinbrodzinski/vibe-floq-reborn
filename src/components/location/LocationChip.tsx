@@ -1,7 +1,22 @@
-import { MapPin, Navigation, Building, Home } from 'lucide-react'
+import { MapPin, Navigation, Building, Home, Users, TrendingUp, Heart } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+
+interface VenueIntelligenceData {
+  vibe_match?: {
+    score: number;
+    explanation: string;
+  };
+  social_proof?: {
+    friend_visits: number;
+    popular_with: string;
+  };
+  crowd_intelligence?: {
+    current_capacity: number;
+    typical_crowd: string;
+  };
+}
 
 interface LocationData {
   coordinates?: [number, number] // [lng, lat]
@@ -9,6 +24,7 @@ interface LocationData {
   venue_id?: string
   address?: string
   distance_from_previous?: number
+  venue_intelligence?: VenueIntelligenceData
 }
 
 interface LocationChipProps {
