@@ -236,7 +236,11 @@ GRANT EXECUTE ON FUNCTION public.cleanup_old_vibe_metrics TO authenticated;
 
 -- Insert initial system health record
 INSERT INTO public.vibe_system_metrics (measurement_type, metrics) 
-VALUES ('system_health', '{"version": "1.0", "initialized": true, "timestamp": "' || NOW() || '"}')
+VALUES ('system_health', jsonb_build_object(
+    'version', '1.0',
+    'initialized', true,
+    'timestamp', NOW()::text
+))
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
