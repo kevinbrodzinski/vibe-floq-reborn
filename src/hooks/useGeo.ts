@@ -20,6 +20,20 @@ const DEMO_COORDS: GeolocationCoordinates = {
   toJSON() { return this; }
 };
 
+// Helper function to create GeolocationCoordinates from lat/lng
+function createCoords(lat: number, lng: number, accuracy: number = 50): GeolocationCoordinates {
+  return {
+    latitude: lat,
+    longitude: lng,
+    altitude: null,
+    altitudeAccuracy: null,
+    accuracy,
+    heading: null,
+    speed: null,
+    toJSON() { return this; }
+  };
+}
+
 export interface GeoState {
   coords: { lat: number; lng: number } | null;
   accuracy: number | null;
@@ -51,11 +65,7 @@ export function useGeo(): GeoState {
       console.log('[useGeo] 🔧 Debug location found:', force);
       const [latStr, lngStr] = force.split(',');
       const debugResult = {
-        coords: {
-          ...DEMO_COORDS,
-          latitude: +latStr,
-          longitude: +lngStr
-        },
+        coords: createCoords(+latStr, +lngStr, 50), // 🔧 FIX: Use helper to create proper coords
         timestamp: Date.now(),
         status: 'ready' as const  // ★ normalize to 'ready' for UI consumption
       };
@@ -77,7 +87,7 @@ export function useGeo(): GeoState {
     if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
       console.log('[useGeo] Debug mode enabled - using demo coordinates');
       const debugResult = {
-        coords: DEMO_COORDS,
+        coords: DEMO_COORDS, // Use original DEMO_COORDS structure
         timestamp: Date.now(),
         status: 'ready' as const
       };
@@ -99,7 +109,11 @@ export function useGeo(): GeoState {
     const t = setTimeout(() => {
       console.log('[useGeo] Timeout reached - falling back to demo coordinates');
       didTimeout = true;
-        const timeoutResult = { coords: DEMO_COORDS, timestamp: Date.now(), status: 'ready' as const };
+        const timeoutResult = { 
+          coords: DEMO_COORDS, // Use original DEMO_COORDS structure
+          timestamp: Date.now(), 
+          status: 'ready' as const 
+        };
         
         if (import.meta.env.DEV) {
           (window as any).__FLOQ_DEBUG_LAST_GEO = timeoutResult;
@@ -142,7 +156,11 @@ export function useGeo(): GeoState {
       console.error('[useGeo] Geolocation failed:', error);
       if (!didTimeout) {
         clearTimeout(t);
-        const debugResult = { coords: DEMO_COORDS, timestamp: Date.now(), status: 'ready' as const };
+        const debugResult = { 
+          coords: DEMO_COORDS, // Use original DEMO_COORDS structure
+          timestamp: Date.now(), 
+          status: 'ready' as const 
+        };
         
         if (import.meta.env.DEV) {
           (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
@@ -164,7 +182,7 @@ export function useGeo(): GeoState {
 
   return {
     coords: value.coords ? {
-      lat: value.coords.latitude,
+      lat: value.coords.latitude,  // 🔧 FIX: Convert from latitude/longitude to lat/lng
       lng: value.coords.longitude
     } : null,
     accuracy: value.coords?.accuracy ?? null,

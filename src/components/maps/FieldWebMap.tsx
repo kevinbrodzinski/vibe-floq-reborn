@@ -75,29 +75,43 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     return filtered;
   }, [floqs, selectedVibe, selectedMyFloq]);
 
-  // Filter people to show only members of selected floq
+  // Build people array with current user + any floq members
   const filteredPeople = useMemo(() => {
-    if (!selectedMyFloq || !selectedFloqMembers.length) {
-      return []; // Return empty array when no floq is selected or no members
-    }
-    
     // 🔧 DEBUG: Log location context state
     console.log('[FieldWebMap] 🔧 Building filteredPeople with location:', {
       hasLocationCoords: !!location?.coords,
       locationCoords: location?.coords,
-      isLocationReady
+      isLocationReady,
+      selectedMyFloq,
+      selectedFloqMembersCount: selectedFloqMembers.length
     });
     
-    // Build people array with actual coordinates when available
-    return selectedFloqMembers.map(member => ({
-      id: member.profile_id,
-      lng: location?.coords?.lng || 0, // Use actual coordinates from location context
-      lat: location?.coords?.lat || 0,
+    // 🔧 CRITICAL FIX: ALWAYS include current user as a person with you: true
+    // This ensures usePeopleSource can find and render the "YOU" pin
+    const currentUserPerson = location?.coords ? [{
+      id: 'current-user', // Use a fixed ID for current user
+      lng: location.coords.lng,
+      lat: location.coords.lat,
       x: 0,
       y: 0,
       you: true, // 🔧 CRITICAL: Mark as current user so usePeopleSource picks it up
       isFriend: false
-    }));
+    }] : [];
+    
+    // Build people array with floq members if selected
+    const floqMembers = selectedMyFloq && selectedFloqMembers.length > 0 
+      ? selectedFloqMembers.map(member => ({
+          id: member.profile_id,
+          lng: 0, // Floq members don't have live coordinates yet
+          lat: 0,
+          x: 0,
+          y: 0,
+          you: false,
+          isFriend: true
+        }))
+      : [];
+    
+    return [...currentUserPerson, ...floqMembers];
   }, [selectedMyFloq, selectedFloqMembers, location?.coords, isLocationReady]);
 
   // Prepare context value for selected floq
