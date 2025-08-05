@@ -55,7 +55,7 @@ export const PersonalHero: React.FC = () => {
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <h3 className="text-sm font-semibold capitalize text-foreground">
-            {vibe || 'chill'}
+            {(vibe as string) || 'chill'}
           </h3>
           {streakDays > 0 && (
             <div className="flex items-center gap-1 text-orange-400">

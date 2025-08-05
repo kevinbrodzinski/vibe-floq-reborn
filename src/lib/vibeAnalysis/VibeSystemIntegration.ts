@@ -45,36 +45,68 @@ export interface EnhancedFeedbackData {
   };
 }
 
+export interface Hotspot {
+  id: string;
+  name: string;
+  center: { lat: number; lng: number };
+  intensity: number;
+  momentumScore: number;
+  predictionConfidence: number;
+  dominantVibe: string;
+  momentum: number;
+  stability: number;
+  diversity: number;
+  socialMetrics: {
+    userCount: number;
+    vibeCoherence: number;
+    averageStayTime: number;
+  };
+  prediction: {
+    confidence: number;
+    trend: 'rising' | 'stable' | 'falling';
+    peakTime: string;
+  };
+}
+
+export interface ProximityIntelligence {
+  confidenceScores: Record<string, number>;
+  proximityTrends: {
+    friendId: string;
+    trend: 'approaching' | 'departing' | 'stable';
+    confidence: number;
+    estimatedMeetupTime?: string;
+  }[];
+  optimalMeetupLocations: { venueId: string; score: number }[];
+  socialMomentum: { score: number; direction: 'building' | 'falling' };
+}
+
 export interface EnhancedSocialContextData {
+  hotspots: Hotspot[];
+  alignment: number;
+  proximityIntelligence: ProximityIntelligence;
   socialScore: number;
   nearbyFriends: any[];
   socialRecommendations: string[];
   groupDynamics: any;
-  hotspots: Array<{
-    id: string;
-    name: string;
-    dominantVibe: string;
-    intensity: number;
-    momentum: number;
-    stability: number;
-    diversity: number;
-    socialMetrics: {
-      userCount: number;
-      vibeCoherence: number;
-      averageStayTime: number;
-    };
-    prediction: {
-      confidence: number;
-      trend: 'rising' | 'stable' | 'declining';
-      peakTime: string;
-    };
-  }>;
+}
+
+export interface EnvFactors { 
+  isOptimalTime: boolean;
+  socialDensity: number;
+  temporalMomentum: number;
+  vibeCoherence: number;
+}
+
+export interface VibePrediction { 
+  vibe: string; 
+  score: number;
+  probability: number;
+  timeframe: string;
+  reason: string;
+  confidence: number;
 }
 
 export interface EnhancedPersonalHeroData {
-  heroMetrics: any;
-  personalInsights: any;
-  adaptiveContent: any;
   confidence: number;
   accuracy: number;
   currentVibe: string;
@@ -83,17 +115,12 @@ export interface EnhancedPersonalHeroData {
       vibe: string;
       probability: number;
       timeframe: string;
-      timeEstimate: string;
     };
     contextualSuggestions: Array<{
       vibe: string;
       reason: string;
       confidence: number;
     }>;
-  };
-  learningProgress: {
-    totalCorrections: number;
-    streakDays: number;
   };
   sensorQuality: {
     overall: number;
@@ -102,12 +129,14 @@ export interface EnhancedPersonalHeroData {
     light: number;
     location: number;
   };
-  environmentalFactors: {
-    isOptimalTime: boolean;
-    socialDensity: number;
-    temporalMomentum: number;
-    vibeCoherence: number;
+  environmentalFactors: EnvFactors;
+  learningProgress: {
+    totalCorrections: number;
+    streakDays: number;
   };
+  heroMetrics: any;
+  personalInsights: any;
+  adaptiveContent: any;
 }
 
 export class VibeSystemIntegration {
@@ -175,20 +204,20 @@ export class VibeSystemIntegration {
   }
 
   async getEnhancedSocialContextData(
-    locationData: any,
-    proximityData: any
+    locationData?: any,
+    vibe?: any,
+    friends?: any
   ): Promise<EnhancedSocialContextData> {
     return {
-      socialScore: Math.random() * 0.4 + 0.6,
-      nearbyFriends: proximityData?.nearbyFriends || [],
-      socialRecommendations: ['Connect with nearby friends', 'Join local events'],
-      groupDynamics: { cohesion: 0.8, energy: 0.7 },
       hotspots: [
         {
           id: 'hotspot-1',
           name: 'Coffee District',
-          dominantVibe: 'social',
+          center: { lat: 37.7749, lng: -122.4194 },
           intensity: 0.8,
+          momentumScore: 0.6,
+          predictionConfidence: 0.85,
+          dominantVibe: 'social',
           momentum: 0.6,
           stability: 0.7,
           diversity: 0.5,
@@ -206,8 +235,11 @@ export class VibeSystemIntegration {
         {
           id: 'hotspot-2', 
           name: 'Park Central',
-          dominantVibe: 'chill',
+          center: { lat: 37.7849, lng: -122.4094 },
           intensity: 0.6,
+          momentumScore: 0.4,
+          predictionConfidence: 0.72,
+          dominantVibe: 'chill',
           momentum: 0.4,
           stability: 0.9,
           diversity: 0.7,
@@ -222,19 +254,26 @@ export class VibeSystemIntegration {
             peakTime: '4:00 PM'
           }
         }
-      ]
+      ],
+      alignment: 0.75,
+      proximityIntelligence: {
+        confidenceScores: {},
+        proximityTrends: [],
+        optimalMeetupLocations: [],
+        socialMomentum: { score: 0.6, direction: 'building' },
+      },
+      socialScore: Math.random() * 0.4 + 0.6,
+      nearbyFriends: friends || [],
+      socialRecommendations: ['Connect with nearby friends', 'Join local events'],
+      groupDynamics: { cohesion: 0.8, energy: 0.7 },
     };
   }
 
   async getEnhancedPersonalHeroData(
-    heroData: any,
-    sensorData: any,
-    locationData?: any
+    sensorData?: any,
+    location?: any
   ): Promise<EnhancedPersonalHeroData> {
     return {
-      heroMetrics: { energy: 0.8, focus: 0.6, social: 0.7 },
-      personalInsights: { mood: 'positive', trend: 'improving' },
-      adaptiveContent: { suggestions: ['Take a break', 'Connect with friends'] },
       confidence: 0.82,
       accuracy: 0.76,
       currentVibe: 'social',
@@ -242,17 +281,12 @@ export class VibeSystemIntegration {
         nextVibeTransition: { 
           vibe: 'chill', 
           probability: 0.65, 
-          timeframe: '30min',
-          timeEstimate: '30 minutes'
+          timeframe: '30min'
         },
         contextualSuggestions: [
           { vibe: 'chill', reason: 'Try a quieter venue', confidence: 0.7 },
           { vibe: 'social', reason: 'Join a group activity', confidence: 0.8 }
         ]
-      },
-      learningProgress: {
-        totalCorrections: 47,
-        streakDays: 12
       },
       sensorQuality: {
         overall: 0.78,
@@ -266,7 +300,14 @@ export class VibeSystemIntegration {
         socialDensity: 0.67,
         temporalMomentum: 0.73,
         vibeCoherence: 0.89
-      }
+      },
+      learningProgress: {
+        totalCorrections: 47,
+        streakDays: 12
+      },
+      heroMetrics: { energy: 0.8, focus: 0.6, social: 0.7 },
+      personalInsights: { mood: 'positive', trend: 'improving' },
+      adaptiveContent: { suggestions: ['Take a break', 'Connect with friends'] },
     };
   }
 }

@@ -89,11 +89,15 @@ export const SystemHealthMonitor: React.FC<SystemHealthMonitorProps> = ({
     setIsRefreshing(true);
     try {
       // Get base health metrics
-      const baseMetrics = vibeSystem.getSystemHealthMetrics();
+      const baseMetrics = await vibeSystem.getSystemHealthMetrics();
       
       // Simulate additional detailed metrics (in real implementation, these would come from actual monitoring)
       const detailedMetrics: SystemHealthMetrics = {
-        ...baseMetrics,
+        overallHealth: Math.round(baseMetrics.overallHealth * 100),
+        accuracy: baseMetrics.accuracy,
+        responseTime: baseMetrics.responseTime,
+        learningProgress: baseMetrics.learningProgress,
+        recommendations: baseMetrics.recommendations || [],
         vibeSystem: {
           mlAccuracy: baseMetrics.accuracy,
           sensorFusionQuality: 0.85 + Math.random() * 0.1,

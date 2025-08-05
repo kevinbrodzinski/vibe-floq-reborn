@@ -54,7 +54,7 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
         
         const data = await vibeSystem.getEnhancedSocialContextData(
           userLocation,
-          currentVibe as any,
+          currentVibe,
           mockFriends
         );
         setSocialData(data);
@@ -86,7 +86,7 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
   
   const topHotspots = socialData.hotspots.slice(0, 3);
   
-  const getTrendIcon = (trend: 'rising' | 'falling' | 'stable') => {
+  const getTrendIcon = (trend: 'rising' | 'stable' | 'falling') => {
     switch (trend) {
       case 'rising': return <TrendingUp className="w-3 h-3 text-green-400" />;
       case 'falling': return <TrendingDown className="w-3 h-3 text-red-400" />;
@@ -94,7 +94,7 @@ export const EnhancedHotspotPreview: React.FC<EnhancedHotspotPreviewProps> = ({
     }
   };
   
-  const getTrendColor = (trend: 'rising' | 'falling' | 'stable') => {
+  const getTrendColor = (trend: 'rising' | 'stable' | 'falling') => {
     switch (trend) {
       case 'rising': return 'text-green-400 bg-green-500/10 border-green-500/20';
       case 'falling': return 'text-red-400 bg-red-500/10 border-red-500/20';

@@ -34,7 +34,7 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
   onVibeTransitionSuggestion,
   onShowDetails
 }) => {
-  const vibe = useCurrentVibe();
+  const vibe = useCurrentVibe() as string;
   const pulseTime = usePulseTime(3);
   const [heroData, setHeroData] = useState<EnhancedPersonalHeroData | null>(null);
   const [showPredictions, setShowPredictions] = useState(false);
