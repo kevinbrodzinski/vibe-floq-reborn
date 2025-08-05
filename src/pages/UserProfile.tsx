@@ -103,10 +103,10 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
   const isMe = profile.id === currentUserId;
   const isCurrentlyFriend = profile.id ? isFriend(profile.id) : false;
   
-  // TODO: Get actual friendship data
-  const friendship = null; // Replace with actual friendship query
-  const pendingFromMe = false; // friendship?.state === 'pending' && friendship.requester === currentUserId
-  const pendingToMe = false; // friendship?.state === 'pending' && friendship.requester !== currentUserId
+  // Get actual friendship data from friendsData
+  const friendship = friendsData.find(f => f.id === profile.id);
+  const pendingFromMe = friendship?.friend_state === 'pending' && friendship.is_outgoing_request;
+  const pendingToMe = friendship?.friend_state === 'pending' && friendship.is_incoming_request;
 
   // Use real stats or fallback to defaults
   const stats = realStats || {
@@ -336,18 +336,8 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         )}
 
         {/* Zone 3: CTA Bar (non-friend only) */}
-        {!isMe && !isCurrentlyFriend && !pendingFromMe && !pendingToMe && (
-          <ActionBarNonFriend profile={profile} />
-        )}
-
-        {/* Pending states */}
-        {!isMe && pendingFromMe && (
-          <GlassCard>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-yellow-300">Request sent</span>
-              {/* TODO: Add cancel button */}
-            </div>
-          </GlassCard>
+        {!isMe && !isCurrentlyFriend && !pendingToMe && (
+          <ActionBarNonFriend profile={profile} requested={pendingFromMe} />
         )}
 
         {!isMe && pendingToMe && (

@@ -7,6 +7,7 @@ import { DiscoverUser } from '@/hooks/useFriendDiscovery';
 import { useQueryClient } from '@tanstack/react-query';
 import { sendFriendRequest } from '@/lib/friends';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface UserSearchResultsProps {
   users: DiscoverUser[];
@@ -23,6 +24,7 @@ export const UserSearchResults = ({
 }: UserSearchResultsProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleAddFriend = async (targetId: string) => {
     try {
@@ -84,9 +86,10 @@ export const UserSearchResults = ({
         return (
           <div 
             key={user.id} 
-            className={`flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors ${
+            className={`flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md transition-colors cursor-pointer ${
               selectedIndex === users.indexOf(user) ? 'bg-accent' : ''
             }`}
+            onClick={() => navigate(`/u/${user.username}`)}
           >
             <Avatar className="w-8 h-8">
               <AvatarImage src={getAvatarUrl(user.avatar_url, 32)} />
@@ -101,7 +104,10 @@ export const UserSearchResults = ({
             
             <AddFriendButton
               status={user.req_status}
-              onAdd={() => handleAddFriend(user.id)}
+              onAdd={(e) => {
+                e.stopPropagation(); // Prevent navigation when clicking Add Friend
+                handleAddFriend(user.id);
+              }}
             />
           </div>
         );

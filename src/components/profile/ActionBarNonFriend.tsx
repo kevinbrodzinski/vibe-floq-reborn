@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { UserPlus, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,9 +8,10 @@ import { Profile } from '@/types/profile';
 
 interface ActionBarNonFriendProps {
   profile: Profile;
+  requested?: boolean;
 }
 
-export const ActionBarNonFriend = ({ profile }: ActionBarNonFriendProps) => {
+export const ActionBarNonFriend = ({ profile, requested = false }: ActionBarNonFriendProps) => {
   const [isAddingFriend, setIsAddingFriend] = useState(false);
   const { toast } = useToast();
 
@@ -58,14 +60,20 @@ export const ActionBarNonFriend = ({ profile }: ActionBarNonFriendProps) => {
 
   return (
     <div className="flex gap-3">
-      <Button
-        onClick={handleAddFriend}
-        disabled={isAddingFriend}
-        className="flex-1 bg-gradient-primary text-white font-medium border-0"
-      >
-        <UserPlus className="h-4 w-4 mr-2" />
-        {isAddingFriend ? 'Sending...' : 'Add Friend'}
-      </Button>
+      {requested ? (
+        <Badge variant="outline" className="flex-1 justify-center px-4 py-2 text-sm border-primary text-primary">
+          Requested
+        </Badge>
+      ) : (
+        <Button
+          onClick={handleAddFriend}
+          disabled={isAddingFriend}
+          className="flex-1 bg-gradient-primary text-white font-medium border-0"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          {isAddingFriend ? 'Sending...' : 'Add Friend'}
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="icon"

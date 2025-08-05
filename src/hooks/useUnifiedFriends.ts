@@ -220,6 +220,7 @@ export function useUnifiedFriends() {
     block       : (id:string) => mutation.mutate({ other:id, state:'blocked' }),
 
     isFriend    : (id:string) => acceptedIds.includes(id),
+    isPending   : (id:string) => data.some(r => r.id === id && r.friend_state === 'pending'),
     updating    : mutation.isPending,
   };
 }

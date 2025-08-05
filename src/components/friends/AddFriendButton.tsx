@@ -6,7 +6,7 @@ type Status = 'none' | 'pending_out' | 'pending_in' | 'friends';
 
 interface AddFriendButtonProps {
   status: Status;
-  onAdd: () => void;
+  onAdd: (e?: React.MouseEvent) => void;
   isLoading?: boolean;
 }
 
