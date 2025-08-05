@@ -22,8 +22,36 @@ import {
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { track } from '@/lib/analytics'
 import dayjs from '@/lib/dayjs'
-import type { EnhancedRecapData } from './enhanced-analytics'
-import { getRecapInsights } from './enhanced-analytics'
+// Removed analytics dependency - using mock data for now
+
+// Stub types until analytics is restored
+interface EnhancedRecapData {
+  day: string;
+  totalMins: number;
+  venues: number;
+  encounters: number;
+  timeline: Array<{ hour: number; mins: number }>;
+  autoCheckins: {
+    total: number;
+    successful: number;
+    detectionMethods: { enhanced: number; gps_fallback: number };
+  };
+  proximityEvents: {
+    totalEvents: number;
+    uniqueFriends: number;
+    closestEncounter: { distance: number };
+  };
+  personalRecords: {
+    longestDayThisMonth: boolean;
+    mostVenuesThisMonth: boolean;
+    mostSocialThisMonth: boolean;
+  };
+  venueInsights: { newVenues: number; returnVisits: number };
+  longestStay: { venue: string; mins: number };
+  topVenues: Array<{ id: string; name: string; mins: number; popularity: number }>;
+}
+
+const getRecapInsights = (data: EnhancedRecapData): string[] => [];
 
 interface EnhancedDailyRecapCardProps {
   data: EnhancedRecapData

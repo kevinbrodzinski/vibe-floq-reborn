@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
 import { setMapInstance }       from '@/lib/geo/project';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
@@ -227,8 +228,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
     (async ()=>{
       try{
-        // CRITICAL: Prepare container to prevent pollution error
-        const containerManager = await import('@/lib/map/MapContainerManager').then(m => m.MapContainerManager.getInstance());
+        // CRITICAL: Prepare container to prevent pollution error (sync import)
+        const containerManager = MapContainerManager.getInstance();
         
         if (!containerManager.prepareContainer(mapContainerRef.current!)) {
           console.error('[FieldWebMap] Container preparation failed');

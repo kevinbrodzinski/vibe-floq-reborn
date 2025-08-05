@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useTodayRecap, shouldShowRecap } from '@/lib/recap'
-import { useEnhancedDailyRecap } from '@/lib/recap/enhanced-analytics'
+// Removed analytics dependency
 import DailyRecapCard from '@/lib/recap/card'
 import EnhancedDailyRecapCard from '@/lib/recap/enhanced-card'
 import CardSkeleton from '@/components/ui/CardSkeleton'
@@ -12,7 +12,8 @@ import { useNavigate } from 'react-router-dom'
 
 export default function DailyRecapGate() {
   const { data, isLoading, error } = useTodayRecap()
-  const { data: enhancedData, isLoading: enhancedLoading } = useEnhancedDailyRecap()
+  const enhancedData = null; // Stub until analytics restored
+  const enhancedLoading = false;
   const [showEnhanced, setShowEnhanced] = useState(true)
   const navigate = useNavigate()
 

@@ -113,11 +113,14 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
 
     const app = new Application();
     appRef.current = app;
+    let cancelled = false; // Guard against unmount before init completes
 
     /* will be assigned after init so we can remove cleanly */
     let onPointerMove: ((e: any) => void) | undefined;
 
     const initAndRegister = async () => {
+      if (cancelled) return; // Check cancellation before async work
+      
       await app.init({
         canvas: actualRef.current!,
         width: window.innerWidth,
@@ -128,6 +131,8 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
         autoDensity: true, // Handle high-DPI displays properly
         backgroundAlpha: 0, // Ensure background is transparent
       });
+      
+      if (cancelled) return; // Check cancellation after async work
       
       // Register app with lifecycle manager
       const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
@@ -278,8 +283,11 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
       import.meta.hot.dispose(safelyDestroyPixi);
     }
 
-    return safelyDestroyPixi;
-  }, [hitTest]);        // ← dependency is safe (stable useCallback)
+    return () => {
+      cancelled = true; // Prevent async init completion after unmount
+      safelyDestroyPixi();
+    };
+  }, [hitTest]);
 
   // Update user dot when GPS position changes
   useEffect(() => {

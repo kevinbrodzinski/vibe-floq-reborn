@@ -29,9 +29,18 @@ export function useMapLayers({
   // Initialize people source (includes self feature)
   usePeopleSource(map, people);
 
-  // Initialize layers once map is ready
+  // Initialize layers once map is ready and reset on style changes
   useEffect(() => {
-    if (!map || !map.isStyleLoaded() || layersInitialized.current) return;
+    if (!map || !map.isStyleLoaded()) return;
+
+    // Reset initialization flag on style changes
+    const handleStyleData = () => {
+      layersInitialized.current = false;
+    };
+
+    map.on('styledata', handleStyleData);
+
+    if (layersInitialized.current) return;
 
     console.log('[useMapLayers] Initializing unified layers');
 
@@ -163,6 +172,10 @@ export function useMapLayers({
     } catch (error) {
       console.error('[useMapLayers] Layer initialization error:', error);
     }
+
+    return () => {
+      map.off('styledata', handleStyleData);
+    };
   }, [map]);
 
   // Cluster click handler (preserve exact existing zoom functionality)

@@ -31,10 +31,10 @@ export class MapContainerManager {
         container.removeChild(container.firstChild);
       }
 
-      // Clear any mapbox-specific classes or attributes
+      // Clear mapbox-specific classes only, preserve Tailwind sizing
       container.className = container.className
         .split(' ')
-        .filter(cls => !cls.startsWith('mapbox'))
+        .filter(cls => !cls.startsWith('mapbox') && !cls.includes('mapbox'))
         .join(' ');
 
       // Remove mapbox-specific attributes
@@ -57,6 +57,7 @@ export class MapContainerManager {
    */
   releaseContainer(container: HTMLElement): void {
     try {
+      // Always delete from active containers set
       this.activeContainers.delete(container);
       
       // Clear any remaining content
@@ -67,6 +68,8 @@ export class MapContainerManager {
       console.log('[MapContainerManager] Container released');
     } catch (error) {
       console.error('[MapContainerManager] Failed to release container:', error);
+      // Force delete even on error to prevent memory leaks
+      this.activeContainers.delete(container);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Application } from 'pixi.js';
+import type { Application } from 'pixi.js';
 
 /**
  * PixiLifecycleManager - Safe PIXI application lifecycle management
@@ -8,6 +8,13 @@ import { Application } from 'pixi.js';
 export class PixiLifecycleManager {
   private static instance: PixiLifecycleManager | null = null;
   private activeApps = new Map<Application, boolean>();
+
+  constructor() {
+    // Clean up on page unload
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', () => this.destroyAll());
+    }
+  }
 
   static getInstance(): PixiLifecycleManager {
     if (!this.instance) {
@@ -70,14 +77,14 @@ export class PixiLifecycleManager {
         texture: true
       });
 
-      // Step 5: Mark as destroyed
-      this.activeApps.set(app, true);
+      // Step 5: Clean up from tracking
+      this.activeApps.delete(app);
       console.log('[PixiLifecycleManager] App destroyed successfully');
 
     } catch (error) {
       console.warn('[PixiLifecycleManager] Destroy error (handled):', error);
-      // Still mark as destroyed to prevent retry loops
-      this.activeApps.set(app, true);
+      // Still clean up tracking to prevent memory leaks
+      this.activeApps.delete(app);
     }
   }
 
@@ -85,7 +92,7 @@ export class PixiLifecycleManager {
    * Check if app is safely destroyed
    */
   isDestroyed(app: Application): boolean {
-    return this.activeApps.get(app) === true || (app as any)._destroyed;
+    return !this.activeApps.has(app) || (app as any)._destroyed;
   }
 
   /**
