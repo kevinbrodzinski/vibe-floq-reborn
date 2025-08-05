@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { databaseCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { locationBus } from '@/lib/location/LocationBus';
-import { useLocationHealth, useLocationMetrics, useLocationCoords, useLocationStatus, useLocationSelectors } from '@/lib/store/useLocationStore';
+import { useLocationHealth, useLocationMetrics, useLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
 
 interface HealthMetrics {
   locationManager: ReturnType<typeof globalLocationManager.getDebugInfo>;
@@ -25,8 +25,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
   const systemHealth = useLocationHealth();
   const storeMetrics = useLocationMetrics();
   const coords = useLocationCoords();
-  const { status, error, hasPermission } = useLocationStatus();
-  const { getSystemHealthScore } = useLocationSelectors();
+  const status = useLocationStatus();
 
   useEffect(() => {
     if (!isVisible) return;
@@ -86,7 +85,7 @@ export const LocationSystemHealthDashboard: React.FC = () => {
     return null; // Only show in development
   }
 
-  const healthScore = getSystemHealthScore();
+  const healthScore = systemHealth ? Math.min(100, systemHealth.gpsManager.isHealthy ? 100 : 50) : 0;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -155,8 +154,8 @@ export const LocationSystemHealthDashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span>Permission:</span>
-                      <span className={getStatusColor(hasPermission)}>
-                        {hasPermission ? 'GRANTED' : 'DENIED'}
+                      <span className={getStatusColor(coords !== null)}>
+                        {coords ? 'GRANTED' : 'DENIED'}
                       </span>
                     </div>
                     {coords && (
@@ -193,10 +192,10 @@ export const LocationSystemHealthDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {error && (
+              {status === 'error' && (
                 <div className="bg-red-900/50 border border-red-600 p-2 rounded">
-                  <div className="text-red-400 font-semibold">Error:</div>
-                  <div className="text-red-300 text-xs">{error}</div>
+                  <div className="text-red-400 font-semibold">Status:</div>
+                  <div className="text-red-300 text-xs">Location Error</div>
                 </div>
               )}
             </div>
