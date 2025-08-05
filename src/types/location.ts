@@ -1,4 +1,11 @@
 
+export interface LocationPoint {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  timestamp: number;
+}
+
 export interface ProximityAnalysis {
   profile_id: string;
   userId: string; // Keep for backward compatibility
@@ -29,7 +36,13 @@ export interface ProximityEventRecord {
   event_type: string;
   proximity_data: any;
   created_at: string;
-  metadata?: any; // Add optional metadata property
+  metadata?: any;
+  // Additional properties for compatibility
+  timestamp?: string;
+  targetProfileId?: string;
+  eventType?: string;
+  distance?: number;
+  confidence?: number;
 }
 
 export interface GeofencingService {

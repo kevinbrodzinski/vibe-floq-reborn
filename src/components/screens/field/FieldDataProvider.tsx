@@ -3,11 +3,21 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { safeVibe } from '@/lib/vibes';
 import type { Vibe } from '@/lib/vibes';
 
-interface FieldData {
+export interface FieldData {
   currentVibe: Vibe;
   vibeStrength: number;
   nearbyFloqs: any[];
   loading: boolean;
+  // Additional properties for compatibility
+  fieldTiles?: any[];
+  tileIds?: string[];
+  viewport?: any;
+  floqEvents?: any[];
+  showDebugVisuals?: boolean;
+  walkableFloqs?: any[];
+  realtime?: any;
+  currentEvent?: any;
+  nearbyVenues?: any[];
 }
 
 interface FieldDataContextType {
@@ -36,6 +46,16 @@ export function FieldDataProvider({ children }: FieldDataProviderProps) {
     vibeStrength: 0.5,
     nearbyFloqs: [],
     loading: true,
+    // Default values for compatibility
+    fieldTiles: [],
+    tileIds: [],
+    viewport: null,
+    floqEvents: [],
+    showDebugVisuals: false,
+    walkableFloqs: [],
+    realtime: null,
+    currentEvent: null,
+    nearbyVenues: [],
   });
 
   const updateVibe = (vibe: Vibe) => {

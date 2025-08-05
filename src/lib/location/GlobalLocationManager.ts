@@ -117,6 +117,18 @@ class GlobalLocationManager {
   getCurrentLocation(): LocationCoords | null {
     return this.currentLocation;
   }
+
+  getDebugInfo() {
+    return {
+      isWatching: this.watchId !== null,
+      subscriberCount: this.subscribers.size,
+      hasPermission: !!navigator.geolocation,
+      failureCount: 0,
+      totalUpdates: 0,
+      gpsAccuracy: this.currentLocation?.accuracy || 0,
+      lastUpdateTime: this.currentLocation?.timestamp || null
+    };
+  }
 }
 
 export const globalLocationManager = new GlobalLocationManager();

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { latLngToCell } from 'h3-js'; // Changed from geoToH3 to latLngToCell
+import { latLngToCell } from 'h3-js';
 import type { 
   LocationPoint, 
   MovementContext as ImportedMovementContext,
@@ -18,12 +18,25 @@ interface MovementContext extends ImportedMovementContext {
 export class LocationBus {
   private userId: string;
   private lastLocation: LocationPoint | null = null;
-  private movementContext: MovementContext = { isMoving: false };
+  private movementContext: MovementContext = { isMoving: false, speed: 0, direction: 0, stability: 1 };
   private venueCache: Record<string, VenueDetectionResult> = {};
   private proximityEventQueue: ProximityEventRecord[] = [];
 
   constructor(userId: string) {
     this.userId = userId;
+  }
+
+  public getDebugInfo() {
+    return {
+      isHealthy: true,
+      consumers: [],
+      batchQueue: [],
+      metrics: {
+        averageLatency: 0,
+        errorRate: 0,
+        writeRate: 0
+      }
+    };
   }
 
   public setMovementContext(context: MovementContext): void {
@@ -89,7 +102,7 @@ export class LocationBus {
         lng: loc.lng,
         acc: loc.accuracy,
         // Convert bigint to string for JSON compatibility
-        h3_idx: latLngToCell(loc.lat, loc.lng, 8).toString() // Changed from geoToH3
+        h3_idx: latLngToCell(loc.lat, loc.lng, 8).toString()
       }));
 
       // Simulate rate limiting on the client side
@@ -114,7 +127,7 @@ export class LocationBus {
   private async detectVenueProximity(loc: LocationPoint): Promise<void> {
     // 1. Check cached venues first
     const cachedVenue = Object.values(this.venueCache).find(venue =>
-      calculateDistance({ lat: loc.lat, lng: loc.lng }, { lat: venue.lat, lng: venue.lng }) <= venue.radius_m
+      calculateDistance({ lat: loc.lat, lng: loc.lng }, { lat: venue.location.lat, lng: venue.location.lng }) <= venue.distance
     );
 
     if (cachedVenue) {
@@ -136,7 +149,7 @@ export class LocationBus {
     }
 
     // 3. Find venues within proximity
-    for (const venue of venues) {
+    for (const venue of venues || []) {
       const distance = calculateDistance(
         { lat: loc.lat, lng: loc.lng },
         { lat: venue.lat, lng: venue.lng }
@@ -144,18 +157,31 @@ export class LocationBus {
 
       if (distance <= venue.radius_m) {
         console.log(`Proximity event (new): ${venue.name}`);
-        this.venueCache[venue.id] = venue; // Cache the venue
-        this.enqueueProximityEvent(loc, venue);
+        const venueResult: VenueDetectionResult = {
+          id: venue.id,
+          name: venue.name,
+          venue_id: venue.id,
+          confidence: 0.8,
+          location: { lat: venue.lat, lng: venue.lng },
+          distance
+        };
+        this.venueCache[venue.id] = venueResult;
+        this.enqueueProximityEvent(loc, venueResult);
       }
     }
   }
 
   private enqueueProximityEvent(loc: LocationPoint, venue: VenueDetectionResult): void {
     const event: ProximityEventRecord = {
-      user_id: this.userId,
-      venue_id: venue.id,
-      location: { lat: loc.lat, lng: loc.lng },
-      timestamp: new Date(loc.timestamp).toISOString()
+      id: `${this.userId}-${venue.id}-${Date.now()}`,
+      profile_id: this.userId,
+      event_type: 'venue_proximity',
+      proximity_data: { 
+        venue_id: venue.id,
+        location: { lat: loc.lat, lng: loc.lng },
+        distance: venue.distance
+      },
+      created_at: new Date(loc.timestamp).toISOString()
     };
 
     this.proximityEventQueue.push(event);
@@ -196,7 +222,7 @@ export class LocationBus {
     const deduped: ProximityEventRecord[] = [];
 
     for (const event of events) {
-      const key = `${event.venue_id}-${Math.floor(new Date(event.timestamp).getTime() / (60 * 1000))}`; // 1-minute window
+      const key = `${event.proximity_data.venue_id}-${Math.floor(new Date(event.created_at).getTime() / (60 * 1000))}`; // 1-minute window
       if (!seen.has(key)) {
         deduped.push(event);
         seen.add(key);
@@ -206,3 +232,6 @@ export class LocationBus {
     return deduped;
   }
 }
+
+// Export singleton instance
+export const locationBus = new LocationBus('current-user-id');

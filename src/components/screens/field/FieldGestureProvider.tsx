@@ -1,14 +1,12 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useFieldUI } from "@/components/field/contexts/FieldUIContext";
-import type { FieldData } from "./FieldDataProvider";
 
 interface FieldGestureProviderProps {
-  data: FieldData;
   children: React.ReactNode;
 }
 
-export const FieldGestureProvider = ({ data, children }: FieldGestureProviderProps) => {
+export const FieldGestureProvider = ({ children }: FieldGestureProviderProps) => {
   const { mode, setMode, navigate, liveRef, detailsOpen, venuesSheetOpen, selectedVenueId } = useFieldUI();
   const { pathname } = useLocation();
 

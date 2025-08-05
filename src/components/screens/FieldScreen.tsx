@@ -9,11 +9,9 @@ export const FieldScreen = () => {
 
   return (
     <FieldDataProvider>
-      {(data) => (
-        <FieldGestureProvider data={data}>
-          <FieldLayout data={data} />
-        </FieldGestureProvider>
-      )}
+      <FieldGestureProvider>
+        <FieldLayout />
+      </FieldGestureProvider>
     </FieldDataProvider>
   );
 };

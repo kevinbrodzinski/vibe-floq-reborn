@@ -13,7 +13,7 @@ import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
-import type { FieldData } from "./FieldDataProvider";
+import { useFieldData } from "./FieldDataProvider";
 import { BottomHud } from "@/components/layout/BottomHud";
 
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
@@ -23,10 +23,10 @@ import { ProximityNotifications } from "@/components/location/ProximityNotificat
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 
 interface FieldLayoutProps {
-  data: FieldData;
 }
 
-export const FieldLayout = ({ data }: FieldLayoutProps) => {
+export const FieldLayout = () => {
+  const { fieldData: data } = useFieldData();
   const { 
     location, 
     isLocationReady, 

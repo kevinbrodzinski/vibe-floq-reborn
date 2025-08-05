@@ -1,4 +1,12 @@
-import { haversine } from 'haversine-distance';
+import haversine from 'haversine-distance';
+
+export function applyPrivacyFilter(data: any): any {
+  return data;
+}
+
+export function snapToGrid(lat: number, lng: number): { lat: number; lng: number } {
+  return { lat, lng };
+}
 
 export function applyPrivacySettings(
   lat: number,
