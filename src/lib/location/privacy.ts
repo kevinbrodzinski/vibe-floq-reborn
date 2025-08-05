@@ -1,11 +1,43 @@
 import haversine from 'haversine-distance';
 
-export function applyPrivacyFilter(data: any): any {
-  return data;
+export function applyPrivacyFilter(
+  lat: number, 
+  lng: number, 
+  accuracy: number, 
+  settings: { live_accuracy?: string }
+): { lat: number; lng: number; accuracy: number } {
+  // TODO(real-impl): Implement proper privacy filtering
+  const privacyLevel = settings.live_accuracy || 'exact';
+  const snapped = snapToGrid(lat, lng, privacyLevel as 'exact' | 'street' | 'area');
+  return {
+    lat: snapped.lat,
+    lng: snapped.lng,
+    accuracy: snapped.accuracy
+  };
 }
 
-export function snapToGrid(lat: number, lng: number): { lat: number; lng: number } {
-  return { lat, lng };
+export function snapToGrid(
+  lat: number, 
+  lng: number, 
+  privacyLevel: 'exact' | 'street' | 'area'
+): { lat: number; lng: number; accuracy: number } {
+  // TODO(real-impl): Implement proper grid snapping
+  switch (privacyLevel) {
+    case 'exact':
+      return { lat, lng, accuracy: 30 };
+    case 'street':
+      // Snap to 100m grid
+      const streetLat = Math.round(lat * 1000) / 1000; // ~100m precision
+      const streetLng = Math.round(lng * 1000) / 1000;
+      return { lat: streetLat, lng: streetLng, accuracy: 100 };
+    case 'area':
+      // Snap to 1km grid
+      const areaLat = Math.round(lat * 100) / 100; // ~1km precision
+      const areaLng = Math.round(lng * 100) / 100;
+      return { lat: areaLat, lng: areaLng, accuracy: 1000 };
+    default:
+      return { lat, lng, accuracy: 30 };
+  }
 }
 
 export function applyPrivacySettings(

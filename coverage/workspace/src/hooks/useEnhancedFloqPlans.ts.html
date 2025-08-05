@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/187</span>
+                <span class='fraction'>0/183</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/187</span>
+                <span class='fraction'>0/183</span>
             </div>
         
             
@@ -326,19 +326,7 @@
 <a name='L261'></a><a href='#L261'>261</a>
 <a name='L262'></a><a href='#L262'>262</a>
 <a name='L263'></a><a href='#L263'>263</a>
-<a name='L264'></a><a href='#L264'>264</a>
-<a name='L265'></a><a href='#L265'>265</a>
-<a name='L266'></a><a href='#L266'>266</a>
-<a name='L267'></a><a href='#L267'>267</a>
-<a name='L268'></a><a href='#L268'>268</a>
-<a name='L269'></a><a href='#L269'>269</a>
-<a name='L270'></a><a href='#L270'>270</a>
-<a name='L271'></a><a href='#L271'>271</a>
-<a name='L272'></a><a href='#L272'>272</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L264'></a><a href='#L264'>264</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -380,8 +368,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -396,8 +382,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -607,36 +591,32 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';<span class="fstat-no" title="function not covered" ><span class="branch-0 cbranch-no" title="branch not covered" ></span></span></span>
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useToast } from '@/hooks/use-toast';
-import type { Vibe } from '@/types/vibes';
+import type { Vibe } from '@/lib/vibes';
 &nbsp;
 export interface EnhancedFloqPlan {
-  plan_id: string;
+  id: string;
   title: string;
-  description?: string;
+  description: string;
   status: string;
-  planned_at: string;
-  start_time?: string;
-  end_time?: string;
-  floq_id?: string;
-  floq_title?: string;
-  floq_vibe?: Vibe;
-  participant_count: number;
-  user_is_participant: boolean;
-  user_rsvp_status: string;
+  starts_at: string;
+  ends_at: string;
   created_at: string;
+  updated_at: string;
+  creator_id: string;
+  floq_id: string;
+  participant_count: number;
+  user_rsvp_status: string;
 }
 &nbsp;
 export interface CreateGroupPlanData {
   title: string;
   description?: string;
-  planned_at?: string;
-  start_time?: string;
-  end_time?: string;
-  vibe_tags?: Vibe[];
-  max_participants?: number;
-  location?: any;
+  starts_at?: string;
+  ends_at?: string;
+  floq_title?: string;
+  floq_description?: string;
 }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >export function useEnhancedFloqPlans(floqId?: string) {</span>
@@ -649,9 +629,7 @@ export interface CreateGroupPlanData {
 <span class="cstat-no" title="statement not covered" >    queryKey: ['enhanced-floq-plans', floqId, user?.id],</span>
 <span class="cstat-no" title="statement not covered" >    queryFn: async (): Promise&lt;EnhancedFloqPlan[]&gt; =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase.rpc('get_floq_plans_enhanced', {</span>
-<span class="cstat-no" title="statement not covered" >        p_floq_id: floqId || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_user_id: user?.id || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_limit: 50</span>
+<span class="cstat-no" title="statement not covered" >        p_profile_id: user?.id!</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (error) {</span>
@@ -672,12 +650,10 @@ export interface CreateGroupPlanData {
 <span class="cstat-no" title="statement not covered" >      const { data, error } = await supabase.rpc('create_group_plan_with_floq', {</span>
 <span class="cstat-no" title="statement not covered" >        p_title: planData.title,</span>
 <span class="cstat-no" title="statement not covered" >        p_description: planData.description || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_planned_at: planData.planned_at || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_start_time: planData.start_time || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_end_time: planData.end_time || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_vibe_tags: planData.vibe_tags || ['social'],</span>
-<span class="cstat-no" title="statement not covered" >        p_max_participants: planData.max_participants || null,</span>
-<span class="cstat-no" title="statement not covered" >        p_location: planData.location || null</span>
+<span class="cstat-no" title="statement not covered" >        p_starts_at: planData.starts_at || null,</span>
+<span class="cstat-no" title="statement not covered" >        p_ends_at: planData.ends_at || null,</span>
+<span class="cstat-no" title="statement not covered" >        p_floq_title: planData.floq_title || null,</span>
+<span class="cstat-no" title="statement not covered" >        p_floq_description: planData.floq_description || null</span>
 <span class="cstat-no" title="statement not covered" >      });</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      if (error) {</span>
@@ -728,7 +704,7 @@ export interface CreateGroupPlanData {
 <span class="cstat-no" title="statement not covered" >        .upsert({</span>
 <span class="cstat-no" title="statement not covered" >          plan_id: planId,</span>
 <span class="cstat-no" title="statement not covered" >          profile_id: user!.id,</span>
-<span class="cstat-no" title="statement not covered" >          rsvp_status: 'yes',</span>
+<span class="cstat-no" title="statement not covered" >          rsvp_status: 'attending',</span>
 <span class="cstat-no" title="statement not covered" >          joined_at: new Date().toISOString()</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 &nbsp;
@@ -847,11 +823,11 @@ export interface CreateGroupPlanData {
 <span class="cstat-no" title="statement not covered" >    isLeavingPlan: leavePlanMutation.isPending,</span>
     
     // Computed values
-<span class="cstat-no" title="statement not covered" >    userPlans: plans.filter(plan =&gt; plan.user_is_participant),</span>
-<span class="cstat-no" title="statement not covered" >    availablePlans: plans.filter(plan =&gt; !plan.user_is_participant),</span>
+<span class="cstat-no" title="statement not covered" >    userPlans: plans.filter(plan =&gt; plan.user_rsvp_status === 'attending' || plan.user_rsvp_status === 'maybe'),</span>
+<span class="cstat-no" title="statement not covered" >    availablePlans: plans.filter(plan =&gt; plan.user_rsvp_status === 'pending' || plan.user_rsvp_status === 'not_attending'),</span>
 <span class="cstat-no" title="statement not covered" >    upcomingPlans: plans.filter(plan =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      const plannedAt = new Date(plan.planned_at);</span>
-<span class="cstat-no" title="statement not covered" >      return plannedAt &gt; new Date();</span>
+<span class="cstat-no" title="statement not covered" >      const startsAt = new Date(plan.starts_at);</span>
+<span class="cstat-no" title="statement not covered" >      return startsAt &gt; new Date();</span>
 <span class="cstat-no" title="statement not covered" >    }),</span>
     
     // Helper functions
@@ -883,7 +859,7 @@ export interface CreateGroupPlanData {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-05T02:32:46.383Z
+                at 2025-08-05T07:53:23.998Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

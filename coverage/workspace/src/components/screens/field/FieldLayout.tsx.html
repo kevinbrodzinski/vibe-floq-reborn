@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/152</span>
+                <span class='fraction'>0/155</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/152</span>
+                <span class='fraction'>0/155</span>
             </div>
         
             
@@ -299,7 +299,9 @@
 <a name='L234'></a><a href='#L234'>234</a>
 <a name='L235'></a><a href='#L235'>235</a>
 <a name='L236'></a><a href='#L236'>236</a>
-<a name='L237'></a><a href='#L237'>237</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L237'></a><a href='#L237'>237</a>
+<a name='L238'></a><a href='#L238'>238</a>
+<a name='L239'></a><a href='#L239'>239</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -326,7 +328,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -512,6 +514,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -550,7 +554,7 @@ import { useFieldSocial } from "@/components/field/contexts/FieldSocialContext";
 import { useShakeDetection } from "@/hooks/useShakeDetection";
 import { useFieldGestures } from "@/hooks/useFieldGestures";
 import { useRef } from "react";
-import type { FieldData } from "./FieldDataProvider";
+import { useFieldData } from "./FieldDataProvider";
 import { BottomHud } from "@/components/layout/BottomHud";
 &nbsp;
 import { FriendDrawerProvider } from "@/contexts/FriendDrawerContext";
@@ -560,10 +564,10 @@ import { ProximityNotifications } from "@/components/location/ProximityNotificat
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
 &nbsp;
 interface FieldLayoutProps {
-  data: FieldData;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const FieldLayout = ({ data }: FieldLayoutProps) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const FieldLayout = () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  const { fieldData: data } = useFieldData();</span>
 <span class="cstat-no" title="statement not covered" >  const { </span>
 <span class="cstat-no" title="statement not covered" >    location, </span>
 <span class="cstat-no" title="statement not covered" >    isLocationReady, </span>
@@ -623,8 +627,8 @@ interface FieldLayoutProps {
 <span class="cstat-no" title="statement not covered" >  };</span>
 &nbsp;
   // ---- helper flags ---------------------------------------------
-<span class="cstat-no" title="statement not covered" >  const geoReady = isLocationReady &amp;&amp; location?.pos?.lat != null;</span>
-<span class="cstat-no" title="statement not covered" >  const geoLoading = location?.loading || (!isLocationReady &amp;&amp; !location?.error);</span>
+<span class="cstat-no" title="statement not covered" >  const geoReady = isLocationReady &amp;&amp; location?.coords?.lat != null;</span>
+<span class="cstat-no" title="statement not covered" >  const geoLoading = location?.status === 'loading' || (!isLocationReady &amp;&amp; !location?.error);</span>
 <span class="cstat-no" title="statement not covered" >  const geoError = location?.error &amp;&amp; location.error !== 'unavailable';</span>
 &nbsp;
   // ---- UI --------------------------------------------------------
@@ -752,7 +756,9 @@ interface FieldLayoutProps {
 <span class="cstat-no" title="statement not covered" >                &lt;div className="bg-accent text-accent-foreground px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;div className="font-medium mb-1"&gt;Recent Proximity Events&lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  {enhancedLocation.proximityEvents.slice(-3).map((event, i) =&gt; (</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div key={i} className="text-xs opacity-90 truncate"&gt;{event}&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;div key={i} className="text-xs opacity-90 truncate"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      {typeof event === 'string' ? event : JSON.stringify(event)}</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  ))}</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/div&gt;</span>
               )}
@@ -778,7 +784,7 @@ interface FieldLayoutProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-05T02:32:46.383Z
+                at 2025-08-05T07:53:23.998Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

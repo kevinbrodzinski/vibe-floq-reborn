@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/381</span>
+                <span class='fraction'>0/370</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/381</span>
+                <span class='fraction'>0/370</span>
             </div>
         
             
@@ -632,7 +632,12 @@
 <a name='L567'></a><a href='#L567'>567</a>
 <a name='L568'></a><a href='#L568'>568</a>
 <a name='L569'></a><a href='#L569'>569</a>
-<a name='L570'></a><a href='#L570'>570</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L570'></a><a href='#L570'>570</a>
+<a name='L571'></a><a href='#L571'>571</a>
+<a name='L572'></a><a href='#L572'>572</a>
+<a name='L573'></a><a href='#L573'>573</a>
+<a name='L574'></a><a href='#L574'>574</a>
+<a name='L575'></a><a href='#L575'>575</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -817,20 +822,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -838,7 +848,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1210,7 +1220,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/providers/AuthProvider';
+import { useAuth } from '@/components/auth/EnhancedAuthProvider';
 import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
@@ -1374,7 +1384,7 @@ export interface FriendDistanceState {
 <span class="cstat-no" title="statement not covered" >        const { data, error } = await supabase.rpc('presence_nearby', {</span>
 <span class="cstat-no" title="statement not covered" >          lat: pos?.lat || 0,</span>
 <span class="cstat-no" title="statement not covered" >          lng: pos?.lng || 0,</span>
-<span class="cstat-no" title="statement not covered" >          km: maxDistance / 1000, // convert to km</span>
+<span class="cstat-no" title="statement not covered" >          radius_m: maxDistance,</span>
 <span class="cstat-no" title="statement not covered" >          include_self: false</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 &nbsp;
@@ -1386,39 +1396,44 @@ export interface FriendDistanceState {
         // Filter to only include friends who are sharing with us
 <span class="cstat-no" title="statement not covered" >        const friendData: FriendLocation[] = [];</span>
         
-<span class="cstat-no" title="statement not covered" >        for (const presence of data || []) {</span>
-<span class="cstat-no" title="statement not covered" >          if (liveShareFriends.includes(presence.profile_id)) {</span>
-            // Extract location from PostGIS geometry
-<span class="cstat-no" title="statement not covered" >            let location: GPSCoords | null = null;</span>
-            
-<span class="cstat-no" title="statement not covered" >            try {</span>
-<span class="cstat-no" title="statement not covered" >              if (presence.location) {</span>
-                // Handle different location formats
-<span class="cstat-no" title="statement not covered" >                if (presence.location.coordinates) {</span>
-<span class="cstat-no" title="statement not covered" >                  const [lng, lat] = presence.location.coordinates;</span>
-<span class="cstat-no" title="statement not covered" >                  location = { lat, lng };</span>
-<span class="cstat-no" title="statement not covered" >                } else if (presence.geo &amp;&amp; presence.geo.coordinates) {</span>
-<span class="cstat-no" title="statement not covered" >                  const [lng, lat] = presence.geo.coordinates;</span>
-<span class="cstat-no" title="statement not covered" >                  location = { lat, lng };</span>
-<span class="cstat-no" title="statement not covered" >                }</span>
-<span class="cstat-no" title="statement not covered" >              }</span>
+        // Define interface for the flattened DB result
+        interface FriendPresenceLite {
+          profile_id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          lat: number;
+          lng: number;
+          vibe: string;
+          updated_at: string;
+          location?: any;
+          geo?: any;
+          visibility?: string;
+          venue_id?: string | null;
+          accuracy?: number;
+          created_at?: string;
+        }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >              if (location) {</span>
-<span class="cstat-no" title="statement not covered" >                friendData.push({</span>
-<span class="cstat-no" title="statement not covered" >                  profileId: presence.profile_id,</span>
-<span class="cstat-no" title="statement not covered" >                  displayName: presence.display_name || null,</span>
-<span class="cstat-no" title="statement not covered" >                  avatarUrl: presence.avatar_url || null,</span>
-<span class="cstat-no" title="statement not covered" >                  location,</span>
-<span class="cstat-no" title="statement not covered" >                  accuracy: presence.accuracy || 50,</span>
-<span class="cstat-no" title="statement not covered" >                  timestamp: new Date(presence.updated_at || presence.created_at).getTime(),</span>
-<span class="cstat-no" title="statement not covered" >                  vibe: presence.vibe || null,</span>
-<span class="cstat-no" title="statement not covered" >                  venueId: presence.venue_id || null,</span>
-<span class="cstat-no" title="statement not covered" >                  visibility: presence.visibility || 'friends'</span>
-<span class="cstat-no" title="statement not covered" >                });</span>
-<span class="cstat-no" title="statement not covered" >              }</span>
-<span class="cstat-no" title="statement not covered" >            } catch (locationError) {</span>
-<span class="cstat-no" title="statement not covered" >              console.warn(`[FriendDistances] Error processing location for ${presence.profile_id}:`, locationError);</span>
-<span class="cstat-no" title="statement not covered" >            }</span>
+<span class="cstat-no" title="statement not covered" >        const presences = data as FriendPresenceLite[];</span>
+        
+<span class="cstat-no" title="statement not covered" >        for (const presence of presences || []) {</span>
+<span class="cstat-no" title="statement not covered" >          if (liveShareFriends.includes(presence.profile_id)) {</span>
+            // Use direct lat/lng from flattened query
+<span class="cstat-no" title="statement not covered" >            const location: GPSCoords = {</span>
+<span class="cstat-no" title="statement not covered" >              lat: presence.lat,</span>
+<span class="cstat-no" title="statement not covered" >              lng: presence.lng</span>
+<span class="cstat-no" title="statement not covered" >            };</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >            friendData.push({</span>
+<span class="cstat-no" title="statement not covered" >              profileId: presence.profile_id,</span>
+<span class="cstat-no" title="statement not covered" >              displayName: presence.display_name || null,</span>
+<span class="cstat-no" title="statement not covered" >              avatarUrl: presence.avatar_url || null,</span>
+<span class="cstat-no" title="statement not covered" >              location,</span>
+<span class="cstat-no" title="statement not covered" >              accuracy: presence.accuracy || 50,</span>
+<span class="cstat-no" title="statement not covered" >              timestamp: new Date(presence.updated_at || presence.created_at || Date.now()).getTime(),</span>
+<span class="cstat-no" title="statement not covered" >              vibe: presence.vibe || null,</span>
+<span class="cstat-no" title="statement not covered" >              venueId: presence.venue_id || null,</span>
+<span class="cstat-no" title="statement not covered" >              visibility: (presence.visibility as 'friends' | 'public' | 'private') || 'friends'</span>
+<span class="cstat-no" title="statement not covered" >            });</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        }</span>
 &nbsp;
@@ -1777,7 +1792,7 @@ export interface FriendDistanceState {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-05T02:32:46.383Z
+                at 2025-08-05T07:53:23.998Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
