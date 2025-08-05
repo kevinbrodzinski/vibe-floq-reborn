@@ -84,6 +84,54 @@ async function realityCheckMapbox() {
   }
 }
 
+// Quick diagnostics function
+function quickMapFixes() {
+  console.log('\n🔧 === QUICK MAP DIAGNOSTICS ===');
+  
+  // Check 1: Container in DOM
+  const containerExists = !!document.querySelector('[data-map-container]');
+  console.log('📋 Container in DOM:', containerExists);
+  
+  // Check 2: Mapbox token
+  const tokenSet = !!(window as any).mapboxgl?.accessToken;
+  const tokenValue = (window as any).mapboxgl?.accessToken;
+  console.log('🔑 Token set:', tokenSet, tokenValue ? `(${tokenValue.substring(0, 10)}...)` : '');
+  
+  // Check 3: WebGL contexts
+  const webglCount = performance.getEntriesByType('frame').filter(e => e.name?.includes('WebGL')).length;
+  console.log('🎮 WebGL contexts:', webglCount);
+  
+  // Check 4: Canvas elements
+  const canvasCount = document.querySelectorAll('.mapboxgl-canvas').length;
+  console.log('🖼️ Map canvases:', canvasCount);
+  
+  // Check 5: Global map instance
+  const globalMap = (window as any).__FLOQ_MAP;
+  console.log('🗺️ Global map instance:', !!globalMap);
+  
+  // Check 6: Container height
+  if (containerExists) {
+    const container = document.querySelector('[data-map-container]') as HTMLElement;
+    const height = getComputedStyle(container).height;
+    console.log('📏 Container height:', height);
+  }
+  
+  console.log('\n🔧 === RECOMMENDATIONS ===');
+  if (!containerExists) console.log('❌ Container missing - check if FieldWebMap is rendering');
+  if (!tokenSet) console.log('❌ No token - check getMapboxToken() function');
+  if (webglCount > 1) console.log('⚠️ Multiple WebGL contexts - possible memory leak');
+  if (containerExists && !canvasCount) console.log('❌ Container exists but no canvas - map failed to initialize');
+  if (containerExists && !globalMap) console.log('❌ Container exists but no global map - check map.on("load") event');
+  
+  return {
+    containerExists,
+    tokenSet,
+    webglCount,
+    canvasCount,
+    globalMap: !!globalMap
+  };
+}
+
 // Auto-setup in development
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   setTimeout(() => {
@@ -91,11 +139,13 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     window.checkContainerHeight = checkContainerHeight;
     window.checkMapboxWorker = checkMapboxWorker;
     window.realityCheckMapbox = realityCheckMapbox;
+    (window as any).quickMapFixes = quickMapFixes;
     
     console.log('🔧 Map debug helpers loaded:');
+    console.log('  - window.quickMapFixes() - ⭐ MAIN DIAGNOSTIC TOOL ⭐');
     console.log('  - window.checkContainerHeight() - Check if any parent has 0px height');
     console.log('  - window.checkMapboxWorker() - Check if Mapbox worker is registered');  
     console.log('  - window.realityCheckMapbox() - Test if Mapbox works at all');
-    console.log('  - Run these in console to debug map loading issues');
-  }, 2000);
+    console.log('  - Run window.quickMapFixes() first for instant diagnosis!');
+  }, 1000);
 }

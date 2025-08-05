@@ -71,6 +71,9 @@ if (import.meta.env.DEV) {
   // Map debugging helpers
   import('./lib/debug/mapDebugHelpers');
   
+  // Map health monitoring
+  import('./lib/debug/mapHealthCheck');
+  
   import('./lib/performance').then(({ initPerformanceMonitoring }) => {
     initPerformanceMonitoring();
   });

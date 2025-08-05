@@ -5,7 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
-import { setMapInstance }       from '@/lib/geo/project';
+import { setMapInstance } from '@/lib/geo/project';
+import { createMapSafely, cleanupMapSingleton } from '@/lib/geo/mapSingleton';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
@@ -276,6 +277,13 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
     (async ()=>{
       try{
+        console.log('[FieldWebMap] 🗺️ Starting map initialization...');
+        console.log('[FieldWebMap] Container state:', {
+          hasContainer: !!mapContainerRef.current,
+          hasExistingMap: !!mapRef.current,
+          containerInDOM: !!document.querySelector('[data-map-container]')
+        });
+
         // CRITICAL: Prepare container to prevent pollution error (sync import)
         const containerManager = MapContainerManager.getInstance();
         
@@ -286,9 +294,16 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           return;
         }
 
-        // Clear cache to force fresh token retrieval
+        // Clear cache to force fresh token retrieval with comprehensive logging
         clearMapboxTokenCache();
-        const{token}=await getMapboxToken();
+        console.log('[FieldWebMap] Fetching Mapbox token...');
+        const{token, source}=await getMapboxToken();
+        
+        if (!token || !token.startsWith('pk.')) {
+          throw new Error(`Invalid Mapbox token received: ${token?.substring(0, 10)}...`);
+        }
+        
+        console.log('[FieldWebMap] ✅ Token acquired:', { source, tokenLength: token.length });
         mapboxgl.accessToken=token;
 
         // Get initial center from user location or fallback to Venice Beach
@@ -296,20 +311,16 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           ? [location.coords.lng, location.coords.lat] 
           : [-118.4695, 33.9850]; // Venice Beach fallback
 
-        // Create map with guaranteed-to-exist style
-        let map: mapboxgl.Map;
-        
-        map = new mapboxgl.Map({
-          container: mapContainerRef.current!,
-          /* Use a guaranteed-to-exist style.  
-             Replace with your own later if you want. */
+        // Create map with singleton protection to prevent WebGL context leaks
+        console.log('[FieldWebMap] Creating map with singleton protection...');
+        const map = createMapSafely(mapContainerRef.current!, {
           style: 'mapbox://styles/mapbox/dark-v11',
           center: initialCenter,
           zoom: 11,
           preserveDrawingBuffer: true,
           antialias: true
         });
-        mapRef.current=map;
+        mapRef.current = map;
 
         // Add user location marker
         const userMarker = new mapboxgl.Marker({
@@ -330,6 +341,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           if (dead) return;
           
           console.log('🗺️ Map loaded successfully');
+          console.log('🗺️ WebGL contexts:', performance.getEntriesByType('frame').filter(e => e.name?.includes('WebGL')).length);
+          console.log('🗺️ Canvas elements:', document.querySelectorAll('.mapboxgl-canvas').length);
+          
           setStatus('ready');
           
           // 🔧 DEBUG: Set global map instance for console debugging
@@ -723,29 +737,37 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           setStatus('error');
         });
       }catch(e:any){
-        if(!dead){setErr(e.message);setStatus('error');}
+        console.error('[FieldWebMap] ❌ Mount failed', e);
+        console.error('[FieldWebMap] Error details:', {
+          message: e.message,
+          stack: e.stack?.split('\n').slice(0, 3),
+          tokenSet: !!mapboxgl.accessToken,
+          containerExists: !!mapContainerRef.current
+        });
+        setErr(e.message ?? 'Map initialization failed');
+        setStatus('error');
       }
     })();
 
-    return()=>{
-      dead=true;
-      
-      if(mapRef.current){
+    return () => {
+      dead = true;
+      if (mapRef.current) {
+        console.log('🗺️ Cleaning up map instance');
         try {
-          mapRef.current.remove();
-        } catch (e) {
-          console.warn('[FieldWebMap] map.remove() failed', e);
-        } finally {
-          mapRef.current=null;
+          mapRef.current.remove(); // This frees WebGL context
+          mapRef.current = null;
           setMapInstance(null);
+          console.log('🗺️ ✅ Map cleanup complete');
+        } catch (error) {
+          console.warn('🗺️ Map cleanup error:', error);
         }
       }
-      if(userMarkerRef.current){
+      if (userMarkerRef.current) {
         userMarkerRef.current.remove();
-        userMarkerRef.current=null;
+        userMarkerRef.current = null;
       }
     };
-  },[onRegionChange, location.coords?.lat, location.coords?.lng]);
+  },[onRegionChange]);
 
   // Helper to safely access map source
   const withUserLocationSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
@@ -835,11 +857,15 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   }, [floqsGeoJSON, withFloqsSource]);
 
 
-  /* render */
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
       <div className="absolute inset-0">
-        <div ref={mapContainerRef} className="absolute inset-0" />
+        {/* Map container that's always present with debug attribute */}
+        <div 
+          ref={mapContainerRef} 
+          data-map-container
+          className="absolute inset-0"
+        />
         
         {/* Vibe Filter Dropdown */}
         {status === 'ready' && vibeTypes.length > 0 && (
