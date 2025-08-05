@@ -228,8 +228,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         mapboxgl.accessToken=token;
 
         // Get initial center from user location or fallback to Venice Beach
-        const initialCenter: [number, number] = location.pos?.lat && location.pos?.lng 
-          ? [location.pos.lng, location.pos.lat] 
+        const initialCenter: [number, number] = location.coords?.lat && location.coords?.lng 
+          ? [location.coords.lng, location.coords.lat] 
           : [-118.4695, 33.9850]; // Venice Beach fallback
 
         // Create map with guaranteed-to-exist style
@@ -818,7 +818,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
               coordinates: [location.coords.lng, location.coords.lat]
             },
             properties: {
-              accuracy: location.pos.accuracy || 10
+              accuracy: location.coords?.accuracy || 10
             }
           }
         ]

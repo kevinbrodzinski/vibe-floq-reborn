@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/187</span>
+                <span class='fraction'>0/192</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/187</span>
+                <span class='fraction'>0/192</span>
             </div>
         
             
@@ -366,7 +366,13 @@
 <a name='L301'></a><a href='#L301'>301</a>
 <a name='L302'></a><a href='#L302'>302</a>
 <a name='L303'></a><a href='#L303'>303</a>
-<a name='L304'></a><a href='#L304'>304</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L304'></a><a href='#L304'>304</a>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -474,6 +480,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -776,7 +788,13 @@ interface FieldDataProviderProps {
 <span class="cstat-no" title="statement not covered" >  console.log('[FieldDataProvider] Rendering with friendIds:', friendIds, 'profiles:', profiles);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
-<span class="cstat-no" title="statement not covered" >    &lt;FieldLocationProvider friendIds={friendIds}&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;FieldLocationProvider </span>
+<span class="cstat-no" title="statement not covered" >        friendIds={friendIds}</span>
+<span class="cstat-no" title="statement not covered" >        enableGeofencing={true}</span>
+<span class="cstat-no" title="statement not covered" >        enableVenueDetection={true}</span>
+<span class="cstat-no" title="statement not covered" >        enableProximityTracking={true}</span>
+<span class="cstat-no" title="statement not covered" >        debugMode={process.env.NODE_ENV === 'development'}</span>
+      &gt;
 <span class="cstat-no" title="statement not covered" >      &lt;FieldSocialProvider profiles={profiles}&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;FieldUIProvider&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;FieldDataProviderInner&gt;</span>
@@ -840,7 +858,7 @@ interface FieldDataProviderInnerProps {
 <span class="cstat-no" title="statement not covered" >  const { setShowBanner } = useFieldUI();</span>
 &nbsp;
   // Start publishing user presence to the field only when location is available
-<span class="cstat-no" title="statement not covered" >  const isLocationAvailable = !!(location?.pos?.lat &amp;&amp; location?.pos?.lng);</span>
+<span class="cstat-no" title="statement not covered" >  const isLocationAvailable = !!(location?.coords?.lat &amp;&amp; location?.coords?.lng);</span>
 <span class="cstat-no" title="statement not covered" >  usePresencePublisher(isLocationAvailable);</span>
 &nbsp;
   // Enable real-time presence updates for friend tracking
@@ -862,16 +880,16 @@ interface FieldDataProviderInnerProps {
 &nbsp;
   // Define viewport bounds based on location
 <span class="cstat-no" title="statement not covered" >  const viewport = useMemo(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!location?.pos?.lat || !location?.pos?.lng) return null;</span>
+<span class="cstat-no" title="statement not covered" >    if (!location?.coords?.lat || !location?.coords?.lng) return null;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    const radius = 0.01; // ~1km viewport</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
-<span class="cstat-no" title="statement not covered" >      minLat: location.pos.lat - radius,</span>
-<span class="cstat-no" title="statement not covered" >      maxLat: location.pos.lat + radius,</span>
-<span class="cstat-no" title="statement not covered" >      minLng: location.pos.lng - radius,</span>
-<span class="cstat-no" title="statement not covered" >      maxLng: location.pos.lng + radius,</span>
+<span class="cstat-no" title="statement not covered" >      minLat: location.coords.lat - radius,</span>
+<span class="cstat-no" title="statement not covered" >      maxLat: location.coords.lat + radius,</span>
+<span class="cstat-no" title="statement not covered" >      minLng: location.coords.lng - radius,</span>
+<span class="cstat-no" title="statement not covered" >      maxLng: location.coords.lng + radius,</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  }, [location?.pos?.lat, location?.pos?.lng]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [location?.coords?.lat, location?.coords?.lng]);</span>
 &nbsp;
   // Get tile IDs for current viewport
 <span class="cstat-no" title="statement not covered" >  const tileIds = useMemo(() =&gt; {</span>
@@ -921,14 +939,14 @@ interface FieldDataProviderInnerProps {
 &nbsp;
   // Auto-sync venues when location changes
 <span class="cstat-no" title="statement not covered" >  const venueSync = useAutoVenueSync(</span>
-<span class="cstat-no" title="statement not covered" >    location?.pos?.lat, </span>
-<span class="cstat-no" title="statement not covered" >    location?.pos?.lng, </span>
+<span class="cstat-no" title="statement not covered" >    location?.coords?.lat, </span>
+<span class="cstat-no" title="statement not covered" >    location?.coords?.lng, </span>
 <span class="cstat-no" title="statement not covered" >    { showToasts: false, minDistanceM: 300 }</span>
 <span class="cstat-no" title="statement not covered" >  );</span>
 &nbsp;
   // Get nearby venues for chip and current event
-<span class="cstat-no" title="statement not covered" >  const { data: nearbyVenues = [] } = useNearbyVenues(location?.pos?.lat ?? 0, location?.pos?.lng ?? 0, 0.3);</span>
-<span class="cstat-no" title="statement not covered" >  const { data: currentEvent } = useCurrentEvent(location?.pos?.lat ?? 0, location?.pos?.lng ?? 0, () =&gt; setShowBanner(false));</span>
+<span class="cstat-no" title="statement not covered" >  const { data: nearbyVenues = [] } = useNearbyVenues(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, 0.3);</span>
+<span class="cstat-no" title="statement not covered" >  const { data: currentEvent } = useCurrentEvent(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, () =&gt; setShowBanner(false));</span>
 &nbsp;
   // Debug logging for location and viewport
 <span class="cstat-no" title="statement not covered" >  console.log('[FIELD_DEBUG] Location and viewport:', {</span>
@@ -979,7 +997,7 @@ interface FieldDataProviderInnerProps {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T02:32:46.383Z
             </div>
         <script src="../../../../../prettify.js"></script>
         <script>

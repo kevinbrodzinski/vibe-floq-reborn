@@ -4,7 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import type { ProximityEvent, ProximityAnalysis } from './proximityScoring';
+import type { ProximityAnalysis } from './proximityScoring';
 
 export interface ProximityEventRecord {
   id?: string;
@@ -98,7 +98,7 @@ export class ProximityEventRecorder {
   async recordProximityEvents(
     profileId: string,
     proximityEvents: string[],
-    nearbyUsers: any[],
+    nearbyUsers: Array<{ profileId: string; confidence: number; distance: number }>,
     location?: { lat: number; lng: number; accuracy: number }
   ): Promise<void> {
     if (!this.options.enableDatabaseRecording || proximityEvents.length === 0) return;
@@ -117,7 +117,7 @@ export class ProximityEventRecorder {
         else eventType = 'sustain';
 
         // Find corresponding user data for confidence
-        const nearbyUser = nearbyUsers.find(u => u.userId === targetUserId);
+        const nearbyUser = nearbyUsers.find(u => u.profileId === targetUserId);
         const confidence = nearbyUser?.confidence || 0.5;
         const distance = nearbyUser?.distance || 0;
 

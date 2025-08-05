@@ -81,6 +81,26 @@ export interface EnhancedSocialContextData {
     };
   };
   
+  // Proximity intelligence data
+  proximityIntelligence?: {
+    socialMomentum?: {
+      score: number;
+      trend: 'rising' | 'falling' | 'stable';
+    };
+    confidenceScores: Record<string, number>;
+    proximityTrends: Array<{
+      friendId: string;
+      trend: 'approaching' | 'stable' | 'departing';
+      confidence: number;
+      estimatedMeetupTime?: string;
+    }>;
+    optimalMeetupLocations: Array<{
+      location: { lat: number; lng: number };
+      score: number;
+      reasoning: string;
+    }>;
+  };
+  
   // Enhanced hotspot data
   hotspots: Array<{
     id: string;

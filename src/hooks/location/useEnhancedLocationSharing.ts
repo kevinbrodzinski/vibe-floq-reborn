@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { geofencingService, type GeofenceMatch } from '@/lib/location/geofencing';
 import { multiSignalVenueDetector, type VenueDetectionResult } from '@/lib/location/multiSignalVenue';
-import { proximityScorer, type ProximityUser, type ProximityAnalysis } from '@/lib/location/proximityScoring';
+import { proximityScorer, type ProximityUser, type ProximityAnalysis, type ProximityEvent } from '@/lib/location/proximityScoring';
 import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
 import { backgroundLocationProcessor } from '@/lib/location/backgroundLocationProcessor';
 import { GPSCoords } from '@/lib/location/standardGeo';
@@ -34,7 +34,7 @@ export interface EnhancedLocationState {
   
   // Proximity awareness
   nearbyUsers: ProximityAnalysis[];
-  proximityEvents: string[]; // Recent proximity event descriptions
+  proximityEvents: ProximityEvent[]; // Recent proximity events
   
   // System status
   lastUpdate: number;
@@ -205,7 +205,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
 
       // 3. Proximity Analysis
       let nearbyUsers: ProximityAnalysis[] = [];
-      const proximityEvents: string[] = [];
+      const proximityEvents: ProximityEvent[] = [];
 
       if (enableProximityTracking) {
         try {
@@ -228,11 +228,34 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
                 
                 // Generate event descriptions for significant events
                 if (analysis.eventType === 'enter') {
-                  proximityEvents.push(`Started proximity with user ${userId}`);
+                  proximityEvents.push({
+                    profileId: user?.id || '',
+                    targetProfileId: userId,
+                    eventType: 'enter',
+                    distance: analysis.distance,
+                    confidence: analysis.confidence,
+                    timestamp: timestamp
+                  });
                 } else if (analysis.eventType === 'exit') {
-                  proximityEvents.push(`Left proximity with user ${userId} (${Math.round(analysis.sustainedDuration / 1000)}s)`);
+                  proximityEvents.push({
+                    profileId: user?.id || '',
+                    targetProfileId: userId,
+                    eventType: 'exit',
+                    distance: analysis.distance,
+                    confidence: analysis.confidence,
+                    timestamp: timestamp,
+                    duration: analysis.sustainedDuration
+                  });
                 } else if (analysis.eventType === 'sustain' && analysis.sustainedDuration > 60000) {
-                  proximityEvents.push(`Sustained proximity with user ${userId} (${Math.round(analysis.sustainedDuration / 1000)}s)`);
+                  proximityEvents.push({
+                    profileId: user?.id || '',
+                    targetProfileId: userId,
+                    eventType: 'sustain',
+                    distance: analysis.distance,
+                    confidence: analysis.confidence,
+                    timestamp: timestamp,
+                    duration: analysis.sustainedDuration
+                  });
                 }
               }
             }

@@ -175,7 +175,7 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
   const { setShowBanner } = useFieldUI();
 
   // Start publishing user presence to the field only when location is available
-  const isLocationAvailable = !!(location?.pos?.lat && location?.pos?.lng);
+  const isLocationAvailable = !!(location?.coords?.lat && location?.coords?.lng);
   usePresencePublisher(isLocationAvailable);
 
   // Enable real-time presence updates for friend tracking
@@ -197,16 +197,16 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
 
   // Define viewport bounds based on location
   const viewport = useMemo(() => {
-    if (!location?.pos?.lat || !location?.pos?.lng) return null;
+    if (!location?.coords?.lat || !location?.coords?.lng) return null;
 
     const radius = 0.01; // ~1km viewport
     return {
-      minLat: location.pos.lat - radius,
-      maxLat: location.pos.lat + radius,
-      minLng: location.pos.lng - radius,
-      maxLng: location.pos.lng + radius,
+      minLat: location.coords.lat - radius,
+      maxLat: location.coords.lat + radius,
+      minLng: location.coords.lng - radius,
+      maxLng: location.coords.lng + radius,
     };
-  }, [location?.pos?.lat, location?.pos?.lng]);
+  }, [location?.coords?.lat, location?.coords?.lng]);
 
   // Get tile IDs for current viewport
   const tileIds = useMemo(() => {
@@ -256,14 +256,14 @@ const FieldDataProviderInner = ({ children }: FieldDataProviderInnerProps) => {
 
   // Auto-sync venues when location changes
   const venueSync = useAutoVenueSync(
-    location?.pos?.lat, 
-    location?.pos?.lng, 
+    location?.coords?.lat, 
+    location?.coords?.lng, 
     { showToasts: false, minDistanceM: 300 }
   );
 
   // Get nearby venues for chip and current event
-  const { data: nearbyVenues = [] } = useNearbyVenues(location?.pos?.lat ?? 0, location?.pos?.lng ?? 0, 0.3);
-  const { data: currentEvent } = useCurrentEvent(location?.pos?.lat ?? 0, location?.pos?.lng ?? 0, () => setShowBanner(false));
+  const { data: nearbyVenues = [] } = useNearbyVenues(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, 0.3);
+  const { data: currentEvent } = useCurrentEvent(location?.coords?.lat ?? 0, location?.coords?.lng ?? 0, () => setShowBanner(false));
 
   // Debug logging for location and viewport
   console.log('[FIELD_DEBUG] Location and viewport:', {

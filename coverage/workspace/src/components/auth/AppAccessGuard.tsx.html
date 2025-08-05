@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/140</span>
+                <span class='fraction'>0/144</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/140</span>
+                <span class='fraction'>0/144</span>
             </div>
         
             
@@ -263,7 +263,11 @@
 <a name='L198'></a><a href='#L198'>198</a>
 <a name='L199'></a><a href='#L199'>199</a>
 <a name='L200'></a><a href='#L200'>200</a>
-<a name='L201'></a><a href='#L201'>201</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -375,6 +379,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -574,18 +582,22 @@ import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
 <span class="cstat-no" title="statement not covered" >    gcTime: 60000, // 1 minute</span>
 <span class="cstat-no" title="statement not covered" >  });</span>
 &nbsp;
-  // Debug logging with more detail
-<span class="cstat-no" title="statement not covered" >  console.log('[AppAccessGuard Debug]', {</span>
-<span class="cstat-no" title="statement not covered" >    user: !!user,</span>
-<span class="cstat-no" title="statement not covered" >    profileId: user?.id,</span>
-<span class="cstat-no" title="statement not covered" >    preferences: !!preferences,</span>
-<span class="cstat-no" title="statement not covered" >    preferencesVersion: preferences?.onboarding_version,</span>
-<span class="cstat-no" title="statement not covered" >    onboardingVersion: ONBOARDING_VERSION,</span>
-<span class="cstat-no" title="statement not covered" >    onboardingComplete,</span>
-<span class="cstat-no" title="statement not covered" >    isSharedRoute: isSharedPlanRoute,</span>
-<span class="cstat-no" title="statement not covered" >    isDirectRoute: isDirectPlanRoute,</span>
-<span class="cstat-no" title="statement not covered" >    currentPath: location.pathname</span>
-<span class="cstat-no" title="statement not covered" >  });</span>
+  // Debug logging optimized to prevent infinite loops
+<span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (process.env.NODE_ENV === 'development') {</span>
+<span class="cstat-no" title="statement not covered" >      console.log('[AppAccessGuard Debug]', {</span>
+<span class="cstat-no" title="statement not covered" >        user: !!user,</span>
+<span class="cstat-no" title="statement not covered" >        profileId: user?.id,</span>
+<span class="cstat-no" title="statement not covered" >        preferences: !!preferences,</span>
+<span class="cstat-no" title="statement not covered" >        preferencesVersion: preferences?.onboarding_version,</span>
+<span class="cstat-no" title="statement not covered" >        onboardingVersion: ONBOARDING_VERSION,</span>
+<span class="cstat-no" title="statement not covered" >        onboardingComplete,</span>
+<span class="cstat-no" title="statement not covered" >        isSharedRoute: isSharedPlanRoute,</span>
+<span class="cstat-no" title="statement not covered" >        isDirectRoute: isDirectPlanRoute,</span>
+<span class="cstat-no" title="statement not covered" >        currentPath: location.pathname</span>
+<span class="cstat-no" title="statement not covered" >      });</span>
+<span class="cstat-no" title="statement not covered" >    }</span>
+<span class="cstat-no" title="statement not covered" >  }, [user?.id, preferences?.onboarding_version, onboardingComplete, isSharedPlanRoute, isDirectPlanRoute, location.pathname]);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (loading || (user &amp;&amp; loadingPrefs) || onboardingLoading || showSplash === null) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
@@ -670,7 +682,7 @@ import { ONBOARDING_VERSION } from '@/hooks/useOnboardingDatabase';
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T02:32:46.383Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
