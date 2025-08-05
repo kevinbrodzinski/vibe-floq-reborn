@@ -58,16 +58,28 @@ export function usePeopleSource(
     return { type: 'FeatureCollection', features } as const;
   }, [people, userPos?.lng, userPos?.lat, user?.id]);
 
-  /* Helper to safely access map source */
+  /* Helper to safely access map source - handles creation AND access */
   const withPeopleSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
     if (!map) return;
     
-    // Wait until style & source are ready
+    // Wait until style is loaded before any source operations
     if (map.isStyleLoaded()) {
-      const src = map.getSource('people') as mapboxgl.GeoJSONSource | undefined;
-      if (src) return cb(src);
+      const srcId = 'people';
+      let src = map.getSource(srcId) as mapboxgl.GeoJSONSource | undefined;
+      
+      // Create source if it doesn't exist (safe to do once style is loaded)
+      if (!src) {
+        map.addSource(srcId, { 
+          type: 'geojson', 
+          data: { type: 'FeatureCollection', features: [] }
+        });
+        src = map.getSource(srcId) as mapboxgl.GeoJSONSource;
+      }
+      
+      return cb(src);
     }
-    // Not ready yet – try again on the next style/load event
+    
+    // Style not ready yet – wait for next styledata event
     map.once('styledata', () => withPeopleSource(cb));
   }, [map]);
 
@@ -75,15 +87,8 @@ export function usePeopleSource(
   useEffect(() => {
     if (!map) return;
     
-    // 🔑 Always ensure the 'people' source exists first
-    const srcId = 'people';
-    if (!map.getSource(srcId)) {
-      map.addSource(srcId, { 
-        type: 'geojson', 
-        data: { type: 'FeatureCollection', features: [] }
-      });
-    }
-    
+    // 🔑 Use withPeopleSource to handle both source creation AND data updates
+    // This ensures we wait for style loading before any source operations
     withPeopleSource((src) => {
       src.setData(geojson);
     });

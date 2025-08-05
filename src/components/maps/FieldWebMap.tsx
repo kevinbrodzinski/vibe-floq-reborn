@@ -284,14 +284,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           console.log('Map loaded successfully');
           setStatus('ready');
           
-          // Add people source for self feature (simplified - unified layer management will handle the rest)
-          map.addSource('people', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
+          // Note: 'people' source is now managed by usePeopleSource hook
+          // to prevent race conditions with style loading
         });
 
         // Add cluster click handler
