@@ -1,0 +1,19 @@
+
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@ui/*": ["packages/ui/*"],
+      "@ui": ["packages/ui/index.ts"],
+      "@maps/*": ["packages/ui/src/maps/*"]
+    }
+  },
+  "include": ["src/types/global.d.ts", "**/*.ts", "**/*.tsx"]
+}

@@ -1,0 +1,33 @@
+name: Lint and Typecheck
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣  Checkout code
+      - uses: actions/checkout@v4
+
+      # 2️⃣  Node 18 + npm cache
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      # 3️⃣  Install deps (peer-deps workaround)
+      - run: npm ci --legacy-peer-deps
+
+      # 4️⃣  ESLint (fail job on errors)
+      - name: Run ESLint
+        run: npm run lint
+        env: { FORCE_COLOR: "1" }
+
+      # 5️⃣  TypeScript type-check
+      - name: Run TypeScript check
+        run: npm run typecheck
+        env: { FORCE_COLOR: "1" }

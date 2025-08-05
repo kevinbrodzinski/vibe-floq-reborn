@@ -1,0 +1,49 @@
+import { useFriendDrawer } from '@/contexts/FriendDrawerContext'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
+import { useNearbyPeople } from '@/hooks/useNearbyPeople'
+import { FriendCard } from '@/components/social/FriendCard'
+import { FriendCardSkeleton } from '@/components/social/FriendCardSkeleton'
+import { Loader2 } from 'lucide-react'
+import { generateStableKey } from '@/utils/stableKeys'
+
+export const FriendDrawer = () => {
+  const { open } = useFriendDrawer()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'friend-drawer'
+  })
+  const pos = coords; // Compatibility alias
+  const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
+
+  return (
+    <div className={`
+      w-full max-w-screen-sm pointer-events-auto
+      transition-transform duration-300 ease-out
+      ${open ? 'translate-y-0' : 'translate-y-[110%]'}
+    `}>
+      <div className="
+          flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-4 py-3
+          rounded-xl bg-background/90 backdrop-blur-sm shadow-lg border border-border
+        ">
+        {loading ? (
+          <>
+            <FriendCardSkeleton />
+            <FriendCardSkeleton />
+            <FriendCardSkeleton />
+            <FriendCardSkeleton />
+          </>
+        ) : people.length === 0 ? (
+          <div className="flex items-center justify-center w-full py-4">
+            <span className="text-sm text-muted-foreground">No friends nearby</span>
+          </div>
+        ) : (
+          people.map((p, i) => {
+            const stableKey = generateStableKey(p, 'drawer', i)
+            return <FriendCard key={stableKey} person={p} />
+          })
+        )}
+      </div>
+    </div>
+  )
+}

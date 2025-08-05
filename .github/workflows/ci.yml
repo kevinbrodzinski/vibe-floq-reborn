@@ -1,0 +1,26 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out your branch
+      - uses: actions/checkout@v4
+
+      # 2. Set up Node and enable the npm cache (locks to package-lock.json)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18          # use the version your project needs
+          cache: npm                # 👉  switched from 'pnpm' to 'npm'
+
+      # 3. Install deps from package-lock.json (fail if it’s out of sync)
+      - run: npm ci --legacy-peer-deps
+
+      # 4. Build the app / library
+      - run: npm run build
+
+      # 5. Run Vitest with coverage (works even without a script entry)
+      - run: npx vitest run --coverage

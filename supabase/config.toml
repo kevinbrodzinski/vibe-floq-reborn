@@ -1,0 +1,122 @@
+
+project_id = "reztyrrafsmlvvlqvsqt"
+
+[functions.fetch_google_places]
+verify_jwt = false
+
+[functions.fetch_foursquare]
+verify_jwt = false
+
+[functions.get_place_details]
+verify_jwt = false
+
+[functions."cleanup-orphaned-avatars"]
+verify_jwt = false
+
+[functions."daily-recap-builder"]
+verify_jwt = false
+
+[functions.generate-plan-recap]
+verify_jwt = true
+
+[functions.generate-year-recap]
+verify_jwt = true
+
+[functions.get_field_tiles]
+verify_jwt = false
+
+[functions.notification-worker]
+verify_jwt = false
+
+[functions.upsert-presence]
+verify_jwt = true
+
+[functions.activity-score-processor]
+verify_jwt = false
+
+[functions.boost-analytics]
+verify_jwt = true
+
+[functions.manage-participant-role]
+verify_jwt = true
+
+[functions.plan-rsvp]
+verify_jwt = true
+
+[functions.get_hotspots]
+verify_jwt = true
+
+[functions.create-share-link]
+verify_jwt = true
+
+[functions.render-og-card]
+verify_jwt = false
+
+[functions.submit-plan-vote]
+verify_jwt = true
+
+[functions.suggest-venues]
+verify_jwt = true
+
+[functions.finalize-plan]
+verify_jwt = true
+
+[functions.sync-plan-changes]
+verify_jwt = true
+
+[functions.parse-voice-to-stop]
+verify_jwt = true
+
+[functions.post-floq-message]
+verify_jwt = true
+
+[functions.generate-intelligence]
+verify_jwt = true
+
+[functions.send-invite]
+verify_jwt = true
+
+[functions.floq-interactions]
+verify_jwt = true
+
+[functions.update-settings]
+verify_jwt = true
+
+[functions.get-venue-intelligence]
+verify_jwt = true
+
+[functions.send-invitations]
+verify_jwt = true
+
+[functions.floq-actions]
+verify_jwt = true
+
+[functions.resolve-plan-slug]
+verify_jwt = false
+
+[functions.join-as-guest]
+verify_jwt = false
+
+[functions.get-transit]
+verify_jwt = true
+
+[functions.get-social-suggestions]
+verify_jwt = true
+
+[functions.send-message]
+verify_jwt = true
+
+[functions.mark-thread-read]
+verify_jwt = true
+
+[functions.record_locations]
+verify_jwt = true
+
+[functions.refresh_field_tiles]
+verify_jwt = false
+
+[functions.seed_presence]
+verify_jwt = false
+
+[functions.sync-places]
+verify_jwt = false

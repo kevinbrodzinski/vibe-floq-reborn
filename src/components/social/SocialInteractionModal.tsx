@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, Users, Zap, Heart, UserPlus, Calendar, MapPin, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
+import { useToast } from '@/hooks/use-toast';
+import { getVibeColor } from '@/utils/getVibeColor';
+
+import type { NearbyRow } from '@/hooks/useNearbyPeople'
+
+interface SocialInteractionModalProps {
+  person: NearbyRow | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDMOpen?: (personId: string) => void;
+}
+
+export const SocialInteractionModal = ({
+  person,
+  open,
+  onOpenChange,
+  onDMOpen
+}: SocialInteractionModalProps) => {
+  const { socialHaptics } = useHapticFeedback();
+  const friendRequestsHook = useUnifiedFriends();
+  const sendFriendRequest = friendRequestsHook.sendRequest || (() => console.log('Send friend request not implemented'));
+  const { toast } = useToast();
+  const [showFloqCreate, setShowFloqCreate] = useState(false);
+
+  if (!person) return null;
+
+
+  // Transform NearbyRow to display data
+  const displayData = {
+    id: person.profile_id || 'unknown',
+    name: person.profile_id ? `User ${person.profile_id.slice(-4)}` : 'Anonymous',
+    vibe: person.vibe,
+    color: getVibeColor(person.vibe),
+    isFriend: false // TODO: Add friend status check
+  }
+
+  const handleAction = (action: string) => {
+    socialHaptics.gestureConfirm();
+    
+    switch (action) {
+      case 'dm':
+        onDMOpen?.(displayData.id);
+        onOpenChange(false);
+        break;
+      case 'friend-request':
+        sendFriendRequest(displayData.id);
+        onOpenChange(false);
+        break;
+      case 'vibe-check':
+        toast({
+          title: "Vibe check sent! ✨",
+          description: `You sent ${displayData.name} a vibe check`,
+        });
+        onOpenChange(false);
+        break;
+      case 'invite-floq':
+        setShowFloqCreate(true);
+        break;
+      case 'meetup':
+        toast({
+          title: "Meetup request sent! 📍",
+          description: `You suggested meeting up with ${displayData.name}`,
+        });
+        onOpenChange(false);
+        break;
+      case 'create-floq':
+        // Feature gated: floq creation flow will be implemented in future release
+        toast({
+          title: "Floq creation started! 🌟",
+          description: `Creating a floq with ${displayData.name}`,
+        });
+        onOpenChange(false);
+        break;
+      default:
+        onOpenChange(false);
+    }
+  };
+
+  const actions = displayData.isFriend
+    ? [
+        { id: 'dm', icon: MessageCircle, label: 'Message', color: 'text-blue-500' },
+        { id: 'invite-floq', icon: Users, label: 'Invite to Floq', color: 'text-purple-500' },
+        { id: 'meetup', icon: MapPin, label: 'Suggest Meetup', color: 'text-green-500' },
+        { id: 'vibe-check', icon: Zap, label: 'Vibe Check', color: 'text-yellow-500' },
+      ]
+    : [
+        { id: 'dm', icon: MessageCircle, label: 'Say Hi', color: 'text-blue-500' },
+        { id: 'friend-request', icon: UserPlus, label: 'Add Friend', color: 'text-green-500' },
+        { id: 'create-floq', icon: Calendar, label: 'Start Floq', color: 'text-purple-500' },
+        { id: 'vibe-check', icon: Zap, label: 'Vibe Check', color: 'text-yellow-500' },
+      ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: displayData.color }}
+            >
+              <span className="text-white font-medium">
+                {displayData.name[0].toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <div className="font-medium">{displayData.name}</div>
+              <div className="text-sm text-muted-foreground capitalize">
+                {displayData.vibe} vibe
+                {displayData.isFriend && (
+                  <span className="ml-2 text-primary">• Friend</span>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <motion.div
+                key={action.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  variant="outline"
+                  className="w-full justify-start h-12"
+                  onClick={() => handleAction(action.id)}
+                  disabled={false}
+                >
+                  <Icon className={`h-5 w-5 mr-3 ${action.color}`} />
+                  <span className="font-medium">{action.label}</span>
+                </Button>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <AnimatePresence>
+          {showFloqCreate && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="border-t pt-4 mt-4"
+            >
+              <div className="text-sm text-muted-foreground mb-3">
+                Quick floq options with {displayData.name}:
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAction('create-floq')}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Hangout
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAction('create-floq')}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Group Up
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DialogContent>
+    </Dialog>
+  );
+};

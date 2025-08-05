@@ -1,0 +1,136 @@
+/*───────────────────────────────────────────────────────────────
+  Replace generate_daily_afterglow_sql
+───────────────────────────────────────────────────────────────*/
+CREATE OR REPLACE FUNCTION public.generate_daily_afterglow_sql(
+    p_user_id uuid,
+    p_date    date               -- YYYY-MM-DD (local user day)
+) RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $func$
+DECLARE
+    v_cnt          int;
+    v_moments      jsonb;
+    v_energy       int;
+    v_social       int;
+    v_vibe         text;
+    v_afterglow_id uuid;
+BEGIN
+    /* 1 ─ gather venue data in one go */
+    WITH data AS (
+        SELECT
+            COUNT(*)                                            AS venue_cnt,
+            COALESCE(
+              jsonb_agg(
+                jsonb_build_object(
+                  'id',        gen_random_uuid(),
+                  'timestamp', vv.arrived_at,
+                  'title',     v.name,
+                  'description', 'Visited ' || v.name,
+                  'moment_type','venue_visit',
+                  'color',      '#3b82f6',
+                  'metadata',   jsonb_build_object(
+                                   'venue_id',    v.id,
+                                   'venue_name',  v.name,
+                                   'distance_m',  vv.distance_m,
+                                   'lat',  ST_Y(v.geom),
+                                   'lng',  ST_X(v.geom)
+                                 )
+                ) ORDER BY vv.arrived_at
+              ),
+              '[]'::jsonb
+            )                                                   AS moments
+        FROM venue_visits  vv
+        JOIN venues        v  ON v.id = vv.venue_id
+        WHERE vv.user_id = p_user_id
+          AND vv.day_key  = p_date
+    )
+    SELECT venue_cnt, moments
+    INTO   v_cnt,     v_moments
+    FROM   data;
+
+    /* 2 ─ derive scores  */
+    v_energy := CASE
+                  WHEN v_cnt = 0           THEN 20
+                  WHEN v_cnt <= 2          THEN 45 + v_cnt*10
+                  WHEN v_cnt <= 5          THEN 65 + v_cnt*5
+                  ELSE 85
+                END;
+    v_social := CASE
+                  WHEN v_cnt = 0           THEN 10
+                  WHEN v_cnt <= 2          THEN 30 + v_cnt*15
+                  WHEN v_cnt <= 5          THEN 60 + v_cnt*8
+                  ELSE 90
+                END;
+    v_vibe   := CASE
+                  WHEN v_cnt = 0 THEN 'chill'
+                  WHEN v_cnt <= 2 THEN 'social'
+                  WHEN v_cnt <= 5 THEN 'excited'
+                  ELSE 'energetic'
+                END;
+
+    /* 3 ─ upsert afterglow */
+    INSERT INTO daily_afterglow (
+        user_id, date,
+        energy_score, social_intensity,
+        total_venues, total_floqs, crossed_paths_count,
+        dominant_vibe,
+        summary_text,
+        vibe_path,
+        emotion_journey,
+        moments,
+        created_at, regenerated_at
+    )
+    VALUES (
+        p_user_id, p_date,
+        v_energy,  v_social,
+        v_cnt,     0,        0,         -- placeholders for future floq/x-paths
+        v_vibe,
+        CASE
+          WHEN v_cnt = 0  THEN 'A quiet day at home'
+          WHEN v_cnt = 1  THEN 'A focused day with one meaningful stop'
+          WHEN v_cnt <= 3 THEN 'A balanced day exploring ' || v_cnt || ' places'
+          ELSE                'An active day visiting '   || v_cnt || ' venues'
+        END,
+        CASE
+          WHEN v_cnt <= 1 THEN ARRAY['chill']
+          WHEN v_cnt <= 3 THEN ARRAY['chill','social']
+          ELSE                 ARRAY['chill','social','excited']
+        END,
+        jsonb_build_array(
+          jsonb_build_object(
+            'timestamp', to_char(p_date,'YYYY-MM-DD') || 'T18:00:00Z',
+            'vibe',      v_vibe,
+            'intensity', v_energy
+          )
+        ),
+        v_moments,
+        now(),           -- created_at
+        now()            -- regenerated_at
+    )
+    ON CONFLICT (user_id, date)           -- PK or UNIQUE constraint required
+    DO UPDATE SET
+        energy_score        = EXCLUDED.energy_score,
+        social_intensity    = EXCLUDED.social_intensity,
+        total_venues        = EXCLUDED.total_venues,
+        dominant_vibe       = EXCLUDED.dominant_vibe,
+        summary_text        = EXCLUDED.summary_text,
+        vibe_path           = EXCLUDED.vibe_path,
+        emotion_journey     = EXCLUDED.emotion_journey,
+        moments             = EXCLUDED.moments,
+        regenerated_at      = now()
+    RETURNING id INTO v_afterglow_id;
+
+    /* 4 ─ done */
+    RETURN jsonb_build_object(
+      'success',       true,
+      'afterglow_id',  v_afterglow_id,
+      'venue_count',   v_cnt,
+      'message',       'Afterglow generated from venue visits'
+    );
+END;
+$func$;
+
+GRANT EXECUTE ON FUNCTION public.generate_daily_afterglow_sql(uuid,date)
+TO authenticated;

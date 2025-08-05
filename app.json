@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "floq social",
+    "slug": "floq social",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.lovable.11986cc974734e3383ddacd244d83d3e",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Floq uses the microphone ONLY to measure ambient noise levels so it can suggest a matching vibe. Audio is never recorded or stored.",
+        "NSMotionUsageDescription": "Floq analyses your device motion to recognise walking or dancing patterns and suggest a vibe that matches your activity.",
+        "NSLocationWhenInUseUsageDescription": "Floq uses your location to show nearby people and places that fit your current vibe. Precise location is never shared publicly without consent.",
+        "NSBluetoothAlwaysUsageDescription": "Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights.",
+        "NSBluetoothPeripheralUsageDescription": "Floq may connect to Bluetooth sensors to enhance vibe detection accuracy and provide richer activity insights."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "app.lovable.11986cc974734e3383ddacd244d83d3e"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "vite"
+    },
+    "plugins": [],
+    "extra": {
+      "MAPBOX_ACCESS_TOKEN": "pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A",
+      "eas": {
+        "projectId": "17404536-fee7-4f98-b3fa-6162360dda09"
+      }
+    },
+    "main": "src/main.native.tsx"
+  }
+}

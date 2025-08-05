@@ -1,0 +1,479 @@
+
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Waypoint } from 'react-waypoint';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Send, Paperclip, Smile, MoreVertical, Phone, Video, UserPlus, Blocks, Flag, User, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { useUnreadDMCounts } from '@/hooks/useUnreadDMCounts';
+import { useLastSeen } from '@/hooks/useLastSeen';
+import { useUnifiedFriends } from '@/hooks/useUnifiedFriends';
+import { useNearbyFriends } from '@/hooks/useNearbyFriends';
+import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
+import { useLiveSettings } from '@/hooks/useLiveSettings';
+import { useToast } from '@/hooks/use-toast';
+import { useMessages } from '@/hooks/messaging/useMessages';
+import { useSendMessage } from '@/hooks/messaging/useSendMessage';
+import { useMarkThreadRead } from '@/hooks/messaging/useMarkThreadRead';
+import { useThreads } from '@/hooks/messaging/useThreads';
+import { useAdvancedGestures } from '@/hooks/useAdvancedGestures';
+import { useFriendsPresence } from '@/hooks/useFriendsPresence';
+import { supabase } from '@/integrations/supabase/client';
+import { rpc_markThreadRead, getOrCreateThread, type Surface } from '@/lib/chat/api';
+import isUuid from '@/lib/utils/isUuid';
+import { cn } from '@/lib/utils';
+import dayjs from '@/lib/dayjs';
+import { MessageList } from '@/components/chat/MessageList';
+import { getMediaURL } from '@/utils/mediaHelpers';
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+
+interface DMQuickSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  friendId: string | null; // friend's profile_id
+}
+
+export const DMQuickSheet = memo(({ open, onOpenChange, friendId }: DMQuickSheetProps) => {
+  // Debug parent props
+  console.log('[PARENT] DMQuickSheet props:', { open, friendId });
+  const [input, setInput] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [sending, setSending] = useState(false); // Local sending state as fallback
+  const [currentProfileId, setCurrentProfileId] = useState<string | null>(null); // profile_id is the main user identifier
+  const [threadId, setThreadId] = useState<string | null | undefined>(undefined); // undefined = loading, null = error, string = success
+  const { user } = useAuth(); // Use auth context instead of one-off getUser()
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Stable thread lookup using RPC - getOrCreateThread is imported (stable)
+   
+  const threadIdFrom = useCallback(async (me: string, friend: string): Promise<string> => {
+    return getOrCreateThread(me, friend);
+  }, []);
+
+   // Auth guard and unified messaging hooks - guard queries until thread is ready
+   const enabled = !!threadId && !!currentProfileId;
+   const messages = useMessages(threadId || '', 'dm', { enabled });
+   const sendMut = useSendMessage('dm');
+
+  // Debug messages hook state
+  useEffect(() => {
+    console.log('[useMessages]', {
+      threadId,
+      enabled,
+      isLoading: messages.isLoading,
+      isFetching: messages.isFetching,
+      error: messages.error,
+      count: messages.data?.pages?.reduce((sum, p) => sum + (p?.length || 0), 0) || 0,
+      pages: messages.data?.pages?.length || 0
+    });
+  }, [
+    threadId,
+    enabled,
+    messages.isLoading,
+    messages.isFetching,
+    messages.error,
+    messages.data
+  ]);
+  const markReadMut = useMarkThreadRead();
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<number | null>(null);
+
+  // Debug logging for overlay management
+  useEffect(() => {
+    console.log('[DM_SHEET] Sheet state changed:', { open, friendId });
+  }, [open, friendId]);
+
+  // Debug mutation state
+  useEffect(() => {
+    console.log('[sendMut]', sendMut.status, sendMut.isPending, sendMut.data, sendMut.error);
+  }, [sendMut.status]);
+
+  // Debug IDs to see if threadId is being set properly
+  useEffect(() => {
+    console.log('[DM_SHEET] IDs:', {
+      currentProfileId,
+      friendId,
+      threadId,
+      enabled
+    });
+  }, [currentProfileId, friendId, threadId, enabled]);
+
+  // Swipe gesture for closing sheet
+  const swipeGestures = useAdvancedGestures({
+    onSwipeDown: () => onOpenChange(false)
+  });
+
+  // Get friend profile and presence
+  const { data: friend, isLoading: friendLoading, error: friendError } = useProfile(friendId || undefined);
+  const presence = useFriendsPresence()[friendId || ''];
+  const online = presence?.status === 'online' && presence?.visible;
+  const lastSeenTs = useLastSeen(friendId || '');
+
+  // Get current profile_id from auth context (user.id is the profile_id)
+  useEffect(() => {
+    const profileId = user?.id || null; // user.id is the profile_id (main user identifier)
+    console.log('[DM_SHEET] Auth profile_id changed:', profileId);
+    setCurrentProfileId(profileId);
+  }, [user]);
+
+   // Initialize thread when both user and friend are available AND sheet is open
+   useEffect(() => {
+     if (!open || !currentProfileId || !friendId) {
+       // Reset to null on sheet close to clear previous error state
+       setThreadId(open ? undefined : null);
+       return;
+     }
+     
+     // Add race condition protection with abort controller
+     const abortController = new AbortController();
+     
+     console.log('[DM_SHEET] Getting thread for:', { currentProfileId, friendId });
+     setThreadId(undefined); // show loading state
+     
+     threadIdFrom(currentProfileId, friendId)
+       .then(id => {
+         // Only apply result if this effect hasn't been superseded
+         if (!abortController.signal.aborted) {
+           console.log('[DM_SHEET] Thread resolved:', id);
+           setThreadId(id);
+         }
+       })
+       .catch(e => {
+         if (!abortController.signal.aborted) {
+           console.error('[DM_SHEET] Thread error:', e);
+           
+           // Provide specific error messages based on the error
+           let errorTitle = 'Chat error';
+           let errorDescription = 'Could not start chat';
+           
+           if (e.message && e.message.includes('not friends')) {
+             errorTitle = 'Cannot start conversation';
+             errorDescription = 'You can only send direct messages to your friends. Send them a friend request first!';
+           } else if (e.message && e.message.includes('yourself')) {
+             errorTitle = 'Cannot message yourself';
+             errorDescription = 'You cannot send direct messages to yourself.';
+           } else if (e.message) {
+             errorDescription = e.message;
+           }
+           
+           toast({ 
+             title: errorTitle, 
+             description: errorDescription, 
+             variant: 'destructive' 
+           });
+           setThreadId(null);
+         }
+       });
+       
+     // Cleanup function to abort on dependency change
+     return () => {
+       abortController.abort();
+     };
+   }, [open, currentProfileId, friendId, threadIdFrom, toast]);
+
+  // Mark thread as read with proper auth guard
+  useEffect(() => {
+    if (open && currentProfileId && friendId && threadId && typeof threadId === 'string') {
+      markReadMut.mutate({ surface: 'dm', threadId });
+      
+      // Optimistically clear unread badge with proper typing
+      queryClient.setQueryData<Array<{thread_id: string}>>(['dm-unread', currentProfileId], 
+        (old) => old?.filter(r => r.thread_id !== threadId) ?? []
+      );
+    }
+  }, [open, currentProfileId, friendId, threadId, markReadMut, queryClient]);
+
+  // Show error toast if friend profile fails to load
+  useEffect(() => {
+    if (friendError && open) {
+      toast({
+        title: "Error loading profile",
+        description: "Unable to load friend's profile information.",
+        variant: "destructive",
+      });
+    }
+  }, [friendError, open, toast]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+    
+    // Typing indicator logic
+    if (value.length === 1 && !isTyping) {
+      setIsTyping(true);
+      // TODO: Implement sendTyping('start') when ready
+    }
+    
+    // Clear existing timeout
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    // Set new timeout to stop typing indicator
+    const timeout = setTimeout(() => {
+      setIsTyping(false);
+      // TODO: Implement sendTyping('stop') when ready
+    }, 3000);
+    
+    setTypingTimeout(timeout);
+  };
+
+  // Auto-clear typing when input becomes empty
+  useEffect(() => {
+    if (!input && isTyping) {
+      setIsTyping(false);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        setTypingTimeout(null);
+      }
+    }
+  }, [input, isTyping, typingTimeout]);
+
+  const handleSend = async () => {
+    if (!input.trim() || sending) return;
+    
+    // Auth guard: ensure we have a valid user
+    if (!currentProfileId) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Ensure we have a valid thread ID before sending
+    if (!threadId || typeof threadId !== 'string') {
+      toast({
+        title: "Cannot send message",
+        description: "Thread not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    console.log('[DMQuickSheet] Starting send with sending:', sending, 'isPending:', sendMut.isPending);
+    
+    // Use local sending state as fallback
+    setSending(true);
+
+    // Clear typing state immediately
+    setIsTyping(false);
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+      setTypingTimeout(null);
+    }
+
+    try {
+      console.log('[DMQuickSheet] Calling mutateAsync...');
+      await sendMut.mutateAsync({ 
+        threadId,
+        content: input.trim()
+      });
+      console.log('[DMQuickSheet] mutateAsync completed successfully');
+      setInput('');
+      setReplyTo(null);
+      
+      // Note: sendMut already invalidates queries optimistically, but keeping for safety
+      queryClient.invalidateQueries({ queryKey: ['dm-threads'] });
+    } catch (error) {
+      console.error('[DMQuickSheet] Send failed:', error);
+      toast({
+        title: "Message failed to send",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      console.log('[DMQuickSheet] Clearing sending state');
+      setSending(false); // Always re-enable input
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className={`h-[calc(100vh-4rem)] flex flex-col backdrop-blur-xl bg-background/80`}
+        style={{
+          maxHeight: 'calc(100vh - env(safe-area-inset-top) - 4rem)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)',
+          zIndex: 9999
+        }}
+        {...swipeGestures.handlers}
+      >
+        <SheetHeader className="pb-4 border-b border-border/50">
+          <VisuallyHidden asChild>
+            <SheetTitle>Direct message with {friend?.display_name ?? 'user'}</SheetTitle>
+          </VisuallyHidden>
+          
+          <VisuallyHidden asChild>
+            <SheetDescription>Conversation panel</SheetDescription>
+          </VisuallyHidden>
+
+          <div className="flex items-center gap-3">
+            {friendLoading ? (
+              <>
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex flex-col gap-1 flex-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              </>
+            ) : friend ? (
+              <>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={friend.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {friend.display_name?.[0]?.toUpperCase() ?? '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="text-left text-sm font-semibold">{friend.display_name}</div>
+                  <div className="text-xs text-muted-foreground">@{friend.username}</div>
+                </div>
+                {online
+                  ? <span className="ml-2 text-xs text-green-400">● Online</span>
+                  : lastSeenTs && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {dayjs(lastSeenTs).fromNow(true)}
+                    </span>
+                  )
+                }
+              </>
+            ) : (
+              <>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="text-xs">
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="text-left text-sm font-semibold">Direct Message</div>
+                  <div className="text-xs text-muted-foreground">Chat privately with your friend</div>
+                </div>
+              </>
+            )}
+          </div>
+        </SheetHeader>
+
+        {/* Messages */}
+        {enabled ? (
+          <MessageList
+            messages={messages}
+            currentUserId={currentProfileId}
+            onReply={setReplyTo}
+            className="flex-1"
+          />
+        ) : threadId === null ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center max-w-sm">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Cannot start conversation</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                You can only send direct messages to your friends. 
+                {friend && (
+                  <>
+                    <br />
+                    <br />
+                    Send <strong>{friend.display_name}</strong> a friend request to start chatting!
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm">Setting up chat...</p>
+            </div>
+          </div>
+        )}
+        
+        {isTyping && (
+          <div className="text-sm text-muted-foreground italic animate-pulse px-4">
+            {friend?.display_name} is typing...
+          </div>
+        )}
+
+        {/* Input with reply preview */}
+        <div className="p-4 border-t border-border/50 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          {replyTo && (
+            <div className="mb-2 bg-muted/30 p-2 rounded flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                Replying to message
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReplyTo(null)}
+                className="h-6 w-6 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            ref={fileRef}
+            disabled
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileRef.current?.click()}
+              className="shrink-0"
+              disabled={true}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Input
+              value={input}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                threadId === null 
+                  ? "Cannot send messages - not friends"
+                  : "Type a message..."
+              }
+              className="flex-1 bg-background/50 border-border/50"
+              disabled={sending || threadId === null}
+              aria-label="Direct message input"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!input.trim() || sending || threadId === null}
+              size="icon"
+              className="shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+});
