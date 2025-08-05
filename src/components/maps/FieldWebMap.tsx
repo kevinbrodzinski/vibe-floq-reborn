@@ -366,15 +366,23 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
         });
         mapboxgl.accessToken=token;
 
-        // Only create map if we have user location
-        if (!isLocationReady) {
+        // Only create map if we have user location (allow dev fallback)
+        const allowMapWithoutLocation = import.meta.env.DEV;
+        if (!isLocationReady && !allowMapWithoutLocation) {
           console.warn('[FieldWebMap] No user location available - waiting for permission');
           setStatus('loading');
           setErr('Waiting for location permission...');
           return;
         }
+        
+        if (!isLocationReady && allowMapWithoutLocation) {
+          console.log('[FieldWebMap] 🔧 DEV: Initializing map without location for development');
+        }
 
-        const initialCenter: [number, number] = [location.coords.lng, location.coords.lat];
+        // Use actual location or dev fallback
+        const initialCenter: [number, number] = isLocationReady 
+          ? [location.coords.lng, location.coords.lat]
+          : [-122.4194, 37.7749]; // SF fallback for dev
 
         // Create map with singleton protection to prevent WebGL context leaks
         console.log('[FieldWebMap] Creating map with singleton protection...');

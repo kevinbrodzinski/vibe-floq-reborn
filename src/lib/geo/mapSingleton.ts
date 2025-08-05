@@ -26,9 +26,13 @@ export function createMapSafely(container: HTMLDivElement, options: Omit<mapboxg
   if (mapSingleton.current) {
     console.log('[mapSingleton] Cleaning up previous map instance');
     try {
-      mapSingleton.current.remove();
+      // Check if map is still valid before removing
+      if (mapSingleton.current && typeof mapSingleton.current.remove === 'function') {
+        mapSingleton.current.remove();
+      }
     } catch (error) {
-      console.warn('[mapSingleton] Error cleaning up previous map:', error);
+      // This is expected during hot reloads - don't spam console
+      console.debug('[mapSingleton] Expected cleanup error during hot reload:', error.message);
     }
     mapSingleton.current = null;
   }
@@ -53,9 +57,11 @@ export function cleanupMapSingleton() {
   if (mapSingleton.current) {
     console.log('[mapSingleton] Cleaning up singleton map');
     try {
-      mapSingleton.current.remove();
+      if (mapSingleton.current && typeof mapSingleton.current.remove === 'function') {
+        mapSingleton.current.remove();
+      }
     } catch (error) {
-      console.warn('[mapSingleton] Error cleaning up singleton:', error);
+      console.debug('[mapSingleton] Expected cleanup error:', error.message);
     }
     mapSingleton.current = null;
   }

@@ -107,3 +107,61 @@ export function setupLocationDebugger() {
 if (import.meta.env.DEV) {
   setupLocationDebugger();
 }
+
+/**
+ * Location State Debugger
+ * Helps debug when maps get stuck in loading due to location issues
+ */
+
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  // Add global debug function for location state
+  (window as any).debugLocationState = () => {
+    console.group('🗺️ Location State Debug');
+    
+    // Check localStorage for debug location
+    const debugLoc = localStorage.getItem('floq-debug-forceLoc');
+    console.log('Debug location set:', debugLoc || 'None');
+    
+    // Check geolocation permission state
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        console.log('Geolocation permission:', result.state);
+      }).catch(e => console.log('Permission query failed:', e));
+    }
+    
+    // Check if location is available
+    if ('geolocation' in navigator) {
+      console.log('Geolocation API available: Yes');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log('Current position:', {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy
+          });
+        },
+        (err) => {
+          console.log('Position error:', err.message, 'Code:', err.code);
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      console.log('Geolocation API available: No');
+    }
+    
+    // Check map state
+    const map = (window as any).__FLOQ_MAP;
+    console.log('Map instance exists:', !!map);
+    if (map) {
+      console.log('Map ready:', map.loaded());
+      console.log('Map center:', map.getCenter());
+    }
+    
+    console.groupEnd();
+  };
+  
+  // Auto-debug on page load after a delay
+  setTimeout(() => {
+    console.log('🔧 Location debugger loaded. Run debugLocationState() to check location state.');
+  }, 2000);
+}
