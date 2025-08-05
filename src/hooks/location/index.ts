@@ -27,7 +27,7 @@ export { useReverseGeocode } from '../useReverseGeocode';
 
 // PostGIS-powered location functions
 export { usePostGISLocation } from '../usePostGISLocation';
-export { useLocationMetrics } from '../useLocationMetrics';
+export { useLocationMetrics as useLocationMetricsDB } from '../useLocationMetrics';
 
 // Migration helper for transitioning to PostGIS
 export { useLocationMigration } from '../useLocationMigration';
@@ -41,6 +41,17 @@ export { useEnhancedLocationSharing } from './useEnhancedLocationSharing';
 
 // Read-only hooks optimized for render-heavy components
 export { useReadOnlyLocation, useReadOnlyLocationCoords, useReadOnlyMovementContext } from './useReadOnlyLocation';
+
+// Store-based location state hooks
+export { 
+  useLocationCoords, 
+  useLocationCoordsWithTime, 
+  useMovementContext, 
+  useLocationHealth, 
+  useLocationMetrics, 
+  useLocationStatus, 
+  useLocationActions 
+} from '@/lib/store/useLocationStore';
 
 // Export shared types for downstream packages
 export type { GeoCoords, MovementContext, LocationHealth, SystemMetrics, UnifiedLocationOptions, UnifiedLocationState } from '@/lib/location/types';
@@ -67,7 +78,8 @@ export { useCompatGeo, getMigrationMetrics, getMigrationStatus } from './compati
  * 4. For PostGIS-powered location features:
  *    useLocationMigration() - provides unified interface
  *    usePostGISLocation() - direct PostGIS access
- *    useLocationMetrics() - performance monitoring
+ *    useLocationMetricsDB() - database metrics operations
+ *    useLocationMetrics() - store metrics state (from store)
  * 
  * 5. For coordinate display:
  *    Continue using useLocationDisplay()
