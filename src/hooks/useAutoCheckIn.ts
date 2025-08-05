@@ -94,8 +94,8 @@ export const useAutoCheckIn = () => {
           // Calculate confidence based on distance and popularity
           const venuesWithConfidence = venues.map((venue: any) => {
             const distance = metersBetween(
-              { lat, lng },
-              { lat: venue.lat, lng: venue.lng }
+              lat, lng,
+              venue.lat, venue.lng
             );
             
             // Simple confidence calculation: closer = higher confidence, popularity boost
@@ -119,7 +119,7 @@ export const useAutoCheckIn = () => {
             .sort((a, b) => b.confidence - a.confidence)[0] || null;
 
           if (eligibleVenue) {
-            console.log(`[AutoCheckIn] GPS fallback venue detected: ${eligibleVenue.name} (confidence: ${eligibleVenue.confidence})`);
+            console.log(`[AutoCheckIn] GPS fallback venue detected: ${eligibleVenue.venueId} (confidence: ${eligibleVenue.confidence})`);
           }
         }
       }
@@ -133,7 +133,7 @@ export const useAutoCheckIn = () => {
           // Started being near a new venue
           currentCheckInRef.current = {
             venueId: eligibleVenue.venueId,
-            name: eligibleVenue.name || `Venue ${eligibleVenue.venueId}`,
+            name: eligibleVenue.name || eligibleVenue.venueId || `Venue ${eligibleVenue.venueId}`,
             checkedInAt: now,
             lastSeen: now,
             confidence: eligibleVenue.overallConfidence,

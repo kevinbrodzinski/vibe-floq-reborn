@@ -49,7 +49,7 @@ export const useHotspots = () => {
 
   const { data, error, mutate } = useSWR(
     swrKey,
-    () => fetchHotspots(coords!.lat, coords!.lng, vibe!),
+    () => fetchHotspots(coords!.lat, coords!.lng, String(vibe || 'chill')),
     {
       refreshInterval: 60000, // Refresh every 60 seconds
       revalidateOnFocus: false,

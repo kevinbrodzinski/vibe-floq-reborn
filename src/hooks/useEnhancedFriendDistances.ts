@@ -171,7 +171,7 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
         const { data, error } = await supabase.rpc('presence_nearby', {
           lat: pos?.lat || 0,
           lng: pos?.lng || 0,
-          km: maxDistance / 1000, // convert to km
+          radius_m: maxDistance,
           include_self: false
         });
 

@@ -274,7 +274,7 @@ export const EnhancedPersonalHero: React.FC<EnhancedPersonalHeroProps> = ({
                         <div>
                           <p className="text-sm font-medium">Predicted Transition</p>
                           <p className="text-xs text-muted-foreground">
-                            To {heroData.predictions.nextVibeTransition.vibe} in {heroData.predictions.nextVibeTransition.timeEstimate}
+                            To {heroData.predictions.nextVibeTransition.vibe} in {heroData.predictions.nextVibeTransition.timeframe}
                           </p>
                         </div>
                       </div>

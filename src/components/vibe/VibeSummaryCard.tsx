@@ -29,7 +29,7 @@ export const VibeSummaryCard = memo(
     error = null,
   }: VibeSummaryCardProps) => {
     const [shouldPulse, setShouldPulse] = useState(false);
-    const visibility = useVibe((s) => s.visibility, shallow);
+    const visibility = useVibe((s) => s.visibility);
 
     /* ---- pulse when vibe changes --------------------------------- */
     useEffect(() => {

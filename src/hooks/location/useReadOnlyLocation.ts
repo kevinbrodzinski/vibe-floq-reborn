@@ -31,7 +31,7 @@ export function useReadOnlyLocation(): ReadOnlyLocationState {
 
   return {
     coords,
-    movementContext,
+    movementContext: movementContext ? { ...movementContext, lastUpdated: Date.now(), heading: movementContext.heading || null } : null,
     timestamp,
     hasPermission,
     status

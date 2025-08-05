@@ -64,7 +64,7 @@ export function useCompatGlow(): CompatGlowState {
       const urlParams = new URLSearchParams({
         lat: location!.coords.latitude.toString(),
         lng: location!.coords.longitude.toString(),
-        vibe: vibe!,
+        vibe: String(vibe || 'chill'),
       });
       
       return fetch(`https://reztyrrafsmlvvlqvsqt.supabase.co/functions/v1/compat_clusters?${urlParams}`, {
