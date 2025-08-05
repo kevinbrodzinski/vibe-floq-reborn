@@ -41,6 +41,7 @@ export function useGeo(): GeoState {
   useEffect(() => {
     // Skip if we're in debug mode with forced debug location
     if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
+      console.log('[useGeo] Debug mode enabled - using demo coordinates');
       setValue({
         coords: DEMO_COORDS,
         timestamp: Date.now(),
@@ -51,22 +52,33 @@ export function useGeo(): GeoState {
 
     let didTimeout = false;
 
-    // ① start timeout
+    // ① start timeout - reduced to 3 seconds for faster fallback
     const t = setTimeout(() => {
+      console.log('[useGeo] Timeout reached - falling back to demo coordinates');
       didTimeout = true;
       setValue((old) =>
         old.coords
           ? old
           : { coords: DEMO_COORDS, timestamp: Date.now(), status: 'debug' }
       );
-    }, GEO_TIMEOUT_MS);
+    }, 3000); // Reduced from GEO_TIMEOUT_MS to 3 seconds
 
     // ② call the browser
+    console.log('[useGeo] Requesting geolocation...');
     setValue({ coords: null, timestamp: null, status: 'fetching' });
     getEnhancedGeolocation().then((res) => {
       if (!didTimeout) {
+        console.log('[useGeo] Got location:', res.status, res.coords ? 'with coords' : 'no coords');
         clearTimeout(t);
         setValue(res);
+      } else {
+        console.log('[useGeo] Location response arrived after timeout, ignoring');
+      }
+    }).catch((error) => {
+      console.error('[useGeo] Geolocation failed:', error);
+      if (!didTimeout) {
+        clearTimeout(t);
+        setValue({ coords: DEMO_COORDS, timestamp: Date.now(), status: 'debug' });
       }
     });
 

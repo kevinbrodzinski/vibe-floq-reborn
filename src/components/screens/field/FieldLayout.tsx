@@ -80,15 +80,29 @@ export const FieldLayout = () => {
 
   // Debug location handler
   const handleDebugLocation = () => {
-    // Set debug location in useGeo context
-    console.log('[DEBUG] Setting dummy location - this should trigger location context');
-    // Note: This will need to be handled by the field location context
+    console.log('[FieldLayout] Setting debug location and reloading...');
+    localStorage.setItem('floq-debug-forceLoc', '37.7749,-122.4194'); // SF coords
+    sessionStorage.removeItem('floq-coords');
+    window.location.reload();
   };
 
-  // ---- helper flags ---------------------------------------------
-  const geoReady = isLocationReady && location?.coords?.lat != null;
-  const geoLoading = location?.status === 'loading' || (!isLocationReady && !location?.error);
-  const geoError = location?.error && location.error !== 'unavailable';
+  // ---- helper flags with improved logic ---------------------------------------------
+  const hasCoords = location?.coords?.lat != null && location?.coords?.lng != null;
+  const geoReady = isLocationReady && hasCoords;
+  const geoLoading = location?.status === 'loading' || location?.status === 'idle';
+  const geoError = location?.error && !['unavailable', 'timeout'].includes(location.error);
+  
+  // Enhanced debugging
+  console.log('[FieldLayout] Location gate state:', {
+    geoReady,
+    geoLoading, 
+    geoError,
+    hasCoords,
+    isLocationReady,
+    locationStatus: location?.status,
+    locationError: location?.error,
+    coords: location?.coords
+  });
 
   // ---- UI --------------------------------------------------------
   // Only show prompt if there's a permission error or persistent failure
@@ -109,14 +123,17 @@ export const FieldLayout = () => {
     );
   }
 
-  // Show loading prompt while initializing or if unavailable signal
-  if (!geoReady && (geoLoading || location?.error === 'unavailable')) {
+  // Show loading prompt while initializing or if still no location after reasonable time
+  if (!geoReady) {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
           <div className="flex items-center justify-center h-full p-4">
             <GeolocationPrompt
-              onRequestLocation={() => location.startTracking()}
+              onRequestLocation={() => {
+                console.log('[FieldLayout] User requested location');
+                location.startTracking();
+              }}
               error={location?.error || null}
               loading={geoLoading}
               onSetDebugLocation={handleDebugLocation}

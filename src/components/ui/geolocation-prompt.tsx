@@ -78,24 +78,20 @@ export function GeolocationPrompt({ onRequestLocation, error, loading, onSetDebu
             {loading ? 'Getting Location...' : hasRequested ? 'Allow Location Access' : 'Enable Location'}
           </Button>
 
-          {import.meta.env.DEV && (
-            <Button
-              variant="outline"
-              onClick={setDebugLocation}
-              className="w-full text-xs"
-            >
-              Use Debug Location (Dev)
-            </Button>
-          )}
-          
-          {/* Always show skip option for stuck users */}
+          {/* Always show demo location option prominently */}
           <Button
-            variant="ghost"
-            onClick={handleSkipLocation}
-            className="w-full text-xs text-muted-foreground"
+            variant="outline"
+            onClick={setDebugLocation}
+            className="w-full"
           >
             Continue with Demo Location
           </Button>
+          
+          {import.meta.env.DEV && (
+            <div className="text-xs text-muted-foreground text-center">
+              Development mode: Demo location will be used
+            </div>
+          )}
         </div>
 
         <div className="text-xs text-muted-foreground">

@@ -90,7 +90,18 @@ const FieldLocationProviderInner = ({
     friendIds
   );
 
+  // Enhanced location readiness check with debugging
   const isLocationReady = lat !== null && lng !== null;
+  
+  // Debug location state
+  console.log('[FieldLocationContext] Location state:', {
+    lat, lng, 
+    isLocationReady,
+    hasCoords: !!coords,
+    locationStatus: location.status,
+    locationError: error,
+    isTracking
+  });
 
   /* auto-start enhanced location sharing when location is ready */
   useEffect(() => {
