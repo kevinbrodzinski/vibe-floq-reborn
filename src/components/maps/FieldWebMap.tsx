@@ -33,7 +33,7 @@ const SelectedFloqContext = createContext<{
 
 export const useSelectedFloq = () => useContext(SelectedFloqContext);
 
-// Remove registerMapboxWorker() for Mapbox v3
+// Mapbox GL v2.15.0 - worker registration not needed, but keep for reference
 
 interface Props {
   onRegionChange: (b:{
@@ -260,6 +260,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       window.removeEventListener('resize', onResize);
       cancelAnimationFrame(resizeRef.current!);
     };
+  }, []);
+
+  
+  // 🔧 DEBUG: Mount debugging effect
+  useEffect(() => {
+    (window as any).__mountPing = true;
+    console.log('[FieldWebMap] 🔧 Mount ping – container?', !!mapContainerRef.current);
+    console.log('[FieldWebMap] 🔧 Map already exists?', !!mapRef.current);
   }, []);
 
   useEffect(()=>{
