@@ -1,4 +1,4 @@
-console.log("[REAL] FieldWebMap loaded");
+// Field Map Implementation - Real version
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';

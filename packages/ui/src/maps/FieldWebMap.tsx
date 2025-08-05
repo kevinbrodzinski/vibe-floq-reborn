@@ -1,5 +1,5 @@
 
-console.log("[UI  ] FieldWebMap loaded");
+// Lightweight FieldWebMap for UI package (Storybook/docs only)
 
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';

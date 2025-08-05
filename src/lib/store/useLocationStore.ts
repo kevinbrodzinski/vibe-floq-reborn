@@ -157,7 +157,7 @@ export const useLocationStore = create<LocationState>()(
               state.coords?.lng === coords.lng &&
               state.coords?.accuracy === coords.accuracy
             ) {
-              return; // Nothing to do → avoid state-change cascade
+              return state; // Nothing to do → avoid state-change cascade
             }
 
             const previousCoords = state.coords;
