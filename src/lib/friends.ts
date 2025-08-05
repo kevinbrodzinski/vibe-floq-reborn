@@ -1,61 +1,69 @@
-import { supabase } from "@/integrations/supabase/client";
 
-/* -------------------------------------------------- */
-/* 1.  Send request  (you  ➜ target)                  */
-/* -------------------------------------------------- */
-export async function sendFriendRequest(targetUserId: string) {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw authErr ?? new Error("Not authenticated");
-  if (targetUserId === user.id) throw new Error("Cannot add yourself");
+import { supabase } from '@/integrations/supabase/client';
 
-  // Use rate-limited friend request function
-  const { data, error } = await supabase.rpc("send_friend_request_with_rate_limit", {
-    p_target_profile_id: targetUserId
-  });
+interface FriendRequestResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
 
-  if (error) throw error;
-  
-  // Handle rate limiting responses
-  if (data && !data.success) {
-    const errorMessage = data.message || "Failed to send friend request";
-    if (data.error === 'rate_limit_exceeded') {
-      throw new Error(`Rate limit exceeded: ${errorMessage}`);
-    } else if (data.error === 'user_rate_limit_exceeded') {
-      throw new Error(`Already sent request: ${errorMessage}`);
-    } else if (data.error === 'duplicate_request') {
-      throw new Error("Friend request already exists");
-    } else {
-      throw new Error(errorMessage);
+export async function sendFriendRequest(profileId: string): Promise<FriendRequestResponse> {
+  try {
+    const { data, error } = await supabase.rpc('send_friend_request', {
+      target_profile_id: profileId
+    });
+
+    if (error) {
+      console.error('Error sending friend request:', error);
+      return { success: false, error: error.message };
     }
+
+    // Type guard for the response
+    const response = data as unknown;
+    if (typeof response === 'object' && response !== null) {
+      const result = response as Record<string, any>;
+      if ('success' in result && typeof result.success === 'boolean') {
+        return {
+          success: result.success,
+          message: result.message || 'Friend request sent successfully',
+          error: result.error
+        };
+      }
+    }
+
+    // Fallback for successful response
+    return { success: true, message: 'Friend request sent successfully' };
+  } catch (error: any) {
+    console.error('Network error sending friend request:', error);
+    return { success: false, error: error.message || 'Network error occurred' };
   }
-  
-  return data;
 }
 
-/* -------------------------------------------------- */
-/* 2.  Accept request  (you  ◀ target)                */
-/* -------------------------------------------------- */
-export async function acceptFriendRequest(fromUserId: string) {
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !user) throw authErr ?? new Error("Not authenticated");
+export async function acceptFriendRequest(requestId: string): Promise<FriendRequestResponse> {
+  try {
+    const { data, error } = await supabase.rpc('accept_friend_request', {
+      request_id: requestId
+    });
 
-  // Use atomic function to prevent race conditions
-  const { data, error } = await supabase.rpc("accept_friend_request_atomic", {
-    requester_id: fromUserId
-  });
-  
-  if (error) throw error;
-  return data;
-}
+    if (error) {
+      return { success: false, error: error.message };
+    }
 
-/* -------------------------------------------------- */
-/* 3.  Block (or re-block) a user                     */
-/* -------------------------------------------------- */
-export async function blockUser(targetUserId: string) {
-  const { data, error } = await supabase.rpc("upsert_friendship", {
-    _other_user: targetUserId,
-    _new_state:  "blocked",
-  });
-  if (error) throw error;
-  return data;
+    // Type guard for the response
+    const response = data as unknown;
+    if (typeof response === 'object' && response !== null) {
+      const result = response as Record<string, any>;
+      if ('success' in result && typeof result.success === 'boolean') {
+        return {
+          success: result.success,
+          message: result.message || 'Friend request accepted',
+          error: result.error
+        };
+      }
+    }
+
+    return { success: true, message: 'Friend request accepted' };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }

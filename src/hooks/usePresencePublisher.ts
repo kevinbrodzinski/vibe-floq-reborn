@@ -1,8 +1,8 @@
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { globalLocationManager } from '@/lib/location/GlobalLocationManager';
-import { publishPresence } from '@/lib/presence/publishPresence';
 import { trackError } from '@/lib/trackError';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
@@ -25,15 +25,25 @@ export function usePresencePublisher(
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const { data: user } = useCurrentUser();
 
-  const updatePosition = useCallback(async (position: GeolocationPosition) => {
+  const updatePosition = useCallback(async (lat: number, lng: number) => {
     if (!user || !isActive) return;
 
     try {
       setIsPublishing(true);
       setError(null);
 
-      // Simple presence update to prevent infinite loops
-      await publishPresence(position);
+      const { error: presenceError } = await supabase.rpc('upsert_presence', {
+        p_lat: lat,
+        p_lng: lng,
+        p_vibe: vibe,
+        p_visibility: 'public',
+      });
+
+      if (presenceError) {
+        console.error('Error publishing presence:', presenceError);
+        throw presenceError;
+      }
+
       setLastUpdate(new Date());
       
     } catch (err: any) {
@@ -43,7 +53,7 @@ export function usePresencePublisher(
     } finally {
       setIsPublishing(false);
     }
-  }, [user, isActive]);
+  }, [user, isActive, vibe]);
 
   useEffect(() => {
     if (!user || !isActive) {
@@ -59,30 +69,14 @@ export function usePresencePublisher(
       unsubscribeRef.current = globalLocationManager.subscribe(
         `presence-publisher-${user.id}`,
         (coords) => {
-          // Create valid GeolocationPosition object
-          const position: GeolocationPosition = {
-            coords: {
-              latitude: coords.lat,
-              longitude: coords.lng,
-              accuracy: coords.accuracy || 50,
-              altitude: null,
-              altitudeAccuracy: null,
-              heading: null,
-              speed: null,
-              toJSON: function() { return this; }
-            },
-            timestamp: Date.now(),
-            toJSON: function() { return this; }
-          };
-          
-          // Defer execution to prevent infinite loops
+          // Call updatePosition with lat and lng directly
           requestAnimationFrame(() => {
-            updatePosition(position);
+            updatePosition(coords.lat, coords.lng);
           });
         },
         (error) => {
           console.error('Location error:', error);
-          setError(error.message);
+          setError(error);
         }
       );
 
@@ -106,7 +100,7 @@ export function usePresencePublisher(
     const setUserVibe = async () => {
       try {
         const { error: vibeError } = await supabase.rpc('set_user_vibe', {
-          p_vibe: vibe
+          new_vibe: vibe
         });
         
         if (vibeError) {
@@ -123,12 +117,10 @@ export function usePresencePublisher(
   const forceUpdate = useCallback(() => {
     if (!user) return;
     
-    globalLocationManager.getCurrentLocation()
-      .then(updatePosition)
-      .catch((err) => {
-        console.error('Error getting current location:', err);
-        setError(err.message);
-      });
+    const currentLocation = globalLocationManager.getCurrentLocation();
+    if (currentLocation) {
+      updatePosition(currentLocation.lat, currentLocation.lng);
+    }
   }, [updatePosition, user]);
 
   return {
