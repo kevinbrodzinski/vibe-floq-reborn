@@ -2,6 +2,9 @@
 // This entry point is used for web development and deployment
 // DO NOT import this in native code - use src/main.native.tsx instead
 
+// 🔧 CRITICAL: Apply DataCloneError fix FIRST before any other code
+import './lib/debug/consoleGuard';
+
 // Import ResizeObserver polyfill FIRST
 import 'resize-observer-polyfill/dist/ResizeObserver.global';
 
