@@ -237,23 +237,33 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     });
   }, [location.coords?.lat, location.coords?.lng]);
 
+  // Handle resize events with debouncing to prevent RAF flooding
+  const resizeRef = useRef<number>();
+
+  // Set up resize listener with debouncing
+  useEffect(() => {
+    const onResize = () => {
+      if (mapRef.current) {
+        cancelAnimationFrame(resizeRef.current!);
+        resizeRef.current = requestAnimationFrame(() => {
+          try {
+            mapRef.current?.resize();
+          } catch (error) {
+            console.warn('Map resize error:', error);
+          }
+        });
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(resizeRef.current!);
+    };
+  }, []);
+
   useEffect(()=>{
     if(!mapContainerRef.current||mapRef.current) return;
     let dead=false;
-
-    // Handle resize events properly
-    const handleResize = () => {
-      if (mapRef.current && !dead) {
-        try {
-          mapRef.current.resize();
-        } catch (error) {
-          console.warn('Map resize error:', error);
-        }
-      }
-    };
-
-    // Add resize listener
-    window.addEventListener('resize', handleResize);
 
     (async ()=>{
       try{
@@ -710,13 +720,16 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
     return()=>{
       dead=true;
-      // Remove resize listener
-      window.removeEventListener('resize', handleResize);
       
       if(mapRef.current){
-        mapRef.current.remove();
-        mapRef.current=null;
-        setMapInstance(null);
+        try {
+          mapRef.current.remove();
+        } catch (e) {
+          console.warn('[FieldWebMap] map.remove() failed', e);
+        } finally {
+          mapRef.current=null;
+          setMapInstance(null);
+        }
       }
       if(userMarkerRef.current){
         userMarkerRef.current.remove();
