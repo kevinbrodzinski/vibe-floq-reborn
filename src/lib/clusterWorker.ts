@@ -60,60 +60,6 @@ class ClusteringFallback {
     });
     return hits;
   }
-  
-  async cluster(tiles: RawTile[], zoom = 11): Promise<Cluster[]> {
-    const BASE_DIST = 32;
-    const threshold = BASE_DIST * Math.pow(2, 11 - zoom);
-    const clusters: Cluster[] = [];
-
-    tiles.forEach(t => {
-      const hit = clusters.find(c => {
-        const dx = c.x - t.x;
-        const dy = c.y - t.y;
-        return Math.hypot(dx, dy) < threshold;
-      });
-
-      if (hit) {
-        const n = hit.count + 1;
-        hit.x = (hit.x * hit.count + t.x) / n;
-        hit.y = (hit.y * hit.count + t.y) / n;
-        hit.r = Math.max(hit.r, t.r);
-        hit.vibe = {
-          h: (hit.vibe.h * hit.count + t.vibe.h) / n,
-          s: (hit.vibe.s * hit.count + t.vibe.s) / n,
-          l: (hit.vibe.l * hit.count + t.vibe.l) / n,
-        };
-        hit.count = n;
-        hit.ids.push(t.id);
-      } else {
-        clusters.push({
-          x: t.x,
-          y: t.y,
-          r: t.r,
-          count: 1,
-          vibe: { ...t.vibe },
-          ids: [t.id],
-        });
-      }
-    });
-
-    this.lastClusters = clusters;
-    return clusters;
-  }
-
-  async hitTest(x: number, y: number, radius = 20): Promise<string[]> {
-    if (!this.lastClusters) return [];
-    
-    const hits: string[] = [];
-    this.lastClusters.forEach(c => {
-      const dx = c.x - x;
-      const dy = c.y - y;
-      if (Math.hypot(dx, dy) <= radius) {
-        hits.push(...c.ids);
-      }
-    });
-    return hits;
-  }
 }
 
 /**

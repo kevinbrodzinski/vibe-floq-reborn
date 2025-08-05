@@ -46,12 +46,43 @@ export function createCompatiblePosition(
   };
 }
 
-export function getEnhancedGeolocation() {
-  if (!navigator.geolocation) {
-    throw new Error('Geolocation not supported');
-  }
-  return navigator.geolocation;
+/* ------------------------------------------------------------------ */
+/*  Browser-only helpers                                              */
+/* ------------------------------------------------------------------ */
+
+export interface EnhancedGeoResult {
+  coords: GeolocationCoordinates | null;
+  timestamp: number | null;
+  status: 'idle' | 'fetching' | 'success' | 'error' | 'debug';
 }
+
+/**
+ * Promise wrapper that returns a richer object + abort-timeout.
+ */
+export const getEnhancedGeolocation = (
+  opts: PositionOptions = { enableHighAccuracy: true, timeout: 10000 }
+): Promise<EnhancedGeoResult> =>
+  new Promise((resolve) => {
+    if (!('geolocation' in navigator)) {
+      return resolve({ coords: null, timestamp: null, status: 'error' });
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        resolve({
+          coords: pos.coords,
+          timestamp: pos.timestamp,
+          status: 'success',
+        }),
+      () =>
+        resolve({
+          coords: null,
+          timestamp: Date.now(),
+          status: 'error',
+        }),
+      opts
+    );
+  });
 
 export function getLocationWithTimeout(
   timeout = 10000
@@ -104,7 +135,9 @@ export function getLocationWithTimeout(
   });
 }
 
+/* Optional small helpers the old code referenced ------------------- */
 export const webLocationHelpers = {
+  metersToMiles: (m: number) => m * 0.000621371,
   isSupported: () => 'geolocation' in navigator,
   isLocationAvailable: () => 'geolocation' in navigator,
   checkPermission: async () => {
