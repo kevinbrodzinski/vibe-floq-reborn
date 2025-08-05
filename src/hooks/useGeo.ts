@@ -74,7 +74,8 @@ export function useGeo(): GeoState {
     navigator.permissions
       ?.query({ name: 'geolocation' })
       .then((p) => {
-        if (p.state !== 'prompt') {
+        if (p.state === 'prompt') {
+          // user hasn't decided → arm a fallback in case they ignore it
           fallback = setTimeout(() => {
             if (completed) return;
             completed = true;
@@ -82,6 +83,8 @@ export function useGeo(): GeoState {
             publish(DEMO, 'ready', undefined);
           }, TIMEOUT_MS);
         }
+        // granted or denied → let the geolocation call resolve/reject,
+        // no demo-coord fallback needed.
       })
       .catch(() => {
         // Permissions API not supported, arm fallback anyway
@@ -123,6 +126,13 @@ export function useGeo(): GeoState {
         if (completed) return;
         completed = true;
         if (fallback) clearTimeout(fallback);
+        
+        if (err?.code === 1 /* PERMISSION_DENIED */) {
+          devLog('🛑 permission denied');
+          setState({ coords: null, status: 'error', error: 'denied' });
+          return;
+        }
+        
         devLog('❌ geolocation failed', err);
         setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
       });
