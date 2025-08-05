@@ -129,7 +129,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     selectedFloqMembers: selectedFloqMembers.map(member => member.profile_id)
   }), [selectedMyFloq, selectedFloqMembers]);
 
-  const initialCenter: [number, number] = location?.coords ? [location.coords.lng, location.coords.lat] : [-118.4912, 34.0224];
+  // Only use user location, no fallback coordinates
 
   const [status,setStatus] = useState<'loading'|'ready'|'error'>('loading');
   const [err,setErr]       = useState<string>();
@@ -330,10 +330,15 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         console.log('[FieldWebMap] ✅ Token acquired:', { source, tokenLength: token.length });
         mapboxgl.accessToken=token;
 
-        // Get initial center from user location or fallback to Venice Beach
-        const initialCenter: [number, number] = location.coords?.lat && location.coords?.lng 
-          ? [location.coords.lng, location.coords.lat] 
-          : [-118.4695, 33.9850]; // Venice Beach fallback
+        // Only create map if we have user location
+        if (!location.coords?.lat || !location.coords?.lng) {
+          console.warn('[FieldWebMap] No user location available, cannot create map');
+          setStatus('error');
+          setErr('Location required for map');
+          return;
+        }
+
+        const initialCenter: [number, number] = [location.coords.lng, location.coords.lat];
 
         // Create map with singleton protection to prevent WebGL context leaks
         console.log('[FieldWebMap] Creating map with singleton protection...');

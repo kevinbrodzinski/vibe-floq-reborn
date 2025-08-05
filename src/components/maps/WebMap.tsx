@@ -37,11 +37,11 @@ export const WebMap: React.FC<Props> = ({ onRegionChange, children }) => {
         mapboxgl.accessToken = token;
         setSrc(source);
 
-        /* map */
+        /* map - require location */
         const map = new mapboxgl.Map({
           container: container.current!,
           style    : 'mapbox://styles/mapbox/dark-v11',
-          center   : [-118.24, 34.05],
+          center   : [0, 0], // Will be set when location is available
           zoom     : 11
         });
         mapRef.current = map;
