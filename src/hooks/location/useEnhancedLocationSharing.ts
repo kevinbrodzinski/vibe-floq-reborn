@@ -115,7 +115,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
           location,
           accuracy,
           timestamp,
-          userId: user.id
+          profileId: user.id
         });
         
         // Still do minimal processing for immediate UI updates
@@ -179,8 +179,8 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       if (enableVenueDetection) {
         try {
           // Get WiFi and Bluetooth data (platform-specific implementation needed)
-          const wifiNetworks = await multiSignalVenueDetector.constructor.getWiFiNetworks();
-          const bluetoothBeacons = await multiSignalVenueDetector.constructor.getBluetoothBeacons();
+          const wifiNetworks = []; // Placeholder - platform specific implementation needed
+          const bluetoothBeacons = []; // Placeholder - platform specific implementation needed
 
           venueDetections = await multiSignalVenueDetector.detectVenues(
             location,
@@ -210,7 +210,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
       if (enableProximityTracking) {
         try {
           const currentUser: ProximityUser = {
-            userId: user.id,
+            profileId: user.id,
             location,
             accuracy,
             timestamp
@@ -219,8 +219,8 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
           // Analyze proximity with all known nearby users
           const proximityResults: ProximityAnalysis[] = [];
           
-          for (const [userId, nearbyUser] of nearbyUsersRef.current) {
-            if (userId !== user.id) {
+          for (const [profileId, nearbyUser] of nearbyUsersRef.current) {
+            if (profileId !== user.id) {
               const analysis = proximityScorer.analyzeProximity(currentUser, nearbyUser);
               
               if (analysis.confidence > 0.1) {
@@ -230,7 +230,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
                 if (analysis.eventType === 'enter') {
                   proximityEvents.push({
                     profileId: user?.id || '',
-                    targetProfileId: userId,
+                    targetProfileId: profileId,
                     eventType: 'enter',
                     distance: analysis.distance,
                     confidence: analysis.confidence,
@@ -239,7 +239,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
                 } else if (analysis.eventType === 'exit') {
                   proximityEvents.push({
                     profileId: user?.id || '',
-                    targetProfileId: userId,
+                    targetProfileId: profileId,
                     eventType: 'exit',
                     distance: analysis.distance,
                     confidence: analysis.confidence,
@@ -249,7 +249,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
                 } else if (analysis.eventType === 'sustain' && analysis.sustainedDuration > 60000) {
                   proximityEvents.push({
                     profileId: user?.id || '',
-                    targetProfileId: userId,
+                    targetProfileId: profileId,
                     eventType: 'sustain',
                     distance: analysis.distance,
                     confidence: analysis.confidence,
@@ -278,7 +278,7 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
           try {
             await proximityEventRecorder.recordProximityEvents(
               user.id,
-              proximityEvents,
+              proximityEvents.map(event => `${event.eventType}:${event.targetProfileId}:${event.distance.toFixed(0)}m`),
               nearbyUsers,
               { lat: location.lat, lng: location.lng, accuracy }
             );
@@ -340,23 +340,23 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
    * Handle incoming proximity data from other users
    */
   const handleProximityUpdate = useCallback((payload: any) => {
-    if (!payload.userId || payload.userId === user?.id) return;
+    if (!payload.profileId || payload.profileId === user?.id) return;
 
     const proximityUser: ProximityUser = {
-      userId: payload.userId,
+      profileId: payload.profileId,
       location: { lat: payload.lat, lng: payload.lng },
       accuracy: payload.accuracy || 50,
       timestamp: payload.timestamp || Date.now(),
       vibe: payload.vibe
     };
 
-    nearbyUsersRef.current.set(payload.userId, proximityUser);
+    nearbyUsersRef.current.set(payload.profileId, proximityUser);
 
     // Clean up old proximity data (older than 5 minutes)
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    for (const [userId, user] of nearbyUsersRef.current) {
+    for (const [profileId, user] of nearbyUsersRef.current) {
       if (user.timestamp < fiveMinutesAgo) {
-        nearbyUsersRef.current.delete(userId);
+        nearbyUsersRef.current.delete(profileId);
       }
     }
   }, [user?.id]);

@@ -89,6 +89,60 @@ export interface UnifiedLocationOptions {
   autoStart?: boolean;
 }
 
+// Additional location-related interfaces
+export interface LocationUpdate {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  timestamp: number;
+  profileId?: string; // Changed from userId
+}
+
+export interface ProximityUser {
+  profileId: string; // Changed from userId
+  location: { lat: number; lng: number };
+  accuracy: number;
+  timestamp: number;
+  vibe?: string;
+}
+
+export interface ProximityEvent {
+  profileId: string; // Changed from userId
+  targetProfileId: string; // Changed from targetUserId
+  eventType: 'enter' | 'exit' | 'sustain';
+  distance: number;
+  confidence: number;
+  timestamp: number;
+  duration?: number;
+}
+
+export interface EnhancedFeedbackData {
+  feedbackType: 'contextual' | 'simple' | 'detailed';
+  showUncertainty: boolean;
+  emphasizePersonalization: boolean;
+  suggestExploration: boolean;
+  userConsistency?: number;
+  learningInsights?: {
+    accuracyTrend: number;
+    adaptationRate: number;
+  };
+  adaptiveInterface: {
+    feedbackType: 'contextual' | 'simple' | 'detailed';
+    showUncertainty: boolean;
+    emphasizePersonalization: boolean;
+    suggestExploration: boolean;
+    userConsistency?: number;
+  };
+}
+
+export interface SystemHealthMetrics {
+  overallHealth: number;
+  accuracy: number;
+  responseTime: number;
+  learningProgress: number;
+  detailedMetrics?: any;
+}
+
 export interface UnifiedLocationState {
   coords: GeoCoords | null;
   timestamp: number | null;

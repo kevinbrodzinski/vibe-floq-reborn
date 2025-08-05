@@ -78,7 +78,10 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
 
   // Zustand store integration
   const coords = useLocationCoords();
-  const { status, error, hasPermission } = useLocationStatus();
+  const locationStatus = useLocationStatus();
+  const status = locationStatus?.status || 'idle';
+  const error = locationStatus?.error || null;
+  const hasPermission = locationStatus?.hasPermission || false;
   const {
     updateLocation,
     updateMovementContext,
@@ -129,7 +132,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
       priority,
       callback: (locationCoords) => {
         // Update store with location from bus
-        updateLocation(locationCoords, locationCoords.timestamp);
+        updateLocation(locationCoords, locationCoords.timestamp || Date.now());
         
         // Handle tracking
         if (enableTracking) {
@@ -142,7 +145,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
         }
       },
       errorCallback: (error) => {
-        setStatus('error', error);
+        setStatus('error', error.message || 'Location error');
       },
       options: {
         minDistance,

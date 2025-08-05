@@ -56,5 +56,13 @@ export function useLocationCoords(): GeoCoords | null {
  * Movement context only - for components that need movement classification
  */
 export function useMovementContext(): MovementContext | null {
-  return useLocationStore((state) => state.movementContext);
+  return useLocationStore((state) => state.movementContext || {
+    speed: 0,
+    heading: null,
+    isStationary: true,
+    isWalking: false,
+    isDriving: false,
+    confidence: 0.9,
+    lastUpdated: Date.now()
+  });
 }
