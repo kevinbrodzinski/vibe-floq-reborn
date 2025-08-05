@@ -346,10 +346,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
         // Clear cache to force fresh token retrieval with comprehensive logging
         clearMapboxTokenCache();
-        console.log('[FieldWebMap] Fetching Mapbox token...');
+        console.log('[FieldWebMap] PRODUCTION FIX: Fetching Mapbox token...');
         const{token, source}=await getMapboxToken();
+        console.log('[FieldWebMap] PRODUCTION FIX: Token received:', { source, length: token?.length });
         
         if (!token || !token.startsWith('pk.')) {
+          console.error('[FieldWebMap] PRODUCTION FIX: Invalid token:', token);
           throw new Error(`Invalid Mapbox token received: ${token?.substring(0, 10)}...`);
         }
         

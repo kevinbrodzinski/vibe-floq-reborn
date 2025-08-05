@@ -19,7 +19,10 @@ export interface MapboxTokenInfo {
 const TTL              = 6 * 60 * 60 * 1_000;          // 6 h
 let   cached: (MapboxTokenInfo & { cachedAt: number }) | null = null;
 
-export const clearMapboxTokenCache = () => { cached = null; };
+export const clearMapboxTokenCache = () => { 
+  cached = null; 
+  console.log('[getMapboxToken] Cache cleared for production fix');
+};
 
 const isFresh = () => cached && Date.now() - cached.cachedAt < TTL;
 
@@ -73,6 +76,7 @@ export async function getMapboxToken(): Promise<MapboxTokenInfo> {
   }
 
   /* ── 3️⃣  Hard-coded fallback – Always available ─────────────────────── */
+  console.log('[getMapboxToken] PRODUCTION: Using hardcoded fallback token');
   const fallback =
     'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
 
