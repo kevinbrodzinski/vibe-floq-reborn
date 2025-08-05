@@ -201,6 +201,44 @@ export function clearEnvironmentOverrides() {
 }
 
 /**
+ * Get current environment - helper for debugging
+ */
+export function getCurrentEnvironment() {
+  const config = getEnvironmentConfig();
+  return {
+    mode: import.meta.env.MODE,
+    isDev: import.meta.env.DEV,
+    isProd: import.meta.env.PROD,
+    presenceMode: config.presenceMode,
+    enableRealtime: config.enableRealtime,
+    enableGeolocation: config.enableGeolocation,
+    enablePresenceUpdates: config.enablePresenceUpdates
+  };
+}
+
+/**
+ * Clear all debug localStorage keys for production
+ */
+export function clearAllDebugKeys() {
+  const debugKeys = [
+    'floq-debug-forceLoc',
+    'floq_presence_mode', 
+    'floq_env_config',
+    'floq_rollout',
+    'floq_rollout_user',
+    'floq-env-override',
+    'showDebug',
+    'floq-lastFix'
+  ];
+  
+  debugKeys.forEach(key => {
+    localStorage.removeItem(key);
+  });
+  
+  console.log('🧹 Cleared all debug localStorage keys');
+}
+
+/**
  * Log environment info for debugging
  */
 export function logEnvironmentInfo() {
@@ -230,9 +268,21 @@ export function isDemo(): boolean {
   return getEnvironmentConfig().presenceMode === 'mock';
 }
 
-// Auto-log environment info in development only
-if (import.meta.env.DEV) {
+// Auto-log environment info in development only and expose helpers
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   logEnvironmentInfo();
+  
+  // Make helpers available globally for debugging
+  setTimeout(() => {
+    (window as any).getCurrentEnvironment = getCurrentEnvironment;
+    (window as any).clearAllDebugKeys = clearAllDebugKeys;
+    (window as any).clearEnvironmentOverrides = clearEnvironmentOverrides;
+    
+    console.log('🌍 Environment helpers available:');
+    console.log('  - window.getCurrentEnvironment()');
+    console.log('  - window.clearAllDebugKeys()');
+    console.log('  - window.clearEnvironmentOverrides()');
+  }, 1000);
 }
 
 /**

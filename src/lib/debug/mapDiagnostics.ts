@@ -212,11 +212,24 @@ export async function runMapDiagnostics() {
   return results;
 }
 
-// Auto-setup in development
+// Auto-setup in development and expose quick manual diagnostic
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   setTimeout(() => {
     (window as any).runMapDiagnostics = runMapDiagnostics;
-    console.log('🔍 Map diagnostics available: window.runMapDiagnostics()');
-    console.log('💡 Note: This is now an async function, use: await window.runMapDiagnostics()');
+    
+    // Quick manual diagnostic for when the helper isn't available
+    (window as any).quickMapCheck = () => {
+      const map = (window as any).__FLOQ_MAP;
+      if (!map) { console.log('❌ Map not on window'); return; }
+      console.log('Style loaded →', map.isStyleLoaded());
+      console.log('Canvas size  →', map.getCanvas().getBoundingClientRect());
+      console.log('Center       →', map.getCenter().toArray(), 'zoom', map.getZoom());
+      console.log('# canvases   →', document.querySelectorAll('.mapboxgl-canvas').length);
+      console.log('Access token →', map._requestManager?._accessToken ? 'Set' : 'Missing');
+    };
+    
+    console.log('🔍 Map diagnostics available:');
+    console.log('  - window.runMapDiagnostics() (full diagnostic - async)');
+    console.log('  - window.quickMapCheck() (quick manual check)');
   }, 1000);
 }
