@@ -1,198 +1,208 @@
-import { EventEmitter } from 'events';
-import { haversine } from 'haversine-distance';
 import { supabase } from '@/integrations/supabase/client';
-import { trackError } from '@/lib/trackError';
-import { h3ToGeo, geoToH3 } from 'h3-js';
-import type { EnvFactors } from '@/types/location';
+import { latLngToCell } from 'h3-js'; // Changed from geoToH3 to latLngToCell
+import type { 
+  LocationPoint, 
+  MovementContext as ImportedMovementContext,
+  VenueDetectionResult,
+  ProximityEventRecord 
+} from '@/types/location';
+import { calculateDistance } from '@/lib/location/standardGeo';
 
-// Remove conflicting import and define MovementContext locally
-interface MovementContext {
-  speed: number;
-  direction: number;
-  stability: number;
+// Extend the existing MovementContext interface
+interface MovementContext extends ImportedMovementContext {
+  isMoving: boolean;
+  speed?: number;
+  bearing?: number;
 }
 
-interface LocationUpdate {
-  lat: number;
-  lng: number;
-  accuracy: number;
-  timestamp: number;
-}
+export class LocationBus {
+  private userId: string;
+  private lastLocation: LocationPoint | null = null;
+  private movementContext: MovementContext = { isMoving: false };
+  private venueCache: Record<string, VenueDetectionResult> = {};
+  private proximityEventQueue: ProximityEventRecord[] = [];
 
-interface Subscriber {
-  id: string;
-  callback: (location: LocationUpdate) => void;
-  errorCallback: (error: string) => void;
-}
-
-export class LocationBus extends EventEmitter {
-  private subscribers = new Map<string, Subscriber>();
-  private currentLocation: LocationUpdate | null = null;
-  private lastUpdate = 0;
-  private readonly MIN_UPDATE_INTERVAL = 5000; // 5 seconds
-  private readonly MIN_DISTANCE_THRESHOLD = 50; // 50 meters
-
-  subscribe(
-    id: string,
-    callback: (location: LocationUpdate) => void,
-    errorCallback: (error: string) => void
-  ): () => void {
-    this.subscribers.set(id, { id, callback, errorCallback });
-    
-    // Send current location if available
-    if (this.currentLocation) {
-      callback(this.currentLocation);
-    }
-
-    return () => {
-      this.subscribers.delete(id);
-    };
+  constructor(userId: string) {
+    this.userId = userId;
   }
 
-  updateLocation(location: LocationUpdate) {
-    const now = Date.now();
-    
-    // Throttle updates
-    if (now - this.lastUpdate < this.MIN_UPDATE_INTERVAL) {
-      return;
-    }
+  public setMovementContext(context: MovementContext): void {
+    this.movementContext = context;
+  }
 
-    // Check if location has changed significantly
-    if (this.currentLocation) {
-      const distance = haversine(
-        { lat: this.currentLocation.lat, lng: this.currentLocation.lng },
-        { lat: location.lat, lng: location.lng }
-      );
-      
-      if (distance < this.MIN_DISTANCE_THRESHOLD) {
+  public async handleLocationUpdate(loc: LocationPoint): Promise<void> {
+    try {
+      // 1. Basic validation
+      if (!loc.lat || !loc.lng) {
+        console.warn('Invalid location:', loc);
         return;
       }
-    }
 
-    this.currentLocation = location;
-    this.lastUpdate = now;
-
-    // Notify all subscribers
-    this.subscribers.forEach(subscriber => {
-      try {
-        subscriber.callback(location);
-      } catch (error) {
-        console.error(`Error in location subscriber ${subscriber.id}:`, error);
-        subscriber.errorCallback(error instanceof Error ? error.message : 'Unknown error');
+      // 2. Rate limiting (example: 1 update per 5 seconds)
+      if (this.lastLocation && (loc.timestamp - this.lastLocation.timestamp) < 5000) {
+        console.debug('Rate limited location update');
+        return;
       }
-    });
 
-    // Emit event for other listeners
-    this.emit('locationUpdate', location);
+      // 3. Enrich with movement context
+      const enrichedLoc = {
+        ...loc,
+        isMoving: this.movementContext.isMoving,
+        speed: this.movementContext.speed,
+        bearing: this.movementContext.bearing
+      };
+
+      // 4. Batch insert to staging
+      await this.batchInsertLocations([enrichedLoc]);
+
+      // 5. Proximity detection (example: venue check-ins)
+      await this.detectVenueProximity(enrichedLoc);
+
+      // 6. Movement heuristics (example: significant distance)
+      if (this.lastLocation) {
+        const distance = calculateDistance(
+          { lat: loc.lat, lng: loc.lng },
+          { lat: this.lastLocation.lat, lng: this.lastLocation.lng }
+        );
+
+        if (distance > 200) {
+          console.log(`Significant movement detected: ${distance}m`);
+          // Trigger some event or notification
+        }
+      }
+
+      this.lastLocation = loc;
+    } catch (error) {
+      console.error('Error handling location update:', error);
+    }
   }
 
-  getCurrentLocation(): LocationUpdate | null {
-    return this.currentLocation;
-  }
+  private async batchInsertLocations(locations: LocationPoint[]): Promise<void> {
+    if (locations.length === 0) return;
 
-  private async storeLocationBatch(locations: LocationUpdate[]) {
     try {
-      // Convert bigint to string for JSON compatibility
-      const locationData = locations.map(loc => ({
-        ts: new Date(loc.timestamp).toISOString(),
+      // Add H3 index to each location using correct function name
+      const enrichedLocations = locations.map(loc => ({
+        user_id: this.userId,
+        captured_at: new Date(loc.timestamp).toISOString(),
         lat: loc.lat,
         lng: loc.lng,
         acc: loc.accuracy,
-        timestamp: loc.timestamp,
-        h3_idx: geoToH3(loc.lat, loc.lng, 9).toString(), // Convert bigint to string
+        // Convert bigint to string for JSON compatibility
+        h3_idx: latLngToCell(loc.lat, loc.lng, 8).toString() // Changed from geoToH3
       }));
 
+      // Simulate rate limiting on the client side
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       const { error } = await supabase
-        .from('location_history')
-        .insert({
-          profile_id: (await supabase.auth.getUser()).data.user?.id,
-          locations: locationData as any,
-          created_at: new Date().toISOString()
-        });
+        .from('raw_locations_staging')
+        .insert(enrichedLocations);
 
       if (error) {
-        console.error('Error storing location batch:', error);
+        console.error('Failed to insert locations:', error);
+        throw error;
       }
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error in storeLocationBatch:', error);
-      return { success: false, error };
+      console.log(`✓ Inserted ${locations.length} locations to staging`);
+    } catch (err) {
+      console.error('Batch insert failed:', err);
+      throw err;
     }
   }
 
-  async processLocationAnalytics(data: any) {
-    try {
-      // Type-safe access to JSON data
-      const processed = typeof data === 'object' && data !== null ? 
-        (data as any).processed : false;
-      const spatialStrategy = typeof data === 'object' && data !== null ? 
-        (data as any).spatial_strategy : 'unknown';
-      const durationMs = typeof data === 'object' && data !== null ? 
-        (data as any).duration_ms : 0;
+  private async detectVenueProximity(loc: LocationPoint): Promise<void> {
+    // 1. Check cached venues first
+    const cachedVenue = Object.values(this.venueCache).find(venue =>
+      calculateDistance({ lat: loc.lat, lng: loc.lng }, { lat: venue.lat, lng: venue.lng }) <= venue.radius_m
+    );
 
-      console.log('Processing analytics:', { processed, spatialStrategy, durationMs });
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error processing location analytics:', error);
-      return { success: false, error };
+    if (cachedVenue) {
+      console.log(`Proximity event (cached): ${cachedVenue.name}`);
+      this.enqueueProximityEvent(loc, cachedVenue);
+      return;
+    }
+
+    // 2. Fetch nearby venues (example: within 500m)
+    const { data: venues, error } = await supabase
+      .from('venues')
+      .select('id, name, lat, lng, radius_m')
+      .range(0, 5)
+      .order('popularity', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch nearby venues:', error);
+      return;
+    }
+
+    // 3. Find venues within proximity
+    for (const venue of venues) {
+      const distance = calculateDistance(
+        { lat: loc.lat, lng: loc.lng },
+        { lat: venue.lat, lng: venue.lng }
+      );
+
+      if (distance <= venue.radius_m) {
+        console.log(`Proximity event (new): ${venue.name}`);
+        this.venueCache[venue.id] = venue; // Cache the venue
+        this.enqueueProximityEvent(loc, venue);
+      }
     }
   }
 
-  async getEnvFactors(): Promise<EnvFactors | null> {
-    try {
-      // Mocked implementation - replace with real data source
-      const envFactors: EnvFactors = {
-        timeOfDay: 'day',
-        weatherConditions: 'clear',
-        crowdDensity: 50,
-        locationStability: 0.8,
-      };
-      return envFactors;
-    } catch (error) {
-      trackError(error, { context: 'LocationBus.getEnvFactors' });
-      return null;
+  private enqueueProximityEvent(loc: LocationPoint, venue: VenueDetectionResult): void {
+    const event: ProximityEventRecord = {
+      user_id: this.userId,
+      venue_id: venue.id,
+      location: { lat: loc.lat, lng: loc.lng },
+      timestamp: new Date(loc.timestamp).toISOString()
+    };
+
+    this.proximityEventQueue.push(event);
+    console.debug('Proximity event enqueued:', event);
+
+    // Process queue if it reaches a certain size
+    if (this.proximityEventQueue.length >= 5) {
+      this.processProximityEventQueue();
     }
   }
 
-  async getMovementContext(): Promise<MovementContext | null> {
+  private async processProximityEventQueue(): Promise<void> {
+    if (this.proximityEventQueue.length === 0) return;
+
     try {
-      // Mocked implementation - replace with real sensor data
-      const movementContext: MovementContext = {
-        speed: 5,
-        direction: 90,
-        stability: 0.7,
-      };
-      return movementContext;
-    } catch (error) {
-      trackError(error, { context: 'LocationBus.getMovementContext' });
-      return null;
+      // 1. Deduplicate events (example: by venue and time window)
+      const dedupedEvents = this.deduplicateProximityEvents(this.proximityEventQueue);
+
+      // 2. Insert into proximity_events table
+      const { error } = await supabase
+        .from('proximity_events')
+        .insert(dedupedEvents);
+
+      if (error) {
+        console.error('Failed to insert proximity events:', error);
+        return;
+      }
+
+      console.log(`✓ Inserted ${dedupedEvents.length} proximity events`);
+      this.proximityEventQueue = []; // Clear the queue
+    } catch (err) {
+      console.error('Proximity event processing failed:', err);
     }
   }
 
-  async reverseGeocode(lat: number, lng: number): Promise<string | null> {
-    try {
-      // Mocked implementation - replace with real geocoding service
-      return `Mocked Location: ${lat}, ${lng}`;
-    } catch (error) {
-      trackError(error, { context: 'LocationBus.reverseGeocode' });
-      return null;
-    }
-  }
+  private deduplicateProximityEvents(events: ProximityEventRecord[]): ProximityEventRecord[] {
+    const seen = new Set<string>();
+    const deduped: ProximityEventRecord[] = [];
 
-  async getNearbyVenues(lat: number, lng: number): Promise<any[]> {
-    try {
-      // Mocked implementation - replace with real venue data source
-      return [
-        { id: '1', name: 'Mock Venue 1', lat: lat + 0.001, lng: lng + 0.001 },
-        { id: '2', name: 'Mock Venue 2', lat: lat - 0.001, lng: lng - 0.001 },
-      ];
-    } catch (error) {
-      trackError(error, { context: 'LocationBus.getNearbyVenues' });
-      return [];
+    for (const event of events) {
+      const key = `${event.venue_id}-${Math.floor(new Date(event.timestamp).getTime() / (60 * 1000))}`; // 1-minute window
+      if (!seen.has(key)) {
+        deduped.push(event);
+        seen.add(key);
+      }
     }
+
+    return deduped;
   }
 }
-
-export const globalLocationBus = new LocationBus();
