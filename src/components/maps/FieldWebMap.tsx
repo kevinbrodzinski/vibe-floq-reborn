@@ -26,6 +26,7 @@ import { useMapLayers } from '@/hooks/useMapLayers';
 import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
+import { trackRender } from '@/lib/debug/renderTracker';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -50,7 +51,7 @@ interface Props {
   realtime?: boolean; // Add realtime status prop
 }
 
-export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible, floqs = [], realtime = false }) => {
+const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visible, floqs = [], realtime = false }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const userMarkerRef = useRef<mapboxgl.Marker|null>(null);
@@ -284,12 +285,19 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   }, []);
 
   
-  // 🔧 DEBUG: Mount debugging effect
+  // 🔧 DEBUG: Mount debugging effect  
   useEffect(() => {
     (window as any).__mountPing = true;
-    console.log('[FieldWebMap] 🔧 Mount ping – container?', !!mapContainerRef.current);
+    console.log('[FieldWebMap] 🔧 Component mounted/re-rendered');
+    console.log('[FieldWebMap] 🔧 Container exists?', !!mapContainerRef.current);
     console.log('[FieldWebMap] 🔧 Map already exists?', !!mapRef.current);
+    console.log('[FieldWebMap] 🔧 Props:', { visible, realtime, floqsCount: floqs.length });
   }, []);
+
+  // Debug re-renders
+  useEffect(() => {
+    trackRender('FieldWebMap', `Props changed - visible: ${visible}, realtime: ${realtime}, floqs: ${floqs.length}`);
+  }, [visible, realtime, floqs.length]);
 
   useEffect(()=>{
     firstPosRef.current = true;          // ← early reset
@@ -1226,3 +1234,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     </SelectedFloqContext.Provider>
   );
 };
+
+// Memoize the component to prevent unnecessary re-renders
+export const FieldWebMap = React.memo(FieldWebMapComponent, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-renders from reference changes
+  return (
+    prevProps.visible === nextProps.visible &&
+    prevProps.realtime === nextProps.realtime &&
+    prevProps.floqs.length === nextProps.floqs.length &&
+    prevProps.onRegionChange === nextProps.onRegionChange // This should now be stable
+  );
+});
