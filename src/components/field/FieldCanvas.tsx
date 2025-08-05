@@ -429,7 +429,7 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           requestAnimationFrame(() => {
             pending = false;
             const currentZoom = getMapInstance()?.getZoom() ?? 11;
-            clusterWorker.cluster(rawTiles, currentZoom).then(clusters => {
+            clusterWorker.call('cluster', rawTiles, currentZoom).then(clusters => {
               const keysThisFrame = new Set<string>();
               
               // Draw clusters with constellation mode support

@@ -14,7 +14,7 @@ export const useFieldHitTest = () => {
     last.current = now;
 
     try {
-      return await clusterWorker.hitTest(x, y, radius);
+      return await clusterWorker.call('hitTest', x, y, radius);
     } catch {
       return [];
     }

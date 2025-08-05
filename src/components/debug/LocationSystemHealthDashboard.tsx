@@ -294,12 +294,10 @@ export const LocationSystemHealthDashboard: React.FC = () => {
                 <div>
                   <div className="text-gray-400 text-xs mb-1">Active Consumers:</div>
                   <div className="max-h-20 overflow-y-auto space-y-1">
-                    {metrics.locationBus.consumers.slice(0, 5).map((consumer) => (
-                      <div key={consumer.id} className="flex justify-between text-xs">
-                        <span className="truncate">{consumer.id}</span>
-                        <span className={`text-${consumer.priority === 'high' ? 'red' : consumer.priority === 'medium' ? 'yellow' : 'green'}-400`}>
-                          {consumer.priority}
-                        </span>
+                    {metrics.locationBus.consumers.slice(0, 5).map((consumer, index) => (
+                      <div key={index} className="flex justify-between text-xs">
+                        <span className="truncate">{consumer}</span>
+                        <span className="text-green-400">active</span>
                       </div>
                     ))}
                     {metrics.locationBus.consumers.length > 5 && (

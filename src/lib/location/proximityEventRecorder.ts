@@ -62,7 +62,7 @@ export class ProximityEventRecorder {
   ): Promise<void> {
     if (!this.options.enableDatabaseRecording) return;
 
-    const eventRecord: ProximityEventRecord = {
+    const eventRecord = {
       profile_id_a: profileId,
       profile_id_b: targetProfileId,
       event_type: analysis.eventType as 'enter' | 'exit' | 'sustain',
@@ -77,7 +77,7 @@ export class ProximityEventRecorder {
         was_near: analysis.wasNear,
         is_near: analysis.isNear
       }
-    };
+    } as ProximityEventRecord;
 
     // Add to queue
     this.eventQueue.push(eventRecord);
@@ -121,7 +121,7 @@ export class ProximityEventRecorder {
         const confidence = nearbyUser?.confidence || 0.5;
         const distance = nearbyUser?.distance || 0;
 
-        const eventRecord: ProximityEventRecord = {
+        const eventRecord = {
           profile_id_a: profileId,
           profile_id_b: targetUserId,
           event_type: eventType,
@@ -135,7 +135,7 @@ export class ProximityEventRecorder {
             source: 'enhanced_location_sharing',
             event_string: eventString
           }
-        };
+        } as ProximityEventRecord;
 
         this.eventQueue.push(eventRecord);
       }

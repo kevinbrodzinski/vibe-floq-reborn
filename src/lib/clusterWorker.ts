@@ -7,6 +7,17 @@ import type { RawTile, Cluster } from '@/workers/clustering.worker';
 class ClusteringFallback {
   private lastClusters: Cluster[] | null = null;
   
+  call<T extends 'cluster' | 'hitTest'>(fn: T, ...args: any[]): Promise<any> {
+    if (fn === 'cluster') {
+      const [tiles, zoom] = args;
+      return this.cluster(tiles, zoom || 11);
+    }
+    if (fn === 'hitTest') {
+      return Promise.resolve(null);
+    }
+    return Promise.resolve([]);
+  }
+  
   async cluster(tiles: RawTile[], zoom = 11): Promise<Cluster[]> {
     const BASE_DIST = 32;
     const threshold = BASE_DIST * Math.pow(2, 11 - zoom);
