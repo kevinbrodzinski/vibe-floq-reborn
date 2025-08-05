@@ -15,6 +15,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { callFn } from '@/lib/callFn';
 import { useGeo } from '@/hooks/useGeo'; // Import the fixed useGeo hook
 
+/* ────────────────────────────────────────────────────────────── helper ──── */
+const devLog = (...args: unknown[]) =>
+  import.meta.env.DEV && console.info('[useUnifiedLocation]', ...args);
+
 interface UnifiedLocationOptions {
   /** Enable server-side location recording */
   enableTracking?: boolean;
@@ -147,6 +151,12 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   useEffect(() => {
     if (consumerRef.current) return; // Already subscribed
 
+    // Defensive check to avoid duplicate consumers during hot-reload
+    if (isInitializedRef.current) {
+      devLog('🔄 Hot-reload detected - skipping duplicate consumer registration');
+      return;
+    }
+
     // Convert priority string to number for LocationBus
     const priorityNumber = priority === 'high' ? 3 : priority === 'medium' ? 2 : 1;
     
@@ -271,15 +281,10 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          try {
-            const { error } = await callFn('record-locations', { batch }) as any;
-            
-            if (error) {
-              throw new Error(`Location recording failed: ${error.message}`);
-            }
-          } catch (innerError) {
-            // FIX: Catch errors inside circuit breaker callback
-            throw innerError;
+          const { error } = await callFn('record-locations', { batch }) as any;
+          
+          if (error) {
+            throw new Error(`Location recording failed: ${error.message}`);
           }
         },
         priority,
@@ -541,8 +546,8 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   return {
     coords,
     timestamp,
-    status,
-    error,
+    status, // Already forwarded from baseGeo.status
+    error,  // Already forwarded from baseGeo.error
     hasPermission,
     isTracking,
     bufferSize: locationBufferRef.current.length,

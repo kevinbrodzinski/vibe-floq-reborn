@@ -12,7 +12,7 @@ import type { LocationStatus } from '@/types/overrides';
 
 /* ────────────────────────────────────────────────────────────── constants ── */
 const DEMO       = { lat: 37.7749, lng: -122.4194 } as const; // San Francisco
-const TIMEOUT_MS = 7_000;            // tolerate slow first fix
+const TIMEOUT_MS = 7_000;            // increased timeout for better UX
 
 /* ──────────────────────────────────────────────────────────────── types ─── */
 export interface GeoCoords { lat: number; lng: number; accuracy?: number }
@@ -70,21 +70,25 @@ export function useGeo(): GeoState {
     /* 3️⃣ Fallback timer -------------------------------------------------- */
     let fallback: ReturnType<typeof setTimeout> | null = null;
     
-    // only arm fallback *after* we know the user didn't click 'Allow'
+    // Only arm fallback timer if permission state is 'prompt' (user hasn't decided yet)
     navigator.permissions
       ?.query({ name: 'geolocation' })
       .then((p) => {
-        if (p.state !== 'prompt') {
+        if (p.state === 'prompt') {
+          devLog('🔒 Permission is prompt - arming fallback timer');
           fallback = setTimeout(() => {
             if (completed) return;
             completed = true;
             devLog('⏰ timeout – falling back to demo coordinates');
             publish(DEMO, 'ready', undefined);
           }, TIMEOUT_MS);
+        } else {
+          devLog('🔒 Permission already decided:', p.state, '- no fallback timer');
         }
       })
       .catch(() => {
         // Permissions API not supported, arm fallback anyway
+        devLog('🔒 Permissions API not supported - arming fallback timer');
         fallback = setTimeout(() => {
           if (completed) return;
           completed = true;
@@ -124,7 +128,14 @@ export function useGeo(): GeoState {
         completed = true;
         if (fallback) clearTimeout(fallback);
         devLog('❌ geolocation failed', err);
-        setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
+        
+        // Handle permission denied specifically - don't publish demo coords
+        if (err.code === 1) {
+          devLog('🚫 Permission denied - surfacing error without demo coords');
+          setState({ coords: null, status: 'error', error: 'denied' });
+        } else {
+          setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
+        }
       });
 
     return () => { if (fallback) clearTimeout(fallback); };

@@ -24,6 +24,7 @@ import { FriendFab } from "@/components/field/FriendFab";
 import { FriendDrawer } from "@/components/field/FriendDrawer";
 import { ProximityNotifications } from "@/components/location/ProximityNotifications";
 import { useEnhancedFriendDistances } from "@/hooks/useEnhancedFriendDistances";
+import { useDebugLocationToast } from "@/components/debug/useDebugLocationToast";
 
 interface FieldLayoutProps {
 }
@@ -54,6 +55,9 @@ export const FieldLayout = () => {
   });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gestureHandlers = useFieldGestures(canvasRef);
+
+  // Debug location toast for dev mode
+  useDebugLocationToast();
 
   // Debug logging for enhanced location tracking state
   console.log('[FieldLayout] Enhanced location tracking state:', {
@@ -99,9 +103,9 @@ export const FieldLayout = () => {
   const deniedList = ['denied','permission_denied'];
   const geoError = geo.error && !['unavailable','timeout'].includes(geo.error) && !deniedList.includes(geo.error);
   
-  // 🔧 REQUIRE LOCATION FOR MAP - Disable fallback to force permission request
+  // 🔧 REQUIRE LOCATION FOR MAP - Allow dev fallback so developers can see UI without GPS
   const allowMapWithFallback = import.meta.env.DEV;
-  const shouldShowMap = allowMapWithFallback || geoReady;
+  const shouldShowMap = geoReady || allowMapWithFallback;
   
   // Enhanced debugging with both geo and location context state
   console.log('[FieldLayout] Location gate state:', {
