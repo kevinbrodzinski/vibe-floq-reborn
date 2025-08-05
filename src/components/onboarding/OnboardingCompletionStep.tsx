@@ -40,7 +40,7 @@ export function OnboardingCompletionStep({ onDone }: OnboardingCompletionStepPro
     return () => {
       toastIdsRef.current.forEach(id => {
         if (id && typeof (id as any) === 'string') {
-          dismiss(id as string);
+          dismiss();
         }
       });
     };

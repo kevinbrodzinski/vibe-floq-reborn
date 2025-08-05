@@ -234,7 +234,7 @@ async function getPersonalRecords(profileId: string, date: string, recapData: Re
     .gte('day', currentMonth)
     .lte('day', endOfMonth)
 
-  const monthData = monthRecaps?.map(r => r.payload as RecapData) || []
+  const monthData = monthRecaps?.map(r => r.payload as unknown as RecapData) || []
   
   const longestDayThisMonth = monthData.every(d => recapData.totalMins >= d.totalMins)
   const mostVenuesThisMonth = monthData.every(d => recapData.venues >= d.venues)
@@ -269,7 +269,7 @@ export const useEnhancedDailyRecap = () => {
 
       if (!baseRecap?.payload) return null
 
-      const recapData = baseRecap.payload as RecapData
+      const recapData = baseRecap.payload as unknown as RecapData
 
       // Fetch enhanced metrics in parallel
       const [

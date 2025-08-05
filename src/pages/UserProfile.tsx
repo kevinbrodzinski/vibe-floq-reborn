@@ -435,10 +435,10 @@ const UserProfile = ({ profileId: propProfileId }: UserProfileProps = {}) => {
         )}
 
         {/* Zone 7: Highlights (always visible) */}
-        <Highlights userId={profile.id} isFriend={isCurrentlyFriend} />
+        <Highlights profileId={profile.id} isFriend={isCurrentlyFriend} />
 
         {/* Frequency Display: Most visited venues, locations, activities */}
-        <FrequencyDisplay userId={profile.id} />
+        <FrequencyDisplay profileId={profile.id} />
 
         {/* Venue Insights: Show most visited places */}
         <VenueInsights profileId={profile.id} isOwnProfile={isMe} />

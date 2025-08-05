@@ -646,7 +646,7 @@ export class VibeAnalysisEngine {
       const distance = this.calculateEmbeddingDistance(currentEmbedding, previousEmbedding);
       consistency += distance;
     }
-    return 1 - (consistency / (this.VIBE_EMBEDDINGS.length * 2)); // Inverse consistency
+    return 1 - (consistency / (Object.keys(this.VIBE_EMBEDDINGS).length * 2)); // Inverse consistency
   }
 
   /**
@@ -772,7 +772,7 @@ export class VibeAnalysisEngine {
       });
 
       // Handle edge cases and unusual combinations
-      if (features.anomaly > 0.5) {
+      if ((features as any).anomaly > 0.5) {
         scores.weird += 0.5;
       }
 
@@ -809,7 +809,7 @@ export class VibeAnalysisEngine {
       });
 
       // Handle edge cases and unusual combinations
-      if (features.anomaly > 0.5) {
+      if ((features as any).anomaly > 0.5) {
         scores.weird += 0.5;
       }
 
@@ -846,7 +846,7 @@ export class VibeAnalysisEngine {
       });
 
       // Handle edge cases and unusual combinations
-      if (features.anomaly > 0.5) {
+      if ((features as any).anomaly > 0.5) {
         scores.weird += 0.5;
       }
 
@@ -890,7 +890,7 @@ export class VibeAnalysisEngine {
       });
 
       // Handle edge cases and unusual combinations
-      if (features.anomaly > 0.5) {
+      if ((features as any).anomaly > 0.5) {
         scores.weird += 0.5;
       }
 

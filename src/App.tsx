@@ -34,7 +34,7 @@ const App = () => {
   // Pre-warm the clustering worker
   useEffect(() => {
     // Empty call warms the Comlink proxy & spins the worker
-    clusterWorker.call('cluster', [], 11);
+    clusterWorker.cluster([], 11);
   }, []);
 
   // Realtime subscription for floq messages

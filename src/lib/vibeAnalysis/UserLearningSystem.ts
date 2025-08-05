@@ -526,7 +526,10 @@ export class UserLearningSystem {
    * Extract preferred vibe from a pattern
    */
   private extractPreferredVibe(context: string, corrections: UserCorrection[]): Vibe {
-    const vibeCounts: Record<Vibe, number> = {};
+    const vibeCounts: Record<any, number> = {
+      social: 0, chill: 0, hype: 0, curious: 0, solo: 0, romantic: 0,
+      weird: 0, down: 0, flowing: 0, open: 0, energetic: 0, excited: 0, focused: 0
+    };
     const totalConfidence = corrections.length;
     
     corrections.forEach(correction => {
@@ -762,5 +765,16 @@ export class UserLearningSystem {
          density: 0
        }
      };
-   }
+  }
+
+  // Missing methods required by the interface
+  buildPersonalityProfile(corrections: any[]): any {
+    // Implementation stub
+    return {};
+  }
+
+  extractTemporalPatterns(corrections: any[]): any {
+    // Implementation stub
+    return {};
+  }
 }

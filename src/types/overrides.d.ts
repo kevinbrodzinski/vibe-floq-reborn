@@ -13,4 +13,36 @@ declare module '@/integrations/supabase/types' {
   interface LocationPoint {
     accuracy?: number;
   }
+
+  interface MLFeatureVector {
+    anomaly?: number;
+    intensity?: number;
+    social?: number;
+    temporal?: number;
+    location?: number;
+    personal?: number;
+  }
+
+  interface EnvFactors {
+    locationStability?: number;
+    socialContext?: number;
+    venueInfluence?: number;
+    privacyComfort?: number;
+    weather?: number;
+    timeOfDay?: number;
+    dayOfWeek?: number;
+    crowd?: number;
+    noise?: number;
+    lighting?: number;
+  }
+
+  interface RecapData {
+    day: string;
+    totalMins: number;
+    venues: number;
+    encounters: number;
+    vibeShifts: number;
+    topVibe: string;
+    highlights: string[];
+  }
 }
