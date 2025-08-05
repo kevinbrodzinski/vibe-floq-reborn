@@ -41,7 +41,8 @@ serve(async (req: Request): Promise<Response> => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=60'
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=60',
+          'Vary': 'Origin'
         } 
       }
     );

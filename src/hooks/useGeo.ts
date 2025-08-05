@@ -106,7 +106,7 @@ export function useGeo(): GeoState {
         completed = true;
         clearTimeout(fallback);
         devLog('❌ geolocation failed', err);
-        setState({ coords: null, status: 'error', error: err.message ?? 'Location unavailable' });
+        setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
       });
 
     return () => clearTimeout(fallback);
@@ -130,7 +130,7 @@ export function useGeo(): GeoState {
     hasLocation,
     isLocationReady,
     /* legacy compat — kept as no-ops / thin wrappers */
-    hasPermission: hasLocation,
+    hasPermission: state.status !== 'error' && !!navigator?.geolocation,
     requestLocation() {
       navigator.geolocation?.getCurrentPosition(() => {/* ignore */}, () => {/* ignore */}, { enableHighAccuracy: true });
     },
@@ -144,5 +144,5 @@ export const useLatLng  = () => useGeo().coords;
 export const useLocation = useGeo;
 export const useGeoPos  = () => {
   const g = useGeo();
-  return { pos: g.coords, loading: !g.isLocationReady, error: g.error };
+  return { pos: g.coords, loading: ['idle','loading','fetching'].includes(g.status), error: g.error };
 };

@@ -42,6 +42,9 @@ export function attachUserLocationSource(map: mapboxgl.Map) {
   return () => {
     map.off('style.load',  ensure);
     map.off('styledata',   ensure);
+    // tidy up on unmount / style switch
+    if (map.getLayer(USER_LOC_LAYER))  map.removeLayer(USER_LOC_LAYER);
+    if (map.getSource(USER_LOC_SRC))   map.removeSource(USER_LOC_SRC);
   };
 }
 

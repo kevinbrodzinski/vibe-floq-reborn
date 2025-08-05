@@ -292,6 +292,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   }, []);
 
   useEffect(()=>{
+    firstPosRef.current = true;          // ← early reset
     // 🔧 CRITICAL: Prevent double-mount flicker in React 18 Strict Mode
     if (mapRef.current) {
       console.log('[FieldWebMap] 🔄 Map already exists, skipping double-mount');
@@ -345,6 +346,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         }
 
         // Early-abort when token missing before map init
+        if (import.meta.env.DEV) clearMapboxTokenCache();
         const { token, source } = await getMapboxToken().catch((e) => {
           console.error('[FieldWebMap] Token fetch failed', e);
           setErr('Mapbox token unavailable');     // shows nice error overlay

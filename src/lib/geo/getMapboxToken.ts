@@ -25,9 +25,8 @@ export interface MapboxTokenInfo {
 const TTL = 1000 * 60 * 60 * 6;          // 6 h
 let cached: CachedToken | null = null;
 
-export const clearMapboxTokenCache = () => { 
-  cached = null; 
-  console.log('[getMapboxToken] Cache cleared for production fix');
+export const clearMapboxTokenCache = () => {
+  if (import.meta.env.DEV) cached = null;
 };
 
 const isFresh = () => cached && Date.now() - cached.cachedAt < TTL;
@@ -76,12 +75,12 @@ export async function getMapboxToken(): Promise<Omit<CachedToken, 'cachedAt'>> {
     devLog('Supabase fetch failed:', err);
   }
 
-  /* ── 3️⃣  Hard-coded fallback – Always available ─────────────────────── */
-  console.log('[getMapboxToken] PRODUCTION: Using hardcoded fallback token');
-  const fallback =
-    'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
-
-  devLog('⚠️  Using hardcoded fallback token.');
-  cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
-  return { token: cached.token, source: cached.source };
+  /* ── 3️⃣  Hard-coded fallback – Dev only ─────────────────────── */
+  if (import.meta.env.DEV) {
+    const fallback = 'pk.eyJ1Ijoia2V2aW5icm9kemluc2tpIiwiYSI6ImNtY25paHJoZzA4cnIyaW9ic2h0OTM3Z3QifQ._NbZi04NXvHoJsU12sul2A';
+    devLog('⚠️  Using hard-coded fallback (dev only)');
+    cached = { token: fallback, source: 'fallback', cachedAt: Date.now() };
+    return { token: fallback, source: 'fallback' };
+  }
+  throw new Error('No valid Mapbox token (env & Supabase both failed)');
 }

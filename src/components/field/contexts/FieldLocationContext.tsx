@@ -64,7 +64,7 @@ const FieldLocationProviderInner = ({
   debugMode = false,
 }: FieldLocationProviderProps) => {
   const location = useUnifiedLocation({
-    enableTracking: true,
+    enableTracking: false,    // Start disabled, enable after permission
     enablePresence: true,
     hookId: 'field-location-context'
   });
@@ -104,7 +104,7 @@ const FieldLocationProviderInner = ({
   
   // 🔧 DEBUG: Track incoming geo data
   useEffect(() => {
-    console.log('[FLP] incoming geo', location);
+    import.meta.env.DEV && console.log('[FLP] incoming geo', location);
   }, [location]);
   
   useEffect(() => {

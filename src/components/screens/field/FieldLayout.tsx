@@ -93,10 +93,11 @@ export const FieldLayout = () => {
   };
 
   // ---- helper flags with improved logic using useGeo for gate ---------------------------------------------
-  const hasCoords = geo.coords?.lat != null && geo.coords?.lng != null;
+  const hasCoords = !!geo.coords;
   const geoReady = geo.isLocationReady && hasCoords;
   const geoLoading = ['idle', 'loading', 'fetching'].includes(geo.status);
-  const geoError = geo.error && !['unavailable', 'timeout'].includes(geo.error as LocationError);
+  const deniedList = ['denied','permission_denied'];
+  const geoError = geo.error && !['unavailable','timeout'].includes(geo.error) && !deniedList.includes(geo.error);
   
   // 🔧 REQUIRE LOCATION FOR MAP - Disable fallback to force permission request
   const allowMapWithFallback = false; // Must have location permission to show map
