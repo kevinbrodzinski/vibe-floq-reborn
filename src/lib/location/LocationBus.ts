@@ -3,9 +3,9 @@ import { latLngToCell } from 'h3-js';
 import type { 
   LocationPoint, 
   MovementContext as ImportedMovementContext,
-  VenueDetectionResult,
-  ProximityEventRecord 
+  VenueDetectionResult
 } from '@/types/location';
+import type { ProximityEventRecord } from './proximityEventRecorder';
 import { calculateDistance } from '@/lib/location/standardGeo';
 
 // Extend the existing MovementContext interface
@@ -147,7 +147,8 @@ export class LocationBus {
   private deduplicateProximityEvents(events: ProximityEventRecord[]): ProximityEventRecord[] {
     const seen = new Set();
     return events.filter(event => {
-      const key = `${event.profile_id}_${event.event_type}_${event.created_at}`;
+      // Use the correct field names from the database schema
+      const key = `${event.profile_id_a}_${event.profile_id_b}_${event.event_type}_${event.event_ts}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
