@@ -13,6 +13,7 @@ import { useLocationStore, useLocationActions, useRawLocationCoords, useLocation
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { supabase } from '@/integrations/supabase/client';
 import { callFn } from '@/lib/callFn';
+import { useGeo } from '@/hooks/useGeo'; // Import the fixed useGeo hook
 
 interface UnifiedLocationOptions {
   /** Enable server-side location recording */
@@ -71,15 +72,27 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   // Emergency disable flag
   const EMERGENCY_DISABLE = false;
 
+  // 🔧 SURGICAL FIX: Use useGeo directly for coordinates
+  const baseGeo = useGeo();
+  
   // Initialize global location manager with useGeo - rate limited
   const { geoState, manager } = useGlobalLocationManager();
 
-  // Zustand store integration
-  const coords = useRawLocationCoords();
-  const locationStatus = useLocationStatus();
-  const status = locationStatus || 'idle';
-  const error = null;
-  const hasPermission = true;
+  // 🔧 NORMALIZE: Convert useGeo {lat, lng} coordinates to unified format
+  const normalizedCoords = baseGeo.coords ? {
+    lat: baseGeo.coords.lat,
+    lng: baseGeo.coords.lng, 
+    accuracy: baseGeo.accuracy || 50
+  } : null;
+
+  // Zustand store integration - use normalized coords from useGeo
+  const coords = normalizedCoords;
+  const locationStatus = baseGeo.status === 'ready' ? 'success' : 
+                         baseGeo.status === 'error' ? 'error' :
+                         baseGeo.status === 'fetching' ? 'loading' : 'idle';
+  const status = locationStatus;
+  const error = baseGeo.error || null;
+  const hasPermission = baseGeo.hasPermission || false;
   const {
     updateLocation,
     updateMovementContext,
@@ -99,26 +112,19 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   const lastFlushRef = useRef<number>(0);
   const isInitializedRef = useRef(false);
 
-  // Sync geoState with Zustand store
+  // 🔧 SYNC: Update store when useGeo provides new coordinates
   useEffect(() => {
-    if (geoState.coords && geoState.status === 'success') {
-      updateLocation(
-        {
-          lat: geoState.coords.lat,
-          lng: geoState.coords.lng,
-          accuracy: geoState.accuracy || 0
-        },
-        geoState.ts || Date.now()
-      );
+    if (normalizedCoords && baseGeo.status === 'ready') {
+      updateLocation(normalizedCoords, Date.now());
       setStatus('success');
-    } else if (geoState.status === 'error') {
-      setStatus('error', geoState.error);
-    } else if (geoState.status === 'loading') {
+    } else if (baseGeo.status === 'error') {
+      setStatus('error', baseGeo.error);
+    } else if (baseGeo.status === 'fetching') {
       setStatus('loading');
     }
 
-    setPermission(geoState.hasPermission || false);
-  }, [geoState.coords, geoState.status, geoState.error, geoState.hasPermission, geoState.ts, geoState.accuracy, updateLocation, setStatus, setPermission]);
+    setPermission(baseGeo.hasPermission || false);
+  }, [normalizedCoords, baseGeo.status, baseGeo.error, baseGeo.hasPermission, updateLocation, setStatus, setPermission]);
 
   // Register with LocationBus for coordinated updates
   useEffect(() => {

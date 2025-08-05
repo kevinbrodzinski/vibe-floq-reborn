@@ -69,8 +69,6 @@ const FieldLocationProviderInner = ({
     hookId: 'field-location-context'
   });
   const { coords, error, isTracking, startTracking } = location;
-  // Compatibility alias for existing code
-  const pos = coords;
   
   // Enhanced location sharing with all features enabled
   const enhancedLocationSharing = useEnhancedLocationSharing();
@@ -78,6 +76,17 @@ const FieldLocationProviderInner = ({
   const [enhancedSharingActive, setEnhancedSharingActive] = useState(false);
 
   /* lat/lng may be undefined until the first fix arrives */
+  // 🔧 DEFENSIVE: Coerce coordinate shape to protect against regressions
+  const pos = coords
+    ? 'lat' in coords              // old vs new shape check
+        ? coords
+        : {                        // convert {latitude,longitude}
+            lat: (coords as any).latitude,
+            lng: (coords as any).longitude,
+            accuracy: (coords as any).accuracy ?? 50,
+          }
+    : null;
+
   const lat = pos?.lat ?? null;
   const lng = pos?.lng ?? null;
 
