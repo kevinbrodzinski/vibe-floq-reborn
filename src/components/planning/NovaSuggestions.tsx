@@ -182,7 +182,7 @@ export function NovaSuggestions({
       setSuggestions([])
       setIsLoading(false)
     }
-  }, [planId, refreshKey, fetchSuggestions])
+  }, [planId, refreshKey]) // Remove fetchSuggestions from deps since it's stable
 
   // Only run on mount + manual refresh
   useEffect(() => {

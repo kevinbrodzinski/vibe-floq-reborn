@@ -147,7 +147,7 @@ export const EnhancedAuthProvider = ({ children }: { children: React.ReactNode }
       // Retry session refresh when network comes back
       refreshSession();
     }
-  }, [isOnline, networkError, user, refreshSession]);
+  }, [isOnline, networkError, user]); // Remove refreshSession from deps
 
   return (
     <AuthContext.Provider value={{ 
