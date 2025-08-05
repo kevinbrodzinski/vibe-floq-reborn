@@ -2321,7 +2321,7 @@ interface Props {
 <span class="cstat-no" title="statement not covered" >    selectedFloqMembers: selectedFloqMembers.map(member =&gt; member.profile_id)</span>
 <span class="cstat-no" title="statement not covered" >  }), [selectedMyFloq, selectedFloqMembers]);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  const initialCenter: [number, number] = location?.pos ? [location.pos.lng, location.pos.lat] : [-118.4912, 34.0224];</span>
+<span class="cstat-no" title="statement not covered" >  const initialCenter: [number, number] = location?.coords ? [location.coords.lng, location.coords.lat] : [-118.4912, 34.0224];</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  const [status,setStatus] = useState&lt;'loading'|'ready'|'error'&gt;('loading');</span>
 <span class="cstat-no" title="statement not covered" >  const [err,setErr]       = useState&lt;string&gt;();</span>
@@ -2426,14 +2426,14 @@ interface Props {
 &nbsp;
   // Memoize center on user location function
 <span class="cstat-no" title="statement not covered" >  const centerOnUserLocation = useCallback(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!mapRef.current || !location.pos?.lat || !location.pos?.lng) return;</span>
+<span class="cstat-no" title="statement not covered" >    if (!mapRef.current || !location.coords?.lat || !location.coords?.lng) return;</span>
     
 <span class="cstat-no" title="statement not covered" >    mapRef.current.flyTo({</span>
-<span class="cstat-no" title="statement not covered" >      center: [location.pos.lng, location.pos.lat],</span>
+<span class="cstat-no" title="statement not covered" >      center: [location.coords.lng, location.coords.lat],</span>
 <span class="cstat-no" title="statement not covered" >      zoom: 14,</span>
 <span class="cstat-no" title="statement not covered" >      duration: 1000</span>
 <span class="cstat-no" title="statement not covered" >    });</span>
-<span class="cstat-no" title="statement not covered" >  }, [location.pos?.lat, location.pos?.lng]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [location.coords?.lat, location.coords?.lng]);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  useEffect(()=&gt;{</span>
 <span class="cstat-no" title="statement not covered" >    if(!mapContainerRef.current||mapRef.current) return;</span>
@@ -2461,8 +2461,8 @@ interface Props {
 <span class="cstat-no" title="statement not covered" >        mapboxgl.accessToken=token;</span>
 &nbsp;
         // Get initial center from user location or fallback to Venice Beach
-<span class="cstat-no" title="statement not covered" >        const initialCenter: [number, number] = location.pos?.lat &amp;&amp; location.pos?.lng </span>
-<span class="cstat-no" title="statement not covered" >          ? [location.pos.lng, location.pos.lat] </span>
+<span class="cstat-no" title="statement not covered" >        const initialCenter: [number, number] = location.coords?.lat &amp;&amp; location.coords?.lng </span>
+<span class="cstat-no" title="statement not covered" >          ? [location.coords.lng, location.coords.lat] </span>
 <span class="cstat-no" title="statement not covered" >          : [-118.4695, 33.9850]; // Venice Beach fallback</span>
 &nbsp;
         // Create map with guaranteed-to-exist style
@@ -2952,9 +2952,9 @@ interface Props {
         `;
         
 <span class="cstat-no" title="statement not covered" >        locationButton.addEventListener('click', () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          if (location?.pos?.lat &amp;&amp; location.pos?.lng) {</span>
+<span class="cstat-no" title="statement not covered" >          if (location?.coords?.lat &amp;&amp; location.coords?.lng) {</span>
 <span class="cstat-no" title="statement not covered" >            map.flyTo({</span>
-<span class="cstat-no" title="statement not covered" >              center: [location.pos.lng, location.pos.lat],</span>
+<span class="cstat-no" title="statement not covered" >              center: [location.coords.lng, location.coords.lat],</span>
 <span class="cstat-no" title="statement not covered" >              zoom: 15,</span>
 <span class="cstat-no" title="statement not covered" >              duration: 1000,</span>
 <span class="cstat-no" title="statement not covered" >              easing: (t) =&gt; t * (2 - t)</span>
@@ -3018,7 +3018,7 @@ interface Props {
 <span class="cstat-no" title="statement not covered" >        userMarkerRef.current=null;</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >  },[onRegionChange, location.pos?.lat, location.pos?.lng]);</span>
+<span class="cstat-no" title="statement not covered" >  },[onRegionChange, location.coords?.lat, location.coords?.lng]);</span>
 &nbsp;
   // Helper to safely access map source
 <span class="cstat-no" title="statement not covered" >  const withUserLocationSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) =&gt; void) =&gt; {</span>
@@ -3035,7 +3035,7 @@ interface Props {
 &nbsp;
   // Update user location when it changes
 <span class="cstat-no" title="statement not covered" >  useEffect(() =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!mapRef.current || !isLocationReady || !location.pos?.lat || !location.pos?.lng) return;</span>
+<span class="cstat-no" title="statement not covered" >    if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;</span>
     
 <span class="cstat-no" title="statement not covered" >    const map = mapRef.current;</span>
     
@@ -3048,10 +3048,10 @@ interface Props {
 <span class="cstat-no" title="statement not covered" >            type: 'Feature',</span>
 <span class="cstat-no" title="statement not covered" >            geometry: {</span>
 <span class="cstat-no" title="statement not covered" >              type: 'Point',</span>
-<span class="cstat-no" title="statement not covered" >              coordinates: [location.pos.lng, location.pos.lat]</span>
+<span class="cstat-no" title="statement not covered" >              coordinates: [location.coords.lng, location.coords.lat]</span>
 <span class="cstat-no" title="statement not covered" >            },</span>
 <span class="cstat-no" title="statement not covered" >            properties: {</span>
-<span class="cstat-no" title="statement not covered" >              accuracy: location.pos.accuracy || 10</span>
+<span class="cstat-no" title="statement not covered" >              accuracy: location.coords?.accuracy || 10</span>
 <span class="cstat-no" title="statement not covered" >            }</span>
 <span class="cstat-no" title="statement not covered" >          }</span>
 <span class="cstat-no" title="statement not covered" >        ]</span>
@@ -3060,13 +3060,13 @@ interface Props {
       // Center map on user location if it's the first time
 <span class="cstat-no" title="statement not covered" >      if (!map.isMoving()) {</span>
 <span class="cstat-no" title="statement not covered" >        map.flyTo({</span>
-<span class="cstat-no" title="statement not covered" >          center: [location.pos.lng, location.pos.lat],</span>
+<span class="cstat-no" title="statement not covered" >          center: [location.coords.lng, location.coords.lat],</span>
 <span class="cstat-no" title="statement not covered" >          zoom: 14,</span>
 <span class="cstat-no" title="statement not covered" >          duration: 2000</span>
 <span class="cstat-no" title="statement not covered" >        });</span>
 <span class="cstat-no" title="statement not covered" >      }</span>
 <span class="cstat-no" title="statement not covered" >    });</span>
-<span class="cstat-no" title="statement not covered" >  }, [location.pos?.lat, location.pos?.lng, location.pos?.accuracy, isLocationReady, withUserLocationSource]);</span>
+<span class="cstat-no" title="statement not covered" >  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady, withUserLocationSource]);</span>
 &nbsp;
   // Helper to safely access floqs source
 <span class="cstat-no" title="statement not covered" >  const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) =&gt; void) =&gt; {</span>
@@ -3268,11 +3268,11 @@ interface Props {
         )}
 &nbsp;
         {/* Location Debug Info */}
-<span class="cstat-no" title="statement not covered" >        {import.meta.env.DEV &amp;&amp; isLocationReady &amp;&amp; location.pos?.lat &amp;&amp; location.pos?.lng &amp;&amp; (</span>
+<span class="cstat-no" title="statement not covered" >        {import.meta.env.DEV &amp;&amp; isLocationReady &amp;&amp; location.coords?.lat &amp;&amp; location.coords?.lng &amp;&amp; (</span>
 <span class="cstat-no" title="statement not covered" >          &lt;div className="absolute bottom-4 left-4 z-10 bg-black/70 text-white px-3 py-2 rounded text-xs font-mono"&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Lat: {location.pos.lat.toFixed(6)}&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Lng: {location.pos.lng.toFixed(6)}&lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Accuracy: {location.pos.accuracy?.toFixed(0)}m&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Lat: {location.coords.lat.toFixed(6)}&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Lng: {location.coords.lng.toFixed(6)}&lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;div&gt;Accuracy: {location.coords.accuracy?.toFixed(0)}m&lt;/div&gt;</span>
 <span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
         )}
 &nbsp;
@@ -3322,7 +3322,7 @@ interface Props {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-04T02:25:31.684Z
+                at 2025-08-05T02:32:46.383Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
