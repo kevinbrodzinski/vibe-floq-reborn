@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { getEnhancedGeolocation } from '@/lib/location/webCompatibility';
 import type { LocationStatus } from '@/types/overrides';
+import { checkDebugLocation } from '@/lib/debug/clearDebugLocation';
 
 /* ────────────────────────────────────────────────────────────── constants ── */
 const DEMO       = { lat: 37.7749, lng: -122.4194 } as const; // San Francisco
@@ -50,11 +51,12 @@ export function useGeo(): GeoState {
     let completed = false;                // guard against late resolutions
 
     /* 1️⃣ Debug override -------------------------------------------------- */
-    const forced = localStorage.getItem('floq-debug-forceLoc');
+    const forced = checkDebugLocation(); // This also logs warnings
     if (forced) {
       const [lat, lng] = forced.split(',').map(Number);
       if (lat && lng) {
         devLog('💡 forcing coordinates via localStorage override', { lat, lng });
+        devLog('🔧 To clear debug location, run: floqDebug.clearDebugLocation()');
         const coords: GeoCoords = { lat, lng, accuracy: 15 };
         publish(coords, 'ready');
         return;
@@ -130,11 +132,11 @@ export function useGeo(): GeoState {
         devLog('❌ geolocation failed', err);
         
         // Handle permission denied specifically - don't publish demo coords
-        if (err.code === 1) {
+        if (err.error?.code === 1) {
           devLog('🚫 Permission denied - surfacing error without demo coords');
           setState({ coords: null, status: 'error', error: 'denied' });
         } else {
-          setState({ coords: null, status: 'error', error: err.message ?? 'unknown-geo-error' });
+          setState({ coords: null, status: 'error', error: err.error?.message ?? err.message ?? 'unknown-geo-error' });
         }
       });
 
