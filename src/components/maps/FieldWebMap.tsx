@@ -887,6 +887,15 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       dead = true;
       if (mapRef.current) {
         console.log('🗺️ Cleaning up map instance');
+        
+        // FIX: Reset firstPosRef on unmount to prevent stuck state
+        firstPosRef.current = true;
+        
+        // FIX: Cancel pending resize animations
+        if (resizeRef.current) {
+          cancelAnimationFrame(resizeRef.current);
+        }
+        
         try {
           mapRef.current.remove(); // This frees WebGL context
           mapRef.current = null;
@@ -907,24 +916,26 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   const withUserLocationSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
     if (!mapRef.current) return;
     
-    // Wait until style & source are ready
-    if (mapRef.current.isStyleLoaded()) {
-      const src = mapRef.current.getSource('user-location') as mapboxgl.GeoJSONSource | undefined;
-      if (src) return cb(src);
-    }
-    // Not ready yet – try again on the next style/load event
-    mapRef.current.once('styledata', () => withUserLocationSource(cb));
+    const tryOnce = () => {
+      const src = mapRef.current?.getSource('user-location') as mapboxgl.GeoJSONSource | undefined;
+      if (src && 'setData' in src) { 
+        cb(src); 
+        return; 
+      }
+      // FIX: Wait for style reload and retry
+      mapRef.current?.once('sourcedata', tryOnce);
+    };
+    tryOnce();
   }, []);
 
-  // Update user location when it changes - NO GUARDS, source is guaranteed to exist
+  // Update user location when it changes - Use callback to handle source guard
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
     
     const map = mapRef.current;
     
-    // ✅ NO GUARD: The helper ensures source always exists
-    const src = map.getSource("user-location") as mapboxgl.GeoJSONSource;
-    if (src) {
+    // Use the guarded callback instead of direct source access
+    withUserLocationSource((src) => {
       src.setData({
         type: 'FeatureCollection',
         features: [{
@@ -963,8 +974,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       } else {
         console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
       }
-    }
-  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady]);
+    });
+  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady, withUserLocationSource]);
 
   // Helper to safely access floqs source
   const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {

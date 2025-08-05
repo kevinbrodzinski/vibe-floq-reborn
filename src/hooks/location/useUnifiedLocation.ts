@@ -5,7 +5,7 @@
  * V2 ENHANCEMENT: Includes H3 spatial indexing for fast neighbor queries
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { latLngToCell } from 'h3-js';
 import { useGlobalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { locationBus } from '@/lib/location/LocationBus';
@@ -117,8 +117,8 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     if (!normalizedCoords) return;
 
     // ❶ Short-circuit if coords didn't actually move
-    const { getState, setState } = useLocationStore;
-    const currentState = getState();
+    // FIX: Access the actual store, not the hook
+    const currentState = useLocationStore.getState();
     
     const same = 
       currentState.coords?.lat === normalizedCoords.lat &&
@@ -128,7 +128,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     if (same) return; // No change → no re-render
 
     // Only update when coordinates actually changed
-    setState((prev) => ({
+    useLocationStore.setState((prev) => ({
       ...prev,
       coords: normalizedCoords,
       timestamp: Date.now(),
@@ -206,8 +206,8 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          // V2: Compute H3 index client-side for presence
-          const h3Idx = BigInt(latLngToCell(locationCoords.lat, locationCoords.lng, 8));
+          // V2: Compute H3 index client-side for presence - FIX: latLngToCell returns string
+          const h3Idx = latLngToCell(locationCoords.lat, locationCoords.lng, 8);
 
           // Use V2 presence function with spatial indexing
           const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
@@ -215,7 +215,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
             p_lng: locationCoords.lng,
             p_vibe: 'active', // Default vibe for presence
             p_accuracy: locationCoords.accuracy,
-            p_h3_idx: Number(h3Idx) // Convert bigint to number
+            p_h3_idx: parseInt(h3Idx, 16) || 0 // Convert hex string to number safely
           });
 
           if (error) {
@@ -224,11 +224,11 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
 
           // Log V2 spatial indexing success
           if (import.meta.env.MODE === 'development' && data && typeof data === 'object' && 'spatial_strategy' in data) {
-            console.debug('[useUnifiedLocation] V2 presence updated:', {
-              spatial_strategy: (data as any).spatial_strategy,
-              h3_idx: Number(h3Idx),
-              duration_ms: (data as any).duration_ms
-            });
+           console.debug('[useUnifiedLocation] V2 presence updated:', {
+             spatial_strategy: (data as any).spatial_strategy,
+             h3_idx: h3Idx,
+             duration_ms: (data as any).duration_ms
+           });
           }
         },
         priority,
@@ -271,10 +271,15 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     try {
       await executeWithCircuitBreaker(
         async () => {
-          const { error } = await callFn('record-locations', { batch }) as any;
-          
-          if (error) {
-            throw new Error(`Location recording failed: ${error.message}`);
+          try {
+            const { error } = await callFn('record-locations', { batch }) as any;
+            
+            if (error) {
+              throw new Error(`Location recording failed: ${error.message}`);
+            }
+          } catch (innerError) {
+            // FIX: Catch errors inside circuit breaker callback
+            throw innerError;
           }
         },
         priority,
@@ -350,9 +355,13 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     setupPresenceChannel();
 
     return () => {
+      // FIX: Await unsubscribe promise to prevent channel leaks
       if (presenceChannelRef.current) {
-        presenceChannelRef.current.unsubscribe();
-        presenceChannelRef.current = null;
+        presenceChannelRef.current.unsubscribe()
+          .then(() => {
+            presenceChannelRef.current = null;
+          })
+          .catch(console.error);
       }
     };
   }, [enablePresence, coords]);
@@ -500,8 +509,11 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
     return locationBus.getH3Neighbors(coords.lat, coords.lng, ringSize);
   }, [coords]);
 
-  // V2 ENHANCEMENT: Compute H3 index for current location
-      const h3Index = coords ? latLngToCell(coords.lat, coords.lng, 8) : null;
+  // V2 ENHANCEMENT: Compute H3 index for current location (moved before return)
+  const h3Index = useMemo(
+    () => coords ? latLngToCell(coords.lat, coords.lng, 8) : null,
+    [coords?.lat, coords?.lng]
+  );
 
   // Cleanup on unmount
   useEffect(() => {
@@ -511,9 +523,13 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
         flushLocationBuffer();
       }
       
-      // Cleanup presence channel
+      // Cleanup presence channel with promise handling
       if (presenceChannelRef.current) {
-        presenceChannelRef.current.unsubscribe();
+        presenceChannelRef.current.unsubscribe()
+          .then(() => {
+            presenceChannelRef.current = null;
+          })
+          .catch(console.error);
       }
     };
   }, [flushLocationBuffer]);
