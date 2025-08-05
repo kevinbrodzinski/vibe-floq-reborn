@@ -36,7 +36,7 @@ export { useLocationMigration } from '../useLocationMigration';
 export { useFriendLocations } from '../useFriendLocations';
 
 // Modern unified location system
-export { useUnifiedLocation, useLocationCore, useLocationTracking, useLocationSharing } from './useUnifiedLocation';
+export { useUnifiedLocation } from './useUnifiedLocation';
 export { useEnhancedLocationSharing } from './useEnhancedLocationSharing';
 
 // Read-only hooks optimized for render-heavy components

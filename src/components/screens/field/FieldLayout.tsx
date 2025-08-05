@@ -86,8 +86,8 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
   };
 
   // ---- helper flags ---------------------------------------------
-  const geoReady = isLocationReady && location?.pos?.lat != null;
-  const geoLoading = location?.loading || (!isLocationReady && !location?.error);
+  const geoReady = isLocationReady && location?.coords?.lat != null;
+  const geoLoading = location?.status === 'loading' || (!isLocationReady && !location?.error);
   const geoError = location?.error && location.error !== 'unavailable';
 
   // ---- UI --------------------------------------------------------
@@ -215,7 +215,9 @@ export const FieldLayout = ({ data }: FieldLayoutProps) => {
                 <div className="bg-accent text-accent-foreground px-3 py-2 rounded-lg shadow-lg text-sm max-w-xs">
                   <div className="font-medium mb-1">Recent Proximity Events</div>
                   {enhancedLocation.proximityEvents.slice(-3).map((event, i) => (
-                    <div key={i} className="text-xs opacity-90 truncate">{event}</div>
+                    <div key={i} className="text-xs opacity-90 truncate">
+                      {typeof event === 'string' ? event : JSON.stringify(event)}
+                    </div>
                   ))}
                 </div>
               )}

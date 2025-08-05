@@ -32,9 +32,9 @@ export const FieldUILayer = ({ data }: FieldUILayerProps) => {
   } = useFieldUI();
 
   const locDisp = useLocationDisplay(
-    location?.pos?.lat ?? null,
-    location?.pos?.lng ?? null,
-    Boolean(location?.pos?.lat && location?.pos?.lng),
+    location?.coords?.lat ?? null,
+    location?.coords?.lng ?? null,
+    Boolean(location?.coords?.lat && location?.coords?.lng),
     location.error,
   );
 
