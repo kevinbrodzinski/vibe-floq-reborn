@@ -73,6 +73,8 @@ export default defineConfig(({ mode, command }) => {
         /* native-only libs we never want in the browser bundle */
         { find: "@rnmapbox/maps", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
         { find: "react-native-mmkv", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "@react-native-async-storage/async-storage", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
+        { find: "expo-haptics", replacement: path.resolve(__dirname, "src/web-stubs/emptyModule.ts") },
       ],
 
       // ensure singletons

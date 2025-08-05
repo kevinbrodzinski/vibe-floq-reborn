@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/providers/AuthProvider';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useNearbyFloqs } from '@/hooks/useNearbyFloqs';
 import { VibeAnalysisEngine, type VibeAnalysisResult, type SensorData } from '@/lib/vibeAnalysis/VibeAnalysisEngine';
 import type { WalkableFloq } from '@/types/schemas/WalkableFloqSchema';
@@ -29,7 +29,12 @@ export interface SmartFloqDiscoveryOptions {
 
 export function useSmartFloqDiscovery(options: SmartFloqDiscoveryOptions = {}) {
   const { user } = useAuth();
-  const { position } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'smart-floq-discovery'
+  });
+  const position = coords; // Compatibility alias
   const {
     maxDistance = 2,
     minVibeMatch = 0.3,

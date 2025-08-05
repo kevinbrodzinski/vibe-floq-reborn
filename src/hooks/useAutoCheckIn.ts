@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { metersBetween } from '@/lib/location/geo';
 import { useToast } from '@/hooks/use-toast';
 import { multiSignalVenueDetector, type VenueDetectionResult } from '@/lib/location/multiSignalVenue';
@@ -28,7 +28,12 @@ export const MIN_FALLBACK_CONFIDENCE = 0.3; // Lower threshold for GPS fallback
  */
 export const useAutoCheckIn = () => {
   const { data: liveSettings } = useLiveSettings();
-  const { pos } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: false,
+    hookId: 'auto-checkin'
+  });
+  const pos = coords; // Compatibility alias
   const { toast } = useToast();
   
   const currentCheckInRef = useRef<VenueCheckIn | null>(null);

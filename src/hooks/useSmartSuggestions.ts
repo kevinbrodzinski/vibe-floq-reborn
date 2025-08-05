@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { distance } from '@/utils/geo'
 import { supabase } from '@/integrations/supabase/client'
-import { useUserLocation } from './useUserLocation'
+import { useUnifiedLocation } from './location/useUnifiedLocation'
 import type { VibeSuggestion } from '@/components/vibe/SuggestionToast'
 
 // Mock learning data for now - replace with actual context when available
@@ -41,7 +41,13 @@ export const useSmartSuggestions = (maxDistanceMeters = 500) => {
   const [dismissedClusters, setDismissedClusters] = useState<Record<string, number>>({})
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastRefreshRef = useRef<number>(0)
-  const { location } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'smart-suggestions'
+  })
+  // Compatibility - convert coords to location format
+  const location = coords ? { coords: { latitude: coords.lat, longitude: coords.lng } } : null
 
   // Helper: mark dismissed
   const dismissSuggestion = useCallback((clusterId: string) => {

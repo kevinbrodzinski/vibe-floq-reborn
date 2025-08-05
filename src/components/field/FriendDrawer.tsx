@@ -1,5 +1,5 @@
 import { useFriendDrawer } from '@/contexts/FriendDrawerContext'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 import { useNearbyPeople } from '@/hooks/useNearbyPeople'
 import { FriendCard } from '@/components/social/FriendCard'
 import { FriendCardSkeleton } from '@/components/social/FriendCardSkeleton'
@@ -8,7 +8,12 @@ import { generateStableKey } from '@/utils/stableKeys'
 
 export const FriendDrawer = () => {
   const { open } = useFriendDrawer()
-  const { pos } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'friend-drawer'
+  })
+  const pos = coords; // Compatibility alias
   const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
 
   return (

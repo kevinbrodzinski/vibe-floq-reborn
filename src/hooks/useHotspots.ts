@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { supabase } from '@/integrations/supabase/client'
-import { useUserLocation } from './useUserLocation'
+import { useUnifiedLocation } from './location/useUnifiedLocation'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { getEnvironmentConfig } from '@/lib/environment'
 
@@ -33,19 +33,23 @@ const fetchHotspots = async (lat: number, lng: number, vibe: string): Promise<Ho
 }
 
 export const useHotspots = () => {
-  const { location } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'hotspots'
+  })
   const vibe = useCurrentVibe()
   const [hotspots, setHotspots] = useState<Hotspot[]>([])
   const env = getEnvironmentConfig()
 
   // SWR key for caching and revalidation
-  const swrKey = !env.hotSpotHalos || !location || !vibe
+  const swrKey = !env.hotSpotHalos || !coords || !vibe
     ? null
-    : `hotspots:${vibe}:${location.coords.latitude.toFixed(3)}:${location.coords.longitude.toFixed(3)}`
+    : `hotspots:${vibe}:${coords.lat.toFixed(3)}:${coords.lng.toFixed(3)}`
 
   const { data, error, mutate } = useSWR(
     swrKey,
-    () => fetchHotspots(location!.coords.latitude, location!.coords.longitude, vibe!),
+    () => fetchHotspots(coords!.lat, coords!.lng, vibe!),
     {
       refreshInterval: 60000, // Refresh every 60 seconds
       revalidateOnFocus: false,

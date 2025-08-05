@@ -1,6 +1,6 @@
 import { useFriendLocations } from '@/hooks/useFriendLocations';
 import { useFriendTrail } from '@/hooks/useFriendTrail';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useCloseEncounterToast } from '@/hooks/useCloseEncounterToast';
 
 interface LiveMapProps {
@@ -18,7 +18,12 @@ interface FriendMarker {
 }
 
 export function LiveMap({ friendIds, className }: LiveMapProps) {
-  const { pos } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'live-map'
+  });
+  const pos = coords; // Compatibility alias
   const friends = useFriendLocations(friendIds);
   
   // Enable close encounter notifications

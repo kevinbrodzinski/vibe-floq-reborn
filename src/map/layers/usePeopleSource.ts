@@ -1,5 +1,4 @@
 import { useMemo, useEffect, useCallback } from 'react';
-import { useUserLocation } from '@/hooks/useUserLocation';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useAuth } from '@/providers/AuthProvider';
 import { buildSelfFeature } from '@/map/geojson/selfFeature';
@@ -21,8 +20,8 @@ export function usePeopleSource(
   const { location: fieldLocation } = useFieldLocation(); // Use consolidated field location
   const { user } = useAuth();            // to tag the feature with our id
 
-  // Field location now uses useUserLocation internally
-  const userPos = fieldLocation.pos;
+  // Field location now uses useUnifiedLocation internally
+  const userPos = fieldLocation.coords;
 
   /** Build the feature-collection every time inputs change */
   const geojson = useMemo(() => {

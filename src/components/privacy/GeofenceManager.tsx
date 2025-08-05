@@ -23,7 +23,7 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { geofencingService, type Geofence, type CircularGeofence, type PolygonGeofence } from '@/lib/location/geofencing';
 import { GPSCoords } from '@/lib/location/standardGeo';
 
@@ -70,7 +70,12 @@ export function GeofenceManager({ onGeofencesChange }: GeofenceManagerProps) {
   const [isDrawingPolygon, setIsDrawingPolygon] = useState(false);
   const [polygonVertices, setPolygonVertices] = useState<GPSCoords[]>([]);
   
-  const { pos } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'geofence-manager'
+  });
+  const pos = coords; // Compatibility alias
   const { toast } = useToast();
 
   // Load geofences on mount

@@ -12,7 +12,7 @@ import React, {
   useState,
 } from 'react';
 
-import { useUserLocation }             from '@/hooks/useUserLocation';
+import { useUnifiedLocation }          from '@/hooks/location/useUnifiedLocation';
 import { useEnhancedLocationSharing, type EnhancedLocationState } from '@/hooks/location/useEnhancedLocationSharing';
 import { useBucketedPresence }         from '@/hooks/useBucketedPresence';
 import { PresenceErrorBoundary }       from '@/components/presence/PresenceErrorBoundary';
@@ -21,8 +21,8 @@ import { FieldLocationErrorBoundary }  from './FieldLocationErrorBoundary';
 /* ---------- types ---------- */
 
 interface FieldLocationContextValue {
-  // Legacy location interface for backwards compatibility
-  location: ReturnType<typeof useUserLocation>;
+  // Modern unified location interface
+  location: ReturnType<typeof useUnifiedLocation>;
   isLocationReady: boolean;
   presenceData: any[];          
   lastHeartbeat: number | null;
@@ -63,8 +63,14 @@ const FieldLocationProviderInner = ({
   enableProximityTracking = true,
   debugMode = false,
 }: FieldLocationProviderProps) => {
-  const location = useUserLocation();
-  const { pos, error, isTracking, startTracking } = location;
+  const location = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: true,
+    hookId: 'field-location-context'
+  });
+  const { coords, error, isTracking, startTracking } = location;
+  // Compatibility alias for existing code
+  const pos = coords;
   
   // Enhanced location sharing with all features enabled
   const enhancedLocationSharing = useEnhancedLocationSharing({
