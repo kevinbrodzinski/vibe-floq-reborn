@@ -15,7 +15,7 @@ const useMockVibeBreakdown = (targetId: string): VibeBreakdown => {
     venueDNA: 70,
     timeRhythm: 50,
     socialPattern: 90
-  };
+  } as const satisfies VibeBreakdown;
 };
 
 export const BreakdownStrip: React.FC<BreakdownStripProps> = ({ 

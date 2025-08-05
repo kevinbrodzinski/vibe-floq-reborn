@@ -9,7 +9,10 @@ interface VibeeMeterProps {
 
 // Mock hook - will be replaced with real data
 const useMockVibeScore = (targetId: string) => {
-  return { score: 78, isLoading: false };
+  return { 
+    score: 78, 
+    isLoading: false 
+  } as const satisfies { score: number; isLoading: boolean };
 };
 
 export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) => {
@@ -70,7 +73,12 @@ export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) =>
         />
       )}
 
-      <svg width="64" height="64" className="rotate-90 -scale-x-100">
+      <div 
+        role="img" 
+        aria-label={`Compatibility ${clamped} percent`}
+        className="relative"
+      >
+        <svg width="64" height="64" className="rotate-90 -scale-x-100">
         {/* Track segments */}
         {arc(-110, -44, 28, 'stroke-muted-foreground/30')}
         {arc(-44, 22, 28, 'stroke-warning/60')}  
@@ -93,6 +101,7 @@ export const VibeMeter: React.FC<VibeeMeterProps> = ({ targetId, className }) =>
         />
         <circle cx="32" cy="32" r="3" className="fill-primary" />
       </svg>
+      </div>
 
       {/* Score label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">

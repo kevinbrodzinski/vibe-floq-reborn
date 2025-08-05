@@ -15,7 +15,7 @@ interface FloqSuggestionProps {
 
 // Mock hook - will be replaced with real data
 const useMockPlanSuggestions = (targetId: string): PlanSuggestion[] => {
-  return [
+  const suggestions = [
     { 
       id: '1', 
       title: 'Coffee & Gallery Hop', 
@@ -37,7 +37,8 @@ const useMockPlanSuggestions = (targetId: string): PlanSuggestion[] => {
       venue_type: 'music',
       estimated_duration: '4h'
     }
-  ];
+  ] as const;
+  return [...suggestions]; // Convert readonly to mutable
 };
 
 export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({ 
@@ -73,16 +74,41 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
     socialHaptics.gestureConfirm();
     setPlanningIds(prev => new Set([...prev, suggestion.id]));
     
-    // Simulate plan creation
-    setTimeout(() => {
-      setPlanningIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(suggestion.id);
-        return newSet;
-      });
-      // Trigger success haptic
-      socialHaptics.floqJoined();
-    }, 2000);
+    // Lazy load confetti for celebration
+    try {
+      const { default: confetti } = await import('canvas-confetti');
+      
+      // Simulate plan creation
+      setTimeout(() => {
+        setPlanningIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(suggestion.id);
+          return newSet;
+        });
+        
+        // Trigger cobalt confetti burst
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.8 },
+          colors: ['hsl(var(--primary))', 'hsl(var(--primary) / 0.8)', 'hsl(var(--primary) / 0.6)']
+        });
+        
+        // Success haptic
+        socialHaptics.floqJoined();
+      }, 2000);
+    } catch (error) {
+      console.warn('Confetti not available:', error);
+      // Fallback without confetti
+      setTimeout(() => {
+        setPlanningIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(suggestion.id);
+          return newSet;
+        });
+        socialHaptics.floqJoined();
+      }, 2000);
+    }
   };
 
   return (
@@ -158,6 +184,7 @@ export const FloqSuggestion: React.FC<FloqSuggestionProps> = ({
                       size="sm"
                       className="mt-3 w-full"
                       onClick={() => handlePlanClick(suggestion)}
+                      data-testid={`plan-button-${suggestion.id}`}
                     >
                       <Plus size={14} className="mr-1" />
                       Plan This

@@ -11,7 +11,8 @@ interface CommonInterestsProps {
 
 // Mock hook - will be replaced with real data
 const useMockCommonInterests = (targetId: string): string[] => {
-  return ['Coffee', 'Photography', 'Jazz Music', 'Art Galleries', 'Hiking'];
+  const interests = ['Coffee', 'Photography', 'Jazz Music', 'Art Galleries', 'Hiking'] as const;
+  return [...interests]; // Convert readonly to mutable
 };
 
 export const CommonInterests: React.FC<CommonInterestsProps> = ({ 
@@ -67,12 +68,22 @@ export const CommonInterests: React.FC<CommonInterestsProps> = ({
             }}
           >
             <Badge
+              role="button"
+              tabIndex={0}
               variant="secondary"
               className={cn(
                 "text-xs transition-all duration-200 cursor-pointer",
                 "group-hover:shadow-[0_0_8px_hsl(var(--primary)/0.6)]",
-                "group-hover:border-primary/40"
+                "group-hover:border-primary/40",
+                "focus:outline-none focus:ring-2 focus:ring-primary/50"
               )}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  // Handle chip click - placeholder for future functionality
+                }
+              }}
+              data-testid={`interest-chip-${interest.toLowerCase().replace(/\s+/g, '-')}`}
             >
               {interest}
             </Badge>

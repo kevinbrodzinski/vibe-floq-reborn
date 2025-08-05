@@ -18,7 +18,7 @@ const useMockCrossStat = (targetId: string): CrossStat | null => {
     lastVenue: 'Blue Bottle Coffee',
     lastAt: '2 hours ago',
     distance: 250 // meters
-  };
+  } as const satisfies CrossStat;
 };
 
 export const CloseEncounters: React.FC<CloseEncountersProps> = ({ 
@@ -119,7 +119,7 @@ export const CloseEncounters: React.FC<CloseEncountersProps> = ({
             animate={{ x: 0, y: '-50%' }}
             transition={{ 
               delay: 1.5,
-              duration: 1,
+              duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1,
               ease: 'easeInOut'
             }}
           />
