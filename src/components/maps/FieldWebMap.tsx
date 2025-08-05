@@ -7,6 +7,7 @@ import { MapContainerManager } from '@/lib/map/MapContainerManager';
 import { getMapboxToken, clearMapboxTokenCache } from '@/lib/geo/getMapboxToken';
 import { setMapInstance } from '@/lib/geo/project';
 import { createMapSafely, cleanupMapSingleton } from '@/lib/geo/mapSingleton';
+import { withUserLocationSource as ensureUserLocationSource } from '@/lib/geo/withUserLocationSource';
 import { useFieldLocation } from '@/components/field/contexts/FieldLocationContext';
 import { useMyActiveFloqs } from '@/hooks/useMyActiveFloqs';
 import { useFloqMembers } from '@/hooks/useFloqMembers';
@@ -380,6 +381,9 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           antialias: true
         });
         mapRef.current = map;
+
+        // ✅ CRITICAL: Ensure user-location source persists through style reloads
+        ensureUserLocationSource(map);
 
         // Add user location marker
         const userMarker = new mapboxgl.Marker({
@@ -912,28 +916,33 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     mapRef.current.once('styledata', () => withUserLocationSource(cb));
   }, []);
 
-  // Update user location when it changes
+  // Update user location when it changes - NO GUARDS, source is guaranteed to exist
   useEffect(() => {
     if (!mapRef.current || !isLocationReady || !location.coords?.lat || !location.coords?.lng) return;
     
     const map = mapRef.current;
     
-    withUserLocationSource((source) => {
-      // Update user location data
-      source.setData({
+    // ✅ NO GUARD: The helper ensures source always exists
+    const src = map.getSource("user-location") as mapboxgl.GeoJSONSource;
+    if (src) {
+      src.setData({
         type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [location.coords.lng, location.coords.lat]
-            },
-            properties: {
-              accuracy: location.coords?.accuracy || 10
-            }
+        features: [{
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [location.coords.lng, location.coords.lat]
+          },
+          properties: {
+            accuracy: location.coords?.accuracy || 10
           }
-        ]
+        }]
+      });
+      
+      console.log('[FieldWebMap] ✅ User location updated:', {
+        lat: location.coords.lat,
+        lng: location.coords.lng,
+        accuracy: location.coords.accuracy
       });
       
       // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
@@ -954,8 +963,8 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       } else {
         console.log('[FieldWebMap] 🔧 Map is moving - skipping position update');
       }
-    });
-  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady, withUserLocationSource]);
+    }
+  }, [location.coords?.lat, location.coords?.lng, location.coords?.accuracy, isLocationReady]);
 
   // Helper to safely access floqs source
   const withFloqsSource = useCallback((cb: (src: mapboxgl.GeoJSONSource) => void) => {
