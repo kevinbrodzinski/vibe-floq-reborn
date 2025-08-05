@@ -47,6 +47,7 @@ export function useGeo(): GeoState {
     // Check for debug flag FIRST, before any real geolocation calls
     const force = localStorage.getItem('floq-debug-forceLoc');
     if (force) {
+      console.log('[useGeo] 🔧 Debug location found:', force);
       const [latStr, lngStr] = force.split(',');
       const debugResult = {
         coords: {
@@ -57,6 +58,8 @@ export function useGeo(): GeoState {
         timestamp: Date.now(),
         status: 'ready' as const  // ★ normalize to 'ready' for UI consumption
       };
+      
+      console.log('[useGeo] 🔧 Setting debug coordinates:', debugResult.coords);
       
       if (import.meta.env.DEV) {
         (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;

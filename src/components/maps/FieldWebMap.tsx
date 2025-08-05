@@ -281,8 +281,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
         map.on('load', () => {
           if (dead) return;
           
-          console.log('Map loaded successfully');
+          console.log('🗺️ Map loaded successfully');
           setStatus('ready');
+          
+          // 🔧 DEBUG: Verify map is ready for source operations
+          console.log('🗺️ Map ready for sources. Style loaded:', map.isStyleLoaded());
           
           // Note: 'people' source is now managed by usePeopleSource hook
           // to prevent race conditions with style loading

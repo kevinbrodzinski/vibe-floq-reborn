@@ -98,6 +98,10 @@ export const FieldLayout = () => {
   const geoLoading = ['idle', 'loading', 'fetching'].includes(geo.status);
   const geoError = geo.error && !['unavailable', 'timeout'].includes(geo.error as LocationError);
   
+  // 🔧 BYPASS LOCATION GATE FOR MAP TESTING - Allow map to render with fallback coordinates
+  const allowMapWithFallback = true; // Set to false to restore strict location gate
+  const shouldShowMap = allowMapWithFallback || geoReady;
+  
   // Enhanced debugging with both geo and location context state
   console.log('[FieldLayout] Location gate state:', {
     geoReady,
@@ -132,7 +136,8 @@ export const FieldLayout = () => {
   }
 
   // Show loading prompt while initializing or if still no location after reasonable time
-  if (!geoReady) {
+  // 🔧 MODIFIED: Only block UI if strict mode AND no fallback permission
+  if (!shouldShowMap && !geoReady) {
     return (
       <ErrorBoundary>
         <div className="relative h-svh w-full bg-background">
