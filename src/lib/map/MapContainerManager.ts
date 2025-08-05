@@ -20,10 +20,10 @@ export class MapContainerManager {
    */
   prepareContainer(container: HTMLElement): boolean {
     try {
-      // Check if container is already being used
+      // Force release if already tracked (dev hot-reload edge case)
       if (this.activeContainers.has(container)) {
-        console.warn('[MapContainerManager] Container already in use');
-        return false;
+        console.warn('[MapContainerManager] Force releasing container for re-use');
+        this.activeContainers.delete(container);
       }
 
       // Clear any existing content
