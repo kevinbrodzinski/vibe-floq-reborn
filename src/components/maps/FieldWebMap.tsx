@@ -385,6 +385,11 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
         // ✅ CRITICAL: Ensure user-location source persists through style reloads
         detachUserLocationSourceRef.current = attachUserLocationSource(map);
+        
+        // Wait for style to fully load before continuing
+        if (!map.isStyleLoaded()) {
+          await new Promise(resolve => map.once('style.load', resolve));
+        }
 
         // Add user location marker
         const userMarker = new mapboxgl.Marker({

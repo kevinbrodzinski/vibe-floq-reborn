@@ -78,8 +78,20 @@ export async function getMapboxToken(): Promise<{ token: string; source: string 
       },
     });
 
+    console.log('[getMapboxToken] Supabase response status:', response.status);
+    console.log('[getMapboxToken] Supabase response headers:', Object.fromEntries(response.headers.entries()));
+
     if (response.ok) {
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('[getMapboxToken] Raw response:', responseText.substring(0, 200));
+      
+      // Check if response is HTML (edge function failed)
+      if (responseText.trim().startsWith('<!DOCTYPE html')) {
+        console.log('[getMapboxToken] ⚠️ Edge function returned HTML, falling back');
+        throw new Error('Edge function returned HTML instead of JSON');
+      }
+      
+      const data = JSON.parse(responseText);
       if (data.token && data.token.startsWith('pk.')) {
         cached = { token: data.token, source: 'supabase' };
         console.log('[getMapboxToken] ✅ Using Supabase token');

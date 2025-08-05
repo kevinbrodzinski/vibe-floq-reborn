@@ -10,6 +10,12 @@ export function attachUserLocationSource(map: mapboxgl.Map) {
   if (!map) return () => {};
 
   const ensure = () => {
+    // FIX: Guard against style not being loaded
+    if (!map.isStyleLoaded()) {
+      devLog('⏳ Style not loaded yet, will retry on style.load');
+      return;
+    }
+    
     // Fast-bail: if both source and layer exist, nothing to do
     if (map.getSource(USER_LOC_SRC) && map.getLayer(USER_LOC_LAYER)) return;
 
@@ -50,17 +56,19 @@ export function attachUserLocationSource(map: mapboxgl.Map) {
   };
 
   // Run once immediately (covers the case map already loaded)
-  ensure();
+  if (map.isStyleLoaded()) {
+    ensure();
+  }
 
-  // Subscribe for future style reloads
-  map.on('load', ensure);
+  // Subscribe for future style reloads - use 'style.load' for better reliability
+  map.on('style.load', ensure);
   map.on('styledata', ensure);
 
   devLog('🔧 Helper attached');
 
   // Return cleanup function
   return () => {
-    map.off('load', ensure);
+    map.off('style.load', ensure);
     map.off('styledata', ensure);
     devLog('🧹 Helper detached');
   };
@@ -78,6 +86,13 @@ export function setUserLocation(
   if (!map) return;
 
   const trySetData = () => {
+    // FIX: Guard against style not being loaded
+    if (!map.isStyleLoaded()) {
+      devLog('⏳ Style not loaded for setUserLocation, will retry');
+      map.once('style.load', trySetData);
+      return false;
+    }
+    
     const src = map.getSource(USER_LOC_SRC) as mapboxgl.GeoJSONSource;
     if (src && 'setData' in src) {
       src.setData({
