@@ -71,12 +71,39 @@ export function debugLocationInfo() {
   console.groupEnd();
 }
 
+export function debugMapLocation() {
+  const map = (window as any).__FLOQ_MAP;
+  if (!map) {
+    console.error('❌ No map instance found. Make sure map is loaded.');
+    return;
+  }
+  
+  console.group('🗺️ Map Location Debug');
+  
+  // Check map state
+  console.log('Map state:', {
+    isStyleLoaded: map.isStyleLoaded(),
+    hasUserLocationSource: !!map.getSource('user-location'),
+    hasUserLocationLayer: !!map.getLayer('user-location-dot'),
+    readyCheck: map.__userLocationSourceReady?.()
+  });
+  
+  // Check source data
+  const source = map.getSource('user-location');
+  if (source) {
+    console.log('User location source data:', source._data);
+  }
+  
+  console.groupEnd();
+}
+
 // Make functions available globally for easy debugging
 if (typeof window !== 'undefined') {
   (window as any).floqDebug = {
     checkDebugLocation,
     clearDebugLocation,
     clearAllLocationStorage,
-    debugLocationInfo
+    debugLocationInfo,
+    debugMapLocation
   };
 }
