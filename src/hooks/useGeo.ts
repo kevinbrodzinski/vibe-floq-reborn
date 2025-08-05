@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { getEnhancedGeolocation, type EnhancedGeoResult } from '@/lib/location/webCompatibility';
+import type { LocationStatus } from '@/types/overrides';
 
 const GEO_TIMEOUT_MS = 5_000;
 
@@ -21,7 +22,7 @@ const DEMO_COORDS: GeolocationCoordinates = {
 export interface GeoState {
   coords: { lat: number; lng: number } | null;
   accuracy: number | null;
-  status: 'idle' | 'fetching' | 'success' | 'error' | 'debug' | 'loading';
+  status: LocationStatus;
   error?: string;
   hasLocation: boolean;
   isLocationReady: boolean;
@@ -31,8 +32,12 @@ export interface GeoState {
   clearWatch: () => void;
 }
 
+interface ExtendedGeoResult extends Omit<EnhancedGeoResult, 'status'> {
+  status: LocationStatus;
+}
+
 export function useGeo(): GeoState {
-  const [value, setValue] = useState<EnhancedGeoResult>({
+  const [value, setValue] = useState<ExtendedGeoResult>({
     coords: null,
     timestamp: null,
     status: 'idle',
@@ -42,11 +47,17 @@ export function useGeo(): GeoState {
     // Skip if we're in debug mode with forced debug location
     if (import.meta.env.VITE_FORCE_GEO_DEBUG === 'true') {
       console.log('[useGeo] Debug mode enabled - using demo coordinates');
-      setValue({
+      const debugResult = {
         coords: DEMO_COORDS,
         timestamp: Date.now(),
-        status: 'debug'
-      });
+        status: 'ready' as const
+      };
+      
+      if (import.meta.env.DEV) {
+        (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
+      }
+      
+      setValue(debugResult);
       return;
     }
 
@@ -56,11 +67,15 @@ export function useGeo(): GeoState {
     const t = setTimeout(() => {
       console.log('[useGeo] Timeout reached - falling back to demo coordinates');
       didTimeout = true;
-      setValue((old) =>
-        old.coords
-          ? old
-          : { coords: DEMO_COORDS, timestamp: Date.now(), status: 'debug' }
-      );
+        const timeoutResult = { coords: DEMO_COORDS, timestamp: Date.now(), status: 'ready' as const };
+        
+        if (import.meta.env.DEV) {
+          (window as any).__FLOQ_DEBUG_LAST_GEO = timeoutResult;
+        }
+        
+        setValue((old) =>
+          old.coords ? old : timeoutResult
+        );
     }, 3000); // Reduced from GEO_TIMEOUT_MS to 3 seconds
 
     // ② call the browser
@@ -70,7 +85,20 @@ export function useGeo(): GeoState {
       if (!didTimeout) {
         console.log('[useGeo] Got location:', res.status, res.coords ? 'with coords' : 'no coords');
         clearTimeout(t);
-        setValue(res);
+        
+        // Debug window object for console inspection
+        if (import.meta.env.DEV) {
+          (window as any).__FLOQ_DEBUG_LAST_GEO = res;
+        }
+        
+        // Normalize status for UI consumption
+        const normalised: ExtendedGeoResult = {
+          ...res,
+          status: res.status === 'fetching' ? 'loading' :
+                  res.status === 'debug' ? 'ready' :
+                  res.status as LocationStatus
+        };
+        setValue(normalised);
       } else {
         console.log('[useGeo] Location response arrived after timeout, ignoring');
       }
@@ -78,7 +106,13 @@ export function useGeo(): GeoState {
       console.error('[useGeo] Geolocation failed:', error);
       if (!didTimeout) {
         clearTimeout(t);
-        setValue({ coords: DEMO_COORDS, timestamp: Date.now(), status: 'debug' });
+        const debugResult = { coords: DEMO_COORDS, timestamp: Date.now(), status: 'ready' as const };
+        
+        if (import.meta.env.DEV) {
+          (window as any).__FLOQ_DEBUG_LAST_GEO = debugResult;
+        }
+        
+        setValue(debugResult);
       }
     });
 
@@ -87,7 +121,7 @@ export function useGeo(): GeoState {
 
   // Expose the booleans the UI looks for
   const hasLocation = !!value.coords;
-  const isLocationReady = hasLocation && value.status !== 'fetching';
+  const isLocationReady = hasLocation && !['fetching', 'loading', 'idle'].includes(value.status);
 
   return {
     coords: value.coords ? {

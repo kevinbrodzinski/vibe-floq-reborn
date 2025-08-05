@@ -90,7 +90,7 @@ export const FieldLayout = () => {
   // ---- helper flags with improved logic ---------------------------------------------
   const hasCoords = location?.coords?.lat != null && location?.coords?.lng != null;
   const geoReady = isLocationReady && hasCoords;
-  const geoLoading = location?.status === 'loading' || location?.status === 'idle';
+  const geoLoading = ['idle', 'loading', 'fetching'].includes(location?.status ?? '');
   const geoError = location?.error && !['unavailable', 'timeout'].includes(location.error as LocationError);
   
   // Enhanced debugging
@@ -133,10 +133,12 @@ export const FieldLayout = () => {
             <GeolocationPrompt
               onRequestLocation={() => {
                 console.log('[FieldLayout] User requested location');
-                if (location?.startTracking) {
+                if (location?.startTracking && typeof location.startTracking === 'function') {
                   location.startTracking();
                 } else {
-                  console.error('[FieldLayout] startTracking not available in location context');
+                  console.log('[FieldLayout] startTracking not available, using fallback');
+                  // Fallback: trigger browser permission request
+                  navigator.geolocation?.getCurrentPosition(() => {}, () => {});
                 }
               }}
               error={location?.error || null}

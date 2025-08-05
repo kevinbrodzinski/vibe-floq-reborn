@@ -70,6 +70,9 @@ declare module '@/integrations/supabase/types' {
 /* Location system type extensions */
 export type LocationError = 'denied' | 'unavailable' | 'timeout' | 'permission_denied' | 'position_unavailable';
 
+/* Enhanced geolocation status union */
+export type LocationStatus = 'idle' | 'fetching' | 'success' | 'error' | 'debug' | 'loading' | 'ready';
+
 /* Enhanced ML types for vibe prediction */
 export interface MLFeatureVector {
   accelMean: number;
