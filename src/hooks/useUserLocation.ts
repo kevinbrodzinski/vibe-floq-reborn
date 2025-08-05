@@ -38,7 +38,16 @@ interface LocationPing {
 
 // Location tracking hook with live sharing capabilities built on useGeo
 export function useUserLocation() {
-  const geo = useGeo({ watch: true }); // Use enhanced useGeo as foundation
+  // EMERGENCY DISABLE: Set to true to completely disable location tracking
+  const DISABLE_LOCATION_TRACKING = false;
+  
+  // RATE LIMIT FIX: Reduce frequency and enable distance filtering
+  const geo = useGeo({ 
+    watch: !DISABLE_LOCATION_TRACKING,
+    minDistanceM: 50,        // Only update if moved 50+ meters
+    debounceMs: 30_000,      // Wait 30 seconds between updates (was 2 seconds)
+    enableHighAccuracy: false // Use less battery/bandwidth
+  });
   const bufferRef = useRef<LocationPing[]>([])
   const flushIntervalRef = useRef<number | null>(null)
   const lastPresenceBroadcast = useRef<number>(0)
@@ -71,8 +80,21 @@ export function useUserLocation() {
     accuracy: geo.accuracy || 0,
   } : null
 
+  const lastFlushRef = useRef<number>(0);
   const flushBuffer = async () => {
+    if (DISABLE_LOCATION_TRACKING) {
+      console.log('[useUserLocation] Location tracking disabled');
+      return;
+    }
+    
     if (bufferRef.current.length === 0) return
+
+    // RATE LIMIT FIX: Only flush every 60 seconds minimum
+    const now = Date.now();
+    if (now - lastFlushRef.current < 60_000) {
+      console.log('[useUserLocation] Skipping flush - rate limited');
+      return;
+    }
 
     try {
       // Use cached user ID if available
@@ -83,11 +105,30 @@ export function useUserLocation() {
       }
 
       const batch = bufferRef.current.splice(0, bufferRef.current.length)
+      
+      // Skip if batch is too small (reduce API calls)
+      if (batch.length < 3) {
+        console.log('[useUserLocation] Skipping small batch:', batch.length);
+        return;
+      }
 
       await callFn('record_locations', { batch });
+      lastFlushRef.current = now;
+      console.log('[useUserLocation] Successfully recorded', batch.length, 'locations');
 
     } catch (error: any) {
-      console.error('Failed to record locations:', error)
+      // RATE LIMIT FIX: Handle 429 errors gracefully
+      if (error.message?.includes('429') || error.status === 429) {
+        console.warn('[useUserLocation] Rate limited - backing off for 5 minutes');
+        lastFlushRef.current = Date.now() + 300_000; // Back off for 5 minutes
+      } else {
+        console.error('Failed to record locations:', error);
+      }
+      
+      // Put locations back in buffer if not rate limited
+      if (!error.message?.includes('429')) {
+        bufferRef.current.unshift(...bufferRef.current);
+      }
     }
   }
 
@@ -121,8 +162,9 @@ export function useUserLocation() {
       geo.requestLocation()
 
       // Flush buffer every 15 seconds
-      if (!flushIntervalRef.current) {
-        flushIntervalRef.current = setInterval(flushBuffer, 15_000)
+              if (!flushIntervalRef.current) {
+          // RATE LIMIT FIX: Flush every 2 minutes instead of 15 seconds
+          flushIntervalRef.current = setInterval(flushBuffer, 120_000)
       }
 
     } catch (err: any) {
