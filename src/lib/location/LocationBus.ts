@@ -5,14 +5,14 @@
  * V2 ENHANCEMENT: Hybrid H3/Geohash spatial indexing for hosted Supabase
  */
 
-import { geoToH3, kRing } from 'h3-js';
+import { latLngToCell, gridDisk } from 'h3-js';
 import { globalLocationManager } from './GlobalLocationManager';
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/lib/location/standardGeo';
 import type { GeoCoords, LocationConsumer, MovementContext } from './types';
 import { callFn } from '@/lib/callFn';
-import { isLovablePreview, platformLog, getCurrentPlatformConfig } from '@/lib/platform';
+import { isLovablePreview, platformLog, getCurrentPlatformConfig } from '@/lib/platform/index';
 
 // Enhanced LocationBatch with spatial indexing
 interface LocationBatch {
@@ -151,7 +151,7 @@ class LocationBus {
       const h3Start = performance.now();
       
       // Compute H3 index at resolution 8 (≈460m hex size, good for neighbor queries)
-      const h3Index = geoToH3(coords.lat, coords.lng, 8);
+      const h3Index = latLngToCell(coords.lat, coords.lng, 8);
       const h3Idx = BigInt(h3Index);
       
       // Track H3 computation performance
@@ -177,8 +177,8 @@ class LocationBus {
    */
   public getH3Neighbors(lat: number, lng: number, ringSize: number = 1): bigint[] {
     try {
-      const centerH3 = geoToH3(lat, lng, 8);
-      const ring = kRing(centerH3, ringSize);
+          const centerH3 = latLngToCell(lat, lng, 8);
+    const ring = gridDisk(centerH3, ringSize);
       return ring.map(h3 => BigInt(h3));
     } catch (error) {
       console.warn('[LocationBus] H3 neighbor computation failed:', error);

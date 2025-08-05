@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { geoToH3 } from 'h3-js';
+import { latLngToCell } from 'h3-js';
 import { useGlobalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { locationBus } from '@/lib/location/LocationBus';
 import { useLocationStore, useLocationActions, useLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
@@ -195,7 +195,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
       await executeWithCircuitBreaker(
         async () => {
           // V2: Compute H3 index client-side for presence
-          const h3Idx = BigInt(geoToH3(locationCoords.lat, locationCoords.lng, 8));
+          const h3Idx = BigInt(latLngToCell(locationCoords.lat, locationCoords.lng, 8));
 
           // Use V2 presence function with spatial indexing
           const { data, error } = await supabase.rpc('upsert_presence_realtime_v2', {
@@ -462,7 +462,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   }, [coords]);
 
   // V2 ENHANCEMENT: Compute H3 index for current location
-  const h3Index = coords ? geoToH3(coords.lat, coords.lng, 8) : null;
+      const h3Index = coords ? latLngToCell(coords.lat, coords.lng, 8) : null;
 
   // Cleanup on unmount
   useEffect(() => {
