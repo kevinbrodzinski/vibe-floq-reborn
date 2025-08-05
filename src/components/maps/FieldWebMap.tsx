@@ -18,8 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WeatherOverlay } from '@/components/ui/WeatherOverlay';
-import { usePeopleSource } from '@/map/layers/usePeopleSource';
-import { selfLayer } from '@/map/layers/selfLayer';
+import { useMapLayers } from '@/hooks/useMapLayers';
 
 // Create context for selected floq
 const SelectedFloqContext = createContext<{
@@ -63,22 +62,32 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   // Get members of selected floq
   const { data: selectedFloqMembers = [] } = useFloqMembers(selectedMyFloq || '');
 
+  // Filter floqs by selected vibe and selected floq
+  const filteredFloqs = useMemo(() => {
+    let filtered = floqs;
+    
+    // Filter by vibe
+    if (selectedVibe !== 'all') {
+      filtered = filtered.filter(floq => floq.primary_vibe === selectedVibe);
+    }
+    
+    return filtered;
+  }, [floqs, selectedVibe, selectedMyFloq]);
+
   // Filter people to show only members of selected floq
   const filteredPeople = useMemo(() => {
     if (!selectedMyFloq || !selectedFloqMembers.length) {
       return []; // Return empty array when no floq is selected or no members
     }
     
-    const selectedFloqMemberIds = selectedFloqMembers.map(member => member.profile_id);
-    
-    // For now, we'll return the selected floq members as people
-    // In a real implementation, you'd filter the actual people data
+    // For now, we'll return the selected floq members as people with proper Person interface
     return selectedFloqMembers.map(member => ({
       id: member.profile_id,
-      x: 0, // These would be actual coordinates in a real implementation
+      lng: 0, // These would be actual coordinates in a real implementation
+      lat: 0,
+      x: 0,
       y: 0,
-      profile: member.profile,
-      role: member.role
+      isFriend: false
     }));
   }, [selectedMyFloq, selectedFloqMembers]);
 
@@ -93,6 +102,16 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   const [status,setStatus] = useState<'loading'|'ready'|'error'>('loading');
   const [err,setErr]       = useState<string>();
   const [showWeather, setShowWeather] = useState(false);
+
+  // Initialize unified map layers (preserves all existing functionality)
+  const { layersReady } = useMapLayers({
+    map: mapRef.current,
+    people: filteredPeople,
+    floqs: filteredFloqs,
+    onClusterClick: (clusterId, coordinates) => {
+      console.log('Cluster clicked:', clusterId, coordinates);
+    }
+  });
 
   // Use real weather data or fallback to mock
   const weather = weatherData ? {
@@ -148,20 +167,6 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     return Array.from(vibes).sort();
   }, [floqs]);
 
-  // Filter floqs by selected vibe and selected floq
-  const filteredFloqs = useMemo(() => {
-    let filtered = floqs;
-    
-    // Filter by vibe
-    if (selectedVibe !== 'all') {
-      filtered = filtered.filter(floq => floq.primary_vibe === selectedVibe);
-    }
-    
-    // If a specific floq is selected, we'll filter people instead of floqs
-    // This will be handled in the people filtering logic
-    
-    return filtered;
-  }, [floqs, selectedVibe, selectedMyFloq]);
 
   // Memoize floqs data to prevent unnecessary updates
   const floqsGeoJSON = useMemo(() => {
@@ -222,6 +227,16 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
 
     (async ()=>{
       try{
+        // CRITICAL: Prepare container to prevent pollution error
+        const containerManager = await import('@/lib/map/MapContainerManager').then(m => m.MapContainerManager.getInstance());
+        
+        if (!containerManager.prepareContainer(mapContainerRef.current!)) {
+          console.error('[FieldWebMap] Container preparation failed');
+          setStatus('error');
+          setErr('Map container not ready');
+          return;
+        }
+
         // Clear cache to force fresh token retrieval
         clearMapboxTokenCache();
         const{token}=await getMapboxToken();
@@ -268,160 +283,12 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
           console.log('Map loaded successfully');
           setStatus('ready');
           
-          // Add user location source
-          map.addSource('user-location', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            }
-          });
-          
-          // Add people source for self feature
+          // Add people source for self feature (simplified - unified layer management will handle the rest)
           map.addSource('people', {
             type: 'geojson',
             data: {
               type: 'FeatureCollection',
               features: []
-            }
-          });
-          
-          // Add floqs source with clustering
-          map.addSource('floqs', {
-            type: 'geojson',
-            data: {
-              type: 'FeatureCollection',
-              features: []
-            },
-            cluster: true,
-            clusterRadius: 80,
-            clusterProperties: {
-              // Keep separate counts for each vibe category in a cluster
-              'social': ['+', ['case', ['==', ['get', 'vibe'], 'social'], 1, 0]],
-              'hype': ['+', ['case', ['==', ['get', 'vibe'], 'hype'], 1, 0]],
-              'curious': ['+', ['case', ['==', ['get', 'vibe'], 'curious'], 1, 0]],
-              'chill': ['+', ['case', ['==', ['get', 'vibe'], 'chill'], 1, 0]],
-              'solo': ['+', ['case', ['==', ['get', 'vibe'], 'solo'], 1, 0]],
-              'romantic': ['+', ['case', ['==', ['get', 'vibe'], 'romantic'], 1, 0]],
-              'weird': ['+', ['case', ['==', ['get', 'vibe'], 'weird'], 1, 0]],
-              'down': ['+', ['case', ['==', ['get', 'vibe'], 'down'], 1, 0]],
-              'flowing': ['+', ['case', ['==', ['get', 'vibe'], 'flowing'], 1, 0]],
-              'open': ['+', ['case', ['==', ['get', 'vibe'], 'open'], 1, 0]]
-            }
-          });
-
-          // Add user location layer
-          map.addLayer({
-            id: 'user-location-layer',
-            type: 'circle',
-            source: 'user-location',
-            paint: {
-              'circle-radius': 8,
-              'circle-color': '#3B82F6',
-              'circle-stroke-color': '#FFFFFF',
-              'circle-stroke-width': 2
-            }
-          });
-          
-          // Add accuracy circle
-          map.addLayer({
-            id: 'user-accuracy',
-            type: 'circle',
-            source: 'user-location',
-            paint: {
-              'circle-radius': ['/', ['get', 'accuracy'], 2],
-              'circle-color': '#3B82F6',
-              'circle-opacity': 0.1,
-              'circle-stroke-color': '#3B82F6',
-              'circle-stroke-width': 1,
-              'circle-stroke-opacity': 0.3
-            }
-          });
-
-          // Add self layer (blue "YOU" pin)
-          map.addLayer(selfLayer);
-
-          // Add cluster layer with improved styling
-          map.addLayer({
-            id: 'floq-clusters',
-            type: 'circle',
-            source: 'floqs',
-            filter: ['has', 'point_count'],
-            paint: {
-              'circle-color': [
-                'case',
-                ['>', ['get', 'social'], 0], '#059669', // Green for social
-                ['>', ['get', 'hype'], 0], '#DC2626', // Red for hype
-                ['>', ['get', 'curious'], 0], '#7C3AED', // Purple for curious
-                ['>', ['get', 'chill'], 0], '#2563EB', // Blue for chill
-                ['>', ['get', 'solo'], 0], '#0891B2', // Cyan for solo
-                ['>', ['get', 'romantic'], 0], '#EC4899', // Pink for romantic
-                ['>', ['get', 'weird'], 0], '#F59E0B', // Amber for weird
-                ['>', ['get', 'down'], 0], '#6B7280', // Gray for down
-                ['>', ['get', 'flowing'], 0], '#10B981', // Emerald for flowing
-                ['>', ['get', 'open'], 0], '#84CC16', // Lime for open
-                '#4B5563' // Darker gray
-              ],
-              'circle-radius': [
-                'step',
-                ['get', 'point_count'],
-                20, 2,  // Default size for 2+ points
-                30, 5,  // Larger for 5+ points
-                40, 10, // Even larger for 10+ points
-                50      // Max size for 20+ points
-              ],
-              'circle-opacity': 0.9,
-              'circle-stroke-width': 3,
-              'circle-stroke-color': '#FFFFFF',
-              'circle-stroke-opacity': 1
-            }
-          });
-
-          // Add cluster count labels
-          map.addLayer({
-            id: 'floq-cluster-count',
-            type: 'symbol',
-            source: 'floqs',
-            filter: ['has', 'point_count'],
-            layout: {
-              'text-field': ['get', 'point_count'],
-              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-              'text-size': 16,
-              'text-allow-overlap': true
-            },
-            paint: {
-              'text-color': '#FFFFFF',
-              'text-halo-color': '#000000',
-              'text-halo-width': 2
-            }
-          });
-
-          // Add individual floq points (unclustered)
-          map.addLayer({
-            id: 'floq-points',
-            type: 'circle',
-            source: 'floqs',
-            filter: ['!', ['has', 'point_count']],
-            paint: {
-              'circle-color': [
-                'case',
-                ['==', ['get', 'vibe'], 'social'], '#059669',
-                ['==', ['get', 'vibe'], 'hype'], '#DC2626',
-                ['==', ['get', 'vibe'], 'curious'], '#7C3AED',
-                ['==', ['get', 'vibe'], 'chill'], '#2563EB',
-                ['==', ['get', 'vibe'], 'solo'], '#0891B2',
-                ['==', ['get', 'vibe'], 'romantic'], '#EC4899',
-                ['==', ['get', 'vibe'], 'weird'], '#F59E0B',
-                ['==', ['get', 'vibe'], 'down'], '#6B7280',
-                ['==', ['get', 'vibe'], 'flowing'], '#10B981',
-                ['==', ['get', 'vibe'], 'open'], '#84CC16',
-                '#4B5563'
-              ],
-              'circle-radius': 12,
-              'circle-opacity': 0.95,
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFFFFF',
-              'circle-stroke-opacity': 1
             }
           });
         });
@@ -864,8 +731,6 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     });
   }, [floqsGeoJSON, withFloqsSource]);
 
-  // Use the people source hook to manage self feature
-  usePeopleSource(mapRef.current, []);
 
   /* render */
   return (

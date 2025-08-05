@@ -117,16 +117,22 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
     /* will be assigned after init so we can remove cleanly */
     let onPointerMove: ((e: any) => void) | undefined;
 
-    app.init({
-      canvas: actualRef.current,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      backgroundColor: undefined, // Force transparent background
-      antialias: true,
-      resolution: window.devicePixelRatio || 1, // Better quality on high-DPI displays
-      autoDensity: true, // Handle high-DPI displays properly
-      backgroundAlpha: 0, // Ensure background is transparent
-    }).then(() => {
+    const initAndRegister = async () => {
+      await app.init({
+        canvas: actualRef.current!,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        backgroundColor: undefined, // Force transparent background
+        antialias: true,
+        resolution: window.devicePixelRatio || 1, // Better quality on high-DPI displays
+        autoDensity: true, // Handle high-DPI displays properly
+        backgroundAlpha: 0, // Ensure background is transparent
+      });
+      
+      // Register app with lifecycle manager
+      const { PixiLifecycleManager } = await import('@/lib/pixi/PixiLifecycleManager');
+      const lifecycleManager = PixiLifecycleManager.getInstance();
+      lifecycleManager.registerApp(app);
       // Create containers in proper z-order
       const heatContainer = new Container();
       const constellationContainer = new Container(); // For constellation effects
@@ -248,33 +254,23 @@ export const FieldCanvas = forwardRef<HTMLCanvasElement, FieldCanvasProps>(({
           setTimeout(() => light(), 50); // Double tap haptic
         }
       });
-    });
+    };
+    
+    initAndRegister();
 
     /* ---------- cleanup ---------- */
     const safelyDestroyPixi = () => {
       const pixiApp = appRef.current;
-      if (!pixiApp || (pixiApp as any)._destroyed) return;
+      if (!pixiApp) return;
 
-      console.log('[PIXI] destroy called');
+      console.log('[FieldCanvas] Starting safe PIXI destroy');
 
-      try {
-        // Remove stage listeners first
-        if (onPointerMove) {
-          pixiApp.stage.off('pointermove', onPointerMove);
-          pixiApp.stage.off('pointerdown');
-        }
-
-        // Stop ticker first
-        pixiApp.ticker.stop();
-
-        // Destroy the app (handles textures & children)
-        pixiApp.destroy(true, { children: true, texture: true });
-      } catch (err) {
-        console.warn('[FieldCanvas] PIXI destroy failed:', err);
-      } finally {
-        (pixiApp as any)._destroyed = true;
-        appRef.current = null;
-      }
+      // Use PixiLifecycleManager for safe destruction
+      import('@/lib/pixi/PixiLifecycleManager').then(({ PixiLifecycleManager }) => {
+        const lifecycleManager = PixiLifecycleManager.getInstance();
+        lifecycleManager.destroyApp(pixiApp);
+      });
+      appRef.current = null;
     };
 
     // Hot-reload guard for development

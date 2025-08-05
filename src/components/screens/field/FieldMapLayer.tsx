@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useCallback } from 'react';
-import { FieldMapBase } from '@/components/maps/FieldMapBase';
+import { FieldWebMap } from '@/components/maps/FieldWebMap';
 import { FieldCanvasLayer } from '@/components/field/FieldCanvasLayer';
 import { FieldUILayer } from './FieldUILayer';
 import { FieldDebugPanel } from '@/components/field/FieldDebugPanel';
@@ -64,19 +64,26 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
     // TODO: Implement map focus on friend location
   }, []);
 
+  // Region change handler for unified map
+  const handleRegionChange = useCallback((bounds: any) => {
+    console.log('[FieldMapLayer] Region changed:', bounds);
+    // TODO: Implement region change logic if needed
+  }, []);
+
   return (
     <div className="absolute inset-0">
-      {/* Layer 1: Base Map */}
-      <FieldMapBase 
+      {/* Layer 1: Unified Map System (Mapbox + coordinated layers) */}
+      <FieldWebMap 
         visible={true} 
         floqs={walkableFloqs} 
         realtime={realtime}
+        onRegionChange={handleRegionChange}
       />
       
       {/* Venue Loading Overlay */}
       <VenueLoadingOverlay show={isVenueSyncing} />
       
-      {/* Layer 2: PIXI Canvas Overlay with Phase 4 enhancements - only render when map is ready */}
+      {/* Layer 2: PIXI Canvas Overlay - only render when map is ready */}
       {isMapReady && (
         <FieldCanvasLayer
           canvasRef={canvasRef}
@@ -85,15 +92,12 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
           data={data}
           onRipple={onRipple}
           isConstellationMode={isConstellationMode}
-          
           showDebugVisuals={isDebugVisible}
         />
       )}
       
       {/* Layer 3: UI Controls */}
       <FieldUILayer data={data} />
-      
-      {/* Phase 4: Enhanced UI Components */}
       
       {/* Data Flow Test Panel (dev only) */}
       {process.env.NODE_ENV === 'development' && isDebugVisible && (
@@ -102,7 +106,6 @@ export const FieldMapLayer: React.FC<FieldMapLayerProps> = ({
         </div>
       )}
 
-      
       {/* Debug Panel with Time Warp */}
       <FieldDebugPanel
         isVisible={isDebugVisible}
