@@ -105,7 +105,7 @@ export const UserSearchResults = ({
             <AddFriendButton
               status={user.req_status}
               onAdd={(e) => {
-                e.stopPropagation(); // Prevent navigation when clicking Add Friend
+                e?.stopPropagation(); // Prevent navigation when clicking Add Friend
                 handleAddFriend(user.id);
               }}
             />

@@ -196,27 +196,16 @@ export function useUnifiedFriends() {
   /* ── 4. derived helpers -------------------------------------------- */
   const acceptedIds = data
     .filter(r => r.friend_state === 'accepted')
-    .map   (r => r.id);
+    .map   (r => r.id);           // use id from the mapped data
 
-  // Use the direction flags from the updated view
+  // Direction flags defined in the compatibility view
   const pendingIn  = data
     .filter(r => r.friend_state === 'pending' && r.is_incoming_request);
 
   const pendingOut = data
     .filter(r => r.friend_state === 'pending' && r.is_outgoing_request);
 
-  // Memoized helper functions
-  const isFriend = useMemo(() => 
-    (id: string): boolean => acceptedIds.includes(id), 
-    [acceptedIds]
-  );
-  
-  const isPending = useMemo(() => 
-    (id: string): boolean => data.some(r => r.id === id && r.friend_state === 'pending'),
-    [data]
-  );
-
-  /* ── 5. public API --------------------------------------------------- */
+  /* ── 5. public API -------------------------------------------------- */
   return {
     isLoading,
     rows        : data,
@@ -226,12 +215,21 @@ export function useUnifiedFriends() {
     pendingOut,
 
     /* actions */
-    sendRequest : (id:string) => mutation.mutate({ other:id, state:'pending' }),
-    accept      : (id:string) => mutation.mutate({ other:id, state:'accepted' }),
-    block       : (id:string) => mutation.mutate({ other:id, state:'blocked' }),
+    sendRequest : (id: string) => mutation.mutate({ other: id, state: 'pending' }),
+    accept      : (id: string) => mutation.mutate({ other: id, state: 'accepted' }),
+    block       : (id: string) => mutation.mutate({ other: id, state: 'blocked' }),
 
-    isFriend,
-    isPending,
-    updating    : mutation.isPending,
+    /* memoised helpers */
+    isFriend  : useMemo(
+      () => (id: string) => acceptedIds.includes(id),
+      [acceptedIds]
+    ),
+    isPending : useMemo(
+      () => (id: string) =>
+        data.some(r => r.id === id && r.friend_state === 'pending'),
+      [data]
+    ),
+
+    updating: mutation.isPending,
   };
 }

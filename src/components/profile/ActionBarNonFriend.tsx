@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Profile } from '@/types/profile';
 
-interface ActionBarNonFriendProps {
+export interface ActionBarNonFriendProps {
   profile: Profile;
   requested?: boolean;
 }
