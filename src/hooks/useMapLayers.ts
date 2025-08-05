@@ -1,9 +1,14 @@
 import { useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { usePeopleSource } from '@/map/layers/usePeopleSource';
+import { useFloqsSource } from '@/map/layers/useFloqsSource';
+import { usePlansSource } from '@/map/layers/usePlansSource';
 import { selfLayer } from '@/map/layers/selfLayer';
 import { friendsLayer } from '@/map/layers/friendsLayer';
+import { floqPointsLayer, floqClustersLayer, floqClusterCountLayer } from '@/map/layers/floqsLayer';
+import { planPointsLayer, planClustersLayer, planClusterCountLayer, planStopCountLayer } from '@/map/layers/plansLayer';
 import type { Person } from '@/map/layers/usePeopleSource';
+import type { MapFloq, MapPlan } from '@/types/mapEntities';
 
 /**
  * useMapLayers - Unified layer management for Mapbox maps
@@ -14,7 +19,8 @@ import type { Person } from '@/map/layers/usePeopleSource';
 interface UseMapLayersProps {
   map: mapboxgl.Map | null;
   people: Person[];
-  floqs: any[];
+  floqs: MapFloq[];
+  plans: MapPlan[];
   onClusterClick?: (clusterId: number, coordinates: [number, number]) => void;
 }
 
@@ -22,13 +28,16 @@ export function useMapLayers({
   map, 
   people, 
   floqs,
+  plans,
   onClusterClick 
 }: UseMapLayersProps) {
   const layersInitialized = useRef(false);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
 
-  // Initialize people source (includes self feature)
+  // Initialize all sources
   usePeopleSource(map, people);
+  useFloqsSource(map, floqs);
+  usePlansSource(map, plans);
 
   // Initialize layers once map is ready and reset on style changes
   useEffect(() => {
@@ -49,31 +58,7 @@ export function useMapLayers({
     try {
       // Note: 'people' source is now managed by usePeopleSource hook
 
-      // Add floqs source with clustering (preserve existing functionality)
-      if (!map.getSource('floqs')) {
-        map.addSource('floqs', {
-          type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: []
-          },
-          cluster: true,
-          clusterRadius: 80,
-          clusterProperties: {
-            // Keep separate counts for each vibe category in a cluster
-            'social': ['+', ['case', ['==', ['get', 'vibe'], 'social'], 1, 0]],
-            'hype': ['+', ['case', ['==', ['get', 'vibe'], 'hype'], 1, 0]],
-            'curious': ['+', ['case', ['==', ['get', 'vibe'], 'curious'], 1, 0]],
-            'chill': ['+', ['case', ['==', ['get', 'vibe'], 'chill'], 1, 0]],
-            'solo': ['+', ['case', ['==', ['get', 'vibe'], 'solo'], 1, 0]],
-            'romantic': ['+', ['case', ['==', ['get', 'vibe'], 'romantic'], 1, 0]],
-            'weird': ['+', ['case', ['==', ['get', 'vibe'], 'weird'], 1, 0]],
-            'down': ['+', ['case', ['==', ['get', 'vibe'], 'down'], 1, 0]],
-            'flowing': ['+', ['case', ['==', ['get', 'vibe'], 'flowing'], 1, 0]],
-            'open': ['+', ['case', ['==', ['get', 'vibe'], 'open'], 1, 0]]
-          }
-        });
-      }
+      // Note: Sources are now managed by dedicated hooks (useFloqsSource, usePlansSource)
 
       // Add friends layer (vibe-colored friend dots)
       if (!map.getLayer('friends-pins')) {
@@ -85,94 +70,34 @@ export function useMapLayers({
         map.addLayer(selfLayer);
       }
 
-      // Add cluster layers (preserve all existing styling and behavior)
+      // Add floq layers (single-stop activities)
       if (!map.getLayer('floq-clusters')) {
-        map.addLayer({
-          id: 'floq-clusters',
-          type: 'circle',
-          source: 'floqs',
-          filter: ['has', 'point_count'],
-          paint: {
-            'circle-color': [
-              'case',
-              ['>', ['get', 'social'], 0], '#059669',
-              ['>', ['get', 'hype'], 0], '#DC2626',
-              ['>', ['get', 'curious'], 0], '#7C3AED',
-              ['>', ['get', 'chill'], 0], '#2563EB',
-              ['>', ['get', 'solo'], 0], '#0891B2',
-              ['>', ['get', 'romantic'], 0], '#EC4899',
-              ['>', ['get', 'weird'], 0], '#F59E0B',
-              ['>', ['get', 'down'], 0], '#6B7280',
-              ['>', ['get', 'flowing'], 0], '#10B981',
-              ['>', ['get', 'open'], 0], '#84CC16',
-              '#4B5563'
-            ],
-            'circle-radius': [
-              'step',
-              ['get', 'point_count'],
-              20, 2,
-              30, 5,
-              40, 10,
-              50
-            ],
-            'circle-opacity': 0.9,
-            'circle-stroke-width': 3,
-            'circle-stroke-color': '#FFFFFF',
-            'circle-stroke-opacity': 1
-          }
-        });
+        map.addLayer(floqClustersLayer);
       }
-
-      // Add cluster count labels (preserve existing functionality)
+      
       if (!map.getLayer('floq-cluster-count')) {
-        map.addLayer({
-          id: 'floq-cluster-count',
-          type: 'symbol',
-          source: 'floqs',
-          filter: ['has', 'point_count'],
-          layout: {
-            'text-field': ['get', 'point_count'],
-            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-            'text-size': 16,
-            'text-allow-overlap': true
-          },
-          paint: {
-            'text-color': '#FFFFFF',
-            'text-halo-color': '#000000',
-            'text-halo-width': 2
-          }
-        });
+        map.addLayer(floqClusterCountLayer);
+      }
+      
+      if (!map.getLayer('floq-points')) {
+        map.addLayer(floqPointsLayer);
       }
 
-      // Add individual floq points (preserve existing functionality)
-      if (!map.getLayer('floq-points')) {
-        map.addLayer({
-          id: 'floq-points',
-          type: 'circle',
-          source: 'floqs',
-          filter: ['!', ['has', 'point_count']],
-          paint: {
-            'circle-color': [
-              'case',
-              ['==', ['get', 'vibe'], 'social'], '#059669',
-              ['==', ['get', 'vibe'], 'hype'], '#DC2626',
-              ['==', ['get', 'vibe'], 'curious'], '#7C3AED',
-              ['==', ['get', 'vibe'], 'chill'], '#2563EB',
-              ['==', ['get', 'vibe'], 'solo'], '#0891B2',
-              ['==', ['get', 'vibe'], 'romantic'], '#EC4899',
-              ['==', ['get', 'vibe'], 'weird'], '#F59E0B',
-              ['==', ['get', 'vibe'], 'down'], '#6B7280',
-              ['==', ['get', 'vibe'], 'flowing'], '#10B981',
-              ['==', ['get', 'vibe'], 'open'], '#84CC16',
-              '#4B5563'
-            ],
-            'circle-radius': 12,
-            'circle-opacity': 0.95,
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#FFFFFF',
-            'circle-stroke-opacity': 1
-          }
-        });
+      // Add plan layers (multi-stop activities)
+      if (!map.getLayer('plan-clusters')) {
+        map.addLayer(planClustersLayer);
+      }
+      
+      if (!map.getLayer('plan-cluster-count')) {
+        map.addLayer(planClusterCountLayer);
+      }
+      
+      if (!map.getLayer('plan-points')) {
+        map.addLayer(planPointsLayer);
+      }
+      
+      if (!map.getLayer('plan-stop-indicators')) {
+        map.addLayer(planStopCountLayer);
       }
 
       layersInitialized.current = true;
@@ -298,6 +223,51 @@ export function useMapLayers({
       }
     };
 
+    // Plan hover effects
+    const handlePlansEnter = () => {
+      if (!map.getLayer('plan-points') && !map.getLayer('plan-clusters')) return;
+      map.getCanvas().style.cursor = 'pointer';
+      if (map.getLayer('plan-points')) {
+        map.setPaintProperty('plan-points', 'circle-radius', [
+          'case',
+          ['>', ['get', 'stop_count'], 5], 18,
+          ['>', ['get', 'stop_count'], 3], 16,
+          ['>', ['get', 'stop_count'], 1], 14,
+          12
+        ]);
+        map.setPaintProperty('plan-points', 'circle-opacity', 1);
+      }
+    };
+
+    const handlePlansLeave = () => {
+      if (!map.getLayer('plan-points') && !map.getLayer('plan-clusters')) return;
+      map.getCanvas().style.cursor = '';
+      if (map.getLayer('plan-points')) {
+        map.setPaintProperty('plan-points', 'circle-radius', [
+          'case',
+          ['>', ['get', 'stop_count'], 5], 16,
+          ['>', ['get', 'stop_count'], 3], 14,
+          ['>', ['get', 'stop_count'], 1], 12,
+          10
+        ]);
+        map.setPaintProperty('plan-points', 'circle-opacity', 0.9);
+      }
+    };
+
+    // Plan click handler
+    const handlePlansClick = (e: mapboxgl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['plan-points', 'plan-clusters']
+      });
+
+      if (features.length > 0) {
+        const plan = features[0];
+        console.log('📋 Plan clicked:', plan.properties);
+        // TODO: Open plan details or start plan execution
+        // This could trigger plan modal, navigation, or execution flow
+      }
+    };
+
     map.on('click', 'floq-clusters', handleClusterClickGuarded);
     map.on('mouseenter' as any, 'floq-clusters', handleClusterEnter);
     map.on('mouseleave' as any, 'floq-clusters', handleClusterLeave);
@@ -308,6 +278,14 @@ export function useMapLayers({
     map.on('click', 'friends-pins', handleFriendsClick);
     map.on('mouseenter' as any, 'friends-pins', handleFriendsEnter);
     map.on('mouseleave' as any, 'friends-pins', handleFriendsLeave);
+    
+    // Plan event listeners
+    map.on('click', 'plan-points', handlePlansClick);
+    map.on('click', 'plan-clusters', handlePlansClick);
+    map.on('mouseenter' as any, 'plan-points', handlePlansEnter);
+    map.on('mouseleave' as any, 'plan-points', handlePlansLeave);
+    map.on('mouseenter' as any, 'plan-clusters', handlePlansEnter);
+    map.on('mouseleave' as any, 'plan-clusters', handlePlansLeave);
 
     return () => {
       map.off('click', 'floq-clusters', handleClusterClickGuarded);
@@ -320,52 +298,18 @@ export function useMapLayers({
       map.off('click', 'friends-pins', handleFriendsClick);
       map.off('mouseenter' as any, 'friends-pins', handleFriendsEnter);
       map.off('mouseleave' as any, 'friends-pins', handleFriendsLeave);
+      
+      // Cleanup plan event listeners
+      map.off('click', 'plan-points', handlePlansClick);
+      map.off('click', 'plan-clusters', handlePlansClick);
+      map.off('mouseenter' as any, 'plan-points', handlePlansEnter);
+      map.off('mouseleave' as any, 'plan-points', handlePlansLeave);
+      map.off('mouseenter' as any, 'plan-clusters', handlePlansEnter);
+      map.off('mouseleave' as any, 'plan-clusters', handlePlansLeave);
     };
   }, [map, layersInitialized.current, handleClusterClick]);
 
-  // Update floqs data with debouncing for large datasets
-  useEffect(() => {
-    if (!map || !layersInitialized.current) return;
-
-    const floqsGeoJSON = {
-      type: 'FeatureCollection' as const,
-      features: floqs.map(floq => ({
-        type: 'Feature' as const,
-        properties: {
-          id: floq.id,
-          title: floq.title,
-          vibe: floq.primary_vibe,
-          participants: floq.participant_count || 0,
-          distance_meters: floq.distance_meters,
-          friend_name: floq.friend_name,
-          address: floq.address
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [floq.lng || 0, floq.lat || 0]
-        }
-      }))
-    };
-
-    const source = map.getSource('floqs') as mapboxgl.GeoJSONSource;
-    if (source) {
-      // 🔍 LARGE DATASET CHECK: Log if data is large enough to cause delays
-      const featureCount = floqsGeoJSON.features.length;
-      if (featureCount > 100) {
-        console.warn(`🐌 Large floqs dataset: ${featureCount} features - may cause WebWorker delay`);
-      }
-      
-      // For very large datasets, consider batching
-      if (featureCount > 500) {
-        console.log('📦 Batching large dataset...');
-        // Set empty first, then data on next tick to avoid blocking
-        source.setData({ type: 'FeatureCollection', features: [] });
-        setTimeout(() => source.setData(floqsGeoJSON), 0);
-      } else {
-        source.setData(floqsGeoJSON);
-      }
-    }
-  }, [map, floqs, layersInitialized.current]);
+  // Note: Floq and plan data updates are now handled by dedicated source hooks
 
   return {
     layersReady: layersInitialized.current

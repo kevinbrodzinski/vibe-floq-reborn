@@ -27,6 +27,7 @@ import '@/lib/debug/locationDebugger';
 import '@/lib/debug/mapDiagnostics';
 import '@/lib/debug/canvasMonitor';
 import '@/lib/debug/friendsDebugger';
+import '@/lib/debug/floqPlanDebugger';
 import { trackRender } from '@/lib/debug/renderTracker';
 
 // Create context for selected floq
@@ -75,15 +76,33 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
 
   // Filter floqs by selected vibe and selected floq
   const filteredFloqs = useMemo(() => {
-    let filtered = floqs;
+    // Add mock floqs in dev mode for testing
+    const mockFloqs = import.meta.env.DEV 
+      ? (typeof window !== 'undefined' && (window as any).getMockFloqs?.() || [])
+      : [];
+    
+    let filtered = [...floqs, ...mockFloqs];
     
     // Filter by vibe
     if (selectedVibe !== 'all') {
       filtered = filtered.filter(floq => floq.primary_vibe === selectedVibe);
     }
     
+    console.log('[FieldWebMap] 🎯 Filtered floqs:', filtered.length, 'total');
     return filtered;
   }, [floqs, selectedVibe, selectedMyFloq]);
+
+  // TODO: Add real plans data from usePlansData or similar hook
+  const filteredPlans = useMemo(() => {
+    // Add mock plans in dev mode for testing
+    const mockPlans = import.meta.env.DEV 
+      ? (typeof window !== 'undefined' && (window as any).getMockPlans?.() || [])
+      : [];
+    
+    // For now, just return mock data - this will be populated with real data
+    console.log('[FieldWebMap] 📋 Filtered plans:', mockPlans.length, 'total');
+    return mockPlans;
+  }, []);
 
   // Build people array with current user + any floq members
   const filteredPeople = useMemo(() => {
@@ -152,6 +171,7 @@ const FieldWebMapComponent: React.FC<Props> = ({ onRegionChange, children, visib
     map: mapRef.current,
     people: filteredPeople,
     floqs: filteredFloqs,
+    plans: filteredPlans,
     onClusterClick: (clusterId, coordinates) => {
       console.log('Cluster clicked:', clusterId, coordinates);
     }
