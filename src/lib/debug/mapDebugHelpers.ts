@@ -7,6 +7,7 @@ declare global {
     checkContainerHeight?: () => void;
     checkMapboxWorker?: () => void;
     realityCheckMapbox?: () => Promise<void>;
+    quickContainerCheck?: () => void;
     mapboxgl?: any;
   }
 }
@@ -92,7 +93,29 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     window.checkMapboxWorker = checkMapboxWorker;
     window.realityCheckMapbox = realityCheckMapbox;
     
+    // Add instant container check function
+    (window as any).quickContainerCheck = () => {
+      const c = document.querySelector('[data-map-container]');
+      if (c) {
+        console.log('✅ Container exists in DOM:', c);
+        const rect = c.getBoundingClientRect();
+        console.log('📐 Container size:', { width: rect.width, height: rect.height });
+        console.log('🎨 Container styles:', {
+          display: getComputedStyle(c).display,
+          height: getComputedStyle(c).height,
+          position: getComputedStyle(c).position
+        });
+      } else {
+        console.warn('❌ Container missing from DOM');
+      }
+      
+      console.log('🔄 Mount ping status:', !!(window as any).__mountPing);
+      console.log('🗺️ Map instance exists:', !!(window as any).__FLOQ_MAP);
+      console.log('🎯 Canvas count:', document.querySelectorAll('.mapboxgl-canvas').length);
+    };
+    
     console.log('🔧 Map debug helpers loaded:');
+    console.log('  - window.quickContainerCheck() - Instant status check'); 
     console.log('  - window.checkContainerHeight() - Check if any parent has 0px height');
     console.log('  - window.checkMapboxWorker() - Check if Mapbox worker is registered');  
     console.log('  - window.realityCheckMapbox() - Test if Mapbox works at all');

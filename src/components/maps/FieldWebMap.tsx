@@ -268,10 +268,25 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
     (window as any).__mountPing = true;
     console.log('[FieldWebMap] 🔧 Mount ping – container?', !!mapContainerRef.current);
     console.log('[FieldWebMap] 🔧 Map already exists?', !!mapRef.current);
+    
+    // Additional container debugging
+    const containerInDOM = document.querySelector('[data-map-container]');
+    console.log('[FieldWebMap] 🔧 Container found in DOM?', !!containerInDOM);
+    if (containerInDOM) {
+      const rect = containerInDOM.getBoundingClientRect();
+      console.log('[FieldWebMap] 🔧 Container size:', { width: rect.width, height: rect.height });
+    }
   }, []);
 
   useEffect(()=>{
-    if(!mapContainerRef.current||mapRef.current) return;
+    console.log('[FieldWebMap] 🔧 Map mount effect starting...');
+    console.log('[FieldWebMap] 🔧 Container ref:', !!mapContainerRef.current);
+    console.log('[FieldWebMap] 🔧 Existing map:', !!mapRef.current);
+    
+    if(!mapContainerRef.current||mapRef.current) {
+      console.log('[FieldWebMap] 🔧 Early exit - container:', !!mapContainerRef.current, 'existing map:', !!mapRef.current);
+      return;
+    }
     let dead=false;
 
     (async ()=>{
@@ -839,7 +854,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
   return (
     <SelectedFloqContext.Provider value={selectedFloqContextValue}>
       <div className="absolute inset-0">
-        <div ref={mapContainerRef} className="absolute inset-0" />
+        <div ref={mapContainerRef} data-map-container className="absolute inset-0" />
         
         {/* Vibe Filter Dropdown */}
         {status === 'ready' && vibeTypes.length > 0 && (
