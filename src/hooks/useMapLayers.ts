@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { usePeopleSource } from '@/map/layers/usePeopleSource';
 import { selfLayer } from '@/map/layers/selfLayer';
+import { friendsLayer } from '@/map/layers/friendsLayer';
 import type { Person } from '@/map/layers/usePeopleSource';
 
 /**
@@ -74,7 +75,12 @@ export function useMapLayers({
         });
       }
 
-      // Add self layer (blue "YOU" pin) - preserve existing functionality
+      // Add friends layer (vibe-colored friend dots)
+      if (!map.getLayer('friends-pins')) {
+        map.addLayer(friendsLayer);
+      }
+
+      // Add self layer (blue "YOU" pin) - preserve existing functionality  
       if (!map.getLayer('me-pin')) {
         map.addLayer(selfLayer);
       }
@@ -259,11 +265,49 @@ export function useMapLayers({
       map.setPaintProperty('floq-points', 'circle-stroke-width', 2);
     };
 
+    // Friends hover effects
+    const handleFriendsEnter = () => {
+      if (!map.getLayer('friends-pins')) return;
+      map.getCanvas().style.cursor = 'pointer';
+      map.setPaintProperty('friends-pins', 'circle-radius', 10); // Slightly bigger on hover
+      map.setPaintProperty('friends-pins', 'circle-opacity', 1);
+      map.setPaintProperty('friends-pins', 'circle-stroke-width', 3);
+    };
+
+    const handleFriendsLeave = () => {
+      if (!map.getLayer('friends-pins')) return;
+      map.getCanvas().style.cursor = '';
+      map.setPaintProperty('friends-pins', 'circle-radius', 8);
+      map.setPaintProperty('friends-pins', 'circle-opacity', 0.9);
+      map.setPaintProperty('friends-pins', 'circle-stroke-width', 2);
+    };
+
+    // Friends click handler (for future profile/chat integration)
+    const handleFriendsClick = (e: mapboxgl.MapMouseEvent) => {
+      if (!map.getLayer('friends-pins')) return;
+      
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['friends-pins']
+      });
+
+      if (features.length > 0) {
+        const friend = features[0];
+        console.log('🫂 Friend clicked:', friend.properties);
+        // TODO: Open friend profile or start chat
+        // This could trigger a modal, navigation, or other interaction
+      }
+    };
+
     map.on('click', 'floq-clusters', handleClusterClickGuarded);
     map.on('mouseenter' as any, 'floq-clusters', handleClusterEnter);
     map.on('mouseleave' as any, 'floq-clusters', handleClusterLeave);
     map.on('mouseenter' as any, 'floq-points', handleFloqEnter);
     map.on('mouseleave' as any, 'floq-points', handleFloqLeave);
+    
+    // Friends event listeners
+    map.on('click', 'friends-pins', handleFriendsClick);
+    map.on('mouseenter' as any, 'friends-pins', handleFriendsEnter);
+    map.on('mouseleave' as any, 'friends-pins', handleFriendsLeave);
 
     return () => {
       map.off('click', 'floq-clusters', handleClusterClickGuarded);
@@ -271,6 +315,11 @@ export function useMapLayers({
       map.off('mouseleave' as any, 'floq-clusters', handleClusterLeave);
       map.off('mouseenter' as any, 'floq-points', handleFloqEnter);
       map.off('mouseleave' as any, 'floq-points', handleFloqLeave);
+      
+      // Cleanup friends event listeners
+      map.off('click', 'friends-pins', handleFriendsClick);
+      map.off('mouseenter' as any, 'friends-pins', handleFriendsEnter);
+      map.off('mouseleave' as any, 'friends-pins', handleFriendsLeave);
     };
   }, [map, layersInitialized.current, handleClusterClick]);
 
