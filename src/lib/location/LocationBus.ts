@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-import { latLngToCell } from 'h3-js';
 import type { 
   LocationPoint, 
   MovementContext as ImportedMovementContext,
@@ -16,28 +14,28 @@ interface MovementContext extends ImportedMovementContext {
 }
 
 export class LocationBus {
-  private userId: string;
+  private profileId: string;
   private lastLocation: LocationPoint | null = null;
   private movementContext: MovementContext = { isMoving: false, speed: 0, direction: 0, stability: 1 };
   private venueCache: Record<string, VenueDetectionResult> = {};
   private proximityEventQueue: ProximityEventRecord[] = [];
 
-  constructor(userId: string) {
-    this.userId = userId;
+  constructor(profileId: string) {
+    this.profileId = profileId;
   }
 
   // Add stub methods for compatibility
-  registerConsumer = (id: string, handler: (loc: LocationPoint) => void) => {
+  registerConsumer = (_id: string, _handler: (loc: LocationPoint) => void) => {
     console.warn('LocationBus.registerConsumer is stubbed');
     return () => {}; // Return unsubscribe function
   };
 
-  getH3Neighbors = (lat: number, lng: number, ringSize = 1) => {
+  getH3Neighbors = (_lat: number, _lng: number, _ringSize = 1) => {
     console.warn('LocationBus.getH3Neighbors is stubbed');
     return []; // Return empty array for now
   };
 
-  getOptimalH3RingSize = (radiusMeters: number) => {
+  getOptimalH3RingSize = (_radiusMeters: number) => {
     console.warn('LocationBus.getOptimalH3RingSize is stubbed');
     return 1; // Return default ring size
   };

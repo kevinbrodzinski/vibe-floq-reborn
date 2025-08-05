@@ -108,7 +108,6 @@ export interface ProximityUser {
 
 export interface ProximityAnalysis {
   profile_id: string;
-  userId: string; // alias for compatibility - now required
   distance: number;
   confidence: number; // now required
 }

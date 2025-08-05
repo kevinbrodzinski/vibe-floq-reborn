@@ -8,7 +8,6 @@ export interface LocationPoint {
 
 export interface ProximityAnalysis {
   profile_id: string;
-  userId: string; // Keep for backward compatibility
   distance: number;
   timestamp: string;
   location: {

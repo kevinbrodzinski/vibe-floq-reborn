@@ -4,7 +4,7 @@
  */
 
 // Platform detection
-export const isWeb = typeof window !== 'undefined' && !window.hasOwnProperty('ReactNativeWebView');
+export const isWeb = typeof window !== 'undefined' && !Object.prototype.hasOwnProperty.call(window, 'ReactNativeWebView');
 export const isMobile = !isWeb;
 export const isIOS = isMobile && /iPad|iPhone|iPod/.test(navigator?.userAgent || '');
 export const isAndroid = isMobile && /Android/.test(navigator?.userAgent || '');
