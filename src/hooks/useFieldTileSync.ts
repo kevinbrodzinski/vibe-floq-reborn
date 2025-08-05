@@ -15,7 +15,8 @@ export const useFieldTileSync = () => {
     const now = Date.now();
 
     if (document.visibilityState !== 'visible') return;
-    if (now - lastRunRef.current < 10_000) return;
+    // Increased minimum interval from 10s to 30s to reduce database load
+    if (now - lastRunRef.current < 30_000) return;
 
     try {
       const { error } = await supabase.functions.invoke('refresh_field_tiles');
@@ -24,7 +25,8 @@ export const useFieldTileSync = () => {
       queryClient.invalidateQueries({ queryKey: ['field-tiles'] });
     } catch (e) {
       console.error('[FieldTileSync] refresh failed:', e);
-      lastRunRef.current = 0;          // allow immediate retry
+      // On error, wait 60s before allowing retry to prevent spam
+      lastRunRef.current = now - 30_000 + 60_000;
     }
   };
 
@@ -35,12 +37,13 @@ export const useFieldTileSync = () => {
           { event: '*', schema: 'public', table: 'vibes_now' },
           () => {
             if (debouncedRefresh.current) clearTimeout(debouncedRefresh.current);
-            debouncedRefresh.current = setTimeout(triggerRefresh, 2_000);
+            // Increased debounce from 2s to 30s to reduce excessive refreshes
+            debouncedRefresh.current = setTimeout(triggerRefresh, 30_000);
           })
       .subscribe();
 
-    // first refresh a few seconds after mount
-    const first = setTimeout(triggerRefresh, 2_000);
+    // first refresh after longer delay to prevent startup spam
+    const first = setTimeout(triggerRefresh, 10_000);
 
     const onVis = () => document.visibilityState === 'visible' && triggerRefresh();
     document.addEventListener('visibilitychange', onVis);

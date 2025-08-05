@@ -1,18 +1,35 @@
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentVibe } from '@/lib/store/useVibe';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useVibe } from '@/lib/store/useVibe';
 import { useAuth } from '@/providers/AuthProvider';
+import ngeohash from 'ngeohash';
 
 export const usePresenceChannel = () => {
   const vibe = useCurrentVibe();
-  const { location } = useUserLocation();
+  const locationHook = useUnifiedLocation({
+    enableTracking: false, // Don't need server tracking for presence
+    enablePresence: false, // We handle presence manually here
+    hookId: 'presence-channel'
+  });
   const { visibility } = useVibe();
   const { user, loading: authLoading } = useAuth();
 
+  // Start location tracking when we have required data
+  useEffect(() => {
+    if (!authLoading && vibe && user?.id) {
+      locationHook.startTracking();
+    } else {
+      locationHook.stopTracking();
+    }
+  }, [authLoading, vibe, user?.id, locationHook.startTracking, locationHook.stopTracking]);
+
   // Memoize gh5 to ensure stable value across effects
-  const gh5 = useMemo(() => location?.geohash?.slice(0, 5), [location?.geohash]);
+  const gh5 = useMemo(() => {
+    if (!locationHook.coords) return null;
+    return ngeohash.encode(locationHook.coords.lat, locationHook.coords.lng, 5);
+  }, [locationHook.coords]);
 
   useEffect(() => {
     // Wait for auth to complete and ensure we have required data

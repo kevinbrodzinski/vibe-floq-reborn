@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { MapPin, Loader2, AlertCircle } from 'lucide-react';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useAuth } from '@/providers/AuthProvider';
 import { Badge } from '@/components/ui/badge';
 
 export function LocationTracker() {
   const { user } = useAuth();
-  const { pos, loading, error } = useUserLocation();
+  const { coords, status, error } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: false,
+    hookId: 'location-tracker'
+  });
+  const pos = coords; // Compatibility alias
+  const loading = status === 'loading';
   const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {

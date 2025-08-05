@@ -11,6 +11,7 @@ import { VibeRealtime } from "@/providers/VibeRealtime";
 import { EventNotificationsProvider } from "@/providers/EventNotificationsProvider";
 import { PlanNotificationProvider } from "@/providers/PlanNotificationProvider";
 import { usePresenceChannel } from "@/hooks/usePresenceChannel";
+import { LocationSystemHealthDashboard } from "@/components/debug/LocationSystemHealthDashboard";
 import { useUnreadBadgeRealtime } from "@/hooks/useUnreadBadgeRealtime";
 import { useAuth } from "@/providers/AuthProvider";
 import { PlanInviteProvider } from "@/components/providers/PlanInviteProvider";
@@ -98,6 +99,7 @@ const App = () => {
                   </Routes>
                   
                   {/* Remove development-only environment debug panel for TestFlight */}
+                  <LocationSystemHealthDashboard />
                 </BrowserRouter>
               </TooltipProvider>
             </BannerProvider>

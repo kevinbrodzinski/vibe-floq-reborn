@@ -1,5 +1,5 @@
 import { useState, memo } from 'react'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 import { useNearbyPeople, type NearbyRow } from '@/hooks/useNearbyPeople'
 import { FriendCard } from './FriendCard'
 import { FriendCardSkeleton } from './FriendCardSkeleton'
@@ -7,7 +7,12 @@ import { SocialInteractionModal } from './SocialInteractionModal'
 import { generateStableKey } from '@/utils/stableKeys'
 
 export const InlineFriendCarousel = memo(() => {
-  const { pos } = useUserLocation()
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'inline-friend-carousel'
+  })
+  const pos = coords; // Compatibility alias
   const { people, loading } = useNearbyPeople(pos?.lat, pos?.lng, 12)
   const [selected, setSelected] = useState<NearbyRow | null>(null)
 

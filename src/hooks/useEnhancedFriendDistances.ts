@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/providers/AuthProvider';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useLiveShareFriends } from '@/hooks/useLiveShareFriends';
 import { proximityEventRecorder } from '@/lib/location/proximityEventRecorder';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -90,7 +90,12 @@ export function useEnhancedFriendDistances(options: FriendDistanceOptions = {}) 
   } = options;
 
   const { user } = useAuth();
-  const { pos } = useUserLocation();
+  const { coords } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: true,
+    hookId: 'enhanced-friend-distances'
+  });
+  const pos = coords; // Compatibility alias
   const liveShareFriends = useLiveShareFriends();
   const queryClient = useQueryClient();
 

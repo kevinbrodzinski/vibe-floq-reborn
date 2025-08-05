@@ -1,0 +1,456 @@
+/**
+ * Centralized Zustand Location Store - Single source of truth for location state
+ * Provides selective subscriptions to prevent unnecessary re-renders
+ * Integrates with GlobalLocationManager and LocationBus for coordinated state management
+ */
+
+import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { devtools } from 'zustand/middleware';
+import { useEffect } from 'react';
+
+interface LocationCoords {
+  lat: number;
+  lng: number;
+  accuracy: number;
+}
+
+interface MovementContext {
+  isStationary: boolean;
+  isWalking: boolean;
+  isDriving: boolean;
+  speed: number; // m/s
+  heading?: number;
+  confidence: number; // 0-1
+}
+
+interface SystemHealth {
+  gpsManager: {
+    isHealthy: boolean;
+    subscriberCount: number;
+    failureCount: number;
+    lastUpdate: number;
+  };
+  locationBus: {
+    isHealthy: boolean;
+    consumerCount: number;
+    batchSize: number;
+    averageLatency: number;
+  };
+  circuitBreaker: {
+    state: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+    isHealthy: boolean;
+    queueSize: number;
+    writeRate: number;
+  };
+}
+
+interface PerformanceMetrics {
+  totalUpdates: number;
+  averageAccuracy: number;
+  updateFrequency: number; // updates per minute
+  lastUpdateTime: number;
+  memoryUsage?: number;
+  renderCount: number;
+  subscriptionCount: number;
+}
+
+interface LocationState {
+  // Core location data
+  coords: LocationCoords | null;
+  timestamp: number | null;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  error: string | null;
+  hasPermission: boolean;
+  
+  // Movement context
+  movementContext: MovementContext | null;
+  
+  // Tracking state
+  isTracking: boolean;
+  trackingStartTime: number | null;
+  
+  // Presence sharing
+  isPresenceEnabled: boolean;
+  presenceStartTime: number | null;
+  
+  // System health
+  systemHealth: SystemHealth;
+  
+  // Performance metrics
+  metrics: PerformanceMetrics;
+  
+  // Actions
+  updateLocation: (coords: LocationCoords, timestamp: number) => void;
+  updateMovementContext: (context: MovementContext) => void;
+  setStatus: (status: 'idle' | 'loading' | 'success' | 'error', error?: string) => void;
+  setPermission: (hasPermission: boolean) => void;
+  startTracking: () => void;
+  stopTracking: () => void;
+  enablePresence: () => void;
+  disablePresence: () => void;
+  updateSystemHealth: (health: Partial<SystemHealth>) => void;
+  updateMetrics: (metrics: Partial<PerformanceMetrics>) => void;
+  reset: () => void;
+  
+  // Computed selectors (for performance)
+  getDistance: (targetLat: number, targetLng: number) => number | null;
+  isNearby: (targetLat: number, targetLng: number, radiusM: number) => boolean;
+  getMovementStatus: () => 'stationary' | 'walking' | 'driving' | 'unknown';
+  getSystemHealthScore: () => number; // 0-100
+}
+
+const initialState = {
+  coords: null,
+  timestamp: null,
+  status: 'idle' as const,
+  error: null,
+  hasPermission: false,
+  movementContext: null,
+  isTracking: false,
+  trackingStartTime: null,
+  isPresenceEnabled: false,
+  presenceStartTime: null,
+  systemHealth: {
+    gpsManager: {
+      isHealthy: true,
+      subscriberCount: 0,
+      failureCount: 0,
+      lastUpdate: 0
+    },
+    locationBus: {
+      isHealthy: true,
+      consumerCount: 0,
+      batchSize: 0,
+      averageLatency: 0
+    },
+    circuitBreaker: {
+      state: 'CLOSED' as const,
+      isHealthy: true,
+      queueSize: 0,
+      writeRate: 0
+    }
+  },
+  metrics: {
+    totalUpdates: 0,
+    averageAccuracy: 0,
+    updateFrequency: 0,
+    lastUpdateTime: 0,
+    renderCount: 0,
+    subscriptionCount: 0
+  }
+};
+
+export const useLocationStore = create<LocationState>()(
+  devtools(
+    subscribeWithSelector(
+      immer((set, get) => ({
+        ...initialState,
+        
+        updateLocation: (coords: LocationCoords, timestamp: number) => {
+          set((state) => {
+            const previousCoords = state.coords;
+            state.coords = coords;
+            state.timestamp = timestamp;
+            state.status = 'success';
+            state.error = null;
+            
+            // Update metrics
+            state.metrics.totalUpdates++;
+            state.metrics.lastUpdateTime = timestamp;
+            
+            // Calculate running average accuracy
+            if (previousCoords) {
+              state.metrics.averageAccuracy = 
+                (state.metrics.averageAccuracy * (state.metrics.totalUpdates - 1) + coords.accuracy) / 
+                state.metrics.totalUpdates;
+            } else {
+              state.metrics.averageAccuracy = coords.accuracy;
+            }
+            
+            // Calculate update frequency (updates per minute)
+            if (state.metrics.totalUpdates > 1) {
+              const timeDiff = timestamp - (state.metrics.lastUpdateTime || timestamp);
+              const updatesPerMs = 1 / timeDiff;
+              state.metrics.updateFrequency = updatesPerMs * 60000; // per minute
+            }
+          });
+        },
+        
+        updateMovementContext: (context: MovementContext) => {
+          set((state) => {
+            state.movementContext = context;
+          });
+        },
+        
+        setStatus: (status: 'idle' | 'loading' | 'success' | 'error', error?: string) => {
+          set((state) => {
+            state.status = status;
+            state.error = error || null;
+          });
+        },
+        
+        setPermission: (hasPermission: boolean) => {
+          set((state) => {
+            state.hasPermission = hasPermission;
+          });
+        },
+        
+        startTracking: () => {
+          set((state) => {
+            if (!state.isTracking) {
+              state.isTracking = true;
+              state.trackingStartTime = Date.now();
+            }
+          });
+        },
+        
+        stopTracking: () => {
+          set((state) => {
+            state.isTracking = false;
+            state.trackingStartTime = null;
+          });
+        },
+        
+        enablePresence: () => {
+          set((state) => {
+            if (!state.isPresenceEnabled) {
+              state.isPresenceEnabled = true;
+              state.presenceStartTime = Date.now();
+            }
+          });
+        },
+        
+        disablePresence: () => {
+          set((state) => {
+            state.isPresenceEnabled = false;
+            state.presenceStartTime = null;
+          });
+        },
+        
+        updateSystemHealth: (health: Partial<SystemHealth>) => {
+          set((state) => {
+            if (health.gpsManager) {
+              Object.assign(state.systemHealth.gpsManager, health.gpsManager);
+            }
+            if (health.locationBus) {
+              Object.assign(state.systemHealth.locationBus, health.locationBus);
+            }
+            if (health.circuitBreaker) {
+              Object.assign(state.systemHealth.circuitBreaker, health.circuitBreaker);
+            }
+          });
+        },
+        
+        updateMetrics: (metrics: Partial<PerformanceMetrics>) => {
+          set((state) => {
+            Object.assign(state.metrics, metrics);
+          });
+        },
+        
+        reset: () => {
+          set((state) => {
+            Object.assign(state, initialState);
+          });
+        },
+        
+        // Computed selectors
+        getDistance: (targetLat: number, targetLng: number) => {
+          const state = get();
+          if (!state.coords) return null;
+          
+          const R = 6371e3; // Earth's radius in meters
+          const φ1 = state.coords.lat * Math.PI / 180;
+          const φ2 = targetLat * Math.PI / 180;
+          const Δφ = (targetLat - state.coords.lat) * Math.PI / 180;
+          const Δλ = (targetLng - state.coords.lng) * Math.PI / 180;
+
+          const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+          return R * c;
+        },
+        
+        isNearby: (targetLat: number, targetLng: number, radiusM: number) => {
+          const distance = get().getDistance(targetLat, targetLng);
+          return distance !== null && distance <= radiusM;
+        },
+        
+        getMovementStatus: () => {
+          const context = get().movementContext;
+          if (!context) return 'unknown';
+          
+          if (context.isDriving) return 'driving';
+          if (context.isWalking) return 'walking';
+          if (context.isStationary) return 'stationary';
+          return 'unknown';
+        },
+        
+        getSystemHealthScore: () => {
+          const health = get().systemHealth;
+          let score = 0;
+          let components = 0;
+          
+          // GPS Manager health (33% weight)
+          if (health.gpsManager.isHealthy) {
+            score += 33;
+          }
+          components++;
+          
+          // Location Bus health (33% weight)
+          if (health.locationBus.isHealthy) {
+            score += 33;
+          }
+          components++;
+          
+          // Circuit Breaker health (34% weight)
+          if (health.circuitBreaker.isHealthy && health.circuitBreaker.state === 'CLOSED') {
+            score += 34;
+          }
+          components++;
+          
+          return Math.round(score);
+        }
+      }))
+    ),
+    {
+      name: 'location-store',
+      enabled: process.env.NODE_ENV === 'development'
+    }
+  )
+);
+
+// Selective subscription hooks for performance optimization
+
+/**
+ * Subscribe to coordinates only - prevents re-renders on other state changes
+ */
+export const useLocationCoords = () => 
+  useLocationStore((state) => state.coords);
+
+/**
+ * Subscribe to coordinates with timestamp
+ */
+export const useLocationCoordsWithTime = () => 
+  useLocationStore((state) => ({ coords: state.coords, timestamp: state.timestamp }));
+
+/**
+ * Subscribe to movement context only
+ */
+export const useMovementContext = () => 
+  useLocationStore((state) => state.movementContext);
+
+/**
+ * Subscribe to tracking state only
+ */
+export const useTrackingState = () => 
+  useLocationStore((state) => ({ 
+    isTracking: state.isTracking, 
+    trackingStartTime: state.trackingStartTime 
+  }));
+
+/**
+ * Subscribe to presence state only
+ */
+export const usePresenceState = () => 
+  useLocationStore((state) => ({ 
+    isPresenceEnabled: state.isPresenceEnabled, 
+    presenceStartTime: state.presenceStartTime 
+  }));
+
+/**
+ * Subscribe to system health only
+ */
+export const useLocationHealth = () => 
+  useLocationStore((state) => state.systemHealth);
+
+/**
+ * Subscribe to performance metrics only
+ */
+export const useLocationMetrics = () => 
+  useLocationStore((state) => state.metrics);
+
+/**
+ * Subscribe to status and error only
+ */
+export const useLocationStatus = () => 
+  useLocationStore((state) => ({ 
+    status: state.status, 
+    error: state.error, 
+    hasPermission: state.hasPermission 
+  }));
+
+/**
+ * Subscribe to computed selectors
+ */
+export const useLocationSelectors = () => 
+  useLocationStore((state) => ({
+    getDistance: state.getDistance,
+    isNearby: state.isNearby,
+    getMovementStatus: state.getMovementStatus,
+    getSystemHealthScore: state.getSystemHealthScore
+  }));
+
+/**
+ * Subscribe to actions only (stable references)
+ */
+export const useLocationActions = () => 
+  useLocationStore((state) => ({
+    updateLocation: state.updateLocation,
+    updateMovementContext: state.updateMovementContext,
+    setStatus: state.setStatus,
+    setPermission: state.setPermission,
+    startTracking: state.startTracking,
+    stopTracking: state.stopTracking,
+    enablePresence: state.enablePresence,
+    disablePresence: state.disablePresence,
+    updateSystemHealth: state.updateSystemHealth,
+    updateMetrics: state.updateMetrics,
+    reset: state.reset
+  }));
+
+/**
+ * Hook to track subscription count for performance monitoring
+ */
+export const useLocationStoreSubscriptionTracker = () => {
+  const updateMetrics = useLocationStore((state) => state.updateMetrics);
+  
+  useEffect(() => {
+    updateMetrics({ subscriptionCount: useLocationStore.getState().metrics.subscriptionCount + 1 });
+    
+    return () => {
+      updateMetrics({ subscriptionCount: Math.max(0, useLocationStore.getState().metrics.subscriptionCount - 1) });
+    };
+  }, [updateMetrics]);
+};
+
+// Development helpers
+if (process.env.NODE_ENV === 'development') {
+  // Expose store to window for debugging
+  (window as any).locationStore = useLocationStore;
+  
+  // Log state changes in development
+  useLocationStore.subscribe(
+    (state) => state.coords,
+    (coords, prevCoords) => {
+      if (coords && (!prevCoords || 
+          coords.lat !== prevCoords.lat || 
+          coords.lng !== prevCoords.lng)) {
+        console.log('[LocationStore] Coordinates updated:', coords);
+      }
+    }
+  );
+  
+  useLocationStore.subscribe(
+    (state) => state.systemHealth,
+    (health) => {
+      const score = useLocationStore.getState().getSystemHealthScore();
+      if (score < 80) {
+        console.warn('[LocationStore] System health degraded:', score, health);
+      }
+    }
+  );
+}

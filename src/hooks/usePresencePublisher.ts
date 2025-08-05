@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/providers/AuthProvider'
 import { useCurrentVibe } from '@/lib/store/useVibe'
 import { storage } from '@/lib/storage'
+import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker'
+import { globalLocationManager } from '@/lib/location/GlobalLocationManager'
 import ngeohash from 'ngeohash'
 
 interface CachedCoords {
@@ -15,7 +17,7 @@ interface CachedCoords {
 export const usePresencePublisher = (isActive: boolean) => {
   const { user } = useAuth()
   const vibe = useCurrentVibe()
-  const watchIdRef = useRef<number | null>(null)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
   const lastPublishRef = useRef<number>(0)
 
   // Cache coordinates for fallback
@@ -45,56 +47,57 @@ export const usePresencePublisher = (isActive: boolean) => {
 
   useEffect(() => {
     if (!isActive || !user || !vibe) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current)
-        watchIdRef.current = null
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
       }
       return
     }
 
     console.log('[PRESENCE_PUBLISHER] Starting location watch with vibe:', vibe)
 
-    const publishPresence = async (position: GeolocationPosition) => {
-      const now = Date.now()
-      
-      // Throttle to max once per 30 seconds
-      if (now - lastPublishRef.current < 30000) {
-        return
-      }
+      const publishPresence = async (position: GeolocationPosition) => {
+    const now = Date.now()
+    
+    // Throttle to max once per 30 seconds
+    if (now - lastPublishRef.current < 30000) {
+      return
+    }
 
-      const { latitude, longitude } = position.coords
-      
-      // Cache coordinates for fallback
-      cacheCoordinates(position.coords)
-      
-      const gh5 = ngeohash.encode(latitude, longitude, 5)
-      
-      console.log('[PRESENCE_PUBLISHER] Publishing presence:', {
-        lat: latitude,
-        lng: longitude,
-        vibe,
-        gh5,
-        profile_id: user.id
-      })
+    const { latitude, longitude } = position.coords
+    
+    // Cache coordinates for fallback
+    cacheCoordinates(position.coords)
+    
+    const gh5 = ngeohash.encode(latitude, longitude, 5)
+    
+    console.log('[PRESENCE_PUBLISHER] Publishing presence:', {
+      lat: latitude,
+      lng: longitude,
+      vibe,
+      gh5,
+      profile_id: user.id
+    })
 
-      try {
-        const { data, error } = await supabase.rpc('upsert_presence', {
+    try {
+      // Use circuit breaker to protect database from overload
+      await executeWithCircuitBreaker(
+        () => supabase.rpc('upsert_presence', {
           p_lat: latitude,
           p_lng: longitude,
           p_vibe: vibe,
           p_visibility: 'public'
-        } as any)
+        } as any),
+        `presence-${user.id}`,
+        'medium'
+      )
 
-        if (error) {
-          console.error('[PRESENCE_PUBLISHER] Error upserting presence:', error)
-        } else {
-          console.log('[PRESENCE_PUBLISHER] Presence upserted successfully')
-          lastPublishRef.current = now
-        }
-      } catch (err) {
-        console.error('[PRESENCE_PUBLISHER] Exception upserting presence:', err)
-      }
+      console.log('[PRESENCE_PUBLISHER] Presence upserted successfully')
+      lastPublishRef.current = now
+    } catch (err) {
+      console.error('[PRESENCE_PUBLISHER] Exception upserting presence:', err)
     }
+  }
 
     const handleError = (error: GeolocationPositionError) => {
       console.error('[PRESENCE_PUBLISHER] Geolocation error:', {
@@ -123,21 +126,22 @@ export const usePresencePublisher = (isActive: boolean) => {
       }).catch(console.error);
     }
 
-    // Start watching position with increased timeout
-    watchIdRef.current = navigator.geolocation.watchPosition(
+    // Use global location manager instead of direct watchPosition
+    unsubscribeRef.current = globalLocationManager.subscribe(
+      `presence-publisher-${user.id}`,
       publishPresence,
       handleError,
       {
         enableHighAccuracy: false,
-        timeout: 30000, // Increased from 10000 to 30000
+        timeout: 30000,
         maximumAge: 30000
       }
     )
 
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current)
-        watchIdRef.current = null
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+        unsubscribeRef.current = null
       }
     }
   }, [isActive, user, vibe])

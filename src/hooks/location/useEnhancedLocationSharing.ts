@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { useUserLocation } from '@/hooks/useUserLocation';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { useLiveSettings } from '@/hooks/useLiveSettings';
 import { useAuth } from '@/providers/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +63,13 @@ export function useEnhancedLocationSharing(options: EnhancedLocationSharingOptio
     debugMode = false
   } = options;
 
-  const { pos, loading, error: locationError, isTracking } = useUserLocation();
+  const { coords, status, error: locationError, isTracking } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: true,
+    hookId: 'enhanced-location-sharing'
+  });
+  const pos = coords; // Compatibility alias
+  const loading = status === 'loading';
   const { data: liveSettings } = useLiveSettings();
   const { user } = useAuth();
   const { toast } = useToast();

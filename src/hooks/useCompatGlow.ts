@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { useCurrentVibe } from '@/lib/store/useVibe';
-import { useUserLocation } from './useUserLocation';
+import { useUnifiedLocation } from './location/useUnifiedLocation';
 import { VIBE_RGB } from '@/constants/vibes';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -38,7 +38,14 @@ const fetcher = async (url: string): Promise<CompatCluster[]> => {
 
 export function useCompatGlow(): CompatGlowState {
   const vibe = useCurrentVibe();
-  const { location, loading } = useUserLocation();
+  const { coords, status } = useUnifiedLocation({
+    enableTracking: false,
+    enablePresence: false,
+    hookId: 'compat-glow'
+  });
+  // Compatibility - convert coords to location format
+  const location = coords ? { coords: { latitude: coords.lat, longitude: coords.lng } } : null;
+  const loading = status === 'loading';
   const [strength, setStrength] = useState(0);
   const [hue, setHue] = useState('#4C92FF');
   const [userCount, setUserCount] = useState(0);

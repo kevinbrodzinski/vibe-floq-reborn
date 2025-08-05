@@ -2,20 +2,31 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useUserLocation } from '@/hooks/useUserLocation'
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation'
 
 export function LocationDebugInfo() {
   const { 
-    location, 
+    coords,
+    timestamp,
     isTracking, 
-    loading, 
+    status, 
     error, 
     hasPermission, 
-    checkPermission, 
-    resetLocation,
     startTracking,
     stopTracking 
-  } = useUserLocation()
+  } = useUnifiedLocation({
+    enableTracking: true,
+    enablePresence: true,
+    hookId: 'location-debug-info'
+  })
+  
+  // Compatibility aliases
+  const location = coords ? { coords: { latitude: coords.lat, longitude: coords.lng, accuracy: coords.accuracy } } : null
+  const loading = status === 'loading'
+  
+  // Legacy functions - these might need to be implemented differently
+  const checkPermission = () => console.log('Permission check not implemented in unified location')
+  const resetLocation = () => console.log('Reset location not implemented in unified location')
   
   const [browserInfo, setBrowserInfo] = useState<any>(null)
   const [permissionState, setPermissionState] = useState<string>('unknown')

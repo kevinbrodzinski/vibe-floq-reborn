@@ -21,6 +21,7 @@ import { myLocationLayer } from '@/components/map/layers/MyLocationLayer';
 
 import { useClusters } from '@/hooks/useClusters';
 import { useVibeFilter } from '@/hooks/useVibeFilter';
+import { useUnifiedLocation } from '@/hooks/location/useUnifiedLocation';
 import { getMapInstance } from '@/lib/geo/project';
 
 /* ------------------------------------------------------------------ */
@@ -79,38 +80,22 @@ export const VibeDensityMap: React.FC<Props> = ({ open, onOpenChange }) => {
   /* slide-out panel state ------------------------------------------- */
   const [showFilter, setShowFilter] = useState(false);
 
-  /* user location state ---------------------------------------------- */
-  const [userLocation, setUserLocation] = useState<{
-    lat: number; lng: number;
-  } | null>(null);
+  /* user location using unified system ------------------------------- */
+  const userLocationHook = useUnifiedLocation({
+    enableTracking: false, // Don't need server tracking for this
+    hookId: 'vibe-density-map'
+  });
 
-  /* user location tracking ------------------------------------------- */
+  // Start/stop location tracking based on modal open state
   useEffect(() => {
-    if (!open) return;
-    if (!navigator.geolocation) return;
+    if (open) {
+      userLocationHook.startTracking();
+    } else {
+      userLocationHook.stopTracking();
+    }
+  }, [open, userLocationHook.startTracking, userLocationHook.stopTracking]);
 
-    const watch = navigator.geolocation.watchPosition(
-      ({ coords }) => {
-        setUserLocation({
-          lat: coords.latitude,
-          lng: coords.longitude,
-        });
-      },
-      (error) => {
-        console.warn('Geolocation error:', error.message);
-      },
-      { 
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
-      }
-    );
-
-    return () => {
-      navigator.geolocation.clearWatch(watch);
-      setUserLocation(null);
-    };
-  }, [open]);
+  const userLocation = userLocationHook.coords;
 
   /* convert clusters to VibeData for overlay ------------------------- */
   const vibePoints = filteredClusters.map((c) => ({

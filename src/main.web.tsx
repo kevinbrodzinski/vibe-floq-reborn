@@ -30,63 +30,38 @@ if (sentryDsn) {
   })
 }
 
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import App from './App.tsx'
-import './index.css'
-import { DebugProvider } from '@/lib/useDebug';
-import { ErrorBoundary } from '@/components/system/ErrorBoundary'
-import posthog from 'posthog-js'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-// Initialize PostHog for web
-const posthogKey = import.meta.env.VITE_POSTHOG_API_KEY
-if (posthogKey) {
-  posthog.init(posthogKey, {
-    api_host: 'https://eu.posthog.com',
-    autocapture: false,
-    capture_pageview: false,
-  })
-}
+// Initialize platform compatibility for Lovable.dev and mobile
+import { platformInfo, platformLog } from '@/lib/platform';
+import { webLocationHelpers } from '@/lib/location/webCompatibility';
 
-// Create a single QueryClient instance
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
-      retry: (failureCount, error: any) => {
-        // Don't retry on 4xx errors
-        if (error?.status >= 400 && error?.status < 500) {
-          return false;
-        }
-        return failureCount < 3;
-      },
-    },
-    mutations: {
-      retry: false,
-    },
-  },
+// Log platform information for debugging
+platformLog.debug('Platform detected:', {
+  platform: platformInfo.isWeb ? 'web' : 'mobile',
+  environment: platformInfo.isLovablePreview ? 'lovable-preview' : 
+               platformInfo.isDev ? 'development' : 'production',
+  locationAvailable: webLocationHelpers.isLocationAvailable,
+  capabilities: {
+    webGL: platformInfo.supportsWebGL,
+    webWorkers: platformInfo.supportsWebWorkers,
+    geolocation: platformInfo.hasGeolocation,
+    localStorage: platformInfo.hasLocalStorage
+  }
 });
 
-// Conditional ReactQueryDevtools import for development
-const ReactQueryDevtools = import.meta.env.DEV
-  ? React.lazy(() => import('@tanstack/react-query-devtools').then(module => ({ default: module.ReactQueryDevtools })))
-  : null;
+// Initialize web compatibility features
+if (platformInfo.isLovablePreview) {
+  platformLog.debug('Lovable.dev preview mode enabled with enhanced features');
+}
 
-createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <DebugProvider>
-        <App />
-      </DebugProvider>
-      {import.meta.env.DEV && ReactQueryDevtools && (
-        <React.Suspense fallback={null}>
-          <ReactQueryDevtools initialIsOpen={false} />
-        </React.Suspense>
-      )}
-    </QueryClientProvider>
-  </ErrorBoundary>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
 );
 
 // Initialize performance monitoring after React is loaded
