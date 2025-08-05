@@ -9,7 +9,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { latLngToCell } from 'h3-js';
 import { useGlobalLocationManager } from '@/lib/location/GlobalLocationManager';
 import { locationBus } from '@/lib/location/LocationBus';
-import { useLocationStore, useLocationActions, useLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
+import { useLocationStore, useLocationActions, useRawLocationCoords, useLocationStatus } from '@/lib/store/useLocationStore';
 import { executeWithCircuitBreaker } from '@/lib/database/CircuitBreaker';
 import { supabase } from '@/integrations/supabase/client';
 import { callFn } from '@/lib/callFn';
@@ -77,7 +77,7 @@ export function useUnifiedLocation(options: UnifiedLocationOptions): UnifiedLoca
   });
 
   // Zustand store integration
-  const coords = useLocationCoords();
+  const coords = useRawLocationCoords();
   const locationStatus = useLocationStatus();
   const status = locationStatus || 'idle';
   const error = null;
