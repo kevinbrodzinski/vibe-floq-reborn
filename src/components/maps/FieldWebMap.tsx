@@ -334,7 +334,14 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
             paint: {
               'circle-color': '#3B82F6',
               'circle-opacity': 0.1,
-              'circle-radius': 50, // Will be updated based on accuracy
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                10, 20,  // At zoom 10, radius = 20px
+                18, 50,  // At zoom 18, radius = 50px  
+                20, 30   // At zoom 20+, cap at 30px (prevent balloon)
+              ],
               'circle-stroke-color': '#3B82F6',
               'circle-stroke-width': 1,
               'circle-stroke-opacity': 0.3
@@ -757,7 +764,7 @@ export const FieldWebMap: React.FC<Props> = ({ onRegionChange, children, visible
       
       // 🔧 FIX: Use jumpTo for first position, flyTo for subsequent updates
       if (firstPosRef.current) {
-        firstPosRef.current = false;
+        firstPosRef.current = false; // 🔧 CRITICAL: Reset flag immediately to prevent stuck state
         console.log('[FieldWebMap] 🔧 First position - using jumpTo for instant positioning');
         map.jumpTo({ 
           center: [location.coords.lng, location.coords.lat], 

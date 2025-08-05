@@ -5,6 +5,12 @@
 // 🔧 CRITICAL: Apply DataCloneError fix FIRST before any other code
 import './lib/debug/consoleGuard';
 
+// 🔧 DEBUG: Import coordinate flow testing utility
+import './lib/debug/coordinateFlowTest';
+
+// 🔧 DEBUG: Import environment configuration helper
+import './lib/debug/environmentHelper';
+
 // Import ResizeObserver polyfill FIRST
 import 'resize-observer-polyfill/dist/ResizeObserver.global';
 
