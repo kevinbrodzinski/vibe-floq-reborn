@@ -65,6 +65,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 // Initialize performance monitoring after React is loaded
 if (import.meta.env.DEV) {
+  // Map diagnostics helper
+  import('./lib/debug/mapDiagnostics');
+  
   import('./lib/performance').then(({ initPerformanceMonitoring }) => {
     initPerformanceMonitoring();
   });
