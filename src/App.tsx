@@ -5,6 +5,8 @@ import { useEffect, useRef, useMemo } from "react";
 if (import.meta.env.DEV) {
   import('@/lib/debug/environmentHelper');
   import('@/lib/debug/immediateLocationFix');
+  import('@/lib/debug/mapDiagnostics');
+  import('@/lib/debug/quickMapFixes');
 }
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
