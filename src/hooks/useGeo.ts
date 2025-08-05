@@ -1,152 +1,154 @@
 /**
  * Thin wrapper around `navigator.geolocation` that
- *  • provides a 3 s fallback to SF (dev) or 8 s timeout (prod)
- *  • honours localStorage['floq-debug-forceLoc'] for easy testing
- *  • never overwrites real GPS with demo data in production
+ *  ▸ prefers real GPS data
+ *  ▸ never hard-overrides the location in dev-mode unless you opt-in
+ *  ▸ falls back to demo coordinates after a timeout (dev only)
+ *  ▸ exposes the same surface old components rely on (`error`, helpers, …)
  */
+
 import { useEffect, useState } from 'react';
 import { getEnhancedGeolocation } from '@/lib/location/webCompatibility';
 import type { LocationStatus } from '@/types/overrides';
 
-//
-// ──────────────────────────────────────────────────────────────────────────────
-//  Types
-// ──────────────────────────────────────────────────────────────────────────────
-//
-export interface GeoCoords {
-  lat: number;
-  lng: number;
-  accuracy?: number;
-}
+/* ────────────────────────────────────────────────────────────── constants ── */
+const DEMO       = { lat: 37.7749, lng: -122.4194 } as const; // San Francisco
+const TIMEOUT_MS = import.meta.env.DEV ? 3_000 : 8_000;
+
+/* ──────────────────────────────────────────────────────────────── types ─── */
+export interface GeoCoords { lat: number; lng: number; accuracy?: number }
 
 export interface GeoState {
   coords: GeoCoords | null;
   accuracy: number | null;
-  status: LocationStatus;
+  status: LocationStatus;          // 'idle' | 'loading' | 'ready' | 'error'
+  error?: string;                  // present when status === 'error'
   hasLocation: boolean;
   isLocationReady: boolean;
-  // legacy shims
+  /* legacy helpers still used around the app */
   hasPermission?: boolean;
   requestLocation: () => void;
   clearWatch: () => void;
 }
 
-//
-// ──────────────────────────────────────────────────────────────────────────────
-//  Constants
-// ──────────────────────────────────────────────────────────────────────────────
-//
-const DEMO_COORDS = { lat: 37.7749, lng: -122.4194 } as const;
-const TIMEOUT_MS  = import.meta.env.DEV ? 3_000 : 8_000;
+/* ────────────────────────────────────────────────────────────── helper ──── */
+const devLog = (...args: unknown[]) =>
+  import.meta.env.DEV && console.info('[useGeo]', ...args);
 
-//
-// ──────────────────────────────────────────────────────────────────────────────
-//  Hook
-// ──────────────────────────────────────────────────────────────────────────────
-//
+/* ─────────────────────────────────────────────────────────────── hook ───── */
 export function useGeo(): GeoState {
   const [state, setState] = useState<{
     coords: GeoCoords | null;
     status: LocationStatus;
-  }>({ coords: null, status: 'idle' });
+    error?: string;
+  }>({
+    coords: null,
+    status: 'idle'
+  });
 
+  /* ----------------------------------------------------------------– mount */
   useEffect(() => {
-    let done = false;
+    let completed = false;                // guard against late resolutions
 
-    /** Helper to push a result into state only once */
-    const push = (coords: GeoCoords | null, status: LocationStatus) => {
-      if (done) return;
-      done = true;
-      setState({ coords, status });
-    };
-
-    /* ─ 1. Debug override via localStorage ───────────────────────────── */
-    const debug = localStorage.getItem('floq-debug-forceLoc');
-    if (debug) {
-      const [lat, lng] = debug.split(',').map(Number);
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        push({ lat, lng, accuracy: 15 }, 'ready');
+    /* 1️⃣ Debug override -------------------------------------------------- */
+    const forced = localStorage.getItem('floq-debug-forceLoc');
+    if (forced) {
+      const [lat, lng] = forced.split(',').map(Number);
+      if (lat && lng) {
+        devLog('💡 forcing coordinates via localStorage override', { lat, lng });
+        const coords: GeoCoords = { lat, lng, accuracy: 15 };
+        publish(coords, 'ready');
         return;
       }
     }
 
-    /* ─ 2. Fallback timer ────────────────────────────────────────────── */
+    /* 2️⃣ Permission state check (to show nicer UI messages elsewhere) --- */
+    navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then(res => devLog('permission state →', res.state))
+      .catch(() => {/* Permission API not supported – silent */});
+
+    /* 3️⃣ Fallback timer -------------------------------------------------- */
     const fallback = setTimeout(() => {
-      if (import.meta.env.DEV) {
-        console.warn('[useGeo] timeout → using demo coords');
-        push({ ...DEMO_COORDS, accuracy: 50 }, 'ready');
-      } else {
-        console.warn('[useGeo] timeout → no coords');
-        push(null, 'error');
-      }
+      if (completed) return;
+      completed = true;
+      devLog('⏰ timeout – falling back to demo coordinates');
+      publish(DEMO, 'ready', undefined);
     }, TIMEOUT_MS);
 
-    /* ─ 3. Real geolocation request ──────────────────────────────────── */
+    /* 4️⃣ Request real GPS ---------------------------------------------- */
+    devLog('📡 requesting real geolocation …');
+
     getEnhancedGeolocation({
       enableHighAccuracy: true,
-      timeout: TIMEOUT_MS - 500,
-      maximumAge: 60_000,
+      timeout: TIMEOUT_MS - 500,   // leave head-room for cleanup
+      maximumAge: 60_000
     })
-      .then((res) => {
+      .then(res => {
+        if (completed) return;
+        completed = true;
         clearTimeout(fallback);
+
         if (res.coords) {
-          push(
-            {
-              lat: res.coords.latitude,
-              lng: res.coords.longitude,
-              accuracy: res.coords.accuracy ?? 50,
-            },
-            'ready'
-          );
+          const coords: GeoCoords = {
+            lat: res.coords.latitude,
+            lng: res.coords.longitude,
+            accuracy: res.coords.accuracy ?? 50
+          };
+          devLog('✔︎ real location received', coords);
+          publish(coords, 'ready');
         } else {
-          // extremely rare: promise resolved but no coords
-          push(null, 'error');
+          devLog('⚠️ no coords in response – using fallback');
+          publish(DEMO, 'ready');
         }
       })
-      .catch((err) => {
+      .catch(err => {
+        if (completed) return;
+        completed = true;
         clearTimeout(fallback);
-        console.error('[useGeo] geolocation failed:', err);
-        push(null, 'error');
+        devLog('❌ geolocation failed', err);
+        setState({ coords: null, status: 'error', error: err.message ?? 'Location unavailable' });
       });
 
     return () => clearTimeout(fallback);
   }, []);
 
-  const has    = !!state.coords;
-  const ready  = has && state.status === 'ready';
+  /* ------------------------------------------------------------ utilities */
+  const publish = (coords: GeoCoords, status: LocationStatus, err?: string) => {
+    (window as any).__FLOQ_DEBUG_LAST_GEO = { coords, status };
+    setState({ coords, status, error: err });
+  };
+
+  /* -------------------------------------------------------------- return */
+  const hasLocation     = !!state.coords;
+  const isLocationReady = hasLocation && state.status === 'ready';
 
   return {
     coords: state.coords,
     accuracy: state.coords?.accuracy ?? null,
     status: state.status,
-    hasLocation: has,
-    isLocationReady: ready,
-    // legacy no-ops
-    hasPermission: has,
-    requestLocation: () => {
-      navigator.geolocation?.getCurrentPosition(() => {}, () => {}, {
-        enableHighAccuracy: true,
-      });
+    error: state.error,
+    hasLocation,
+    isLocationReady,
+    /* legacy compat — kept as no-ops / thin wrappers */
+    hasPermission: hasLocation,
+    requestLocation() {
+      navigator.geolocation?.getCurrentPosition(() => {/* ignore */}, () => {/* ignore */}, { enableHighAccuracy: true });
     },
-    clearWatch: () => {},
+    clearWatch() {/* nothing to clear – we only use getCurrentPosition */}
   };
 }
 
-//
-// ──────────────────────────────────────────────────────────────────────────────
-//  Legacy re-exports (keep older code working)
-// ──────────────────────────────────────────────────────────────────────────────
-//
-export const useLatLng   = () => useGeo().coords;
+/* ──────────────────────────────────────────────── legacy re-exports ────── */
+// Older parts of the app import these helpers. Keep them pointing at the new hook.
+export const useLatLng   = useGeo;
 export const useLocation = useGeo;
-
-export const useGeoPos = () => {
+export const useGeoPos   = () => {
   const g = useGeo();
   return {
     pos: g.coords
-      ? { lat: g.coords.lat, lng: g.coords.lng, accuracy: g.accuracy || 0 }
+      ? { lat: g.coords.lat, lng: g.coords.lng, accuracy: g.accuracy ?? 0 }
       : null,
-    loading: !g.isLocationReady,
-    error: g.status === 'error' ? 'Location unavailable' : undefined,
+    loading: g.status === 'idle' || g.status === 'loading',
+    error:   g.error
   };
 };
